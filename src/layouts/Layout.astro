@@ -91,10 +91,10 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
 <<<<<<< Updated upstream
 <script is:inline>
   document.addEventListener('astro:before-preparation', () => {
-    document.querySelector('#loading').classList.add('opacity-100');
+    document.querySelector('#preloader').classList.add('z-20', 'opacity-100');
   });
   document.addEventListener('astro:after-preparation', () => {
-    document.querySelector('#loading').classList.remove('opacity-100');
+    document.querySelector('#preloader').classList.remove('z-20', 'opacity-100');
   });
 </script>
 =======
