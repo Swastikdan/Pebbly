@@ -28,9 +28,31 @@ import Footer from "../components/Footer.astro";
     <ViewTransitions />
   </head>
   <body class="font-sora text-white bg-gray-950">
-    
+    <div
+      id="preloader"
+      style="position: fixed; overflow: hidden; width: 100%;"
+      class="overflow-hidden -z-20 opacity-0"
+    >
+      <div
+        class="min-h-[100vh] flex flex-col backdrop-blur-md   "
+      >
+        <div
+          class="flex flex-auto flex-col justify-center items-center p-4 md:p-5"
+        >
+          <div class="flex justify-center">
+            <div
+              class="animate-spin inline-block w-14 h-14 md:w-20 md:h-20 border-[3.5px] border-current border-t-transparent text-blue-600 rounded-full"
+              role="status"
+              aria-label="loading"
+            >
+              <span class="sr-only">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> 
     <Navbar />
-   
+  
 
     
     <slot />
@@ -38,10 +60,10 @@ import Footer from "../components/Footer.astro";
     <Footer />
 <script is:inline>
   document.addEventListener('astro:before-preparation', () => {
-    document.querySelector('#loading').classList.add('opacity-100');
+    document.querySelector('#preloader').classList.add('z-20', 'opacity-100');
   });
   document.addEventListener('astro:after-preparation', () => {
-    document.querySelector('#loading').classList.remove('opacity-100');
+    document.querySelector('#preloader').classList.remove('z-20', 'opacity-100');
   });
 </script>
     <style is:global>

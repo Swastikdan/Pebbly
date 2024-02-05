@@ -11,7 +11,7 @@ export function getStaticPaths() {
     { params: { slug: "upcoming" } },
   ];
 }
-// export const prerender = true;
+export const prerender = true;
 const { slug } = Astro.params;
 
 const page = Astro.url.searchParams.get("page") || "1";
