@@ -31,7 +31,7 @@ if (title !== urltitle) {
 }
 }
 const movietitle:string = movie.title || movie.name;
-const moviedescription:string = movie.overview.substring(0, 200) || `Watch ${movietitle} online for free. ${movietitle} is a movie from ${movie.release_date || movie.first_air_date}.`;
+const moviedescription:string = movie.overview || `Watch ${movietitle} online for free. ${movietitle} is a movie from ${movie.release_date || movie.first_air_date}.`;
 const movieogImage:string = movie.poster_path ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}` : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${movietitle}`;
 
 ---
