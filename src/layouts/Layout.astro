@@ -56,11 +56,6 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
     <ViewTransitions />
   </head>
   <body class="font-sora text-white bg-gray-950">
-<<<<<<< Updated upstream
-    
-    <Navbar />
-   
-=======
     <div
       id="preloader"
       style="position: fixed; overflow: hidden; width: 100%;"
@@ -83,21 +78,10 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
       </div>
     </div>
     <Navbar />
->>>>>>> Stashed changes
 
     <slot />
 
     <Footer />
-<<<<<<< Updated upstream
-<script is:inline>
-  document.addEventListener('astro:before-preparation', () => {
-    document.querySelector('#preloader').classList.add('z-20', 'opacity-100');
-  });
-  document.addEventListener('astro:after-preparation', () => {
-    document.querySelector('#preloader').classList.remove('z-20', 'opacity-100');
-  });
-</script>
-=======
     <script is:inline>
       document.addEventListener("astro:before-preparation", () => {
         document
@@ -110,7 +94,6 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
           .classList.remove("z-20", "opacity-100");
       });
     </script>
->>>>>>> Stashed changes
     <style is:global>
       * {
         margin: 0;
