@@ -56,7 +56,7 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
     <ViewTransitions />
   </head>
   <body class="font-sora text-white bg-gray-950">
-    <div
+    <!-- <div
       id="preloader"
       style="position: fixed; overflow: hidden; width: 100%;"
       class="overflow-hidden -z-20 opacity-0"
@@ -76,24 +76,43 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
+    
     <Navbar />
+<div id="preloader" class="fixed flex justify-center -z-20 opacity-0 w-full">
+<!-- <div  class="fixed flex justify-center  w-full"> -->
+    <div class="w-full">
+        <div id="progress-bar" class="h-1.5 bg-blue-600" role="status" aria-label="loading" style="width: 0%;">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+</div>
+<slot />
 
-    <slot />
+<Footer />
+<script is:inline>
+  let progressBar = document.querySelector("#progress-bar");
 
-    <Footer />
-    <script is:inline>
-      document.addEventListener("astro:before-preparation", () => {
-        document
-          .querySelector("#preloader")
-          .classList.add("z-20", "opacity-100");
-      });
-      document.addEventListener("astro:after-preparation", () => {
-        document
-          .querySelector("#preloader")
-          .classList.remove("z-20", "opacity-100");
-      });
-    </script>
+  document.addEventListener("astro:before-preparation", () => {
+    document.querySelector("#preloader").classList.add("z-20", "opacity-100");
+    let width = 0;
+    let intervalId = setInterval(() => {
+      if (width >= 100) {
+        clearInterval(intervalId);
+      } else {
+        width++;
+        progressBar.style.width = width + '%';
+      }
+    }, 10); // Adjust this value to control the speed of the progress bar
+  });
+
+  document.addEventListener("astro:after-preparation", () => {
+    progressBar.style.width = '100%';
+    setTimeout(() => {
+      document.querySelector("#preloader").classList.remove("z-20", "opacity-100");
+    }, 1000); // Wait for 1s before hiding the preloader
+  });
+</script>
     <style is:global>
       * {
         margin: 0;
