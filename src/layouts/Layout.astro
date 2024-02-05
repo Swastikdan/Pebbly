@@ -77,12 +77,11 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
         </div>
       </div>
     </div> -->
-    
-    <Navbar />
-<div id="preloader" class="fixed flex justify-center -z-20 opacity-0 w-full">
-<!-- <div  class="fixed flex justify-center  w-full"> -->
+    <header class="sticky top-0 z-30 bg-gray-950">
+    <Navbar /></header>
+<div id="preloader" class= " fixed flex justify-center w-full opacity-0">
     <div class="w-full">
-        <div id="progress-bar" class="h-1.5 bg-blue-600" role="status" aria-label="loading" style="width: 0%;">
+       <div id="progress-bar " class="h-1.5 bg-blue-600 " role="status" aria-label="loading" style=" ">
             <span class="sr-only">Loading...</span>
         </div>
     </div>
@@ -91,28 +90,25 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
 
 <Footer />
 <script is:inline>
-  let progressBar = document.querySelector("#progress-bar");
+  document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('astro:before-preparation', () => {
+      let progressBar = document.querySelector('#progress-bar');
+      document.querySelector("#preloader").classList.add("z-20", "opacity-100");
+      
+      progressBar.style.width = '0';// Make the progress bar visible
+      progressBar.style.animation = 'progress 3s ease-out forwards';
+    });
 
-  document.addEventListener("astro:before-preparation", () => {
-    document.querySelector("#preloader").classList.add("z-20", "opacity-100");
-    let width = 0;
-    let intervalId = setInterval(() => {
-      if (width >= 100) {
-        clearInterval(intervalId);
-      } else {
-        width++;
-        progressBar.style.width = width + '%';
-      }
-    }, 10); // Adjust this value to control the speed of the progress bar
-  });
-
-  document.addEventListener("astro:after-preparation", () => {
-    progressBar.style.width = '100%';
-    setTimeout(() => {
+    document.addEventListener('astro:after-preparation', () => {
+      let progressBar = document.querySelector('#progress-bar');
       document.querySelector("#preloader").classList.remove("z-20", "opacity-100");
-    }, 1000); // Wait for 1s before hiding the preloader
+      progressBar.style.animation = 'none'; // Remove the previous animation
+      progressBar.style.transition = 'width 1s ease-out'; // Add a transition for the width
+      progressBar.style.width = '100%'; // Set the width to 100%
+    });
   });
 </script>
+
     <style is:global>
       * {
         margin: 0;
@@ -160,6 +156,40 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
         --tw-bg-opacity: 1;
         background-color: rgb(234 179 8 / var(--tw-bg-opacity));
       }
+@keyframes progress {
+  to {
+    width: 80%;
+  }
+}
     </style>
   </body>
 </html>
+  <!-- // let progressBar = document.querySelector("#progress-bar");
+
+  // function startLoading() {
+  //   document.querySelector("#preloader").classList.add("z-20", "opacity-100");
+  //   let width = 0;
+  //   let intervalId = setInterval(() => {
+  //     if (width >= 100) {
+  //       clearInterval(intervalId);
+  //     } else {
+  //       width++;
+  //       progressBar.style.width = width + '%';
+  //     }
+  //   }, 10); // Adjust this value to control the speed of the progress bar
+  // }
+
+  // function stopLoading() {
+  //   progressBar.style.width = '100%';
+  //   setTimeout(() => {
+  //     document.querySelector("#preloader").classList.remove("z-20", "opacity-100");
+  //   }, 1000); // Wait for 1s before hiding the preloader
+  // }
+
+  // document.addEventListener("astro:before-preparation", startLoading);
+  // document.addEventListener("astro:after-preparation", stopLoading);
+
+  // window.onpopstate = function(event) {
+  //   startLoading();
+  //   setTimeout(stopLoading, 1000); // Wait for 1s before stopping the preloader
+  // }; -->
