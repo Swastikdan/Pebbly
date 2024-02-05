@@ -1,4 +1,4 @@
 Sitemap: https://film-fanatic.vercel.app/sitemap.xml
 
 User-agent: *
-Allow: /
+Allow: /api/og/*

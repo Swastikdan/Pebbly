@@ -28,12 +28,12 @@ if (tv.success !== false) {
     tv.name.replace(/ /g, "-").toLowerCase();
 
   if (title !== urltitle) {
-    return Astro.redirect(`/movie/${id}/${urltitle}`, 302);
+    return Astro.redirect(`/tv/${id}/${urltitle}`, 302);
   }
 }
 const tvtitle: string = tv.title ||tv.name;
 const tvdescription: string =
-  tv.overview.substring(0, 200) ||
+  tv.overview ||
   `Watch ${tvtitle} online for free. ${tvtitle} is a movie from ${
     tv.release_date || tv.first_air_date
   }.`;
