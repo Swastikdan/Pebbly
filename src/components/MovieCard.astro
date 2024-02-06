@@ -18,7 +18,7 @@ const imageUrl = (image === 'https://image.tmdb.org/t/p/original/null' || image 
 const urltitle = title.replace(/ /g, "-").toLowerCase();
 ---
 
-<a href={`/${type}/${id}/${urltitle}`} class="group">
+<a href={`/${type}/${id}/${urltitle}`} class="group rounded-lg focus:ring-2 focus:outline-none ring-white">
   <div 
     class="relative block h-[20rem] overflow-hidden rounded-t-lg ">
     <Image 

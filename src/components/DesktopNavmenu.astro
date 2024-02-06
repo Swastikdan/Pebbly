@@ -9,8 +9,8 @@ const navlinks = [
 <ul class="hidden md:flex text-xl font-medium ">
   {
     navlinks.map((link) => (
-      <li >
-        <a href={link.href} class={Astro.url.pathname === link.href ? 'px-2.5 py-1.5 rounded-md bg-gray-500/30' : 'px-2.5 py-1.5'}>{link.name}</a>
+      <li class="" >
+        <a href={link.href} class={Astro.url.pathname === link.href ? 'px-2.5 py-1.5 mx-1 rounded-md bg-gray-500/30 focus:ring-2 focus:outline-none ring-white' : 'px-2.5 py-1.5 mx-1 rounded-md focus:ring-2 focus:outline-none ring-white'}>{link.name}</a>
       </li>
     ))
   }

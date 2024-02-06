@@ -25,7 +25,7 @@ if (quary) {
 let isError = false;
 
 let errormesssage = "";
-if (quary === "") {
+if (quary === "" || quary === null) {
     isError = true;
     errormesssage = "Oops! It looks like you forgot to enter a search term.  Please enter a term and try again.";
 } else if (searchResults === undefined || searchResults.success === false) {
@@ -37,9 +37,19 @@ if (quary === "") {
 } else {
     isError = false;
 }
+const title = quary ? `Search results for ${quary}` : "Search Here";
+let descriptionResults = '';
+
+if (searchResults) {
+  descriptionResults = searchResults.results.map((result: any) => result.title ||result.name).join(', ');
+}
+const description = quary ? `Search results for "${quary}" are ${descriptionResults}` : "Search movies and TV shows here.";
+const ogImage = searchResults && searchResults.results && searchResults.results[0] && searchResults.results[0].poster_path ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${searchResults.results[0].poster_path}` : "https://media.dev.to/cdn-cgi/image/width=800,height=400,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.webp";
+
+
 ---
 
-<Layout>
+<Layout title={title} description={description} ogImage={ogImage} >
   <main class="">
     <div class="justify-center mx-auto items-center py-10">
       <SearchForm quary={quary} />
@@ -53,7 +63,7 @@ if (quary === "") {
             <h1 class=" text-xl lg:text-3xl  text-red-500">{errormesssage}</h1>
             </div>
         ) : (
-            <div class="flex flex-col space-y-10 md:gap-5 ">
+            <div class="flex flex-col space-y-10  ">
             {searchResults && searchResults.results && searchResults.results.map((result: any) => (
                 <SearchPageCard
                 id={result.id}

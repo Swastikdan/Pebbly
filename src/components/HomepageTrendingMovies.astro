@@ -1,5 +1,5 @@
 ---
-import MovieCard from "../MovieCard.astro";
+import MovieCard from "./MovieCard.astro";
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
 
@@ -59,7 +59,7 @@ try {
             <div class="flex justify-center items-center mt-10">
                 <a
                   href="/trending?page=2"
-                  class="text-center px-3 py-1.5 rounded-md bg-gray-600/40 active:scale-95 transition-all duration-100"
+                  class="text-center px-3 py-1.5 rounded-md focus:ring-2 focus:outline-none ring-white bg-gray-600/40 active:scale-95 transition-all duration-100"
                 >
                   View More
                 </a>

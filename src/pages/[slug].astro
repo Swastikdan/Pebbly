@@ -101,7 +101,7 @@ const title:string = slug === "trending"
 const description = ` Get the latest ${title} and enjoy the best movies and TV shows.`;
 ---
 
-<Layout title={title} description={description} ogImage="https://media.dev.to/cdn-cgi/image/width=400,height=200,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.jpg" >
+<Layout title={title} description={description} ogImage="https://media.dev.to/cdn-cgi/image/width=400,height=200,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.webp" >
   <main >
     <div class="justify-center mx-auto items-center pt-20 pb-10">
       <SearchForm quary="" />
@@ -177,7 +177,7 @@ const description = ` Get the latest ${title} and enjoy the best movies and TV s
                                 Number(page) - 1
                               )}`}
                               aria-label="Previous page"
-                              class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 hover:bg-blue-500 hover:text-gray-200"
+                              class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white"
                             >
                               <div class="flex items-center -mx-1">
                                 <svg
@@ -203,7 +203,7 @@ const description = ` Get the latest ${title} and enjoy the best movies and TV s
                           {Number(page) > 4 ? (
                             <a
                               href={`/${slug}?page=1`}
-                              class="hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200"
+                              class="hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white"
                             >
                               1
                             </a>
@@ -219,7 +219,7 @@ const description = ` Get the latest ${title} and enjoy the best movies and TV s
                               pageNum >= Number(page) - 2 && pageNum <= Number(page) + 2 ? (
                                 <a
                                   href={`/${slug}?page=${pageNum}`}
-                                  class={`hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200 ${
+                                  class={`hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white ${
                                     pageNum == Number(page) ? "current" : ""
                                   }`}
                                 >
@@ -236,7 +236,7 @@ const description = ` Get the latest ${title} and enjoy the best movies and TV s
                             </div>
                             <a
                               href={`/${slug}?page=${maxPage}`}
-                              class="hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200"
+                              class="hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white"
                             >
                               {maxPage}
                             </a>
@@ -269,7 +269,7 @@ const description = ` Get the latest ${title} and enjoy the best movies and TV s
                                 Number(page) + 1
                               )}`}
                               aria-label="Next page"
-                              class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 hover:bg-blue-500 hover:text-gray-200"
+                              class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white"
                             >
                               <div class="flex items-center -mx-1">
                                 

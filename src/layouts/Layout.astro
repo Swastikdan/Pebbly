@@ -10,7 +10,7 @@ interface Props {
 
 }
 
-const { title ="Film Fanatic" , description ="Explore a vast collection of movies and TV shows with Film Fanatic." , ogImage="https://media.dev.to/cdn-cgi/image/width=800,height=400,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.jpg"  } = Astro.props;
+const { title ="Film Fanatic" , description ="Explore a vast collection of movies and TV shows with Film Fanatic." , ogImage="https://media.dev.to/cdn-cgi/image/width=800,height=400,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.webp"  } = Astro.props;
 ---
 
 <!doctype html>
@@ -56,27 +56,6 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
     <ViewTransitions />
   </head>
   <body class="font-sora text-white bg-gray-950">
-    <!-- <div
-      id="preloader"
-      style="position: fixed; overflow: hidden; width: 100%;"
-      class="overflow-hidden -z-20 opacity-0"
-    >
-      <div class="min-h-[100vh] flex flex-col backdrop-blur-md">
-        <div
-          class="flex flex-auto flex-col justify-center items-center p-4 md:p-5"
-        >
-          <div class="flex justify-center">
-            <div
-              class="animate-spin inline-block w-14 h-14 md:w-20 md:h-20 border-[3.5px] border-current border-t-transparent text-blue-600 rounded-full"
-              role="status"
-              aria-label="loading"
-            >
-              <span class="sr-only">Loading...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div> -->
     <header class="sticky top-0 z-30 bg-gray-950">
     <Navbar /></header>
 <div id="preloader" class= " z-20 fixed flex justify-center w-full opacity-0">
@@ -87,12 +66,12 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
     </div>
 </div>
 <slot />
-
+<Footer/>
 <script is:inline>
     function initLoader() {
         document.addEventListener('astro:before-preparation', () => {
             let progressBar = document.querySelector('#progress-bar');
-            document.querySelector("#preloader").classList.add("z-20", "opacity-100");
+            document.querySelector("#preloader").classList.add("z-50", "opacity-100");
 
             progressBar.style.width = '0';
             progressBar.style.animation = 'progress1 1s ease-out forwards, progress2 2s ease-out 1s forwards';
@@ -100,7 +79,7 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
 
         document.addEventListener('astro:after-preparation', () => {
             let progressBar = document.querySelector('#progress-bar');
-            document.querySelector("#preloader").classList.remove("z-20", "opacity-100");
+            document.querySelector("#preloader").classList.remove("z-50", "opacity-100");
             progressBar.style.animation = 'progress3 1.5s ease-out forwards'; // Adjust the animation
         });
     }
