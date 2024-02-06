@@ -17,6 +17,7 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="google-site-verification" content="uHvrTYV7MI9jil_qDblV-QDi9qjXlpdb_8XJUtCLGLQ" />
     <meta name="description" content="Astro description" />
     <meta name="viewport" content="width=device-width" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -53,6 +54,18 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
     />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "url": "https://film-fanatic.vercel.app/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://film-fanatic.vercel.app/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
     <ViewTransitions />
   </head>
   <body class="font-sora text-white bg-gray-950">

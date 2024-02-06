@@ -31,31 +31,25 @@ const urltitle = title.replace(/ /g, "-").toLowerCase();
       class="h-full w-full object-cover object-center transition duration-200 group-hover:scale-105 bg-gray-400"
       
     />
-
-    <!-- <span
-      class={`absolute left-3 top-3 rounded-lg  bg--800/70 dark:text-green-500  px-3 py-1.5 text-sm font-semibold uppercase tracking-wider  flex space-x-2 items-center`}
-    >
-      
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M234.5,114.38l-45.1,39.36,13.51,58.6a16,16,0,0,1-23.84,17.34l-51.11-31-51,31a16,16,0,0,1-23.84-17.34L66.61,153.8,21.5,114.38a16,16,0,0,1,9.11-28.06l59.46-5.15,23.21-55.36a15.95,15.95,0,0,1,29.44,0h0L166,81.17l59.44,5.15a16,16,0,0,1,9.11,28.06Z"></path></svg>
-      <span>{Number(rating).toFixed(1)}/10</span>
-    </span> -->
-    <span class=`absolute left-3 top-3 flex items-center gap-1.5 text-${ratingColor}-700 bg-${ratingColor}-100  mr-3 mb-3 rounded-lg  px-[3px] py-[3px] font-semibold text-md  backdrop-blur md:px-3 `><svg aria-hidden="true" class="w-5 h-5  text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg><span>{Number(rating).toFixed(1)}/10</span>
-          </span>
+    {rating && Number(rating) !== 0 && 
+  
+    <span class=`absolute left-3 top-3 flex items-center gap-1 text-${ratingColor}-700 bg-${ratingColor}-100  mr-3 mb-3 rounded-lg  px-2 py-1 font-semibold text-md  backdrop-blur md:px-3 `>
+      <svg aria-hidden="true" class="w-5 h-5  text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg><span>{isNaN(Number(rating)) ? 0 : Number(rating).toFixed(1)}</span>
+          </span> }
   </div>
 
   <div class="bg-white rounded-b-lg">
     <div class="p-4">
-        <!-- <span class="hidden md:flex text-lg font-bold text-gray-800 transition duration-100 py-5">{title?.length > 20 ? `${title.substring(0, 20)}...` : title ?? ''}</span> -->
-      <span class=" text-lg md:text-[16px] font-bold text-gray-900 transition duration-100 py-5">{title?.length > 20 ? `${title.substring(0, 20)} ...` : title ?? ''}</span>
+      <span class=" text-lg md:text-[16px] capitalize font-bold text-gray-900 transition duration-100 py-5">{title?.length > 20 ? `${title.substring(0, 20)} ...` : title ?? ''}</span>
       </span>
       <div class="flex justify-between mt-3">
         <span class="text-sm text-gray-700 lg:text-base">{new Date(year).getFullYear()}</span>
         <div class="text-black">
-          <span class="text-sm sm:text-base font-sans font-medium uppercase mx-2 px-2 py-1 bg-blue-100/60 text-blue-800 rounded-md"
+          <span class="text-sm sm:text-base font-sans font-medium capitalize mx-2 px-2 py-1 bg-blue-100/60 text-blue-800 rounded-md"
             >{type}</span
           >
           <span
-            class="text-sm sm:text-base font-sans font-medium uppercase mx-2 px-2 py-1 bg-gray-200/60 text-gray-800 rounded-md"
+            class="text-sm sm:text-base font-sans font-medium capitalize mx-2 px-2 py-1 bg-gray-200/60 text-gray-800 rounded-md"
             >{language}</span
           >
         </div>

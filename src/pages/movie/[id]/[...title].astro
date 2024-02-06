@@ -6,13 +6,15 @@ const { id, title } = Astro.params;
 const path = Astro.url.pathname;
 async function getmovie(){
   try {
-    const response = await fetch(`${url}/movie/${id}?api_key=${key}&language=en-US&&append_to_response=videos`);
+    const response = await fetch(`${url}/movie/${id}?api_key=${key}&language=en-US&&append_to_response=videos,release_dates,recommendations,keywords`);
     const data = await response.json();
     return data;
   } catch (error) {
     console.error(error);
   }
 }
+
+// &language=en-US&&append_to_response=videos,release_dates,recommendations,keywords
 
 const movie = await getmovie();
 
