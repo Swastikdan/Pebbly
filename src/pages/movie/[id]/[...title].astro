@@ -1,12 +1,25 @@
 ---
+import { Image } from "astro:assets";
+import ISO6391 from 'iso-639-1';
+
 import Layout from "../../../layouts/Layout.astro";
+import Poster from "../../../components/Poster.astro";
+import Description from "../../../components/Description.astro";
+import Rateing from "../../../components/Rateing.astro";
+import SelectedCasts from "../../../components/SelectedCasts.astro";
+import MediaImages from "../../../components/MediaImages.astro";
+import ExtraInformation from "../../../components/ExtraInformation.astro";
+import Keywords from "../../../components/Keywords.astro";
+import Recommendations from "../../../components/Recommendations.astro";
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
 const { id, title } = Astro.params;
 const path = Astro.url.pathname;
-async function getmovie(){
+async function getmovie() {
   try {
-    const response = await fetch(`${url}/movie/${id}?api_key=${key}&language=en-US&&append_to_response=videos,release_dates,recommendations,keywords`);
+    const response = await fetch(
+      `${url}/movie/${id}?api_key=${key}&include_adult=true&append_to_response=external_ids,credits,images,videos,release_dates,recommendations,keywords`
+    );
     const data = await response.json();
     return data;
   } catch (error) {
@@ -18,54 +31,218 @@ async function getmovie(){
 
 const movie = await getmovie();
 
-
 if (movie.success === false) {
   return new Response(null, {
     status: 404,
   });
 }
-if(movie.success !== false){
+if (movie.success !== false) {
+  const urltitle =
+    movie.title.replace(/ /g, "-").toLowerCase() ||
+    movie.name.replace(/ /g, "-").toLowerCase();
 
-const urltitle = movie.title.replace(/ /g, "-").toLowerCase() || movie.name.replace(/ /g, "-").toLowerCase();
-
-if (title !== urltitle) {
-  return Astro.redirect(`/movie/${id}/${urltitle}` ,302);
+  if (title !== urltitle) {
+    return Astro.redirect(`/movie/${id}/${urltitle}`, 302);
+  }
 }
+function formatNumber(num) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + "K";
+  } else {
+    return num;
+  }
 }
-const movietitle:string = movie.title || movie.name;
-const moviedescription:string = movie.overview || `Watch ${movietitle} online for free. ${movietitle} is a movie from ${movie.release_date || movie.first_air_date}.`;
-const movieogImage:string = movie.poster_path ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}` : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${movietitle}`;
+const movietitle: string = movie.title || movie.name;
+const movietagline: string = movie.tagline;
+const moviedescription: string = movie.overview;
+const movieimage: string = movie.poster_path
+  ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
+  : `https://via.placeholder.com/500x750?text=${movietitle}`;
+const movieyear: number = new Date(
+  movie.release_date || movie.first_air_date
+).getFullYear();
+const usRelease: any = movie.release_dates.results.find(
+  (result) => result.iso_3166_1 === "US"
+);
+const usCertification: string = usRelease
+  ? usRelease.release_dates[0].certification
+  : "Not found";
+const hours: number = Math.floor(movie.runtime / 60);
+const minutes: number = movie.runtime % 60;
+const movieRuntime: string = `${hours}h ${minutes}m`;
+const movierating: number = isNaN(Number(movie.vote_average))
+  ? 0
+  : Number(Number(movie.vote_average).toFixed(1));
+const rateingcount: string = formatNumber(movie.vote_count);
+const moviegenres: string[] = movie.genres.map((genre) => genre.name);
+const youtubekeys: string[] = movie.videos.results.map((video) => video.key);
+const selectedMovieCast: any = movie.credits.cast
+  .sort((a, b) => b.popularity - a.popularity)
+  .slice(0, 10)
+  .map((cast) => ({
+    name: cast.name,
+    profile_path: cast.profile_path,
+    character: cast.character,
+  }));
 
+const status: string = movie.status;
+const originalLanguage = ISO6391.getName(movie.original_language);
+const budget = '$' + movie.budget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const revenue = '$' + movie.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const mediaimages: string[] = movie.images.backdrops.map(
+  (image) => `https://image.tmdb.org/t/p/original${image.file_path}`
+);
+const keywords:any = movie.keywords.keywords.map((keyword) => ({name: keyword.name, id: keyword.id}));
+const recommendations = movie.recommendations.results.map((recommendation) => ({
+  title: recommendation.title || recommendation.name,
+  poster_path: 'https://image.tmdb.org/t/p/original' + recommendation.poster_path,
+  id: recommendation.id,
+  vote_average: parseFloat(recommendation.vote_average).toFixed(1),
+  url_title: (recommendation.title || recommendation.name).toLowerCase().replace(/ /g, '-'),
+  media_type: recommendation.media_type
+}));
+
+const ogtitle: string = movietitle;
+const ogdescription: string =
+  movie.overview ||
+  `Watch ${ogtitle} online for free. ${ogtitle} is a movie from ${
+    movie.release_date || movie.first_air_date
+  }.`;
+const ogImage: string = movie.poster_path
+  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}`
+  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${ogtitle}`;
 ---
 
-<Layout title={movietitle} description={moviedescription} ogImage={movieogImage} >
+<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
   <main>
-    <section class="bg-gray-900 min-h-screen items-start pt-20">
-      <div
-        class="py-8 px-4 mx-auto max-w-screen-md text-center lg:py-16 lg:px-12"
-      >
-        <svg
-          class="mx-auto mb-4 w-20 h-20 text-gray-400"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 512 512"
-          ><path
-            fill="currentColor"
-            d="M331.8 224.1c28.29 0 54.88 10.99 74.86 30.97l19.59 19.59c40.01-17.74 71.25-53.3 81.62-96.65c5.725-23.92 5.34-47.08 .2148-68.4c-2.613-10.88-16.43-14.51-24.34-6.604l-68.9 68.9h-75.6V97.2l68.9-68.9c7.912-7.912 4.275-21.73-6.604-24.34c-21.32-5.125-44.48-5.51-68.4 .2148c-55.3 13.23-98.39 60.22-107.2 116.4C224.5 128.9 224.2 137 224.3 145l82.78 82.86C315.2 225.1 323.5 224.1 331.8 224.1zM384 278.6c-23.16-23.16-57.57-27.57-85.39-13.9L191.1 158L191.1 95.99l-127.1-95.99L0 63.1l96 127.1l62.04 .0077l106.7 106.6c-13.67 27.82-9.251 62.23 13.91 85.39l117 117.1c14.62 14.5 38.21 14.5 52.71-.0016l52.75-52.75c14.5-14.5 14.5-38.08-.0016-52.71L384 278.6zM227.9 307L168.7 247.9l-148.9 148.9c-26.37 26.37-26.37 69.08 0 95.45C32.96 505.4 50.21 512 67.5 512s34.54-6.592 47.72-19.78l119.1-119.1C225.5 352.3 222.6 329.4 227.9 307zM64 472c-13.25 0-24-10.75-24-24c0-13.26 10.75-24 24-24S88 434.7 88 448C88 461.3 77.25 472 64 472z"
-          ></path></svg
-        >
-        <h1
-          class="mb-4 text-4xl font-bold tracking-tight leading-none lg:mb-6 md:text-5xl xl:text-6xl text-white pt-10"
-        >
-          Under Mentainance
-          <br />
-          <br />
-          <h1 class="text-base font-light">
-            <span class="ring-2 ring-orange-400 text-white px-3 py-2"
-              >path: {path} </span
-            >
+    <div
+      class="max-w-screen-2xl block mx-auto items-center px-3 md:px-10 xl:px-20"
+    >
+      <section class="px-3">
+        <div class="pt-10 pb-5">
+          <div class="pb-5 space-y-3">
+          <h1
+            class="text-[19px] sm:text-xl md:text-2xl lg:text-3xl font-bold lg:px-0 "
+          >
+            {movietitle}
           </h1>
-        </h1>
-      </div>
-    </section>
+          <h2 class="text-gray-400 hidden sm:flex">{movietagline}</h2>
+        </div>
+          <div
+            class="flex flex-col space-y-3 sm:flex-row items-start sm:items-center justify-start sm:justify-between"
+          >
+            <span
+              class="space-x-1 whitespace-nowrap text-base sm:text-lg font-medium text-gray-300"
+            >
+              <span class="py-1">{movieyear}</span>
+              <span class="py-1">.</span>
+              <span class="px-2 py-1 text-gray-400 ring-2 ring-gray-400"
+                >{usCertification}</span
+              >
+              <span class="py-1">.</span>
+              <span class="py-1">{movieRuntime}</span>
+            </span>
+            <div class="hidden sm:flex">
+              <Rateing rating={movierating} rateingcount={rateingcount} />
+            </div>
+          </div>
+        </div>
+        <div class="grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <Poster image={movieimage} title={title} />
+          <div
+            class="relative sm:col-span-2 lg:col-span-3 xl:col-span-4 bg-gray-300 rounded-lg"
+          >
+          </div>
+        </div>
+
+        <div
+          class="text-sm md:text-base font-medium overflow-x-auto whitespace-nowrap sm:whitespace-normal py-5 scrollbar-hide"
+        >
+          {
+            moviegenres &&
+              moviegenres.map((genre) => (
+                <span class="px-2 py-1 m-1 rounded-full ring-1 ring-white">
+                  {genre}
+                </span>
+              ))
+          }
+        </div>
+        <Description description={moviedescription} />
+        <div class="sm:hidden">
+          <Rateing rating={movierating} rateingcount={rateingcount} />
+        </div>
+
+        <div class="py-5">
+          <span class="text-base md:text-lg font-semibold">Top Billed Cast</span
+          ><SelectedCasts
+                MovieCast={selectedMovieCast}
+                contantainerid="selectedmoviecast"
+              />
+        </div>
+
+        <a
+          href=" "
+          class="text-blue-500 font-semibold hover:underline pb-10 flex items-center gap-2"
+          >Full Cast & Crew <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-6 h-6 mx-1 rtl:-scale-x-100"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+          </svg>
+        </a>
+
+         <div class="lg:hidden flex justify-start  -mt-5">
+              <ExtraInformation
+                status={status}
+                originalLanguage={originalLanguage}
+                budget={budget}
+                revenue={revenue} />
+            </div>
+        <div class="py-5">
+          <span class="text-base md:text-lg font-semibold">Media</span>
+
+          <MediaImages
+            movietitle={movietitle}
+            movieimages={mediaimages}
+            containerid="mediaimages"
+          />
+        </div>
+
+        <div>
+          <span class="text-base md:text-lg font-semibold ">Keywords</span>
+          <div>
+            <Keywords keywords={keywords} />
+          </div>
+        </div>
+        <div class="py-5">
+          <span class="text-base md:text-lg font-semibold">Recommendations</span>
+         <Recommendations recomentations={recommendations} contantainerid="" />
+        </div>
+      </section>
+    </div>
   </main>
 </Layout>
+
+<style is:global>
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+</style>
+
+<script src="/dragscroll.js" is:inline></script>

@@ -54,6 +54,7 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
     />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <link rel="stylesheet" href="https://paulirish.github.io/lite-youtube-embed/src/lite-yt-embed.css">
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -66,9 +67,16 @@ const { title ="Film Fanatic" , description ="Explore a vast collection of movie
       }
     }
     </script>
+    
     <ViewTransitions />
   </head>
-  <body class="font-sora text-white bg-gray-950">
+  <body class="font-sora text-white bg-gray-950 [&::-webkit-scrollbar]:w-2
+  [&::-webkit-scrollbar-track]:rounded-none
+  [&::-webkit-scrollbar-track]:bg-gray-100
+  [&::-webkit-scrollbar-thumb]:rounded-none
+  [&::-webkit-scrollbar-thumb]:bg-gray-300
+  dark:[&::-webkit-scrollbar-track]:bg-slate-700
+  dark:[&::-webkit-scrollbar-thumb]:bg-slate-500">
     <header class="sticky top-0 z-30 bg-gray-950">
     <Navbar /></header>
 <div id="preloader" class= " z-20 fixed flex justify-center w-full opacity-0">
