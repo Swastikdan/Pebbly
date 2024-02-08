@@ -13,7 +13,7 @@ const cdn= "https://media.dev.to/cdn-cgi/image/width=500,height=600,fit=cover,gr
       MovieCast.map((cast) => (
         <div class=" p-2 bg-gray-200 min-w-36 sm:min-w-38 rounded-lg">
           <img
-            class="h-auto min-h-28 md:min-h-32  aspect-auto object-cover rounded-lg bg-gray-500"
+            class="h-auto max-h-28 md:min-h-32 w-full  aspect-auto object-cover rounded-lg bg-gray-500"
             src={`${cdn}https://image.tmdb.org/t/p/w600_and_h900_bestv2/${cast.profile_path}`}
             alt=""
           />

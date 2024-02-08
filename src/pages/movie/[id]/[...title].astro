@@ -1,7 +1,5 @@
 ---
-import { Image } from "astro:assets";
 import ISO6391 from 'iso-639-1';
-
 import Layout from "../../../layouts/Layout.astro";
 import Poster from "../../../components/Poster.astro";
 import Description from "../../../components/Description.astro";
@@ -116,6 +114,7 @@ const ogImage: string = movie.poster_path
 ---
 
 <Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+ 
   <main>
     <div
       class="max-w-screen-2xl block mx-auto items-center px-3 md:px-10 xl:px-20"
