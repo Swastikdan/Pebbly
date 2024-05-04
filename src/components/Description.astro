@@ -1,0 +1,37 @@
+---
+interface Props{
+    description: string;
+}
+const {description} = Astro.props;
+---
+
+<div id="summary" class="text-sm sm:text-base py-5">
+    <span id="short-text" class="md:hidden">{description.substring(0, 100)}</span>
+    <span id="full-text" class="hidden md:inline">{description}</span>
+    <button id="read-more" class="md:hidden text-blue-500 pl-5" onclick="toggleText()">Read More</button>
+</div>
+
+<script is:inline>
+    function toggleText() {
+        const fullText = document.getElementById('full-text');
+        const shortText = document.getElementById('short-text');
+        const readMoreButton = document.getElementById('read-more');
+
+        if (fullText.style.display === 'none') {
+            fullText.style.display = 'inline';
+            shortText.style.display = 'none';
+            readMoreButton.textContent = 'Read Less';
+        } else {
+            fullText.style.display = 'none';
+            shortText.style.display = 'inline';
+            readMoreButton.textContent = 'Read More';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const fullText = document.getElementById('full-text').textContent;
+        if (fullText.length <= 100) {
+            toggleText();
+        }
+    });
+</script>

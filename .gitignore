@@ -1,6 +1,6 @@
 # build output
 dist/
-bin
+
 # generated types
 .astro/
 .vercel/

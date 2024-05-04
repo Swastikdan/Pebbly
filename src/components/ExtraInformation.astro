@@ -1,0 +1,28 @@
+---
+interface Props {
+  status: string;
+  originalLanguage: string;
+  budget: string;
+  revenue: string;
+}
+const { status, originalLanguage, budget, revenue } = Astro.props;
+---
+
+<span class="flex flex-col space-y-3">
+  <span class="flex flex-col">
+    <span class="text-lg font-bol">Status</span>
+    <span class="font-thin text-gray-300">{status}</span>
+</span>
+  <span class="flex flex-col">
+    <span class="text-lg font-bol">Original Language</span>
+    <span class="font-thin text-gray-300">{originalLanguage}</span>
+</span>
+  <span class="flex flex-col">
+    <span class="text-lg font-bol">Budget</span>
+    <span class="font-thin text-gray-300">{budget}</span>
+</span>
+  <span class="flex flex-col">
+    <span class="text-lg font-bol">Revenue</span>
+    <span class="font-thin text-gray-300">{revenue}</span>
+</span>
+</span>

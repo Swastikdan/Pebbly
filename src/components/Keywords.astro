@@ -1,0 +1,16 @@
+---
+interface Props{
+    keywords:any;
+}
+const {keywords} = Astro.props;
+---
+
+<div class="flex flex-wrap gap-2 py-3">
+  {
+    keywords.map((keyword) => (
+      <span id={keyword.id} class="text-[9px] sm:text-xs px-2 py-1 bg-gray-700 rounded-md ring-1 ring-gray-500">
+        {keyword.name}
+      </span>
+    ))
+  }
+</div>

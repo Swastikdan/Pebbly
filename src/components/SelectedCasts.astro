@@ -1,0 +1,28 @@
+---
+import ScrollContainer from "./ScrollContainer.astro"
+interface Props {
+MovieCast:any;
+contantainerid:string;
+}
+const { MovieCast ,contantainerid  } = Astro.props;
+const cdn= "https://media.dev.to/cdn-cgi/image/width=500,height=600,fit=cover,gravity=auto,format=auto/";
+---
+
+<ScrollContainer contantainerid={contantainerid}>
+    {
+      MovieCast.map((cast) => (
+        <div class=" p-2 bg-gray-200 min-w-36 sm:min-w-38 rounded-lg">
+          <img
+            class="h-auto max-h-28 md:min-h-32 w-full  aspect-auto object-cover rounded-lg bg-gray-500"
+            src={`${cdn}https://image.tmdb.org/t/p/w600_and_h900_bestv2/${cast.profile_path}`}
+            alt=""
+          />
+          <span class="flex-col space-y-1 flex whitespace-nowrap overflow-hidden py-2">
+            <span class="text-xs text-black font-semibold">{cast.name}</span>
+            <span class="text-[10px] text-gray-700 ">{cast.character}</span>
+          </span>
+        </div>
+      ))
+    }
+</ScrollContainer>
+

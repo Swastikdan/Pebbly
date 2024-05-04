@@ -1,0 +1,247 @@
+---
+import ISO6391 from 'iso-639-1';
+import Layout from "../../../layouts/Layout.astro";
+import Poster from "../../../components/Poster.astro";
+import Description from "../../../components/Description.astro";
+import Rateing from "../../../components/Rateing.astro";
+import SelectedCasts from "../../../components/SelectedCasts.astro";
+import MediaImages from "../../../components/MediaImages.astro";
+import Keywords from "../../../components/Keywords.astro";
+import Recommendations from "../../../components/Recommendations.astro";
+const key = import.meta.env.ApiKeyAuth;
+const url = import.meta.env.ApiUrl;
+const { id, title } = Astro.params;
+async function gettv() {
+  try {
+    const response = await fetch(
+      `${url}/tv/${id}?api_key=${key}&include_adult=true&append_to_response=external_ids,credits,images,videos,release_dates,recommendations,keywords`
+    );
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+const tv = await gettv();
+if (tv.success === false) {
+  return new Response(null, {
+    status: 404,
+  });
+}
+if (tv.success !== false) {
+  const urltitle =
+    tv.name.replace(/ /g, "-").toLowerCase();
+
+  if (title !== urltitle) {
+    return Astro.redirect(`/tv/${id}/${urltitle}`, 302);
+  }
+}
+function formatNumber(num) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + "K";
+  } else {
+    return num;
+  }
+}
+const tvtitle: string = tv.title || tv.name;
+const tvtagline: string = tv.tagline;
+const tvdescription: string = tv.overview;
+const tvimage: string = tv.poster_path
+  ? `https://image.tmdb.org/t/p/original${tv.poster_path}`
+  : `https://via.placeholder.com/500x750?text=${tvtitle}`;
+
+const tvyear: number = new Date(
+  tv.release_date || tv.first_air_date
+).getFullYear();
+let usContentRating;
+let usCertification = "Not found";
+
+if (tv.content_ratings) {
+  usContentRating = tv.content_ratings.results.find(
+    (result) => result.iso_3166_1 === "US"
+  );
+
+  if (usContentRating) {
+    usCertification = usContentRating.rating;
+  }
+}
+const hours: number = Math.floor(tv.runtime / 60);
+const minutes: number = tv.runtime % 60;
+const tvRuntime: string = `${hours}h ${minutes}m`;
+const tvrating: number = isNaN(Number(tv.vote_average))
+  ? 0
+  : Number(Number(tv.vote_average).toFixed(1));
+const rateingcount: string = formatNumber(tv.vote_count);
+const tvgenres: string[] = tv.genres.map((genre) => genre.name);
+const youtubekeys: string[] = tv.videos.results.map((video) => video.key);
+const selectedtvCast: any = tv.credits.cast
+  .sort((a, b) => b.popularity - a.popularity)
+  .slice(0, 10)
+  .map((cast) => ({
+    name: cast.name,
+    profile_path: cast.profile_path,
+    character: cast.character,
+  }));
+
+const status: string = tv.status;
+const originalLanguage = ISO6391.getName(tv.original_language);
+const mediaimages: string[] = tv.images.backdrops.map(
+  (image) => `https://image.tmdb.org/t/p/original${image.file_path}`
+);
+const keywords = tv.keywords.results.map((keyword) => ({name: keyword.name, id: keyword.id}));
+const recommendations = tv.recommendations.results.map((recommendation) => ({
+  title: recommendation.title || recommendation.name,
+  poster_path: 'https://image.tmdb.org/t/p/original' + recommendation.poster_path,
+  id: recommendation.id,
+  vote_average: parseFloat(recommendation.vote_average).toFixed(1),
+  url_title: (recommendation.title || recommendation.name).toLowerCase().replace(/ /g, '-'),
+  media_type: recommendation.media_type
+}));
+
+const ogtitle: string = tvtitle;
+const ogdescription: string =
+  tv.overview ||
+  `Watch ${ogtitle} online for free. ${ogtitle} is a tv from ${
+    tv.release_date || tv.first_air_date
+  }.`;
+const ogImage: string = tv.poster_path
+  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${tv.poster_path}`
+  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${ogtitle}`;
+
+
+  
+
+---
+<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+  <main>
+    <div
+      class="max-w-screen-2xl block mx-auto items-center px-3 md:px-10 xl:px-20"
+    >
+      <section class="px-3">
+        <div class="pt-10 pb-5">
+          <div class="pb-5 space-y-3">
+          <h1
+            class="text-[19px] sm:text-xl md:text-2xl lg:text-3xl font-bold lg:px-0 "
+          >
+            {tvtitle}
+          </h1>
+          <h2 class="text-gray-400 hidden sm:flex">{tvtagline}</h2>
+        </div>
+          <div
+            class="flex flex-col space-y-3 sm:flex-row items-start sm:items-center justify-start sm:justify-between"
+          >
+            <span
+              class="space-x-1 whitespace-nowrap text-base sm:text-lg font-medium text-gray-300"
+            >
+              <span class="py-1">{tvyear}</span>
+              <span class="py-1">.</span>
+              <span class="px-2 py-1 text-gray-400 ring-2 ring-gray-400"
+                >{usCertification}</span
+              >
+              <span class="py-1">.</span>
+              <span class="py-1">{tvRuntime}</span>
+            </span>
+            <div class="hidden sm:flex">
+              <Rateing rating={tvrating} rateingcount={rateingcount} />
+            </div>
+          </div>
+        </div>
+        <div class="grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <Poster image={tvimage} title={title} />
+          <div
+            class="relative sm:col-span-2 lg:col-span-3 xl:col-span-4 bg-gray-300 rounded-lg"
+          >
+          </div>
+        </div>
+
+        <div
+          class="text-sm md:text-base font-medium overflow-x-auto whitespace-nowrap sm:whitespace-normal py-5 scrollbar-hide"
+        >
+          {
+            tvgenres &&
+              tvgenres.map((genre) => (
+                <span class="px-2 py-1 m-1 rounded-full ring-1 ring-white">
+                  {genre}
+                </span>
+              ))
+          }
+        </div>
+        <Description description={tvdescription} />
+        <div class="sm:hidden">
+          <Rateing rating={tvrating} rateingcount={rateingcount} />
+        </div>
+
+        <div class="py-5">
+          <span class="text-base md:text-lg font-semibold">Top Billed Cast</span
+          ><SelectedCasts
+                MovieCast={selectedtvCast}
+                contantainerid="selectedmoviecast"
+              />
+        </div>
+
+        <a
+          href=" "
+          class="text-blue-500 font-semibold hover:underline pb-10 flex items-center gap-2"
+          >Full Cast & Crew <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-6 h-6 mx-1 rtl:-scale-x-100"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+          </svg>
+        </a>
+
+         <!-- <div class="lg:hidden flex justify-start  -mt-5">
+              <ExtraInformation
+                status={status}
+                originalLanguage={originalLanguage}
+                budget={budget}
+                revenue={revenue} />
+            </div> -->
+        <div class="py-5">
+          <span class="text-base md:text-lg font-semibold">Media</span>
+
+          <MediaImages
+            movietitle={tvtitle}
+            movieimages={mediaimages}
+            containerid="mediaimages"
+          />
+        </div>
+
+        <div>
+          <span class="text-base md:text-lg font-semibold ">Keywords</span>
+          <div>
+            <Keywords keywords={keywords} />
+          </div>
+        </div>
+        <div class="py-5">
+          <span class="text-base md:text-lg font-semibold">Recommendations</span>
+         <Recommendations recomentations={recommendations} contantainerid="" />
+        </div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<style is:global>
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+</style>
+
+<script src="/dragscroll.js" is:inline></script>
