@@ -2,345 +2,398 @@
 import Layout from "../layouts/Layout.astro";
 import SearchForm from "../components/SearchForm.astro";
 import MovieCard from "../components/MovieCard.astro";
+import Goback from "../components/Goback";
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
 export function getStaticPaths() {
-  return [
-    { params: { slug: "trending" } },
-    { params: { slug: "now-playing" } },
-    { params: { slug: "upcoming" } },
-  ];
+return [
+{ params: { slug: "trending" } },
+{ params: { slug: "now-playing" } },
+{ params: { slug: "upcoming" } },
+];
 }
+
+const pages = ["trending", "now-playing", "upcoming"];
 
 const { slug } = Astro.params;
 
-const page = Astro.url.searchParams.get("page") || "1";
+// if(!pages.includes(slug)) {
+//   return Astro.redirect('/');
+// }
 
-async function trending(page: string) {
-  try {
-    const response = await fetch(
-      `${url}/trending/all/week?sort_by=popularity.desc&api_key=${key}&page=${page}`
-    );
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(error);
-  }
+let page = Number(Astro.url.searchParams.get("page") || "1");
+
+async function trending(page: number) {
+try {
+const response = await fetch(
+`${url}/trending/all/week?sort_by=popularity.desc&api_key=${key}&page=${page}`
+);
+const data = await response.json();
+return data;
+} catch (error) {
+console.error(error);
+}
 }
 
-async function nowplaying(page: string) {
-  try {
-    const response = await fetch(
-      `${url}/movie/now_playing?api_key=${key}&page=${page}`
-    );
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(error);
-  }
+async function nowplaying(page: number) {
+try {
+const response = await fetch(
+`${url}/movie/now_playing?api_key=${key}&page=${page}`
+);
+const data = await response.json();
+return data;
+} catch (error) {
+console.error(error);
 }
-async function upcoming(page: string) {
-  try {
-    const response = await fetch(
-      `${url}/movie/upcoming?api_key=${key}&page=${page}`
-    );
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(error);
-  }
 }
-interface Movie {
-  id: number;
-  title: string;
-  name: string;
-  poster_path: string;
-  original_language: string;
-  release_date: string;
-  first_air_date: string;
-  media_type: string;
-  vote_average: number;
-  total_pages: string;
+async function upcoming(page: number) {
+try {
+const response = await fetch(
+`${url}/movie/upcoming?api_key=${key}&page=${page}`
+);
+const data = await response.json();
+return data;
+} catch (error) {
+console.error(error);
+}
+}
+
+interface Movies {
+id: number;
+title: string;
+image: string;
+rating: number;
+year: string;
+type: string;
+language: string;
 }
 
 interface MovieData {
-  results: Movie[];
-  total_pages: number;
+results: Movies[];
+total_pages: number;
+total_results: number;
 }
-
 
 let moviedata: MovieData | null = null;
+
 try {
-  const slugFunctions = {
-    trending: trending,
-    "now-playing": nowplaying,
-    upcoming: upcoming,
-  };
-
-  if (slugFunctions[slug]) {
-    moviedata = await slugFunctions[slug](page);
-  } else {
-    throw new Error(`Invalid slug: ${slug}`);
-  }
+if (slug === "trending") {
+moviedata = await trending(page);
+} else if (slug === "now-playing") {
+moviedata = await nowplaying(page);
+} else if (slug === "upcoming") {
+moviedata = await upcoming(page);
+}
 } catch (error) {
-  console.error(`There was a problem: ${error.message}`);
+console.error(error);
 }
+let maxPage: number;
 
-let maxPage;
 if (moviedata) {
-  maxPage = Math.min(moviedata.total_pages, 500);
-} else {
-  console.error("moviedata is undefined");
+maxPage = Math.min(moviedata.total_pages, 500);
 }
-
-const title:string = slug === "trending"
-  ? "Trending Movies & TV Shows"
-  : slug === "now-playing"
-    ? "Now Playing Movies"
-    : "Upcoming Movies";
+const title: string =
+slug === "trending"
+? "Trending Movies & TV Shows"
+: slug === "now-playing"
+? "Now Playing Movies"
+: "Upcoming Movies";
 const description = ` Get the latest ${title} and enjoy the best movies and TV shows.`;
 ---
 
-<Layout title={title} description={description} ogImage="https://media.dev.to/cdn-cgi/image/width=400,height=200,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.webp" >
-  <main >
-    <div class="justify-center mx-auto items-center pt-20 pb-10">
-      <SearchForm quary="" />
+<Layout title={title} description={description}
+  ogImage="https://media.dev.to/cdn-cgi/image/width=400,height=200,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.webp">
+  <main>
+    <div class="bg-gray-100 my-5 md:my-10 mx-5 md:mx-10 rounded-xl">
+      <div class="justify-center mx-auto items-center lg:py-10">
+        <SearchForm quary="" />
+      </div>
     </div>
     <section>
-    {
-      Number(page) > maxPage || Number(page) > 500 ? (
+      {
+      isNaN(page) || page < 1 || page> maxPage || page > 500 ? (
         <div class="mx-auto max-w-screen-2xl min-h-[50vh] px-5 md:px-20">
           <div class="flex justify-center items-center">
-            <p class="text-center text-red-500 text-2xl md:text-3xl font-medium">
-              Page Not Found , It should be less than 
-              {maxPage < 500 ? maxPage : 500}
-            </p>
+            <div class="max-w-screen-xl mx-auto items-center py-3 px-5 md:px-10 xl:px-5 text-center">
+              <p class="mb-4 text-3xl tracking-tight font-bold md:text-4xl text-black">
+                Something's missing.
+              </p>
+              <p class="mb-4 text-lg font-light text-gray-700">
+                Sorry, we can't find that page. You'll find lots to explore
+              </p>
+              <br />
+              <Goback client:load />
+            </div>
           </div>
         </div>
-      ) : (
+        ) : (
         <>
           <div class="py-10 mx-auto">
             <div class="">
               <h2 class="text-2xl md:text-3xl justify-center text-center font-bold">
                 {slug === "trending"
-                  ? "Trending Now"
-                  : slug === "now-playing"
-                    ? "Now Playing"
-                    : "Upcoming Movies"}
+                ? "Trending Now"
+                : slug === "now-playing"
+                ? "Now Playing"
+                : "Upcoming Movies"}
               </h2>
               <div>
                 <div class="py-6 sm:py-8 lg:py-12">
                   {moviedata &&
                   moviedata.results &&
                   moviedata.results.length > 0 ? (
-                    <div class="mx-auto max-w-screen-2xl ">
-                      <div class="grid  gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 px-7 md:px-20">
-                        {moviedata.results.map((movie: any) => (
-                          <MovieCard
-                            id={movie.id}
-                            title={movie.title || movie.name}
-                            image={`https://image.tmdb.org/t/p/original/${movie.poster_path}`}
-                            language={movie.original_language}
-                            year={movie.release_date || movie.first_air_date}
-                            type={movie.media_type || "movie"}
-                            rating={movie.vote_average}
-                          />
-                        ))}
-                      </div>
-                      <div class="flex justify-center items-center mt-10 ">
-                        <div class="flex">
-                          {Number(page) == 1 ? (
-                            <div class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200  opacity-30 select-none">
-                              <div class="flex items-center -mx-1">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  class="w-6 h-6 mx-1 rtl:-scale-x-100"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                                  />
-                                </svg>
+                  <div class="mx-auto max-w-screen-2xl ">
+                    <div class="grid  gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 px-7 md:px-20">
+                      {moviedata.results.map((movie: any) => (
+                      <MovieCard id={movie.id} title={movie.title || movie.name}
+                        image={`https://image.tmdb.org/t/p/original/${movie.poster_path}`}
+                        language={movie.original_language} year={movie.release_date || movie.first_air_date}
+                        type={movie.media_type || "movie" } rating={movie.vote_average} />
+                      ))}
+                    </div>
 
-                                
+                    <div class="flex justify-center items-center mt-10 ">
+                      <nav class="flex justify-center items-center mt-10">
+                        <div class="flex pr-2">
+                          {page == 1 ? (
+                           <div class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-base rounded-lg text-gray-800 opacity-30 select-none">
+                                <svg
+                                  class="flex-shrink-0 size-3.5"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                >
+                                  <path d="m15 18-6-6 6-6" />
+                                </svg>
+                                <span>Previous</span>
                               </div>
-                            </div>
                           ) : (
                             <a
-                              href={`/${slug}?page=${Math.max(
-                                1,
-                                Number(page) - 1
-                              )}`}
-                              aria-label="Previous page"
-                              class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white"
-                            >
-                              <div class="flex items-center -mx-1">
+                                href={`/${slug}?page=${Math.max(
+                                  1,
+                                  page - 1
+                                )}`}
+                                aria-label="Previous page"
+                                class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-base  rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-none  focus:bg-gray-100 focus:ring-2 focus:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none"
+                              >
                                 <svg
+                                  class="flex-shrink-0 size-3.5"
                                   xmlns="http://www.w3.org/2000/svg"
-                                  class="w-6 h-6 mx-1 rtl:-scale-x-100"
-                                  fill="none"
+                                  width="24"
+                                  height="24"
                                   viewBox="0 0 24 24"
+                                  fill="none"
                                   stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
                                 >
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                                  />
+                                  <path d="m15 18-6-6 6-6" />
                                 </svg>
-
-                                
-                              </div>
-                            </a>
+                                <span>Previous</span>
+                              </a>
                           )}
-
-                          {Number(page) > 4 ? (
-                            <a
-                              href={`/${slug}?page=1`}
-                              class="hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white"
-                            >
-                              1
-                            </a>
-                            <div
-                              class="hidden px-2 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline font-semibold text-gray-200 "
-                            >
-                              ...
-                            </div>
+                          </div>
+<div class="hidden md:flex space-x-2" >
+                          {page > 4 ? (
+                          <a href={`/${slug}?page=1`}
+                                                            class={`min-h-[38px] min-w-[38px] flex justify-center items-center text-gray-800 hover:bg-gray-100 py-2 px-3 text-base rounded-lg focus:outline-none  focus:bg-gray-100 focus:ring-2 focus:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none ${
+                                  page == 1 ? "bg-gray-200" : ""
+                                }`}
+                                aria-current="page"
+>1</a>
+                          <div
+                             
+                                class="min-h-[38px] min-w-[38px] flex justify-center items-center text-gray-800 hover:bg-gray-100 py-2 px-3 text-base rounded-lg focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none">•••</div>
                           ) : null}
 
                           {Array.from({ length: maxPage }, (_, i) => i + 1).map(
-                            (pageNum) =>
-                              pageNum >= Number(page) - 2 && pageNum <= Number(page) + 2 ? (
-                                <a
-                                  href={`/${slug}?page=${pageNum}`}
-                                  class={`hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white ${
-                                    pageNum == Number(page) ? "current" : ""
-                                  }`}
-                                >
-                                  {pageNum}
-                                </a>
-                              ) : null
-                          )}
-
-                          {Number(page) < maxPage - 4 ? (
-                            <div
-                              class="hidden px-2 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline font-semibold text-gray-200 "
-                            >
-                              ...
-                            </div>
-                            <a
-                              href={`/${slug}?page=${maxPage}`}
-                              class="hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white"
-                            >
-                              {maxPage}
+                          (pageNum) =>
+                          pageNum >= page - 2 && pageNum <= page + 2 ? ( <a
+                            href={`/${slug}?page=${pageNum}`} class={`min-h-[38px] min-w-[38px] flex justify-center items-center text-gray-800 hover:bg-gray-100 py-2 px-3 text-base rounded-lg focus:outline-none  focus:bg-gray-100 focus:ring-2 focus:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none ${
+                                page == pageNum ? "bg-gray-200" : ""
+                                }`}
+                                aria-current="page">
+                            {pageNum}
                             </a>
-                          ) : null}
-                          {page == maxPage ? (
-                            <div class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 disabled cursor-not-allowed opacity-30">
-                              <div class="flex items-center -mx-1">
-                                
+                            ) : null
+                            )}
 
+                            {page < maxPage - 4 ? (  <div
+                             
+                                class="min-h-[38px] min-w-[38px] flex justify-center items-center text-gray-800 hover:bg-gray-100 py-2 px-3 text-base rounded-lg focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none">•••</div>
+                        <a href={`/${slug}?page=${maxPage}`}
+                          class={`min-h-[38px] min-w-[38px] flex justify-center items-center text-gray-800 hover:bg-gray-100 py-2 px-3 text-base rounded-lg focus:outline-none  focus:bg-gray-100 focus:ring-2 focus:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none ${
+                                page == maxPage ? "bg-gray-200" : ""
+                                }`}
+                                aria-current="page">{maxPage}</a>
+                        ) : null}
+</div>
+                         <div class="flex pl-2">
+                        {page == maxPage ? (
+                            <div class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-lg rounded-lg text-gray-800 opacity-30 select-none ">
+                                <span class="">Next</span>
                                 <svg
+                                  class="flex-shrink-0 size-3.5"
                                   xmlns="http://www.w3.org/2000/svg"
-                                  class="w-6 h-6 mx-1 rtl:-scale-x-100"
-                                  fill="none"
+                                  width="24"
+                                  height="24"
                                   viewBox="0 0 24 24"
+                                  fill="none"
                                   stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
                                 >
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                                  />
+                                  <path d="m9 18 6-6-6-6" />
                                 </svg>
                               </div>
-                            </div>
-                          ) : (
-                            <a
-                              href={`/${slug}?page=${Math.min(
-                                maxPage,
-                                Number(page) + 1
-                              )}`}
-                              aria-label="Next page"
-                              class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white"
-                            >
-                              <div class="flex items-center -mx-1">
-                                
-
+                        ) : (
+                          <a
+                                href={`/${slug}?page=${Math.min(
+                                  maxPage,
+                                  page + 1
+                                )}`}
+                                aria-label="Next page"
+                                class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-base rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-none  focus:bg-gray-100 focus:ring-2 focus:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none "
+                              >
+                                <span class="">Next</span>
                                 <svg
+                                  class="flex-shrink-0 size-3.5"
                                   xmlns="http://www.w3.org/2000/svg"
-                                  class="w-6 h-6 mx-1 rtl:-scale-x-100"
-                                  fill="none"
+                                  width="24"
+                                  height="24"
                                   viewBox="0 0 24 24"
+                                  fill="none"
                                   stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
                                 >
-                                  <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                                  />
+                                  <path d="m9 18 6-6-6-6" />
                                 </svg>
-                              </div>
-                            </a>
-                          )}
+                              </a>
+                        )}
+                        </div>
+                    </div>
+                    </nav>
+
+                  </div>
+
+                  {/* <div class="flex justify-center items-center mt-10 ">
+                    <div class="flex">
+                      {Number(page) == 1 ? (
+                      <div
+                        class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 text-gray-200  opacity-30 select-none">
+                        <div class="flex items-center -mx-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mx-1 rtl:-scale-x-100" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                          </svg>
+
+
                         </div>
                       </div>
+                      ) : (
+                      <a href={`/${slug}?page=${Math.max( 1, Number(page) - 1 )}`} aria-label="Previous page"
+                        class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white">
+                        <div class="flex items-center -mx-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mx-1 rtl:-scale-x-100" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                          </svg>
+
+
+                        </div>
+                      </a>
+                      )}
+
+                      {Number(page) > 4 ? (
+                      <a href={`/${slug}?page=1`}
+                        class="hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white">
+                        1
+                      </a>
+                      <div
+                        class="hidden px-2 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline font-semibold text-gray-200 ">
+                        ...
+                      </div>
+                      ) : null}
+
+                      {Array.from({ length: maxPage }, (_, i) => i + 1).map(
+                      (pageNum) =>
+                      pageNum >= Number(page) - 2 && pageNum <= Number(page) + 2 ? ( <a
+                        href={`/${slug}?page=${pageNum}`} class={`hidden px-4 py-2 mx-1 transition-colors duration-300
+                        transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200
+                        focus:ring-2 focus:outline-none ring-white ${ pageNum==Number(page) ? "current" : "" }`}>
+                        {pageNum}
+                        </a>
+                        ) : null
+                        )}
+
+                        {Number(page) < maxPage - 4 ? ( <div
+                          class="hidden px-2 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline font-semibold text-gray-200 ">
+                          ...
                     </div>
-                  ) : (
-                    <div class="mx-auto max-w-screen-2xl min-h-[50vh] px-5 md:px-20">
-                      <div class="flex justify-center items-center">
-                        <p class="text-center text-red-500 text-2xl md:text-3xl font-medium">
-                          Something went wrong. Please try again later.
-                        </p>
+                    <a href={`/${slug}?page=${maxPage}`}
+                      class="hidden px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md sm:inline bg-gray-800 text-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white">
+                      {maxPage}
+                    </a>
+                    ) : null}
+                    {page == maxPage ? (
+                    <div
+                      class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 disabled cursor-not-allowed opacity-30">
+                      <div class="flex items-center -mx-1">
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mx-1 rtl:-scale-x-100" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
                       </div>
                     </div>
-                  )}
-                </div>
+                    ) : (
+                    <a href={`/${slug}?page=${Math.min( maxPage, Number(page) + 1 )}`} aria-label="Next page"
+                      class="px-4 py-2 mx-1 transition-colors duration-300 transform rounded-md bg-gray-800 ext-gray-200 hover:bg-blue-500 hover:text-gray-200 focus:ring-2 focus:outline-none ring-white">
+                      <div class="flex items-center -mx-1">
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mx-1 rtl:-scale-x-100" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                      </div>
+                    </a>
+                    )}
+                  </div> */}
+                
+                ) : (
+                 <div class="mx-auto max-w-screen-2xl min-h-[50vh] px-5 md:px-20">
+          <div class="flex justify-center items-center">
+            <div class="max-w-screen-xl mx-auto items-center py-3 px-5 md:px-10 xl:px-5 text-center">
+              <p class="mb-4 text-3xl tracking-tight font-bold md:text-4xl text-black">
+              Something went wrong. Please try again later.
+              </p>
+            </div>
+          </div>
+        </div>
+                )}
               </div>
             </div>
           </div>
+          </div>
         </>
-      )
-    }
+        )
+        }
     </section>
   </main>
 </Layout>
-
-<!-- {Number(page) > maxPage || Number(page) > 500 ? (
-        <div>Page not found</div>
-    ) : (
-        <>
-            
-            {
-                Number(page) > 1 ? (
-                    <a href={`/${slug}?page=${Number(page) - 1}`}>Before</a>
-                ) : (
-                    <span>Before</span>
-                )
-            }
-
-            {
-                Number(page) < maxPage ? (
-                    <a href={`/${slug}?page=${Number(page) + 1}`}>Next</a>
-                ) : (
-                    <span>Next</span>
-                )
-            }
-            <div>{JSON.stringify(data)}</div>
-        </>
-    )} -->
-<!-- <MovieCard id={data.id}
-title={data.title || data.name}
-image={`https://image.tmdb.org/t/p/original/${data.poster_path}`}
-language={data.original_language}
-year={data.release_date || data.first_air_date}
-type={data.media_type}
-rating={data.vote_average} /> -->
