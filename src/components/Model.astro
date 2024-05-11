@@ -1,0 +1,129 @@
+---
+interface Props {
+  isimage: boolean;
+  link: string;
+}
+
+const { isimage, link } = Astro.props;
+---
+
+<button
+  class="myBtn w-full h-full"
+>
+  <slot name="model-trigger" />
+</button>
+
+<div
+  class="myModal fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden outline-none backdrop-blur-lg focus:outline-none invisible opacity-0 w-screen h-screen"
+  style="cursor: pointer; margin: 0; padding: 0; top: 0; left: 0; right: 0; bottom: 0;"
+>
+  <div
+    class="relative m-1 h-auto max-h-[98vh] max-w-[95vw] animate-fade-in-down flex w-auto flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg outline-none focus:outline-none"
+  >
+    <div class="relative">
+      <button
+        class="close fixed right-0 top-0 m-2 rounded-lg bg-red-200 px-3 py-1 text-3xl text-red-500 hover:bg-red-100 active:scale-95 shadow-lg"
+      >
+        &times;
+      </button>
+      {
+        isimage ? (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="absolute right-0 top-0 m-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded focus:outline-none ring-1 ring-blue-400 "
+          >
+            View Original
+          </a>
+        ) : null
+      }
+
+      <slot name="model-content" />
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  // Get all the modals
+  var modals = document.getElementsByClassName('myModal');
+
+  // Get all the buttons that open the modals
+  var btns = document.getElementsByClassName('myBtn');
+
+  // Get all the <span> elements that close the modals
+  var spans = document.getElementsByClassName('close');
+
+  // When the user clicks a button, open the corresponding modal
+  for (let i = 0; i < btns.length; i++) {
+    btns[i].onclick = function () {
+      modals[i].classList.remove(
+        'invisible',
+        'opacity-0',
+        'translate-y-4',
+        'sm:translate-y-0',
+      );
+      modals[i].classList.add('visible', 'opacity-100', 'translate-y-0');
+      document.body.style.overflow = 'hidden';
+    };
+  }
+
+  // When the user clicks on a <span> (x), close the corresponding modal
+  for (let i = 0; i < spans.length; i++) {
+    spans[i].onclick = function () {
+      modals[i].classList.remove('visible', 'opacity-100', 'translate-y-0');
+      modals[i].classList.add(
+        'invisible',
+        'opacity-0',
+        'translate-y-4',
+        'sm:translate-y-0',
+      );
+      document.body.style.overflow = 'auto';
+    };
+  }
+
+  // When the user clicks anywhere outside of a modal, close it
+  for (let i = 0; i < modals.length; i++) {
+    modals[i].onclick = function (event) {
+      if (event.target == modals[i]) {
+        modals[i].classList.remove('visible', 'opacity-100', 'translate-y-0');
+        modals[i].classList.add(
+          'invisible',
+          'opacity-0',
+          'translate-y-4',
+          'sm:translate-y-0',
+        );
+        document.body.style.overflow = 'auto';
+      }
+    };
+  }
+
+  // When the user clicks a button, open the corresponding modal
+  // for (let i = 0; i < btns.length; i++) {
+  //   btns[i].onclick = function () {
+  //     modals[i].classList.remove('invisible', 'opacity-0');
+  //     modals[i].classList.add('visible', 'opacity-100');
+  //     document.body.style.overflow = 'hidden';
+  //   };
+  // }
+
+  // // When the user clicks on a <span> (x), close the corresponding modal
+  // for (let i = 0; i < spans.length; i++) {
+  //   spans[i].onclick = function () {
+  //     modals[i].classList.remove('visible', 'opacity-100');
+  //     modals[i].classList.add('invisible', 'opacity-0');
+  //     document.body.style.overflow = 'auto';
+  //   };
+  // }
+
+  // // When the user clicks anywhere outside of a modal, close it
+  // for (let i = 0; i < modals.length; i++) {
+  //   modals[i].onclick = function (event) {
+  //     if (event.target == modals[i]) {
+  //       modals[i].classList.remove('visible', 'opacity-100');
+  //       modals[i].classList.add('invisible', 'opacity-0');
+  //       document.body.style.overflow = 'auto';
+  //     }
+  //   };
+  // }
+</script>

@@ -1,26 +1,21 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import SearchForm from "../components/SearchForm.astro";
-import HomepageTrendingMovies from "../components/HomepageTrendingMovies.astro";
+
+import Layout from '../layouts/Layout.astro';
+import SearchForm from '../components/SearchForm.astro';
+import HomepageMovies from '../components/HomepageMovies.astro';
 ---
 
-<Layout >
-  <main id="main" >
-    <div class="bg-gray-900 pb-10 md:my-10 md:mx-10 rounded-xl">
-      <div>
-        <h1 class="text-center text-xl lg:text-3xl font-semibold py-10 px-3">
-          Experience the magic of cinema with Film Fanatic
-        </h1>
-      </div>
+<Layout>
+  <main>
+    <div class="bg-gray-100 my-5 md:my-10 mx-5 md:mx-10 rounded-xl">
       <div class="justify-center mx-auto items-center lg:py-10">
-        <SearchForm  quary="" />
+        <SearchForm quary="" />
       </div>
     </div>
-    <div class="py-10 mx-auto ">
-      <HomepageTrendingMovies />
-
-     
-      </div>
+    <div class="pb-10 mx-auto">
+      <HomepageMovies />
     </div>
   </main>
 </Layout>
+
+<style></style>

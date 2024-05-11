@@ -1,12 +1,12 @@
 ---
 interface Props {
   rating: number;
-  rateingcount: string;
+  rateingcount: number;
 }
 const { rating, rateingcount } = Astro.props;
 ---
 
-<div class="flex space-x-3 text-gray-400">
+<div class="flex space-x-1 text-gray-800">
   <div class="flex space-x-1 text-medium">
     <svg
       aria-hidden="true"
@@ -20,9 +20,8 @@ const { rating, rateingcount } = Astro.props;
     >
 
     <span class="">
-      <span class="text-white font-bold"> {rating}</span>/10</span
+      <span class="text-black font-bold"> {rating}</span>/10</span
     >
   </div>
-  <span>{rateingcount}</span>
-  <span class=" text-sm">(user score)</span>
+  <span>({rateingcount} users)</span>
 </div>

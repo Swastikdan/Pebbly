@@ -1,86 +1,253 @@
 ---
-
-import Layout from "../layouts/Layout.astro";
-import SearchForm from "../components/SearchForm.astro";
-import SearchPageCard from "../components/SearchPageCard.astro";
-const quary = Astro.url.searchParams.get("q");
-
+import Layout from '../layouts/Layout.astro';
+import SearchForm from '../components/SearchForm.astro';
+import SearchResultCard from '../components/SearchResultCard.astro';
+import Goback from '../components/Goback';
+const quary = Astro.url.searchParams.get('q');
+const slug = `search?q=${quary}`;
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
+let page = Number(Astro.url.searchParams.get('page') || '1');
+interface Results {
+backdrop_path: string;
+id: string;
+original_title: string;
+overview: string;
+poster_path: string;
+media_type: string;
+adult: boolean;
+title: string;
+name: string;
+original_language: string;
+genre_ids: number[];
+popularity: number;
+release_date: string;
+first_air_date: string;
+video: boolean;
+vote_average: number;
+vote_count: number;
+}
+
+interface SearchResults {
+results: Results[];
+total_pages: number;
+total_results: number;
+success?: boolean;
+}
+
 async function getSearchResults() {
-  try {
-    const response = await fetch(
-      `${url}/search/multi?api_key=${key}&query=${quary}`
-    );
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(error);
-  }
+try {
+const response = await fetch(
+`${url}/search/multi?api_key=${key}&query=${quary}`
+);
+const data = await response.json();
+return data;
+} catch (error) {
+console.error(error);
 }
-let searchResults: any;
+}
+
+let searchResults: SearchResults;
 if (quary) {
-  searchResults = await getSearchResults();
+searchResults = await getSearchResults();
 }
+
+// sort search reult by popularity
+
+// searchResults.results.sort((a, b) => b.popularity - a.popularity);
+
+// if media_type != movie or tv show remove it from the search results , if orinaal_language is missing reove it  ,  with sort `popularity`
+
+if (searchResults) {
+searchResults.results = searchResults.results.filter(
+(result) =>
+result.media_type === 'movie' || result.media_type === 'tv' 
+);  // remove other media types
+searchResults.results = searchResults.results.filter(
+(result) => result.original_language
+); // remove missing original_language
+// remove release_date: '', first_air_date: '' from search results
+searchResults.results = searchResults.results.filter(
+(result) => result.release_date || result.first_air_date
+)
+searchResults.results = 
+searchResults.results.sort((a, b) => b.popularity - a.popularity); // sort by popularity
+}
+
+ 
 let isError = false;
 
-let errormesssage = "";
-if (quary === "" || quary === null) {
-    isError = true;
-    errormesssage = "Oops! It looks like you forgot to enter a search term.  Please enter a term and try again.";
+let errormesssage = '';
+
+if (quary === '' || quary === null) {
+isError = true;
+errormesssage = '😅 Oops! Looks like you forgot to type something.';
 } else if (searchResults === undefined || searchResults.success === false) {
-    isError = true;
-    errormesssage = "Sorry, we're experiencing technical difficulties. Please try your search again later.";
+isError = true;
+errormesssage = '😓 Uh-oh, we seem to be having some tech issues.';
 } else if (searchResults.results.length === 0) {
-    isError = true;
-    errormesssage = "We couldn't find any results for your search term. Please try a different keyword.";
-} else {
-    isError = false;
+isError = true;
+errormesssage =
+'🔍 Hmm, we couldn’t find anything for that. Maybe try a different keyword?';
+} else  {
+isError = false;
 }
-const title = quary ? `Search results for ${quary}` : "Search Here";
+if (page > searchResults.total_pages) {
+return new Response(null, {
+    status: 404,
+  });
+} 
+const title = quary
+? `Search results for ${quary}`
+: 'Search any Movies or Tv series here';
 let descriptionResults = '';
 
 if (searchResults) {
-  descriptionResults = searchResults.results.map((result: any) => result.title ||result.name).join(', ');
+descriptionResults = searchResults.results
+.map((result: Results) => result.title || result.original_title)
+.join(', ');
 }
-const description = quary ? `Search results for "${quary}" are ${descriptionResults}` : "Search movies and TV shows here.";
-const ogImage = searchResults && searchResults.results && searchResults.results[0] && searchResults.results[0].poster_path ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${searchResults.results[0].poster_path}` : "https://media.dev.to/cdn-cgi/image/width=800,height=400,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.webp";
 
+let maxPage: number= searchResults.total_pages;
 
+const description = quary
+? `Search results for "${quary}" are ${descriptionResults}`
+: 'Search movies and TV shows here.';
+const ogImage =
+searchResults &&
+searchResults.results &&
+searchResults.results[0] &&
+searchResults.results[0].poster_path
+?
+`https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${searchResults.results[0].poster_path}`
+:
+'https://media.dev.to/cdn-cgi/image/width=800,height=400,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.webp';
 ---
 
-<Layout title={title} description={description} ogImage={ogImage} >
-  <main class="">
+<Layout title={title} description={description} ogImage={ogImage}>
+  <main class=" min-h-screen">
+  <div class="">
     <div class="justify-center mx-auto items-center py-10">
       <SearchForm quary={quary} />
     </div>
-  </main>
+  </div>
 
-  <div class="flex justify-center items-center px-8">
+  <div class="flex flex-col justify-center items-center px-8">
     {
-        isError ? (
-            <div class="text-center min-h-[60vh]  py-20">
-            <h1 class=" text-xl lg:text-3xl  text-red-500">{errormesssage}</h1>
-            </div>
-        ) : (
-            <div class="grid gap-10 xl:grid-cols-2 xl:px-10 pb-40 ">
-            {searchResults && searchResults.results && searchResults.results.map((result: any) => (
-                <SearchPageCard
-                id={result.id}
-                title={result.title || result.name}
-                date={result.release_date || result.first_air_date}
-                description={result.overview}
-                rating={result.vote_average}
-                reviews={result.vote_count}
-                type={result.media_type}
-                language={result.original_language}
-                genres={result.genre_ids ? result.genre_ids.map(id => id.toString()) : ""}
-                image={`https://image.tmdb.org/t/p/original/${result.poster_path}`}
-                />
-            ))}
-            </div>
-        )
-    }
-  </div> 
+       isError ? (
+    <div class="mx-auto max-w-screen-2xl min-h-[50vh] px-5 md:px-20">
+      <div class="flex justify-center items-center">
+        <div class="max-w-screen-xl mx-auto items-center py-3 px-5 md:px-10 xl:px-5 text-center">
+          <p class="mb-4 text-lg tracking-tight  md:text-xl text-black">
+            {errormesssage}
+          </p>
+        </div>
+      </div>
+    </div>
+    ) : (
+    <div class="py-6 sm:py-8 lg:py-12 mb-40">
+      {searchResults &&
+      searchResults.results &&
+      searchResults.results.length > 0 && (
+      <div class="grid gap-10 xl:grid-cols-2 xl:px-10  ">
+        {searchResults.results.map((result: Results) => (
+        <SearchResultCard id={result.id} title={result.title || result.name} date={result.release_date ||
+          result.first_air_date} description={result.overview} rating={result.vote_average} reviews={result.vote_count}
+          type={result.media_type} language={result.original_language} genres={ result.genre_ids ?
+          result.genre_ids.map((id)=> id.toString())
+          : []
+          }
+          image={`https://image.tmdb.org/t/p/original/${result.poster_path}`}
+          />
+          ))}
+      </div>
+      )}
+{
+   maxPage > 1 && (
+     
+      <nav class="flex justify-center items-center mt-10">
+        <div class="flex pr-2">
+          {page == 1 ? (
+          <div
+            class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-base rounded-lg text-gray-800 opacity-30 select-none">
+            <svg class="flex-shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            <span>Previous</span>
+          </div>
+          ) : (
+          <a href={`/${slug}&page=${Math.max( 1, page - 1 )}`} aria-label="Previous page"
+            class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-base  rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-none  focus:bg-gray-100 focus:ring-2 focus:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none">
+            <svg class="flex-shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            <span>Previous</span>
+          </a>
+          )}
+        </div>
+        <div class="hidden md:flex space-x-2">
+          {page > 4 ? (
+          <a href={`/${slug}&page=1`} class={`min-h-[38px] min-w-[38px] flex justify-center items-center text-gray-800
+            hover:bg-gray-100 py-2 px-3 text-base rounded-lg focus:outline-none focus:bg-gray-100 focus:ring-2
+            focus:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none ${ page==1 ? "bg-gray-200" : "" }`}
+            aria-current="page">1</a>
+          <div
+            class="min-h-[38px] min-w-[38px] flex justify-center items-center text-gray-800 hover:bg-gray-100 py-2 px-3 text-base rounded-lg focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none">
+            •••</div>
+          ) : null}
 
+          {Array.from({ length: maxPage }, (_, i) => i + 1).map(
+          (pageNum) =>
+          pageNum >= page - 2 && pageNum <= page + 2 ? ( <a href={`/${slug}&page=${pageNum}`} class={`min-h-[38px]
+            min-w-[38px] flex justify-center items-center text-gray-800 hover:bg-gray-100 py-2 px-3 text-base rounded-lg
+            focus:outline-none focus:bg-gray-100 focus:ring-2 focus:ring-gray-400 disabled:opacity-50
+            disabled:pointer-events-none ${ page==pageNum ? "bg-gray-200" : "" }`} aria-current="page">
+            {pageNum}
+            </a>
+            ) : null
+            )}
+
+            {page < maxPage - 4 ? ( <div
+              class="min-h-[38px] min-w-[38px] flex justify-center items-center text-gray-800 hover:bg-gray-100 py-2 px-3 text-base rounded-lg focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none">
+              •••
+        </div>
+        <a href={`/${slug}&page=${maxPage}`} class={`min-h-[38px] min-w-[38px] flex justify-center items-center
+          text-gray-800 hover:bg-gray-100 py-2 px-3 text-base rounded-lg focus:outline-none focus:bg-gray-100
+          focus:ring-2 focus:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none ${ page==maxPage
+          ? "bg-gray-200" : "" }`} aria-current="page">{maxPage}</a>
+        ) : null}
+    </div>
+    <div class="flex pl-2">
+      {page == maxPage ? (
+      <div
+        class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-lg rounded-lg text-gray-800 opacity-30 select-none ">
+        <span class="">Next</span>
+        <svg class="flex-shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </div>
+      ) : (
+      <a href={`/${slug}&page=${Math.min( maxPage, page + 1 )}`} aria-label="Next page"
+        class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-1.5 text-base rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-none  focus:bg-gray-100 focus:ring-2 focus:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none ">
+        <span class="">Next</span>
+        <svg class="flex-shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </a>
+      )}
+    </div>
+  </nav> )
+}
+  </div>
+  )
+  }
+  </div></main>
 </Layout>

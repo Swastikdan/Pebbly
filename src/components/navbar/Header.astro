@@ -1,0 +1,41 @@
+---
+import { Image } from 'astro:assets';
+
+import NavmenuMobile from './NavmenuMobile';
+import NavmenuDesktop from './NavmenuDesktop';
+const navitems = [
+  { name: 'Trending', href: '/trending' },
+  { name: 'Now Playing', href: '/now-playing' },
+  { name: 'Upcoming ', href: '/upcoming' },
+];
+
+const pathname = Astro.url.pathname;
+---
+
+<!-- <header
+  id="myHeader"
+  class="sticky z-50 top-5 bg-white mt-5 mx-3 -mb-2 shadow-md border-[1px] rounded-lg border-gray-700"
+> -->
+<header
+  class="border-b-[1px] border-gray-700 bg-white items-center sticky top-0 z-50"
+>
+  <nav class="max-w-screen-xl mx-auto items-center py-3 px-5 md:px-10 xl:px-5">
+    <div class="flex justify-between items-center">
+      <a href="/" class="flex space-x-3 items-center">
+        <Image
+          class="h-8 w-8 md:h-10 md:w-10"
+          loading="eager"
+          src="/logo.svg"
+          width={50}
+          height={50}
+          alt="Logo"
+        />
+        <span class="text-xl md:text-3xl font-semibold">Film Fanatic</span>
+      </a>
+      <div class="flex items-center space-x-3">
+        <NavmenuMobile navitems={navitems} pathname={pathname} client:load />
+        <NavmenuDesktop navitems={navitems} pathname={pathname} client:load />
+      </div>
+    </div>
+  </nav>
+</header>

@@ -1,0 +1,214 @@
+---
+import { Image } from 'astro:assets';
+import Layout from '../../../../layouts/Layout.astro';
+import Secondarynav from '../../../../components/Secondarynav';
+const { id, slug } = Astro.params;
+const key = import.meta.env.ApiKeyAuth;
+const url = import.meta.env.ApiUrl;
+const vcdn =
+  'https://media.dev.to/cdn-cgi/image/width=550,height=300,fit=cover,gravity=auto,format=auto,quality=100/';
+const hcdn =
+  'https://media.dev.to/cdn-cgi/image/width=300,height=550,fit=cover,gravity=auto,format=auto,quality=100/';
+
+const cdn =
+  'https://media.dev.to/cdn-cgi/image/width=200,height=300,fit=cover,gravity=auto,format=auto/';
+interface MovieCredits {
+  cast: {
+    adult: boolean;
+    gender: number;
+    id: number;
+    known_for_department: string;
+    name: string;
+    original_name: string;
+    popularity: number;
+    profile_path: string | null;
+    cast_id: number;
+    character: string;
+    credit_id: string;
+    order: number;
+  }[];
+  crew: {
+    adult: boolean;
+    gender: number;
+    id: number;
+    known_for_department: string;
+    name: string;
+    original_name: string;
+    popularity: number;
+    profile_path: string | null;
+    credit_id: string;
+    department: string;
+    job: string;
+  }[];
+}
+
+interface Movie {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string;
+  backdrop_path: string;
+  release_date: string;
+  color?: string;
+}
+
+async function loadMovieCredits(): Promise<MovieCredits> {
+  const res = await fetch(`${url}/movie/${id}/credits?api_key=${key}`);
+  return res.json();
+}
+
+async function loadMovie(): Promise<Movie> {
+  const res = await fetch(`${url}/movie/${id}?api_key=${key}`);
+  return res.json();
+}
+
+const movieCredits = await loadMovieCredits();
+
+let movie = await loadMovie().then((data) => {
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.overview,
+    poster_path: data.poster_path,
+    backdrop_path: data.backdrop_path,
+    release_date: data.release_date,
+    year: new Date(data.release_date).getFullYear(),
+  };
+});
+
+const image = `${hcdn}https://image.tmdb.org/t/p/original${movie.poster_path}`;
+let color = await fetch(
+  `${Astro.url.origin}/api/imagecolor.json?image=${image}`
+).then((res) => res.json());
+
+color = color.color;
+const cast = movieCredits.cast.map((item) => ({
+  id: item.id,
+  name: item.name,
+  image: item.profile_path,
+  character: item.character,
+}));
+
+const crew = movieCredits.crew.map((item) => ({
+  id: item.id,
+  name: item.name,
+  image: item.profile_path,
+  job: item.job,
+  department: item.department,
+}));
+
+const departments = crew.reduce((acc, item) => {
+  if (!acc[item.department]) {
+    acc[item.department] = [];
+  }
+  acc[item.department].push(item);
+  return acc;
+}, {});
+
+const castbydepartment = Object.entries(departments);
+const ogtitle: string = `The Cast of the movie | ${movie.title}`;
+const ogdescription: string = movie.description;
+const ogImage: string = movie.poster_path
+  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}`
+  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${movie.title}`;
+---
+
+<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+  <main>
+    <Secondarynav
+      movie={movie}
+      url={Astro.url.href}
+      id={id}
+      slug={slug}
+      color={color}
+      client:load
+      client:only="react"
+    />
+
+    <section class="py-2 mb-3">
+      <div
+        class="max-w-screen-2xl block mx-auto items-center px-3 md:px-10 xl:px-20"
+      >
+      </div>
+
+      <div
+        class="max-w-screen-2xl block mx-auto items-center px-3 md:px-10 xl:px-20 pb-20"
+      >
+        <section
+          class="grid md:grid-cols-2 justify-between gap-3 space-y-10 md:space-y-0 mt-5"
+        >
+          <div class="">
+            <span class="text-2xl text-gray-600">
+              <span class="text-black font-bold">Cast</span>
+              {cast && cast.length}
+            </span>
+            <div class="pt-5 grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {
+                cast &&
+                  cast.map((cast: any) => (
+                    <a
+                      href={`/person/${cast.id}/${encodeURIComponent(cast.name.replace(/ /g, '-').toLowerCase())}`}
+                      class="flex  items-center pb-0"
+                    >
+                      <Image
+                        width={200}
+                        height={300}
+                        loading="eager"
+                        src={`${cdn}${cast.image ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2/${cast.image}` : `https://www.themoviedb.org/assets/2/v4/glyphicons/basic/glyphicons-basic-4-user-grey-d8fe957375e70239d6abdd549fd7568c89281b2179b5f4470e2e12895792dfa5.svg`}`}
+                        alt={cast.name}
+                        class="rounded-lg w-14 h-20 bg-gray-200 object-center"
+                      />
+                      <div class="flex flex-col items-start pl-5">
+                        <p class="text-start   font-bold">{cast.name}</p>
+                        <p class="text-start text-sm">{cast.character}</p>
+                      </div>
+                    </a>
+                  ))
+              }
+            </div>
+          </div>
+
+          <div>
+            <span class="text-2xl text-gray-600">
+              <span class="text-black font-bold">Crew</span>
+              {crew && crew.length}
+            </span>
+
+            <div class="pt-5">
+              {
+                castbydepartment &&
+                  castbydepartment.map(([department, crew]: any) => (
+                    <>
+                      <h2 class="text-lg font-bold mt-3">{department}</h2>
+
+                      <div class="pt-5 grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        {crew.map((crew: any) => (
+                          <a
+                            href={`/person/${crew.id}/${encodeURIComponent(crew.name.replace(/ /g, '-').toLowerCase())}`}
+                            class="flex  items-center pb-5"
+                          >
+                            <Image
+                              width={200}
+                              height={300}
+                              loading="eager"
+                              src={`${cdn}${crew.image ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2/${crew.image}` : `https://www.themoviedb.org/assets/2/v4/glyphicons/basic/glyphicons-basic-4-user-grey-d8fe957375e70239d6abdd549fd7568c89281b2179b5f4470e2e12895792dfa5.svg`}`}
+                              alt={crew.name}
+                              class="rounded-lg w-14 h-20 bg-gray-200 object-center"
+                            />
+                            <div class="flex flex-col items-start pl-5">
+                              <p class="text-start   font-bold">{crew.name}</p>
+                              <p class="text-start text-sm">{crew.job}</p>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    </>
+                  ))
+              }
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+</Layout>

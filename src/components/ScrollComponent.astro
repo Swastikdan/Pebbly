@@ -1,0 +1,224 @@
+---
+interface Props {
+  contantainerid: string;
+  isScrollable: boolean;
+  buttons: boolean;
+}
+const { contantainerid, isScrollable, buttons } = Astro.props;
+---
+
+<div class={`relative ${contantainerid} rounded-lg`}>
+  <button
+    id={`${contantainerid}-prev`}
+    class={`hidden ${buttons ? 'sm:flex' : null} absolute m-3 top-1/2 left-0 transform -translate-y-1/2 active:scale-95 z-30  `}
+    onclick={`scrollAmount('${contantainerid}', -1)`}
+  >
+    <svg
+      class="w-0 sm:w-10 h-0 sm:h-10"
+      width="208"
+      height="208"
+      viewBox="0 0 208 208"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        opacity="1"
+        d="M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z"
+        fill="white"></path>
+      <path
+        d="M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z"
+        stroke="black"
+        stroke-width="4"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+      <path
+        d="M120 64L80 104L120 144"
+        stroke="black"
+        stroke-width="16"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </button>
+  <div
+    id={contantainerid}
+    class={`flex space-x-4  overflow-x-auto whitespace-nowrap dragscroll active:cursor-grab ${ isScrollable? "scrollbar" :"scrollbar-hidden "}  `}
+  >
+    <slot />
+  </div>
+  <button
+    id={`${contantainerid}-next`}
+    class={`hidden ${buttons ? 'sm:flex' : null} absolute m-3 top-1/2 right-0 transform -translate-y-1/2 active:scale-95 z-30`}
+    onclick={`scrollAmount('${contantainerid}', 1)`}
+  >
+    <svg
+      class="w-0 sm:w-10 h-0 sm:h-10"
+      width="208"
+      height="208"
+      viewBox="0 0 208 208"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        opacity="1"
+        d="M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z"
+        fill="white"></path>
+      <path
+        d="M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z"
+        stroke="black"
+        stroke-width="4"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+      <path
+        d="M88 64L128 104L88 144"
+        stroke="black"
+        stroke-width="16"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </button>
+</div>
+<style>
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+  .scrollbar::-webkit-scrollbar-track {
+    background: #ffffff;
+  }
+
+  @media (max-width: 640px) {
+    .scrollbar::-webkit-scrollbar {
+      display: block;
+      height: 4px;
+    }
+  }
+
+  @media (min-width: 641px) {
+    .scrollbar::-webkit-scrollbar {
+      display: block;
+      height: 6px;
+    }
+  }
+</style>
+
+<script is:inline>
+  /**
+   * @fileoverview dragscroll - scroll area by dragging
+   * @version 0.0.8
+   *
+   * @license MIT, see http://github.com/asvd/dragscroll
+   * @copyright 2015 asvd <heliosframework@gmail.com>
+   */
+
+  (function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+      define(['exports'], factory);
+    } else if (typeof exports !== 'undefined') {
+      factory(exports);
+    } else {
+      factory((root.dragscroll = {}));
+    }
+  })(this, function (exports) {
+    var _window = window;
+    var _document = document;
+    var mousemove = 'mousemove';
+    var mouseup = 'mouseup';
+    var mousedown = 'mousedown';
+    var EventListener = 'EventListener';
+    var addEventListener = 'add' + EventListener;
+    var removeEventListener = 'remove' + EventListener;
+    var newScrollX, newScrollY;
+
+    var dragged = [];
+    var reset = function (i, el) {
+      for (i = 0; i < dragged.length; ) {
+        el = dragged[i++];
+        el = el.container || el;
+        el[removeEventListener](mousedown, el.md, 0);
+        _window[removeEventListener](mouseup, el.mu, 0);
+        _window[removeEventListener](mousemove, el.mm, 0);
+      }
+
+      // cloning into array since HTMLCollection is updated dynamically
+      dragged = [].slice.call(_document.getElementsByClassName('dragscroll'));
+      for (i = 0; i < dragged.length; ) {
+        (function (el, lastClientX, lastClientY, pushed, scroller, cont) {
+          (cont = el.container || el)[addEventListener](
+            mousedown,
+            (cont.md = function (e) {
+              if (
+                !el.hasAttribute('nochilddrag') ||
+                _document.elementFromPoint(e.pageX, e.pageY) == cont
+              ) {
+                pushed = 1;
+                lastClientX = e.clientX;
+                lastClientY = e.clientY;
+
+                e.preventDefault();
+              }
+            }),
+            0
+          );
+
+          _window[addEventListener](
+            mouseup,
+            (cont.mu = function () {
+              pushed = 0;
+            }),
+            0
+          );
+
+          _window[addEventListener](
+            mousemove,
+            (cont.mm = function (e) {
+              if (pushed) {
+                (scroller = el.scroller || el).scrollLeft -= newScrollX =
+                  -lastClientX + (lastClientX = e.clientX);
+                scroller.scrollTop -= newScrollY =
+                  -lastClientY + (lastClientY = e.clientY);
+                if (el == _document.body) {
+                  (scroller = _document.documentElement).scrollLeft -=
+                    newScrollX;
+                  scroller.scrollTop -= newScrollY;
+                }
+              }
+            }),
+            0
+          );
+        })(dragged[i++]);
+      }
+    };
+
+    if (_document.readyState == 'complete') {
+      reset();
+    } else {
+      _window[addEventListener]('load', reset, 0);
+    }
+
+    exports.reset = reset;
+  });
+</script>
+
+<script is:inline>
+  // var containerIds = ['youtubevideos', 'moviecast', 'mediaimages'];
+
+  function scrollAmount(containerId, direction) {
+    var container = document.getElementById(containerId);
+    var amount = window.innerWidth * 0.7 * direction; // Scroll 70% of the screen width
+    container.scrollBy({ top: 0, left: amount, behavior: 'smooth' });
+  }
+
+  // Call hidePrevButton and hideNextButton for each container when the DOM is fully loaded
+  document.addEventListener('DOMContentLoaded', function () {
+    containerIds.forEach(function (containerId) {
+      // Add scroll event listener to each container
+      var container = document.getElementById(containerId);
+      if (container) {
+        container.addEventListener('scroll', function () {
+          scrollAmount(containerId);
+        });
+      }
+    });
+  });
+</script>

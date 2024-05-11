@@ -1,0 +1,96 @@
+---
+import { Image } from 'astro:assets';
+import ScrollComponent from './ScrollComponent.astro';
+
+interface Props {
+  MovieCast: any;
+  url: string;
+  crew_length: number;
+}
+const { MovieCast, url, crew_length } = Astro.props;
+const cdn =
+  'https://media.dev.to/cdn-cgi/image/width=200,height=300,fit=cover,gravity=auto,format=auto/';
+---
+
+<ScrollComponent contantainerid="moviecast" isScrollable={true} buttons={true}>
+  {
+    MovieCast.length === 0 && (
+      <div class="text-center text-gray-500 text-sm font-semibold mt-5">
+        No Cast Found
+      </div>
+    )
+  }
+  {
+    MovieCast.map((cast: any) => (
+      <>
+        <a
+          href={`/person/${cast.id}/${encodeURIComponent(cast.name.replace(/ /g, '-').toLowerCase())}`}
+          class=" p-2 bg-gray-100 border-2 border-gray-200 min-w-36 sm:min-w-38 rounded-lg mb-2 mt-5 hover:scale-[.975] transition-all duration-150 ease-in-out"
+        >
+          <Image
+            class="h-auto max-h-40 md:min-h-40 w-full  aspect-auto object-cover rounded-lg bg-white"
+            width={200}
+            height={300}
+            src={`${cdn}${cast.profile_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2/${cast.profile_path}` : 'https://www.themoviedb.org/assets/2/v4/glyphicons/basic/glyphicons-basic-4-user-grey-d8fe957375e70239d6abdd549fd7568c89281b2179b5f4470e2e12895792dfa5.svg'}`}
+            alt=""
+          />
+          <span class="flex-col space-y-1 flex whitespace-nowrap overflow-hidden py-2">
+            <span class="text-xs text-black font-semibold">{cast.name}</span>
+            <span class="text-[10px] text-gray-700 ">{cast.character}</span>
+          </span>
+        </a>
+      </>
+    ))
+  }
+  {
+    (MovieCast.length > 10 || crew_length != 0) && (
+      <>
+        <div class="h-full min-h-56 flex justify-start items-center w-full mb-2 mt-5 min-w-40 pl-5">
+          <a
+            href={`${url}/cast`}
+            class="text-center items-center flex font-bold cursor-pointer  px-2 py-1  rounded-lg mr-5  bg-gray-200/70 hover:bg-gray-100"
+          >
+            View More
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 256 256"
+              class="size-5 mx-1.5"
+            >
+              <rect width="256" height="256" fill="none" />
+              <line
+                x1="40"
+                y1="128"
+                x2="216"
+                y2="128"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="16"
+              />
+              <polyline
+                points="144 56 216 128 144 200"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="16"
+              />
+            </svg>
+          </a>
+        </div>
+        <div class="h-full min-h-56 flex justify-start items-center w-full mb-2 mt-5 pl-1 pr-8" />
+      </>
+    )
+  }
+</ScrollComponent>
+{
+  (MovieCast.length > 10 || crew_length != 0) && (
+    <div class="py-5 text-sm sm:text-base font-semibold hover:underline underline-offset-4">
+      <a href={`${url}/cast`} class="">
+        {' '}
+        Full Cast & Crew{' '}
+      </a>
+    </div>
+  )
+}

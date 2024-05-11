@@ -2,50 +2,50 @@
 interface Props {
   quary: string;
 }
-
 const { quary } = Astro.props;
 ---
 
-<form action="/search" class="flex max-w-5xl mx-auto items-center px-3 md:px-5">
-  <label for="movie-search" class="sr-only">Search</label>
-  <div class="relative w-full">
+<form class="flex items-center max-w-5xl mx-auto" action="/search">
+  <label for="voice-search" class="sr-only">Search</label>
+  <div class="relative w-full bg-white rounded-lg">
     <div
-      class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none"
+      class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"
     >
       <svg
-        class="w-5 h-5 text-gray-400"
-        fill="currentColor"
-        viewBox="0 0 20 20"
         xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        fill="currentColor"
+        viewBox="0 0 256 256"
         ><path
-          fill-rule="evenodd"
-          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-          clip-rule="evenodd"></path></svg
+          d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+        ></path></svg
       >
     </div>
     <input
       type="text"
       id="movie-search"
       name="q"
-      class="border  text-base md:text-lg rounded-lg block w-full pl-10 p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-2 focus:outline-none ring-white "
-      placeholder="👀 What movie or show? Let's find it!" value={quary}
+      class="bg-white border border-gray-600 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5"
+      placeholder="👀 What movie or show? Let's find it!"
+      value={quary}
       required
     />
   </div>
   <button
     type="submit"
-    class="hidden sm:inline-flex items-center py-[9px] px-3 ml-2 text-lg font-medium text-white  rounded-lg border border-blue-700  focus:ring-2 focus:outline-none ring-white bg-blue-600 "
-    ><svg
-      class="mr-2 -ml-1 w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-      ><path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg
-    >Search</button
+    class="inline-flex items-center py-2.5 px-3 ms-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:outline-none ring-blue-500"
   >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      fill="currentColor"
+      viewBox="0 0 256 256"
+      ><path
+        d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+      ></path></svg
+    >
+    <span class="px-1">Search</span>
+  </button>
 </form>

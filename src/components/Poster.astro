@@ -1,25 +1,23 @@
 ---
-import Model from "./Model"
-import { Image } from "astro:assets";
+
+import { Image } from 'astro:assets';
 interface Props {
-    title: string;
-    image: string;
+  title: string;
+  image: string;
 }
 
 const { title, image } = Astro.props;
 
-const cdn = "https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/"
+const cdn =
+  'https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/';
 ---
 
-
-<div class="flex justify-center ">
-            <Image
-              src={cdn+image}
-              width={400}
-              height={600}
-              alt={title}
-              class="bg-gray-600 object-cover rounded-xl   "
-            />
-          </div>
-        
-       
+<div class="flex justify-center relative ">
+  <Image
+    src={cdn + image}
+    width={400}
+    height={600}
+    alt={title}
+    class="bg-gray-400 object-cover rounded-xl ring-1 ring-gray-200 h-auto sm:hidden lg:block "
+  />
+</div>
