@@ -115,7 +115,15 @@ const ogImage: string = movie.poster_path
       client:only="react"
     />
 
-    <section
+
+    {
+      (images.backdrops.length < 2 && images.posters.length < 2) ? (
+        <section class="max-w-screen-2xl block mx-auto  text-center min-h-screen items-center px-3 md:px-6 xl:px-14 pt-5 pb-10">
+          <span class="text-xl sm:text-2xl font-semibold text-center mt-10 pb-4">
+            No Images Found
+          </span>
+        </section>
+      ):(<section
       class="max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-14 pt-5 pb-10"
     >
       <span
@@ -154,7 +162,7 @@ const ogImage: string = movie.poster_path
                   height={image.height}
                   aspect-ratio={image.aspect_ratio}
                   loading="lazy"
-                  class="w-auto h-full items-center justify-center rounded-lg object-center max-h-[95vh] m-0 bg-gray-400"
+                  class="w-auto h-full items-center justify-center rounded-lg object-center max-h-[95vh] m-0 bg-gray-200"
                   slot="model-content"
                 />
               </Model>
@@ -187,7 +195,7 @@ const ogImage: string = movie.poster_path
                   width={300}
                   height={500}
                   loading="lazy"
-                  class="mb-2 h-56 w-full min-w-32 object-center rounded-lg  hover:scale-[.975] border-2 border-gray-200 transition-all duration-150 ease-in-out bg-gray-400"
+                  class="mb-2 h-56 w-full min-w-32 object-center rounded-lg  hover:scale-[.975] transition-all duration-150 ease-in-out bg-gray-200"
                   slot="model-trigger"
                 />
 
@@ -198,7 +206,7 @@ const ogImage: string = movie.poster_path
                   height={image.height}
                   loading="lazy"
                   aspect-ratio={image.aspect_ratio}
-                  class="w-auto h-full items-center justify-center rounded-lg object-center max-h-[100vh] m-0 bg-gray-400"
+                  class="w-auto h-full items-center justify-center rounded-lg object-center max-h-[100vh] m-0 bg-gray-200"
                   slot="model-content"
                 />
               </Model>
@@ -206,6 +214,9 @@ const ogImage: string = movie.poster_path
           }
         </ScrollComponent>
       </div>
-    </section>
+    </section>)
+    }
+
+    
   </main>
 </Layout>

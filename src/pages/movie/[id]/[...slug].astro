@@ -497,19 +497,22 @@ const ogImage: string = movie.poster_path
           }
         </div>
 
-        <div class="pb-5">
+        {
+          moviebackdrops.length > 2 && movieposters.length > 2 ? (<div class="pb-5">
           <a
             href={`${Astro.url.href}/media`}
             aria-label="Media"
             class="text-xl md:text-2xl font-semibold my-5 hover:underline underline-offset-4"
-            >Media</a
-          >
+            >Media</a>
 
           <Moviemedia
             moviebackdrops={moviebackdrops}
             movieposters={movieposters}
           />
-        </div>
+        </div>) : null
+        }
+
+        
 
         <div class="pb-5">
           <h2 class="text-xl md:text-2xl font-semibold">Keywords</h2>
