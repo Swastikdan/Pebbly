@@ -285,7 +285,7 @@ let youtubevideos: { key: string; name: string; type: string }[] =
     name: video.name,
     type: video.type,
   })) || [];
-youtubevideos = youtubevideos.filter((video) => video.type !== 'Clip');
+youtubevideos = youtubevideos.length > 2 ? youtubevideos.filter((video) => video.type !== 'Clip'): youtubevideos;
 youtubevideos.sort((a, b) => {
   if (a.type === 'Trailer' && b.type !== 'Trailer') {
     return -1;
@@ -299,7 +299,7 @@ youtubevideos.sort((a, b) => {
 const youtubekeys: string[] = youtubevideos.map((video) => video.key);
 const youtubetitles: string[] = youtubevideos.map((video) => video.name);
 
-const selectedMovieCast: {
+const cast: {
   id: number;
   name: string;
   profile_path: string;
@@ -313,8 +313,20 @@ const selectedMovieCast: {
       character: cast.character,
     }))
     .slice(0, 15) || [];
-const crew_length: number = movie.credits?.crew.length || 0;
-
+const crew: {
+  id: number;
+  name: string;
+  profile_path: string;
+  job: string;
+}[] =
+  movie.credits?.crew
+    .map((crew) => ({
+      id: crew.id,
+      name: crew.name,
+      profile_path: crew.profile_path,
+      job: crew.job,
+    }))
+    .slice(0, 15) || [];
 const status: string = movie.status || '';
 const originalLanguage: string = ISO6391.getName(movie.original_language) || '';
 const budget: string = movie.budget
@@ -383,7 +395,7 @@ const ogImage: string = movie.poster_path
 <Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
   <main>
     <div
-      class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-14'>
+      class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-20'>
       <section class='px-3'>
         <div class='pt-5 pb-5'>
           <div class='pb-5 space-y-3'>
@@ -488,21 +500,17 @@ const ogImage: string = movie.poster_path
           <a
             href={`${Astro.url.href}/cast`}
             class='text-xl md:text-2xl font-semibold hover:underline underline-offset-4'
-            >Top Billed Cast</a
+            >Cast / Crew</a
           >
           {
-            selectedMovieCast.length === 0 ? (
+            cast.length === 0 && crew.length == 0 ? (
               <div class='flex '>
                 <p class='text-base text-gray-800 py-5'>
-                  No Cast Information found
+                  No Cast / Crew Information found
                 </p>
               </div>
             ) : (
-              <Casts
-                MovieCast={selectedMovieCast}
-                crew_length={crew_length}
-                url={pageurl}
-              />
+              <Casts cast={cast} crew={crew} url={pageurl} />
             )
           }
         </div>

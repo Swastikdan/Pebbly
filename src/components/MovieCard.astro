@@ -25,23 +25,19 @@ const urltitle = title.replace(/ /g, '-').toLowerCase();
 
 <a
   href={`/${type}/${id}/${urltitle}`}
-  class="group rounded-lg  focus:ring-2 focus:outline-none ring-gray-400 bg-gray-200/70 hover:shadow-md"
->
+  class='group rounded-lg focus:ring-2 focus:outline-none ring-gray-400 bg-gray-200/70 hover:shadow-md'>
   <div
-    class="relative block h-[25rem] sm:h-[22rem] overflow-hidden rounded-t-lg"
-  >
-  
+    class='relative block h-[25rem] sm:h-[22rem] overflow-hidden rounded-t-lg'>
     <Image
       src={cdn + imageUrl}
       width={500}
       height={900}
-      decoding="async"
-      loading="eager"
-      alt="movieImage"
-      class="h-full w-full object-cover object-center transition duration-200 group-hover:scale-105 bg-gray-400"
+      decoding='async'
+      loading='eager'
+      alt='movieImage'
+      class='h-full w-full object-cover object-center transition duration-200 group-hover:scale-105 bg-gray-200'
     />
 
-    
     {
       rating && Number(rating) !== 0 && (
         <span
@@ -51,17 +47,15 @@ const urltitle = title.replace(/ /g, '-').toLowerCase();
             '-700 bg-' +
             ratingColor +
             '-100  mr-3 mb-3 rounded-lg  px-2 py-1 text-md  backdrop-blur md:px-3'
-          }
-        >
+          }>
           <>
             <svg
-              aria-hidden="true"
-              class="w-5 h-5  text-yellow-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              aria-hidden='true'
+              class='w-5 h-5  text-yellow-400'
+              fill='currentColor'
+              viewBox='0 0 20 20'
+              xmlns='http://www.w3.org/2000/svg'>
+              <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
             </svg>
             <span>{isNaN(Number(rating)) ? 0 : Number(rating).toFixed(1)}</span>
           </>
@@ -70,25 +64,25 @@ const urltitle = title.replace(/ /g, '-').toLowerCase();
     }
   </div>
 
-  <div class="bg-gray-200/70 rounded-b-lg">
-    <div class="p-4">
+  <div class='bg-gray-200/70 rounded-b-lg'>
+    <div class='p-4'>
       <span
-        class="text-lg md:text-[16px] capitalize font-semibold text-gray-900 transition duration-100 py-5"
+        class='text-lg md:text-[16px] capitalize font-semibold text-gray-900 transition duration-100 py-5'
         >{
           title?.length > 20 ? `${title.substring(0, 20)} ...` : title ?? ''
         }</span
       >
-      <div class="flex justify-between mt-3">
-        <span class="text-sm text-gray-700 lg:text-base"
+      <div class='flex justify-between mt-3'>
+        <span class='text-sm text-gray-700 lg:text-base'
           >{new Date(year).getFullYear()}</span
         >
-        <div class="text-black">
+        <div class='text-black'>
           <span
-            class="text-base font-sans font-medium capitalize mx-2 px-2 py-1 bg-blue-200 text-blue-800 rounded-md"
+            class='text-base font-sans font-medium capitalize mx-2 px-2 py-1 bg-blue-200 text-blue-800 rounded-md'
             >{type}</span
           >
           <span
-            class="text-base font-sans font-medium capitalize mx-2 px-2 py-1 bg-gray-300 text-black rounded-md"
+            class='text-base font-sans font-medium capitalize mx-2 px-2 py-1 bg-gray-300 text-black rounded-md'
             >{language}</span
           >
         </div>
@@ -97,6 +91,6 @@ const urltitle = title.replace(/ /g, '-').toLowerCase();
   </div>
 </a>
 
-<span class="hidden text-green-700 bg-green-100 border-green-500"> </span>
-<span class="hidden text-red-700 bg-red-100 border-red-500"> </span>
-<span class="hidden text-yellow-700 bg-yellow-100 border-yellow-500"> </span>
+<span class='hidden text-green-700 bg-green-100 border-green-500'> </span>
+<span class='hidden text-red-700 bg-red-100 border-red-500'> </span>
+<span class='hidden text-yellow-700 bg-yellow-100 border-yellow-500'> </span>

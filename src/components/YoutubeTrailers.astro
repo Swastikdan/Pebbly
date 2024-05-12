@@ -10,17 +10,14 @@ interface Props {
 const { youtubekeys, youtubetitles } = Astro.props;
 ---
 
-<ScrollComponent
-  contantainerid='youtubevideos'
-  scrollbar={true}
-  buttons={true}>
+<ScrollComponent contantainerid='youtubevideos' scrollbar={true} buttons={true}>
   {
     youtubekeys.map((key, index) => (
       <>
         <div class=' mb-1'>
           <YouTube
             id={key}
-            posterQuality='max'
+            
             playlabel='Play the video'
             title={youtubetitles[index]}
             class=' h-full min-h-40 w-full md:min-h-[22rem] aspect-video rounded-lg bg-gray-200 '

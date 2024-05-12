@@ -3,25 +3,26 @@ import { Image } from 'astro:assets';
 import ScrollComponent from './ScrollComponent.astro';
 
 interface Props {
-  MovieCast: any;
+  cast: any;
   url: string;
-  crew_length: number;
+  crew: any;
 }
-const { MovieCast, url, crew_length } = Astro.props;
+const { cast, url, crew } = Astro.props;
+
 const cdn =
   'https://media.dev.to/cdn-cgi/image/width=200,height=300,fit=cover,gravity=auto,format=auto/';
 ---
 
 <ScrollComponent contantainerid='moviecast' scrollbar={true} buttons={true}>
   {
-    MovieCast.length === 0 && (
+    cast.length === 0 && (
       <div class='text-center text-gray-500 text-sm font-semibold mt-5'>
         No Cast Found
       </div>
     )
   }
   {
-    MovieCast.map((cast: any) => (
+    cast.map((cast: any) => (
       <>
         <a
           href={`/person/${cast.id}/${encodeURIComponent(cast.name.replace(/ /g, '-').toLowerCase())}`}
@@ -41,8 +42,30 @@ const cdn =
       </>
     ))
   }
+
   {
-    (MovieCast.length > 10 || crew_length != 0) && (
+    crew.map((crew: any) => (
+      <>
+        <a
+          href={`/person/${crew.id}/${encodeURIComponent(crew.name.replace(/ /g, '-').toLowerCase())}`}
+          class=' p-2 bg-gray-100 border-2 border-gray-200 min-w-36 sm:min-w-38 rounded-lg mb-2 mt-5 hover:scale-[.975] transition-all duration-150 ease-in-out'>
+          <Image
+            class='h-auto max-h-40 md:min-h-40 w-full  aspect-auto object-cover rounded-lg bg-white'
+            width={200}
+            height={300}
+            src={`${cdn}${crew.profile_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2/${crew.profile_path}` : 'https://ik.imagekit.io/swastikdan/Film-Fanatic/placeholder-user-mono.svg'}`}
+            alt=''
+          />
+          <span class='flex-col space-y-1 flex whitespace-nowrap overflow-hidden py-2'>
+            <span class='text-xs text-black font-semibold'>{crew.name}</span>
+            <span class='text-[10px] text-gray-700 '>{crew.job}</span>
+          </span>
+        </a>
+      </>
+    ))
+  }
+  {
+    (cast.length > 10 || crew.length > 10) && (
       <>
         <div class='h-full min-h-56 flex justify-start items-center w-full mb-2 mt-5 min-w-40 pl-5'>
           <a
@@ -82,7 +105,7 @@ const cdn =
   }
 </ScrollComponent>
 {
-  (MovieCast.length > 10 || crew_length != 0) && (
+  (cast.length > 0 || crew.length > 0) && (
     <div class='py-5 text-sm sm:text-base font-semibold hover:underline underline-offset-4'>
       <a href={`${url}/cast`} class=''>
         {' '}

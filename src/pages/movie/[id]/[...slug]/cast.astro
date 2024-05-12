@@ -116,7 +116,8 @@ const ogImage: string = movie.poster_path
 <Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
   <main>
     <Secondarynav
-      movie={movie}
+      data={movie}
+      type={'movie'}
       url={Astro.url.href}
       id={id}
       slug={slug}
@@ -128,7 +129,7 @@ const ogImage: string = movie.poster_path
     <section class="py-2 mb-3">
 
       <div
-        class="max-w-screen-2xl block mx-auto items-center px-3 md:px-10 xl:px-14 pb-20"
+        class="max-w-screen-2xl block mx-auto items-center px-3 md:px-10 xl:px-20 pb-20"
       >
         <section
           class="grid md:grid-cols-2 justify-between gap-3 space-y-10 md:space-y-0 mt-5"

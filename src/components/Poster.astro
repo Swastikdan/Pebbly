@@ -29,19 +29,25 @@ const cdn =
         <div
           slot='model-content'
           class='w-auto h-full max-h-[90vh] sm:max-w-[90vw] m-0  rounded-lg'>
-          <ScrollComponent buttons={true} scrollbar={true}  contantainerid='poster'>
+          <ScrollComponent
+            buttons={true}
+            scrollbar={true}
+            contantainerid='poster'>
             {posters.map((poster, index) => (
               <div class='relative'>
-                <span class='absolute top-3 left-3 px-2 py-1 text-xs bg-blue-200 ring-1 ring-blue-800 text-blue-800 rounded'>
+                <span class='absolute top-3 left-3 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded focus:outline-none ring-1 ring-blue-400'>
                   {index + 1}/{postersnum}
                 </span>
-                <a
-                  href={poster}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  class='px-2 py-1  text-xs bg-blue-200 ring-1 ring-blue-800 text-blue-800 rounded absolute right-3 top-3 '>
-                  View Original
-                </a>
+                <div class='absolute right-3 top-3 flex items-center space-x-3'>
+                  <a
+                    href={poster}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    class='px-2 py-1   bg-blue-100 text-blue-700 text-xs rounded focus:outline-none ring-1 ring-blue-400  '>
+                    View Original
+                  </a>
+                 
+                </div>
                 <Image
                   src={cdn + poster}
                   width={400}

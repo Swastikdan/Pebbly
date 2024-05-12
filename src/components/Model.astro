@@ -15,7 +15,7 @@ const { isimage, link } = Astro.props;
   class='myModal fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden outline-none backdrop-blur-lg focus:outline-none invisible opacity-0 w-screen h-screen'
   style='cursor: pointer; margin: 0; padding: 0; top: 0; left: 0; right: 0; bottom: 0;'>
   <div
-    class='relative m-1 h-auto max-h-[98vh] max-w-[98vw] animate-fade-in-down flex w-auto flex-col overflow-hidden rounded-lg border-0 outline-none focus:outline-none  backdrop-blur-lg'>
+    class='relative m-1 h-auto max-h-[98vh] max-w-[98vw] animate-fade-in-down flex w-auto flex-col overflow-hidden rounded-lg border-0 outline-none focus:outline-none backdrop-blur-lg'>
     <div class='relative'>
       <div class='absolute right-0 top-0 m-2 flex items-center space-x-4'>
         {
@@ -29,27 +29,22 @@ const { isimage, link } = Astro.props;
             </a>
           ) : null
         }
+       
         <button
-          class='close rounded-lg bg-red-300 flex items-center space-x-2 p-2 group text-3xl text-red-700 hover:bg-red-200 active:scale-95 shadow-lg z-50'>
+          class='close rounded ring-1 ring-red-600 bg-red-300 flex items-center space-x-2 px-2 py-1 group text-3xl text-red-700 hover:bg-red-200 active:scale-95 shadow-lg z-50'>
           <svg
-            fill='currentColor'
-            height='200px'
-            width='200px'
-            class='size-3'
-            version='1.1'
-            id='Capa_1'
             xmlns='http://www.w3.org/2000/svg'
-            xmlns:xlink='http://www.w3.org/1999/xlink'
-            viewBox='0 0 490 490'
-            xml:space='preserve'
-            ><g id='SVGRepo_bgCarrier' stroke-width='0'></g><g
-              id='SVGRepo_tracerCarrier'
-              stroke-linecap='round'
-              stroke-linejoin='round'></g><g id='SVGRepo_iconCarrier'>
-              <polygon
-                points='456.851,0 245,212.564 33.149,0 0.708,32.337 212.669,245.004 0.708,457.678 33.149,490 245,277.443 456.851,490 489.292,457.678 277.331,245.004 489.292,32.337 '
-              ></polygon>
-            </g></svg
+            width='24'
+            class='size-4'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            stroke-width='2'
+            stroke-linecap='round'
+            stroke-linejoin='round'
+            class='lucide lucide-x'
+            ><path d='M18 6 6 18'></path><path d='m6 6 12 12'></path></svg
           >
 
           <span class='sr-only'>Close</span>
