@@ -228,7 +228,7 @@ function formatNumber(num: number) {
 const movietitle: string = movie.title || movie.name || '';
 const imdb_url: string = `https://www.imdb.com/title/${movie.imdb_id}/`;
 const movietagline: string = movie.tagline || '';
-const moviedescription: string = movie.overview || '';
+const moviedescription: string = movie.overview || 'No description found';
 const movieimage: string = movie.poster_path
   ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
   : `https://via.placeholder.com/500x750?text=${movietitle}`;
@@ -239,7 +239,7 @@ const movieyear: number | null =
 const usRelease = movie.release_dates?.results.find(
   (result) => result.iso_3166_1 === 'US'
 );
-let usCertification: string = 'Not found';
+let usCertification: string = 'Not Rated';
 
 if (usRelease && usRelease.release_dates) {
   for (let i = 0; i < usRelease.release_dates.length; i++) {
@@ -251,7 +251,10 @@ if (usRelease && usRelease.release_dates) {
 }
 const hours: number = movie.runtime ? Math.floor(movie.runtime / 60) : 0;
 const minutes: number = movie.runtime ? movie.runtime % 60 : 0;
-const movieRuntime: string = `${hours}h ${minutes}m`;
+const movieRuntime: string =
+  hours === 0 && minutes === 0
+    ? 'Runtime not Finalized   '
+    : `${hours ? hours + 'h ' : ''}${minutes ? minutes + 'm' : ''}`;
 const movierating: number = isNaN(Number(movie.vote_average))
   ? 0
   : Number(Number(movie.vote_average).toFixed(1));
@@ -415,7 +418,11 @@ const ogImage: string = movie.poster_path
                 )
               }
             </h1>
-            <h2 class="text-gray-800 hidden sm:flex">{movietagline}</h2>
+            {
+              movietagline ? (
+                <h2 class="text-gray-800 hidden sm:flex">{movietagline}</h2>
+              ) : null
+            }
           </div>
           <div
             class="flex flex-col space-y-3 sm:flex-row items-start sm:items-center justify-start sm:justify-between"
@@ -423,7 +430,13 @@ const ogImage: string = movie.poster_path
             <span
               class="space-x-1 whitespace-nowrap text-base sm:text-lg font-medium text-gray-700"
             >
-              <span class="py-1">{movieyear}</span>
+              {
+                movieyear ? (
+                  <span class="py-1">{movieyear}</span>
+                ) : (
+                  <span class="py-1">Not Relesed </span>
+                )
+              }
               <span class="py-1">•</span>
               <span
                 class="px-2 py-1 text-gray-700 ring-1 ring-gray-700 rounded-sm"
@@ -459,9 +472,8 @@ const ogImage: string = movie.poster_path
           </div>
         </div>
         <div
-          class="text-sm md:text-base font-medium overflow-x-auto whitespace-nowrap sm:whitespace-normal pt-5 pb-2 scrollbar-small gap-3 pl-[1px] flex "
+          class="text-sm md:text-base font-medium overflow-x-auto whitespace-nowrap sm:whitespace-normal pt-5 pb-2 scrollbar-small gap-3 pl-[1px] flex"
         >
-
           {
             movieGenres.map((genre, index) => (
               <a
@@ -486,7 +498,11 @@ const ogImage: string = movie.poster_path
           >
           {
             selectedMovieCast.length === 0 ? (
-              <div class="text-gray-700">No cast found</div>
+              <div class="flex ">
+                <p class="text-base text-gray-800 py-5">
+                  No Cast Information found
+                </p>
+              </div>
             ) : (
               <Casts
                 MovieCast={selectedMovieCast}
@@ -496,39 +512,48 @@ const ogImage: string = movie.poster_path
             )
           }
         </div>
-
-        {
-          moviebackdrops.length > 2 && movieposters.length > 2 ? (<div class="pb-5">
+        <div class="pb-5">
           <a
             href={`${Astro.url.href}/media`}
             aria-label="Media"
             class="text-xl md:text-2xl font-semibold my-5 hover:underline underline-offset-4"
-            >Media</a>
-
-          <Moviemedia
-            moviebackdrops={moviebackdrops}
-            movieposters={movieposters}
-          />
-        </div>) : null
-        }
-
-        
-
+          >
+            Media
+          </a>
+          {
+            moviebackdrops.length > 2 && movieposters.length > 2 ? (
+              <Moviemedia
+                moviebackdrops={moviebackdrops}
+                movieposters={movieposters}
+              />
+            ) : (
+              <div class="flex ">
+                <p class="text-base text-gray-800 pt-5">No Media Found</p>
+              </div>
+            )
+          }
+        </div>
         <div class="pb-5">
           <h2 class="text-xl md:text-2xl font-semibold">Keywords</h2>
-          <div class="flex flex-wrap gap-2 py-5">
-            {
-              keywords.map((keyword) => (
-                <a
-                  href={`/keyword/${keyword.id}/${keyword.name}`}
-                  aria-label={`${keyword.name}`}
-                  class="inline-flex items-center gap-x-1.5 py-1.5 px-4 rounded text-xs bg-blue-100 text-blue-800 hover:ring-1 ring-blue-800"
-                >
-                  {keyword.name}
-                </a>
-              ))
-            }
-          </div>
+          {
+            keywords.length === 0 ? (
+              <div class="flex ">
+                <p class="text-base text-gray-800 pt-5">No Keywords Found</p>
+              </div>
+            ) : (
+              <div class="flex flex-wrap gap-2 py-5">
+                {keywords.map((keyword) => (
+                  <a
+                    href={`/keyword/${keyword.id}/${keyword.name}`}
+                    aria-label={`${keyword.name}`}
+                    class="inline-flex items-center gap-x-1.5 py-1.5 px-4 rounded text-xs bg-blue-100 text-blue-800 hover:ring-1 ring-blue-800"
+                  >
+                    {keyword.name}
+                  </a>
+                ))}
+              </div>
+            )
+          }
         </div>
 
         <div class="pb-5">

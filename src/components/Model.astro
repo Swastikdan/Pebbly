@@ -7,9 +7,7 @@ interface Props {
 const { isimage, link } = Astro.props;
 ---
 
-<button
-  class="myBtn w-full h-full"
->
+<button class="myBtn w-full h-full">
   <slot name="model-trigger" />
 </button>
 
@@ -18,13 +16,37 @@ const { isimage, link } = Astro.props;
   style="cursor: pointer; margin: 0; padding: 0; top: 0; left: 0; right: 0; bottom: 0;"
 >
   <div
-    class="relative m-1 h-auto max-h-[98vh] max-w-[95vw] animate-fade-in-down flex w-auto flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg outline-none focus:outline-none"
+    class="relative m-1 h-auto max-h-[98vh] max-w-[98vw] animate-fade-in-down flex w-auto flex-col overflow-hidden rounded-lg border-0 bg-white shadow-lg outline-none focus:outline-none"
   >
     <div class="relative">
       <button
-        class="close fixed right-0 top-0 m-2 rounded-lg bg-red-200 px-3 py-1 text-3xl text-red-500 hover:bg-red-100 active:scale-95 shadow-lg"
+        class="close absolute right-0 top-0 m-2 rounded-lg bg-red-300 flex items-center space-x-2 p-2 group text-3xl text-red-700 hover:bg-red-200 active:scale-95 shadow-lg  "
       >
-        &times;
+        <svg
+          fill="currentColor"
+          height="200px"
+          width="200px"
+          class="size-3"
+          version="1.1"
+          id="Capa_1"
+          xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          viewBox="0 0 490 490"
+          xml:space="preserve"
+          ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g
+            id="SVGRepo_tracerCarrier"
+            stroke-linecap="round"
+            stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier">
+            <polygon
+              points="456.851,0 245,212.564 33.149,0 0.708,32.337 212.669,245.004 0.708,457.678 33.149,490 245,277.443 456.851,490 489.292,457.678 277.331,245.004 489.292,32.337 "
+            ></polygon>
+          </g></svg
+        >
+
+        <span
+          class="sr-only"
+          >Close</span
+        >
       </button>
       {
         isimage ? (
@@ -32,7 +54,7 @@ const { isimage, link } = Astro.props;
             href={link}
             target="_blank"
             rel="noopener noreferrer"
-            class="absolute right-0 top-0 m-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded focus:outline-none ring-1 ring-blue-400 "
+            class="absolute left-0 top-0 m-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded focus:outline-none ring-1 ring-blue-400 "
           >
             View Original
           </a>
@@ -61,7 +83,7 @@ const { isimage, link } = Astro.props;
         'invisible',
         'opacity-0',
         'translate-y-4',
-        'sm:translate-y-0',
+        'sm:translate-y-0'
       );
       modals[i].classList.add('visible', 'opacity-100', 'translate-y-0');
       document.body.style.overflow = 'hidden';
@@ -76,7 +98,7 @@ const { isimage, link } = Astro.props;
         'invisible',
         'opacity-0',
         'translate-y-4',
-        'sm:translate-y-0',
+        'sm:translate-y-0'
       );
       document.body.style.overflow = 'auto';
     };
@@ -91,7 +113,7 @@ const { isimage, link } = Astro.props;
           'invisible',
           'opacity-0',
           'translate-y-4',
-          'sm:translate-y-0',
+          'sm:translate-y-0'
         );
         document.body.style.overflow = 'auto';
       }

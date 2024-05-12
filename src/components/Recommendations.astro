@@ -58,7 +58,12 @@ const cdn =
 ---
 
 <div class="py-5">
-  <ScrollComponent
+  {
+    recommendations.length === 0 ? (
+      <div class="flex ">
+        <p class="text-base text-gray-800">No Recommendations Found</p>
+      </div>
+    ):(<ScrollComponent
     contantainerid="recommendation"
     buttons={false}
     isScrollable={true}
@@ -101,7 +106,9 @@ const cdn =
         </a>
       ))
     }
-  </ScrollComponent>
+  </ScrollComponent>)
+  }
+  
 </div>
 
 <!-- <div>
