@@ -1,3 +1,466 @@
 ---
-return Astro.redirect('/under-construction');
+import ISO6391 from 'iso-639-1';
+import Layout from '../../../layouts/Layout.astro';
+
+import Rateing from '../../../components/Rateing.astro';
+import Poster from '../../../components/Poster.astro';
+import Description from '../../../components/Description.astro';
+import genreList from '../../../components/genres';
+import YoutubeTrailers from '../../../components/YoutubeTrailers.astro';
+import Goback from '../../../components/Goback';
+import Share from '../../../components/Share';
+
+const key = import.meta.env.ApiKeyAuth;
+const url = import.meta.env.ApiUrl;
+const { id, title } = Astro.params;
+const path = Astro.url.pathname;
+
+interface CreatedBy {
+  id: number;
+  credit_id: string;
+  name: string;
+  original_name: string;
+  gender: number;
+  profile_path: string | null;
+}
+
+interface Genre {
+  id: number;
+  name: string;
+}
+
+interface LastEpisodeToAir {
+  id: number;
+  overview: string;
+  name: string;
+  vote_average: number;
+  vote_count: number;
+  air_date: string;
+  episode_number: number;
+  episode_type: string;
+  production_code: string;
+  runtime: number;
+  season_number: number;
+  show_id: number;
+  still_path: string | null;
+}
+
+interface Network {
+  id: number;
+  logo_path: string | null;
+  name: string;
+  origin_country: string;
+}
+
+interface ProductionCompany {
+  id: number;
+  logo_path: string | null;
+  name: string;
+  origin_country: string;
+}
+
+interface ProductionCountry {
+  iso_3166_1: string;
+  name: string;
+}
+
+interface Season {
+  air_date: string;
+  episode_count: number;
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  season_number: number;
+  vote_average: number;
+}
+
+interface SpokenLanguage {
+  english_name: string;
+  iso_639_1: string;
+  name: string;
+}
+
+interface ExternalIDs {
+  imdb_id: string;
+  freebase_mid: null;
+  freebase_id: null;
+  tvdb_id: number;
+  tvrage_id: null;
+  wikidata_id: string;
+  facebook_id: string;
+  instagram_id: string;
+  twitter_id: string;
+}
+
+interface ContentRating {
+  iso_3166_1: string;
+  rating: string;
+  description: string;
+}
+
+interface ContentRatings {
+  results: ContentRating[];
+}
+
+interface Cast {
+  adult: boolean;
+  gender: number;
+  id: number;
+  known_for_department: string;
+  name: string;
+  original_name: string;
+  popularity: number;
+  profile_path: string | null;
+  character: string;
+  credit_id: string;
+  order: number;
+}
+
+interface Crew {
+  adult: boolean;
+  gender: number;
+  id: number;
+  known_for_department: string;
+  name: string;
+  original_name: string;
+  popularity: number;
+  profile_path: string | null;
+  credit_id: string;
+  department: string;
+  job: string;
+}
+
+interface Credits {
+  cast: Cast[];
+  crew: Crew[];
+}
+
+interface Image {
+  aspect_ratio: number;
+  file_path: string;
+  height: number;
+  iso_639_1: string | null;
+  vote_average: number;
+  vote_count: number;
+  width: number;
+}
+
+interface Images {
+  backdrops: Image[];
+  logos: Image[];
+  posters: Image[];
+}
+
+interface Video {
+  iso_639_1: string;
+  iso_3166_1: string;
+  name: string;
+  key: string;
+  site: string;
+  size: number;
+  type: string;
+  official: boolean;
+  published_at: string;
+  id: string;
+}
+
+interface Videos {
+  results: Video[];
+}
+
+interface Keyword {
+  name: string;
+  id: number;
+}
+
+interface Keywords {
+  results: Keyword[];
+}
+
+interface TvShow {
+  success?: boolean;
+  adult: boolean;
+  backdrop_path: string | null;
+  created_by: CreatedBy[];
+  episode_run_time: any[];
+  first_air_date: string;
+  genres: Genre[];
+  homepage: string;
+  id: number;
+  in_production: boolean;
+  languages: string[];
+  last_air_date: string;
+  last_episode_to_air: LastEpisodeToAir;
+  name: string;
+  next_episode_to_air: null;
+  networks: Network[];
+  number_of_episodes: number;
+  number_of_seasons: number;
+  origin_country: string[];
+  original_language: string;
+  original_name: string;
+  overview: string;
+  popularity: number;
+  poster_path: string | null;
+  production_companies: ProductionCompany[];
+  production_countries: ProductionCountry[];
+  seasons: Season[];
+  spoken_languages: SpokenLanguage[];
+  status: string;
+  tagline: string;
+  type: string;
+  vote_average: number;
+  vote_count: number;
+  external_ids: ExternalIDs;
+  content_ratings: ContentRatings;
+  credits: Credits;
+  images: Images;
+  videos: Videos;
+  keywords: Keywords;
+}
+
+async function getTvShow(): Promise<TvShow> {
+  try {
+    const response = await fetch(
+      `${url}/tv/${id}?api_key=${key}&language=en-US&include_adult=true&append_to_response=content_ratings,,external_ids,credits,images,videos,release_dates,keywords`
+    );
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+const tv: TvShow = await getTvShow();
+
+if (tv.success === false || tv === undefined) {
+  return new Response(null, {
+    status: 404,
+  });
+}
+
+let pageurl: string;
+
+if (tv.success === undefined || tv.success === null) {
+  const urltitle = encodeURIComponent(tv.name.replace(/ /g, '-').toLowerCase());
+  pageurl = `/tv/${id}/${urltitle}`;
+
+  // Check if the current URL already matches the intended URL
+  if (
+    title !== urltitle &&
+    `/tv/${id}/${urltitle}` !== path &&
+    `/tv/${id}/${urltitle}` &&
+    !(path.endsWith('/cast') || path.endsWith('/media')) // Do not redirect if the current URL ends with '/cast' or '/media'
+  ) {
+    return Astro.redirect(`/tv/${id}/${urltitle}`, 302);
+  }
+}
+
+function formatNumber(num: number) :number | string{
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  } else {
+    return num;
+  }
+}
+
+const tvname: string = tv.name || tv.original_name || '';
+const tvtagline: string = tv.tagline || '';
+const tvdescription: string = tv.overview || 'No description found';
+const imdb_url: string = tv.external_ids.imdb_id
+  ? `https://www.imdb.com/title/${tv.external_ids.imdb_id}`
+  : '';
+const tvimage: string = tv.poster_path
+  ? `https://image.tmdb.org/t/p/original${tv.poster_path}`
+  : `https://via.placeholder.com/500x750?text=${tvname}`;
+const tvyear: string | null = tv.first_air_date
+  ? new Date(tv.first_air_date).getFullYear().toString()
+  : null;
+
+// const usRelease = movie.release_dates?.results.find(
+//   (result) => result.iso_3166_1 === 'US'
+// );
+
+const rating: string =
+  tv.content_ratings?.results.find((result) => result.iso_3166_1 === 'US')
+    ?.rating || 'NR';
+
+let tvepruntime: string =
+  tv.episode_run_time.length > 0 ? `${tv.episode_run_time[0]} min` : 'N/A';
+
+const tvrating: number = Number(tv.vote_average.toFixed(1)) || 0.0;
+
+
+
+const rateingcount: number|string = formatNumber(tv.vote_count) || 0;
+
+let tvgenres: { id: number; original_name: string; name: string }[] = tv.genres
+  ? tv.genres.map((genre) => ({
+      id: genre.id,
+      original_name: genre.name,
+      name: genre.name,
+    }))
+  : [];
+
+tvgenres = tvgenres.map((genre) => {
+  const matchedGenre = genreList.find(
+    (genreItem) => Number(genreItem.id) === genre.id
+  );
+  return {
+    id: genre.id,
+    original_name: genre.original_name,
+    name: matchedGenre ? matchedGenre.name : genre.original_name,
+  };
+});
+
+let youtubevideos: { key: string; name: string; type: string }[] =
+  tv.videos?.results.map((video) => ({
+    key: video.key,
+    name: video.name,
+    type: video.type,
+  })) || [];
+youtubevideos = youtubevideos.filter((video) => video.type !== 'Clip');
+youtubevideos.sort((a, b) => {
+  if (a.type === 'Trailer' && b.type !== 'Trailer') {
+    return -1;
+  } else if (a.type !== 'Trailer' && b.type === 'Trailer') {
+    return 1;
+  } else {
+    return 0;
+  }
+});
+
+const youtubekeys: string[] = youtubevideos.map((video) => video.key);
+const youtubetitles: string[] = youtubevideos.map((video) => video.name);
+
+// const ogtitle: string = movietitle;
+// const ogdescription: string =
+//   movie.overview ||
+//   `Watch ${ogtitle} online for free. ${ogtitle} is a movie from ${
+//     movie.release_date || movie.first_air_date
+//   }.`;
+// const ogImage: string = movie.poster_path
+//   ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}`
+//   : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${ogtitle}`;
+
+const ogtitle: string = `${tvname} (${tvyear})`;
+const ogdescription: string =
+  tvdescription || `Watch ${ogtitle} online for free.`;
+const ogImage: string = tvimage
+  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${tvimage}`
+  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${ogtitle}`;
 ---
+
+<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+  <main>
+    <div
+      class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-14'>
+      <main>
+        <div
+          class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-14'>
+          <section class='px-3'>
+            <div class='pt-5 pb-5'>
+              <div class='pb-5 space-y-3'>
+                <div class='flex justify-between items-center'>
+                  <Goback type='icon' link={`/`} client:load bg={true} />
+                  <Share
+                    title={tvname}
+                    description={tvdescription}
+                    url={Astro.url.href}
+                    client:load
+                    bg={true}
+                  />
+                </div>
+                <h1
+                  class='text-[19px] sm:text-xl md:text-2xl lg:text-3xl font-bold lg:px-0'>
+                  {
+                    imdb_url ? (
+                      <a
+                        href={imdb_url}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        class='hover:text-blue-900 '>
+                        {tvname}
+                      </a>
+                    ) : (
+                      tvname
+                    )
+                  }
+                </h1>
+                {
+                  tvtagline ? (
+                    <h2 class='text-gray-800 hidden sm:flex'>{tvtagline}</h2>
+                  ) : null
+                }
+              </div>
+              <div
+                class='flex flex-col space-y-3 sm:flex-row items-start sm:items-center justify-start sm:justify-between'>
+                <span
+                  class='space-x-1 whitespace-nowrap text-base sm:text-lg font-medium text-gray-700'>
+                  {
+                    tvyear ? (
+                      <span class='py-1'>{tvyear}</span>
+                    ) : (
+                      <span class='py-1'>Not Relesed </span>
+                    )
+                  }
+                  <span class='py-1'>•</span>
+                  <span
+                    class='px-2 py-1 text-gray-700 ring-1 ring-gray-700 rounded-sm'
+                    >{rating}</span
+                  >
+                  <span class='py-1'>•</span>
+                  <span class='py-1'>{tvepruntime}</span>
+                </span>
+                <div class='hidden sm:flex'>
+                  <Rateing rating={tvrating} rateingcount={rateingcount} />
+                </div>
+              </div>
+            </div>
+
+            <div
+              class='grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'>
+              <Poster image={tvimage} title={tvname} />
+
+              <div
+                class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 min-h-56' : ''} `}>
+                {
+                  youtubekeys.length < 2 ? (
+                    <div class='flex items-center justify-center text-gray-black text-lg h-full bg-gray-200'>
+                      🤷‍♀️ No Trailers found
+                    </div>
+                  ) : (
+                    <YoutubeTrailers
+                      youtubekeys={youtubekeys}
+                      youtubetitles={youtubetitles}
+                    />
+                  )
+                }
+              </div>
+            </div>
+            <div
+              class='text-sm md:text-base font-medium overflow-x-auto whitespace-nowrap sm:whitespace-normal pt-5 pb-2 scrollbar-small gap-3 pl-[1px] flex'>
+              {
+                tvgenres.map((genre, index) => (
+                  <a
+                    href={`/genre/${genre.id}/${genre.original_name.replace(/ /g, '-').toLowerCase()}/tv`}
+                    class='inline-flex items-center gap-x-1.5 py-1.5 px-4  rounded-md text-xs md:text-sm bg-gray-100  text-black hover:ring-1 ring-gray-800'>
+                    {genre.name}
+                  </a>
+                ))
+              }
+            </div>
+
+            <Description description={tvdescription} />
+            <div class='sm:hidden'>
+              <Rateing rating={tvrating} rateingcount={rateingcount} />
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </main></Layout
+>

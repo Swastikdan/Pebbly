@@ -21,7 +21,7 @@ const cdn =
     {
       moviebackdrops &&
         moviebackdrops.length > 2 &&
-        moviebackdrops.slice(0, 10).map((backdrop: string) => (
+        moviebackdrops.map((backdrop: string) => (
           <Model isimage={true} link={backdrop}>
             <Image
               src={vcdn + backdrop}

@@ -41,7 +41,7 @@ const { contantainerid, isScrollable, buttons } = Astro.props;
   </button>
   <div
     id={contantainerid}
-    class={`flex space-x-4  overflow-x-auto whitespace-nowrap dragscroll active:cursor-grab ${ isScrollable? "scrollbar" :"scrollbar-hidden "}  `}
+    class={`flex space-x-4 rounded-lg  overflow-x-auto whitespace-nowrap dragscroll active:cursor-grab ${ isScrollable? "scrollbar" :"scrollbar-hidden "}  `}
   >
     <slot />
   </div>

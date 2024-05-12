@@ -159,12 +159,11 @@ interface Movie {
     }[];
   };
 }
-
 // write with full types
 async function getmovie(): Promise<Movie> {
   try {
     const res = await fetch(
-      `${url}/movie/${id}?api_key=${key}&include_adult=true&append_to_response=external_ids,images,credits,image,videos,release_dates,recommendations,keywords,images`
+      `${url}/movie/${id}?api_key=${key}&include_adult=true&append_to_response=external_ids,images,credits,image,videos,release_dates,keywords`
     );
     const data = await res.json();
     return data;
@@ -239,7 +238,7 @@ const movieyear: number | null =
 const usRelease = movie.release_dates?.results.find(
   (result) => result.iso_3166_1 === 'US'
 );
-let usCertification: string = 'Not Rated';
+let usCertification: string = 'NR';
 
 if (usRelease && usRelease.release_dates) {
   for (let i = 0; i < usRelease.release_dates.length; i++) {
@@ -253,7 +252,7 @@ const hours: number = movie.runtime ? Math.floor(movie.runtime / 60) : 0;
 const minutes: number = movie.runtime ? movie.runtime % 60 : 0;
 const movieRuntime: string =
   hours === 0 && minutes === 0
-    ? 'Runtime not Finalized   '
+    ? 'NA'
     : `${hours ? hours + 'h ' : ''}${minutes ? minutes + 'm' : ''}`;
 const movierating: number = isNaN(Number(movie.vote_average))
   ? 0
@@ -371,11 +370,10 @@ const recommendations: {
     media_type: recommendation.media_type || '',
   })) || [];
 
-const ogtitle: string = movietitle;
+const ogtitle: string = `${movietitle} (${movieyear})`;
 const ogdescription: string =
   movie.overview ||
-  `Watch ${ogtitle} online for free. ${ogtitle} is a movie from ${
-    movie.release_date || movie.first_air_date
+  `Watch ${ogtitle} online for free. 
   }.`;
 const ogImage: string = movie.poster_path
   ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}`
@@ -385,13 +383,12 @@ const ogImage: string = movie.poster_path
 <Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
   <main>
     <div
-      class="max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-14"
-    >
-      <section class="px-3">
-        <div class="pt-5 pb-5">
-          <div class="pb-5 space-y-3">
-            <div class="flex justify-between items-center">
-              <Goback type="icon" link={`/`} client:load bg={true} />
+      class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-14'>
+      <section class='px-3'>
+        <div class='pt-5 pb-5'>
+          <div class='pb-5 space-y-3'>
+            <div class='flex justify-between items-center'>
+              <Goback type='icon' link={`/`} client:load bg={true} />
               <Share
                 title={movietitle}
                 description={moviedescription}
@@ -401,16 +398,14 @@ const ogImage: string = movie.poster_path
               />
             </div>
             <h1
-              class="text-[19px] sm:text-xl md:text-2xl lg:text-3xl font-bold lg:px-0"
-            >
+              class='text-[19px] sm:text-xl md:text-2xl lg:text-3xl font-bold lg:px-0'>
               {
                 imdb_url ? (
                   <a
                     href={imdb_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="hover:text-blue-900 "
-                  >
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    class='hover:text-blue-900 '>
                     {movietitle}
                   </a>
                 ) : (
@@ -420,46 +415,47 @@ const ogImage: string = movie.poster_path
             </h1>
             {
               movietagline ? (
-                <h2 class="text-gray-800 hidden sm:flex">{movietagline}</h2>
+                <h2 class='text-gray-800 hidden sm:flex'>{movietagline}</h2>
               ) : null
             }
           </div>
           <div
-            class="flex flex-col space-y-3 sm:flex-row items-start sm:items-center justify-start sm:justify-between"
-          >
+            class='flex flex-col space-y-3 sm:flex-row items-start sm:items-center justify-start sm:justify-between'>
             <span
-              class="space-x-1 whitespace-nowrap text-base sm:text-lg font-medium text-gray-700"
-            >
+              class='space-x-1 whitespace-nowrap text-base sm:text-lg font-medium text-gray-700'>
               {
                 movieyear ? (
-                  <span class="py-1">{movieyear}</span>
+                  <span class='py-1'>{movieyear}</span>
                 ) : (
-                  <span class="py-1">Not Relesed </span>
+                  <span class='py-1'>Not Relesed </span>
                 )
               }
-              <span class="py-1">•</span>
+              <span class='py-1'>•</span>
               <span
-                class="px-2 py-1 text-gray-700 ring-1 ring-gray-700 rounded-sm"
+                class='px-2 py-1 text-gray-700 ring-1 ring-gray-700 rounded-sm'
                 >{usCertification}</span
               >
-              <span class="py-1">•</span>
-              <span class="py-1">{movieRuntime}</span>
+              <span class='py-1'>•</span>
+              <span class='py-1'>{movieRuntime}</span>
             </span>
-            <div class="hidden sm:flex">
+            <div class='hidden sm:flex'>
               <Rateing rating={movierating} rateingcount={rateingcount} />
             </div>
           </div>
         </div>
 
-        <div class="grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          <Poster image={movieimage} title={movietitle} />
+        <div class='grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'>
+          <Poster
+            image={movieimage}
+            title={movietitle}
+            posters={movieposters}
+          />
 
           <div
-            class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 min-h-56' : ''} `}
-          >
+            class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 min-h-56' : ''} `}>
             {
               youtubekeys.length < 2 ? (
-                <div class="flex items-center justify-center text-gray-black text-lg h-full bg-gray-200">
+                <div class='flex items-center justify-center text-gray-black text-lg h-full bg-gray-200'>
                   🤷‍♀️ No Trailers found
                 </div>
               ) : (
@@ -472,14 +468,12 @@ const ogImage: string = movie.poster_path
           </div>
         </div>
         <div
-          class="text-sm md:text-base font-medium overflow-x-auto whitespace-nowrap sm:whitespace-normal pt-5 pb-2 scrollbar-small gap-3 pl-[1px] flex"
-        >
+          class='text-sm md:text-base font-medium overflow-x-auto whitespace-nowrap sm:whitespace-normal pt-5 pb-2 scrollbar-small gap-3 pl-[1px] flex'>
           {
             movieGenres.map((genre, index) => (
               <a
-                href={`/genre/${genre.id}/${genre.original_name.replace(/ /g, '-').toLowerCase()}`}
-                class="inline-flex items-center gap-x-1.5 py-1.5 px-4  rounded-md text-xs md:text-sm bg-gray-100  text-black hover:ring-1 ring-gray-800"
-              >
+                href={`/genre/${genre.id}/${genre.original_name.replace(/ /g, '-').toLowerCase()}/movie`}
+                class='inline-flex items-center gap-x-1.5 py-1.5 px-4  rounded-md text-xs md:text-sm bg-gray-100  text-black hover:ring-1 ring-gray-800'>
                 {genre.name}
               </a>
             ))
@@ -487,19 +481,19 @@ const ogImage: string = movie.poster_path
         </div>
 
         <Description description={moviedescription} />
-        <div class="sm:hidden">
+        <div class='sm:hidden'>
           <Rateing rating={movierating} rateingcount={rateingcount} />
         </div>
-        <div class="pt-5">
+        <div class='pt-5'>
           <a
             href={`${Astro.url.href}/cast`}
-            class="text-xl md:text-2xl font-semibold hover:underline underline-offset-4"
+            class='text-xl md:text-2xl font-semibold hover:underline underline-offset-4'
             >Top Billed Cast</a
           >
           {
             selectedMovieCast.length === 0 ? (
-              <div class="flex ">
-                <p class="text-base text-gray-800 py-5">
+              <div class='flex '>
+                <p class='text-base text-gray-800 py-5'>
                   No Cast Information found
                 </p>
               </div>
@@ -512,12 +506,11 @@ const ogImage: string = movie.poster_path
             )
           }
         </div>
-        <div class="pb-5">
+        <div class='pb-5'>
           <a
             href={`${Astro.url.href}/media`}
-            aria-label="Media"
-            class="text-xl md:text-2xl font-semibold my-5 hover:underline underline-offset-4"
-          >
+            aria-label='Media'
+            class='text-xl md:text-2xl font-semibold my-5 hover:underline underline-offset-4'>
             Media
           </a>
           {
@@ -527,27 +520,26 @@ const ogImage: string = movie.poster_path
                 movieposters={movieposters}
               />
             ) : (
-              <div class="flex ">
-                <p class="text-base text-gray-800 pt-5">No Media Found</p>
+              <div class='flex '>
+                <p class='text-base text-gray-800 pt-5'>No Media Found</p>
               </div>
             )
           }
         </div>
-        <div class="pb-5">
-          <h2 class="text-xl md:text-2xl font-semibold">Keywords</h2>
+        <div class='pb-5'>
+          <h2 class='text-xl md:text-2xl font-semibold'>Keywords</h2>
           {
             keywords.length === 0 ? (
-              <div class="flex ">
-                <p class="text-base text-gray-800 pt-5">No Keywords Found</p>
+              <div class='flex '>
+                <p class='text-base text-gray-800 pt-5'>No Keywords Found</p>
               </div>
             ) : (
-              <div class="flex flex-wrap gap-2 py-5">
+              <div class='flex flex-wrap gap-2 py-5'>
                 {keywords.map((keyword) => (
                   <a
-                    href={`/keyword/${keyword.id}/${keyword.name}`}
+                    href={`/keyword/${keyword.id}/${keyword.name}/movie`}
                     aria-label={`${keyword.name}`}
-                    class="inline-flex items-center gap-x-1.5 py-1.5 px-4 rounded text-xs bg-blue-100 text-blue-800 hover:ring-1 ring-blue-800"
-                  >
+                    class='inline-flex items-center gap-x-1.5 py-1.5 px-4 rounded text-xs bg-blue-100 text-blue-800 hover:ring-1 ring-blue-800'>
                     {keyword.name}
                   </a>
                 ))}
@@ -556,8 +548,8 @@ const ogImage: string = movie.poster_path
           }
         </div>
 
-        <div class="pb-5">
-          <h2 class="text-xl md:text-2xl font-semibold">Recommendations</h2>
+        <div class='pb-5'>
+          <h2 class='text-xl md:text-2xl font-semibold'>Recommendations</h2>
 
           <Recommendations id={Number(id)} />
         </div>
