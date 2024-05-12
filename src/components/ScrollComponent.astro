@@ -1,87 +1,81 @@
 ---
 interface Props {
   contantainerid: string;
-  isScrollable: boolean;
+  scrollbar: boolean;
   buttons: boolean;
 }
-const { contantainerid, isScrollable, buttons } = Astro.props;
+const { contantainerid, scrollbar, buttons } = Astro.props;
 ---
 
 <div class={`relative ${contantainerid} rounded-lg`}>
   <button
     id={`${contantainerid}-prev`}
     class={`hidden ${buttons ? 'sm:flex' : null} absolute m-3 top-1/2 left-0 transform -translate-y-1/2 active:scale-95 z-30  `}
-    onclick={`scrollAmount('${contantainerid}', -1)`}
-  >
+    onclick={`scrollAmount('${contantainerid}', -1)`}>
     <svg
-      class="w-0 sm:w-10 h-0 sm:h-10"
-      width="208"
-      height="208"
-      viewBox="0 0 208 208"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+      class='w-0 sm:w-10 h-0 sm:h-10'
+      width='208'
+      height='208'
+      viewBox='0 0 208 208'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'>
       <path
-        opacity="1"
-        d="M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z"
-        fill="white"></path>
+        opacity='1'
+        d='M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z'
+        fill='white'></path>
       <path
-        d="M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z"
-        stroke="black"
-        stroke-width="4"
-        stroke-linecap="round"
-        stroke-linejoin="round"></path>
+        d='M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z'
+        stroke='black'
+        stroke-width='4'
+        stroke-linecap='round'
+        stroke-linejoin='round'></path>
       <path
-        d="M120 64L80 104L120 144"
-        stroke="black"
-        stroke-width="16"
-        stroke-linecap="round"
-        stroke-linejoin="round"></path>
+        d='M120 64L80 104L120 144'
+        stroke='black'
+        stroke-width='16'
+        stroke-linecap='round'
+        stroke-linejoin='round'></path>
     </svg>
   </button>
   <div
     id={contantainerid}
-    class={`flex space-x-4 rounded-lg  overflow-x-auto whitespace-nowrap dragscroll active:cursor-grab ${ isScrollable? "scrollbar" :"scrollbar-hidden "}  `}
-  >
+    class={`flex space-x-4 rounded-lg  overflow-x-auto whitespace-nowrap dragscroll active:cursor-grab ${scrollbar ? 'scrollbar' : 'scrollbar-hidden '}  `}>
     <slot />
   </div>
   <button
     id={`${contantainerid}-next`}
     class={`hidden ${buttons ? 'sm:flex' : null} absolute m-3 top-1/2 right-0 transform -translate-y-1/2 active:scale-95 z-30`}
-    onclick={`scrollAmount('${contantainerid}', 1)`}
-  >
+    onclick={`scrollAmount('${contantainerid}', 1)`}>
     <svg
-      class="w-0 sm:w-10 h-0 sm:h-10"
-      width="208"
-      height="208"
-      viewBox="0 0 208 208"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+      class='w-0 sm:w-10 h-0 sm:h-10'
+      width='208'
+      height='208'
+      viewBox='0 0 208 208'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'>
       <path
-        opacity="1"
-        d="M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z"
-        fill="white"></path>
+        opacity='1'
+        d='M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z'
+        fill='white'></path>
       <path
-        d="M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z"
-        stroke="black"
-        stroke-width="4"
-        stroke-linecap="round"
-        stroke-linejoin="round"></path>
+        d='M104 200C157.019 200 200 157.019 200 104C200 50.9807 157.019 8 104 8C50.9807 8 8 50.9807 8 104C8 157.019 50.9807 200 104 200Z'
+        stroke='black'
+        stroke-width='4'
+        stroke-linecap='round'
+        stroke-linejoin='round'></path>
       <path
-        d="M88 64L128 104L88 144"
-        stroke="black"
-        stroke-width="16"
-        stroke-linecap="round"
-        stroke-linejoin="round"></path>
+        d='M88 64L128 104L88 144'
+        stroke='black'
+        stroke-width='16'
+        stroke-linecap='round'
+        stroke-linejoin='round'></path>
     </svg>
   </button>
 </div>
 <style>
-
-.scrollbar-hidden::-webkit-scrollbar {
-  display: none;
-}
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
 
   .scrollbar::-webkit-scrollbar-track {
     background: #ffffff;
@@ -202,7 +196,7 @@ const { contantainerid, isScrollable, buttons } = Astro.props;
 
 <script is:inline>
   // var containerIds = ['youtubevideos', 'moviecast', 'mediaimages'];
-
+  var containerIds = [];
   function scrollAmount(containerId, direction) {
     var container = document.getElementById(containerId);
     var amount = window.innerWidth * 0.7 * direction; // Scroll 70% of the screen width

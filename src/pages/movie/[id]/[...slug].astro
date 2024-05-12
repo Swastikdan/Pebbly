@@ -454,7 +454,7 @@ const ogImage: string = movie.poster_path
           <div
             class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 min-h-56' : ''} `}>
             {
-              youtubekeys.length < 2 ? (
+              youtubekeys.length == 0 ? (
                 <div class='flex items-center justify-center text-gray-black text-lg h-full bg-gray-200'>
                   🤷‍♀️ No Trailers found
                 </div>
@@ -551,7 +551,7 @@ const ogImage: string = movie.poster_path
         <div class='pb-5'>
           <h2 class='text-xl md:text-2xl font-semibold'>Recommendations</h2>
 
-          <Recommendations id={Number(id)} />
+          <Recommendations id={Number(id)} type='movie' />
         </div>
       </section>
     </div>

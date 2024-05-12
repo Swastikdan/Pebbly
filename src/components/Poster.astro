@@ -15,53 +15,53 @@ const cdn =
 ---
 
 <div class='flex justify-center relative'>
-      {postersnum > 1 ? (
-        
-  <Model>
-    <Image
-      src={cdn + image}
-      width={400}
-      height={600}
-      alt={title}
-      slot='model-trigger'
-      class='bg-gray-200 object-cover rounded-xl ring-1 ring-gray-200 h-auto sm:hidden lg:block'
-    />
-    <div
-      slot='model-content'
-      class='w-auto h-full max-h-[98vh] m-0 sm:p-10 rounded-lg'>
-      <ScrollComponent buttons={true} contantainerid='poster'>
-        {
-          posters.map((poster, index) => (
-            <div class='relative'>
-              <span class='absolute top-3 left-3 px-2 py-1 text-xs bg-blue-200 ring-1 ring-blue-800 text-blue-800 rounded'>
-                {index + 1}/{postersnum}
-              </span>
-              <a
-                href={poster}
-                target='_blank'
-                rel='noopener noreferrer'
-                class='px-2 py-1  text-xs bg-blue-200 ring-1 ring-blue-800 text-blue-800 rounded absolute right-3 top-3 '>
-                View Original
-              </a>
-              <Image
-                src={cdn + poster}
-                width={400}
-                height={600}
-                alt={title}
-                class=' items-center justify-center rounded-lg object-center max-h-[98vh] max-w-[90vw] sm:max-w-max  m-0 bg-gray-200 sm:mb-2'
-              />
-            </div>
-          ))
-        }
-      </ScrollComponent>
-    </div>
-  </Model>) : (
+  {
+    postersnum > 1 ? (
+      <Model>
         <Image
           src={cdn + image}
           width={400}
           height={600}
           alt={title}
-          class='bg-gray-200 object-cover rounded-xl ring-1 ring-gray-200 h-auto sm:hidden lg:block'
+          slot='model-trigger'
+          class='bg-gray-200 object-cover rounded-xl ring-1 ring-gray-200 min-h-40 md:min-h-[22rem] aspect-auto  sm:hidden lg:block h-full w-full'
         />
-      )}
+        <div
+          slot='model-content'
+          class='w-auto h-full max-h-[90vh] sm:max-w-[90vw] m-0  rounded-lg'>
+          <ScrollComponent buttons={true} scrollbar={true}  contantainerid='poster'>
+            {posters.map((poster, index) => (
+              <div class='relative'>
+                <span class='absolute top-3 left-3 px-2 py-1 text-xs bg-blue-200 ring-1 ring-blue-800 text-blue-800 rounded'>
+                  {index + 1}/{postersnum}
+                </span>
+                <a
+                  href={poster}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  class='px-2 py-1  text-xs bg-blue-200 ring-1 ring-blue-800 text-blue-800 rounded absolute right-3 top-3 '>
+                  View Original
+                </a>
+                <Image
+                  src={cdn + poster}
+                  width={400}
+                  height={600}
+                  alt={title}
+                  class=' items-center justify-center rounded-lg object-center max-h-[98vh] max-w-[90vw] sm:max-w-max  m-0 bg-gray-200 '
+                />
+              </div>
+            ))}
+          </ScrollComponent>
+        </div>
+      </Model>
+    ) : (
+      <Image
+        src={cdn + image}
+        width={400}
+        height={600}
+        alt={title}
+        class='bg-gray-200 object-cover rounded-xl ring-1 ring-gray-200 min-h-40 md:min-h-[22rem] h-auto sm:hidden lg:block'
+      />
+    )
+  }
 </div>

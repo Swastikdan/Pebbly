@@ -104,7 +104,7 @@ const ogImage: string = movie.poster_path
 ---
 
 <Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
-  <main class="">
+  <main class=''>
     <Secondarynav
       movie={movie}
       url={Astro.url.href}
@@ -112,111 +112,96 @@ const ogImage: string = movie.poster_path
       slug={slug}
       color={color}
       client:load
-      client:only="react"
+      client:only='react'
     />
 
-
     {
-      (images.backdrops.length < 2 && images.posters.length < 2) ? (
-        <section class="max-w-screen-2xl block mx-auto  text-center min-h-screen items-center px-3 md:px-6 xl:px-14 pt-5 pb-10">
-          <span class="text-xl sm:text-2xl font-semibold text-center mt-10 pb-4">
+      images.backdrops.length < 2 && images.posters.length < 2 ? (
+        <section class='max-w-screen-2xl block mx-auto  text-center min-h-screen items-center px-3 md:px-6 xl:px-14 pt-5 pb-10'>
+          <span class='text-xl sm:text-2xl font-semibold text-center mt-10 pb-4'>
             No Images Found
           </span>
         </section>
-      ):(<section
-      class="max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-14 pt-5 pb-10"
-    >
-      <span
-        class="text-xl sm:text-2xl font-semibold underline underline-offset-8 pb-4"
-      >
-       Movie Stills
-      </span>
+      ) : (
+        <section class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-14 pt-5 pb-10'>
+          <span class='text-xl sm:text-2xl font-semibold underline underline-offset-8 pb-4'>
+            Movie Stills
+          </span>
 
-      <div class="pt-5 pb-10">
-        <ScrollComponent
-          buttons={true}
-          isScrollable={true}
-          contantainerid="backdrops"
-        >
-          {
-            images.backdrops.map((image) => (
-              <Model
-                isimage={true}
-                link={`https://image.tmdb.org/t/p/original${image.file_path}`}
-              >
-                <Image
-                  src={`${vcdn}https://image.tmdb.org/t/p/original${image.file_path}`}
-                  alt={movie.title}
-                  width={image.width}
-                  height={image.height}
-                  aspect-ratio={image.aspect_ratio}
-                  loading="lazy"
-                  slot="model-trigger"
-                  class="rounded-lg bg-gray-200 min-h-36 md:min-h-56 min-w-72 md:min-w-96 w-full mb-2"
-                />
+          <div class='pt-5 pb-10'>
+            <ScrollComponent
+              buttons={true}
+              scrollbar={true}
+              contantainerid='backdrops'>
+              {images.backdrops.map((image) => (
+                <Model
+                  isimage={true}
+                  link={`https://image.tmdb.org/t/p/original${image.file_path}`}>
+                  <Image
+                    src={`${vcdn}https://image.tmdb.org/t/p/original${image.file_path}`}
+                    alt={movie.title}
+                    width={image.width}
+                    height={image.height}
+                    aspect-ratio={image.aspect_ratio}
+                    loading='lazy'
+                    slot='model-trigger'
+                    class='rounded-lg bg-gray-200 min-h-36 md:min-h-56 min-w-72 md:min-w-96 w-full mb-2'
+                  />
 
-                <Image
-                  src={`${cdn}https://image.tmdb.org/t/p/original${image.file_path}`}
-                  alt={movie.title}
-                  width={image.width}
-                  height={image.height}
-                  aspect-ratio={image.aspect_ratio}
-                  loading="lazy"
-                  class="w-auto h-full items-center justify-center rounded-lg object-center max-h-[98vh] m-0 bg-gray-200"
-                  slot="model-content"
-                />
-              </Model>
-            ))
-          }
-        </ScrollComponent>
-      </div>
+                  <Image
+                    src={`${cdn}https://image.tmdb.org/t/p/original${image.file_path}`}
+                    alt={movie.title}
+                    width={image.width}
+                    height={image.height}
+                    aspect-ratio={image.aspect_ratio}
+                    loading='lazy'
+                    class='w-auto h-full items-center justify-center rounded-lg object-center max-h-[98vh] m-0 bg-gray-200'
+                    slot='model-content'
+                  />
+                </Model>
+              ))}
+            </ScrollComponent>
+          </div>
 
-      <span
-        class="text-xl sm:text-2xl font-semibold underline underline-offset-8 pb-4"
-      >
-        Posters
-      </span>
+          <span class='text-xl sm:text-2xl font-semibold underline underline-offset-8 pb-4'>
+            Posters
+          </span>
 
-      <div class="pt-5 pb-10">
-        <ScrollComponent
-          buttons={true}
-          isScrollable={true}
-          contantainerid="posters"
-        >
-          {
-            images.posters.map((image) => (
-              <Model
-                isimage={true}
-                link={`https://image.tmdb.org/t/p/original${image.file_path}`}
-              >
-                <Image
-                  src={`${hcdn}https://image.tmdb.org/t/p/original${image.file_path}`}
-                  alt={movie.title}
-                  width={300}
-                  height={500}
-                  loading="lazy"
-                  class="mb-2 h-56 w-full min-w-32 object-center rounded-lg  hover:scale-[.975] transition-all duration-150 ease-in-out bg-gray-200"
-                  slot="model-trigger"
-                />
+          <div class='pt-5 pb-10'>
+            <ScrollComponent
+              buttons={true}
+              scrollbar={true}
+              contantainerid='posters'>
+              {images.posters.map((image) => (
+                <Model
+                  isimage={true}
+                  link={`https://image.tmdb.org/t/p/original${image.file_path}`}>
+                  <Image
+                    src={`${hcdn}https://image.tmdb.org/t/p/original${image.file_path}`}
+                    alt={movie.title}
+                    width={300}
+                    height={500}
+                    loading='lazy'
+                    class='mb-2 h-56 w-full min-w-32 object-center rounded-lg  hover:scale-[.975] transition-all duration-150 ease-in-out bg-gray-200'
+                    slot='model-trigger'
+                  />
 
-                <Image
-                  src={`https://image.tmdb.org/t/p/original${image.file_path}`}
-                  alt={movie.title}
-                  width={image.width}
-                  height={image.height}
-                  loading="lazy"
-                  aspect-ratio={image.aspect_ratio}
-                  class="w-auto h-full items-center justify-center rounded-lg object-center max-h-[98vh] m-0 bg-gray-200"
-                  slot="model-content"
-                />
-              </Model>
-            ))
-          }
-        </ScrollComponent>
-      </div>
-    </section>)
+                  <Image
+                    src={`https://image.tmdb.org/t/p/original${image.file_path}`}
+                    alt={movie.title}
+                    width={image.width}
+                    height={image.height}
+                    loading='lazy'
+                    aspect-ratio={image.aspect_ratio}
+                    class='w-auto h-full items-center justify-center rounded-lg object-center max-h-[98vh] m-0 bg-gray-200'
+                    slot='model-content'
+                  />
+                </Model>
+              ))}
+            </ScrollComponent>
+          </div>
+        </section>
+      )
     }
-
-    
   </main>
 </Layout>

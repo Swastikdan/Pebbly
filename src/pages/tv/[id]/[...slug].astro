@@ -9,6 +9,9 @@ import genreList from '../../../components/genres';
 import YoutubeTrailers from '../../../components/YoutubeTrailers.astro';
 import Goback from '../../../components/Goback';
 import Share from '../../../components/Share';
+import Casts from '../../../components/Casts.astro';
+import Moviemedia from '../../../components/Moviemedia.astro';
+import Recommendations from '../../../components/Recommendations.astro';
 
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
@@ -223,7 +226,7 @@ interface TvShow {
 async function getTvShow(): Promise<TvShow> {
   try {
     const response = await fetch(
-      `${url}/tv/${id}?api_key=${key}&language=en-US&include_adult=true&append_to_response=content_ratings,,external_ids,credits,images,videos,release_dates,keywords`
+      `${url}/tv/${id}?api_key=${key}&include_adult=true&append_to_response=content_ratings,,external_ids,credits,images,videos,release_dates,keywords`
     );
     const data = await response.json();
     return data;
@@ -257,7 +260,7 @@ if (tv.success === undefined || tv.success === null) {
   }
 }
 
-function formatNumber(num: number) :number | string{
+function formatNumber(num: number): number | string {
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1) + 'M';
   } else if (num >= 1000) {
@@ -293,9 +296,7 @@ let tvepruntime: string =
 
 const tvrating: number = Number(tv.vote_average.toFixed(1)) || 0.0;
 
-
-
-const rateingcount: number|string = formatNumber(tv.vote_count) || 0;
+const rateingcount: number | string = formatNumber(tv.vote_count) || 0;
 
 let tvgenres: { id: number; original_name: string; name: string }[] = tv.genres
   ? tv.genres.map((genre) => ({
@@ -336,15 +337,43 @@ youtubevideos.sort((a, b) => {
 const youtubekeys: string[] = youtubevideos.map((video) => video.key);
 const youtubetitles: string[] = youtubevideos.map((video) => video.name);
 
-// const ogtitle: string = movietitle;
-// const ogdescription: string =
-//   movie.overview ||
-//   `Watch ${ogtitle} online for free. ${ogtitle} is a movie from ${
-//     movie.release_date || movie.first_air_date
-//   }.`;
-// const ogImage: string = movie.poster_path
-//   ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}`
-//   : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${ogtitle}`;
+const selectedMovieCast: {
+  id: number;
+  name: string;
+  profile_path: string;
+  character: string;
+}[] =
+  tv.credits?.cast
+    .map((cast) => ({
+      id: cast.id,
+      name: cast.name,
+      profile_path: cast.profile_path,
+      character: cast.character,
+    }))
+    .slice(0, 15) || [];
+const crew_length: number = tv.credits?.crew.length || 0;
+
+const status: string = tv.status || '';
+const originalLanguage: string = ISO6391.getName(tv.original_language) || '';
+
+const tvbackdrops: string[] =
+  tv.images?.backdrops
+    .sort((a, b) => b.vote_average - a.vote_average)
+    .map((image) => `https://image.tmdb.org/t/p/original${image.file_path}`) ||
+  [];
+
+const tvposters: string[] =
+  tv.images?.posters
+    .sort((a, b) => b.vote_average - a.vote_average)
+    .map((image) => `https://image.tmdb.org/t/p/original${image.file_path}`) ||
+  [];
+
+const keywords: { name: string; id: number }[] =
+  tv.keywords.results.map((keyword) => ({
+    name: keyword.name,
+    id: keyword.id,
+  })) || [];
+
 
 const ogtitle: string = `${tvname} (${tvyear})`;
 const ogdescription: string =
@@ -355,7 +384,7 @@ const ogImage: string = tvimage
 ---
 
 <Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
-  <main>
+
     <div
       class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-14'>
       <main>
@@ -423,12 +452,12 @@ const ogImage: string = tvimage
 
             <div
               class='grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'>
-              <Poster image={tvimage} title={tvname} />
+              <Poster image={tvimage} title={tvname} posters={tvposters} />
 
               <div
                 class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 min-h-56' : ''} `}>
                 {
-                  youtubekeys.length < 2 ? (
+                  youtubekeys.length == 0 ? (
                     <div class='flex items-center justify-center text-gray-black text-lg h-full bg-gray-200'>
                       🤷‍♀️ No Trailers found
                     </div>
@@ -458,9 +487,81 @@ const ogImage: string = tvimage
             <div class='sm:hidden'>
               <Rateing rating={tvrating} rateingcount={rateingcount} />
             </div>
+
+            <div class='pt-5'>
+              <a
+                href={`${Astro.url.href}/cast`}
+                class='text-xl md:text-2xl font-semibold hover:underline underline-offset-4'
+                >Top Billed Cast</a
+              >
+              {
+                selectedMovieCast.length === 0 ? (
+                  <div class='flex '>
+                    <p class='text-base text-gray-800 py-5'>
+                      No Cast Information found
+                    </p>
+                  </div>
+                ) : (
+                  <Casts
+                    MovieCast={selectedMovieCast}
+                    crew_length={crew_length}
+                    url={pageurl}
+                  />
+                )
+              }
+            </div>
+            <div class='pb-5'>
+              <a
+                href={`${Astro.url.href}/media`}
+                aria-label='Media'
+                class='text-xl md:text-2xl font-semibold my-5 hover:underline underline-offset-4'>
+                Media
+              </a>
+              {
+                tvbackdrops.length > 2 && tvposters.length > 2 ? (
+                  <Moviemedia
+                    moviebackdrops={tvbackdrops}
+                    movieposters={tvposters}
+                  />
+                ) : (
+                  <div class='flex '>
+                    <p class='text-base text-gray-800 pt-5'>No Media Found</p>
+                  </div>
+                )
+              }
+            </div>
+            <div class='pb-5'>
+              <h2 class='text-xl md:text-2xl font-semibold'>Keywords</h2>
+              {
+                keywords.length === 0 ? (
+                  <div class='flex '>
+                    <p class='text-base text-gray-800 pt-5'>
+                      No Keywords Found
+                    </p>
+                  </div>
+                ) : (
+                  <div class='flex flex-wrap gap-2 py-5'>
+                    {keywords.map((keyword) => (
+                      <a
+                        href={`/keyword/${keyword.id}/${keyword.name}/movie`}
+                        aria-label={`${keyword.name}`}
+                        class='inline-flex items-center gap-x-1.5 py-1.5 px-4 rounded text-xs bg-blue-100 text-blue-800 hover:ring-1 ring-blue-800'>
+                        {keyword.name}
+                      </a>
+                    ))}
+                  </div>
+                )
+              }
+            </div>
+
+            <div class='pb-5'>
+              <h2 class='text-xl md:text-2xl font-semibold'>Recommendations</h2>
+
+              <Recommendations id={Number(id)} type="tv" />
+            </div>
           </section>
         </div>
       </main>
     </div>
-  </main></Layout
+ </Layout
 >
