@@ -138,7 +138,7 @@ const description = ` Get the latest ${title} and enjoy the best movies and TV s
                   moviedata.results &&
                   moviedata.results.length > 0 ? (
                   <div class="mx-auto max-w-screen-2xl ">
-                    <div class="grid  gap-4 md:grid-cols-2 min-[884px]:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 px-7 md:px-20">
+                    <div class="grid  gap-4 sm:grid-cols-2 min-[884px]:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 px-7 md:px-20">
                       {moviedata.results.map((movie: any) => (
                       <MovieCard id={movie.id} title={movie.title || movie.name}
                         image={`https://image.tmdb.org/t/p/original/${movie.poster_path}`}
