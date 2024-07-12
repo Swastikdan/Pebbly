@@ -22,7 +22,7 @@ let homepagetrending: TrendingResponse | null = null;
 
 try {
   const response = await fetch(
-    `${url}trending/all/week?sort_by=popularity.desc&api_key=${key}&page=1`
+    `${url}/trending/all/week?sort_by=popularity.desc&api_key=${key}&page=1`
   );
   const data = await response.json();
   homepagetrending = {

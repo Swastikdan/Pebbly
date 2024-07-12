@@ -285,7 +285,10 @@ let youtubevideos: { key: string; name: string; type: string }[] =
     name: video.name,
     type: video.type,
   })) || [];
-youtubevideos = youtubevideos.length > 2 ? youtubevideos.filter((video) => video.type !== 'Clip'): youtubevideos;
+youtubevideos =
+  youtubevideos.length > 2
+    ? youtubevideos.filter((video) => video.type !== 'Clip')
+    : youtubevideos;
 youtubevideos.sort((a, b) => {
   if (a.type === 'Trailer' && b.type !== 'Trailer') {
     return -1;
@@ -400,7 +403,7 @@ const ogImage: string = movie.poster_path
         <div class='pt-5 pb-5'>
           <div class='pb-5 space-y-3'>
             <div class='flex justify-between items-center'>
-              <Goback type='icon' link={`/`} client:load bg={true} />
+              <Goback type='icon' link={`/`}  bg={true} client:load/>
               <Share
                 title={movietitle}
                 description={moviedescription}
@@ -456,7 +459,8 @@ const ogImage: string = movie.poster_path
           </div>
         </div>
 
-        <div class='grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'>
+        <div
+          class='grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 '>
           <Poster
             image={movieimage}
             title={movietitle}
@@ -464,7 +468,7 @@ const ogImage: string = movie.poster_path
           />
 
           <div
-            class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 min-h-56' : ''} `}>
+            class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 ' : ''} `}>
             {
               youtubekeys.length == 0 ? (
                 <div class='flex items-center justify-center text-gray-black text-lg h-full bg-gray-200'>
