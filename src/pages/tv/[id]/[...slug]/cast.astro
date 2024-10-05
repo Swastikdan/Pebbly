@@ -77,11 +77,11 @@ let tv = await loadMovie().then((data) => {
 });
 
 const image = `${hcdn}https://image.tmdb.org/t/p/original${tv.poster_path}`;
-let color = await fetch(
-  `${Astro.url.origin}/api/imagecolor.json?image=${image}`
-).then((res) => res.json());
+// let color = await fetch(
+//   `${Astro.url.origin}/api/imagecolor.json?image=${image}`
+// ).then((res) => res.json());
 
-color = color.color;
+// color = color.color;
 const cast = movieCredits.cast.map((item) => ({
   id: item.id,
   name: item.name,
@@ -117,18 +117,16 @@ const ogImage: string = tv.poster_path
   <main>
     <Secondarynav
       data={tv}
-      type="tv"
+      type='tv'
       url={Astro.url.href}
       id={id}
       slug={slug}
-      color={color}
+      color='#5C735D'
       client:load
       client:only='react'
     />
 
     <section class='py-2 mb-3'>
-
-
       <div
         class='max-w-screen-2xl block mx-auto items-center px-3 md:px-10 xl:px-20 pb-20'>
         <section
@@ -201,7 +199,8 @@ const ogImage: string = tv.poster_path
               }
             </div>
           </div>
-     
+        </section>
+      </div>
     </section>
-  </main>
-</Layout>
+  </main></Layout
+>

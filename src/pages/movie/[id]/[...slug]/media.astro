@@ -91,11 +91,11 @@ let movie = await loadMovie().then((data) => {
   };
 });
 const image = `${hcdn}https://image.tmdb.org/t/p/original${movie.poster_path}`;
-let color = await fetch(
-  `${Astro.url.origin}/api/imagecolor.json?image=${image}`
-).then((res) => res.json());
+// let color = await fetch(
+//   `${Astro.url.origin}/api/imagecolor.json?image=${image}`
+// ).then((res) => res.json());
 
-color = color.color;
+// color = color.color;
 const ogtitle: string = `The Cast of the movie | ${movie.title}`;
 const ogdescription: string = movie.description;
 const ogImage: string = movie.poster_path
@@ -111,7 +111,7 @@ const ogImage: string = movie.poster_path
       url={Astro.url.href}
       id={id}
       slug={slug}
-      color={color}
+      color='#5C735D'
       client:load
       client:only='react'
     />
