@@ -12,10 +12,7 @@ export default defineConfig({
   site: 'https://film-fanatic.vercel.app',
   integrations: [react(), tailwind(), sitemap()],
   output: 'server',
-
-  adapter: vercel(),
-  // output: "server",
-  // adapter: node({
-  //   mode: "standalone"
-  // })
+  adapter: vercel({
+    mode: 'standalone',
+  }),
 });
