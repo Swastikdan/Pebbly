@@ -1,0 +1,51 @@
+---
+interface Props {
+  quary: string;
+}
+const { quary } = Astro.props;
+---
+
+<form class="flex items-center max-w-5xl mx-auto" action="/search">
+  <label for="voice-search" class="sr-only">Search</label>
+  <div class="relative w-full bg-white rounded-lg">
+    <div
+      class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        fill="currentColor"
+        viewBox="0 0 256 256"
+        ><path
+          d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+        ></path></svg
+      >
+    </div>
+    <input
+      type="text"
+      id="movie-search"
+      name="q"
+      class="bg-white border border-gray-600 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5"
+      placeholder="👀 What movie or show? Let's find it!"
+      value={quary}
+      required
+    />
+  </div>
+  <button
+    type="submit"
+    class="inline-flex items-center py-2.5 px-3 ms-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:outline-none ring-blue-500"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      fill="currentColor"
+      viewBox="0 0 256 256"
+      ><path
+        d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"
+      ></path></svg
+    >
+    <span class="px-1">Search</span>
+  </button>
+</form>

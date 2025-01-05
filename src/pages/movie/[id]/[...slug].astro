@@ -1,0 +1,605 @@
+---
+import ISO6391 from 'iso-639-1';
+import Layout from '../../../layouts/Layout.astro';
+
+import Rateing from '../../../components/Rateing.astro';
+import Poster from '../../../components/Poster.astro';
+import Description from '../../../components/Description.astro';
+import genreList from '../../../components/genres';
+import YoutubeTrailers from '../../../components/YoutubeTrailers.astro';
+import Goback from '../../../components/Goback';
+import Share from '../../../components/Share';
+import Casts from '../../../components/Casts.astro';
+import Moviemedia from '../../../components/Moviemedia.astro';
+import Recommendations from '../../../components/Recommendations.astro';
+const key = import.meta.env.ApiKeyAuth;
+const url = import.meta.env.ApiUrl;
+const { id, title } = Astro.params;
+const path = Astro.url.pathname;
+
+interface MovieCredits {
+  cast: {
+    adult: boolean;
+    gender: number;
+    id: number;
+    known_for_department: string;
+    name: string;
+    original_name: string;
+    popularity: number;
+    profile_path: string | null;
+    cast_id: number;
+    character: string;
+    credit_id: string;
+    order: number;
+  }[];
+  crew: {
+    adult: boolean;
+    gender: number;
+    id: number;
+    known_for_department: string;
+    name: string;
+    original_name: string;
+    popularity: number;
+    profile_path: string | null;
+    credit_id: string;
+    department: string;
+    job: string;
+  }[];
+}
+
+interface MovieImage {
+  aspect_ratio: number;
+  file_path: string;
+  height: number;
+  width: number;
+  iso_639_1: string | null;
+  vote_average: number;
+  vote_count: number;
+}
+
+interface MovieVideo {
+  iso_639_1: string;
+  iso_3166_1: string;
+  name: string;
+  key: string;
+  site: string;
+  size: number;
+  type: string;
+  official: boolean;
+  published_at: string;
+  id: string;
+}
+
+interface MovieReleaseDate {
+  certification: string;
+  descriptors: any[];
+  iso_639_1: string;
+  note: string;
+  release_date: string;
+  type: number;
+}
+
+interface Movie {
+  success?: boolean;
+  adult: boolean;
+  backdrop_path: string | null;
+  belongs_to_collection: any | null;
+  budget: number;
+  genres: {
+    id: number;
+    name: string;
+  }[];
+  homepage: string | null;
+  id: number;
+  imdb_id: string | null;
+  origin_country: string[];
+  original_language: string;
+  original_title: string;
+  overview: string | null;
+  popularity: number;
+  poster_path: string | null;
+  production_companies: {
+    id: number;
+    logo_path: string | null;
+    name: string;
+    origin_country: string;
+  }[];
+  production_countries: {
+    iso_3166_1: string;
+    name: string;
+  }[];
+  release_date: string;
+  first_air_date: string;
+  revenue: number;
+  runtime: number | null;
+  spoken_languages: {
+    english_name: string;
+    iso_639_1: string;
+    name: string;
+  }[];
+  status: string;
+  tagline: string | null;
+  title: string;
+  name: string;
+  video: boolean;
+  vote_average: number;
+  vote_count: number;
+  external_ids: {
+    imdb_id: string | null;
+    wikidata_id: string | null;
+    facebook_id: string | null;
+    instagram_id: string | null;
+    twitter_id: string | null;
+  };
+  credits: MovieCredits;
+  images: {
+    backdrops: MovieImage[];
+    logos: MovieImage[];
+    posters: MovieImage[];
+  };
+  videos: {
+    results: MovieVideo[];
+  };
+  release_dates: {
+    results: {
+      iso_3166_1: string;
+      release_dates: MovieReleaseDate[];
+    }[];
+  };
+  recommendations: {
+    page: number;
+    results: any[];
+    total_pages: number;
+    total_results: number;
+  };
+  keywords: {
+    keywords: {
+      id: number;
+      name: string;
+    }[];
+  };
+}
+// write with full types
+async function getmovie(): Promise<Movie> {
+  try {
+    const res = await fetch(
+      `${url}/movie/${id}?api_key=${key}&include_adult=true&append_to_response=external_ids,images,credits,image,videos,release_dates,keywords`
+    );
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+const movie: Movie = await getmovie();
+// console.log(
+//   `${url}/movie/${id}?api_key=${key}&language=en-US&append_to_response=credits,images,videos,release_dates,recommendations,keywords`
+// );
+
+// https://api.themoviedb.org/3//movie/693134?api_key=f6f845f4c051289b806ce5fd5434aac1&language=en-US&append_to_response=credits,images,videos,release_dates,recommendations,keywords
+
+if (movie.success === false) {
+  return new Response(null, {
+    status: 404,
+  });
+}
+let pageurl: string;
+// if (movie.success === undefined || movie.success === null) {
+//   const urltitle =
+//     movie.title.replace(/ /g, '-').toLowerCase() ||
+//     movie.name.replace(/ /g, '-').toLowerCase();
+//   pageurl = `/movie/${id}/${urltitle}`;
+//   // Check if the current URL already matches the intended URL
+//   if (
+//     title !== urltitle &&
+//     `/movie/${id}/${urltitle}` !== path &&
+//     `/movie/${id}/${urltitle}`
+//   ) {
+//     return Astro.redirect(`/movie/${id}/${urltitle}`, 302);
+//   }
+// }
+if (movie.success === undefined || movie.success === null) {
+  const urltitle =
+    encodeURIComponent(movie.title.replace(/ /g, '-').toLowerCase()) ||
+    encodeURIComponent(movie.name.replace(/ /g, '-').toLowerCase());
+  pageurl = `/movie/${id}/${urltitle}`;
+
+  // Check if the current URL already matches the intended URL
+  if (
+    title !== urltitle &&
+    `/movie/${id}/${urltitle}` !== path &&
+    `/movie/${id}/${urltitle}` &&
+    !(path.endsWith('/cast') || path.endsWith('/media')) // Do not redirect if the current URL ends with '/cast' or '/media'
+  ) {
+    return Astro.redirect(`/movie/${id}/${urltitle}`, 302);
+  }
+}
+function formatNumber(num: number) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  } else {
+    return num;
+  }
+}
+
+const movietitle: string = movie.title || movie.name || '';
+const imdb_url: string = `https://www.imdb.com/title/${movie.imdb_id}/`;
+const movietagline: string = movie.tagline || '';
+const moviedescription: string = movie.overview || 'No description found';
+const movieimage: string = movie.poster_path
+  ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
+  : `https://via.placeholder.com/500x750?text=${movietitle}`;
+const movieyear: number | null =
+  movie.release_date || movie.first_air_date
+    ? new Date(movie.release_date || movie.first_air_date).getFullYear()
+    : null;
+const usRelease = movie.release_dates?.results.find(
+  (result) => result.iso_3166_1 === 'US'
+);
+let usCertification: string = 'NR';
+
+if (usRelease && usRelease.release_dates) {
+  for (let i = 0; i < usRelease.release_dates.length; i++) {
+    if (usRelease.release_dates[i].certification) {
+      usCertification = usRelease.release_dates[i].certification;
+      break;
+    }
+  }
+}
+const hours: number = movie.runtime ? Math.floor(movie.runtime / 60) : 0;
+const minutes: number = movie.runtime ? movie.runtime % 60 : 0;
+const movieRuntime: string =
+  hours === 0 && minutes === 0
+    ? 'NA'
+    : `${hours ? hours + 'h ' : ''}${minutes ? minutes + 'm' : ''}`;
+const movierating: number = isNaN(Number(movie.vote_average))
+  ? 0
+  : Number(Number(movie.vote_average).toFixed(1));
+const rateingcount: number = Number(formatNumber(movie.vote_count));
+let movieGenres: { id: number; original_name: string; name: string }[] =
+  movie.genres
+    ? movie.genres.map((genre) => ({
+        id: genre.id,
+        original_name: genre.name,
+        name: genre.name,
+      }))
+    : [];
+
+// add a name to the movieGenres for the names matched for the genreList
+movieGenres = movieGenres.map((genre) => {
+  const matchedGenre = genreList.find(
+    (genreItem) => Number(genreItem.id) === genre.id
+  );
+  return {
+    id: genre.id,
+    original_name: genre.original_name,
+    name: matchedGenre ? matchedGenre.name : genre.original_name,
+  };
+});
+
+let youtubevideos: { key: string; name: string; type: string }[] =
+  movie.videos?.results.map((video) => ({
+    key: video.key,
+    name: video.name,
+    type: video.type,
+  })) || [];
+youtubevideos =
+  youtubevideos.length > 2
+    ? youtubevideos.filter((video) => video.type !== 'Clip')
+    : youtubevideos;
+youtubevideos.sort((a, b) => {
+  if (a.type === 'Trailer' && b.type !== 'Trailer') {
+    return -1;
+  } else if (a.type !== 'Trailer' && b.type === 'Trailer') {
+    return 1;
+  } else {
+    return 0;
+  }
+});
+
+const youtubekeys: string[] = youtubevideos.map((video) => video.key);
+const youtubetitles: string[] = youtubevideos.map((video) => video.name);
+
+const cast: {
+  id: number;
+  name: string;
+  profile_path: string;
+  character: string;
+}[] =
+  movie.credits?.cast
+    .map((cast) => ({
+      id: cast.id,
+      name: cast.name,
+      profile_path: cast.profile_path,
+      character: cast.character,
+    }))
+    .slice(0, 15) || [];
+const crew: {
+  id: number;
+  name: string;
+  profile_path: string;
+  job: string;
+}[] =
+  movie.credits?.crew
+    .map((crew) => ({
+      id: crew.id,
+      name: crew.name,
+      profile_path: crew.profile_path,
+      job: crew.job,
+    }))
+    .slice(0, 15) || [];
+const status: string = movie.status || '';
+const originalLanguage: string = ISO6391.getName(movie.original_language) || '';
+const budget: string = movie.budget
+  ? '$' +
+    movie.budget.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  : '';
+const revenue: string = movie.revenue
+  ? '$' +
+    movie.revenue.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  : '';
+
+const moviebackdrops: string[] =
+  movie.images?.backdrops
+    .sort((a, b) => b.vote_average - a.vote_average)
+    .map((image) => `https://image.tmdb.org/t/p/original${image.file_path}`) ||
+  [];
+
+const movieposters: string[] =
+  movie.images?.posters
+    .sort((a, b) => b.vote_average - a.vote_average)
+    .map((image) => `https://image.tmdb.org/t/p/original${image.file_path}`) ||
+  [];
+
+const keywords: { name: string; id: number }[] =
+  movie.keywords?.keywords.map((keyword) => ({
+    name: keyword.name,
+    id: keyword.id,
+  })) || [];
+const recommendations: {
+  title: string;
+  poster_path: string;
+  id: number;
+  vote_average: number;
+  url_title: string;
+  media_type: string;
+}[] =
+  movie.recommendations?.results.map((recommendation) => ({
+    title: recommendation.title || recommendation.name || '',
+    poster_path:
+      'https://image.tmdb.org/t/p/original' +
+      (recommendation.poster_path || ''),
+    id: Number(recommendation.id),
+    vote_average: Number(parseFloat(recommendation.vote_average).toFixed(1)),
+    url_title: (recommendation.title || recommendation.name || '')
+      .toLowerCase()
+      .replace(/ /g, '-'),
+    media_type: recommendation.media_type || '',
+  })) || [];
+
+const ogtitle: string = `${movietitle} (${movieyear})`;
+const ogdescription: string =
+  movie.overview ||
+  `Watch ${ogtitle} online for free. 
+  }.`;
+const ogImage: string = movie.poster_path
+  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}`
+  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${ogtitle}`;
+---
+
+<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+  <main>
+    <div
+      class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-20'>
+      <section class='px-3'>
+        <div class='pt-5 pb-5'>
+          <div class='pb-5 space-y-3'>
+            <div class='flex justify-between items-center'>
+              <Goback type='icon' link={`/`}  bg={true} client:load/>
+              <Share
+                title={movietitle}
+                description={moviedescription}
+                url={Astro.url.href}
+                client:load
+                bg={true}
+              />
+            </div>
+            <h1
+              class='text-[19px] sm:text-xl md:text-2xl lg:text-3xl font-bold lg:px-0'>
+              {
+                imdb_url ? (
+                  <a
+                    href={imdb_url}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    class='hover:text-blue-900 '>
+                    {movietitle}
+                  </a>
+                ) : (
+                  movietitle
+                )
+              }
+            </h1>
+            {
+              movietagline ? (
+                <h2 class='text-gray-800 hidden sm:flex'>{movietagline}</h2>
+              ) : null
+            }
+          </div>
+          <div
+            class='flex flex-col space-y-3 sm:flex-row items-start sm:items-center justify-start sm:justify-between'>
+            <span
+              class='space-x-1 whitespace-nowrap text-base sm:text-lg font-medium text-gray-700'>
+              {
+                movieyear ? (
+                  <span class='py-1'>{movieyear}</span>
+                ) : (
+                  <span class='py-1'>Not Relesed </span>
+                )
+              }
+              <span class='py-1'>•</span>
+              <span
+                class='px-2 py-1 text-gray-700 ring-1 ring-gray-700 rounded-sm'
+                >{usCertification}</span
+              >
+              <span class='py-1'>•</span>
+              <span class='py-1'>{movieRuntime}</span>
+            </span>
+            <div class='hidden sm:flex'>
+              <Rateing rating={movierating} rateingcount={rateingcount} />
+            </div>
+          </div>
+        </div>
+
+        <div
+          class='grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 '>
+          <Poster
+            image={movieimage}
+            title={movietitle}
+            posters={movieposters}
+          />
+
+          <div
+            class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 ' : ''} `}>
+            {
+              youtubekeys.length == 0 ? (
+                <div class='flex items-center justify-center text-gray-black text-lg h-full bg-gray-200'>
+                  🤷‍♀️ No Trailers found
+                </div>
+              ) : (
+                <YoutubeTrailers
+                  youtubekeys={youtubekeys}
+                  youtubetitles={youtubetitles}
+                />
+              )
+            }
+          </div>
+        </div>
+        <div
+          class='text-sm md:text-base font-medium overflow-x-auto whitespace-nowrap sm:whitespace-normal pt-5 pb-2 scrollbar-small gap-3 pl-[1px] flex'>
+          {
+            movieGenres.map((genre, index) => (
+              <a
+                href={`/genre/${genre.id}/${genre.original_name.replace(/ /g, '-').toLowerCase()}/movie`}
+                class='inline-flex items-center gap-x-1.5 py-1.5 px-4  rounded-md text-xs md:text-sm bg-gray-100  text-black hover:ring-1 ring-gray-800'>
+                {genre.name}
+              </a>
+            ))
+          }
+        </div>
+
+        <Description description={moviedescription} />
+        <div class='sm:hidden'>
+          <Rateing rating={movierating} rateingcount={rateingcount} />
+        </div>
+        <div class='pt-5'>
+          <a
+            href={`${Astro.url.href}/cast`}
+            class='text-xl md:text-2xl font-semibold hover:underline underline-offset-4'
+            >Cast / Crew</a
+          >
+          {
+            cast.length === 0 && crew.length == 0 ? (
+              <div class='flex '>
+                <p class='text-base text-gray-800 py-5'>
+                  No Cast / Crew Information found
+                </p>
+              </div>
+            ) : (
+              <Casts cast={cast} crew={crew} url={pageurl} />
+            )
+          }
+        </div>
+        <div class='pb-5'>
+          <a
+            href={`${Astro.url.href}/media`}
+            aria-label='Media'
+            class='text-xl md:text-2xl font-semibold my-5 hover:underline underline-offset-4'>
+            Media
+          </a>
+          {
+            moviebackdrops.length > 2 && movieposters.length > 2 ? (
+              <Moviemedia
+                moviebackdrops={moviebackdrops}
+                movieposters={movieposters}
+              />
+            ) : (
+              <div class='flex '>
+                <p class='text-base text-gray-800 pt-5'>No Media Found</p>
+              </div>
+            )
+          }
+        </div>
+        <div class='pb-5'>
+          <h2 class='text-xl md:text-2xl font-semibold'>Keywords</h2>
+          {
+            keywords.length === 0 ? (
+              <div class='flex '>
+                <p class='text-base text-gray-800 pt-5'>No Keywords Found</p>
+              </div>
+            ) : (
+              <div class='flex flex-wrap gap-2 py-5'>
+                {keywords.map((keyword) => (
+                  <a
+                    href={`/keyword/${keyword.id}/${keyword.name}/movie`}
+                    aria-label={`${keyword.name}`}
+                    class='inline-flex items-center gap-x-1.5 py-1.5 px-4 rounded text-xs bg-blue-100 text-blue-800 hover:ring-1 ring-blue-800'>
+                    {keyword.name}
+                  </a>
+                ))}
+              </div>
+            )
+          }
+        </div>
+
+        <div class='pb-5'>
+          <h2 class='text-xl md:text-2xl font-semibold'>Recommendations</h2>
+
+          <Recommendations id={Number(id)} type='movie' />
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- <script is:inline>
+
+  var modal = document.getElementById('myModal');
+
+  // Get the button that opens the modal
+  var btn = document.getElementById('myBtn');
+
+  // Get the <span> element that closes the modal
+  var span = document.getElementById('close');
+
+  // When the user clicks the button, open the modal
+  btn.onclick = function () {
+    modal.classList.remove('invisible', 'opacity-0');
+    modal.classList.add('visible', 'opacity-100');
+    document.body.style.overflow = 'hidden';
+  };
+
+  // When the user clicks on <span> (x), close the modal
+  span.onclick = function () {
+    modal.classList.remove('visible', 'opacity-100');
+    modal.classList.add('invisible', 'opacity-0');
+    document.body.style.overflow = 'auto';
+  };
+
+  // When the user clicks anywhere outside of the modal, close it
+  modal.onclick = function (event) {
+    if (event.target == modal) {
+      modal.classList.remove('visible', 'opacity-100');
+      modal.classList.add('invisible', 'opacity-0');
+      document.body.style.overflow = 'auto';
+    }
+  };
+</script> -->
+</Layout>

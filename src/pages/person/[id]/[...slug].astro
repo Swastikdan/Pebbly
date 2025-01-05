@@ -1,0 +1,53 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+
+return Astro.redirect('/under-construction');
+
+const { id, slug } = Astro.params;
+const key = import.meta.env.ApiKeyAuth;
+const url = import.meta.env.ApiUrl;
+const cdn =
+  'https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/';
+interface Person {
+  adult: boolean;
+  also_known_as: string[];
+  biography: string;
+  birthday: string;
+  deathday: string | null;
+  gender: number;
+  homepage: string | null;
+  id: number;
+  imdb_id: string;
+  known_for_department: string;
+  name: string;
+  place_of_birth: string;
+  popularity: number;
+  profile_path: string;
+}
+
+const getPerson = async (id: string): Promise<Person> => {
+  const res = await fetch(`${url}/person/${id}?api_key=${key}&language=en-US`);
+  const data = await res.json();
+  return data;
+};
+
+const person = await getPerson(id);
+
+const ogtitle: string = `${person.name} | Film Fanatic`;
+
+const ogdescription: string = person.biography.split('\n')[0];
+
+const ogImage: string = person.profile_path
+  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${person.profile_path}`
+  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${person.name}`;
+---
+
+<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+  <img
+    src={`${cdn}${person.profile_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2/${person.profile_path}` : 'https://www.themoviedb.org/assets/2/v4/glyphicons/basic/glyphicons-basic-4-user-grey-d8fe957375e70239d6abdd549fd7568c89281b2179b5f4470e2e12895792dfa5.svg'}`}
+    alt={person.name}
+    class="w-48 h-full mx-auto"
+  />
+
+  <h1 class="py-5 text-lg font-semibold text-center items-center justify-center">{person.name}</h1>
+</Layout>

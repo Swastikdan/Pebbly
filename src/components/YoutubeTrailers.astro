@@ -1,0 +1,37 @@
+---
+import ScrollComponent from './ScrollComponent.astro';
+import { YouTube } from 'astro-embed';
+
+interface Props {
+  youtubekeys: string[];
+  youtubetitles: string[];
+}
+
+const { youtubekeys, youtubetitles } = Astro.props;
+---
+
+<ScrollComponent contantainerid='youtubevideos' scrollbar={true} buttons={true}>
+  {
+    youtubekeys.map((key, index) => (
+      <>
+        <div class=' mb-1'>
+          <YouTube
+            id={key}
+            
+            playlabel='Play the video'
+            title={youtubetitles[index]}
+            class=' h-full min-h-40 w-full md:min-h-[23.5rem] aspect-video rounded-lg bg-gray-200'
+          />
+        </div>
+      </>
+    ))
+  }
+  {
+    youtubekeys.length < 2 && (
+      <div class='h-full min-h-40 w-full md:min-h-[22rem] aspect-video max-w-56 rounded-lg bg-white' />
+    )
+  }
+  <!-- <div
+    class='h-full min-h-40 w-full md:min-h-96 aspect-video max-w-56 rounded-lg bg-white'>
+  </div> -->
+</ScrollComponent>
