@@ -1,17 +1,16 @@
 ---
-import { Image } from 'astro:assets';
-import Layout from '../../../../layouts/Layout.astro';
-import Secondarynav from '../../../../components/Secondarynav';
+import { Image } from "astro:assets";
+import Layout from "../../../../layouts/Layout.astro";
+import Secondarynav from "../../../../components/Secondarynav";
 const { id, slug } = Astro.params;
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
 const vcdn =
-  'https://media.dev.to/cdn-cgi/image/width=550,height=300,fit=cover,gravity=auto,format=auto,quality=100/';
+  "https://media.dev.to/cdn-cgi/image/width=550,height=300,fit=cover,gravity=auto,format=auto,quality=100/";
 const hcdn =
-  'https://media.dev.to/cdn-cgi/image/width=300,height=550,fit=cover,gravity=auto,format=auto,quality=100/';
+  "https://media.dev.to/cdn-cgi/image/width=300,height=550,fit=cover,gravity=auto,format=auto,quality=100/";
 
-const cdn =
-  'https://media.dev.to/cdn-cgi/image/width=200,height=300,fit=cover,gravity=auto,format=auto/';
+const cdn = "/";
 interface MovieCredits {
   cast: {
     adult: boolean;
@@ -109,15 +108,18 @@ const castbydepartment = Object.entries(departments);
 const ogtitle: string = `The Cast of the movie | ${movie.title}`;
 const ogdescription: string = movie.description;
 const ogImage: string = movie.poster_path
-  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}`
-  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${movie.title}`;
+  ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
+  : `https://placehold.co/500x750?text=${movie.title}`;
 ---
 
-<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+<Layout
+  title={ogtitle}
+  description={ogdescription}
+  ogImage={ogImage}>
   <main>
     <Secondarynav
       data={movie}
-      type={'movie'}
+      type={"movie"}
       url={Astro.url.href}
       id={id}
       slug={slug}
@@ -141,13 +143,13 @@ const ogImage: string = movie.poster_path
                 cast &&
                   cast.map((cast: any) => (
                     <a
-                      href={`/person/${cast.id}/${encodeURIComponent(cast.name.replace(/ /g, '-').toLowerCase())}`}
+                      href={`/person/${cast.id}/${encodeURIComponent(cast.name.replace(/ /g, "-").toLowerCase())}`}
                       class='flex  items-center pb-0'>
                       <Image
                         width={200}
                         height={300}
                         loading='eager'
-                        src={`${cdn}${cast.image ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2/${cast.image}` : `https://ik.imagekit.io/swastikdan/Film-Fanatic/placeholder-user-mono.svg`}`}
+                        src={`${cast.image ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2/${cast.image}` : `https://ik.imagekit.io/swastikdan/Film-Fanatic/placeholder-user-mono.svg`}`}
                         alt={cast.name}
                         class='rounded-lg w-14 h-20 bg-gray-200 object-center'
                       />
@@ -177,13 +179,13 @@ const ogImage: string = movie.poster_path
                       <div class='pt-5 grid grid-cols-1 lg:grid-cols-2 gap-3'>
                         {crew.map((crew: any) => (
                           <a
-                            href={`/person/${crew.id}/${encodeURIComponent(crew.name.replace(/ /g, '-').toLowerCase())}`}
+                            href={`/person/${crew.id}/${encodeURIComponent(crew.name.replace(/ /g, "-").toLowerCase())}`}
                             class='flex  items-center pb-5'>
                             <Image
                               width={200}
                               height={300}
                               loading='eager'
-                              src={`${cdn}${crew.image ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2/${crew.image}` : `https://ik.imagekit.io/swastikdan/Film-Fanatic/placeholder-user-mono.svg`}`}
+                              src={`${crew.image ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2/${crew.image}` : `https://ik.imagekit.io/swastikdan/Film-Fanatic/placeholder-user-mono.svg`}`}
                               alt={crew.name}
                               class='rounded-lg w-14 h-20 bg-gray-200 object-center'
                             />

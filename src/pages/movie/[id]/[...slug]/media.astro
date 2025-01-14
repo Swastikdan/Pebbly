@@ -1,19 +1,19 @@
 ---
-import { Image } from 'astro:assets';
-import Layout from '../../../../layouts/Layout.astro';
-import Secondarynav from '../../../../components/Secondarynav';
-import ScrollComponent from '../../../../components/ScrollComponent.astro';
-import Model from '../../../../components/Model.astro';
+import { Image } from "astro:assets";
+import Layout from "../../../../layouts/Layout.astro";
+import Secondarynav from "../../../../components/Secondarynav";
+import ScrollComponent from "../../../../components/ScrollComponent.astro";
+import Model from "../../../../components/Model.astro";
 const { id, slug } = Astro.params;
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
 const vcdn =
-  'https://media.dev.to/cdn-cgi/image/width=550,height=300,fit=cover,gravity=auto,format=auto,quality=100/';
+  "https://media.dev.to/cdn-cgi/image/width=550,height=300,fit=cover,gravity=auto,format=auto,quality=100/";
 const hcdn =
-  'https://media.dev.to/cdn-cgi/image/width=300,height=550,fit=cover,gravity=auto,format=auto,quality=100/';
+  "https://media.dev.to/cdn-cgi/image/width=300,height=550,fit=cover,gravity=auto,format=auto,quality=100/";
 
 const cdn =
-  'https://media.dev.to/cdn-cgi/image/fit=cover,gravity=auto,format=auto,quality=100/';
+  "https://media.dev.to/cdn-cgi/image/fit=cover,gravity=auto,format=auto,quality=100/";
 interface Movie {
   id: number;
   title: string;
@@ -99,15 +99,18 @@ const image = `${hcdn}https://image.tmdb.org/t/p/original${movie.poster_path}`;
 const ogtitle: string = `The Cast of the movie | ${movie.title}`;
 const ogdescription: string = movie.description;
 const ogImage: string = movie.poster_path
-  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}`
-  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${movie.title}`;
+  ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
+  : `https://placehold.co/500x750?text=${movie.title}`;
 ---
 
-<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+<Layout
+  title={ogtitle}
+  description={ogdescription}
+  ogImage={ogImage}>
   <main class=''>
     <Secondarynav
       data={movie}
-      type={'movie'}
+      type={"movie"}
       url={Astro.url.href}
       id={id}
       slug={slug}

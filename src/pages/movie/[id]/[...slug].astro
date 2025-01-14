@@ -1,17 +1,17 @@
 ---
-import ISO6391 from 'iso-639-1';
-import Layout from '../../../layouts/Layout.astro';
+import ISO6391 from "iso-639-1";
+import Layout from "../../../layouts/Layout.astro";
 
-import Rateing from '../../../components/Rateing.astro';
-import Poster from '../../../components/Poster.astro';
-import Description from '../../../components/Description.astro';
-import genreList from '../../../components/genres';
-import YoutubeTrailers from '../../../components/YoutubeTrailers.astro';
-import Goback from '../../../components/Goback';
-import Share from '../../../components/Share';
-import Casts from '../../../components/Casts.astro';
-import Moviemedia from '../../../components/Moviemedia.astro';
-import Recommendations from '../../../components/Recommendations.astro';
+import Rateing from "../../../components/Rateing.astro";
+import Poster from "../../../components/Poster.astro";
+import Description from "../../../components/Description.astro";
+import genreList from "../../../components/genres";
+import YoutubeTrailers from "../../../components/YoutubeTrailers.astro";
+import Goback from "../../../components/Goback";
+import Share from "../../../components/Share";
+import Casts from "../../../components/Casts.astro";
+import Moviemedia from "../../../components/Moviemedia.astro";
+import Recommendations from "../../../components/Recommendations.astro";
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
 const { id, title } = Astro.params;
@@ -200,8 +200,8 @@ let pageurl: string;
 // }
 if (movie.success === undefined || movie.success === null) {
   const urltitle =
-    encodeURIComponent(movie.title.replace(/ /g, '-').toLowerCase()) ||
-    encodeURIComponent(movie.name.replace(/ /g, '-').toLowerCase());
+    encodeURIComponent(movie.title.replace(/ /g, "-").toLowerCase()) ||
+    encodeURIComponent(movie.name.replace(/ /g, "-").toLowerCase());
   pageurl = `/movie/${id}/${urltitle}`;
 
   // Check if the current URL already matches the intended URL
@@ -209,25 +209,25 @@ if (movie.success === undefined || movie.success === null) {
     title !== urltitle &&
     `/movie/${id}/${urltitle}` !== path &&
     `/movie/${id}/${urltitle}` &&
-    !(path.endsWith('/cast') || path.endsWith('/media')) // Do not redirect if the current URL ends with '/cast' or '/media'
+    !(path.endsWith("/cast") || path.endsWith("/media")) // Do not redirect if the current URL ends with '/cast' or '/media'
   ) {
     return Astro.redirect(`/movie/${id}/${urltitle}`, 302);
   }
 }
 function formatNumber(num: number) {
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
+    return (num / 1000000).toFixed(1) + "M";
   } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
+    return (num / 1000).toFixed(1) + "K";
   } else {
     return num;
   }
 }
 
-const movietitle: string = movie.title || movie.name || '';
+const movietitle: string = movie.title || movie.name || "";
 const imdb_url: string = `https://www.imdb.com/title/${movie.imdb_id}/`;
-const movietagline: string = movie.tagline || '';
-const moviedescription: string = movie.overview || 'No description found';
+const movietagline: string = movie.tagline || "";
+const moviedescription: string = movie.overview || "No description found";
 const movieimage: string = movie.poster_path
   ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
   : `https://via.placeholder.com/500x750?text=${movietitle}`;
@@ -236,9 +236,9 @@ const movieyear: number | null =
     ? new Date(movie.release_date || movie.first_air_date).getFullYear()
     : null;
 const usRelease = movie.release_dates?.results.find(
-  (result) => result.iso_3166_1 === 'US'
+  (result) => result.iso_3166_1 === "US"
 );
-let usCertification: string = 'NR';
+let usCertification: string = "NR";
 
 if (usRelease && usRelease.release_dates) {
   for (let i = 0; i < usRelease.release_dates.length; i++) {
@@ -252,8 +252,8 @@ const hours: number = movie.runtime ? Math.floor(movie.runtime / 60) : 0;
 const minutes: number = movie.runtime ? movie.runtime % 60 : 0;
 const movieRuntime: string =
   hours === 0 && minutes === 0
-    ? 'NA'
-    : `${hours ? hours + 'h ' : ''}${minutes ? minutes + 'm' : ''}`;
+    ? "NA"
+    : `${hours ? hours + "h " : ""}${minutes ? minutes + "m" : ""}`;
 const movierating: number = isNaN(Number(movie.vote_average))
   ? 0
   : Number(Number(movie.vote_average).toFixed(1));
@@ -287,12 +287,12 @@ let youtubevideos: { key: string; name: string; type: string }[] =
   })) || [];
 youtubevideos =
   youtubevideos.length > 2
-    ? youtubevideos.filter((video) => video.type !== 'Clip')
+    ? youtubevideos.filter((video) => video.type !== "Clip")
     : youtubevideos;
 youtubevideos.sort((a, b) => {
-  if (a.type === 'Trailer' && b.type !== 'Trailer') {
+  if (a.type === "Trailer" && b.type !== "Trailer") {
     return -1;
-  } else if (a.type !== 'Trailer' && b.type === 'Trailer') {
+  } else if (a.type !== "Trailer" && b.type === "Trailer") {
     return 1;
   } else {
     return 0;
@@ -330,22 +330,22 @@ const crew: {
       job: crew.job,
     }))
     .slice(0, 15) || [];
-const status: string = movie.status || '';
-const originalLanguage: string = ISO6391.getName(movie.original_language) || '';
+const status: string = movie.status || "";
+const originalLanguage: string = ISO6391.getName(movie.original_language) || "";
 const budget: string = movie.budget
-  ? '$' +
-    movie.budget.toLocaleString('en-US', {
+  ? "$" +
+    movie.budget.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })
-  : '';
+  : "";
 const revenue: string = movie.revenue
-  ? '$' +
-    movie.revenue.toLocaleString('en-US', {
+  ? "$" +
+    movie.revenue.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })
-  : '';
+  : "";
 
 const moviebackdrops: string[] =
   movie.images?.backdrops
@@ -373,16 +373,16 @@ const recommendations: {
   media_type: string;
 }[] =
   movie.recommendations?.results.map((recommendation) => ({
-    title: recommendation.title || recommendation.name || '',
+    title: recommendation.title || recommendation.name || "",
     poster_path:
-      'https://image.tmdb.org/t/p/original' +
-      (recommendation.poster_path || ''),
+      "https://image.tmdb.org/t/p/original" +
+      (recommendation.poster_path || ""),
     id: Number(recommendation.id),
     vote_average: Number(parseFloat(recommendation.vote_average).toFixed(1)),
-    url_title: (recommendation.title || recommendation.name || '')
+    url_title: (recommendation.title || recommendation.name || "")
       .toLowerCase()
-      .replace(/ /g, '-'),
-    media_type: recommendation.media_type || '',
+      .replace(/ /g, "-"),
+    media_type: recommendation.media_type || "",
   })) || [];
 
 const ogtitle: string = `${movietitle} (${movieyear})`;
@@ -391,11 +391,14 @@ const ogdescription: string =
   `Watch ${ogtitle} online for free. 
   }.`;
 const ogImage: string = movie.poster_path
-  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${movie.poster_path}`
-  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${ogtitle}`;
+  ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
+  : `https://via.placeholder.com/500x750?text=${ogtitle}`;
 ---
 
-<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+<Layout
+  title={ogtitle}
+  description={ogdescription}
+  ogImage={ogImage}>
   <main>
     <div
       class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-20'>
@@ -403,7 +406,12 @@ const ogImage: string = movie.poster_path
         <div class='pt-5 pb-5'>
           <div class='pb-5 space-y-3'>
             <div class='flex justify-between items-center'>
-              <Goback type='icon' link={`/`}  bg={true} client:load/>
+              <Goback
+                type='icon'
+                link={`/`}
+                bg={true}
+                client:load
+              />
               <Share
                 title={movietitle}
                 description={moviedescription}
@@ -454,13 +462,15 @@ const ogImage: string = movie.poster_path
               <span class='py-1'>{movieRuntime}</span>
             </span>
             <div class='hidden sm:flex'>
-              <Rateing rating={movierating} rateingcount={rateingcount} />
+              <Rateing
+                rating={movierating}
+                rateingcount={rateingcount}
+              />
             </div>
           </div>
         </div>
 
-        <div
-          class='grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 '>
+        <div class='grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'>
           <Poster
             image={movieimage}
             title={movietitle}
@@ -468,7 +478,7 @@ const ogImage: string = movie.poster_path
           />
 
           <div
-            class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 ' : ''} `}>
+            class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? "bg-gray-200 " : ""} `}>
             {
               youtubekeys.length == 0 ? (
                 <div class='flex items-center justify-center text-gray-black text-lg h-full bg-gray-200'>
@@ -488,7 +498,7 @@ const ogImage: string = movie.poster_path
           {
             movieGenres.map((genre, index) => (
               <a
-                href={`/genre/${genre.id}/${genre.original_name.replace(/ /g, '-').toLowerCase()}/movie`}
+                href={`/genre/${genre.id}/${genre.original_name.replace(/ /g, "-").toLowerCase()}/movie`}
                 class='inline-flex items-center gap-x-1.5 py-1.5 px-4  rounded-md text-xs md:text-sm bg-gray-100  text-black hover:ring-1 ring-gray-800'>
                 {genre.name}
               </a>
@@ -498,7 +508,10 @@ const ogImage: string = movie.poster_path
 
         <Description description={moviedescription} />
         <div class='sm:hidden'>
-          <Rateing rating={movierating} rateingcount={rateingcount} />
+          <Rateing
+            rating={movierating}
+            rateingcount={rateingcount}
+          />
         </div>
         <div class='pt-5'>
           <a
@@ -514,7 +527,11 @@ const ogImage: string = movie.poster_path
                 </p>
               </div>
             ) : (
-              <Casts cast={cast} crew={crew} url={pageurl} />
+              <Casts
+                cast={cast}
+                crew={crew}
+                url={pageurl}
+              />
             )
           }
         </div>
@@ -563,7 +580,10 @@ const ogImage: string = movie.poster_path
         <div class='pb-5'>
           <h2 class='text-xl md:text-2xl font-semibold'>Recommendations</h2>
 
-          <Recommendations id={Number(id)} type='movie' />
+          <Recommendations
+            id={Number(id)}
+            type='movie'
+          />
         </div>
       </section>
     </div>

@@ -1,17 +1,17 @@
 ---
-import ISO6391 from 'iso-639-1';
-import Layout from '../../../layouts/Layout.astro';
+import ISO6391 from "iso-639-1";
+import Layout from "../../../layouts/Layout.astro";
 
-import Rateing from '../../../components/Rateing.astro';
-import Poster from '../../../components/Poster.astro';
-import Description from '../../../components/Description.astro';
-import genreList from '../../../components/genres';
-import YoutubeTrailers from '../../../components/YoutubeTrailers.astro';
-import Goback from '../../../components/Goback';
-import Share from '../../../components/Share';
-import Casts from '../../../components/Casts.astro';
-import Moviemedia from '../../../components/Moviemedia.astro';
-import Recommendations from '../../../components/Recommendations.astro';
+import Rateing from "../../../components/Rateing.astro";
+import Poster from "../../../components/Poster.astro";
+import Description from "../../../components/Description.astro";
+import genreList from "../../../components/genres";
+import YoutubeTrailers from "../../../components/YoutubeTrailers.astro";
+import Goback from "../../../components/Goback";
+import Share from "../../../components/Share";
+import Casts from "../../../components/Casts.astro";
+import Moviemedia from "../../../components/Moviemedia.astro";
+import Recommendations from "../../../components/Recommendations.astro";
 
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
@@ -246,7 +246,7 @@ if (tv.success === false || tv === undefined) {
 let pageurl: string;
 
 if (tv.success === undefined || tv.success === null) {
-  const urltitle = encodeURIComponent(tv.name.replace(/ /g, '-').toLowerCase());
+  const urltitle = encodeURIComponent(tv.name.replace(/ /g, "-").toLowerCase());
   pageurl = `/tv/${id}/${urltitle}`;
 
   // Check if the current URL already matches the intended URL
@@ -254,7 +254,7 @@ if (tv.success === undefined || tv.success === null) {
     title !== urltitle &&
     `/tv/${id}/${urltitle}` !== path &&
     `/tv/${id}/${urltitle}` &&
-    !(path.endsWith('/cast') || path.endsWith('/media')) // Do not redirect if the current URL ends with '/cast' or '/media'
+    !(path.endsWith("/cast") || path.endsWith("/media")) // Do not redirect if the current URL ends with '/cast' or '/media'
   ) {
     return Astro.redirect(`/tv/${id}/${urltitle}`, 302);
   }
@@ -262,23 +262,23 @@ if (tv.success === undefined || tv.success === null) {
 
 function formatNumber(num: number): number | string {
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
+    return (num / 1000000).toFixed(1) + "M";
   } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
+    return (num / 1000).toFixed(1) + "K";
   } else {
     return num;
   }
 }
 
-const tvname: string = tv.name || tv.original_name || '';
-const tvtagline: string = tv.tagline || '';
-const tvdescription: string = tv.overview || 'No description found';
+const tvname: string = tv.name || tv.original_name || "";
+const tvtagline: string = tv.tagline || "";
+const tvdescription: string = tv.overview || "No description found";
 const imdb_url: string = tv.external_ids.imdb_id
   ? `https://www.imdb.com/title/${tv.external_ids.imdb_id}`
-  : '';
+  : "";
 const tvimage: string = tv.poster_path
   ? `https://image.tmdb.org/t/p/original${tv.poster_path}`
-  : `https://via.placeholder.com/500x750?text=${tvname}`;
+  : `https://placehold.co/500x750?text=${tvname}`;
 const tvyear: string | null = tv.first_air_date
   ? new Date(tv.first_air_date).getFullYear().toString()
   : null;
@@ -288,11 +288,11 @@ const tvyear: string | null = tv.first_air_date
 // );
 
 const rating: string =
-  tv.content_ratings?.results.find((result) => result.iso_3166_1 === 'US')
-    ?.rating || 'NR';
+  tv.content_ratings?.results.find((result) => result.iso_3166_1 === "US")
+    ?.rating || "NR";
 
 let tvepruntime: string =
-  tv.episode_run_time.length > 0 ? `${tv.episode_run_time[0]} min` : 'N/A';
+  tv.episode_run_time.length > 0 ? `${tv.episode_run_time[0]} min` : "N/A";
 
 const tvrating: number = Number(tv.vote_average.toFixed(1)) || 0.0;
 
@@ -323,11 +323,14 @@ let youtubevideos: { key: string; name: string; type: string }[] =
     name: video.name,
     type: video.type,
   })) || [];
-youtubevideos = youtubevideos.length > 2 ?youtubevideos.filter((video) => video.type !== 'Clip') : youtubevideos;
+youtubevideos =
+  youtubevideos.length > 2
+    ? youtubevideos.filter((video) => video.type !== "Clip")
+    : youtubevideos;
 youtubevideos.sort((a, b) => {
-  if (a.type === 'Trailer' && b.type !== 'Trailer') {
+  if (a.type === "Trailer" && b.type !== "Trailer") {
     return -1;
-  } else if (a.type !== 'Trailer' && b.type === 'Trailer') {
+  } else if (a.type !== "Trailer" && b.type === "Trailer") {
     return 1;
   } else {
     return 0;
@@ -366,8 +369,8 @@ const crew: {
     }))
     .slice(0, 15) || [];
 
-const status: string = tv.status || '';
-const originalLanguage: string = ISO6391.getName(tv.original_language) || '';
+const status: string = tv.status || "";
+const originalLanguage: string = ISO6391.getName(tv.original_language) || "";
 
 const tvbackdrops: string[] =
   tv.images?.backdrops
@@ -391,11 +394,14 @@ const ogtitle: string = `${tvname} (${tvyear})`;
 const ogdescription: string =
   tvdescription || `Watch ${ogtitle} online for free.`;
 const ogImage: string = tvimage
-  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${tvimage}`
-  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${ogtitle}`;
+  ? `https://image.tmdb.org/t/p/original${tvimage}`
+  : `https://placehold.co/500x750?text=${ogtitle}`;
 ---
 
-<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+<Layout
+  title={ogtitle}
+  description={ogdescription}
+  ogImage={ogImage}>
   <main>
     <div
       class='max-w-screen-2xl block mx-auto items-center px-3 md:px-6 xl:px-20'>
@@ -403,7 +409,12 @@ const ogImage: string = tvimage
         <div class='pt-5 pb-5'>
           <div class='pb-5 space-y-3'>
             <div class='flex justify-between items-center'>
-              <Goback type='icon' link={`/`} client:load bg={true} />
+              <Goback
+                type='icon'
+                link={`/`}
+                client:load
+                bg={true}
+              />
               <Share
                 title={tvname}
                 description={tvdescription}
@@ -454,16 +465,23 @@ const ogImage: string = tvimage
               <span class='py-1'>{tvepruntime}</span>
             </span>
             <div class='hidden sm:flex'>
-              <Rateing rating={tvrating} rateingcount={rateingcount} />
+              <Rateing
+                rating={tvrating}
+                rateingcount={rateingcount}
+              />
             </div>
           </div>
         </div>
 
         <div class='grid gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'>
-          <Poster image={tvimage} title={tvname} posters={tvposters} />
+          <Poster
+            image={tvimage}
+            title={tvname}
+            posters={tvposters}
+          />
 
           <div
-            class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? 'bg-gray-200 min-h-56' : ''} `}>
+            class={`relative sm:col-span-3 lg:col-span-3 xl:col-span-4 rounded-lg overflow-hidden   ${youtubekeys.length === 0 ? "bg-gray-200 min-h-56" : ""} `}>
             {
               youtubekeys.length == 0 ? (
                 <div class='flex items-center justify-center text-gray-black text-lg h-full bg-gray-200'>
@@ -483,7 +501,7 @@ const ogImage: string = tvimage
           {
             tvgenres.map((genre, index) => (
               <a
-                href={`/genre/${genre.id}/${genre.original_name.replace(/ /g, '-').toLowerCase()}/tv`}
+                href={`/genre/${genre.id}/${genre.original_name.replace(/ /g, "-").toLowerCase()}/tv`}
                 class='inline-flex items-center gap-x-1.5 py-1.5 px-4  rounded-md text-xs md:text-sm bg-gray-100  text-black hover:ring-1 ring-gray-800'>
                 {genre.name}
               </a>
@@ -493,7 +511,10 @@ const ogImage: string = tvimage
 
         <Description description={tvdescription} />
         <div class='sm:hidden'>
-          <Rateing rating={tvrating} rateingcount={rateingcount} />
+          <Rateing
+            rating={tvrating}
+            rateingcount={rateingcount}
+          />
         </div>
 
         <div class='pt-5'>
@@ -510,7 +531,11 @@ const ogImage: string = tvimage
                 </p>
               </div>
             ) : (
-              <Casts cast={cast} crew={crew} url={pageurl} />
+              <Casts
+                cast={cast}
+                crew={crew}
+                url={pageurl}
+              />
             )
           }
         </div>
@@ -559,7 +584,10 @@ const ogImage: string = tvimage
         <div class='pb-5'>
           <h2 class='text-xl md:text-2xl font-semibold'>Recommendations</h2>
 
-          <Recommendations id={Number(id)} type='tv' />
+          <Recommendations
+            id={Number(id)}
+            type='tv'
+          />
         </div>
       </section>
     </div>

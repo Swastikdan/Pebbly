@@ -1,7 +1,7 @@
 ---
-import { Image } from 'astro:assets';
-import Model from './Model.astro';
-import ScrollComponent from './ScrollComponent.astro';
+import { Image } from "astro:assets";
+import Model from "./Model.astro";
+import ScrollComponent from "./ScrollComponent.astro";
 interface Props {
   title: string;
   image: string;
@@ -10,8 +10,7 @@ interface Props {
 
 const { title, image, posters } = Astro.props;
 const postersnum: number = posters?.length;
-const cdn =
-  'https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/';
+const cdn = "";
 ---
 
 <div class='flex justify-center relative min-h-56 max-h-96'>
@@ -46,7 +45,6 @@ const cdn =
                     class='px-2 py-1   bg-blue-100 text-blue-700 text-xs rounded focus:outline-none ring-1 ring-blue-400  '>
                     View Original
                   </a>
-                 
                 </div>
                 <Image
                   src={cdn + poster}

@@ -1,19 +1,19 @@
 ---
-import { Image } from 'astro:assets';
-import Layout from '../../../../layouts/Layout.astro';
-import Secondarynav from '../../../../components/Secondarynav';
-import ScrollComponent from '../../../../components/ScrollComponent.astro';
-import Model from '../../../../components/Model.astro';
+import { Image } from "astro:assets";
+import Layout from "../../../../layouts/Layout.astro";
+import Secondarynav from "../../../../components/Secondarynav";
+import ScrollComponent from "../../../../components/ScrollComponent.astro";
+import Model from "../../../../components/Model.astro";
 const { id, slug } = Astro.params;
 const key = import.meta.env.ApiKeyAuth;
 const url = import.meta.env.ApiUrl;
 const vcdn =
-  'https://media.dev.to/cdn-cgi/image/width=550,height=300,fit=cover,gravity=auto,format=auto,quality=100/';
+  "https://media.dev.to/cdn-cgi/image/width=550,height=300,fit=cover,gravity=auto,format=auto,quality=100/";
 const hcdn =
-  'https://media.dev.to/cdn-cgi/image/width=300,height=550,fit=cover,gravity=auto,format=auto,quality=100/';
+  "https://media.dev.to/cdn-cgi/image/width=300,height=550,fit=cover,gravity=auto,format=auto,quality=100/";
 
 const cdn =
-  'https://media.dev.to/cdn-cgi/image/fit=cover,gravity=auto,format=auto,quality=100/';
+  "https://media.dev.to/cdn-cgi/image/fit=cover,gravity=auto,format=auto,quality=100/";
 interface Tv {
   id: number;
   name: string;
@@ -101,11 +101,14 @@ const image = `${hcdn}https://image.tmdb.org/t/p/original${tv.poster_path}`;
 const ogtitle: string = `The Cast of the show | ${tv.title}`;
 const ogdescription: string = tv.description;
 const ogImage: string = tv.poster_path
-  ? `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${tv.poster_path}`
-  : `https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://via.placeholder.com/500x750?text=${tv.title}`;
+  ? `https://image.tmdb.org/t/p/original${tv.poster_path}`
+  : `https://placehold.co/500x750?text=${tv.title}`;
 ---
 
-<Layout title={ogtitle} description={ogdescription} ogImage={ogImage}>
+<Layout
+  title={ogtitle}
+  description={ogdescription}
+  ogImage={ogImage}>
   <main class=''>
     <Secondarynav
       data={tv}
@@ -115,7 +118,7 @@ const ogImage: string = tv.poster_path
       color='#5C735D'
       client:load
       client:only='react'
-      type={'tv'}
+      type={"tv"}
     />
 
     {

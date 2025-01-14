@@ -1,13 +1,11 @@
-
-export async function GET(){
-  return new Response(JSON.stringify({ color: '#5C735D' }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+export async function GET() {
+  return new Response(JSON.stringify({ color: "#5C735D" }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 }
-
 
 // import getColors from 'get-image-colors';
 
@@ -23,7 +21,7 @@ export async function GET(){
 //     image == 'undefined' ||
 //     image == 'null' ||
 //     image ==
-//       'https://media.dev.to/cdn-cgi/image/width=200,height=300,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/originalnull'
+//       '/https://image.tmdb.org/t/p/originalnull'
 //   ) {
 //     return new Response(JSON.stringify({ color: '#5C735D' }), {
 //       status: 200,
@@ -45,13 +43,13 @@ export async function GET(){
 //     r = Math.round(r * 0.6);
 //     g = Math.round(g * 0.6);
 //     b = Math.round(b * 0.6);
-//   } 
+//   }
 //   else if (brightness > 100) {
 //     // If the color is medium light, make it dark
 //     r = Math.round(r * 0.8);
 //     g = Math.round(g * 0.8);
 //     b = Math.round(b * 0.8);
-//   } 
+//   }
 //   else if (brightness < 50) {
 //     // If the color is very dark, make it less dark
 //     r = Math.round(r * 1.4);

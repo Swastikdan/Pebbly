@@ -1,26 +1,24 @@
 ---
-import { Image } from 'astro:assets';
-import ScrollComponent from './ScrollComponent.astro';
-import Model from './Model.astro';
+import { Image } from "astro:assets";
+import ScrollComponent from "./ScrollComponent.astro";
+import Model from "./Model.astro";
 const { moviebackdrops, movieposters } = Astro.props;
-const vcdn =
-  'https://media.dev.to/cdn-cgi/image/width=550,height=300,fit=cover,gravity=auto,format=auto/';
-const hcdn =
-  'https://media.dev.to/cdn-cgi/image/width=350,height=500,fit=cover,gravity=auto,format=auto/';
-
-const cdn =
-  'https://media.dev.to/cdn-cgi/image/fit=cover,gravity=auto,format=auto/';
 ---
 
 <div class='py-5'>
-  <ScrollComponent contantainerid='moviemedia' scrollbar={true} buttons={true}>
+  <ScrollComponent
+    contantainerid='moviemedia'
+    scrollbar={true}
+    buttons={true}>
     {
       moviebackdrops &&
         moviebackdrops.length > 2 &&
         moviebackdrops.map((backdrop: string) => (
-          <Model isimage={true} link={backdrop}>
+          <Model
+            isimage={true}
+            link={backdrop}>
             <Image
-              src={vcdn + backdrop}
+              src={backdrop}
               alt={`Image`}
               width={300}
               height={500}
@@ -30,7 +28,7 @@ const cdn =
 
             <div slot='model-content'>
               <Image
-                src={cdn + backdrop}
+                src={backdrop}
                 alt={`Image`}
                 width={500}
                 height={300}
@@ -44,9 +42,11 @@ const cdn =
       movieposters &&
         movieposters.length > 2 &&
         movieposters.slice(0, 5).map((poster: string) => (
-          <Model isimage={true} link={poster}>
+          <Model
+            isimage={true}
+            link={poster}>
             <Image
-              src={hcdn + poster}
+              src={poster}
               alt={`Image`}
               width={300}
               height={500}
@@ -56,7 +56,7 @@ const cdn =
 
             <div slot='model-content'>
               <Image
-                src={cdn + poster}
+                src={poster}
                 alt={`Image`}
                 width={300}
                 height={500}
@@ -78,7 +78,11 @@ const cdn =
               xmlns='http://www.w3.org/2000/svg'
               viewBox='0 0 256 256'
               class='size-5 mx-1.5'>
-              <rect width='256' height='256' fill='none' />
+              <rect
+                width='256'
+                height='256'
+                fill='none'
+              />
               <line
                 x1='40'
                 y1='128'
@@ -108,7 +112,9 @@ const cdn =
 {
   moviebackdrops.length > 10 || movieposters.length > 5 ? (
     <div class='pb-5 text-sm sm:text-base font-semibold hover:underline underline-offset-4'>
-      <a href={`${Astro.url.href}/media`} class=''>
+      <a
+        href={`${Astro.url.href}/media`}
+        class=''>
         All Backdrops & Posters
       </a>
     </div>

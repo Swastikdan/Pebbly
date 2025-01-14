@@ -23,7 +23,7 @@ export default function Secondarynav({ data, url, id, slug ,color , type }) {
       <div class='mx-auto block max-w-screen-2xl items-center px-2 md:px-10 xl:px-20'>
         <div class='flex items-center space-x-0'>
           <img
-            src={`https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/${data.poster_path ? `https://image.tmdb.org/t/p/original/${data.poster_path}` : `https://via.placeholder.com/500x750?text=${data.title}`}`}
+            src={`${data.poster_path ? `https://image.tmdb.org/t/p/original/${data.poster_path}` : `https://placehold.co/500x750?text=${data.title}`}`}
             alt={data.title}
             class='hidden h-28 w-20 rounded-lg object-cover ring-2 ring-gray-200 md:block'
           />

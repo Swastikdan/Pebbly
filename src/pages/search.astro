@@ -119,7 +119,7 @@ searchResults.results &&
 searchResults.results[0] &&
 searchResults.results[0].poster_path
 ?
-`https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/https://image.tmdb.org/t/p/original${searchResults.results[0].poster_path}`
+`https://image.tmdb.org/t/p/original${searchResults.results[0].poster_path}`
 :
 'https://media.dev.to/cdn-cgi/image/width=800,height=400,fit=cover,gravity=auto,format=auto/https://film-fanatic.vercel.app/ogimage.webp';
 ---

@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import { Image } from "astro:assets";
 
 interface Props {
   id: number;
@@ -11,16 +11,15 @@ interface Props {
   language: string;
 }
 
-const cdn =
-  'https://media.dev.to/cdn-cgi/image/width=400,height=600,fit=cover,gravity=auto,format=auto/';
+const cdn = "";
 const { id, title, image, rating, year, type, language } = Astro.props;
-const ratingColor = rating > 7 ? 'green' : rating > 5 ? 'yellow' : 'red';
+const ratingColor = rating > 7 ? "green" : rating > 5 ? "yellow" : "red";
 const imageUrl =
-  image === 'https://image.tmdb.org/t/p/original/null' ||
-  image === 'https://image.tmdb.org/t/p/original/undefined'
-    ? `https://via.placeholder.com/300x450?text=Image+Not+Found`
+  image === "https://image.tmdb.org/t/p/original/null" ||
+  image === "https://image.tmdb.org/t/p/original/undefined"
+    ? `https://placehold.co/300x450?text=Image+Not+Found`
     : image;
-const urltitle = title.replace(/ /g, '-').toLowerCase();
+const urltitle = title.replace(/ /g, "-").toLowerCase();
 ---
 
 <a
@@ -42,11 +41,11 @@ const urltitle = title.replace(/ /g, '-').toLowerCase();
       rating && Number(rating) !== 0 && (
         <span
           class={
-            'absolute left-3 top-3 flex items-center gap-1 text-' +
+            "absolute left-3 top-3 flex items-center gap-1 text-" +
             ratingColor +
-            '-700 bg-' +
+            "-700 bg-" +
             ratingColor +
-            '-100  mr-3 mb-3 rounded-lg  px-2 py-1 text-md  backdrop-blur md:px-3'
+            "-100  mr-3 mb-3 rounded-lg  px-2 py-1 text-md  backdrop-blur md:px-3"
           }>
           <>
             <svg
@@ -69,7 +68,7 @@ const urltitle = title.replace(/ /g, '-').toLowerCase();
       <span
         class='text-lg md:text-[16px] capitalize font-semibold text-gray-900 transition duration-100 py-5'
         >{
-          title?.length > 20 ? `${title.substring(0, 20)} ...` : title ?? ''
+          title?.length > 20 ? `${title.substring(0, 20)} ...` : (title ?? "")
         }</span
       >
       <div class='flex justify-between mt-3'>
