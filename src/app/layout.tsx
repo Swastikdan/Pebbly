@@ -105,7 +105,7 @@ export default function RootLayout({
               }
               .noscript-warning h1 {
                 color: #991b1b;
-                font-size: 1.75rem;
+                font-size: 2rem;
                 margin-bottom: 1rem;
                 font-weight: 600;
               }
