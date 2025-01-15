@@ -39,14 +39,20 @@ export default function SearchResults() {
 
   const total_pages = data?.total_pages ?? 1
   if (!query || query.length < 1) {
-    return <div className="flex h-[70vh] items-center justify-center"></div>
+    return (
+      <div className="flex h-[70vh] items-center justify-center">
+        <p className="font-heading text-lg">
+          Please enter a search query to get results
+        </p>
+      </div>
+    )
   }
 
   if (error) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
-        <p className="font-heading text-xl font-semibold">
-          Something went wrong. Please try again later
+        <p className="font-heading text-lg">
+          Please enter a search query to get results
         </p>
       </div>
     )

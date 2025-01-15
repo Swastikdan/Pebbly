@@ -30,6 +30,10 @@ export function Searchbar({
 
   const clearSearch = () => {
     setSearch('')
+    const pathname = window.location.pathname
+    if (pathname === '/search') {
+      router.push('/search')
+    }
   }
 
   return (
@@ -47,10 +51,10 @@ export function Searchbar({
           type="text"
           name="query"
           autoComplete="off"
-          placeholder="👀 What movie or show? Let's find it!"
+          placeholder="👀 What movie, show, person? Let's find it!"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="placeholder:font-baricolage peer block h-12 w-full bg-background pr-8 ps-10 enabled:bg-background sm:h-11"
+          className="peer block h-12 w-full bg-background pr-8 ps-10 placeholder:text-sm enabled:bg-background sm:h-11 placeholder:md:text-base"
         />
         <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-2 peer-disabled:pointer-events-none peer-disabled:opacity-50">
           <Search />

@@ -101,7 +101,7 @@ export default function Navbar() {
             height={100}
             className="size-10"
           />
-          <h1 className="font-heading xs:block hidden text-lg font-bold md:text-xl xl:text-2xl">
+          <h1 className="font-heading hidden text-lg font-bold xs:block md:text-xl xl:text-2xl">
             Film Fanatic
           </h1>
         </Link>

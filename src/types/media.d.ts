@@ -25,6 +25,7 @@ export interface MediaListResultsEntity {
   vote_average: number
   vote_count: number
   known_for_department?: string
+  media_type: string
 }
 
 export interface SearchResultsData {

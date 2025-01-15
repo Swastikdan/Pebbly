@@ -88,4 +88,31 @@ const GENRE_LIST = [
   { id: 10768, name: '⚔️ War & Politics' },
 ].map((genre) => ({ ...genre, id: genre.id }))
 
-export { NAV_ITEMS, MEDIA_PAGE_SLUGS, GENRE_LIST }
+const ORIGINAL_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/original'
+
+const HD_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w780'
+const HD_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w1280'
+const HD_PROFILE_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/h632'
+
+const SD_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w500'
+const SD_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w780'
+const SD_PROFILE_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w185'
+
+const LQ_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w342'
+const LQ_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w300'
+
+const IMAGE_PREFIX = {
+  ORIGINAL: ORIGINAL_IMAGE_PREFIX,
+  HD_POSTER: HD_POSTER_IMAGE_PREFIX,
+  HD_BACKDROP: HD_BACKDROP_IMAGE_PREFIX,
+  HD_PROFILE: HD_PROFILE_IMAGE_PREFIX,
+  SD_POSTER: SD_POSTER_IMAGE_PREFIX,
+  SD_BACKDROP: SD_BACKDROP_IMAGE_PREFIX,
+  SD_PROFILE: SD_PROFILE_IMAGE_PREFIX,
+  LQ_POSTER: LQ_POSTER_IMAGE_PREFIX,
+  LQ_BACKDROP: LQ_BACKDROP_IMAGE_PREFIX,
+}
+
+const IMDB_URL = 'https://www.imdb.com/title/'
+
+export { NAV_ITEMS, MEDIA_PAGE_SLUGS, GENRE_LIST, IMAGE_PREFIX, IMDB_URL }

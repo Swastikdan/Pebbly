@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import WatchListContatiner from './watchlist-contatiner'
-import ExportAndAddWatchlist from './ExportAndAddWatchlist'
+import { MediaCardSkeleton } from '@/components/MediaCard'
+import { Loader2 } from 'lucide-react'
+
 export const metadata: Metadata = {
   title: 'Watchlist | Film Fanatic',
   description: 'Your saved movies and TV shows',
@@ -14,9 +17,18 @@ export default function WatchlistPage() {
         <p className="mt-2 text-start text-lg">
           Your saved movies and TV shows
         </p>
-        <ExportAndAddWatchlist />
-        <WatchListContatiner />
+        <Suspense fallback={<WatchListContainerFallback />}>
+          <WatchListContatiner />
+        </Suspense>
       </div>
     </section>
+  )
+}
+
+function WatchListContainerFallback() {
+  return (
+    <div className="flex min-h-96 w-full items-center justify-center">
+      <Loader2 size={32} className="animate-spin" />
+    </div>
   )
 }

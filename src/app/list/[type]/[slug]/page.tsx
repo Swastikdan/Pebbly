@@ -1,7 +1,8 @@
-import React from 'react'
+import { Suspense } from 'react'
 import { MEDIA_PAGE_SLUGS, NAV_ITEMS } from '@/constants'
 import MediaPageResults from './MediaPageResults'
 import { type MediaListDataQuery } from '@/types/media'
+import { MediaCardSkeleton } from '@/components/MediaCard'
 export const dynamicParams = false
 
 export function generateStaticParams() {
@@ -27,9 +28,22 @@ export default async function MediaPage({
         <h1 className="text-start text-4xl font-bold">
           {subNavItem?.name} {navItem?.name}
         </h1>
-
-        <MediaPageResults query={query} mediatype={mediatype} />
+        <Suspense fallback={<MediaPageFallback />}>
+          <MediaPageResults query={query} mediatype={mediatype} />
+        </Suspense>
       </div>
     </section>
+  )
+}
+
+function MediaPageFallback() {
+  return (
+    <div className="flex min-h-96 w-full items-center justify-center">
+      <div className="grid w-full grid-cols-2 items-center justify-center gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {Array.from({ length: 12 }).map((_, index) => (
+          <MediaCardSkeleton key={index} />
+        ))}
+      </div>
+    </div>
   )
 }
