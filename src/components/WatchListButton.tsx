@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Badge } from './ui/badge'
 export default function WatchListButton({
   title,
   rating,
@@ -49,14 +50,13 @@ export default function WatchListButton({
     <TooltipProvider delayDuration={100} skipDelayDuration={100}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
+          <Badge
             onClick={handleWatchList}
-            variant="secondary"
-            size="icon"
+            variant="default"
             className={cn(className, 'z-20 size-9 p-2')}
           >
             {isOnWatchList ? <Check size={24} /> : <Plus size={24} />}
-          </Button>
+          </Badge>
         </TooltipTrigger>
         <TooltipContent className="cursor-none select-none">
           <p className="text-sm font-medium">

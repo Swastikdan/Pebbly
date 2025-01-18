@@ -25,10 +25,11 @@
   video: boolean
   vote_average: number
   vote_count: number
+  external_ids: ExternalIds
   images: Images
   credits: Credits
   videos: Videos
-  recommendations: Recommendations
+  release_dates: ReleaseDates
   keywords: Keywords
 }
 export interface BasicMovie {
@@ -59,6 +60,7 @@ export interface BasicMovie {
   vote_average: number
   vote_count: number
 }
+
 export interface BelongsToCollection {
   id: number
   name: string
@@ -83,6 +85,13 @@ export interface SpokenLanguagesEntity {
   english_name: string
   iso_639_1: string
   name: string
+}
+export interface ExternalIds {
+  imdb_id: string
+  wikidata_id: string
+  facebook_id: string
+  instagram_id: string
+  twitter_id: string
 }
 export interface Images {
   backdrops?: BackdropsEntityOrLogosEntityOrPostersEntity[] | null
@@ -144,28 +153,20 @@ export interface ResultsEntity {
   published_at: string
   id: string
 }
-export interface Recommendations {
-  page: number
+export interface ReleaseDates {
   results?: ResultsEntity1[] | null
-  total_pages: number
-  total_results: number
 }
 export interface ResultsEntity1 {
-  backdrop_path: string
-  id: number
-  title: string
-  original_title: string
-  overview: string
-  poster_path: string
-  media_type: string
-  adult: boolean
-  original_language: string
-  genre_ids?: number[] | null
-  popularity: number
+  iso_3166_1: string
+  release_dates?: ReleaseDatesEntity[] | null
+}
+export interface ReleaseDatesEntity {
+  certification: string
+  descriptors?: (string | null)[] | null
+  iso_639_1: string
+  note: string
   release_date: string
-  video: boolean
-  vote_average: number
-  vote_count: number
+  type: number
 }
 export interface Keywords {
   keywords?: GenresEntityOrKeywordsEntity[] | null

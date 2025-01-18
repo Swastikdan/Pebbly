@@ -1,43 +1,4 @@
-﻿export interface Tv {
-  adult: boolean
-  backdrop_path: string
-  created_by?: CreatedByEntity[] | null
-  episode_run_time?: null[] | null
-  first_air_date: string
-  genres?: GenresEntityOrResultsEntity[] | null
-  homepage: string
-  id: number
-  in_production: boolean
-  languages?: string[] | null
-  last_air_date: string
-  last_episode_to_air: LastEpisodeToAir
-  name: string
-  next_episode_to_air: NextEpisodeToAir
-  networks?: NetworksEntity[] | null
-  number_of_episodes: number
-  number_of_seasons: number
-  origin_country?: string[] | null
-  original_language: string
-  original_name: string
-  overview: string
-  popularity: number
-  poster_path: string
-  production_companies?: ProductionCompaniesEntity[] | null
-  production_countries?: ProductionCountriesEntity[] | null
-  seasons?: SeasonsEntity[] | null
-  spoken_languages?: SpokenLanguagesEntity[] | null
-  status: string
-  tagline: string
-  type: string
-  vote_average: number
-  vote_count: number
-  images: Images
-  credits: Credits
-  videos: Videos
-  recommendations: Recommendations
-  keywords: Keywords
-}
-export interface BasicTv {
+﻿export interface BasicTv {
   adult: boolean
   backdrop_path: string
   created_by?: CreatedByEntity[] | null
@@ -70,6 +31,47 @@ export interface BasicTv {
   type: string
   vote_average: number
   vote_count: number
+}
+
+export interface Tv {
+  adult: boolean
+  backdrop_path: string
+  created_by?: CreatedByEntity[] | null
+  episode_run_time?: null[] | null
+  first_air_date: string
+  genres?: GenresEntityOrResultsEntity[] | null
+  homepage: string
+  id: number
+  in_production: boolean
+  languages?: string[] | null
+  last_air_date: string
+  last_episode_to_air: LastEpisodeToAir
+  name: string
+  next_episode_to_air: NextEpisodeToAir
+  networks?: NetworksEntity[] | null
+  number_of_episodes: number
+  number_of_seasons: number
+  origin_country?: string[] | null
+  original_language: string
+  original_name: string
+  overview: string
+  popularity: number
+  poster_path: string
+  production_companies?: ProductionCompaniesEntity[] | null
+  production_countries?: ProductionCountriesEntity[] | null
+  seasons?: SeasonsEntity[] | null
+  spoken_languages?: SpokenLanguagesEntity[] | null
+  status: string
+  tagline: string
+  type: string
+  vote_average: number
+  vote_count: number
+  external_ids: ExternalIds
+  images: Images
+  credits: Credits
+  videos: Videos
+  content_ratings: ContentRatings
+  keywords: Keywords
 }
 export interface CreatedByEntity {
   id: number
@@ -144,6 +146,17 @@ export interface SpokenLanguagesEntity {
   iso_639_1: string
   name: string
 }
+export interface ExternalIds {
+  imdb_id: string
+  freebase_mid?: null
+  freebase_id?: null
+  tvdb_id: number
+  tvrage_id?: null
+  wikidata_id: string
+  facebook_id: string
+  instagram_id: string
+  twitter_id: string
+}
 export interface Images {
   backdrops?: BackdropsEntityOrPostersEntity[] | null
   logos?: LogosEntity[] | null
@@ -212,28 +225,13 @@ export interface ResultsEntity {
   published_at: string
   id: string
 }
-export interface Recommendations {
-  page: number
+export interface ContentRatings {
   results?: ResultsEntity1[] | null
-  total_pages: number
-  total_results: number
 }
 export interface ResultsEntity1 {
-  backdrop_path: string
-  id: number
-  name: string
-  original_name: string
-  overview: string
-  poster_path: string
-  media_type: string
-  adult: boolean
-  original_language: string
-  genre_ids?: number[] | null
-  popularity: number
-  first_air_date: string
-  vote_average: number
-  vote_count: number
-  origin_country?: string[] | null
+  descriptors?: null[] | null
+  iso_3166_1: string
+  rating: string
 }
 export interface Keywords {
   results?: GenresEntityOrResultsEntity[] | null

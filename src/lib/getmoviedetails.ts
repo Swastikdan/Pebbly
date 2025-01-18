@@ -26,7 +26,7 @@ export async function getMovieDetails({ id }: { id: number }): Promise<Movie> {
   if (id < -2147483648 || id > 2147483647) {
     throw new Error('Invalid ID')
   }
-  const url = `/movie/${id}?include_adult=true&append_to_response=external_ids,images,credits,image,videos,collections,release_dates,recommendations,keywords`
+  const url = `/movie/${id}?include_adult=true&include_adult=true&append_to_response=external_ids,images,credits,image,videos,collections,release_dates,keywords`
   const result = await Tmdb<Movie>(url)
 
   if (result.error) {

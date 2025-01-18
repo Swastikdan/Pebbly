@@ -5,6 +5,7 @@ import { Star } from 'lucide-react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { IMAGE_PREFIX } from '@/constants'
 export interface MediaCardProps {
   title: string
   rating: number
@@ -45,6 +46,7 @@ export function MediaCard({
         year: 'numeric',
       })
     : ''
+
   if (card_type === 'vertical') {
     return (
       <Link
@@ -54,7 +56,7 @@ export function MediaCard({
       >
         <div className="relative h-40 w-full rounded-xl bg-background">
           <Image
-            src={`https://image.tmdb.org/t/p/w500/${image}`}
+            src={`${IMAGE_PREFIX.SD_BACKDROP}${image}`}
             width={300}
             height={450}
             loading="eager"
@@ -110,7 +112,7 @@ export function MediaCard({
     >
       <div className="relative h-64 w-full rounded-xl bg-secondary md:h-72">
         <Image
-          src={`https://image.tmdb.org/t/p/w500/${image}`}
+          src={`${IMAGE_PREFIX.SD_POSTER}${image}`}
           width={300}
           height={450}
           alt={title}
@@ -211,13 +213,13 @@ export function PersonCard({
       aria-label={name}
     >
       <Image
-        src={`https://image.tmdb.org/t/p/w500/${profile_path}`}
+        src={`${IMAGE_PREFIX.SD_PROFILE}${profile_path}`}
         width={300}
         height={450}
         alt={name}
         className="h-36 w-full rounded-xl bg-secondary md:h-44"
       />
-      <div className="flex h-[40px] flex-col gap-2 py-1 md:h-[52px]">
+      <div className="flex flex-col gap-2 py-1">
         <h3 className="truncate text-sm font-medium capitalize">{name}</h3>
         <span className="truncate text-[10px] font-thin md:text-xs">
           {known_for_department}

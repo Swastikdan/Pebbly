@@ -76,7 +76,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <noscript>
-          <style>
+          {/* <style>
             {`
               body {
               overflow: hidden;
@@ -115,7 +115,7 @@ export default function RootLayout({
                 line-height: 1.6;
               }
             `}
-          </style>
+          </style> */}
           <div className="noscript-warning" role="alert">
             <h1>JavaScript is Required</h1>
             <p>

@@ -89,20 +89,42 @@ const GENRE_LIST = [
 ].map((genre) => ({ ...genre, id: genre.id }))
 
 const ORIGINAL_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/original'
+const PREVIEW_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w92'
+// const HD_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w1280'
+// const HD_PROFILE_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/h632'
+// const HD_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w780'
+// const SD_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w780'
+// const SD_PROFILE_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w185'
+// const SD_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w500'
+// const LQ_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w300'
+// const LQ_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w342'
 
-const HD_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w780'
-const HD_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w1280'
-const HD_PROFILE_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/h632'
+const HD_POSTER_IMAGE_PREFIX =
+  'https://media2.dev.to/dynamic/image/width=780,height=,fit=scale-down,gravity=auto,pr-true,format=auto/https://image.tmdb.org/t/p/w780'
 
-const SD_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w500'
-const SD_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w780'
-const SD_PROFILE_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w185'
+const HD_BACKDROP_IMAGE_PREFIX =
+  'https://media2.dev.to/dynamic/image/width=1280,height=,fit=scale-down,gravity=auto,pr-true,format=auto/https://image.tmdb.org/t/p/w1280'
+const HD_PROFILE_IMAGE_PREFIX =
+  'https://media2.dev.to/dynamic/image/width=632,height=,fit=scale-down,gravity=auto,pr-true,format=auto/https://image.tmdb.org/t/p/h632'
 
-const LQ_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w342'
-const LQ_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w300'
+const SD_POSTER_IMAGE_PREFIX =
+  'https://media2.dev.to/dynamic/image/width=500,height=,fit=scale-down,gravity=auto,pr-true,format=auto/https://image.tmdb.org/t/p/w500'
+
+const SD_BACKDROP_IMAGE_PREFIX =
+  'https://media2.dev.to/dynamic/image/width=780,height=,fit=scale-down,gravity=auto,pr-true,format=auto/https://image.tmdb.org/t/p/w780'
+
+const SD_PROFILE_IMAGE_PREFIX =
+  'https://media2.dev.to/dynamic/image/width=185,height=,fit=scale-down,gravity=auto,pr-true,format=auto/https://image.tmdb.org/t/p/w185'
+
+const LQ_POSTER_IMAGE_PREFIX =
+  'https://media2.dev.to/dynamic/image/width=342,height=,fit=scale-down,gravity=auto,pr-true,format=auto/https://image.tmdb.org/t/p/w342'
+
+const LQ_BACKDROP_IMAGE_PREFIX =
+  'https://media2.dev.to/dynamic/image/width=300,height=,fit=scale-down,gravity=auto,pr-true,format=auto/https://image.tmdb.org/t/p/w300'
 
 const IMAGE_PREFIX = {
   ORIGINAL: ORIGINAL_IMAGE_PREFIX,
+  PREVIEW: PREVIEW_IMAGE_PREFIX,
   HD_POSTER: HD_POSTER_IMAGE_PREFIX,
   HD_BACKDROP: HD_BACKDROP_IMAGE_PREFIX,
   HD_PROFILE: HD_PROFILE_IMAGE_PREFIX,
