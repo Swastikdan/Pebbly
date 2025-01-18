@@ -1,13 +1,32 @@
 import { Suspense } from 'react'
+import type { Metadata } from 'next'
 import { MEDIA_PAGE_SLUGS, NAV_ITEMS } from '@/constants'
 import MediaPageResults from './MediaPageResults'
 import { type MediaListDataQuery } from '@/types/media'
 import { MediaCardSkeleton } from '@/components/MediaCard'
+
 export const dynamicParams = false
 
 export function generateStaticParams() {
   return MEDIA_PAGE_SLUGS
 }
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { type: string; slug: string }
+}): Promise<Metadata> {
+  const { type, slug } = params
+  const navItem = NAV_ITEMS.find((item) => item.slug === type)
+  const subNavItem = navItem
+    ? navItem.submenu.find((item) => item.slug === slug)
+    : null
+  return {
+    title: `${subNavItem?.name} ${navItem?.name} | Film Fanatic`,
+    description: `Browse ${subNavItem?.name} ${navItem?.name} | Film Fanatic`,
+  }
+}
+
 export default async function MediaPage({
   params,
 }: {
