@@ -25,10 +25,10 @@ export default function Collections({ id }: { id: number }) {
             />
 
             <div className="relative flex h-full flex-col items-start justify-center p-5">
-              <span className="text-lg font-bold text-primary-foreground dark:text-primary md:text-xl lg:text-2xl xl:text-3xl">
+              <span className="text-lg font-bold text-primary md:text-xl lg:text-2xl xl:text-3xl">
                 Part of the {data?.name}
               </span>
-              <span className="mt-2 flex flex-wrap text-xs font-light text-primary-foreground dark:text-primary md:text-sm lg:text-base">
+              <span className="mt-2 flex flex-wrap text-xs font-light text-primary md:text-sm lg:text-base">
                 Includes{' '}
                 {data?.parts?.map((part) => part.title)?.join(', ') ?? ''}
               </span>
@@ -36,7 +36,7 @@ export default function Collections({ id }: { id: number }) {
                 <Button
                   variant="default"
                   size="lg"
-                  className="mt-3 rounded-full bg-primary-foreground font-medium text-primary shadow hover:bg-primary-foreground dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+                  className="mt-3 rounded-full font-medium shadow"
                 >
                   View Collection
                 </Button>
