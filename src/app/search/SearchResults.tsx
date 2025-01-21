@@ -41,7 +41,7 @@ export default function SearchResults() {
   if (!query || query.length < 1) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
-        <p className="font-heading text-lg">
+        <p className="font-heading text-sm md:text-base lg:text-lg">
           Please enter a search query to get results
         </p>
       </div>
@@ -51,8 +51,8 @@ export default function SearchResults() {
   if (error) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
-        <p className="font-heading text-lg">
-          Please enter a search query to get results
+        <p className="font-heading text-sm md:text-base lg:text-lg">
+          Something went wrong. Please try again later
         </p>
       </div>
     )
@@ -81,7 +81,7 @@ export default function SearchResults() {
   if (!data || filteredData.length === 0) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
-        <p className="font-heading text-xl font-semibold">
+        <p className="font-heading text-sm md:text-base lg:text-lg">
           No results found for your query
         </p>
       </div>
