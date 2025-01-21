@@ -52,7 +52,7 @@ export default function WatchListButton({
         <TooltipTrigger asChild>
           <Badge
             onClick={handleWatchList}
-            variant="secondary"
+            variant="default"
             className={cn(className, 'z-20 size-9 p-2')}
           >
             {isOnWatchList ? <Check size={24} /> : <Plus size={24} />}

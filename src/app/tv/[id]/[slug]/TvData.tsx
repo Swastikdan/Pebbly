@@ -3,7 +3,7 @@ import React from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { getTvDetails } from '@/lib/gettvdetails'
 import { useQuery } from '@tanstack/react-query'
-import { Tv } from '@/types/tv'
+import { SeasonsEntity, Tv } from '@/types/tv'
 import DefaultLoader from '@/components/DefaultLoader'
 import { GENRE_LIST, IMAGE_PREFIX } from '@/constants'
 import MediaTitleContailer from '@/components/media/MediaTitleContailer'
@@ -15,6 +15,7 @@ import MediaContainer from '@/components/media/MediaContainer'
 import Collections from '@/components/Collections'
 import MediaKeywords from '@/components/media/MediaKeywords'
 import MediaRecomendations from '@/components/media/MediaRecomendations'
+import CurrentSeason from '@/components/media/CurrentSeason'
 
 export default function TvData({
   params,
@@ -185,7 +186,7 @@ export default function TvData({
     })) ?? []
 
   return (
-    <section className="mx-auto block max-w-screen-2xl items-center px-4 md:px-8 lg:px-20">
+    <section className="mx-auto block max-w-screen-xl items-center px-4">
       <MediaTitleContailer
         title={tvtitle}
         description={
@@ -218,6 +219,18 @@ export default function TvData({
         }
         type="tv"
       />
+      {data.seasons && data.seasons.length > 0 && (
+        <CurrentSeason
+          id={id}
+          urltitle={urltitle}
+          season_data={
+            data.seasons && data.seasons.length > 0
+              ? data.seasons[data.seasons.length - 1]
+              : ({} as SeasonsEntity)
+          }
+        />
+      )}
+
       <MediaContainer
         id={id}
         urltitle={urltitle}

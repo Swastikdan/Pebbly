@@ -16,7 +16,7 @@ export async function generateMetadata({
 }: {
   params: { type: string; slug: string }
 }): Promise<Metadata> {
-  const { type, slug } = params
+  const { type, slug } = await params
   const navItem = NAV_ITEMS.find((item) => item.slug === type)
   const subNavItem = navItem
     ? navItem.submenu.find((item) => item.slug === slug)

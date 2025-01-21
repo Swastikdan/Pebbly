@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import NextImage, { ImageProps as NextImageProps } from 'next/image'
+
 import { Skeleton } from './ui/skeleton'
 
 type NextImageWithFallbackProps = NextImageProps & {
@@ -19,18 +20,29 @@ export default function Image({
   fallbackImage = DEFAULT_PLACEHOLDER_IMAGE,
   ...props
 }: NextImageWithFallbackProps) {
+  const [loading, setLoading] = useState(true)
   const [imageSrc, setImageSrc] = useState(src)
-
+  const onImageLoad = () => setLoading(false)
+  const onImageError = () => setImageSrc(fallbackImage)
   return (
-    <NextImage
-      src={imageSrc}
-      alt={alt}
-      placeholder="blur"
-      unoptimized
-      blurDataURL={fallbackImage}
-      className={cn(className)}
-      onError={() => setImageSrc(fallbackImage)}
-      {...props}
-    />
+    <div className={cn('relative', className)}>
+      <Skeleton
+        style={{ display: loading ? 'block' : 'none' }}
+        className={className}
+      />
+      <NextImage
+        src={imageSrc}
+        alt={alt}
+        unoptimized
+        className={cn(className)}
+        loading="eager"
+        fetchPriority="high"
+        priority
+        onLoad={onImageLoad}
+        onError={onImageError}
+        style={{ display: loading ? 'none' : 'block' }}
+        {...props}
+      />
+    </div>
   )
 }

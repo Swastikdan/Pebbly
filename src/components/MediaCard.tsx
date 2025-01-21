@@ -73,15 +73,12 @@ export function MediaCard({
             relese_date={relese_date}
           />
           <div className="absolute bottom-2 right-2 flex items-center gap-2 text-sm md:text-base">
-            <Badge
-              variant="secondary"
-              className="h-7 rounded-sm px-2 uppercase hover:bg-secondary"
-            >
+            <Badge variant="default" className="h-7 rounded-sm px-2 uppercase">
               {media_type}
             </Badge>
             <Badge
-              variant="secondary"
-              className="flex h-7 items-center gap-1 rounded-sm px-2 hover:bg-secondary"
+              variant="default"
+              className="flex h-7 items-center gap-1 rounded-sm px-2"
             >
               {rating > 0.0 ? (
                 <>
@@ -132,14 +129,14 @@ export function MediaCard({
 
             <div className="absolute bottom-2 right-2 flex items-center gap-2 text-sm md:text-base">
               <Badge
-                variant="secondary"
-                className="h-7 rounded-sm px-2 uppercase hover:bg-secondary"
+                variant="default"
+                className="h-7 rounded-sm px-2 uppercase"
               >
                 {media_type}
               </Badge>
               <Badge
-                variant="secondary"
-                className="flex h-7 items-center gap-1 rounded-sm px-2 hover:bg-secondary"
+                variant="default"
+                className="flex h-7 items-center gap-1 rounded-sm px-2"
               >
                 {rating > 0.0 ? (
                   <>
@@ -209,7 +206,7 @@ export function PersonCard({
   return (
     <Link
       href={`/person/${id}/${formattedName}`}
-      className="h-52 w-32 space-y-2 rounded-xl bg-secondary p-2 transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-[15.5rem] md:w-36"
+      className="h-[13.25rem] w-32 space-y-2 rounded-xl bg-secondary/80 p-2 transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-[15.5rem] md:w-36"
       aria-label={name}
     >
       <Image
@@ -219,7 +216,7 @@ export function PersonCard({
         alt={name}
         className="h-36 w-full rounded-xl bg-secondary md:h-44"
       />
-      <div className="flex flex-col gap-2 py-1">
+      <div className="flex flex-col gap-1 py-1">
         <h3 className="truncate text-sm font-medium capitalize">{name}</h3>
         <span className="truncate text-[10px] font-thin md:text-xs">
           {known_for_department}

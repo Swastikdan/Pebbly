@@ -31,7 +31,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 
-import { ModeToggle } from '@/components/ModeToggle'
+// import { ModeToggle } from '@/components/ModeToggle'
 import { NAV_ITEMS } from '@/constants'
 const DesktopNavMenuItem: React.FC<{
   item: {
@@ -149,7 +149,7 @@ export default function Navbar() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <ModeToggle />
+          {/* <ModeToggle /> */}
           <Sheet>
             <SheetTrigger className="md:hidden" asChild>
               <Button

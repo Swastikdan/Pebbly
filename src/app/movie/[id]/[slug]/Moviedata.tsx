@@ -180,7 +180,7 @@ export default function Moviedata({
     })) ?? []
 
   return (
-    <section className="mx-auto block max-w-screen-2xl items-center px-4 md:px-8 lg:px-20">
+    <section className="mx-auto block max-w-screen-xl items-center px-4">
       <MediaTitleContailer
         title={movietitle}
         description={
