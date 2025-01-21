@@ -13,6 +13,7 @@ export default function MediaTitleContailer({
   vote_average,
   vote_count,
   imdb_url,
+  tv_status,
 }: {
   title: string
   description: string
@@ -23,6 +24,7 @@ export default function MediaTitleContailer({
   vote_average: number | null
   vote_count: number | null
   imdb_url?: string | null
+  tv_status: string | null
 }) {
   return (
     <div className="pb-5 pt-5">
@@ -59,6 +61,12 @@ export default function MediaTitleContailer({
             <>
               <span className="py-1">•</span>
               <span className="py-1">{Runtime}</span>
+            </>
+          )}
+          {tv_status && (
+            <>
+              <span className="py-1">•</span>
+              <span className="py-1">{tv_status}</span>
             </>
           )}
         </span>

@@ -56,7 +56,7 @@ export default function TvData({
     images,
     credits,
     videos,
-
+    status,
     keywords,
   } = data
   const urltitle = encodeURIComponent(name.replace(/ /g, '-').toLowerCase())
@@ -201,6 +201,7 @@ export default function TvData({
         vote_average={vote_average}
         vote_count={vote_count}
         imdb_url={imdb_url}
+        tv_status={status}
       />
       <MediaPosterTrailerContainer
         image={tvimage}
@@ -225,7 +226,15 @@ export default function TvData({
           urltitle={urltitle}
           season_data={
             data.seasons && data.seasons.length > 0
-              ? data.seasons[data.seasons.length - 1]
+              ? data.seasons
+                  .slice()
+                  .reverse()
+                  .find(
+                    (season) =>
+                      season.air_date &&
+                      new Date(season.air_date).getTime() <=
+                        new Date().getTime(),
+                  ) || data.seasons[data.seasons.length - 1]
               : ({} as SeasonsEntity)
           }
         />

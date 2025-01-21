@@ -43,13 +43,15 @@ export default function CurrentSeason({
               {season_data.name}
             </Link>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="secondary"
-                className="inline-flex items-center gap-1 rounded-md px-3 text-sm font-light"
-              >
-                <Star size={16} className="size-3 fill-current" />
-                {season_data.vote_average * 10} %
-              </Badge>
+              {season_data.vote_average > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="inline-flex items-center gap-1 rounded-md px-3 text-sm font-light"
+                >
+                  <Star size={16} className="size-3 fill-current" />
+                  {season_data.vote_average * 10} %
+                </Badge>
+              )}
               <span className="text-sm">
                 {season_data.air_date?.split('-')[0] || 'TBA'}
               </span>
@@ -63,8 +65,11 @@ export default function CurrentSeason({
             </span>
           </div>
         </div>
-        <Link href={`/tv/${id}/${urltitle}/seasons/${season_data.season_number}`} className="w-fit text-lg hover:opacity-70">
-        View All Episodes
+        <Link
+          href={`/tv/${id}/${urltitle}/seasons/${season_data.season_number}`}
+          className="w-fit text-lg hover:opacity-70"
+        >
+          View All Episodes
         </Link>
       </div>
     </div>

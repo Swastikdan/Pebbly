@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import { Bookmark, Menu, Search } from 'lucide-react'
-
+import { Badge } from '@/components/ui/badge'
 import {
   Tooltip,
   TooltipContent,
@@ -101,9 +101,17 @@ export default function Navbar() {
             height={100}
             className="size-10"
           />
-          <h1 className="font-heading hidden text-lg font-bold xs:block md:text-xl xl:text-2xl">
-            Film Fanatic
-          </h1>
+          <div className="flex items-start">
+            <h1 className="font-heading hidden text-lg font-bold xs:block md:text-xl xl:text-2xl">
+              Film Fanatic
+            </h1>{' '}
+            <Badge
+              variant="secondary"
+              className="ml-2 hidden text-[10px] font-light xs:block"
+            >
+              Beta
+            </Badge>
+          </div>
         </Link>
         <section className="flex items-center gap-3">
           <ul className="hidden gap-2 md:flex">
