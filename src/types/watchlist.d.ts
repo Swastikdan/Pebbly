@@ -6,3 +6,5 @@ export interface WatchList {
   rating?: number
   releaseDate?: string
 }
+
+export type NullableWatchList = WatchList | null

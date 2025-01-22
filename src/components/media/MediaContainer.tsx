@@ -57,7 +57,7 @@ export default function MediaContainer({
             Media
           </Link>
 
-          <TabsList className="h-8 border border-input bg-background p-0 sm:h-9 md:rounded-[18px]">
+          <TabsList className="h-8 rounded-xl border border-input bg-background p-0 sm:h-9">
             {youtubeclips.length > 0 && (
               <TabsTrigger
                 value="videos"

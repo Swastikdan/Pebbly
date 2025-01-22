@@ -12,7 +12,6 @@ import GenreContainer from '@/components/media/GenreContainer'
 import MediaDescription from '@/components/media/MediaDescription'
 import CastSection from '@/components/media/CastSection'
 import MediaContainer from '@/components/media/MediaContainer'
-import Collections from '@/components/Collections'
 import MediaKeywords from '@/components/media/MediaKeywords'
 import MediaRecomendations from '@/components/media/MediaRecomendations'
 import CurrentSeason from '@/components/media/CurrentSeason'
@@ -189,6 +188,11 @@ export default function TvData({
     <section className="mx-auto block max-w-screen-xl items-center px-4">
       <MediaTitleContailer
         title={tvtitle}
+        rateing={vote_average}
+        image={tvimage}
+        id={id}
+        media_type="tv"
+        relese_date={release_date}
         description={
           overview.length > 100
             ? overview.slice(0, 100) + '...'

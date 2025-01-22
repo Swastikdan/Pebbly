@@ -75,61 +75,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <noscript>
-          {/* <style>
-            {`
-              body {
-              overflow: hidden;
-              }
-              .noscript-warning {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                max-width: 600px;
-                width: 90%;
-                padding: 2rem;
-                background-color: #fee2e2;
-                border-radius: 8px;
-                box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-                text-align: center;
-                z-index: 9999;
-                font-family: system-ui, -apple-system, sans-serif;
-                animation: float 3s ease-in-out infinite;
-               
-              }
-              @keyframes float {
-                0% { transform: translate(-50%, -50%); }
-                50% { transform: translate(-50%, -52%); }
-                100% { transform: translate(-50%, -50%); }
-              }
-              .noscript-warning h1 {
-                color: #991b1b;
-                font-size: 2rem;
-                margin-bottom: 1rem;
-                font-weight: 600;
-              }
-              .noscript-warning p {
-                color: #450a0a;
-                margin: 0.75rem 0;
-                line-height: 1.6;
-              }
-            `}
-          </style> */}
-          <div className="noscript-warning" role="alert">
-            <h1>JavaScript is Required</h1>
-            <p>
-              Film Fanatic requires JavaScript to provide you with the best
-              movie browsing experience. Please enable JavaScript in your
-              browser settings and reload the page.
-            </p>
-            <p>
-              <strong>How to enable JavaScript:</strong> Go to your browser
-              settings, find the JavaScript or content settings section, and
-              make sure JavaScript is allowed.
-            </p>
-          </div>
-        </noscript>
+        <meta
+          name="google-site-verification"
+          content="uHvrTYV7MI9jil_qDblV-QDi9qjXlpdb_8XJUtCLGLQ"
+        />
       </head>
       <body
         className={`${parkinsans.variable} font-parkinsans leading-relaxed antialiased`}

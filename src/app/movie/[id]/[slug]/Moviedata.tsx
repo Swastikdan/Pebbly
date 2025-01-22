@@ -12,7 +12,7 @@ import GenreContainer from '@/components/media/GenreContainer'
 import MediaDescription from '@/components/media/MediaDescription'
 import CastSection from '@/components/media/CastSection'
 import MediaContainer from '@/components/media/MediaContainer'
-import Collections from '@/components/Collections'
+import Collections from '@/components/media/Collections'
 import MediaKeywords from '@/components/media/MediaKeywords'
 import MediaRecomendations from '@/components/media/MediaRecomendations'
 export default function Moviedata({
@@ -183,6 +183,11 @@ export default function Moviedata({
     <section className="mx-auto block max-w-screen-xl items-center px-4">
       <MediaTitleContailer
         title={movietitle}
+        rateing={vote_average}
+        image={movieimage}
+        id={id}
+        media_type="movie"
+        relese_date={release_date}
         description={
           overview.length > 100
             ? overview.slice(0, 100) + '...'

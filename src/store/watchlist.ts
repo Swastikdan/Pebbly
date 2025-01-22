@@ -1,67 +1,76 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { WatchList } from '@/types/watchlist'
+import { NullableWatchList as WatchList } from '@/types/watchlist'
 
-// Define the state interface for the watchlist
 interface WatchListState {
-  watchlist: WatchList[]
+  watchlist: WatchList[] | null
   update: (item: WatchList) => void
 }
 
-// Function to validate and deduplicate the watchlist items
-const validateWatchList = (data: unknown): WatchList[] => {
-  if (Array.isArray(data)) {
-    const uniqueItems = new Map<string, WatchList>()
-    data.forEach((item) => {
-      if (item && typeof item.externalId === 'string') {
-        uniqueItems.set(item.externalId, item)
-      }
-    })
-    return Array.from(uniqueItems.values())
+const validateWatchList = (data: unknown): WatchList[] | null => {
+  if (!data || !Array.isArray(data)) {
+    return null
   }
-  return []
+
+  const uniqueItems = new Map<string, WatchList>()
+  data.forEach((item) => {
+    if (
+      item &&
+      typeof item === 'object' &&
+      'externalId' in item &&
+      typeof item.externalId === 'string'
+    ) {
+      uniqueItems.set(item.externalId, item as WatchList)
+    }
+  })
+
+  const validatedItems = Array.from(uniqueItems.values())
+  return validatedItems.length > 0 ? validatedItems : null
 }
 
-// Create the Zustand store with persistence
 export const useWatchList = create<
   WatchListState,
   [['zustand/persist', WatchListState]]
 >(
   persist(
     (set) => ({
-      watchlist: [],
-      // Update function to add or remove items from the watchlist
-      update: (item) =>
+      watchlist: null,
+      update: (item: WatchList) =>
         set((state) => {
-          const existingItem = state.watchlist.find(
-            (i) => i.externalId === item.externalId,
+          if (!item?.externalId) {
+            return state
+          }
+
+          const currentList = state.watchlist || []
+          const existingItem = currentList.find(
+            (i) => i?.externalId === item.externalId,
           )
+
           if (existingItem) {
-            // Remove the item if it already exists
+            const filtered = currentList.filter(
+              (i) => i?.externalId !== item.externalId,
+            )
             return {
-              watchlist: state.watchlist.filter(
-                (i) => i.externalId !== item.externalId,
-              ),
+              watchlist: filtered.length > 0 ? filtered : null,
             }
-          } else {
-            // Add the item to the beginning if it does not exist
-            return { watchlist: [item, ...state.watchlist] }
+          }
+
+          return {
+            watchlist: [item, ...currentList],
           }
         }),
     }),
     {
       name: 'watchlist',
-      // Merge function to validate and merge persisted state with current state
       merge: (persistedState, currentState) => {
-        const validatedState = validateWatchList(
-          (persistedState as { watchlist: WatchList[] })?.watchlist,
+        const validatedList = validateWatchList(
+          (persistedState as { watchlist?: WatchList[] })?.watchlist,
         )
+
         return {
           ...currentState,
-          watchlist: validatedState.length
-            ? validatedState
-            : currentState.watchlist,
+          watchlist: validatedList ?? currentState.watchlist,
         }
       },
     },

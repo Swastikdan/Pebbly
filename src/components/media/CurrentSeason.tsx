@@ -1,9 +1,9 @@
 import React from 'react'
 import Link from 'next/link'
 import { SeasonsEntity } from '@/types/tv'
-import Image from '../Image'
+import Image from '@/components/Image'
 import { IMAGE_PREFIX } from '@/constants'
-import { Badge } from '../ui/badge'
+import { Badge } from '@/components/ui/badge'
 import { Star } from 'lucide-react'
 export default function CurrentSeason({
   id,
@@ -20,7 +20,7 @@ export default function CurrentSeason({
         <span className="w-fit text-xl font-semibold md:text-2xl">
           Current Season
         </span>
-        <div className="flex items-start gap-5 rounded-lg border-2 border-border p-3 md:p-5">
+        <div className="flex items-start gap-5 rounded-3xl border-2 border-border p-3 md:p-5">
           <div className="min-w-[7rem] md:min-w-[9rem]">
             <Link
               href={`/tv/${id}/${urltitle}/seasons/${season_data.season_number}`}

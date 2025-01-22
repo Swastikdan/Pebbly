@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import { SearchResultsEntity } from '@/types/media'
 import { useQuery } from '@tanstack/react-query'
 import { getSearchResult } from '@/lib/getsearchresult'
@@ -36,7 +37,13 @@ export default function SearchResults() {
       return item.media_type === validtype
     },
   )
-
+  useEffect(() => {
+    if (data && validtype && filteredData.length === 0) {
+      const newSearchParams = new URLSearchParams(searchParams.toString())
+      newSearchParams.delete('type')
+      router.replace(`?${newSearchParams.toString()}`)
+    }
+  }, [data, validtype, filteredData, router, searchParams])
   const total_pages = data?.total_pages ?? 1
   if (!query || query.length < 1) {
     return (

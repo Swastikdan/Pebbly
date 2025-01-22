@@ -3,8 +3,14 @@ import GoBack from '@/components/GoBack'
 import ShareButton from '@/components/ShareButton'
 import RatingCount from '@/components/media/RatingCount'
 import { isStringEmpty } from '@/lib/utils'
+import MediaPageWatchlistButton from './MediaPageWatchlistButton'
 export default function MediaTitleContailer({
   title,
+  rateing,
+  image,
+  id,
+  media_type,
+  relese_date,
   description,
   tagline,
   releaseyear,
@@ -16,6 +22,11 @@ export default function MediaTitleContailer({
   tv_status,
 }: {
   title: string
+  rateing: number
+  image: string
+  id: number
+  media_type: 'movie' | 'tv'
+  relese_date: string | null
   description: string
   tagline: string | null
   releaseyear: string
@@ -24,14 +35,24 @@ export default function MediaTitleContailer({
   vote_average: number | null
   vote_count: number | null
   imdb_url?: string | null
-  tv_status: string | null
+  tv_status?: string | null
 }) {
   return (
     <div className="pb-5 pt-5">
       <div className="space-y-3 pb-5">
         <div className="flex items-center justify-between">
           <GoBack link="/" />
-          <ShareButton title={title} description={description} />
+          <div className="flex items-center gap-3">
+            <MediaPageWatchlistButton
+              title={title}
+              rating={rateing}
+              image={image}
+              id={id}
+              media_type={media_type}
+              relese_date={relese_date}
+            />
+            <ShareButton title={title} description={description} />
+          </div>
         </div>
         <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
           {imdb_url ? (
@@ -39,7 +60,7 @@ export default function MediaTitleContailer({
               href={imdb_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-primary"
+              className="hover:text-primary hover:opacity-70"
             >
               {title}
             </a>
