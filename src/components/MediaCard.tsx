@@ -213,11 +213,9 @@ export function PersonCard({
   id,
   known_for_department,
 }: PersonCardProps) {
-  const formattedName = name.replace(/ /g, '-').toLowerCase()
   return (
-    <Link
-      href={`/person/${id}/${formattedName}`}
-      className="h-[13.25rem] w-32 space-y-2 rounded-xl bg-secondary/80 p-2 transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-[15.5rem] md:w-36"
+    <div
+      className="h-[13.25rem] w-32 space-y-2 rounded-xl bg-secondary/80 p-2 md:h-[15.5rem] md:w-36"
       aria-label={name}
     >
       <Image
@@ -233,6 +231,6 @@ export function PersonCard({
           {known_for_department}
         </span>
       </div>
-    </Link>
+    </div>
   )
 }

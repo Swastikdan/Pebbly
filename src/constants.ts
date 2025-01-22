@@ -31,13 +31,13 @@ const NAV_ITEMS = [
       },
     ],
   },
-  {
-    name: 'People',
-    slug: 'peoples',
-    submenu: [
-      { name: 'Popular', url: '/list/peoples/popular', slug: 'popular' },
-    ],
-  },
+  // {
+  //   name: 'People',
+  //   slug: 'peoples',
+  //   submenu: [
+  //     { name: 'Popular', url: '/list/peoples/popular', slug: 'popular' },
+  //   ],
+  // },
 ]
 
 type MediaPageSlug = {

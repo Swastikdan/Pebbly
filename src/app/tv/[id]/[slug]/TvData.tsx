@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { cache, use } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { getTvDetails } from '@/lib/gettvdetails'
 import { useQuery } from '@tanstack/react-query'
@@ -23,11 +23,14 @@ export default function TvData({
 }) {
   const { id: tv_id, slug: tv_slug } = params
   const tv_id_param = Number(tv_id)
-  const { data, error, isLoading } = useQuery({
-    queryKey: ['tv_details', tv_id_param],
-    queryFn: async () => await getTvDetails({ id: tv_id_param }),
-    staleTime: 1000 * 60 * 60 * 24,
-  })
+
+  const { data, error, isLoading } = cache(() =>
+    useQuery({
+      queryKey: ['tv_details', tv_id_param],
+      queryFn: async () => await getTvDetails({ id: tv_id_param }),
+      staleTime: 1000 * 60 * 60 * 24,
+    }),
+  )()
 
   if (isLoading) {
     return <DefaultLoader />

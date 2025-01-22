@@ -19,7 +19,7 @@ export default function SearchFilter({
   const [type, setType] = useState(currentType)
 
   useEffect(() => {
-    const isValidType = ['movie', 'tv', 'person'].includes(type ?? '')
+    const isValidType = ['movie', 'tv'].includes(type ?? '')
     if (!isValidType) {
       setType(null)
     }
@@ -65,14 +65,6 @@ export default function SearchFilter({
         disabled={!activeTypes.includes('tv')}
       >
         TV Shows
-      </Button>
-      <Button
-        variant={type === 'person' ? 'secondary' : 'outline'}
-        onClick={() => handleTypeChange('person')}
-        className="w-[84px] hover:no-underline"
-        disabled={!activeTypes.includes('person')}
-      >
-        People
       </Button>
     </div>
   )

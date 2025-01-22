@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React, { Suspense, cache } from 'react'
 import type { Metadata } from 'next'
 import { getBasicTvDetails } from '@/lib/gettvdetails'
 import { QueryClient } from '@tanstack/react-query'
@@ -39,13 +39,16 @@ export async function generateMetadata({
       },
     }
   }
-  const data = await queryClient
-    .fetchQuery({
-      queryKey: ['movie_details_basic', id],
-      queryFn: () => getBasicTvDetails({ id }),
-      staleTime: 1000 * 60 * 60 * 24,
-    })
-    .catch(() => null)
+
+  const data = await cache(async () =>
+    queryClient
+      .fetchQuery({
+        queryKey: ['movie_details_basic', id],
+        queryFn: () => getBasicTvDetails({ id }),
+        staleTime: 1000 * 60 * 60 * 24,
+      })
+      .catch(() => null),
+  )()
 
   const {
     original_name = DEFAULT_METADATA.title,

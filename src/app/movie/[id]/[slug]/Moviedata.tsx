@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { cache } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { getMovieDetails } from '@/lib/getmoviedetails'
 import { useQuery } from '@tanstack/react-query'
@@ -15,6 +15,7 @@ import MediaContainer from '@/components/media/MediaContainer'
 import Collections from '@/components/media/Collections'
 import MediaKeywords from '@/components/media/MediaKeywords'
 import MediaRecomendations from '@/components/media/MediaRecomendations'
+
 export default function Moviedata({
   params,
 }: {
@@ -22,11 +23,13 @@ export default function Moviedata({
 }) {
   const { id: movie_id, slug: movie_slug } = params
   const movie_id_param = Number(movie_id)
-  const { data, error, isLoading } = useQuery({
-    queryKey: ['movie_details', movie_id_param],
-    queryFn: async () => await getMovieDetails({ id: movie_id_param }),
-    staleTime: 1000 * 60 * 60 * 24,
-  })
+  const { data, error, isLoading } = cache(() =>
+    useQuery({
+      queryKey: ['movie_details', movie_id_param],
+      queryFn: async () => await getMovieDetails({ id: movie_id_param }),
+      staleTime: 1000 * 60 * 60 * 24,
+    }),
+  )()
 
   if (isLoading) {
     return <DefaultLoader />

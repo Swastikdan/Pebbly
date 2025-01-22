@@ -14,7 +14,7 @@ export default function SearchResults() {
   const query = searchParams.get('query') ?? ''
   const page = parseInt(searchParams.get('page') ?? '1')
   const type = searchParams.get('type')
-  const validtype = ['movie', 'tv', 'person'].includes(type ?? '') ? type : null
+  const validtype = ['movie', 'tv'].includes(type ?? '') ? type : null
 
   const { data, error, isLoading, isFetching } = useQuery({
     queryKey: ['search', query, page],
@@ -33,6 +33,7 @@ export default function SearchResults() {
 
   const filteredData = (data?.results ?? []).filter(
     (item: SearchResultsEntity) => {
+      if (item.media_type === 'person') return false
       if (validtype === null) return true
       return item.media_type === validtype
     },
@@ -71,7 +72,7 @@ export default function SearchResults() {
         <div className="flex h-10 items-center justify-between">
           <div></div>
           <div className="flex items-center gap-2">
-            {Array.from({ length: 4 }).map((_, index) => (
+            {Array.from({ length: 3 }).map((_, index) => (
               <Skeleton key={index} className="h-9 w-[84px]" />
             ))}
           </div>
@@ -85,22 +86,20 @@ export default function SearchResults() {
     )
   }
 
-  if (!data || filteredData.length === 0) {
-    return (
-      <div className="flex h-[70vh] items-center justify-center">
-        <p className="font-heading text-sm md:text-base lg:text-lg">
-          No results found for your query
-        </p>
-      </div>
-    )
-  }
+  // if (!data || filteredData.length === 0) {
+  //   return (
+  //     <div className="flex h-[70vh] items-center justify-center">
+  //       <p className="font-heading text-sm md:text-base lg:text-lg">
+  //         No results found for your query
+  //       </p>
+  //     </div>
+  //   )
+  // }
 
   const hasMovies =
     data?.results?.some((item) => item.media_type === 'movie') ?? false
   const hasTVShows =
     data?.results?.some((item) => item.media_type === 'tv') ?? false
-  const hasPeople =
-    data?.results?.some((item) => item.media_type === 'person') ?? false
 
   return (
     <section className="flex h-full flex-col gap-5">
@@ -110,27 +109,32 @@ export default function SearchResults() {
             activeTypes={[
               hasMovies ? 'movie' : '',
               hasTVShows ? 'tv' : '',
-              hasPeople ? 'person' : '',
             ].filter(Boolean)}
           />
         </div>
       </div>
       <div className="flex min-h-96 w-full items-center justify-center">
-        <div className="grid w-full grid-cols-2 items-center justify-center gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {filteredData.map((item) => (
-            <MediaCard
-              key={item.id}
-              title={item.title || item.name || 'Untitled'}
-              rating={item.vote_average ?? 0}
-              poster_path={item.poster_path ?? ''}
-              image={item.poster_path || item.profile_path || ''}
-              media_type={item.media_type as 'movie' | 'tv' | 'person'}
-              known_for_department={item.known_for_department ?? ''}
-              id={item.id}
-              relese_date={item.first_air_date || item.release_date || null}
-            />
-          ))}
-        </div>
+        {!data || filteredData.length === 0 ? (
+          <p className="font-heading text-sm md:text-base lg:text-lg">
+            No results found for your query
+          </p>
+        ) : (
+          <div className="grid w-full grid-cols-2 items-center justify-center gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {filteredData.map((item) => (
+              <MediaCard
+                key={item.id}
+                title={item.title || item.name || 'Untitled'}
+                rating={item.vote_average ?? 0}
+                poster_path={item.poster_path ?? ''}
+                image={item.poster_path || item.profile_path || ''}
+                media_type={item.media_type as 'movie' | 'tv' | 'person'}
+                known_for_department={item.known_for_department ?? ''}
+                id={item.id}
+                relese_date={item.first_air_date || item.release_date || null}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <Pagination
         currentPage={page}
