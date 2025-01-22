@@ -12,6 +12,7 @@ const parkinsans = Parkinsans({
 import { Providers } from './Providers'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import Scroll from '@/components/Scroll'
 
 export const metadata: Metadata = {
   title: 'Film Fanatic',
@@ -80,6 +81,7 @@ export default function RootLayout({
           content="uHvrTYV7MI9jil_qDblV-QDi9qjXlpdb_8XJUtCLGLQ"
         />
       </head>
+      <Scroll />
       <body
         className={`${parkinsans.variable} font-parkinsans leading-relaxed antialiased`}
       >

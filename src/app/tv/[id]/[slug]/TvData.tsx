@@ -3,7 +3,7 @@ import React from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { getTvDetails } from '@/lib/gettvdetails'
 import { useQuery } from '@tanstack/react-query'
-import { SeasonsEntity, Tv } from '@/types/tv'
+import { SeasonsEntity } from '@/types/tv'
 import DefaultLoader from '@/components/DefaultLoader'
 import { GENRE_LIST, IMAGE_PREFIX } from '@/constants'
 import MediaTitleContailer from '@/components/media/MediaTitleContailer'
@@ -18,10 +18,8 @@ import CurrentSeason from '@/components/media/CurrentSeason'
 
 export default function TvData({
   params,
-  initial_data,
 }: {
   params: { id: string; slug: string }
-  initial_data: Tv
 }) {
   const { id: tv_id, slug: tv_slug } = params
   const tv_id_param = Number(tv_id)
@@ -29,13 +27,12 @@ export default function TvData({
     queryKey: ['tv_details', tv_id_param],
     queryFn: async () => await getTvDetails({ id: tv_id_param }),
     staleTime: 1000 * 60 * 60 * 24,
-    initialData: initial_data,
   })
 
   if (isLoading) {
     return <DefaultLoader />
   }
-  if (error) {
+  if (!data || error) {
     notFound()
   }
 

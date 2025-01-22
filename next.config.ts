@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   experimental: {
     reactCompiler: true,
   },
+  compiler: {
+    removeConsole: {
+      exclude: ['error'],
+    },
+  },
+
   images: {
     remotePatterns: [
       {
@@ -31,6 +37,19 @@ const nextConfig: NextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=7200, stale-while-revalidate=3600',
+          },
+        ],
+      },
+    ]
   },
 }
 

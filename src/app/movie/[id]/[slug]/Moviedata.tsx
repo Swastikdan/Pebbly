@@ -17,10 +17,8 @@ import MediaKeywords from '@/components/media/MediaKeywords'
 import MediaRecomendations from '@/components/media/MediaRecomendations'
 export default function Moviedata({
   params,
-  initial_data,
 }: {
   params: { id: string; slug: string }
-  initial_data: Movie
 }) {
   const { id: movie_id, slug: movie_slug } = params
   const movie_id_param = Number(movie_id)
@@ -28,13 +26,12 @@ export default function Moviedata({
     queryKey: ['movie_details', movie_id_param],
     queryFn: async () => await getMovieDetails({ id: movie_id_param }),
     staleTime: 1000 * 60 * 60 * 24,
-    initialData: initial_data,
   })
 
   if (isLoading) {
     return <DefaultLoader />
   }
-  if (error) {
+  if (!data || error) {
     notFound()
   }
 

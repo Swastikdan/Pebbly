@@ -87,20 +87,9 @@ export default async function page({
   if (Number(id) < -2147483648 || Number(id) > 2147483647) {
     notFound()
   }
-  const data = await queryClient
-    .fetchQuery({
-      queryKey: ['movie_details', id],
-      queryFn: () => getMovieDetails({ id }),
-      staleTime: 1000 * 60 * 60 * 24,
-    })
-    .catch(() => null)
-  if (!data) {
-    notFound()
-  }
-
   return (
     <Suspense fallback={<DefaultLoader />}>
-      <Moviedata params={await params} initial_data={data} />
+      <Moviedata params={await params} />
     </Suspense>
   )
 }
