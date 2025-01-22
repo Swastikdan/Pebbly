@@ -2,8 +2,7 @@ import React from 'react'
 import GoBack from '@/components/GoBack'
 import ShareButton from '@/components/ShareButton'
 import RatingCount from '@/components/media/RatingCount'
-import { isStringEmpty } from '@/lib/utils'
-import MediaPageWatchlistButton from './MediaPageWatchlistButton'
+import WatchListButton from '@/components/WatchListButton'
 export default function MediaTitleContailer({
   title,
   rateing,
@@ -43,7 +42,7 @@ export default function MediaTitleContailer({
         <div className="flex items-center justify-between">
           <GoBack link="/" />
           <div className="flex items-center gap-3">
-            <MediaPageWatchlistButton
+            <WatchListButton
               title={title}
               rating={rateing}
               image={image}

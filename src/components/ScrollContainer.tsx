@@ -1,13 +1,13 @@
-"use client";
-import React, { useRef, useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
+'use client'
+import React, { useRef, useState, useEffect } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from './ui/button'
+import { cn } from '@/lib/utils'
 
 interface ScrollContainerProps {
-  children: React.ReactNode;
-  isButtonsVisible?: boolean;
-  className?: string;
+  children: React.ReactNode
+  isButtonsVisible?: boolean
+  className?: string
 }
 
 export const ScrollContainer: React.FC<ScrollContainerProps> = ({
@@ -15,76 +15,76 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
   isButtonsVisible = true,
   className,
 }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
 
   const updateScrollButtons = () => {
     if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth);
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
+      setCanScrollLeft(scrollLeft > 0)
+      setCanScrollRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth)
     }
-  };
+  }
 
   const scrollLeftFunc = () => {
     if (scrollRef.current) {
       const scrollAmount = Math.min(
         scrollRef.current.scrollLeft,
-        0.8 * scrollRef.current.clientWidth
-      );
+        0.8 * scrollRef.current.clientWidth,
+      )
       scrollRef.current.scrollBy({
         left: -scrollAmount,
-        behavior: "smooth",
-      });
+        behavior: 'smooth',
+      })
     }
-  };
+  }
 
   const scrollRightFunc = () => {
     if (scrollRef.current) {
       const remainingScroll =
         scrollRef.current.scrollWidth -
-        (scrollRef.current.scrollLeft + scrollRef.current.clientWidth);
+        (scrollRef.current.scrollLeft + scrollRef.current.clientWidth)
       const scrollAmount = Math.min(
         remainingScroll,
-        0.8 * scrollRef.current.clientWidth
-      );
+        0.8 * scrollRef.current.clientWidth,
+      )
       scrollRef.current.scrollBy({
         left: scrollAmount,
-        behavior: "smooth",
-      });
+        behavior: 'smooth',
+      })
     }
-  };
+  }
 
   useEffect(() => {
-    const currentScrollRef = scrollRef.current;
+    const currentScrollRef = scrollRef.current
 
     const handleResize = () => {
-      updateScrollButtons();
-    };
+      updateScrollButtons()
+    }
 
-    handleResize();
-    updateScrollButtons();
+    handleResize()
+    updateScrollButtons()
 
     if (currentScrollRef) {
-      currentScrollRef.addEventListener("scroll", updateScrollButtons);
-      window.addEventListener("resize", handleResize);
+      currentScrollRef.addEventListener('scroll', updateScrollButtons)
+      window.addEventListener('resize', handleResize)
 
-      const resizeObserver = new ResizeObserver(handleResize);
-      resizeObserver.observe(currentScrollRef);
+      const resizeObserver = new ResizeObserver(handleResize)
+      resizeObserver.observe(currentScrollRef)
     }
 
     return () => {
       if (currentScrollRef) {
-        currentScrollRef.removeEventListener("scroll", updateScrollButtons);
-        window.removeEventListener("resize", handleResize);
+        currentScrollRef.removeEventListener('scroll', updateScrollButtons)
+        window.removeEventListener('resize', handleResize)
       }
-    };
-  }, [children]);
+    }
+  }, [children])
 
   return (
-    <div className={cn("relative w-full overflow-hidden", className)}>
+    <div className={cn('relative w-full overflow-hidden', className)}>
       {isButtonsVisible && canScrollLeft && (
         <Button
           onClick={scrollLeftFunc}
@@ -99,6 +99,8 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
       <div
         ref={scrollRef}
         className="scrollbar-hidden relative w-full overflow-x-auto scroll-smooth rounded-xl"
+        role="region"
+        aria-label="Scrollable content"
       >
         <div ref={containerRef} className="flex w-max items-center">
           {children}
@@ -116,5 +118,5 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
         </Button>
       )}
     </div>
-  );
-};
+  )
+}

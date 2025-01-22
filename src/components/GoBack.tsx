@@ -1,20 +1,21 @@
-"use client";
-import React from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+'use client'
+import React from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft } from 'lucide-react'
+
 export default function GoBack({ link }: { link?: string }) {
-  const router = useRouter();
+  const router = useRouter()
   function goBack() {
     if (link) {
-      router.push(link);
+      router.push(link)
     } else {
-      router.back();
+      router.back()
     }
   }
   return (
-    <Button onClick={() => goBack()} variant="outline">
-      <ArrowLeft size={24} /> Go Back
+    <Button onClick={() => goBack()} variant="outline" aria-label="Go back">
+      <ArrowLeft size={24} aria-hidden="true" /> Go Back
     </Button>
-  );
+  )
 }

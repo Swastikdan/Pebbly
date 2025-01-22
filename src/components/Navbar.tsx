@@ -31,8 +31,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 
-// import { ModeToggle } from '@/components/ModeToggle'
 import { NAV_ITEMS } from '@/constants'
+
 const DesktopNavMenuItem: React.FC<{
   item: {
     name: string
@@ -42,12 +42,17 @@ const DesktopNavMenuItem: React.FC<{
 }> = ({ item }) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
-      <Button variant="secondary" className="px-3 text-base">
+      <Button
+        variant="secondary"
+        className="px-3 text-base"
+        aria-haspopup="true"
+        aria-expanded="false"
+      >
         {item.name}
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent
-      aria-describedby="Desktop Menu"
+      aria-label="Desktop Menu"
       align="end"
       className="mt-2 w-40 p-2"
     >
@@ -61,6 +66,7 @@ const DesktopNavMenuItem: React.FC<{
     </DropdownMenuContent>
   </DropdownMenu>
 )
+
 const MobileNavMenuItem: React.FC<{
   item: {
     name: string
@@ -79,7 +85,7 @@ const MobileNavMenuItem: React.FC<{
             <SheetClose className="w-full items-center justify-center text-left">
               {subitem.name}
             </SheetClose>
-          </AccordionContent>{' '}
+          </AccordionContent>
         </Link>
       ))}
     </AccordionItem>
@@ -91,8 +97,15 @@ export default function Navbar() {
   const isSearchButtonVisible = !(pathname === '/search' || pathname === '/')
 
   return (
-    <header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-b-2 border-border bg-background transition-transform duration-300">
-      <nav className="flex w-full max-w-screen-xl items-center justify-between p-3">
+    <header
+      className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-b-2 border-border bg-background transition-transform duration-300"
+      role="banner"
+    >
+      <nav
+        className="flex w-full max-w-screen-xl items-center justify-between p-3"
+        role="navigation"
+        aria-label="Main Navigation"
+      >
         <Link href="/" className="flex items-center gap-3" aria-label="Home">
           <Image
             src="/logo.svg"
@@ -104,7 +117,7 @@ export default function Navbar() {
           <div className="flex items-start">
             <h1 className="font-heading hidden text-lg font-bold xs:block md:text-xl xl:text-2xl">
               Film Fanatic
-            </h1>{' '}
+            </h1>
             <Badge
               variant="secondary"
               className="ml-2 hidden text-[10px] font-light xs:block"
@@ -114,7 +127,7 @@ export default function Navbar() {
           </div>
         </Link>
         <section className="flex items-center gap-3">
-          <ul className="hidden gap-2 md:flex">
+          <ul className="hidden gap-2 md:flex" role="menubar">
             {NAV_ITEMS.map((item, index) => (
               <DesktopNavMenuItem key={index} item={item} />
             ))}
@@ -125,7 +138,7 @@ export default function Navbar() {
                 variant="outline"
                 size="icon"
                 className="font-heading size-11 px-2 text-base font-light sm:size-9"
-                aria-label="search-button"
+                aria-label="Search"
               >
                 <Search size={24} />
               </Button>
@@ -157,7 +170,6 @@ export default function Navbar() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          {/* <ModeToggle /> */}
           <Sheet>
             <SheetTrigger className="md:hidden" asChild>
               <Button
@@ -171,7 +183,7 @@ export default function Navbar() {
             </SheetTrigger>
             <SheetContent
               className="w-full border-none duration-0"
-              aria-describedby="Mobile Nav"
+              aria-label="Mobile Navigation"
             >
               <div className="scrollbar-small h-full overflow-y-auto py-12">
                 {NAV_ITEMS.map((item, index) => (

@@ -36,13 +36,14 @@ export default function CastSection({
         <Link
           href={`/${type}/${id}/${urltitle}/cast-crew`}
           className="w-fit text-xl font-semibold hover:opacity-70 md:text-2xl"
+          aria-label="View full cast and crew"
         >
           Cast / Crew
         </Link>
         {cast.length > 0 && crew.length > 0 ? (
           <div className="flex flex-col gap-3">
             <ScrollContainer>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3" role="list">
                 {cast.map((cast, index) => (
                   <PersonCard
                     key={index}
@@ -61,21 +62,11 @@ export default function CastSection({
                     profile_path={crew.profile_path}
                   />
                 ))}
-                {/* {((credits?.cast?.length ?? 0) > 10 ||
-                  (credits?.crew?.length ?? 0) > 10) && (
-                  <Link href={`/${id}/${urltitle}/cast-crew`}>
-                    <Button
-                      variant="secondary"
-                      size="lg"
-                      className="ml-5 mr-10 flex items-center justify-center"
-                    >
-                      View More
-                      <ArrowRight size={24} />
-                    </Button>
-                  </Link>
-                )} */}
                 {is_more_cast_crew && (
-                  <Link href={`/${type}/${id}/${urltitle}/cast-crew`}>
+                  <Link
+                    href={`/${type}/${id}/${urltitle}/cast-crew`}
+                    aria-label="View more cast and crew"
+                  >
                     <Button
                       variant="secondary"
                       size="lg"
@@ -91,13 +82,14 @@ export default function CastSection({
             <Link
               href={`/${type}/${id}/${urltitle}/cast-crew`}
               className="w-fit text-lg hover:opacity-70"
+              aria-label="View full cast and crew"
             >
               Full Cast & Crew
             </Link>
           </div>
         ) : (
-          <p className="py-2 text-sm">
-            {`We don't have any cast added to this .`}
+          <p className="py-2 text-sm" role="alert">
+            {`We don't have any cast added to this.`}
           </p>
         )}
       </div>

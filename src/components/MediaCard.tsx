@@ -71,6 +71,7 @@ export function MediaCard({
             image={poster_path}
             rating={rating}
             relese_date={relese_date}
+            aria-label={`Add ${title} to watchlist`}
           />
           <div className="absolute bottom-2 right-2 flex items-center gap-2 text-sm md:text-base">
             <Badge variant="default" className="h-7 rounded-sm px-2 uppercase">
@@ -106,6 +107,7 @@ export function MediaCard({
     <Link
       href={`/${media_type}/${id}/${formattedTitle}`}
       className="h-full w-44 space-y-2 rounded-xl transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:w-48"
+      aria-label={title}
     >
       <div className="relative h-64 w-full rounded-xl bg-secondary md:h-72">
         <Image
@@ -125,6 +127,7 @@ export function MediaCard({
               image={image ?? poster_path}
               rating={rating}
               relese_date={relese_date}
+              aria-label={`Add ${title} to watchlist`}
             />
 
             <div className="absolute bottom-2 right-2 flex items-center gap-2 text-sm md:text-base">
@@ -166,7 +169,7 @@ export function MediaCardSkeleton({
 }: MediaCardSkeletonProps) {
   if (card_type === 'vertical') {
     return (
-      <div className="h-52 w-72 space-y-2">
+      <div className="h-52 w-72 space-y-2" role="status" aria-label="Loading">
         <Skeleton className="h-40 w-full rounded-xl md:h-40" />
         <div className="flex h-[40px] flex-col gap-2 md:h-[52px]">
           <Skeleton className="h-4 w-32" />
@@ -176,7 +179,11 @@ export function MediaCardSkeleton({
     )
   } else if (card_type === 'small_card_person') {
     return (
-      <div className="h-32 w-28 space-y-2 md:h-40 md:w-32">
+      <div
+        className="h-32 w-28 space-y-2 md:h-40 md:w-32"
+        role="status"
+        aria-label="Loading"
+      >
         <Skeleton className="relative h-24 w-full md:h-32" />
         <div className="flex h-[40px] flex-col gap-2 md:h-[52px]">
           <Skeleton className="h-4 w-24" />
@@ -186,7 +193,11 @@ export function MediaCardSkeleton({
     )
   }
   return (
-    <div className="h-full w-44 space-y-2 md:w-48">
+    <div
+      className="h-full w-44 space-y-2 md:w-48"
+      role="status"
+      aria-label="Loading"
+    >
       <Skeleton className="relative h-64 w-full md:h-72" />
       <div className="flex h-[40px] flex-col gap-2 md:h-[52px]">
         <Skeleton className="h-4 w-32" />

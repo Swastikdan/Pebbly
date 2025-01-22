@@ -8,9 +8,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Button } from '@/components/ui/button'
+
 import { cn } from '@/lib/utils'
-import { Badge } from './ui/badge'
+import { Badge } from '@/components/ui/badge'
+
 export default function WatchListButton({
   title,
   rating,
@@ -30,9 +31,8 @@ export default function WatchListButton({
 }) {
   const { watchlist, update } = useWatchList()
 
-  const isOnWatchList = watchlist.some(
-    (item) => item.externalId === id.toString(),
-  )
+  const isOnWatchList =
+    watchlist?.some((item) => item?.externalId === id.toString()) ?? false
 
   function handleWatchList(event: React.MouseEvent) {
     event.preventDefault()
@@ -46,6 +46,7 @@ export default function WatchListButton({
       releaseDate: relese_date ?? undefined,
     })
   }
+
   return (
     <TooltipProvider delayDuration={100} skipDelayDuration={100}>
       <Tooltip>
@@ -54,6 +55,11 @@ export default function WatchListButton({
             onClick={handleWatchList}
             variant="default"
             className={cn(className, 'z-20 size-9 p-2')}
+            aria-label={
+              isOnWatchList ? 'Remove from Watchlist' : 'Add to Watchlist'
+            }
+            role="button"
+            aria-pressed={isOnWatchList}
           >
             {isOnWatchList ? <Check size={24} /> : <Plus size={24} />}
           </Badge>

@@ -29,16 +29,19 @@ export function Pagination({
   if (totalPages <= 1) return null //Return null if there's only one page or less
 
   return (
-    <div className="flex items-center justify-center gap-5 font-medium md:gap-1">
+    <nav
+      className="flex items-center justify-center gap-5 font-medium md:gap-1"
+      aria-label="Pagination Navigation"
+    >
       {/* Previous Button */}
       <Button
         variant="ghost"
         className="border border-input px-2 pr-4 text-lg md:border-transparent md:text-base"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1} //Disable if on the first page
+        aria-label="Previous Page"
       >
         <ChevronLeft />
-
         <span>Prev</span>
       </Button>
       <div className="flex h-9 items-center justify-center gap-2 rounded-lg bg-secondary/20 px-4 py-2 md:hidden">
@@ -51,19 +54,26 @@ export function Pagination({
           <span className="text-base text-muted-foreground">{totalPages}</span>
         </div>
       </div>
-      <div className="hidden md:block">
+      <div className="hidden gap-2 md:flex" role="list">
         {/* Page 1 */}
         <Button
           variant={currentPage === 1 ? 'secondary' : 'ghost'} //Highlight if on page 1
           className="text-base"
           onClick={() => onPageChange(1)}
+          aria-label="Page 1"
+          aria-current={currentPage === 1 ? 'page' : undefined}
         >
           1
         </Button>
 
         {/* Ellipsis after Page 1 */}
         {currentPage > 4 && (
-          <Button variant="link" className="cursor-default text-base" disabled>
+          <Button
+            variant="link"
+            className="cursor-default text-base"
+            disabled
+            aria-hidden="true"
+          >
             <MoreHorizontal />
           </Button>
         )}
@@ -78,6 +88,8 @@ export function Pagination({
                 variant={pageNumber === currentPage ? 'secondary' : 'ghost'} //Highlight current page
                 className="text-base"
                 onClick={() => onPageChange(pageNumber)}
+                aria-label={`Page ${pageNumber}`}
+                aria-current={pageNumber === currentPage ? 'page' : undefined}
               >
                 {pageNumber}
               </Button>
@@ -88,7 +100,12 @@ export function Pagination({
 
         {/* Ellipsis before Last Page */}
         {currentPage < totalPages - 3 && (
-          <Button variant="link" className="cursor-default text-base" disabled>
+          <Button
+            variant="link"
+            className="cursor-default text-base"
+            disabled
+            aria-hidden="true"
+          >
             <MoreHorizontal />
           </Button>
         )}
@@ -99,6 +116,8 @@ export function Pagination({
             variant={currentPage === totalPages ? 'secondary' : 'ghost'} //Highlight if on last page
             className="text-base"
             onClick={() => onPageChange(totalPages)}
+            aria-label={`Page ${totalPages}`}
+            aria-current={currentPage === totalPages ? 'page' : undefined}
           >
             {totalPages}
           </Button>
@@ -110,10 +129,11 @@ export function Pagination({
         className="border border-input px-2 pl-4 text-lg md:border-transparent md:text-base"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages} //Disable if on the last page
+        aria-label="Next Page"
       >
         Next
         <ChevronRight />
       </Button>
-    </div>
+    </nav>
   )
 }
