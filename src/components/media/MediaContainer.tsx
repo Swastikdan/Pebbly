@@ -24,6 +24,7 @@ export default function MediaContainer({
   is_more_posters_available,
   is_more_backdrops_available,
   is_more_clips_available,
+  type,
 }: {
   id: number
   urltitle: string
@@ -34,6 +35,7 @@ export default function MediaContainer({
   is_more_posters_available: boolean
   is_more_backdrops_available: boolean
   is_more_clips_available: boolean
+  type: 'movie' | 'tv'
 }) {
   return (
     <div className="pb-5">
@@ -51,7 +53,7 @@ export default function MediaContainer({
       >
         <div className="flex items-center justify-start gap-5 pb-3 md:gap-10">
           <Link
-            href={`/${id}/${urltitle}/media`}
+            href={`/${type}/${id}/${urltitle}/media`}
             className="w-fit text-xl font-semibold hover:opacity-70 md:text-2xl"
           >
             Media
@@ -134,7 +136,7 @@ export default function MediaContainer({
                   </Dialog>
                 ))}
                 {is_more_clips_available && (
-                  <Link href={`/${id}/${urltitle}/media`}>
+                  <Link href={`/${type}/${id}/${urltitle}/media`}>
                     <Button
                       variant="secondary"
                       size="lg"
@@ -187,7 +189,7 @@ export default function MediaContainer({
                   </Dialog>
                 ))}
                 {is_more_backdrops_available && (
-                  <Link href={`/${id}/${urltitle}/media`}>
+                  <Link href={`/${type}/${id}/${urltitle}/media`}>
                     <Button
                       variant="secondary"
                       size="lg"
@@ -238,7 +240,7 @@ export default function MediaContainer({
                   </Dialog>
                 ))}
                 {is_more_posters_available && (
-                  <Link href={`/${id}/${urltitle}/media`}>
+                  <Link href={`/${type}/${id}/${urltitle}/media`}>
                     <Button
                       variant="secondary"
                       size="lg"
@@ -258,7 +260,7 @@ export default function MediaContainer({
         is_more_backdrops_available ||
         (is_more_clips_available && (
           <Link
-            href={`/${id}/${urltitle}/media`}
+            href={`/${type}/${id}/${urltitle}/media`}
             className="w-fit text-lg hover:opacity-70"
           >
             View All Media
@@ -268,7 +270,7 @@ export default function MediaContainer({
         (images.backdrops?.length ?? 0) > 0 ||
         (images.posters?.length ?? 0) > 0) && (
         <Link
-          href={`/${id}/${urltitle}/media`}
+          href={`/${type}/${id}/${urltitle}/media`}
           className="w-fit text-lg hover:opacity-70"
         >
           View All Media

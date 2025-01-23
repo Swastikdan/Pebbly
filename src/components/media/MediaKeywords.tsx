@@ -6,6 +6,7 @@ export default function MediaKeywords({
 }: {
   keywords: Array<{ name: string }>
 }) {
+  if (keywords.length === 0) return null
   return (
     <div className="py-5">
       <div className="flex flex-col gap-5">

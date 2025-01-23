@@ -228,6 +228,7 @@ export default function Moviedata({
         is_more_backdrops_available={images?.backdrops?.length! > 10}
         is_more_posters_available={images?.posters?.length! > 10}
         is_more_clips_available={youtubevideos.length > 10}
+        type="movie"
       />
       {belongs_to_collection && <Collections id={belongs_to_collection.id} />}
       {keywords && <MediaKeywords keywords={moviekeywords} />}

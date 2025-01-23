@@ -1,4 +1,4 @@
-import React from 'react'
+import { cache } from 'react'
 import type { Metadata } from 'next'
 import { getCollection } from '@/lib/getcollection'
 import { QueryClient } from '@tanstack/react-query'
@@ -43,10 +43,12 @@ export default async function CollectionsPage({
   const { slug } = await params
   if (!slug) return notFound()
 
-  const collention_data = await queryClient.fetchQuery({
-    queryKey: ['collection', slug],
-    queryFn: async () => await getCollection({ id: Number(slug) }),
-  })
+  const collention_data = await cache(async () =>
+    queryClient.fetchQuery({
+      queryKey: ['collection', slug],
+      queryFn: async () => await getCollection({ id: Number(slug) }),
+    }),
+  )()
   if (!collention_data) return notFound()
   const { id, name, overview, poster_path, backdrop_path, parts } =
     collention_data

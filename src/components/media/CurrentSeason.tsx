@@ -74,11 +74,11 @@ export default function CurrentSeason({
           </div>
         </div>
         <Link
-          href={`/tv/${id}/${urltitle}/seasons/${season_data.season_number}`}
+          href={`/tv/${id}/${urltitle}/seasons`}
           className="w-fit text-lg hover:opacity-70"
-          aria-label={`View all episodes of season ${season_data.season_number}`}
+          aria-label={`View all episodes of season`}
         >
-          View All Episodes
+          View All Season
         </Link>
       </div>
     </div>

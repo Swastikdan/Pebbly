@@ -93,11 +93,14 @@ const PREVIEW_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w92'
 const HD_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w1280'
 const HD_PROFILE_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/h632'
 const HD_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w780'
+const HD_LOGO_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w500'
 const SD_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w780'
 const SD_PROFILE_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w185'
 const SD_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w500'
+const SD_LOGO_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w300'
 const LQ_BACKDROP_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w300'
 const LQ_POSTER_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w342'
+const LQ_PROFILE_IMAGE_PREFIX = 'https://image.tmdb.org/t/p/w185'
 
 // const HD_POSTER_IMAGE_PREFIX =
 //   'https://media2.dev.to/dynamic/image/width=780,height=,fit=scale-down,gravity=auto,pr-true,format=auto/https://image.tmdb.org/t/p/w780'
@@ -128,11 +131,14 @@ const IMAGE_PREFIX = {
   HD_POSTER: HD_POSTER_IMAGE_PREFIX,
   HD_BACKDROP: HD_BACKDROP_IMAGE_PREFIX,
   HD_PROFILE: HD_PROFILE_IMAGE_PREFIX,
+  HD_LOGO: HD_LOGO_IMAGE_PREFIX,
   SD_POSTER: SD_POSTER_IMAGE_PREFIX,
   SD_BACKDROP: SD_BACKDROP_IMAGE_PREFIX,
   SD_PROFILE: SD_PROFILE_IMAGE_PREFIX,
+  SD_LOGO: SD_LOGO_IMAGE_PREFIX,
   LQ_POSTER: LQ_POSTER_IMAGE_PREFIX,
   LQ_BACKDROP: LQ_BACKDROP_IMAGE_PREFIX,
+  LQ_PROFILE: LQ_PROFILE_IMAGE_PREFIX,
 }
 
 const IMDB_URL = 'https://www.imdb.com/title/'

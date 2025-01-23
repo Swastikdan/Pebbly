@@ -254,6 +254,7 @@ export default function TvData({
         is_more_backdrops_available={images?.backdrops?.length! > 10}
         is_more_posters_available={images?.posters?.length! > 10}
         is_more_clips_available={youtubevideos.length > 10}
+        type="tv"
       />
 
       {keywords && <MediaKeywords keywords={tvkeywords} />}
