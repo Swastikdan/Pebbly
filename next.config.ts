@@ -38,19 +38,19 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=7200, stale-while-revalidate=3600',
-          },
-        ],
-      },
-    ]
-  },
+  // async headers() {
+  //   return [
+  //     {
+  //       source: '/:path*',
+  //       headers: [
+  //         {
+  //           key: 'Cache-Control',
+  //           value: 'public, max-age=7200, stale-while-revalidate=3600',
+  //         },
+  //       ],
+  //     },
+  //   ]
+  // },
 }
 
 export default nextConfig

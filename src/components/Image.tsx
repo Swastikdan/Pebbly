@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import NextImage, { ImageProps as NextImageProps } from 'next/image'
 
-import { Skeleton } from './ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type NextImageWithFallbackProps = NextImageProps & {
   src: string

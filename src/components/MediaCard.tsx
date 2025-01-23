@@ -54,7 +54,7 @@ export function MediaCard({
         className="h-52 w-72 space-y-2 rounded-xl transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70"
         aria-label={title}
       >
-        <div className="relative h-40 w-full rounded-xl bg-background">
+        <div className="relative h-40 w-full rounded-xl bg-secondary/80">
           <Image
             src={`${IMAGE_PREFIX.SD_BACKDROP}${image}`}
             width={300}
@@ -109,7 +109,7 @@ export function MediaCard({
       className="h-full w-44 space-y-2 rounded-xl transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:w-48"
       aria-label={title}
     >
-      <div className="relative h-64 w-full rounded-xl bg-secondary md:h-72">
+      <div className="relative h-64 w-full rounded-xl bg-secondary/80 md:h-72">
         <Image
           src={`${IMAGE_PREFIX.SD_POSTER}${image}`}
           width={300}

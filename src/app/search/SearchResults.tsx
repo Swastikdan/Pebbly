@@ -86,16 +86,6 @@ export default function SearchResults() {
     )
   }
 
-  // if (!data || filteredData.length === 0) {
-  //   return (
-  //     <div className="flex h-[70vh] items-center justify-center">
-  //       <p className="font-heading text-sm md:text-base lg:text-lg">
-  //         No results found for your query
-  //       </p>
-  //     </div>
-  //   )
-  // }
-
   const hasMovies =
     data?.results?.some((item) => item.media_type === 'movie') ?? false
   const hasTVShows =
