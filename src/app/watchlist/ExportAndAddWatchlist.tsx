@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label'
 export default function ExportAndAddWatchlist() {
   const [importLoading, setImportLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
-  const { watchlist, update } = useWatchList()
+  const { watchlist, loading, update } = useWatchList()
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const exportWatchlist = async () => {
@@ -62,7 +63,8 @@ export default function ExportAndAddWatchlist() {
     }
     reader.readAsText(file)
   }
-
+  console.log('watchlist', watchlist)
+  if (loading || watchlist.length === 0) return null
   return (
     <div className="flex justify-end pt-5">
       <div className="flex gap-4">

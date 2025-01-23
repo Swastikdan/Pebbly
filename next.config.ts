@@ -2,15 +2,23 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   experimental: {
+    inlineCss: true,
     reactCompiler: true,
   },
-  compiler: {
-    removeConsole: {
-      exclude: ['error'],
-    },
+  typescript: {
+    ignoreBuildErrors: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  // compiler: {
+  //   removeConsole: {
+  //     exclude: ['error'],
+  //   },
+  // },
 
   images: {
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       {
         protocol: 'https',
@@ -32,12 +40,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+
   async headers() {
     return [
       {

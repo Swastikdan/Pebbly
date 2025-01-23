@@ -4,13 +4,14 @@ import { persist } from 'zustand/middleware'
 import { NullableWatchList as WatchList } from '@/types/watchlist'
 
 interface WatchListState {
-  watchlist: WatchList[] | null
+  watchlist: WatchList[]
+  loading: boolean
   update: (item: WatchList) => void
 }
 
-const validateWatchList = (data: unknown): WatchList[] | null => {
+const validateWatchList = (data: unknown): WatchList[] => {
   if (!data || !Array.isArray(data)) {
-    return null
+    return []
   }
 
   const uniqueItems = new Map<string, WatchList>()
@@ -25,8 +26,7 @@ const validateWatchList = (data: unknown): WatchList[] | null => {
     }
   })
 
-  const validatedItems = Array.from(uniqueItems.values())
-  return validatedItems.length > 0 ? validatedItems : null
+  return Array.from(uniqueItems.values())
 }
 
 export const useWatchList = create<
@@ -35,29 +35,30 @@ export const useWatchList = create<
 >(
   persist(
     (set) => ({
-      watchlist: null,
+      watchlist: [],
+      loading: true,
       update: (item: WatchList) =>
         set((state) => {
           if (!item?.externalId) {
             return state
           }
 
-          const currentList = state.watchlist || []
-          const existingItem = currentList.find(
+          const existingItem = state.watchlist.find(
             (i) => i?.externalId === item.externalId,
           )
 
           if (existingItem) {
-            const filtered = currentList.filter(
-              (i) => i?.externalId !== item.externalId,
-            )
             return {
-              watchlist: filtered.length > 0 ? filtered : null,
+              ...state,
+              watchlist: state.watchlist.filter(
+                (i) => i?.externalId !== item.externalId,
+              ),
             }
           }
 
           return {
-            watchlist: [item, ...currentList],
+            ...state,
+            watchlist: [item, ...state.watchlist],
           }
         }),
     }),
@@ -70,7 +71,8 @@ export const useWatchList = create<
 
         return {
           ...currentState,
-          watchlist: validatedList ?? currentState.watchlist,
+          watchlist: validatedList,
+          loading: false,
         }
       },
     },

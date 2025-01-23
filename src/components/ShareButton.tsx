@@ -8,14 +8,14 @@ export default function ShareButton({
   title,
   description,
 }: {
-  title: string
-  description: string
+  title?: string
+  description?: string
 }) {
   function handleShare() {
     if (navigator.share) {
       navigator.share({
-        title: title,
-        text: description,
+        // title: title,
+        // text: description,
         url: window.location.href,
       })
     } else {

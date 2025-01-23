@@ -185,7 +185,7 @@ export default function Navbar() {
               className="w-full border-none duration-0"
               aria-label="Mobile Navigation"
             >
-              <div className="scrollbar-small h-full overflow-y-auto py-12">
+              <div className="scrollbar-small h-full overflow-y-auto py-12 pt-20">
                 {NAV_ITEMS.map((item, index) => (
                   <MobileNavMenuItem key={index} item={item} />
                 ))}

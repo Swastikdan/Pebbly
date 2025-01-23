@@ -7,6 +7,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { getCredits } from '@/lib/getCredits'
 import { MediaCredits, CrewEntity } from '@/types/MediaCredits'
 import { IMAGE_PREFIX } from '@/constants'
+import ShareButton from '@/components/ShareButton'
 
 const queryClient = new QueryClient()
 
@@ -47,8 +48,8 @@ export default async function CastCrewPage({
     <section className="mx-auto block max-w-screen-xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between">
-          <GoBack link={`/movie/${id}/${slug}`} title="Back to main" />
-          <div></div>
+          <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
+          <ShareButton />
         </div>
         <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
           {title}

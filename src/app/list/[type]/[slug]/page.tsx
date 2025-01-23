@@ -44,7 +44,7 @@ export default async function MediaPage({
   return (
     <section className="flex min-h-screen w-full justify-center">
       <div className="top-0 w-full max-w-screen-xl items-center justify-center p-5">
-        <h1 className="text-start text-4xl font-bold">
+        <h1 className="text-start text-2xl font-bold md:text-3xl lg:text-4xl">
           {subNavItem?.name} {navItem?.name}
         </h1>
         <Suspense fallback={<MediaPageFallback />}>

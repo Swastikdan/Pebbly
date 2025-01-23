@@ -2,7 +2,8 @@ import GoBack from '@/components/GoBack'
 import { notFound } from 'next/navigation'
 import React from 'react'
 import SeasonContainer from './SeasonContainer'
-export default async function MovieMediaPage({
+import ShareButton from '@/components/ShareButton'
+export default async function TvSeasonsPage({
   params,
 }: {
   params: Promise<{ id: string; slug: string }>
@@ -15,11 +16,11 @@ export default async function MovieMediaPage({
 
   if (!id) return notFound()
   return (
-    <section className="mx-auto block max-w-screen-xl items-center px-4">
+    <section className="mx-auto block min-h-[90vh] max-w-screen-xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between">
           <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
-          <div></div>
+          <ShareButton />
         </div>
         <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
           {title}

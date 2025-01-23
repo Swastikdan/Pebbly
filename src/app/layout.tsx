@@ -83,7 +83,7 @@ export default function RootLayout({
       </head>
       <Scroll />
       <body
-        className={`${parkinsans.variable} font-parkinsans leading-relaxed antialiased`}
+        className={`${parkinsans.variable} min-h-screen font-parkinsans leading-relaxed antialiased`}
       >
         <Providers>
           <Navbar />

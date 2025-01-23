@@ -4,7 +4,9 @@ import { useWatchList } from '@/store/watchlist'
 import { MediaCard } from '@/components/MediaCard'
 
 export default function WatchListContainer() {
-  const { watchlist } = useWatchList()
+  const { watchlist, loading } = useWatchList()
+
+  if (loading) return null
 
   return (
     <div className="flex min-h-96 w-full items-center justify-center">

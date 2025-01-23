@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 import MediaVideos from '@/components/media/MediaVideos'
 import MediaImages from '@/components/media/MediaImages'
+import ShareButton from '@/components/ShareButton'
 export default async function MovieMediaPage({
   params,
 }: {
@@ -20,7 +21,7 @@ export default async function MovieMediaPage({
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between">
           <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
-          <div></div>
+          <ShareButton />
         </div>
         <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
           {title}

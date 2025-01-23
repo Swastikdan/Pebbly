@@ -53,11 +53,10 @@ export function Searchbar({
           id="search"
           type="text"
           name="query"
-          autoComplete="true"
-          placeholder="👀 What movie, show, person? Let's find it!"
+          autoComplete="false"
+          placeholder="👀 What movie, show? Let's find it!"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          
           className="peer block h-12 w-full bg-background pr-8 ps-10 placeholder:text-sm enabled:bg-background sm:h-11 placeholder:md:text-base"
           aria-label="Search Input"
         />
