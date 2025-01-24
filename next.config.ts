@@ -43,36 +43,36 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // async headers() {
-  //   return [
-  //     {
-  //       source: '/:path*',
-  //       headers: [
-  //         {
-  //           key: 'Cache-Control',
-  //           value:
-  //             'public, max-age=31536000, immutable, stale-while-revalidate=86400',
-  //         },
-  //         {
-  //           key: 'Strict-Transport-Security',
-  //           value: 'max-age=31536000; includeSubDomains preload',
-  //         },
-  //         {
-  //           key: 'X-Content-Type-Options',
-  //           value: 'nosniff',
-  //         },
-  //         {
-  //           key: 'X-Frame-Options', //
-  //           value: 'ALLOW-FROM https://www.youtube.com',
-  //         },
-  //         {
-  //           key: 'X-XSS-Protection',
-  //           value: '1; mode=block',
-  //         },
-  //       ],
-  //     },
-  //   ]
-  // },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value:
+              'public, max-age=31536000, immutable, stale-while-revalidate=86400',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains preload',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options', //
+            value: 'ALLOW-FROM https://www.youtube.com',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig
