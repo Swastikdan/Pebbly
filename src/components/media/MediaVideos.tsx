@@ -7,6 +7,7 @@ import Image from '@/components/Image'
 import {
   Dialog,
   DialogTrigger,
+  DialogOverlay,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -66,20 +67,21 @@ export default function MediaVideos({
                     </button>
                   </div>
                 </DialogTrigger>
-
-                <DialogContent className="aspect-video w-full max-w-5xl rounded-2xl border-0 bg-transparent p-0 ring-0">
-                  <DialogHeader className="sr-only">
-                    <DialogTitle>{video.name}</DialogTitle>
-                  </DialogHeader>
-                  <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${video.key}`}
-                      className="size-full rounded-2xl"
-                      allowFullScreen
-                      allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
-                    ></iframe>
-                  </div>
-                </DialogContent>
+                <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
+                  <DialogContent className="aspect-video w-full max-w-5xl rounded-2xl border-0 bg-transparent p-0 ring-0">
+                    <DialogHeader className="sr-only">
+                      <DialogTitle>{video.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${video.key}`}
+                        className="size-full rounded-2xl"
+                        allowFullScreen
+                        allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
+                      ></iframe>
+                    </div>
+                  </DialogContent>
+                </DialogOverlay>
               </Dialog>
             ))}
       </div>

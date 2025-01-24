@@ -119,20 +119,21 @@ export default function MediaContainer({
                         </button>
                       </div>
                     </DialogTrigger>
-
-                    <DialogContent className="aspect-video w-full max-w-5xl rounded-2xl border-0 bg-transparent p-0 ring-0">
-                      <DialogHeader className="sr-only">
-                        <DialogTitle>{video.name}</DialogTitle>
-                      </DialogHeader>
-                      <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${video.key}`}
-                          className="size-full rounded-2xl"
-                          allowFullScreen
-                          allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
-                        ></iframe>
-                      </div>
-                    </DialogContent>
+                    <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
+                      <DialogContent className="aspect-video w-full max-w-5xl rounded-2xl border-0 bg-transparent p-0 ring-0">
+                        <DialogHeader className="sr-only">
+                          <DialogTitle>{video.name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
+                          <iframe
+                            src={`https://www.youtube.com/embed/${video.key}`}
+                            className="size-full rounded-2xl"
+                            allowFullScreen
+                            allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
+                          ></iframe>
+                        </div>
+                      </DialogContent>
+                    </DialogOverlay>
                   </Dialog>
                 ))}
                 {is_more_clips_available && (
@@ -221,22 +222,23 @@ export default function MediaContainer({
                         className="aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl bg-accent object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-52 lg:h-60"
                       />
                     </DialogTrigger>
-
-                    <DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0 bg-transparent p-0 ring-0 sm:h-full sm:w-auto">
-                      <DialogHeader className="sr-only">
-                        <DialogTitle>{title} Poster Image</DialogTitle>
-                      </DialogHeader>
-                      <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
-                        <Image
-                          unoptimized
-                          src={image.poster_image_raw}
-                          width={450}
-                          height={300}
-                          alt={title}
-                          className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
-                        />
-                      </div>
-                    </DialogContent>
+                    <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
+                      <DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0 bg-transparent p-0 ring-0 sm:h-full sm:w-auto">
+                        <DialogHeader className="sr-only">
+                          <DialogTitle>{title} Poster Image</DialogTitle>
+                        </DialogHeader>
+                        <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
+                          <Image
+                            unoptimized
+                            src={image.poster_image_raw}
+                            width={450}
+                            height={300}
+                            alt={title}
+                            className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
+                          />
+                        </div>
+                      </DialogContent>
+                    </DialogOverlay>
                   </Dialog>
                 ))}
                 {is_more_posters_available && (
@@ -266,16 +268,6 @@ export default function MediaContainer({
             View All Media
           </Link>
         ))}
-      {/* {((videos.results?.length ?? 0) > 0 ||
-        (images.backdrops?.length ?? 0) > 0 ||
-        (images.posters?.length ?? 0) > 0) && (
-        <Link
-          href={`/${type}/${id}/${urltitle}/media`}
-          className="w-fit text-lg hover:opacity-70"
-        >
-          View All Media
-        </Link>
-      )} */}
     </div>
   )
 }
