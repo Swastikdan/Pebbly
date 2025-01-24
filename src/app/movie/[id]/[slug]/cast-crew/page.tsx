@@ -1,13 +1,26 @@
+import type { Metadata } from 'next'
 import React, { cache } from 'react'
 import GoBack from '@/components/GoBack'
 import Image from '@/components/Image'
 import { notFound } from 'next/navigation'
-
 import { QueryClient } from '@tanstack/react-query'
 import { getCredits } from '@/lib/getCredits'
 import { MediaCredits, CrewEntity } from '@/types/MediaCredits'
 import { IMAGE_PREFIX } from '@/constants'
 import ShareButton from '@/components/ShareButton'
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string; slug: string }>
+}): Promise<Metadata> {
+  const title = decodeURIComponent((await params).slug)
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (l) => l.toUpperCase())
+  return {
+    title: `${title} - Cast & Crew`,
+    description: `Explore the cast and crew of ${title}`,
+  }
+}
 
 const queryClient = new QueryClient()
 

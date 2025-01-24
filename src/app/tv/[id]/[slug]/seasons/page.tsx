@@ -1,8 +1,25 @@
+import type { Metadata } from 'next'
 import GoBack from '@/components/GoBack'
 import { notFound } from 'next/navigation'
 import React from 'react'
 import SeasonContainer from './SeasonContainer'
 import ShareButton from '@/components/ShareButton'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string; slug: string }>
+}): Promise<Metadata> {
+  const title = decodeURIComponent((await params).slug)
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (l) => l.toUpperCase())
+
+  return {
+    title: `${title} - Seasons`,
+    description: `All seasons of ${title}`,
+  }
+}
+
 export default async function TvSeasonsPage({
   params,
 }: {

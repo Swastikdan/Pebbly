@@ -85,26 +85,3 @@ export default function Recomendations({
     </ScrollContainer>
   )
 }
-
-//  <ScrollContainer isButtonsVisible={!trending_day_fetching}>
-//             <div className="flex gap-4 p-4 first:pl-0 last:pr-0">
-//               {trending_day_fetching || trending_day_error
-//                 ? Array.from({ length: 6 }).map((_, index) => (
-//                     <MediaCardSkeleton key={index} />
-//                   ))
-//                 : trending_day_data?.map((item) => (
-//                     <MediaCard
-//                       key={item.id}
-//                       title={item.title || item.name || "Untitled"}
-//                       rating={item.vote_average}
-//                       image={item.poster_path}
-//                       poster_path={item.poster_path}
-//                       media_type={item.media_type as "movie" | "tv"}
-//                       id={item.id}
-//                       relese_date={
-//                         item.first_air_date || item.release_date || null
-//                       }
-//                     />
-//                   ))}
-//             </div>
-//           </ScrollContainer>

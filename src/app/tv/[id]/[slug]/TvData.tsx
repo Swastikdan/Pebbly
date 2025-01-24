@@ -13,7 +13,7 @@ import MediaDescription from '@/components/media/MediaDescription'
 import CastSection from '@/components/media/CastSection'
 import MediaContainer from '@/components/media/MediaContainer'
 import MediaKeywords from '@/components/media/MediaKeywords'
-import MediaRecomendations from '@/components/media/MediaRecomendations'
+import MediaRecomendations from '@/components/media/MediaRecommendation'
 import CurrentSeason from '@/components/media/CurrentSeason'
 
 export default function TvData({
@@ -258,7 +258,7 @@ export default function TvData({
       />
 
       {keywords && <MediaKeywords keywords={tvkeywords} />}
-      <MediaRecomendations type="tv" id={id} />
+      <MediaRecomendations type="tv" id={id} urltitle={urltitle} />
     </section>
   )
 }

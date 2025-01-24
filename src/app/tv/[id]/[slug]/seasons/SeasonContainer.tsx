@@ -8,6 +8,7 @@ import { getTvDetails } from '@/lib/gettvdetails'
 import DefaultLoader from '@/components/DefaultLoader'
 import { Badge } from '@/components/ui/badge'
 import { IMAGE_PREFIX } from '@/constants'
+import { notFound } from 'next/navigation'
 
 interface SeasonContainerProps {
   tv_id_param: number
@@ -20,7 +21,7 @@ export default function SeasonContainer({
   id,
   urltitle,
 }: SeasonContainerProps) {
-  const { data, isLoading } = cache(() =>
+  const { data, isLoading, error } = cache(() =>
     useQuery({
       queryKey: ['tv_details', tv_id_param],
       queryFn: async () => await getTvDetails({ id: tv_id_param }),
@@ -30,6 +31,10 @@ export default function SeasonContainer({
 
   if (isLoading) {
     return <DefaultLoader />
+  }
+
+  if (!data || error) {
+    return notFound()
   }
 
   return (
@@ -42,8 +47,7 @@ export default function SeasonContainer({
           aria-label={`Current Season: ${season.name}`}
         >
           <div className="min-w-[7rem] md:min-w-[9rem]">
-            <Link
-              href={`/tv/${id}/${urltitle}/seasons/${season.season_number}`}
+            <div
               className="transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70"
               aria-label={`View season ${season.season_number} details`}
             >
@@ -54,16 +58,15 @@ export default function SeasonContainer({
                 className="h-40 w-28 shrink-0 rounded-xl object-cover md:h-52 md:w-36"
                 alt={season.name}
               />
-            </Link>
+            </div>
           </div>
           <div className="flex flex-1 flex-col items-start justify-center gap-2 overflow-hidden py-3">
-            <Link
-              href={`/tv/${id}/${urltitle}/seasons/${season.season_number}`}
+            <div
               className="line-clamp-1 text-xl font-bold transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:text-2xl"
               aria-label={`View season ${season.season_number} details`}
             >
               {season.name}
-            </Link>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               {season.vote_average > 0 && (
                 <Badge

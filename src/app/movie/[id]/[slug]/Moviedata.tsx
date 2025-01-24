@@ -14,7 +14,7 @@ import CastSection from '@/components/media/CastSection'
 import MediaContainer from '@/components/media/MediaContainer'
 import Collections from '@/components/media/Collections'
 import MediaKeywords from '@/components/media/MediaKeywords'
-import MediaRecomendations from '@/components/media/MediaRecomendations'
+import MediaRecomendations from '@/components/media/MediaRecommendation'
 
 export default function Moviedata({
   params,
@@ -232,7 +232,7 @@ export default function Moviedata({
       />
       {belongs_to_collection && <Collections id={belongs_to_collection.id} />}
       {keywords && <MediaKeywords keywords={moviekeywords} />}
-      <MediaRecomendations type="movie" id={id} />
+      <MediaRecomendations type="movie" id={id} urltitle={urltitle} />
     </section>
   )
 }
