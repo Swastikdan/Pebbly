@@ -27,8 +27,7 @@ export default function CurrentSeason({
           aria-label={`Current Season: ${season_data.name}`}
         >
           <div className="min-w-[7rem] md:min-w-[9rem]">
-            <Link
-              href={`/tv/${id}/${urltitle}/seasons/${season_data.season_number}`}
+            <div
               className="transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70"
               aria-label={`View season ${season_data.season_number} details`}
             >
@@ -39,16 +38,15 @@ export default function CurrentSeason({
                 className="h-40 w-28 shrink-0 rounded-xl object-cover md:h-52 md:w-36"
                 alt={season_data.name}
               />
-            </Link>
+            </div>
           </div>
           <div className="flex flex-1 flex-col items-start justify-center gap-2 overflow-hidden py-3">
-            <Link
-              href={`/tv/${id}/${urltitle}/seasons/${season_data.season_number}`}
+            <div
               className="line-clamp-1 text-xl font-bold transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:text-2xl"
               aria-label={`View season ${season_data.season_number} details`}
             >
               {season_data.name}
-            </Link>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               {season_data.vote_average > 0 && (
                 <Badge
