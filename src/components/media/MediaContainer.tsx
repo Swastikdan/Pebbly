@@ -177,7 +177,6 @@ export default function MediaContainer({
                         </DialogHeader>
                         <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
                           <Image
-                            unoptimized
                             src={image.backdrop_image_raw}
                             alt={title}
                             width={450}
@@ -229,7 +228,6 @@ export default function MediaContainer({
                         </DialogHeader>
                         <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
                           <Image
-                            unoptimized
                             src={image.poster_image_raw}
                             width={450}
                             height={300}
