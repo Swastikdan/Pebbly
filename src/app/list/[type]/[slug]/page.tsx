@@ -1,4 +1,3 @@
-export const runtime = 'static'
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { MEDIA_PAGE_SLUGS, NAV_ITEMS } from '@/constants'
