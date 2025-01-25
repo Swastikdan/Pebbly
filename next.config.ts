@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     minimumCacheTTL: 31536000,
-    domains: ['via.placeholder.com', 'image.tmdb.org', 'img.youtube.com'],
+    loader: 'default',
     deviceSizes: [320, 420, 768, 1024, 1200, 1920, 2048],
     formats: ['image/webp', 'image/avif'],
     remotePatterns: [

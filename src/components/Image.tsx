@@ -33,7 +33,7 @@ export default function Image({
       <NextImage
         src={imageSrc}
         alt={alt}
-        //unoptimized
+        unoptimized
         className={cn(className)}
         loading="eager"
         fetchPriority="high"
