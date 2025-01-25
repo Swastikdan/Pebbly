@@ -1,5 +1,6 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '../ui/badge'
 
 export default function MediaKeywords({
   keywords,
@@ -15,13 +16,13 @@ export default function MediaKeywords({
         </span>
         <div className="flex flex-wrap gap-2">
           {keywords.map((keyword, index) => (
-            <Button
+            <Badge
               variant="default"
-              className="h-6 rounded-sm px-4 text-xs font-light md:text-sm"
+              className="h-6 cursor-auto rounded-sm px-4 text-xs font-light hover:bg-primary md:text-sm"
               key={index}
             >
               {keyword.name}
-            </Button>
+            </Badge>
           ))}
         </div>
       </div>

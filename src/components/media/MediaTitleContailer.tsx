@@ -6,6 +6,7 @@ import WatchListButton from '@/components/WatchListButton'
 export default function MediaTitleContailer({
   title,
   rateing,
+  poster_path,
   image,
   id,
   media_type,
@@ -23,6 +24,7 @@ export default function MediaTitleContailer({
   title: string
   rateing: number
   image: string
+  poster_path: string
   id: number
   media_type: 'movie' | 'tv'
   relese_date: string | null
@@ -45,7 +47,7 @@ export default function MediaTitleContailer({
             <WatchListButton
               title={title}
               rating={rateing}
-              image={image}
+              image={poster_path}
               id={id}
               media_type={media_type}
               relese_date={relese_date}

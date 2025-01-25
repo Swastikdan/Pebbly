@@ -185,6 +185,7 @@ export default function Moviedata({
         title={movietitle}
         rateing={vote_average}
         image={movieimage}
+        poster_path={poster_path}
         id={id}
         media_type="movie"
         relese_date={release_date}

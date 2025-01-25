@@ -190,6 +190,7 @@ export default function TvData({
         title={tvtitle}
         rateing={vote_average}
         image={tvimage}
+        poster_path={poster_path}
         id={id}
         media_type="tv"
         relese_date={release_date}

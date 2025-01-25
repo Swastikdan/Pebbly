@@ -120,7 +120,7 @@ export default function Navbar() {
             </h1>
             <Badge
               variant="secondary"
-              className="ml-2 hidden text-[10px] font-light xs:block"
+              className="ml-2 hidden text-[10px] font-light hover:bg-primary xs:block"
             >
               Beta
             </Badge>
