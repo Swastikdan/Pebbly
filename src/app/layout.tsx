@@ -6,7 +6,16 @@ const parkinsans = Parkinsans({
   variable: '--font-parkinsans',
   subsets: ['latin'],
   weight: 'variable',
-  fallback: ['sans-serif'],
+  fallback: [
+    'system-ui',
+    '-apple-system',
+    'BlinkMacSystemFont',
+    'Segoe UI',
+    'Roboto',
+    'Helvetica Neue',
+    'Arial',
+    'sans-serif',
+  ],
   display: 'swap',
 })
 import { Providers } from './Providers'

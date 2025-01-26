@@ -49,36 +49,36 @@ const nextConfig: NextConfig = {
     TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL,
     TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN,
   },
-  // async headers() {
-  //   return [
-  //     {
-  //       source: '/:path*',
-  //       headers: [
-  //         {
-  //           key: 'Cache-Control',
-  //           value:
-  //             'public, max-age=31536000, immutable, stale-while-revalidate=86400',
-  //         },
-  //         {
-  //           key: 'Strict-Transport-Security',
-  //           value: 'max-age=31536000; includeSubDomains preload',
-  //         },
-  //         {
-  //           key: 'X-Content-Type-Options',
-  //           value: 'nosniff',
-  //         },
-  //         {
-  //           key: 'X-Frame-Options', //
-  //           value: 'ALLOW-FROM https://www.youtube.com',
-  //         },
-  //         {
-  //           key: 'X-XSS-Protection',
-  //           value: '1; mode=block',
-  //         },
-  //       ],
-  //     },
-  //   ]
-  // },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value:
+              'public, max-age=31536000, immutable, stale-while-revalidate=86400',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains preload',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options', //
+            value: 'ALLOW-FROM https://www.youtube.com',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig

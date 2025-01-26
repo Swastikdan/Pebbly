@@ -34,6 +34,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "critters": "^0.0.25",
+    "directory-tree": "^3.5.2",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.471.1",
     "next": "15.1.4",
