@@ -1,4 +1,3 @@
-export const runtime = 'edge'
 import React from 'react'
 import type { Metadata } from 'next'
 import { Searchbar, SearchBarSkeleton } from '@/components/SearchBar'

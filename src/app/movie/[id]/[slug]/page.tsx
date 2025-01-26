@@ -1,4 +1,3 @@
-export const runtime = 'edge'
 import React, { Suspense, cache } from 'react'
 import type { Metadata } from 'next'
 import { getMovieDetails, getBasicMovieDetails } from '@/lib/getmoviedetails'

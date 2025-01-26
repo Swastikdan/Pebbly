@@ -1,55 +1,31 @@
 import * as React from 'react'
 
 interface InfiniteScrollProps {
-  /** Indicates if data is currently being loaded */
   isLoading: boolean
-  /** Indicates if there are more items to load */
   hasMore: boolean
-  /** Function to call when more items need to be loaded */
   next: () => unknown
-  /** Intersection observer threshold (0 to 1). Default is 1 */
   threshold?: number
-  /** Root element for intersection observer. Default is null (viewport) */
   root?: Element | Document | null
-  /** Root margin for intersection observer. Default is "0px" */
   rootMargin?: string
-  /** Whether to reverse the scroll direction. Default is false */
   reverse?: boolean
-  /** Child elements to render */
   children: React.ReactNode
 }
 
-/**
- * InfiniteScroll component that automatically loads more content when the user scrolls near the bottom
- * @param props InfiniteScrollProps
- * @returns React component that implements infinite scrolling
- */
 export default function InfiniteScroll({
   isLoading,
   hasMore,
   next,
-  threshold = 1,
+  threshold = 0.1,
   root = null,
   rootMargin = '0px',
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reverse = false,
   children,
 }: InfiniteScrollProps) {
   const observerTarget = React.useRef<HTMLDivElement>(null)
-  // @ts-expect-error IntersectionObserver is not available in Node
-  const observer = React.useRef<IntersectionObserver>()
+  const observer = React.useRef<IntersectionObserver | null>(null)
   const hasCalledNext = React.useRef(false)
-  // @ts-expect-error NodeJS.Timeout is not available in Node
-  const timeoutRef = React.useRef<NodeJS.Timeout>()
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
-  // Reset hasCalledNext when loading completes or hasMore changes
-  React.useEffect(() => {
-    if (!isLoading) {
-      hasCalledNext.current = false
-    }
-  }, [isLoading, hasMore])
-
-  // Cleanup timeout on unmount
   React.useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -59,7 +35,7 @@ export default function InfiniteScroll({
   }, [])
 
   React.useEffect(() => {
-    const safeThreshold = threshold < 0 || threshold > 1 ? 1 : threshold
+    const safeThreshold = Math.min(Math.max(threshold, 0), 1)
 
     if (isLoading || !hasMore) {
       if (observer.current) {
@@ -69,26 +45,20 @@ export default function InfiniteScroll({
     }
 
     const handleIntersection = (entries: IntersectionObserverEntry[]) => {
-      if (
-        entries[0].isIntersecting &&
-        hasMore &&
-        !isLoading &&
-        !hasCalledNext.current
-      ) {
-        // Debounce the next() call
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current)
-        }
+      const entry = entries[0]
 
-        timeoutRef.current = setTimeout(() => {
+      if (entry.isIntersecting) {
+        if (!hasCalledNext.current && hasMore && !isLoading) {
           hasCalledNext.current = true
-          next()
-        }, 0) // 300ms debounce
-      }
-    }
+          if (timeoutRef.current) clearTimeout(timeoutRef.current)
 
-    if (observer.current) {
-      observer.current.disconnect()
+          timeoutRef.current = setTimeout(() => {
+            next()
+          }, 100)
+        }
+      } else {
+        hasCalledNext.current = false
+      }
     }
 
     observer.current = new IntersectionObserver(handleIntersection, {
@@ -103,31 +73,26 @@ export default function InfiniteScroll({
     }
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
       if (observer.current) {
         observer.current.disconnect()
       }
     }
   }, [hasMore, isLoading, next, threshold, root, rootMargin])
 
-  if (!hasMore && !isLoading) {
-    return <>{children}</>
-  }
-
   return (
     <>
       {children}
       <div
         ref={observerTarget}
-        className="w-full"
-        style={{ height: '1px' }}
+        className="sentinel"
+        style={{
+          height: '1px',
+          width: '1px',
+          pointerEvents: 'none',
+          visibility: 'hidden',
+        }}
         aria-hidden="true"
         data-testid="infinite-scroll-sentinel"
-        role="status"
-        aria-live="polite"
-        aria-label="Loading more content"
       />
     </>
   )

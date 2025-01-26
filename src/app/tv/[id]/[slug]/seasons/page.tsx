@@ -1,4 +1,3 @@
-export const runtime = 'edge'
 import type { Metadata } from 'next'
 import GoBack from '@/components/GoBack'
 import { notFound } from 'next/navigation'

@@ -1,4 +1,3 @@
-export const runtime = 'edge'
 import type { Metadata } from 'next'
 import React, { cache } from 'react'
 import GoBack from '@/components/GoBack'

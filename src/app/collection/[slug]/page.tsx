@@ -1,4 +1,3 @@
-export const runtime = 'edge'
 import { cache } from 'react'
 import type { Metadata } from 'next'
 import { getCollection } from '@/lib/getcollection'
