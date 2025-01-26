@@ -82,7 +82,7 @@ export default function MediaPageResults({
   if (status === 'pending') {
     return (
       <section>
-        <div className="grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+        <div className="grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {skeletonCards}
         </div>
       </section>
@@ -90,8 +90,8 @@ export default function MediaPageResults({
   }
 
   return (
-    <div className="flex min-h-96 w-full items-center justify-center px-[max(5vmin,1.5rem)]">
-      <div className="grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+    <div className="flex min-h-96 w-full items-center justify-center">
+      <div className="grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {totalItems > 0 ? (
           mediaCards
         ) : (

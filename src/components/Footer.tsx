@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function Footer() {
   return (
     <footer
@@ -13,15 +15,25 @@ export default function Footer() {
           </span>{' '}
           By Swastik Dan
         </p>
-        <a
-          href="https://github.com/Swastikdan/Film-Fanatic"
-          target="_blank"
-          className="underline"
-          rel="noopener noreferrer"
-          aria-label="Github repository for Film Fanatic"
-        >
-          Github
-        </a>
+        <div className="flex items-center gap-5">
+          <Link
+            href="/legal"
+            className="underline"
+            aria-label="Legal information"
+          >
+            Legal
+          </Link>
+
+          <a
+            href="https://github.com/Swastikdan/Film-Fanatic"
+            target="_blank"
+            className="underline"
+            rel="noopener noreferrer"
+            aria-label="Github repository for Film Fanatic"
+          >
+            Github
+          </a>
+        </div>
       </section>
     </footer>
   )
