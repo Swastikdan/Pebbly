@@ -4,29 +4,43 @@ import { persist } from 'zustand/middleware'
 import { WatchList } from '@/types/watchlist'
 import { useAuthStore } from './auth-store'
 
-// Debounce utility for syncing with server
+/**
+ * Creates a debounced synchronization manager to prevent excessive server requests
+ * while maintaining data consistency between client and server
+ */
 const createDebouncedSync = () => {
   let timeoutId: NodeJS.Timeout
   let pendingChanges = false
 
-  const sync = async (fn: () => Promise<void>) => {
-    if (!pendingChanges) return
-    try {
-      await fn()
-      pendingChanges = false
-    } catch (error) {
-      console.error('Sync failed:', error)
-    }
-  }
-
   return {
+    /**
+     * Marks that there are pending changes needing synchronization
+     */
     markChanged: () => {
       pendingChanges = true
     },
+
+    /**
+     * Schedules a synchronization attempt after a specified delay
+     * @param fn - Synchronization function to execute
+     * @param ms - Delay in milliseconds before execution
+     */
     scheduleSync: (fn: () => Promise<void>, ms: number) => {
       clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => sync(fn), ms)
+      timeoutId = setTimeout(async () => {
+        if (!pendingChanges) return
+        try {
+          await fn()
+          pendingChanges = false
+        } catch (error) {
+          console.error('Sync failed:', error)
+        }
+      }, ms)
     },
+
+    /**
+     * Cancels any pending synchronization attempts
+     */
     cancel: () => {
       clearTimeout(timeoutId)
       pendingChanges = false
@@ -34,11 +48,10 @@ const createDebouncedSync = () => {
   }
 }
 
-// State interface definition
 interface WatchListState {
-  watchlist: WatchList[] | null // null indicates not yet loaded
-  loading: boolean // true only during initial load
-  isSyncing: boolean // true during background syncs
+  watchlist: WatchList[] | null
+  loading: boolean
+  isSyncing: boolean
   error: string | null
   update: (item: WatchList) => void
   hydrateFromServer: () => Promise<void>
@@ -46,7 +59,11 @@ interface WatchListState {
   syncWithServer: () => Promise<void>
 }
 
-// Validation helper for watchlist data
+/**
+ * Validates the structure of watchlist data from unknown sources
+ * @param data - Raw data to validate
+ * @returns Array of validated WatchList items
+ */
 const validateWatchList = (data: unknown): WatchList[] => {
   if (!data || !Array.isArray(data)) return []
   return data.filter(
@@ -58,20 +75,21 @@ const validateWatchList = (data: unknown): WatchList[] => {
   )
 }
 
-// Create Zustand store with persistence
 export const useWatchList = create<WatchListState>()(
   persist(
     (set, get) => {
       const syncManager = createDebouncedSync()
 
       return {
-        // Initial state
         watchlist: null,
         loading: true,
         isSyncing: false,
         error: null,
 
-        // Add/Remove items from watchlist
+        /**
+         * Updates the watchlist in local state and schedules server synchronization
+         * @param item - Watchlist item to add/remove
+         */
         update: (item: WatchList) => {
           if (!item?.externalId) return
 
@@ -87,22 +105,24 @@ export const useWatchList = create<WatchListState>()(
             return { watchlist: newWatchlist }
           })
 
-          // Schedule background sync
           syncManager.markChanged()
           syncManager.scheduleSync(get().syncWithServer, 5000)
         },
 
-        // Load data from server
+        /**
+         * Hydrates state from server when authenticated, merging with local changes
+         * Acts as the primary synchronization point for initial data loading
+         */
         hydrateFromServer: async () => {
           const { isLoggedIn } = useAuthStore.getState()
 
-          // Handle non-logged in state
+          // For unauthenticated users, maintain local-only state
           if (!isLoggedIn) {
-            set({ loading: false, watchlist: [] })
+            set({ loading: false })
             return
           }
 
-          // Only set loading on initial load
+          // Only show loading state on initial hydration
           if (get().watchlist === null) {
             set({ loading: true, error: null })
           }
@@ -114,12 +134,13 @@ export const useWatchList = create<WatchListState>()(
             const serverWatchlist = await response.json()
             const validatedServer = validateWatchList(serverWatchlist)
 
-            // Merge local and server data
             set((state) => {
               const currentList = state.watchlist || []
+
+              // Merge strategy: Server items take precedence, local additions preserved
               const combinedWatchlist = [
-                ...currentList,
                 ...validatedServer,
+                ...currentList,
               ].reduce((acc: WatchList[], current) => {
                 const exists = acc.some(
                   (item) => item.externalId === current.externalId,
@@ -134,22 +155,30 @@ export const useWatchList = create<WatchListState>()(
                 error: null,
               }
             })
+
+            // Schedule immediate sync to push any merged changes to server
+            syncManager.markChanged()
+            syncManager.scheduleSync(get().syncWithServer, 0)
           } catch (err) {
             set({
               error: 'Failed to sync with server',
               loading: false,
-              watchlist: [],
+              watchlist: get().watchlist || [],
             })
           }
         },
 
-        // Clear local data
+        /**
+         * Clears local watchlist state and cancels pending syncs
+         */
         clearLocalWatchlist: () => {
           syncManager.cancel()
           set({ watchlist: [], error: null, loading: false })
         },
 
-        // Sync with server (background operation)
+        /**
+         * Direct synchronization with server - pushes local state when authenticated
+         */
         syncWithServer: async () => {
           const { watchlist } = get()
           const { isLoggedIn, email } = useAuthStore.getState()
@@ -185,9 +214,10 @@ export const useWatchList = create<WatchListState>()(
         watchlist: validateWatchList(
           (persistedState as WatchListState)?.watchlist,
         ),
-        loading: true, // Start with loading true
+        loading: true, // Trigger loading state on merge
       }),
       onRehydrateStorage: () => async (state: WatchListState | undefined) => {
+        // Post-rehydration logic
         if (!state) {
           useWatchList.setState({ loading: false, watchlist: [] })
           return
@@ -198,46 +228,28 @@ export const useWatchList = create<WatchListState>()(
   ),
 )
 
-// Auth state subscription - handle both login and logout
-// useAuthStore.subscribe((state, prevState) => {
-//   // Handle login
-//   if (!prevState.isLoggedIn && state.isLoggedIn) {
-//     useWatchList.getState().hydrateFromServer()
-//   }
-
-//   // Handle logout
-//   if (prevState.isLoggedIn && !state.isLoggedIn) {
-//     useWatchList.setState({
-//       watchlist: [],
-//       loading: false,
-//       isSyncing: false,
-//       error: null,
-//     })
-//   }
-// })
+// Cross-store synchronization: Handle authentication state changes
 useAuthStore.subscribe((state, prevState) => {
   const watchListStore = useWatchList.getState()
 
-  // Handle login - merge local data with server
   if (!prevState.isLoggedIn && state.isLoggedIn) {
-    // If we have local data, trigger hydration to merge
     if (watchListStore.watchlist?.length) {
       watchListStore.hydrateFromServer()
     } else {
-      // No local data, just fetch from server
       useWatchList.setState({ loading: true })
       watchListStore.hydrateFromServer()
     }
   }
 
-  // Handle logout - preserve local data
   if (prevState.isLoggedIn && !state.isLoggedIn) {
-    // Keep local data but reset states
+    // Clear both memory state and persisted storage
     useWatchList.setState({
+      watchlist: null,
       loading: false,
       isSyncing: false,
       error: null,
-      watchlist: [],
     })
+    // Clear persisted data from storage
+    useWatchList.persist.clearStorage()
   }
 })
