@@ -1,3 +1,4 @@
+// SearchResults.tsx
 'use client'
 import { useEffect } from 'react'
 import { SearchResultsEntity } from '@/types/media'
@@ -8,6 +9,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import SearchFilter from './SearchFilter'
 import { Pagination } from '@/components/Pagination'
 import { Skeleton } from '@/components/ui/skeleton'
+
 export default function SearchResults() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -38,15 +40,29 @@ export default function SearchResults() {
       return item.media_type === validtype
     },
   )
+
   useEffect(() => {
-    if (data && validtype && filteredData.length === 0) {
-      const newSearchParams = new URLSearchParams(searchParams.toString())
-      newSearchParams.delete('type')
-      router.replace(`?${newSearchParams.toString()}`)
+    const params = new URLSearchParams(searchParams.toString())
+    const currentPage = parseInt(params.get('page') || '1')
+
+    // Reset invalid filters
+    if (validtype && !filteredData.length) {
+      params.delete('type')
+    }
+
+    // Validate page number
+    if (data && currentPage > data.total_pages) {
+      params.set('page', Math.min(currentPage, data.total_pages).toString())
+      router.replace(`?${params.toString()}`)
     }
   }, [data, validtype, filteredData, router, searchParams])
-  const total_pages = data?.total_pages ?? 1
-  if (!query || query.length < 1) {
+
+  const hasMovies =
+    data?.results?.some((item) => item.media_type === 'movie') ?? false
+  const hasTVShows =
+    data?.results?.some((item) => item.media_type === 'tv') ?? false
+
+  if (!query) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
         <p className="font-heading text-sm md:text-base lg:text-lg">
@@ -86,28 +102,32 @@ export default function SearchResults() {
     )
   }
 
-  const hasMovies =
-    data?.results?.some((item) => item.media_type === 'movie') ?? false
-  const hasTVShows =
-    data?.results?.some((item) => item.media_type === 'tv') ?? false
-
   return (
     <section className="flex h-full flex-col gap-5">
       <div className="flex h-10 items-center justify-end">
         <div className="flex items-center gap-2">
           <SearchFilter
             activeTypes={[
-              hasMovies ? 'movie' : '',
-              hasTVShows ? 'tv' : '',
-            ].filter(Boolean)}
+              ...(hasMovies ? ['movie'] : []),
+              ...(hasTVShows ? ['tv'] : []),
+            ]}
           />
         </div>
       </div>
       <div className="flex min-h-96 w-full items-center justify-center">
-        {!data || filteredData.length === 0 ? (
-          <p className="font-heading text-sm md:text-base lg:text-lg">
-            No results found for your query
-          </p>
+        {filteredData.length === 0 ? (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <p className="font-heading text-sm md:text-base lg:text-lg">
+              {data?.results?.length
+                ? 'No movies or TV shows found in these results.'
+                : 'No results found for your search query.'}
+            </p>
+            {data?.results && data.results.length > 0 && (
+              <p className="text-muted-foreground">
+                Try adjusting your search terms or filters.
+              </p>
+            )}
+          </div>
         ) : (
           <div className="grid w-full grid-cols-2 items-center justify-center gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {filteredData.map((item) => (
@@ -126,11 +146,13 @@ export default function SearchResults() {
           </div>
         )}
       </div>
-      <Pagination
-        currentPage={page}
-        totalPages={total_pages}
-        onPageChange={handlePageChange}
-      />
+      {data?.results && data.results.length > 0 && (
+        <Pagination
+          currentPage={page}
+          totalPages={data?.total_pages ?? 1}
+          onPageChange={handlePageChange}
+        />
+      )}
     </section>
   )
 }

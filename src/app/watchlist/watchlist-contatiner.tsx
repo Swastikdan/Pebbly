@@ -9,9 +9,9 @@ export default function WatchListContainer() {
   if (loading) return null
 
   return (
-    <div className="flex min-h-96 w-full items-center justify-center">
+    <div className="flex min-h-96 w-full items-center justify-center px-[max(5vmin,1.5rem)]">
       {watchlist && watchlist.length > 0 ? (
-        <div className="grid w-full grid-cols-2 items-center justify-center gap-5 py-10 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
+        <div className="grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
           {watchlist.map(
             (item) =>
               item && (
