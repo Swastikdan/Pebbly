@@ -139,7 +139,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
   - [TanStack Query](https://tanstack.com/query/)
   - [Tailwind CSS](https://tailwindcss.com/)
   - [Turso](https://turso.tech/)
-- All contributors who have helped improve this project.
 
 ---
 
@@ -164,7 +163,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 **Swastik Dan**
 
 - GitHub: [@Swastikdan](https://github.com/Swastikdan)
-- Portfolio: [swastikdan.com](https://swastikdan.com)
+- Portfolio: [swastikdan.in](https://www.swastikdan.in)
 
 ---
 
