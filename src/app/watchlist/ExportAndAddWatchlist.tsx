@@ -10,7 +10,7 @@ import { AuthButton } from '@/components/AuthButton'
 export default function ExportAndAddWatchlist() {
   const [importLoading, setImportLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
-  const { watchlist, loading, update, syncWithServer } = useWatchList()
+  const { watchlist, loading } = useWatchList() // Removed unused variables
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const exportWatchlist = async () => {
@@ -18,7 +18,7 @@ export default function ExportAndAddWatchlist() {
       setExportLoading(true)
       const dataToExport = {
         state: {
-          watchlist: watchlist,
+          watchlist: watchlist ?? [], // Add null check
           version: 1,
         },
       }
@@ -58,9 +58,10 @@ export default function ExportAndAddWatchlist() {
         const validatedList = Array.isArray(rawWatchlist) ? rawWatchlist : []
 
         useWatchList.setState((state) => {
+          const currentWatchlist = state.watchlist ?? [] // Add null check
           const existingMap = new Map(
-            state.watchlist
-              .filter((item) => item !== null)
+            currentWatchlist
+              .filter((item): item is WatchList => item !== null)
               .map((item) => [item.externalId, item]),
           )
 
@@ -95,7 +96,7 @@ export default function ExportAndAddWatchlist() {
   return (
     <div className="flex justify-end pt-5">
       <div className="flex gap-4">
-        {watchlist.length > 0 && (
+        {(watchlist?.length ?? 0) > 0 && ( // Add null safe check
           <>
             <Button
               variant="secondary"

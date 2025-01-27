@@ -2,6 +2,7 @@
 import React from 'react'
 import { useWatchList } from '@/store/watchlist'
 import { MediaCard, MediaCardSkeleton } from '@/components/MediaCard'
+import DefaultLoader from '@/components/DefaultLoader'
 
 export default function WatchListContainer() {
   const { watchlist, loading } = useWatchList()
@@ -11,11 +12,7 @@ export default function WatchListContainer() {
   return (
     <div className="flex min-h-96 w-full items-center justify-center">
       {loading ? (
-        <div className="mt-[56px] grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {Array.from({ length: 12 }).map((_, index) => (
-            <MediaCardSkeleton key={index} />
-          ))}
-        </div>
+        <DefaultLoader />
       ) : watchlist && watchlist.length > 0 ? (
         <div className="grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {watchlist.map(
