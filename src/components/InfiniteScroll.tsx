@@ -54,7 +54,7 @@ export default function InfiniteScroll({
 
           timeoutRef.current = setTimeout(() => {
             next()
-          }, 100)
+          }, 0)
         }
       } else {
         hasCalledNext.current = false
