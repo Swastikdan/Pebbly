@@ -1,13 +1,11 @@
 'use client'
-
-import { useMemo, memo } from 'react'
+import React, { useMemo, memo } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { type MediaListDataQuery } from '@/types/media'
 import { getMediaData } from '@/lib/getmediadata'
 import { MediaCard, MediaCardSkeleton } from '@/components/MediaCard'
 import InfiniteScroll from '@/components/InfiniteScroll'
 
-// Memoize MediaCard to prevent unnecessary re-renders
 const MemoizedMediaCard = memo(MediaCard)
 
 export default function MediaPageResults({
@@ -35,15 +33,12 @@ export default function MediaPageResults({
     staleTime: 1000 * 60 * 60,
   })
 
-  // Memoize flattened results to avoid recalculation on every render
   const flattenedResults = useMemo(() => {
     return data?.pages.flatMap((page) => page.results || []) || []
   }, [data])
 
-  // Memoize total items count
   const totalItems = useMemo(() => flattenedResults.length, [flattenedResults])
 
-  // Pre-render media cards to optimize list rendering
   const mediaCards = useMemo(() => {
     return flattenedResults.map((item) => (
       <MemoizedMediaCard
@@ -60,7 +55,6 @@ export default function MediaPageResults({
     ))
   }, [flattenedResults, mediatype])
 
-  // Memoize skeleton cards to prevent re-rendering loading state
   const skeletonCards = useMemo(
     () =>
       Array.from({ length: 20 }).map((_, index) => (
@@ -73,7 +67,7 @@ export default function MediaPageResults({
     return (
       <div className="flex h-[70vh] items-center justify-center">
         <p className="font-heading text-xl font-semibold">
-          Something went wrong. Please try again later
+          Something went wrong. Please try again later.
         </p>
       </div>
     )

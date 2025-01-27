@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { useWatchList } from '@/store/watchlist'
+import { useWatchListStore } from '@/store/watchlist-store'
 import { Plus, Check } from 'lucide-react'
 import {
   Tooltip,
@@ -29,7 +29,7 @@ export default function WatchListButton({
   relese_date: string | null
   className?: string
 }) {
-  const { watchlist, update } = useWatchList()
+  const { watchlist, update } = useWatchListStore()
 
   const isOnWatchList =
     watchlist?.some((item) => item?.externalId === id.toString()) ?? false

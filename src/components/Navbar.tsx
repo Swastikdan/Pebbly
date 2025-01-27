@@ -132,18 +132,18 @@ export default function Navbar() {
               <DesktopNavMenuItem key={index} item={item} />
             ))}
           </ul>
-          {isSearchButtonVisible && (
-            <Link href="/search">
-              <Button
-                variant="outline"
-                size="icon"
-                className="font-heading size-11 px-2 text-base font-light sm:size-9"
-                aria-label="Search"
-              >
-                <Search size={24} />
-              </Button>
-            </Link>
-          )}
+
+          <Link href="/search">
+            <Button
+              variant={pathname === '/search' ? 'secondary' : 'outline'}
+              size="icon"
+              className="font-heading size-11 px-2 text-base font-light sm:size-9"
+              aria-label="Search"
+            >
+              <Search size={24} />
+            </Button>
+          </Link>
+
           <TooltipProvider delayDuration={100} skipDelayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>

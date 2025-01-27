@@ -75,7 +75,7 @@ const validateWatchList = (data: unknown): WatchList[] => {
   )
 }
 
-export const useWatchList = create<WatchListState>()(
+export const useWatchListStore = create<WatchListState>()(
   persist(
     (set, get) => {
       const syncManager = createDebouncedSync()
@@ -106,7 +106,7 @@ export const useWatchList = create<WatchListState>()(
           })
 
           syncManager.markChanged()
-          syncManager.scheduleSync(get().syncWithServer, 5000)
+          syncManager.scheduleSync(get().syncWithServer, 500)
         },
 
         /**
@@ -219,7 +219,7 @@ export const useWatchList = create<WatchListState>()(
       onRehydrateStorage: () => async (state: WatchListState | undefined) => {
         // Post-rehydration logic
         if (!state) {
-          useWatchList.setState({ loading: false, watchlist: [] })
+          useWatchListStore.setState({ loading: false, watchlist: [] })
           return
         }
         await state.hydrateFromServer()
@@ -230,26 +230,26 @@ export const useWatchList = create<WatchListState>()(
 
 // Cross-store synchronization: Handle authentication state changes
 useAuthStore.subscribe((state, prevState) => {
-  const watchListStore = useWatchList.getState()
+  const watchListStore = useWatchListStore.getState()
 
   if (!prevState.isLoggedIn && state.isLoggedIn) {
     if (watchListStore.watchlist?.length) {
       watchListStore.hydrateFromServer()
     } else {
-      useWatchList.setState({ loading: true })
+      useWatchListStore.setState({ loading: true })
       watchListStore.hydrateFromServer()
     }
   }
 
   if (prevState.isLoggedIn && !state.isLoggedIn) {
     // Clear both memory state and persisted storage
-    useWatchList.setState({
+    useWatchListStore.setState({
       watchlist: null,
       loading: false,
       isSyncing: false,
       error: null,
     })
     // Clear persisted data from storage
-    useWatchList.persist.clearStorage()
+    useWatchListStore.persist.clearStorage()
   }
 })

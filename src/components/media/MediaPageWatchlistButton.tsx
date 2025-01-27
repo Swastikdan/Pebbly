@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { useWatchList } from '@/store/watchlist'
+import { useWatchListStore } from '@/store/watchlist-store'
 import { Plus, Check } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -29,7 +29,7 @@ export default function MediaPageWatchlistButton({
   relese_date: string | null
   className?: string
 }) {
-  const { watchlist, update } = useWatchList()
+  const { watchlist, update } = useWatchListStore()
   if (watchlist === null)
     return <Skeleton className={cn(className, 'size-9 p-2')} />
   const isOnWatchList = watchlist.some(

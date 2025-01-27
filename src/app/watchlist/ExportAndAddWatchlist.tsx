@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useRef } from 'react'
-import { useWatchList } from '@/store/watchlist'
+import { useWatchListStore } from '@/store/watchlist-store'
 import { WatchList } from '@/types/watchlist'
 import { Button } from '@/components/ui/button'
 import { Loader2, Upload, ArrowDownToLine } from 'lucide-react'
@@ -10,7 +10,7 @@ import { AuthButton } from '@/components/AuthButton'
 export default function ExportAndAddWatchlist() {
   const [importLoading, setImportLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
-  const { watchlist, loading } = useWatchList() // Removed unused variables
+  const { watchlist, loading } = useWatchListStore() // Removed unused variables
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const exportWatchlist = async () => {
@@ -57,7 +57,7 @@ export default function ExportAndAddWatchlist() {
         const rawWatchlist = importedData.state?.watchlist || importedData
         const validatedList = Array.isArray(rawWatchlist) ? rawWatchlist : []
 
-        useWatchList.setState((state) => {
+        useWatchListStore.setState((state) => {
           const currentWatchlist = state.watchlist ?? [] // Add null check
           const existingMap = new Map(
             currentWatchlist
@@ -97,54 +97,52 @@ export default function ExportAndAddWatchlist() {
     <div className="flex justify-end pt-5">
       <div className="flex gap-4">
         {(watchlist?.length ?? 0) > 0 && ( // Add null safe check
-          <>
-            <Button
-              variant="secondary"
-              disabled={exportLoading}
-              onClick={exportWatchlist}
-              className="gap-2"
-            >
-              {exportLoading ? (
-                <Loader2 className="animate-spin" size={20} />
-              ) : (
-                <ArrowDownToLine size={20} />
-              )}
-              Export
-            </Button>
-
-            <Label
-              htmlFor="watchlist-import"
-              role="button"
-              tabIndex={0}
-              aria-label="Import watchlist"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  fileInputRef.current?.click()
-                }
-              }}
-              className={`inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 ${
-                importLoading ? 'cursor-not-allowed opacity-50' : ''
-              }`}
-            >
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={importWatchlist}
-                accept=".json"
-                className="hidden"
-                id="watchlist-import"
-                disabled={importLoading}
-              />
-              {importLoading ? (
-                <Loader2 className="animate-spin" size={20} />
-              ) : (
-                <Upload size={20} />
-              )}
-              Import
-            </Label>
-          </>
+          <Button
+            variant="secondary"
+            disabled={exportLoading}
+            onClick={exportWatchlist}
+            className="gap-2"
+          >
+            {exportLoading ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <ArrowDownToLine size={20} />
+            )}
+            Export
+          </Button>
         )}
+        <Label
+          htmlFor="watchlist-import"
+          role="button"
+          tabIndex={0}
+          aria-label="Import watchlist"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              fileInputRef.current?.click()
+            }
+          }}
+          className={`inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 ${
+            importLoading ? 'cursor-not-allowed opacity-50' : ''
+          }`}
+        >
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={importWatchlist}
+            accept=".json"
+            className="hidden"
+            id="watchlist-import"
+            disabled={importLoading}
+          />
+          {importLoading ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : (
+            <Upload size={20} />
+          )}
+          Import
+        </Label>
+
         <AuthButton />
       </div>
     </div>

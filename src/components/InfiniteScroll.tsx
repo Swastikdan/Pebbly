@@ -1,4 +1,5 @@
-import * as React from 'react'
+'use client'
+import React, { useEffect, useRef } from 'react'
 
 interface InfiniteScrollProps {
   isLoading: boolean
@@ -21,26 +22,20 @@ export default function InfiniteScroll({
   reverse = false,
   children,
 }: InfiniteScrollProps) {
-  const observerTarget = React.useRef<HTMLDivElement>(null)
-  const observer = React.useRef<IntersectionObserver | null>(null)
-  const hasCalledNext = React.useRef(false)
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const observerTarget = useRef<HTMLDivElement>(null)
+  const observer = useRef<IntersectionObserver | null>(null)
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
+      if (observer.current) observer.current.disconnect()
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current)
     }
   }, [])
 
-  React.useEffect(() => {
-    const safeThreshold = Math.min(Math.max(threshold, 0), 1)
-
+  useEffect(() => {
     if (isLoading || !hasMore) {
-      if (observer.current) {
-        observer.current.disconnect()
-      }
+      if (observer.current) observer.current.disconnect()
       return
     }
 
@@ -48,34 +43,25 @@ export default function InfiniteScroll({
       const entry = entries[0]
 
       if (entry.isIntersecting) {
-        if (!hasCalledNext.current && hasMore && !isLoading) {
-          hasCalledNext.current = true
-          if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        if (debounceTimeout.current) clearTimeout(debounceTimeout.current)
 
-          timeoutRef.current = setTimeout(() => {
-            next()
-          }, 100)
-        }
-      } else {
-        hasCalledNext.current = false
+        debounceTimeout.current = setTimeout(() => {
+          next()
+        }, 150) // Debounce interval to avoid rapid calls
       }
     }
 
     observer.current = new IntersectionObserver(handleIntersection, {
-      threshold: safeThreshold,
+      threshold,
       root,
       rootMargin,
     })
 
     const currentTarget = observerTarget.current
-    if (currentTarget) {
-      observer.current.observe(currentTarget)
-    }
+    if (currentTarget) observer.current.observe(currentTarget)
 
     return () => {
-      if (observer.current) {
-        observer.current.disconnect()
-      }
+      if (observer.current) observer.current.disconnect()
     }
   }, [hasMore, isLoading, next, threshold, root, rootMargin])
 

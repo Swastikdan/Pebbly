@@ -1,11 +1,11 @@
 'use client'
 import React from 'react'
-import { useWatchList } from '@/store/watchlist'
+import { useWatchListStore } from '@/store/watchlist-store'
 import { MediaCard, MediaCardSkeleton } from '@/components/MediaCard'
 import DefaultLoader from '@/components/DefaultLoader'
 
 export default function WatchListContainer() {
-  const { watchlist, loading } = useWatchList()
+  const { watchlist, loading } = useWatchListStore()
 
   //if (loading) return null
 

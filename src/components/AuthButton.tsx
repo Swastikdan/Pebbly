@@ -7,7 +7,12 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, LogIn, LogOut, UserPlus } from 'lucide-react'
-
+import {
+  Tooltip,
+  TooltipProvider,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 export const AuthButton = () => {
   const { isLoggedIn, clearAuth } = useAuthStore()
   const [showModal, setShowModal] = useState(false)
@@ -48,19 +53,30 @@ export const AuthButton = () => {
     <>
       <Button
         onClick={isLoggedIn ? clearAuth : () => setShowModal(true)}
-        variant={isLoggedIn ? 'destructive' : 'outline'}
+        variant={isLoggedIn ? 'destructive' : 'secondary'}
         className="gap-2"
       >
         {isLoggedIn ? (
           <>
-            <LogOut className="h-4 w-4" />
+            <LogOut size={20} />
             Sign out
           </>
         ) : (
-          <>
-            <LogIn className="h-4 w-4" />
-            Sign in
-          </>
+          <TooltipProvider delayDuration={100} skipDelayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2">
+                  <LogIn size={20} />
+                  Sign in
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="cursor-none select-none">
+                <p className="text-sm font-medium">
+                  Sync watchlist across devices
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </Button>
 
