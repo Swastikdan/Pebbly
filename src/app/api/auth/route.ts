@@ -1,3 +1,5 @@
+// Code for the /api/auth route
+
 import { turso } from '@/lib/turso'
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
@@ -23,6 +25,13 @@ interface UserRow {
 const isValidEmail = (email: string) => {
   return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
 }
+async function checkEmailExists(email: string): Promise<boolean> {
+  const result = await turso.execute({
+    sql: 'SELECT COUNT(*) as count FROM users WHERE email = ?',
+    args: [email.toLowerCase()],
+  })
+  return (result.rows[0] as unknown as { count: number }).count > 0
+}
 
 export async function POST(req: Request) {
   const { action, email, password } = await req.json()
@@ -33,6 +42,15 @@ export async function POST(req: Request) {
         return NextResponse.json(
           { error: 'Invalid email format' },
           { status: 400 },
+        )
+      }
+
+      // Add email existence check
+      const emailExists = await checkEmailExists(email)
+      if (emailExists) {
+        return NextResponse.json(
+          { error: 'Email already registered' },
+          { status: 409 },
         )
       }
 

@@ -1,3 +1,5 @@
+// code for the /api/sync route
+
 import { turso } from '@/lib/turso'
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload
     const result = await turso.execute({
-      sql: 'SELECT data FROM watchlist WHERE user_email = ? ORDER BY created_at DESC',
+      sql: 'SELECT data FROM watchlist WHERE user_email = ? ORDER BY created_at ASC',
       args: [decoded.email],
     })
 
