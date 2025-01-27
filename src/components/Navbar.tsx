@@ -120,7 +120,7 @@ export default function Navbar() {
             </h1>
             <Badge
               variant="secondary"
-              className="ml-2 hidden text-[10px] font-light hover:bg-primary xs:block"
+              className="ml-2 hidden text-[10px] font-light hover:bg-secondary xs:block"
             >
               Beta
             </Badge>
@@ -140,7 +140,12 @@ export default function Navbar() {
               className="font-heading size-11 px-2 text-base font-light sm:size-9"
               aria-label="Search"
             >
-              <Search size={24} />
+              <Search
+                size={24}
+                className={
+                  pathname === '/search' ? 'fill-current' : 'fill-none'
+                }
+              />
             </Button>
           </Link>
 

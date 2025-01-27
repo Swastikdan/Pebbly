@@ -39,23 +39,29 @@ export default function Recomendations({
     return (
       <ScrollContainer isButtonsVisible={!movie_is_loading}>
         <div className="flex gap-4 p-4 first:pl-0 last:pr-0">
-          {movie_is_loading || movie_is_error
-            ? Array.from({ length: 6 }).map((_, index) => (
-                <MediaCardSkeleton card_type="vertical" key={index} />
-              ))
-            : movie_data?.map((item) => (
-                <MediaCard
-                  key={item.id}
-                  title={item.title}
-                  rating={item.vote_average}
-                  image={item.backdrop_path}
-                  poster_path={item.poster_path}
-                  media_type="movie"
-                  card_type="vertical"
-                  id={item.id}
-                  relese_date={item.release_date}
-                />
-              ))}
+          {movie_is_loading || movie_is_error ? (
+            Array.from({ length: 6 }).map((_, index) => (
+              <MediaCardSkeleton card_type="vertical" key={index} />
+            ))
+          ) : movie_data?.length === 0 ? (
+            <p className="py-2 text-sm" role="alert">
+              No recommendations found
+            </p>
+          ) : (
+            movie_data?.map((item) => (
+              <MediaCard
+                key={item.id}
+                title={item.title}
+                rating={item.vote_average}
+                image={item.backdrop_path}
+                poster_path={item.poster_path}
+                media_type="movie"
+                card_type="vertical"
+                id={item.id}
+                relese_date={item.release_date}
+              />
+            ))
+          )}
         </div>
       </ScrollContainer>
     )
@@ -64,23 +70,29 @@ export default function Recomendations({
   return (
     <ScrollContainer isButtonsVisible={!tv_is_loading}>
       <div className="flex gap-4 p-4 first:pl-0 last:pr-0">
-        {tv_is_loading || tv_is_error
-          ? Array.from({ length: 6 }).map((_, index) => (
-              <MediaCardSkeleton card_type="vertical" key={index} />
-            ))
-          : tv_data?.map((item) => (
-              <MediaCard
-                key={item.id}
-                title={item.name}
-                rating={item.vote_average}
-                image={item.backdrop_path}
-                poster_path={item.poster_path}
-                media_type="tv"
-                card_type="vertical"
-                id={item.id}
-                relese_date={item.first_air_date}
-              />
-            ))}
+        {tv_is_loading || tv_is_error ? (
+          Array.from({ length: 6 }).map((_, index) => (
+            <MediaCardSkeleton card_type="vertical" key={index} />
+          ))
+        ) : tv_data?.length === 0 ? (
+          <p className="py-2 text-sm" role="alert">
+            No recommendations found
+          </p>
+        ) : (
+          tv_data?.map((item) => (
+            <MediaCard
+              key={item.id}
+              title={item.name}
+              rating={item.vote_average}
+              image={item.backdrop_path}
+              poster_path={item.poster_path}
+              media_type="tv"
+              card_type="vertical"
+              id={item.id}
+              relese_date={item.first_air_date}
+            />
+          ))
+        )}
       </div>
     </ScrollContainer>
   )

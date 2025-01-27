@@ -1,4 +1,5 @@
 'use client'
+
 import React, { useMemo, memo } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { type MediaListDataQuery } from '@/types/media'
@@ -7,8 +8,11 @@ import { MediaCard, MediaCardSkeleton } from '@/components/MediaCard'
 import InfiniteScroll from '@/components/InfiniteScroll'
 
 const MemoizedMediaCard = memo(MediaCard)
+const skeletonCards = Array.from({ length: 20 }).map((_, index) => (
+  <MediaCardSkeleton key={`skeleton-${index}`} />
+))
 
-export default function MediaPageResults({
+function MediaPageResults({
   query,
   mediatype,
 }: {
@@ -37,12 +41,10 @@ export default function MediaPageResults({
     return data?.pages.flatMap((page) => page.results || []) || []
   }, [data])
 
-  const totalItems = useMemo(() => flattenedResults.length, [flattenedResults])
-
   const mediaCards = useMemo(() => {
-    return flattenedResults.map((item) => (
+    return flattenedResults.map((item, index) => (
       <MemoizedMediaCard
-        key={`${item.id}-${mediatype}`}
+        key={`${item.id}-${mediatype}+${index}`}
         title={item.title || item.name || 'Untitled'}
         rating={item.vote_average ?? 0}
         poster_path={item.poster_path ?? ''}
@@ -54,14 +56,6 @@ export default function MediaPageResults({
       />
     ))
   }, [flattenedResults, mediatype])
-
-  const skeletonCards = useMemo(
-    () =>
-      Array.from({ length: 20 }).map((_, index) => (
-        <MediaCardSkeleton key={`skeleton-${index}`} />
-      )),
-    [],
-  )
 
   if (error) {
     return (
@@ -86,7 +80,7 @@ export default function MediaPageResults({
   return (
     <div className="flex min-h-96 w-full items-center justify-center">
       <div className="grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-        {totalItems > 0 ? (
+        {flattenedResults.length > 0 ? (
           mediaCards
         ) : (
           <p className="font-heading w-full pb-20 text-center text-lg font-bold md:text-xl lg:text-2xl">
@@ -98,7 +92,7 @@ export default function MediaPageResults({
           hasMore={hasNextPage}
           isLoading={isFetching || isFetchingNextPage}
           next={fetchNextPage}
-          threshold={0.5}
+          threshold={0.8}
         >
           {isFetchingNextPage && skeletonCards}
         </InfiniteScroll>
@@ -106,3 +100,5 @@ export default function MediaPageResults({
     </div>
   )
 }
+
+export default memo(MediaPageResults)

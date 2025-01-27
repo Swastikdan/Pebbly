@@ -7,7 +7,7 @@ interface InfiniteScrollProps {
   hasMore: boolean
   /** Function to call when more items need to be loaded */
   next: () => unknown
-  /** Intersection observer threshold (0 to 1). Default is 1 */
+  /** Intersection observer threshold (0 to 1). Default is 0 */
   threshold?: number
   /** Root element for intersection observer. Default is null (viewport) */
   root?: Element | Document | null
@@ -20,7 +20,7 @@ interface InfiniteScrollProps {
 }
 
 /**
- * InfiniteScroll component that automatically loads more content when the user scrolls near the bottom
+ * InfiniteScroll component that automatically loads more content when the user scrolls near the bounds
  * @param props InfiniteScrollProps
  * @returns React component that implements infinite scrolling
  */
@@ -28,19 +28,16 @@ export default function InfiniteScroll({
   isLoading,
   hasMore,
   next,
-  threshold = 1,
+  threshold = 0,
   root = null,
   rootMargin = '0px',
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reverse = false,
   children,
 }: InfiniteScrollProps) {
   const observerTarget = React.useRef<HTMLDivElement>(null)
-  // @ts-expect-error IntersectionObserver is not available in Node
-  const observer = React.useRef<IntersectionObserver>()
+  const observer = React.useRef<IntersectionObserver | null>(null)
   const hasCalledNext = React.useRef(false)
-  // @ts-expect-error NodeJS.Timeout is not available in Node
-  const timeoutRef = React.useRef<NodeJS.Timeout>()
+  const timeoutRef = React.useRef<number | null>(null)
 
   // Reset hasCalledNext when loading completes or hasMore changes
   React.useEffect(() => {
@@ -53,13 +50,13 @@ export default function InfiniteScroll({
   React.useEffect(() => {
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+        window.clearTimeout(timeoutRef.current)
       }
     }
   }, [])
 
   React.useEffect(() => {
-    const safeThreshold = threshold < 0 || threshold > 1 ? 1 : threshold
+    const safeThreshold = Math.min(Math.max(threshold, 0), 1)
 
     if (isLoading || !hasMore) {
       if (observer.current) {
@@ -77,13 +74,13 @@ export default function InfiniteScroll({
       ) {
         // Debounce the next() call
         if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current)
+          window.clearTimeout(timeoutRef.current)
         }
 
-        timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = window.setTimeout(() => {
           hasCalledNext.current = true
           next()
-        }, 0) // 300ms debounce
+        }, 300)
       }
     }
 
@@ -104,31 +101,36 @@ export default function InfiniteScroll({
 
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+        window.clearTimeout(timeoutRef.current)
       }
       if (observer.current) {
         observer.current.disconnect()
       }
     }
-  }, [hasMore, isLoading, next, threshold, root, rootMargin])
+  }, [hasMore, isLoading, next, threshold, root, rootMargin, reverse])
 
   if (!hasMore && !isLoading) {
     return <>{children}</>
   }
 
+  const sentinel = (
+    <div
+      ref={observerTarget}
+      className="w-full"
+      style={{ height: '50px' }}
+      aria-hidden="true"
+      data-testid="infinite-scroll-sentinel"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading more content"
+    />
+  )
+
   return (
     <>
+      {reverse && sentinel}
       {children}
-      <div
-        ref={observerTarget}
-        className="w-full"
-        style={{ height: '1px' }}
-        aria-hidden="true"
-        data-testid="infinite-scroll-sentinel"
-        role="status"
-        aria-live="polite"
-        aria-label="Loading more content"
-      />
+      {!reverse && sentinel}
     </>
   )
 }
