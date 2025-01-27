@@ -85,7 +85,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script src="https://unpkg.com/react-scan/dist/auto.global.js"></script>
         <meta
           name="google-site-verification"
           content="uHvrTYV7MI9jil_qDblV-QDi9qjXlpdb_8XJUtCLGLQ"
