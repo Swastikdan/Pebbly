@@ -114,9 +114,6 @@ importers:
       '@tanstack/eslint-plugin-query':
         specifier: ^5.62.16
         version: 5.62.16(eslint@9.18.0(jiti@1.21.7))(typescript@5.7.3)
-      '@trivago/prettier-plugin-sort-imports':
-        specifier: ^5.2.1
-        version: 5.2.1(prettier@3.4.2)
       '@types/bcryptjs':
         specifier: ^2.4.6
         version: 2.4.6
@@ -3719,6 +3716,7 @@ snapshots:
       prettier: 3.4.2
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@types/bcryptjs@2.4.6': {}
 
@@ -4948,7 +4946,8 @@ snapshots:
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
 
-  javascript-natural-sort@0.7.1: {}
+  javascript-natural-sort@0.7.1:
+    optional: true
 
   jiti@1.21.7: {}
 
@@ -5066,7 +5065,8 @@ snapshots:
 
   lodash.once@4.1.1: {}
 
-  lodash@4.17.21: {}
+  lodash@4.17.21:
+    optional: true
 
   loose-envify@1.4.0:
     dependencies:
