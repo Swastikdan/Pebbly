@@ -25,7 +25,9 @@ export function Searchbar({
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!search) return
+    if (!search) {
+      return
+    }
     router.push(`/search?query=${search}`)
   }
 

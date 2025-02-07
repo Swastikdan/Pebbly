@@ -1,5 +1,5 @@
 'use client'
-import React, { cache, use } from 'react'
+import React, { cache } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { getTvDetails } from '@/lib/gettvdetails'
 import { useQuery } from '@tanstack/react-query'
@@ -78,22 +78,6 @@ export default function TvData({
   const tvreleaseyear = release_date
     ? new Date(release_date).getFullYear()
     : null
-  // const usrelease = release_dates?.results?.find(
-  //   (release) => release.iso_3166_1 === 'US',
-  // )
-  // let uscertification = 'NR'
-
-  // if (usrelease && usrelease.release_dates) {
-  //   for (let i = 0; i < usrelease.release_dates.length; i++) {
-  //     if (usrelease.release_dates[i].certification) {
-  //       uscertification = usrelease.release_dates[i].certification
-  //       break
-  //     }
-  //   }
-  // }
-  // const rating: string =
-  // tv.content_ratings?.results.find((result) => result.iso_3166_1 === "US")
-  //   ?.rating || "NR";
 
   const uscertification =
     content_ratings?.results?.find((result) => result.iso_3166_1 === 'US')

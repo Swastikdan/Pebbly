@@ -4,18 +4,10 @@ import React from 'react'
 import { Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export default function ShareButton({
-  title,
-  description,
-}: {
-  title?: string
-  description?: string
-}) {
+export default function ShareButton({ title }: { title?: string }) {
   function handleShare() {
     if (navigator.share) {
       navigator.share({
-        // title: title,
-        // text: description,
         url: window.location.href,
       })
     } else {

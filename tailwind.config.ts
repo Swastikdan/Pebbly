@@ -11,6 +11,7 @@ export default {
     extend: {
       fontFamily: {
         parkinsans: ['var(--font-parkinsans)'],
+        firacode: ['var(--font-firacode)'],
       },
       colors: {
         border: 'hsl(var(--border))',

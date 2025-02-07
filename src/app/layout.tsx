@@ -18,6 +18,7 @@ const parkinsans = Parkinsans({
   ],
   display: 'swap',
 })
+
 import { Providers } from './Providers'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -92,7 +93,7 @@ export default function RootLayout({
       </head>
       <Scroll />
       <body
-        className={`${parkinsans.variable} min-h-screen font-parkinsans leading-relaxed antialiased`}
+        className={`${parkinsans.className} min-h-screen leading-relaxed antialiased`}
       >
         <Providers>
           <Navbar />

@@ -52,7 +52,7 @@ export default function MediaTitleContailer({
               media_type={media_type}
               relese_date={relese_date}
             />
-            <ShareButton title={title} description={description} />
+            <ShareButton title={title} />
           </div>
         </div>
         <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">

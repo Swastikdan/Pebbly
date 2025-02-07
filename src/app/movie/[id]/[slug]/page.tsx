@@ -1,6 +1,6 @@
 import React, { Suspense, cache } from 'react'
 import type { Metadata } from 'next'
-import { getMovieDetails, getBasicMovieDetails } from '@/lib/getmoviedetails'
+import { getBasicMovieDetails } from '@/lib/getmoviedetails'
 import { QueryClient } from '@tanstack/react-query'
 import { notFound } from 'next/navigation'
 import Moviedata from './Moviedata'

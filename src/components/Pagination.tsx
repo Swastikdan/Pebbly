@@ -26,7 +26,9 @@ export function Pagination({
   totalPages,
   onPageChange,
 }: PaginationProps) {
-  if (totalPages <= 1) return null //Return null if there's only one page or less
+  if (totalPages <= 1) {
+    return null
+  } //Return null if there's only one page or less
 
   return (
     <nav

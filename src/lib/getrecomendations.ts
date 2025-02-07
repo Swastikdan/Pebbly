@@ -4,7 +4,7 @@ import {
   MovieRecommendationsResultsEntity,
   TvRecommendations,
   TvRecommendationsResultsEntity,
-} from '@/types/Recommendations'
+} from '@/types/recommendations'
 
 export async function getMovieRecommendations({
   id,

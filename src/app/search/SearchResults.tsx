@@ -26,8 +26,14 @@ export default function SearchResults() {
   })
 
   const handlePageChange = (newPage: number) => {
-    if (!data || newPage < 1 || newPage > data.total_pages || newPage === page)
+    if (
+      !data ||
+      newPage < 1 ||
+      newPage > data.total_pages ||
+      newPage === page
+    ) {
       return
+    }
     const newSearchParams = new URLSearchParams(searchParams.toString())
     newSearchParams.set('page', newPage.toString())
     router.replace(`?${newSearchParams.toString()}`)
@@ -35,8 +41,12 @@ export default function SearchResults() {
 
   const filteredData = (data?.results ?? []).filter(
     (item: SearchResultsEntity) => {
-      if (item.media_type === 'person') return false
-      if (validtype === null) return true
+      if (item.media_type === 'person') {
+        return false
+      }
+      if (validtype === null) {
+        return true
+      }
       return item.media_type === validtype
     },
   )
@@ -89,7 +99,7 @@ export default function SearchResults() {
           <div></div>
           <div className="flex items-center gap-2">
             {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-9 w-[84px]" />
+              <Skeleton key={index} className="h-9 w-[84px] rounded-md" />
             ))}
           </div>
         </div>

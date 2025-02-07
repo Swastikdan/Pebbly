@@ -30,8 +30,9 @@ export default function MediaPageWatchlistButton({
   className?: string
 }) {
   const { watchlist, update } = useWatchListStore()
-  if (watchlist === null)
+  if (watchlist === null) {
     return <Skeleton className={cn(className, 'size-9 p-2')} />
+  }
   const isOnWatchList = watchlist.some(
     (item) => item && item.externalId === id.toString(),
   )

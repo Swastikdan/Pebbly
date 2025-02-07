@@ -36,7 +36,9 @@ export default async function CastCrewPage({
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (l) => l.toUpperCase())
 
-  if (!id) return notFound()
+  if (!id) {
+    return notFound()
+  }
 
   const credits: MediaCredits = await cache(async () =>
     queryClient.fetchQuery({

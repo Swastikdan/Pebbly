@@ -97,7 +97,7 @@ export default function MediaImages({
                       width={450}
                       height={300}
                       quality={100}
-                      className="aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl bg-accent object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-52 lg:h-60"
+                      className="aspect-[11/16] h-44 w-min cursor-pointer rounded-xl bg-accent object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-52 lg:h-60"
                     />
                   </DialogTrigger>
                   <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">

@@ -12,7 +12,7 @@ export default function Collections({ id }: { id: number }) {
     queryFn: async () => await getCollection({ id }),
   })
 
-  if (!isLoading)
+  if (!isLoading) {
     return (
       <>
         {isLoading ? (
@@ -59,4 +59,5 @@ export default function Collections({ id }: { id: number }) {
         )}
       </>
     )
+  }
 }

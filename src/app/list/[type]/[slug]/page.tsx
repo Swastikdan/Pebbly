@@ -7,16 +7,16 @@ import { MediaCardSkeleton } from '@/components/MediaCard'
 
 export const dynamicParams = false
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
   return MEDIA_PAGE_SLUGS
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: { type: string; slug: string }
+  params:Promise<{ type: string; slug: string }>
 }): Promise<Metadata> {
-  const { type, slug } = await params
+  const { type, slug } =await params
   const navItem = NAV_ITEMS.find((item) => item.slug === type)
   const subNavItem = navItem
     ? navItem.submenu.find((item) => item.slug === slug)
@@ -30,7 +30,7 @@ export async function generateMetadata({
 export default async function MediaPage({
   params,
 }: {
-  params: Promise<{ type: string; slug: string }>
+  params:Promise<{ type: string; slug: string }>
 }) {
   const { type, slug } = await params
   const navItem = NAV_ITEMS.find((item) => item.slug === type)

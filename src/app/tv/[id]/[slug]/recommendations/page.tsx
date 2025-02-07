@@ -29,7 +29,9 @@ export default async function TvRecommendationsPage({
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (l) => l.toUpperCase())
 
-  if (!id) return notFound()
+  if (!id) {
+    return notFound()
+  }
   return (
     <section className="mx-auto block max-w-screen-xl items-center px-4">
       <div className="space-y-3 py-5">

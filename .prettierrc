@@ -1,5 +1,5 @@
 {
-  "plugins": ["prettier-plugin-tailwindcss"],
+  "plugins": ["prettier-plugin-tailwindcss", "prettier-plugin-import-sort"],
   "tailwindConfig": "./tailwind.config.ts",
   "tailwindStylesheet": "./src/app/globals.css",
   "printWidth": 80,

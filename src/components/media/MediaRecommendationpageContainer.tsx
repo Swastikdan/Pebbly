@@ -5,7 +5,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import type { MediaRecommendations } from '@/types/MediaRecommendations'
 import { getRecommendations } from '@/lib/getRecommendations'
 import { MediaCard, MediaCardSkeleton } from '@/components/MediaCard'
-import InfiniteScroll from '@/components/InfiniteScroll'
+import InfiniteScroll from 'react-infinite-scroll-component'
 
 const MemoizedMediaCard = memo(MediaCard)
 
@@ -89,24 +89,26 @@ export default function MediaRecommendationpageContainer({
 
   return (
     <div className="flex min-h-96 w-full items-center justify-center">
-      <div className="grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-        {totalItems > 0 ? (
-          mediaCards
-        ) : (
-          <p className="font-heading w-full pb-20 text-center text-lg font-bold md:text-xl lg:text-2xl">
-            No items found
-          </p>
-        )}
-
-        <InfiniteScroll
-          hasMore={hasNextPage}
-          isLoading={isFetching || isFetchingNextPage}
-          next={fetchNextPage}
-          threshold={0.5}
-        >
-          {isFetchingNextPage && skeletonCards}
-        </InfiniteScroll>
-      </div>
+      <InfiniteScroll
+        dataLength={flattenedResults.length}
+        next={fetchNextPage}
+        hasMore={hasNextPage}
+        loader={null}
+        endMessage={null}
+      >
+        <div className="grid w-full grid-cols-2 gap-3 py-10 xs:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          {flattenedResults.length > 0 ? (
+            <>
+              {mediaCards}
+              {isFetchingNextPage && skeletonCards}
+            </>
+          ) : (
+            <p className="font-heading w-full pb-20 text-center text-lg font-bold md:text-xl lg:text-2xl">
+              No items found
+            </p>
+          )}
+        </div>
+      </InfiniteScroll>
     </div>
   )
 }

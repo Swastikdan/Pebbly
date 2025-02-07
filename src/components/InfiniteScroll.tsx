@@ -24,7 +24,7 @@ interface InfiniteScrollProps {
  * @param props InfiniteScrollProps
  * @returns React component that implements infinite scrolling
  */
-export default function InfiniteScroll({
+export default function DEPRICATED_InfiniteScroll({
   isLoading,
   hasMore,
   next,

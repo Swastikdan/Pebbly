@@ -38,7 +38,9 @@ export const AuthButton = () => {
       })
 
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error)
+      if (!response.ok) {
+        throw new Error(data.error)
+      }
 
       useAuthStore.getState().setAuth(data.email)
       setShowModal(false)

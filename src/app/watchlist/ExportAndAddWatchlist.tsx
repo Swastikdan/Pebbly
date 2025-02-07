@@ -80,7 +80,9 @@ export default function ExportAndAddWatchlist() {
         alert('Invalid watchlist file format')
       } finally {
         setImportLoading(false)
-        if (fileInputRef.current) fileInputRef.current.value = ''
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
       }
     }
 
@@ -91,7 +93,9 @@ export default function ExportAndAddWatchlist() {
     reader.readAsText(file)
   }
 
-  if (loading) return null
+  if (loading) {
+    return null
+  }
 
   return (
     <div className="flex justify-end pt-5">

@@ -7,8 +7,6 @@ import DefaultLoader from '@/components/DefaultLoader'
 export default function WatchListContainer() {
   const { watchlist, loading } = useWatchListStore()
 
-  //if (loading) return null
-
   return (
     <div className="flex min-h-96 w-full items-center justify-center">
       {loading ? (

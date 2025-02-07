@@ -15,8 +15,9 @@ interface WatchlistItem {
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('token')?.value
-  if (!token)
+  if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload
@@ -43,8 +44,9 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const token = req.cookies.get('token')?.value
-  if (!token)
+  if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload

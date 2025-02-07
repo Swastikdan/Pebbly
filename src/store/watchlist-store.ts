@@ -28,7 +28,9 @@ const createDebouncedSync = () => {
     scheduleSync: (fn: () => Promise<void>, ms: number) => {
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
-        if (!pendingChanges) return
+        if (!pendingChanges) {
+          return
+        }
         try {
           await fn()
           pendingChanges = false
@@ -65,7 +67,9 @@ interface WatchListState {
  * @returns Array of validated WatchList items
  */
 const validateWatchList = (data: unknown): WatchList[] => {
-  if (!data || !Array.isArray(data)) return []
+  if (!data || !Array.isArray(data)) {
+    return []
+  }
   return data.filter(
     (item): item is WatchList =>
       !!item &&
@@ -91,7 +95,9 @@ export const useWatchListStore = create<WatchListState>()(
          * @param item - Watchlist item to add/remove
          */
         update: (item: WatchList) => {
-          if (!item?.externalId) return
+          if (!item?.externalId) {
+            return
+          }
 
           set((state) => {
             const currentList = state.watchlist || []
@@ -129,7 +135,9 @@ export const useWatchListStore = create<WatchListState>()(
 
           try {
             const response = await fetch('/api/sync')
-            if (!response.ok) throw new Error('Sync failed')
+            if (!response.ok) {
+              throw new Error('Sync failed')
+            }
 
             const serverWatchlist = await response.json()
             const validatedServer = validateWatchList(serverWatchlist)
@@ -145,7 +153,9 @@ export const useWatchListStore = create<WatchListState>()(
                 const exists = acc.some(
                   (item) => item.externalId === current.externalId,
                 )
-                if (!exists) acc.push(current)
+                if (!exists) {
+                  acc.push(current)
+                }
                 return acc
               }, [])
 
@@ -182,7 +192,9 @@ export const useWatchListStore = create<WatchListState>()(
         syncWithServer: async () => {
           const { watchlist } = get()
           const { isLoggedIn, email } = useAuthStore.getState()
-          if (!isLoggedIn || !email) return
+          if (!isLoggedIn || !email) {
+            return
+          }
 
           set({ isSyncing: true, error: null })
 
@@ -193,7 +205,9 @@ export const useWatchListStore = create<WatchListState>()(
               body: JSON.stringify({ watchlist, email }),
             })
 
-            if (!response.ok) throw new Error('Sync failed')
+            if (!response.ok) {
+              throw new Error('Sync failed')
+            }
             set({ isSyncing: false })
           } catch (err) {
             set({

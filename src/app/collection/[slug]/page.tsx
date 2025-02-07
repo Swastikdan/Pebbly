@@ -41,7 +41,9 @@ export default async function CollectionsPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  if (!slug) return notFound()
+  if (!slug) {
+    return notFound()
+  }
 
   const collention_data = await cache(async () =>
     queryClient.fetchQuery({
@@ -49,9 +51,10 @@ export default async function CollectionsPage({
       queryFn: async () => await getCollection({ id: Number(slug) }),
     }),
   )()
-  if (!collention_data) return notFound()
-  const { id, name, overview, poster_path, backdrop_path, parts } =
-    collention_data
+  if (!collention_data) {
+    return notFound()
+  }
+  const { name, overview, poster_path, parts } = collention_data
   const user_rating =
     parts && parts.length > 0
       ? parseInt(

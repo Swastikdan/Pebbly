@@ -1,11 +1,11 @@
-import React from "react";
-import { Star } from "lucide-react";
+import React from 'react'
+import { Star } from 'lucide-react'
 export default function RatingCount({
   rating,
   ratingcount,
 }: {
-  rating: number;
-  ratingcount: number;
+  rating: number
+  ratingcount: number
 }) {
   return (
     <div className="flex items-center space-x-1 text-lg font-light">
@@ -13,5 +13,5 @@ export default function RatingCount({
       <span>{rating}/10</span>
       {ratingcount && <span>{`(${ratingcount} users)`}</span>}
     </div>
-  );
+  )
 }
