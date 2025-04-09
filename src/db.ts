@@ -1,27 +1,29 @@
-import Dexie, { type Table } from 'dexie';
+// db.ts
+import Dexie, { type Table } from "dexie";
 
 export interface WatchlistItem {
   watchlist_id: string; // Primary key
   user_id: string; // Foreign/user key
   title: string;
-  type: 'tv' | 'movie';
+  type: "tv" | "movie";
   external_id: string;
   image: string;
   rating: number;
   release_date: string;
   updated_at: number; // Timestamp used for sync
-  deleted?: boolean; // For soft deletes
+  // Use numeric flag for deletion: 0 = active, 1 = deleted.
+  deleted: 0 | 1;
 }
 
 class WatchlistDB extends Dexie {
   watchlist!: Table<WatchlistItem>;
 
   constructor() {
-    super('WatchlistDB');
+    super("WatchlistDB");
+    // Define a compound index on user_id and deleted
     this.version(1).stores({
-      // Primary key: watchlist_id
-      // Indexed fields: user_id, updated_at, deleted
-      watchlist: 'watchlist_id, user_id, updated_at, deleted',
+      // Compound index on [user_id+deleted]
+      watchlist: "watchlist_id, [user_id+deleted], updated_at",
     });
   }
 }

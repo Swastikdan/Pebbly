@@ -37,7 +37,7 @@ const ImageComponent = ({
   }, [fallbackImage]);
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("bg-accent/80 relative", className)}>
       <Skeleton
         style={{ display: loading ? "block" : "none" }}
         className={className}

@@ -38,7 +38,7 @@ function DesktopNavButton({
             <Button
               variant={isActive ? "secondary" : "outline"}
               size="icon"
-              className="font-heading size-11 px-2 text-base font-light sm:size-9"
+              className="font-heading size-11 rounded-full px-2 text-base font-light sm:size-9"
               aria-label={label}
             >
               {React.createElement(icon, {

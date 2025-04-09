@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/accordion";
 
 import { NAV_ITEMS } from "@/constants";
-import DesktopNavButtons from "./desktop-nav-buttons";
+import NavButtons from "./nav-buttons";
 import { Menu } from "lucide-react";
 
 const DesktopNavMenuItem: React.FC<{
@@ -68,12 +68,12 @@ const MobileNavMenuItem: React.FC<{
 }> = ({ item }) => (
   <Accordion type="multiple">
     <AccordionItem value={item.name} className="border-0 pb-2">
-      <AccordionTrigger className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-12 rounded-xl px-4 py-2 text-base shadow-sm hover:no-underline">
+      <AccordionTrigger className="bg-secondary text-secondary-foreground hover:bg-secondary/80 mb-2 h-12 rounded-xl px-4 py-2 text-base shadow-sm hover:no-underline">
         {item.name}
       </AccordionTrigger>
       {item.submenu.map((subitem, index) => (
         <Link href={subitem.url} key={index} className="cursor-pointer">
-          <AccordionContent className="hover:bg-accent hover:text-accent-foreground my-1 flex h-12 items-center justify-center rounded-xl px-4 py-2 text-base font-medium">
+          <AccordionContent className="bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 my-1 flex h-10 items-center justify-center rounded-xl border px-4 py-2 text-base font-medium shadow-xs">
             <SheetClose className="w-full items-center justify-center text-left">
               {subitem.name}
             </SheetClose>
@@ -104,7 +104,7 @@ export default function Navbar() {
             className="size-10"
           />
           <div className="flex items-start">
-            <h1 className="font-heading hidden text-lg font-black sm:block md:text-xl xl:text-2xl">
+            <h1 className="font-heading text-lg font-black md:text-xl xl:text-2xl">
               Film Fanatic
             </h1>
           </div>
@@ -115,20 +115,20 @@ export default function Navbar() {
               <DesktopNavMenuItem key={index} item={item} />
             ))}
           </ul>
-          <DesktopNavButtons />
+          <NavButtons />
           <Sheet>
             <SheetTrigger className="md:hidden" asChild>
               <Button
                 variant="outline"
                 size="icon"
-                className="font-heading size-11 px-2 text-base font-light sm:size-9"
+                className="font-heading size-11 rounded-full px-2 text-base font-light sm:size-9"
                 aria-label="Menu"
               >
                 <Menu size={32} className="fill-current" />
               </Button>
             </SheetTrigger>
             <SheetContent
-              className="w-full border-none duration-0"
+              className="border-none px-2 duration-0"
               aria-label="Mobile Navigation"
             >
               <div className="scrollbar-small h-full overflow-y-auto py-12 pt-20">

@@ -16,6 +16,7 @@ export interface MediaCardProps {
   relese_date: string | null;
   known_for_department?: string;
   card_type?: "horizontal" | "vertical" | "small_card_person";
+  is_on_watchlist_page?: boolean;
 }
 export interface PersonCardProps {
   name: string;
@@ -37,6 +38,7 @@ export function MediaCard({
   relese_date,
   known_for_department,
   card_type = "horizontal",
+  is_on_watchlist_page = false,
 }: MediaCardProps) {
   const formattedTitle = title.replace(/ /g, "-").toLowerCase();
   const formattedReleseDate = relese_date
@@ -51,7 +53,7 @@ export function MediaCard({
     return (
       <Link
         href={`/${media_type}/${id}/${formattedTitle}`}
-        className="h-52 w-72 space-y-2  transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70"
+        className="h-52 w-72 space-y-2 transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70"
         aria-label={title}
       >
         <div className="bg-secondary/80 relative h-40 w-full rounded-md">
@@ -71,6 +73,7 @@ export function MediaCard({
             image={poster_path}
             rating={rating}
             relese_date={relese_date}
+            is_on_watchlist_page={is_on_watchlist_page}
             aria-label={`Add ${title} to watchlist`}
           />
           <div className="absolute right-2 bottom-2 flex items-center gap-2 text-sm md:text-base">
@@ -94,7 +97,7 @@ export function MediaCard({
         </div>
         <div className="flex h-[40px] flex-col gap-2 md:h-[52px]">
           <h3 className="truncate text-sm font-semibold capitalize">{title}</h3>
-          <span className="text-xs ">
+          <span className="text-xs">
             {media_type === "person"
               ? known_for_department
               : formattedReleseDate}
@@ -106,16 +109,16 @@ export function MediaCard({
   return (
     <Link
       href={`/${media_type}/${id}/${formattedTitle}`}
-      className="h-full w-44 space-y-2  transition-opacity duration-200 ease-in-out hover:opacity-90 md:w-48 dark:hover:opacity-70 "
+      className="h-full w-44 space-y-2 transition-opacity duration-200 ease-in-out hover:opacity-90 md:w-48 dark:hover:opacity-70"
       aria-label={title}
     >
-      <div className=" relative h-64 w-full rounded-md md:h-72">
+      <div className="relative h-64 w-full rounded-md md:h-72">
         <Image
           src={`${IMAGE_PREFIX.SD_POSTER}${image}`}
           width={300}
           height={450}
           alt={title}
-          className="h-64 w-full  md:h-72 rounded-md"
+          className="h-64 w-full rounded-md md:h-72"
         />
         {media_type === "movie" || media_type === "tv" ? (
           <>
@@ -128,6 +131,7 @@ export function MediaCard({
               rating={rating}
               relese_date={relese_date}
               aria-label={`Add ${title} to watchlist`}
+              is_on_watchlist_page={is_on_watchlist_page}
             />
 
             <div className="absolute right-2 bottom-2 flex items-center gap-2 text-sm md:text-base">
@@ -170,7 +174,7 @@ export function MediaCardSkeleton({
   if (card_type === "vertical") {
     return (
       <div className="h-52 w-72 space-y-2" role="status" aria-label="Loading">
-        <Skeleton className="h-40 w-full  md:h-40" />
+        <Skeleton className="h-40 w-full md:h-40" />
         <div className="flex h-[40px] flex-col gap-2 md:h-[52px]">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-24" />
@@ -214,7 +218,7 @@ export function PersonCard({
 }: PersonCardProps) {
   return (
     <div
-      className=" h-[13.25rem] w-32 space-y-2  p-2 md:h-[15.5rem] md:w-36"
+      className="h-[13.25rem] w-32 space-y-2 p-2 md:h-[15.5rem] md:w-36"
       aria-label={name}
     >
       <Image
@@ -222,7 +226,7 @@ export function PersonCard({
         width={300}
         height={450}
         alt={name}
-        className="bg-secondary h-36 w-full rounded-md  md:h-44"
+        className="bg-secondary h-36 w-full rounded-md md:h-44"
       />
       <div className="flex flex-col gap-1 py-1">
         <h3 className="truncate text-sm font-semibold capitalize">{name}</h3>
