@@ -1,37 +1,160 @@
-import Link from "next/link";
-
-export default function HomePage() {
+import { Suspense } from "react";
+import {
+  TrendingDayMovies,
+  TrendingWeekMovies,
+  UpcomingMovies,
+  PopularMovies,
+  PopularTv,
+  TopRatedMovies,
+  TopRatedTv,
+} from "@/components/homepage-media-list-section";
+import { Searchbar } from "@/components/search/search-bar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollContainer } from "@/components/scroll-container";
+import { MediaCardSkeleton } from "@/components/media-card";
+export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-        <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-          Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-        </h1>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/usage/first-steps"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">First Steps →</h3>
-            <div className="text-lg">
-              Just the basics - Everything you need to know to set up your
-              database and authentication.
-            </div>
-          </Link>
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/introduction"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">Documentation →</h3>
-            <div className="text-lg">
-              Learn more about Create T3 App, the libraries it uses, and how to
-              deploy it.
-            </div>
-          </Link>
+    <section className="flex flex-col items-center justify-center">
+      <div className="relative w-full overflow-hidden before:absolute before:start-1/2 before:top-1/2 before:-z-[1] before:h-96 before:w-full before:-translate-x-1/2 before:-translate-y-1/2 before:transform before:bg-[url('https://preline.co/assets/svg/component/hyperdrive.svg')] before:bg-center before:bg-no-repeat dark:before:bg-[url('https://preline.co/assets/svg/component-dark/hyperdrive.svg')]">
+        <div className="mx-auto max-w-screen-lg px-4 py-10 pt-5 pb-5 text-center sm:px-6 md:pt-10 lg:px-8 lg:py-14">
+          <div className="py-5">
+            <h1 className="items-center justify-center text-2xl font-black sm:text-3xl md:text-5xl lg:text-6xl lg:leading-tight">
+              Welcome to
+              <span className="px-2 text-blue-400">Film Fanatic</span>
+            </h1>
+            <p className="mb-3 text-[10px] tracking-wide text-gray-500 sm:text-xs dark:text-gray-200">
+              Millions of movies, TV shows, and people to discover.
+            </p>
+          </div>
+
+          <Searchbar />
         </div>
       </div>
-    </main>
+
+      <div className="mx-auto flex w-full max-w-screen-xl px-5 py-5 pt-5 pb-5 md:pt-10">
+        <div className="flex w-full flex-col gap-10">
+          <Tabs defaultValue="trending_day">
+            <div className="flex items-center gap-5">
+              <h2 className="font-heading text-xl font-semibold md:text-2xl">
+                Trending
+              </h2>
+              <TabsList>                
+                <TabsTrigger
+                  value="trending_day"
+                  className="h-full w-full rounded-xl px-5"
+                >
+                  Today
+                </TabsTrigger>
+                <TabsTrigger
+                  value="trending_week"
+                  className="h-full w-full rounded-xl px-5"
+                >
+                  This Week
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="trending_day">
+              <Suspense fallback={<Fallback />}>
+                <TrendingDayMovies />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="trending_week">
+              <Suspense fallback={<Fallback />}>
+                <TrendingWeekMovies />
+              </Suspense>
+            </TabsContent>
+          </Tabs>
+
+          <section>
+            <div className="flex items-center gap-5">
+              <h2 className="font-heading text-xl font-semibold md:text-2xl">
+                Upcoming Movies
+              </h2>
+            </div>
+            <div>
+              <Suspense fallback={<Fallback />}>
+                <UpcomingMovies />
+              </Suspense>
+            </div>
+          </section>
+
+          <Tabs defaultValue="popular_movie">
+            <div className="flex items-center gap-5">
+              <h2 className="font-heading text-xl font-semibold md:text-2xl">{`What's Popular`}</h2>
+              <TabsList >
+                <TabsTrigger
+                  value="popular_movie"
+                  className="h-full w-full rounded-xl px-5"
+                >
+                  Theaters
+                </TabsTrigger>
+                <TabsTrigger
+                  value="popular_tv"
+                  className="h-full w-full rounded-xl px-5"
+                >
+                  On TV
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="popular_movie">
+              <Suspense fallback={<Fallback />}>
+                <PopularMovies />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="popular_tv">
+              <Suspense fallback={<Fallback />}>
+                <PopularTv />
+              </Suspense>
+            </TabsContent>
+          </Tabs>
+          <Tabs defaultValue="top_rated_movies">
+            <div className="flex items-center gap-5">
+              <h2 className="font-heading text-xl font-semibold md:text-2xl">
+                Top Rated
+              </h2>
+              <TabsList >
+                <TabsTrigger
+                  value="top_rated_movies"
+                  className="h-full w-full rounded-xl px-5"
+                >
+                  Movies
+                </TabsTrigger>
+                <TabsTrigger
+                  value="top_rated_tv"
+                  className="h-full w-full rounded-xl px-5"
+                >
+                  TV Shows
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="top_rated_movies">
+              <Suspense fallback={<Fallback />}>
+                <TopRatedMovies />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="top_rated_tv">
+              <Suspense fallback={<Fallback />}>
+                <TopRatedTv />
+              </Suspense>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+      <div>
+        <div className="h-20"></div>
+      </div>
+    </section>
+  );
+}
+
+function Fallback() {
+  return (
+    <ScrollContainer isButtonsVisible={false}>
+      <div className="flex flex-wrap gap-4 p-4 first:pl-0 last:pr-0">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <MediaCardSkeleton key={index} />
+        ))}
+      </div>
+    </ScrollContainer>
   );
 }
