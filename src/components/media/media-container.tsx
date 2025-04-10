@@ -1,7 +1,7 @@
-import React from 'react'
-import Link from 'next/link'
-import { ArrowRight, Play } from 'lucide-react'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import React from "react";
+import Link from "next/link";
+import { ArrowRight, Play } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogTrigger,
@@ -9,10 +9,35 @@ import {
   DialogHeader,
   DialogTitle,
   DialogOverlay,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { ScrollContainer } from '@/components/scroll-container'
-import Image from '@/components/ui/image'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollContainer } from "@/components/scroll-container";
+import Image from "@/components/ui/image";
+
+interface VideoItem {
+  key: string;
+  name: string;
+}
+
+interface ImageItem {
+  backdrop_image?: string;
+  backdrop_image_raw?: string;
+  poster_image?: string;
+  poster_image_raw?: string;
+}
+
+interface MediaContainerProps {
+  id: number;
+  urltitle: string;
+  youtubeclips: VideoItem[];
+  backdrops: ImageItem[];
+  posters: ImageItem[];
+  title: string;
+  is_more_posters_available: boolean;
+  is_more_backdrops_available: boolean;
+  is_more_clips_available: boolean;
+  type: "movie" | "tv";
+}
 
 export default function MediaContainer({
   id,
@@ -25,18 +50,7 @@ export default function MediaContainer({
   is_more_backdrops_available,
   is_more_clips_available,
   type,
-}: {
-  id: number
-  urltitle: string
-  youtubeclips: any[]
-  backdrops: any[]
-  posters: any[]
-  title: string
-  is_more_posters_available: boolean
-  is_more_backdrops_available: boolean
-  is_more_clips_available: boolean
-  type: 'movie' | 'tv'
-}) {
+}: MediaContainerProps) {
   return (
     <div className="pb-5">
       {youtubeclips.length === 0 &&
@@ -52,12 +66,12 @@ export default function MediaContainer({
         <Tabs
           defaultValue={
             youtubeclips.length > 0
-              ? 'videos'
+              ? "videos"
               : backdrops.length > 0
-                ? 'backdrops'
+                ? "backdrops"
                 : posters.length > 0
-                  ? 'posters'
-                  : 'videos'
+                  ? "posters"
+                  : "videos"
           }
           className="pb-2"
         >
@@ -69,11 +83,11 @@ export default function MediaContainer({
               Media
             </Link>
 
-            <TabsList >
+            <TabsList>
               {youtubeclips.length > 0 && (
                 <TabsTrigger
                   value="videos"
-                  className="h-full w-full rounded-xl px-5  md:rounded-2xl md:px-10"
+                  className="h-full w-full rounded-xl px-5 md:rounded-2xl md:px-10"
                 >
                   Videos
                 </TabsTrigger>
@@ -81,7 +95,7 @@ export default function MediaContainer({
               {backdrops.length > 0 && (
                 <TabsTrigger
                   value="backdrops"
-                  className="h-full w-full rounded-xl px-5  md:rounded-2xl md:px-10"
+                  className="h-full w-full rounded-xl px-5 md:rounded-2xl md:px-10"
                 >
                   Backdrops
                 </TabsTrigger>
@@ -89,7 +103,7 @@ export default function MediaContainer({
               {posters.length > 0 && (
                 <TabsTrigger
                   value="posters"
-                  className="h-full w-full rounded-xl px-5  md:rounded-2xl md:px-10"
+                  className="h-full w-full rounded-xl px-5 md:rounded-2xl md:px-10"
                 >
                   Posters
                 </TabsTrigger>
@@ -110,19 +124,19 @@ export default function MediaContainer({
                             height={450}
                             quality={100}
                             alt={video.name}
-                            className="aspect-video h-44 w-auto rounded-xl bg-accent object-cover md:h-52 lg:h-60"
+                            className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
                           />
-                          <span className="absolute left-4 top-4 truncate text-xs text-white md:text-sm">
+                          <span className="absolute top-4 left-4 truncate text-xs text-white md:text-sm">
                             {video.name.slice(0, 30) +
-                              (video.name.length > 30 ? '...' : '')}
+                              (video.name.length > 30 ? "..." : "")}
                           </span>
                           <button className="absolute inset-0 flex items-center justify-center">
-                            <div className="rounded-full bg-black/60 p-4 transition-transform group-hover:scale-110">
+                            <div className="cursor-pointer rounded-full bg-black/60 p-4 transition-transform group-hover:scale-110">
                               <Play
                                 className="size-8 scale-100 fill-white text-white transition-transform duration-200 ease-out group-hover:scale-105"
                                 style={{
                                   filter:
-                                    'drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))',
+                                    "drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))",
                                 }}
                               />
                             </div>
@@ -134,7 +148,7 @@ export default function MediaContainer({
                           <DialogHeader className="sr-only">
                             <DialogTitle>{video.name}</DialogTitle>
                           </DialogHeader>
-                          <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
+                          <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
                             <iframe
                               src={`https://www.youtube.com/embed/${video.key}`}
                               className="size-full rounded-2xl"
@@ -151,7 +165,7 @@ export default function MediaContainer({
                       <Button
                         variant="secondary"
                         size="lg"
-                        className="ml-5 mr-10 flex items-center justify-center"
+                        className="mr-10 ml-5 flex items-center justify-center"
                       >
                         View More
                         <ArrowRight size={24} />
@@ -172,12 +186,12 @@ export default function MediaContainer({
                       <DialogTrigger asChild>
                         <Image
                           key={index}
-                          src={image.backdrop_image}
+                          src={image.backdrop_image ?? ""}
                           alt={title}
                           width={300}
                           height={450}
                           quality={100}
-                          className="aspect-video h-44 w-auto cursor-pointer rounded-xl bg-accent object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-52 lg:h-60"
+                          className="bg-accent aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
                         />
                       </DialogTrigger>
                       <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
@@ -185,9 +199,9 @@ export default function MediaContainer({
                           <DialogHeader className="sr-only">
                             <DialogTitle>{title} Backdrop Image</DialogTitle>
                           </DialogHeader>
-                          <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
+                          <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
                             <Image
-                              src={image.backdrop_image_raw}
+                              src={image.backdrop_image_raw ?? ""}
                               alt={title}
                               width={450}
                               height={300}
@@ -203,7 +217,7 @@ export default function MediaContainer({
                       <Button
                         variant="secondary"
                         size="lg"
-                        className="ml-5 mr-10 flex items-center justify-center"
+                        className="mr-10 ml-5 flex items-center justify-center"
                       >
                         View More
                         <ArrowRight size={24} />
@@ -223,12 +237,12 @@ export default function MediaContainer({
                       <DialogTrigger asChild>
                         <Image
                           key={index}
-                          src={image.poster_image}
+                          src={image.poster_image ?? ""}
                           alt={title}
                           width={450}
                           height={300}
                           quality={100}
-                          className="aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl bg-accent object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-52 lg:h-60"
+                          className="bg-accent aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
                         />
                       </DialogTrigger>
                       <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
@@ -236,9 +250,9 @@ export default function MediaContainer({
                           <DialogHeader className="sr-only">
                             <DialogTitle>{title} Poster Image</DialogTitle>
                           </DialogHeader>
-                          <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
+                          <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
                             <Image
-                              src={image.poster_image_raw}
+                              src={image.poster_image_raw ?? ""}
                               width={450}
                               height={300}
                               alt={title}
@@ -254,7 +268,7 @@ export default function MediaContainer({
                       <Button
                         variant="secondary"
                         size="lg"
-                        className="ml-5 mr-10 flex items-center justify-center"
+                        className="mr-10 ml-5 flex items-center justify-center"
                       >
                         View More
                         <ArrowRight size={24} />
@@ -279,5 +293,5 @@ export default function MediaContainer({
         </Link>
       )}
     </div>
-  )
+  );
 }

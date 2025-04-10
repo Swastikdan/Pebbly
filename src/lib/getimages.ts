@@ -1,7 +1,4 @@
-import type {
-  MediaImages,
-  BackdropsEntityOrLogosEntityOrPostersEntity,
-} from "@/types/mediaimages";
+import type { MediaImages } from "@/types/mediaimages";
 import { Tmdb } from "@/lib/tmdb";
 
 export async function getImages({

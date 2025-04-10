@@ -49,6 +49,8 @@ export default function WatchListButton({
         id: itemId,
         media_type,
         release_date: relese_date ?? "",
+      }).catch((error) => {
+        console.error(error);
       });
     },
     [
@@ -68,7 +70,7 @@ export default function WatchListButton({
         <TooltipTrigger asChild>
           <Badge
             variant="default"
-            className={cn(className, "z-20 p-2 [&>svg]:size-4")}
+            className={cn(className, "z-20 cursor-pointer p-2 [&>svg]:size-4")}
             aria-label="Add to watchlist"
             role="button"
             onClick={handleWatchList}

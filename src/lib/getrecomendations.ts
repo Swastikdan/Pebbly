@@ -23,7 +23,7 @@ export async function getMovieRecommendations({
     throw new Error(result.error);
   }
 
-  return result?.data?.results || [];
+  return (result?.data?.results ?? []) as MovieRecommendationsResultsEntity[];
 }
 
 export async function getTvSeriesRecommendations({
@@ -43,5 +43,5 @@ export async function getTvSeriesRecommendations({
     throw new Error(result.error);
   }
 
-  return result?.data?.results || [];
+  return (result?.data?.results ?? []) as TvRecommendationsResultsEntity[];
 }

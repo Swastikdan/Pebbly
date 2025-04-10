@@ -1,19 +1,19 @@
-import React from 'react'
-import Link from 'next/link'
-import type { SeasonsEntity } from '@/types/tv'
-import Image from '@/components/ui/image'
-import { IMAGE_PREFIX } from '@/constants'
-import { Badge } from '@/components/ui/badge'
-import { Star } from 'lucide-react'
+import React from "react";
+import Link from "next/link";
+import type { SeasonsEntity } from "@/types/tv";
+import Image from "@/components/ui/image";
+import { IMAGE_PREFIX } from "@/constants";
+import { Badge } from "@/components/ui/badge";
+import { Star } from "lucide-react";
 
 export default function CurrentSeason({
   id,
   urltitle,
   season_data,
 }: {
-  id: number
-  urltitle: string
-  season_data: SeasonsEntity
+  id: number;
+  urltitle: string;
+  season_data: SeasonsEntity;
 }) {
   return (
     <div className="pb-5">
@@ -22,7 +22,7 @@ export default function CurrentSeason({
           Current Season
         </span>
         <div
-          className="flex items-start gap-5 rounded-3xl border-2 border-border p-3 md:p-5"
+          className="border-border flex items-start gap-5 rounded-3xl border-2 p-3 md:p-5"
           role="region"
           aria-label={`Current Season: ${season_data.name}`}
         >
@@ -42,7 +42,7 @@ export default function CurrentSeason({
           </div>
           <div className="flex flex-1 flex-col items-start justify-center gap-2 overflow-hidden py-3">
             <div
-              className="line-clamp-1 text-xl font-bold transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:text-2xl"
+              className="line-clamp-1 text-xl font-bold transition-opacity duration-200 ease-in-out hover:opacity-90 md:text-2xl dark:hover:opacity-70"
               aria-label={`View season ${season_data.season_number} details`}
             >
               {season_data.name}
@@ -59,7 +59,7 @@ export default function CurrentSeason({
                 </Badge>
               )}
               <span className="text-sm">
-                {season_data.air_date?.split('-')[0] || 'TBA'}
+                {season_data.air_date?.split("-")[0] ?? "TBA"}
               </span>
               {` • `}
               <span className="text-sm">
@@ -67,7 +67,7 @@ export default function CurrentSeason({
               </span>
             </div>
             <span className="line-clamp-3 text-sm md:text-base">
-              {season_data.overview || 'No overview available'}
+              {season_data.overview || "No overview available"}
             </span>
           </div>
         </div>
@@ -80,5 +80,5 @@ export default function CurrentSeason({
         </Link>
       </div>
     </div>
-  )
+  );
 }

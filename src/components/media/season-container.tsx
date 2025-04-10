@@ -1,5 +1,5 @@
 "use client";
-import React, { cache } from "react";
+import React from "react";
 import Image from "@/components/ui/image";
 import { Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -15,18 +15,27 @@ interface SeasonContainerProps {
   urltitle: string;
 }
 
+interface Season {
+  id: number;
+  name: string;
+  season_number: number;
+  poster_path: string;
+  vote_average: number;
+  air_date: string | null;
+  episode_count: number;
+  overview: string;
+}
+
 export default function SeasonContainer({
   tv_id_param,
-  id,
-  urltitle,
+  //id,
+  //urltitle,
 }: SeasonContainerProps) {
-  const { data, isLoading, error } = cache(() =>
-    useQuery({
-      queryKey: ["tv_details", tv_id_param],
-      queryFn: async () => await getTvDetails({ id: tv_id_param }),
-      staleTime: 1000 * 60 * 60 * 24,
-    }),
-  )();
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["tv_details", tv_id_param],
+    queryFn: async () => await getTvDetails({ id: tv_id_param }),
+    staleTime: 1000 * 60 * 60 * 24,
+  });
 
   if (isLoading) {
     return <DefaultLoader />;
@@ -38,7 +47,7 @@ export default function SeasonContainer({
 
   return (
     <div className="flex flex-col gap-5 py-5 pb-32">
-      {data?.seasons?.map((season) => (
+      {data?.seasons?.map((season: Season) => (
         <div
           key={season.id}
           className="border-border flex items-start gap-5 rounded-3xl border-2 p-3 md:p-5"
@@ -78,7 +87,7 @@ export default function SeasonContainer({
                 </Badge>
               )}
               <span className="text-sm">
-                {season.air_date?.split("-")[0] || "TBA"}
+                {season.air_date?.split("-")[0] ?? "TBA"}
               </span>
               {` • `}
               <span className="text-sm">{season.episode_count} Episodes</span>

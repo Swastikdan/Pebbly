@@ -1,11 +1,11 @@
 "use client";
 import React from "react";
 import { useWatchlist } from "@/hooks/usewatchlist";
-import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
+import { MediaCard } from "@/components/media-card";
 import DefaultLoader from "@/components/default-loader";
 
 export default function WatchListContainer() {
-  const { watchlist, loading} = useWatchlist();
+  const { watchlist, loading } = useWatchlist();
 
   return (
     <div className="flex min-h-96 w-full items-center justify-center">

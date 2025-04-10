@@ -1,9 +1,9 @@
-import { Badge } from '@/components/ui/badge'
+import { Badge } from "@/components/ui/badge";
 
 export default function MediaKeywords({
   keywords,
 }: {
-  keywords: Array<{ name: string }>
+  keywords: Array<{ name: string }>;
 }) {
   return (
     <div className="py-5">
@@ -26,7 +26,7 @@ export default function MediaKeywords({
               {keywords.map((keyword, index) => (
                 <Badge
                   variant="default"
-                  className="h-6 cursor-auto rounded-sm px-4 text-xs font-light hover:bg-primary md:text-sm"
+                  className="hover:bg-primary h-6 cursor-auto rounded-sm px-4 text-xs font-light md:text-sm"
                   key={index}
                 >
                   {keyword.name}
@@ -37,5 +37,5 @@ export default function MediaKeywords({
         )}
       </div>
     </div>
-  )
+  );
 }

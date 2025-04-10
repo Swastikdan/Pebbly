@@ -20,7 +20,7 @@ export default function MediaRecommendationPageContainer({
     error,
     fetchNextPage,
     hasNextPage,
-    isFetching,
+    //isFetching,
     isFetchingNextPage,
     status,
   } = useInfiniteQuery({
@@ -35,24 +35,24 @@ export default function MediaRecommendationPageContainer({
 
   // Memoize flattened results
   const flattenedResults = useMemo(() => {
-    return data?.pages.flatMap((page) => page.results || []) || [];
+    return data?.pages.flatMap((page) => page.results ?? []) ?? [];
   }, [data]);
 
   // Memoize total items count
-  const totalItems = useMemo(() => flattenedResults.length, [flattenedResults]);
+  //const totalItems = useMemo(() => flattenedResults.length, [flattenedResults]);
 
   // Pre-render media cards
   const mediaCards = useMemo(() => {
     return flattenedResults.map((item) => (
       <MemoizedMediaCard
         key={`${item.id}-${type}`}
-        title={item.title || item.name || "Untitled"}
+        title={item.title ?? item.name ?? "Untitled"}
         rating={item.vote_average ?? 0}
         poster_path={item.poster_path ?? ""}
         image={item.poster_path ?? ""}
         media_type={type}
         id={item.id}
-        relese_date={item.first_air_date || item.release_date || null}
+        relese_date={item.first_air_date ?? item.release_date ?? null}
       />
     ));
   }, [flattenedResults, type]);

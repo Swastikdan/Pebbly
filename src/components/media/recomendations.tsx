@@ -1,41 +1,41 @@
-'use client'
-import React from 'react'
-import { ScrollContainer } from '@/components/scroll-container'
+"use client";
+import React from "react";
+import { ScrollContainer } from "@/components/scroll-container";
 import {
-    getMovieRecommendations,
-    getTvSeriesRecommendations,
-  } from '@/lib/getrecomendations'
-import { MediaCard, MediaCardSkeleton } from '@/components/media-card'
-import { useQuery } from '@tanstack/react-query'
+  getMovieRecommendations,
+  getTvSeriesRecommendations,
+} from "@/lib/getrecomendations";
+import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
+import { useQuery } from "@tanstack/react-query";
 export default function Recomendations({
   media_id,
   media_type,
 }: {
-  media_id: number
-  media_type: string
+  media_id: number;
+  media_type: string;
 }) {
   const {
     data: movie_data,
     isLoading: movie_is_loading,
     isError: movie_is_error,
   } = useQuery({
-    queryKey: ['recomendations', media_id],
+    queryKey: ["recomendations", media_id],
     queryFn: async () => await getMovieRecommendations({ id: media_id }),
     staleTime: 1000 * 60 * 60 * 24,
-    enabled: media_type === 'movie',
-  })
+    enabled: media_type === "movie",
+  });
   const {
     data: tv_data,
     isLoading: tv_is_loading,
     isError: tv_is_error,
   } = useQuery({
-    queryKey: ['recomendations', media_id],
+    queryKey: ["recomendations", media_id],
     queryFn: async () => await getTvSeriesRecommendations({ id: media_id }),
     staleTime: 1000 * 60 * 60 * 24,
-    enabled: media_type === 'tv',
-  })
+    enabled: media_type === "tv",
+  });
 
-  if (media_type === 'movie') {
+  if (media_type === "movie") {
     return (
       <ScrollContainer isButtonsVisible={!movie_is_loading}>
         <div className="flex gap-4 p-4 first:pl-0 last:pr-0">
@@ -64,7 +64,7 @@ export default function Recomendations({
           )}
         </div>
       </ScrollContainer>
-    )
+    );
   }
 
   return (
@@ -95,5 +95,5 @@ export default function Recomendations({
         )}
       </div>
     </ScrollContainer>
-  )
+  );
 }

@@ -1,17 +1,17 @@
-import React from 'react'
-import GoBack from '@/components/go-back'
-import ShareButton from '@/components/share-button'
-import RatingCount from '@/components/media/rating-count'
-import WatchListButton from '@/components/watch-list-button'
+import React from "react";
+import GoBack from "@/components/go-back";
+import ShareButton from "@/components/share-button";
+import RatingCount from "@/components/media/rating-count";
+import WatchListButton from "@/components/watch-list-button";
 export default function MediaTitleContailer({
   title,
   rateing,
   poster_path,
-  image,
+  //image,
   id,
   media_type,
   relese_date,
-  description,
+  //description,
   tagline,
   releaseyear,
   uscertification,
@@ -21,25 +21,25 @@ export default function MediaTitleContailer({
   imdb_url,
   tv_status,
 }: {
-  title: string
-  rateing: number
-  image: string
-  poster_path: string
-  id: number
-  media_type: 'movie' | 'tv'
-  relese_date: string | null
-  description: string
-  tagline: string | null
-  releaseyear: string
-  uscertification: string
-  Runtime?: string | null
-  vote_average: number | null
-  vote_count: number | null
-  imdb_url?: string | null
-  tv_status?: string | null
+  title: string;
+  rateing: number;
+  image: string;
+  poster_path: string;
+  id: number;
+  media_type: "movie" | "tv";
+  relese_date: string | null;
+  description: string;
+  tagline: string | null;
+  releaseyear: string;
+  uscertification: string;
+  Runtime?: string | null;
+  vote_average: number | null;
+  vote_count: number | null;
+  imdb_url?: string | null;
+  tv_status?: string | null;
 }) {
   return (
-    <div className="pb-5 pt-5">
+    <div className="pt-5 pb-5">
       <div className="space-y-3 pb-5">
         <div className="flex items-center justify-between">
           <GoBack link="/" />
@@ -72,11 +72,11 @@ export default function MediaTitleContailer({
         {tagline && <h2 className="hidden sm:flex">{tagline}</h2>}
       </div>
       <div className="flex flex-col items-start justify-start space-y-3 sm:flex-row sm:items-center sm:justify-between">
-        <span className="space-x-1 whitespace-nowrap font-light sm:text-lg">
+        <span className="space-x-1 font-light whitespace-nowrap sm:text-lg">
           <span className="py-1">{releaseyear}</span>
 
           <span className="py-1">•</span>
-          <span className="rounded-[10px] px-2 py-1 ring-1 ring-ring">
+          <span className="ring-ring rounded-[10px] px-2 py-1 ring-1">
             {uscertification}
           </span>
           {Runtime && (
@@ -100,5 +100,5 @@ export default function MediaTitleContailer({
         </div>
       </div>
     </div>
-  )
+  );
 }

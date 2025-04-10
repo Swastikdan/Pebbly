@@ -11,10 +11,9 @@ const nextConfig: NextConfig = {
     reactCompiler: true,
     optimizeCss: true,
     ppr: true,
-    //dynamicIO:true,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    //ignoreDuringBuilds: true,
   },
   compress: true,
   poweredByHeader: false,
@@ -51,10 +50,6 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          // {
-          //   key: 'Strict-Transport-Security',
-          //   value: 'max-age=31536000; includeSubDomains preload',
-          // },
           {
             key: "X-Content-Type-Options",
             value: "nosniff",

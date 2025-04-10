@@ -2,14 +2,16 @@
 import { useCallback } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, type WatchlistItem } from "@/db";
-
-const USER_ID = "local-guest-user";
+import { LOCAL_GUEST_USER_ID } from "@/constants";
 
 export function useWatchlist() {
   // Remove the default value so we can detect if the query is still loading.
   const watchlist = useLiveQuery(
     () =>
-      db.watchlist.where("[user_id+deleted]").equals([USER_ID, 0]).toArray(),
+      db.watchlist
+        .where("[user_id+deleted]")
+        .equals([LOCAL_GUEST_USER_ID, 0])
+        .toArray(),
     [],
   );
 
@@ -28,7 +30,7 @@ export function useWatchlist() {
       // Use the compound index to check if the item exists and is active.
       const existing = await db.watchlist
         .where("[user_id+deleted]")
-        .equals([USER_ID, 0])
+        .equals([LOCAL_GUEST_USER_ID, 0])
         .and((entry) => entry.external_id === item.id)
         .first();
 
@@ -41,7 +43,7 @@ export function useWatchlist() {
       } else {
         const newItem: WatchlistItem = {
           watchlist_id: crypto.randomUUID(),
-          user_id: USER_ID,
+          user_id: LOCAL_GUEST_USER_ID,
           title: item.title,
           type: item.media_type,
           external_id: item.id,
@@ -60,64 +62,3 @@ export function useWatchlist() {
 
   return { watchlist: watchlist ?? [], loading, toggleWatchlistItem };
 }
-
-// // useWatchlist.ts
-// import { useCallback } from "react";
-// import { useLiveQuery } from "dexie-react-hooks";
-// import { db, type WatchlistItem } from "@/db";
-
-// const USER_ID = "local-guest-user";
-
-// export function useWatchlist() {
-//   // Query active items using the compound index: deleted flag 0 means active.
-//   const watchlist = useLiveQuery(
-//     () =>
-//       db.watchlist.where("[user_id+deleted]").equals([USER_ID, 0]).toArray(),
-//     [],
-//     [] as WatchlistItem[],
-//   );
-
-//   const toggleWatchlistItem = useCallback(
-//     async (item: {
-//       title: string;
-//       rating: number;
-//       image: string;
-//       id: string;
-//       media_type: "tv" | "movie";
-//       release_date: string;
-//     }) => {
-//       // Use the compound index to check if the item is active.
-//       const existing = await db.watchlist
-//         .where("[user_id+deleted]")
-//         .equals([USER_ID, 0])
-//         .and((entry) => entry.external_id === item.id)
-//         .first();
-
-//       if (existing) {
-//         // Soft delete the item: set deleted flag to 1.
-//         await db.watchlist.update(existing.watchlist_id, {
-//           deleted: 1,
-//           updated_at: Date.now(),
-//         });
-//       } else {
-//         const newItem: WatchlistItem = {
-//           watchlist_id: crypto.randomUUID(),
-//           user_id: USER_ID,
-//           title: item.title,
-//           type: item.media_type,
-//           external_id: item.id,
-//           image: item.image,
-//           rating: item.rating,
-//           release_date: item.release_date,
-//           updated_at: Date.now(),
-//           deleted: 0,
-//         };
-//         await db.watchlist.add(newItem);
-//       }
-//       // No need to manually refresh the list because useLiveQuery updates automatically.
-//     },
-//     [],
-//   );
-
-//   return { watchlist, toggleWatchlistItem };
-// }

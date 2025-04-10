@@ -4,7 +4,8 @@ import { useWatchlist } from "@/hooks/usewatchlist";
 import { Button } from "@/components/ui/button";
 import { Loader2, FileDown, FileUp } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { db } from "@/db";
+import { db, type WatchlistItem } from "@/db";
+import { LOCAL_GUEST_USER_ID } from "@/constants";
 
 export default function ExportAndAddWatchlist() {
   const [importLoading, setImportLoading] = useState(false);
@@ -47,15 +48,19 @@ export default function ExportAndAddWatchlist() {
       reader.onload = async (e) => {
         try {
           const content = e.target?.result as string;
-          const importedData = JSON.parse(content);
+
+          const importedData = JSON.parse(
+            content,
+          ) as unknown as WatchlistItem[];
           // Expect the imported data to be a JSON array.
           const validatedList = Array.isArray(importedData) ? importedData : [];
 
           // Map each imported item to ensure it has the correct fields:
-          const itemsToImport = validatedList.map((item: any) => ({
+
+          const itemsToImport = validatedList.map((item: WatchlistItem) => ({
             ...item,
             // Force the watchlist items to belong to 'local-guest-user'
-            user_id: "local-guest-user",
+            user_id: LOCAL_GUEST_USER_ID,
             // Set/update the timestamp
             updated_at: Date.now(),
           }));
@@ -121,7 +126,7 @@ export default function ExportAndAddWatchlist() {
               fileInputRef.current?.click();
             }
           }}
-          className={`bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-ring inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 ${
+          className={`bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-ring inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 cursor-pointer ${
             importLoading ? "cursor-not-allowed opacity-50" : ""
           }`}
         >

@@ -48,11 +48,11 @@ export default async function CastCrewPage({
     }),
   )();
 
-  const cast = credits?.cast || [];
-  const crew = credits?.crew || [];
+  const cast = credits?.cast ?? [];
+  const crew = credits?.crew ?? [];
   const castByDepartment = crew.reduce<Map<string, CrewEntity[]>>(
     (acc, item) => {
-      const dept = acc.get(item.department) || [];
+      const dept = acc.get(item.department) ?? [];
       dept.push(item);
       acc.set(item.department, dept);
       return acc;

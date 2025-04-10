@@ -38,7 +38,7 @@ export default function Home() {
               <h2 className="font-heading text-xl font-semibold md:text-2xl">
                 Trending
               </h2>
-              <TabsList>                
+              <TabsList>
                 <TabsTrigger
                   value="trending_day"
                   className="h-full w-full rounded-xl px-5"
@@ -81,7 +81,7 @@ export default function Home() {
           <Tabs defaultValue="popular_movie">
             <div className="flex items-center gap-5">
               <h2 className="font-heading text-xl font-semibold md:text-2xl">{`What's Popular`}</h2>
-              <TabsList >
+              <TabsList>
                 <TabsTrigger
                   value="popular_movie"
                   className="h-full w-full rounded-xl px-5"
@@ -112,7 +112,7 @@ export default function Home() {
               <h2 className="font-heading text-xl font-semibold md:text-2xl">
                 Top Rated
               </h2>
-              <TabsList >
+              <TabsList>
                 <TabsTrigger
                   value="top_rated_movies"
                   className="h-full w-full rounded-xl px-5"

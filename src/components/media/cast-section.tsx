@@ -1,9 +1,9 @@
-import React from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { ArrowRight } from 'lucide-react'
-import { PersonCard } from '@/components/media-card'
-import { ScrollContainer } from '@/components/scroll-container'
+import React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { PersonCard } from "@/components/media-card";
+import { ScrollContainer } from "@/components/scroll-container";
 
 export default function CastSection({
   id,
@@ -13,22 +13,22 @@ export default function CastSection({
   is_more_cast_crew,
   type,
 }: {
-  id: number
-  urltitle: string
+  id: number;
+  urltitle: string;
   cast: Array<{
-    id: number
-    name: string
-    character: string
-    profile_path: string
-  }>
+    id: number;
+    name: string;
+    character: string;
+    profile_path: string;
+  }>;
   crew: Array<{
-    id: number
-    name: string
-    job: string
-    profile_path: string
-  }>
-  is_more_cast_crew: boolean
-  type: 'movie' | 'tv'
+    id: number;
+    name: string;
+    job: string;
+    profile_path: string;
+  }>;
+  is_more_cast_crew: boolean;
+  type: "movie" | "tv";
 }) {
   return (
     <div className="pb-5">
@@ -71,7 +71,7 @@ export default function CastSection({
                       <Button
                         variant="secondary"
                         size="lg"
-                        className="ml-5 mr-10 flex items-center justify-center"
+                        className="mr-10 ml-5 flex items-center justify-center"
                       >
                         View More
                         <ArrowRight size={24} />
@@ -104,5 +104,5 @@ export default function CastSection({
         )}
       </div>
     </div>
-  )
+  );
 }

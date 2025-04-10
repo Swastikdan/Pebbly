@@ -1,16 +1,16 @@
-'use client'
-import React from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { getCollection } from '@/lib/getcollection'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import Link from 'next/link'
+"use client";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getCollection } from "@/lib/getcollection";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 export default function Collections({ id }: { id: number }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['collection', id],
+    queryKey: ["collection", id],
     queryFn: async () => await getCollection({ id }),
-  })
+  });
 
   if (!isLoading) {
     return (
@@ -22,7 +22,7 @@ export default function Collections({ id }: { id: number }) {
           />
         ) : (
           <div
-            className="relative h-48 w-full overflow-hidden rounded-2xl bg-secondary md:h-52 lg:h-60"
+            className="bg-secondary relative h-48 w-full overflow-hidden rounded-2xl md:h-52 lg:h-60"
             role="region"
             aria-label={`Collection: ${data?.name}`}
           >
@@ -35,12 +35,12 @@ export default function Collections({ id }: { id: number }) {
             />
 
             <div className="relative flex h-full flex-col items-start justify-center p-5">
-              <span className="text-lg font-bold text-primary md:text-xl lg:text-2xl xl:text-3xl">
+              <span className="text-primary text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
                 Part of the {data?.name}
               </span>
-              <span className="mt-2 flex flex-wrap text-xs font-light text-primary md:text-sm lg:text-base">
-                Includes{' '}
-                {data?.parts?.map((part) => part.title)?.join(', ') ?? ''}
+              <span className="text-primary mt-2 flex flex-wrap text-xs font-light md:text-sm lg:text-base">
+                Includes{" "}
+                {data?.parts?.map((part) => part.title)?.join(", ") ?? ""}
               </span>
               <Link
                 href={`/collection/${id}`}
@@ -58,6 +58,6 @@ export default function Collections({ id }: { id: number }) {
           </div>
         )}
       </>
-    )
+    );
   }
 }

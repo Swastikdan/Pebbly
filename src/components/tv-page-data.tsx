@@ -3,7 +3,6 @@ import React, { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { getTvDetails } from "@/lib/gettvdetails";
 import { useQuery } from "@tanstack/react-query";
-import type { SeasonsEntity } from "@/types/tv";
 import DefaultLoader from "@/components/default-loader";
 import { GENRE_LIST, IMAGE_PREFIX } from "@/constants";
 import MediaTitleContailer from "@/components/media/media-title-container";
@@ -15,6 +14,7 @@ import MediaContainer from "@/components/media/media-container";
 import MediaKeywords from "@/components/media/media-keywords";
 import MediaRecomendations from "@/components/media/media-recommendation";
 import CurrentSeason from "@/components/media/current-season";
+import type { Tv } from "@/types/tv";
 
 export default function TvData({
   params,
@@ -24,13 +24,11 @@ export default function TvData({
   const { id: tv_id, slug: tv_slug } = params;
   const tv_id_param = Number(tv_id);
 
-  const { data, error, isLoading } = cache(() =>
-    useQuery({
-      queryKey: ["tv_details", tv_id_param],
-      queryFn: async () => await getTvDetails({ id: tv_id_param }),
-      staleTime: 1000 * 60 * 60 * 24,
-    }),
-  )();
+  const { data, error, isLoading } = useQuery<Tv>({
+    queryKey: ["tv_details", tv_id_param],
+    queryFn: cache(async () => await getTvDetails({ id: tv_id_param })),
+    staleTime: 1000 * 60 * 60 * 24,
+  });
 
   if (isLoading) {
     return <DefaultLoader />;
@@ -73,7 +71,7 @@ export default function TvData({
   const tvtitle = name ?? original_name;
   const tvimage =
     poster_path && poster_path !== "" && poster_path !== null
-      ? `https://image.tmdb.org/t/p/w500/${poster_path}`
+      ? `${IMAGE_PREFIX.HD_POSTER}${poster_path}`
       : `https://placehold.co/300x450?text=Image+Not+Found`;
   const tvreleaseyear = release_date
     ? new Date(release_date).getFullYear()
@@ -127,7 +125,7 @@ export default function TvData({
       ?.map((cast) => ({
         id: cast.id,
         name: cast.name,
-        profile_path: cast.profile_path!,
+        profile_path: cast.profile_path,
         character: cast.character,
       }))
       .slice(0, 10) ?? [];
@@ -176,7 +174,7 @@ export default function TvData({
         (season) =>
           season.air_date &&
           new Date(season.air_date).getTime() <= new Date().getTime(),
-      ) || data.seasons?.[data.seasons.length - 1];
+      ) ?? data.seasons?.[data.seasons.length - 1];
 
   return (
     <section className="mx-auto block max-w-screen-xl items-center px-4">
@@ -194,7 +192,7 @@ export default function TvData({
             : overview || ""
         }
         tagline={tagline ?? null}
-        releaseyear={String(tvreleaseyear) || "Not Released"}
+        releaseyear={String(tvreleaseyear) ?? "Not Released"}
         uscertification={uscertification}
         Runtime={null}
         vote_average={vote_average}
@@ -215,7 +213,7 @@ export default function TvData({
         cast={tvcast}
         crew={tvcrew}
         is_more_cast_crew={
-          credits?.cast?.length! > 10 || (credits?.crew?.length ?? 0) > 10
+          (credits?.cast?.length ?? 0) > 10 || (credits?.crew?.length ?? 0) > 10
         }
         type="tv"
       />
@@ -230,8 +228,8 @@ export default function TvData({
         posters={tvposters}
         title={tvtitle}
         youtubeclips={youtubeclips}
-        is_more_backdrops_available={images?.backdrops?.length! > 10}
-        is_more_posters_available={images?.posters?.length! > 10}
+        is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
+        is_more_posters_available={(images?.posters?.length ?? 0) > 10}
         is_more_clips_available={youtubevideos.length > 10}
         type="tv"
       />

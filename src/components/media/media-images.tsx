@@ -1,8 +1,8 @@
-'use client'
-import React from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { ScrollContainer } from '@/components/scroll-container'
-import Image from '@/components/ui/image'
+"use client";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ScrollContainer } from "@/components/scroll-container";
+import Image from "@/components/ui/image";
 import {
   Dialog,
   DialogTrigger,
@@ -10,23 +10,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogOverlay,
-} from '@/components/ui/dialog'
-import { getImages } from '@/lib/getimages'
-import { Skeleton } from '@/components/ui/skeleton'
-import { IMAGE_PREFIX } from '@/constants'
+} from "@/components/ui/dialog";
+import { getImages } from "@/lib/getimages";
+import { Skeleton } from "@/components/ui/skeleton";
+import { IMAGE_PREFIX } from "@/constants";
 
 export default function MediaImages({
   id,
   media_type,
 }: {
-  id: number
-  media_type: 'movie' | 'tv'
+  id: number;
+  media_type: "movie" | "tv";
 }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['media_images', id, media_type],
+  const { data, isLoading } = useQuery({
+    queryKey: ["media_images", id, media_type],
     queryFn: async () => getImages({ id, type: media_type }),
     staleTime: 1000 * 60 * 60 * 24,
-  })
+  });
 
   return (
     <div className="flex flex-col gap-3">
@@ -37,11 +37,10 @@ export default function MediaImages({
             ? Array.from({ length: 6 }).map((_, index) => (
                 <Skeleton
                   key={index}
-                  className="aspect-video h-44 w-auto rounded-xl bg-accent md:h-52 lg:h-60"
+                  className="bg-accent aspect-video h-44 w-auto rounded-xl md:h-52 lg:h-60"
                 />
               ))
-            : data &&
-              data.backdrops?.map((image, index) => (
+            : data?.backdrops?.map((image, index) => (
                 <Dialog key={index}>
                   <DialogTrigger asChild>
                     <Image
@@ -51,7 +50,7 @@ export default function MediaImages({
                       width={300}
                       height={450}
                       quality={100}
-                      className="aspect-video h-44 w-auto cursor-pointer rounded-xl bg-accent object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-52 lg:h-60"
+                      className="bg-accent aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
                     />
                   </DialogTrigger>
                   <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
@@ -61,7 +60,7 @@ export default function MediaImages({
                           {image.file_path} Backdrop Image
                         </DialogTitle>
                       </DialogHeader>
-                      <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
+                      <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
                         <Image
                           src={IMAGE_PREFIX.ORIGINAL + image.file_path}
                           alt={image.file_path}
@@ -83,11 +82,10 @@ export default function MediaImages({
             ? Array.from({ length: 6 }).map((_, index) => (
                 <Skeleton
                   key={index}
-                  className="aspect-video h-44 w-auto rounded-xl bg-accent md:h-52 lg:h-60"
+                  className="bg-accent aspect-video h-44 w-auto rounded-xl md:h-52 lg:h-60"
                 />
               ))
-            : data &&
-              data.posters?.map((image, index) => (
+            : data?.posters?.map((image, index) => (
                 <Dialog key={index}>
                   <DialogTrigger asChild>
                     <Image
@@ -97,7 +95,7 @@ export default function MediaImages({
                       width={450}
                       height={300}
                       quality={100}
-                      className="aspect-[11/16] h-44 w-min cursor-pointer rounded-xl bg-accent object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70 md:h-52 lg:h-60"
+                      className="bg-accent aspect-[11/16] h-44 w-min cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
                     />
                   </DialogTrigger>
                   <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
@@ -107,7 +105,7 @@ export default function MediaImages({
                           {image.file_path} Poster Image
                         </DialogTitle>
                       </DialogHeader>
-                      <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] bg-accent p-0">
+                      <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
                         <Image
                           src={IMAGE_PREFIX.ORIGINAL + image.file_path}
                           alt={image.file_path}
@@ -123,5 +121,5 @@ export default function MediaImages({
         </div>
       </ScrollContainer>
     </div>
-  )
+  );
 }

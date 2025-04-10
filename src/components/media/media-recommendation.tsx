@@ -1,14 +1,14 @@
-import React from 'react'
-import Link from 'next/link'
-import Recomendations from './recomendations'
+import React from "react";
+import Link from "next/link";
+import Recomendations from "./recomendations";
 export default function MediaRecomendations({
   id,
   urltitle,
   type,
 }: {
-  id: number
-  urltitle: string
-  type: 'movie' | 'tv'
+  id: number;
+  urltitle: string;
+  type: "movie" | "tv";
 }) {
   return (
     <div className="pb-5">
@@ -22,5 +22,5 @@ export default function MediaRecomendations({
         <Recomendations media_type={type} media_id={id} />
       </div>
     </div>
-  )
+  );
 }

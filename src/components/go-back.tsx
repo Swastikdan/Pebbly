@@ -1,22 +1,22 @@
-'use client'
-import React from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
+"use client";
+import React from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function GoBack({
   title,
   link,
 }: {
-  title?: string
-  link?: string
+  title?: string;
+  link?: string;
 }) {
-  const router = useRouter()
+  const router = useRouter();
   function goBack() {
     if (link) {
-      router.push(link)
+      router.push(link);
     } else {
-      router.back()
+      router.back();
     }
   }
   return (
@@ -27,7 +27,7 @@ export default function GoBack({
       className="Capitalized"
     >
       <ArrowLeft size={24} aria-hidden="true" />
-      {title ? title : 'Go Back'}
+      {title ?? "Go Back"}
     </Button>
-  )
+  );
 }

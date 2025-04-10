@@ -1,11 +1,11 @@
-import React from 'react'
-import { Button } from '@/components/ui/button'
-import { ScrollContainer } from '@/components/scroll-container'
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { ScrollContainer } from "@/components/scroll-container";
 
 export default function GenreContainer({
   genres,
 }: {
-  genres: Array<{ name: string }>
+  genres: Array<{ name: string }>;
 }) {
   return (
     <ScrollContainer>
@@ -24,5 +24,5 @@ export default function GenreContainer({
         ))}
       </div>
     </ScrollContainer>
-  )
+  );
 }

@@ -1,14 +1,14 @@
-'use client'
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+"use client";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function MediaDescription({
   description,
 }: {
-  description: string
+  description: string;
 }) {
-  const [isFullTextVisible, setIsFullTextVisible] = useState(false)
-  const toggleText = () => setIsFullTextVisible(!isFullTextVisible)
+  const [isFullTextVisible, setIsFullTextVisible] = useState(false);
+  const toggleText = () => setIsFullTextVisible(!isFullTextVisible);
   return (
     <div className="py-3">
       <span className="text-xl font-semibold md:text-2xl">Overview</span>
@@ -23,12 +23,12 @@ export default function MediaDescription({
           <Button
             onClick={toggleText}
             variant="link"
-            className="ml-2 w-min justify-end text-primary md:hidden"
+            className="text-primary ml-2 w-min justify-end md:hidden"
           >
-            {isFullTextVisible ? 'Read Less' : 'Read More'}
+            {isFullTextVisible ? "Read Less" : "Read More"}
           </Button>
         </span>
       </div>
     </div>
-  )
+  );
 }

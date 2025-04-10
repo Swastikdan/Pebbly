@@ -14,6 +14,7 @@ import Collections from "@/components/media/collections";
 import MediaKeywords from "@/components/media/media-keywords";
 import MediaRecomendations from "@/components/media/media-recommendation";
 import DefaultLoader from "@/components/default-loader";
+import type { Movie } from "@/types/movie";
 
 export default function MoviePagedata({
   params,
@@ -22,13 +23,11 @@ export default function MoviePagedata({
 }) {
   const { id: movie_id, slug: movie_slug } = params;
   const movie_id_param = Number(movie_id);
-  const { data, error, isLoading } = cache(() =>
-    useQuery({
-      queryKey: ["movie_details", movie_id_param],
-      queryFn: async () => await getMovieDetails({ id: movie_id_param }),
-      staleTime: 1000 * 60 * 60 * 24,
-    }),
-  )();
+  const { data, error, isLoading } = useQuery<Movie>({
+    queryKey: ["movie_details", movie_id_param],
+    queryFn: cache(async () => await getMovieDetails({ id: movie_id_param })),
+    staleTime: 1000 * 60 * 60 * 24,
+  });
 
   if (isLoading) {
     return <DefaultLoader />;
@@ -82,10 +81,9 @@ export default function MoviePagedata({
   );
   let uscertification = "NR";
 
-  if (usrelease && usrelease.release_dates) {
-    for (let i = 0; i < usrelease.release_dates.length; i++) {
-      const date = usrelease.release_dates[i];
-      if (date && date.certification) {
+  if (usrelease?.release_dates) {
+    for (const date of usrelease.release_dates) {
+      if (date?.certification) {
         uscertification = date.certification;
         break;
       }
@@ -216,7 +214,7 @@ export default function MoviePagedata({
         cast={moviecast}
         crew={moviecrew}
         is_more_cast_crew={
-          credits?.cast?.length! > 10 || (credits?.crew?.length ?? 0) > 10
+          (credits?.cast?.length ?? 0) > 10 || (credits?.crew?.length ?? 0) > 10
         }
         type="movie"
       />
@@ -227,8 +225,8 @@ export default function MoviePagedata({
         posters={movieposters}
         title={movietitle}
         youtubeclips={youtubeclips}
-        is_more_backdrops_available={images?.backdrops?.length! > 10}
-        is_more_posters_available={images?.posters?.length! > 10}
+        is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
+        is_more_posters_available={(images?.posters?.length ?? 0) > 10}
         is_more_clips_available={youtubevideos.length > 10}
         type="movie"
       />

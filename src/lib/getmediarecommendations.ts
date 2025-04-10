@@ -14,7 +14,7 @@ export async function getMediaRecommendations({
   if (result.error) {
     throw new Error(result.error);
   }
-  if (!result.data || !result.data.results) {
+  if (!result.data?.results) {
     throw new Error("No data returned");
   }
   return result.data;

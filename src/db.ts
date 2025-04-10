@@ -11,7 +11,6 @@ export interface WatchlistItem {
   rating: number;
   release_date: string;
   updated_at: number; // Timestamp used for sync
-  // Use numeric flag for deletion: 0 = active, 1 = deleted.
   deleted: 0 | 1;
 }
 

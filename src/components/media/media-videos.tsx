@@ -21,7 +21,7 @@ export default function MediaVideos({
   id: number;
   media_type: "movie" | "tv";
 }) {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["media_videos", id, media_type],
     queryFn: async () => getVideos({ id, type: media_type }),
     staleTime: 1000 * 60 * 60 * 24,
@@ -37,8 +37,7 @@ export default function MediaVideos({
                 className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
               />
             ))
-          : data &&
-            data.map((video, index) => (
+          : data?.map((video, index) => (
               <Dialog key={index}>
                 <DialogTrigger asChild>
                   <div className="group relative cursor-pointer">
@@ -55,7 +54,7 @@ export default function MediaVideos({
                         (video.name.length > 30 ? "..." : "")}
                     </span>
                     <button className="absolute inset-0 flex cursor-pointer items-center justify-center">
-                      <div className="rounded-full bg-black/60 p-4 transition-transform group-hover:scale-110">
+                      <div className="cursor-pointer rounded-full bg-black/60 p-4 transition-transform group-hover:scale-110">
                         <Play
                           className="size-8 scale-100 fill-white text-white transition-transform duration-200 ease-out group-hover:scale-105"
                           style={{
