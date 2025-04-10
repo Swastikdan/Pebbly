@@ -1,36 +1,36 @@
-import type { Metadata } from 'next'
-import GoBack from '@/components/GoBack'
-import { notFound } from 'next/navigation'
-import ShareButton from '@/components/ShareButton'
-import MediaRecommendationpageContainer from '@/components/media/MediaRecommendationpageContainer'
+import type { Metadata } from "next";
+import GoBack from "@/components/go-back";
+import { notFound } from "next/navigation";
+import ShareButton from "@/components/share-button";
+import MediaRecommendationPageContainer from "@/components/media/media-recommendationpage-container";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>
+  params: Promise<{ id: string; slug: string }>;
 }): Promise<Metadata> {
   const title = decodeURIComponent((await params).slug)
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (l) => l.toUpperCase())
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
   return {
     title: `${title} - Recommendations`,
     description: `Recomendations for ${title}`,
-  }
+  };
 }
 
 export default async function TvRecommendationsPage({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>
+  params: Promise<{ id: string; slug: string }>;
 }) {
-  const { id, slug } = await params
+  const { id, slug } = await params;
 
   const title = decodeURIComponent(slug)
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (l) => l.toUpperCase())
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 
   if (!id) {
-    return notFound()
+    return notFound();
   }
   return (
     <section className="mx-auto block max-w-screen-xl items-center px-4">
@@ -44,8 +44,8 @@ export default async function TvRecommendationsPage({
         </h1>
       </div>
       <div className="py-">
-        <MediaRecommendationpageContainer id={Number(id)} type="tv" />
+        <MediaRecommendationPageContainer id={Number(id)} type="tv" />
       </div>
     </section>
-  )
+  );
 }

@@ -1,45 +1,43 @@
-import { Suspense } from 'react'
-import type { Metadata } from 'next'
-import { MEDIA_PAGE_SLUGS, NAV_ITEMS } from '@/constants'
-import MediaPageResults from './MediaPageResults'
-import { type MediaListDataQuery } from '@/types/media'
-import { MediaCardSkeleton } from '@/components/MediaCard'
-
-export const dynamicParams = false
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import { MEDIA_PAGE_SLUGS, NAV_ITEMS } from "@/constants";
+import MediaListPageResults from "@/components/media-list-page-results";
+import { type MediaListDataQuery } from "@/types/media";
+import { MediaCardSkeleton } from "@/components/media-card";
 
 export async function generateStaticParams() {
-  return MEDIA_PAGE_SLUGS
+  return MEDIA_PAGE_SLUGS;
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params:Promise<{ type: string; slug: string }>
+  params: Promise<{ type: string; slug: string }>;
 }): Promise<Metadata> {
-  const { type, slug } =await params
-  const navItem = NAV_ITEMS.find((item) => item.slug === type)
+  const { type, slug } = await params;
+  const navItem = NAV_ITEMS.find((item) => item.slug === type);
   const subNavItem = navItem
     ? navItem.submenu.find((item) => item.slug === slug)
-    : null
+    : null;
   return {
     title: `${subNavItem?.name} ${navItem?.name} | Film Fanatic`,
     description: `Browse ${subNavItem?.name} ${navItem?.name} | Film Fanatic`,
-  }
+  };
 }
 
 export default async function MediaPage({
   params,
 }: {
-  params:Promise<{ type: string; slug: string }>
+  params: Promise<{ type: string; slug: string }>;
 }) {
-  const { type, slug } = await params
-  const navItem = NAV_ITEMS.find((item) => item.slug === type)
+  const { type, slug } = await params;
+  const navItem = NAV_ITEMS.find((item) => item.slug === type);
   const subNavItem = navItem
     ? navItem.submenu.find((item) => item.slug === slug)
-    : null
-  const query = (type + '_' + slug) as unknown as MediaListDataQuery['type']
+    : null;
+  const query = (type + "_" + slug) as unknown as MediaListDataQuery["type"];
   const mediatype =
-    type === 'movies' ? 'movie' : type === 'tv-shows' ? 'tv' : 'person'
+    type === "movies" ? "movie" : type === "tv-shows" ? "tv" : "person";
 
   return (
     <section className="flex min-h-screen w-full justify-center">
@@ -48,11 +46,11 @@ export default async function MediaPage({
           {subNavItem?.name} {navItem?.name}
         </h1>
         <Suspense fallback={<MediaPageFallback />}>
-          <MediaPageResults query={query} mediatype={mediatype} />
+          <MediaListPageResults query={query} mediatype={mediatype} />
         </Suspense>
       </div>
     </section>
-  )
+  );
 }
 
 function MediaPageFallback() {
@@ -64,5 +62,5 @@ function MediaPageFallback() {
         ))}
       </div>
     </div>
-  )
+  );
 }

@@ -1,177 +1,29 @@
-# Film Fanatic 🎬
+# Create T3 App
 
-A modern and sleek web application built with **Next.js** for exploring movies and TV shows, powered by the **TMDB API**. Dive into the world of cinema with a seamless and visually stunning experience.
+This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
 
----
+## What's next? How do I make an app with this?
 
-## Features ✨
+We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
 
-### 🎥 **Content Discovery**
+If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
 
-- **Browse** popular movies and TV shows
-- **Advanced search** functionality with filters
-- **Personalized recommendations** based on your preferences
+- [Next.js](https://nextjs.org)
+- [NextAuth.js](https://next-auth.js.org)
+- [Prisma](https://prisma.io)
+- [Drizzle](https://orm.drizzle.team)
+- [Tailwind CSS](https://tailwindcss.com)
+- [tRPC](https://trpc.io)
 
-### 📄 **Detailed Information**
+## Learn More
 
-- **Cast and crew details** for every movie and show
-- **Trailers and videos** to get a sneak peek
-- **High-quality image galleries** for posters and stills
-- **Release information** including dates and regions
-- **Ratings and reviews** from critics and audiences
+To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
 
-### 👤 **User Features**
+- [Documentation](https://create.t3.gg/)
+- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
 
-- **Customizable watchlist** to save your favorites
-- **Dark/Light theme support** for comfortable viewing
-- **Fully responsive design** for all devices
+You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
 
----
+## How do I deploy this?
 
-## Tech Stack 🛠️
-
-### Frontend
-
-- **Framework**: Next.js 15.1.4
-- **Language**: TypeScript
-
-### Styling
-
-- Tailwind CSS
-- `tailwind-merge`
-- `class-variance-authority`
-
-### UI Components
-
-- Radix UI
-- Lucide Icons
-
-### State Management
-
-- Zustand
-- `@tanstack/react-query`
-
-### Database
-
-- Turso via `@libsql/client`
-
-### Development Tools
-
-- ESLint
-- Prettier
-
----
-
-## Getting Started 🚀
-
-### Prerequisites
-
-- Node.js 18.17.0 or higher
-- PNPM package manager
-- TMDB API key
-- Turso database
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Swastikdan/Film-Fanatic.git
-   ```
-2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
-3. Configure environment variables:
-   - Create a `.env.local` file and add your TMDB API key and Turso database credentials.
-4. Start the development server:
-   ```bash
-   pnpm dev
-   ```
-5. Open `http://localhost:3000` in your browser.
-
-### Available Scripts
-
-| Command             | Description                  |
-| ------------------- | ---------------------------- |
-| `pnpm dev`          | Start development server     |
-| `pnpm build`        | Build production bundle      |
-| `pnpm start`        | Start production server      |
-| `pnpm lint`         | Run ESLint                   |
-| `pnpm format:check` | Check code formatting        |
-| `pnpm format:write` | Fix code formatting          |
-| `pnpm typecheck`    | Run TypeScript type checking |
-
----
-
-## Contributing 🤝
-
-We welcome contributions from the community! Here’s how you can help:
-
-1. **Fork** the repository.
-2. Create a **feature branch**:
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Commit** your changes:
-   ```bash
-   git commit -m 'Add some amazing feature'
-   ```
-4. **Push** to the branch:
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-5. Open a **Pull Request**.
-
----
-
-## License 📝
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Acknowledgments 🙏
-
-- **[The Movie Database (TMDB)](https://www.themoviedb.org/)** for providing the comprehensive movie and TV show API.
-- The amazing open-source community for providing excellent libraries and tools:
-  - [Next.js](https://nextjs.org/)
-  - [Radix UI](https://www.radix-ui.com/)
-  - [TanStack Query](https://tanstack.com/query/)
-  - [Tailwind CSS](https://tailwindcss.com/)
-  - [Turso](https://turso.tech/)
-
----
-
-## Project Links 🔗
-
-### Live Environments
-
-- **Production**: [https://film-fanatic.vercel.app](https://film-fanatic.vercel.app)
-- **Development**: [GitHub Repository](https://github.com/Swastikdan/Film-Fanatic)
-
-### Quick Links
-
-- [Report Bug](https://github.com/Swastikdan/Film-Fanatic/issues)
-- [Request Feature](https://github.com/Swastikdan/Film-Fanatic/issues)
-- [Project Roadmap](https://github.com/Swastikdan/Film-Fanatic/projects)
-- [Documentation](https://github.com/Swastikdan/Film-Fanatic/wiki)
-
----
-
-## Author ✨
-
-**Swastik Dan**
-
-- GitHub: [@Swastikdan](https://github.com/Swastikdan)
-- Portfolio: [swastikdan.in](https://www.swastikdan.in)
-
----
-
-<div align="center">
-
-[![Made with Next.js](https://img.shields.io/badge/Made%20with-Next.js-000000?style=for-the-badge&logo=next.js)](https://nextjs.org)
-[![Powered by TMDB](https://img.shields.io/badge/Powered%20by-TMDB-01B4E4?style=for-the-badge&logo=themoviedatabase)](https://www.themoviedb.org)
-
-Made with ❤️ by [Swastik Dan](https://github.com/Swastikdan)
-
-</div>
+Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.

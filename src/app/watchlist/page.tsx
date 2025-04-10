@@ -1,13 +1,13 @@
-import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import WatchListContatiner from './watchlist-contatiner'
-import DefaultLoader from '@/components/DefaultLoader'
-import ExportAndAddWatchlist from './ExportAndAddWatchlist'
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import WatchListContatiner from "@/components/watchlist-contatiner";
+import DefaultLoader from "@/components/default-loader";
+import ExportAndAddWatchlist from "@/components/export-and-add-watchlist";
 
 export const metadata: Metadata = {
-  title: 'Watchlist | Film Fanatic',
-  description: 'Your saved movies and TV shows',
-}
+  title: "Watchlist | Film Fanatic",
+  description: "Your saved movies and TV shows",
+};
 
 export default function WatchlistPage() {
   return (
@@ -23,5 +23,5 @@ export default function WatchlistPage() {
         </Suspense>
       </div>
     </section>
-  )
+  );
 }

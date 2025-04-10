@@ -1,90 +1,76 @@
-import type { Metadata } from 'next'
-import { Parkinsans } from 'next/font/google'
-import './globals.css'
+import Footer from "@/components/footer";
+import Navbar from "@/components/navbar";
+import Providers from "@/components/providers";
+import Scroll from "@/components/scroll";
+import "@/styles/globals.css";
 
-const parkinsans = Parkinsans({
-  variable: '--font-parkinsans',
-  subsets: ['latin'],
-  weight: 'variable',
-  fallback: [
-    'system-ui',
-    '-apple-system',
-    'BlinkMacSystemFont',
-    'Segoe UI',
-    'Roboto',
-    'Helvetica Neue',
-    'Arial',
-    'sans-serif',
-  ],
-  display: 'swap',
-})
-
-import { Providers } from './Providers'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
-import Scroll from '@/components/Scroll'
+import { type Metadata } from "next";
+import { Geist } from "next/font/google";
 
 export const metadata: Metadata = {
-  title: 'Film Fanatic',
+  title: "Film Fanatic",
   description:
-    'Explore a vast collection of movies and TV shows with Film Fanatic.',
-  applicationName: 'Film Fanatic',
+    "Explore a vast collection of movies and TV shows with Film Fanatic.",
+  applicationName: "Film Fanatic",
   keywords: [
-    'movie database',
-    'film reviews',
-    'TV show information',
-    'movie ratings',
-    'entertainment',
+    "movie database",
+    "film reviews",
+    "TV show information",
+    "movie ratings",
+    "entertainment",
   ],
-  robots: 'noindex, nofollow',
+  robots: "noindex, nofollow",
   icons: [
     {
-      url: '/logo.svg',
-      sizes: 'any',
-      type: 'image/x-icon',
+      url: "/logo.svg",
+      sizes: "any",
+      type: "image/x-icon",
     },
     {
-      url: 'https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png',
-      sizes: '180x180',
-      type: 'image/png',
+      url: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+      sizes: "180x180",
+      type: "image/png",
     },
     {
-      url: 'https://ik.imagekit.io/swastikdan/Film-Fanatic/public/favicon-32x32.png',
-      sizes: '32x32',
-      type: 'image/png',
+      url: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/favicon-32x32.png",
+      sizes: "32x32",
+      type: "image/png",
     },
     {
-      url: 'https://ik.imagekit.io/swastikdan/Film-Fanatic/public/favicon-16x16.png',
-      sizes: '16x16',
-      type: 'image/png',
+      url: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/favicon-16x16.png",
+      sizes: "16x16",
+      type: "image/png",
     },
   ],
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    siteName: 'Film Fanatic',
+    type: "website",
+    locale: "en_US",
+    siteName: "Film Fanatic",
     images: [
       {
-        url: 'https://ik.imagekit.io/swastikdan/Film-Fanatic/public/ogimage.webp?updatedAt=1715421360221',
+        url: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/ogimage.webp?updatedAt=1715421360221",
         width: 1200,
         height: 630,
-        alt: 'Film Fanatic',
+        alt: "Film Fanatic",
       },
     ],
   },
   twitter: {
-    site: '@swastikdan',
-    card: 'summary_large_image',
+    site: "@swastikdan",
+    card: "summary_large_image",
   },
-}
+};
+
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+});
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <head>
         <meta
           name="google-site-verification"
@@ -92,9 +78,7 @@ export default function RootLayout({
         />
       </head>
       <Scroll />
-      <body
-        className={`${parkinsans.className} min-h-screen leading-relaxed antialiased`}
-      >
+      <body className="min-h-screen leading-relaxed antialiased">
         <Providers>
           <Navbar />
           <main>{children}</main>
@@ -102,5 +86,5 @@ export default function RootLayout({
         </Providers>
       </body>
     </html>
-  )
+  );
 }

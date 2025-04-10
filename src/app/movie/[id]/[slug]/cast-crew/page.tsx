@@ -1,63 +1,63 @@
-import type { Metadata } from 'next'
-import React, { cache } from 'react'
-import GoBack from '@/components/GoBack'
-import Image from '@/components/Image'
-import { notFound } from 'next/navigation'
-import { QueryClient } from '@tanstack/react-query'
-import { getCredits } from '@/lib/getCredits'
-import { MediaCredits, CrewEntity } from '@/types/MediaCredits'
-import { IMAGE_PREFIX } from '@/constants'
-import ShareButton from '@/components/ShareButton'
+import type { Metadata } from "next";
+import React, { cache } from "react";
+import GoBack from "@/components/go-back";
+import Image from "@/components/ui/image";
+import { notFound } from "next/navigation";
+import { QueryClient } from "@tanstack/react-query";
+import { getCredits } from "@/lib/getcredits";
+import type { MediaCredits, CrewEntity } from "@/types/mediacredits";
+import { IMAGE_PREFIX } from "@/constants";
+import ShareButton from "@/components/share-button";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>
+  params: Promise<{ id: string; slug: string }>;
 }): Promise<Metadata> {
   const title = decodeURIComponent((await params).slug)
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (l) => l.toUpperCase())
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
   return {
     title: `${title} - Cast & Crew`,
     description: `Explore the cast and crew of ${title}`,
-  }
+  };
 }
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 export default async function CastCrewPage({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>
+  params: Promise<{ id: string; slug: string }>;
 }) {
-  const { id, slug } = await params
+  const { id, slug } = await params;
 
   const title = decodeURIComponent(slug)
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (l) => l.toUpperCase())
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 
   if (!id) {
-    return notFound()
+    return notFound();
   }
 
   const credits: MediaCredits = await cache(async () =>
     queryClient.fetchQuery({
-      queryKey: ['media-credits', id, 'movie'],
-      queryFn: async () => getCredits({ id: parseInt(id), type: 'movie' }),
+      queryKey: ["media-credits", id, "movie"],
+      queryFn: async () => getCredits({ id: parseInt(id), type: "movie" }),
       staleTime: 1000 * 60 * 60 * 24,
     }),
-  )()
+  )();
 
-  const cast = credits?.cast || []
-  const crew = credits?.crew || []
+  const cast = credits?.cast ?? [];
+  const crew = credits?.crew ?? [];
   const castByDepartment = crew.reduce<Map<string, CrewEntity[]>>(
     (acc, item) => {
-      const dept = acc.get(item.department) || []
-      dept.push(item)
-      acc.set(item.department, dept)
-      return acc
+      const dept = acc.get(item.department) ?? [];
+      dept.push(item);
+      acc.set(item.department, dept);
+      return acc;
     },
     new Map(),
-  )
+  );
 
   return (
     <section className="mx-auto block max-w-screen-xl items-center px-4">
@@ -74,7 +74,7 @@ export default async function CastCrewPage({
       <div className="my-5 mb-40 grid justify-between gap-3 space-y-10 md:grid-cols-2 md:space-y-0">
         <div>
           <span className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-primary">Cast</span>(
+            <span className="text-primary text-2xl font-bold">Cast</span>(
             {cast?.length})
           </span>
           <div className="grid grid-cols-1 gap-3 pt-5 lg:grid-cols-2">
@@ -100,7 +100,7 @@ export default async function CastCrewPage({
 
         <div>
           <span className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-primary">Crew</span>(
+            <span className="text-primary text-2xl font-bold">Crew</span>(
             {crew?.length})
           </span>
 
@@ -135,5 +135,5 @@ export default async function CastCrewPage({
         </div>
       </div>
     </section>
-  )
+  );
 }
