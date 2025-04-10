@@ -1,7 +1,8 @@
-import React from "react";
+import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { Searchbar } from "@/components/search/search-bar";
 import SearchResults from "@/components/search/search-results";
+import DefaultLoader from "@/components/default-loader";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 function normalizeQuery(rawQuery: string | string[] | undefined): string {
@@ -44,7 +45,9 @@ export default async function SearchPage(props: {
         <Searchbar searchterm={queryString} />
 
         <div className="w-full py-5">
-          <SearchResults />
+          <Suspense fallback={<DefaultLoader />}>
+            <SearchResults />
+          </Suspense>
         </div>
       </div>
     </section>
