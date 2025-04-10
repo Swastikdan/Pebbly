@@ -50,8 +50,7 @@ export default async function CollectionsPage({
     }),
   )();
   if (!collention_data) return notFound();
-  const { id, name, overview, poster_path, backdrop_path, parts } =
-    collention_data;
+  const { name, overview, poster_path, parts } = collention_data;
   const user_rating =
     parts && parts.length > 0
       ? parseInt(
@@ -65,7 +64,7 @@ export default async function CollectionsPage({
 
   const original_language =
     Array.isArray(parts) && parts.length > 0
-      ? // @ts-expect-error
+      ? // @ts-expect-error parts exist and is an array
         parts[0].original_language
       : "en";
 
