@@ -92,7 +92,7 @@ export default function ExportAndAddWatchlist() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="animate-spin" size={24} />
+        <Loader2 className="sr-only animate-spin opacity-0" size={24} />
       </div>
     );
   }
@@ -126,7 +126,7 @@ export default function ExportAndAddWatchlist() {
               fileInputRef.current?.click();
             }
           }}
-          className={`bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-ring inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 cursor-pointer ${
+          className={`bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-ring inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 ${
             importLoading ? "cursor-not-allowed opacity-50" : ""
           }`}
         >
