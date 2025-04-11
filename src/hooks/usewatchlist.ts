@@ -11,7 +11,8 @@ export function useWatchlist() {
       db.watchlist
         .where("[user_id+deleted]")
         .equals([LOCAL_GUEST_USER_ID, 0])
-        .toArray(),
+        .sortBy("updated_at")
+        .then((entries) => entries.reverse()),
     [],
   );
 
