@@ -73,7 +73,7 @@ const MobileNavMenuItem: React.FC<{
       </AccordionTrigger>
       {item.submenu.map((subitem, index) => (
         <Link href={subitem.url} key={index} className="cursor-pointer">
-          <AccordionContent className="bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 my-1 flex h-10 items-center justify-center rounded-xl border px-4 py-2 text-base font-medium shadow-xs">
+          <AccordionContent className="hover:bg-accent hover:text-accent-foreground active:bg-accent dark:active:bg-accent/50 dark:hover:bg-accent/50 text-secondary-foreground my-1 flex h-10 items-center justify-center rounded-xl px-4 py-2 text-base font-medium shadow-xs">
             <SheetClose className="w-full items-center justify-center text-left">
               {subitem.name}
             </SheetClose>
