@@ -4,22 +4,11 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, type WatchlistItem } from "@/db";
 import { LOCAL_GUEST_USER_ID } from "@/constants";
 
-export function useWatchlist() {
-  // Remove the default value so we can detect if the query is still loading.
-  const watchlist = useLiveQuery(
-    () =>
-      db.watchlist
-        .where("[user_id+deleted]")
-        .equals([LOCAL_GUEST_USER_ID, 0])
-        .sortBy("updated_at")
-        .then((entries) => entries.reverse()),
-    [],
-  );
-
-  // If watchlist is undefined, the query hasn't returned yet.
-  const loading = watchlist === undefined;
-
-  const toggleWatchlistItem = useCallback(
+/**
+ * Toggle a watchlist item (add or remove) without subscribing to entire list changes.
+ */
+export function useToggleWatchlistItem() {
+  return useCallback(
     async (item: {
       title: string;
       rating: number;
@@ -28,15 +17,12 @@ export function useWatchlist() {
       media_type: "tv" | "movie";
       release_date: string;
     }) => {
-      // Use the compound index to check if the item exists and is active.
       const existing = await db.watchlist
-        .where("[user_id+deleted]")
-        .equals([LOCAL_GUEST_USER_ID, 0])
-        .and((entry) => entry.external_id === item.id)
+        .where("[user_id+deleted+external_id]")
+        .equals([LOCAL_GUEST_USER_ID, 0, item.id])
         .first();
 
       if (existing) {
-        // Soft delete the item: set deleted flag to 1.
         await db.watchlist.update(existing.watchlist_id, {
           deleted: 1,
           updated_at: Date.now(),
@@ -56,10 +42,41 @@ export function useWatchlist() {
         };
         await db.watchlist.add(newItem);
       }
-      // No need to manually refresh: useLiveQuery updates automatically.
     },
     [],
   );
+}
 
-  return { watchlist: watchlist ?? [], loading, toggleWatchlistItem };
+/**
+ * Subscribe to a single watchlist item by ID.
+ * Only the component using this hook will rerender when this item's state changes.
+ */
+export function useWatchlistItem(id: string) {
+  const item = useLiveQuery(
+    () =>
+      db.watchlist
+        .where("[user_id+deleted+external_id]")
+        .equals([LOCAL_GUEST_USER_ID, 0, id])
+        .first(),
+    [id],
+  );
+
+  return {
+    isOnWatchList: !!item,
+    isLoading: item === undefined,
+  };
+}
+
+export function useWatchlist() {
+  const watchlist = useLiveQuery(
+    () =>
+      db.watchlist
+        .where("[user_id+deleted]")
+        .equals([LOCAL_GUEST_USER_ID, 0])
+        .sortBy("updated_at")
+        .then((entries) => entries.reverse()),
+    [],
+  );
+
+  return { watchlist: watchlist ?? [], loading: watchlist === undefined };
 }

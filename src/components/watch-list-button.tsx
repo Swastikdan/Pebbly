@@ -1,7 +1,7 @@
 "use client";
 import React, { useCallback } from "react";
-import { useWatchlist } from "@/hooks/usewatchlist";
-import { Plus, Check, Trash2 } from "lucide-react";
+import { useToggleWatchlistItem, useWatchlistItem } from "@/hooks/usewatchlist";
+import { Plus, Check, Trash2, Loader2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -32,36 +32,24 @@ export default function WatchListButton({
   is_on_watchlist_page = false,
   className,
 }: WatchListButtonProps) {
-  const { watchlist, toggleWatchlistItem } = useWatchlist();
   const itemId = String(id);
-
-  // Check if this item is active on the watchlist.
-  const isOnWatchList = watchlist.some((item) => item.external_id === itemId);
+  const toggle = useToggleWatchlistItem();
+  const { isOnWatchList, isLoading } = useWatchlistItem(itemId);
 
   const handleWatchList = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
-      toggleWatchlistItem({
+      toggle({
         title,
         rating,
         image,
         id: itemId,
         media_type,
         release_date: relese_date ?? "",
-      }).catch((error) => {
-        console.error(error);
       });
     },
-    [
-      title,
-      rating,
-      image,
-      itemId,
-      media_type,
-      relese_date,
-      toggleWatchlistItem,
-    ],
+    [title, rating, image, itemId, media_type, relese_date, toggle],
   );
 
   return (
@@ -71,7 +59,11 @@ export default function WatchListButton({
           <Badge
             variant="default"
             className={cn(className, "z-20 cursor-pointer p-2 [&>svg]:size-4")}
-            aria-label="Add to watchlist"
+            aria-label={
+              is_on_watchlist_page || isOnWatchList
+                ? "Remove from watchlist"
+                : "Add to watchlist"
+            }
             role="button"
             onClick={handleWatchList}
           >

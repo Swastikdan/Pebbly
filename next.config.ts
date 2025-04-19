@@ -12,9 +12,6 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     ppr: true,
   },
-  eslint: {
-    //ignoreDuringBuilds: true,
-  },
   compress: true,
   poweredByHeader: false,
   images: {
