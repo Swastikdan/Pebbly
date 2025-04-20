@@ -63,7 +63,6 @@ export function useWatchlistItem(id: string) {
 
   return {
     isOnWatchList: !!item,
-    isLoading: item === undefined,
   };
 }
 

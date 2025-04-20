@@ -1,7 +1,7 @@
 "use client";
 import React, { useCallback } from "react";
 import { useToggleWatchlistItem, useWatchlistItem } from "@/hooks/usewatchlist";
-import { Plus, Check, Trash2, Loader2 } from "lucide-react";
+import { Plus, Check, Trash2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -34,13 +34,13 @@ export default function WatchListButton({
 }: WatchListButtonProps) {
   const itemId = String(id);
   const toggle = useToggleWatchlistItem();
-  const { isOnWatchList, isLoading } = useWatchlistItem(itemId);
+  const { isOnWatchList } = useWatchlistItem(itemId);
 
   const handleWatchList = useCallback(
-    (event: React.MouseEvent) => {
+    (event: React.MouseEvent) => async () => {
       event.preventDefault();
       event.stopPropagation();
-      toggle({
+      await toggle({
         title,
         rating,
         image,
