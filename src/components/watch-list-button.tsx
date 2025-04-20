@@ -37,16 +37,18 @@ export default function WatchListButton({
   const { isOnWatchList } = useWatchlistItem(itemId);
 
   const handleWatchList = useCallback(
-    (event: React.MouseEvent) => async () => {
+    (event: React.MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
-      await toggle({
+      toggle({
         title,
         rating,
         image,
         id: itemId,
         media_type,
         release_date: relese_date ?? "",
+      }).catch((error) => {
+        console.error(error);
       });
     },
     [title, rating, image, itemId, media_type, relese_date, toggle],
