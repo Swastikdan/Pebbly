@@ -4,7 +4,7 @@ import Providers from "@/components/providers";
 import Scroll from "@/components/scroll";
 import "@/styles/globals.css";
 import { type Metadata } from "next";
-import { Geist } from "next/font/google";
+// import { Geist } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Film Fanatic",
@@ -60,16 +60,16 @@ export const metadata: Metadata = {
   },
 };
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
+// const geist = Geist({
+//   subsets: ["latin"],
+//   variable: "--font-geist-sans",
+// });
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta
           name="google-site-verification"
@@ -77,7 +77,7 @@ export default function RootLayout({
         />
       </head>
       <Scroll />
-      <body className="min-h-screen leading-relaxed antialiased">
+      <body className="min-h-screen font-sans leading-relaxed antialiased">
         <Providers>
           <Navbar />
           <main>{children}</main>

@@ -176,8 +176,8 @@ export function MediaCardSkeleton({
       <div className="h-52 w-72 space-y-2" role="status" aria-label="Loading">
         <Skeleton className="h-40 w-full md:h-40" />
         <div className="flex h-[40px] flex-col gap-2 md:h-[52px]">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-2 w-24" />
         </div>
       </div>
     );
@@ -204,8 +204,8 @@ export function MediaCardSkeleton({
     >
       <Skeleton className="relative h-64 w-full md:h-72" />
       <div className="flex h-[40px] flex-col gap-2 md:h-[52px]">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-3 w-16" />
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-2 w-16" />
       </div>
     </div>
   );
