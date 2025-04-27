@@ -4,33 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: "iA Writer Quattro", sans-serif;
-}
-
-/* ia-writer-quattro-latin-400-normal */
-@font-face {
-  font-family: "iA Writer Quattro";
-  font-style: normal;
-  font-display: swap;
-  font-weight: 400;
-  src:
-    url(@fontsource/ia-writer-quattro/files/ia-writer-quattro-latin-400-normal.woff2)
-      format("woff2"),
-    url(@fontsource/ia-writer-quattro/files/ia-writer-quattro-latin-400-normal.woff)
-      format("woff");
-}
-
-/* ia-writer-quattro-latin-700-normal */
-@font-face {
-  font-family: "iA Writer Quattro";
-  font-style: normal;
-  font-display: swap;
-  font-weight: 700;
-  src:
-    url(@fontsource/ia-writer-quattro/files/ia-writer-quattro-latin-700-normal.woff2)
-      format("woff2"),
-    url(@fontsource/ia-writer-quattro/files/ia-writer-quattro-latin-700-normal.woff)
-      format("woff");
+  --font-sans:
+    var(--font-ia-writer-quattro), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 :root {
@@ -59,7 +35,6 @@
   --popover: hsl(270 4% 10%);
   --popover-foreground: hsl(240 6% 94%);
   --muted: hsl(264 5% 20%);
-
   --muted-foreground: hsl(240 6% 94%);
   --accent: hsl(260 4% 14%);
   --accent-foreground: hsl(240 6% 94%);

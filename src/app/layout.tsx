@@ -5,6 +5,7 @@ import Scroll from "@/components/scroll";
 import "@/styles/globals.css";
 import { type Metadata } from "next";
 // import { Geist } from "next/font/google";
+import localFont from "next/font/local";
 
 export const metadata: Metadata = {
   title: "Film Fanatic",
@@ -65,11 +66,33 @@ export const metadata: Metadata = {
 //   variable: "--font-geist-sans",
 // });
 
+const ia_writer_quattro = localFont({
+  src: [
+    {
+      path: "./fonts/ia-writer-quattro-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/ia-writer-quattro-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  preload: true,
+  variable: "--font-ia-writer-quattro",
+  display: "swap",
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={ia_writer_quattro.className}
+    >
       <head>
         <meta
           name="google-site-verification"
