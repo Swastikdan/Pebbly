@@ -15,7 +15,6 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const searchParams = await props.searchParams;
   const query = searchParams.query;
-
   // Ensure query is a string (join if it's an array)
   const queryString = normalizeQuery(query);
 

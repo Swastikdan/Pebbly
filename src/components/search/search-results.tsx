@@ -72,7 +72,7 @@ export default function SearchPage() {
 
   if (!query) {
     return (
-      <EmptyMessage message="Please enter a search query to get results" />
+      <EmptyMessage message="There are no movies that matched your query." />
     );
   }
 

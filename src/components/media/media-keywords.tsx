@@ -25,8 +25,8 @@ export default function MediaKeywords({
             <div className="flex flex-wrap gap-2">
               {keywords.map((keyword, index) => (
                 <Badge
-                  variant="default"
-                  className="hover:bg-primary h-6 cursor-auto rounded-sm px-4 text-xs font-light md:text-sm"
+                  variant="secondary"
+                  className="[a&]:hover:bg-primary h-6 cursor-auto rounded-sm px-4 text-xs font-light md:text-sm"
                   key={index}
                 >
                   {keyword.name}

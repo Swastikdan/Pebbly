@@ -33,10 +33,10 @@ export function Searchbar({
 
   const clearSearch = () => {
     setSearch("");
-    const pathname = window.location.pathname;
-    if (pathname === "/search") {
-      router.push("/search");
-    }
+    // const pathname = window.location.pathname;
+    // if (pathname === "/search") {
+    //   router.push("/search");
+    // }
   };
 
   return (
@@ -59,11 +59,11 @@ export function Searchbar({
           placeholder="👀 What movie, show? Let's find it!"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="peer bg-background enabled:bg-background block h-12 w-full ps-12 pr-8 placeholder:text-sm sm:h-11 placeholder:md:text-base"
+          className="peer bg-background enabled:bg-background block h-12 w-full rounded-full ps-12 pr-8 placeholder:text-sm sm:h-11 placeholder:md:text-base"
           aria-label="Search Input"
         />
         <div className="pointer-events-none absolute inset-y-0 start-2 flex items-center ps-2 peer-disabled:pointer-events-none peer-disabled:opacity-50">
-          <Search aria-hidden="true" />
+          <Search aria-hidden="true" size={20} />
         </div>
         {search && (
           <button
@@ -78,7 +78,7 @@ export function Searchbar({
       </div>
       <Button
         size="lg"
-        className="font-heading ml-2 hidden h-11 text-base sm:block"
+        className="font-heading ml-2 hidden h-11 rounded-full text-base sm:block"
         aria-label="Submit Search"
       >
         Search

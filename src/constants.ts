@@ -72,7 +72,7 @@ const GENRE_LIST = [
   { id: 36, name: "🏛️ History" },
   { id: 27, name: "👻 Horror" },
   { id: 10402, name: "🎵 Music" },
-  { id: 9648, name: "🕵️‍♂️Mystery" },
+  { id: 9648, name: "🕵️‍♂️ Mystery" },
   { id: 10749, name: "💘 Romance" },
   { id: 878, name: "🤖 Science Fiction" },
   { id: 10770, name: "📺 TV Movie" },

@@ -20,9 +20,9 @@ export default function Home() {
           <div className="py-5">
             <h1 className="items-center justify-center text-2xl font-black sm:text-3xl md:text-5xl lg:text-6xl lg:leading-tight">
               Welcome to
-              <span className="px-2 text-blue-400">Film Fanatic</span>
+              <span className="px-2 text-blue-500">Film Fanatic</span>
             </h1>
-            <p className="mb-3 text-[10px] tracking-wide text-gray-500 sm:text-xs dark:text-gray-200">
+            <p className="mb-3 text-[10px] tracking-wide text-gray-200 sm:text-xs dark:text-gray-200">
               Millions of movies, TV shows, and people to discover.
             </p>
           </div>

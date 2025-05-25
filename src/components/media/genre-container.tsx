@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollContainer } from "@/components/scroll-container";
+import { Badge } from "../ui/badge";
 
 export default function GenreContainer({
   genres,
@@ -11,16 +12,15 @@ export default function GenreContainer({
     <ScrollContainer>
       <div className="flex gap-2 py-1" role="list" aria-label="Genres">
         {genres.map((genre, index) => (
-          <Button
+          <Badge
+            className="[a&]:hover:bg-primary text-xs md:text-sm"
             variant="secondary"
-            className="text-xs md:text-sm"
-            size="sm"
             key={index}
             role="listitem"
             aria-label={`Genre: ${genre.name}`}
           >
             {genre?.name}
-          </Button>
+          </Badge>
         ))}
       </div>
     </ScrollContainer>
