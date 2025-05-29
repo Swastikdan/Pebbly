@@ -44,11 +44,11 @@ export default async function SearchPage(props: {
         <Suspense fallback={<SearchBarSkeleton />}>
           <Searchbar searchterm={queryString} />
         </Suspense>
-        <div className="w-full py-5">
-          <Suspense fallback={null}>
+        <Suspense fallback={<div className="h-[80vh] w-full py-5"></div>}>
+          <div className="w-full py-5">
             <SearchResults />
-          </Suspense>
-        </div>
+          </div>
+        </Suspense>
       </div>
     </section>
   );
