@@ -91,9 +91,10 @@ export function SearchBarSkeleton() {
   return (
     <div className="flex w-full p-3">
       <div className="relative w-full font-sans text-lg font-medium">
-        <Skeleton className="h-12 w-full sm:h-11" aria-hidden="true" />
-
-        <Skeleton className="-10 w-12" aria-hidden="true" />
+        <Skeleton
+          className="h-12 w-full rounded-full sm:h-11"
+          aria-hidden="true"
+        />
       </div>
     </div>
   );
