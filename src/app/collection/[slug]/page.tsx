@@ -1,6 +1,6 @@
 import { cache } from "react";
 import type { Metadata } from "next";
-import { getCollection } from "@/lib/getcollection";
+import { getCollection } from "@/lib/queries";
 import { QueryClient } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 import Image from "@/components/ui/image";
@@ -24,6 +24,7 @@ export async function generateMetadata({
   const collection = await queryClient.fetchQuery({
     queryKey: ["collection", slug],
     queryFn: async () => await getCollection({ id: Number(slug) }),
+    staleTime: 1000 * 60 * 60,
   });
 
   if (!collection) {

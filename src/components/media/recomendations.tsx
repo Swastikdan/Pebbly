@@ -4,7 +4,7 @@ import { ScrollContainer } from "@/components/scroll-container";
 import {
   getMovieRecommendations,
   getTvSeriesRecommendations,
-} from "@/lib/getrecomendations";
+} from "@/lib/queries";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { useQuery } from "@tanstack/react-query";
 export default function Recomendations({

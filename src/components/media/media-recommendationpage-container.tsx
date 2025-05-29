@@ -2,7 +2,7 @@
 
 import { useMemo, memo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getMediaRecommendations } from "@/lib/getmediarecommendations";
+import { getMediaRecommendations } from "@/lib/queries";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import InfiniteScroll from "react-infinite-scroll-component";
 

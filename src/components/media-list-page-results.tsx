@@ -2,10 +2,11 @@
 
 import React, { useMemo, memo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { type MediaListDataQuery } from "@/types/media";
-import { getMediaData } from "@/lib/getmediadata";
+import { type MediaListQuery } from "@/types";
+import { getMediaList } from "@/lib/queries";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import InfiniteScroll from "react-infinite-scroll-component";
+import DefaultLoader from "./default-loader";
 const MemoizedMediaCard = memo(MediaCard);
 const skeletonCards = Array.from({ length: 20 }).map((_, index) => (
   <MediaCardSkeleton key={`skeleton-${index}`} />
@@ -15,8 +16,8 @@ function MediaListPageResults({
   query,
   mediatype,
 }: {
-  query: MediaListDataQuery["type"];
-  mediatype: "movie" | "tv" | "person";
+  query: MediaListQuery["type"];
+  mediatype: "movie" | "tv";
 }) {
   const {
     data,
@@ -28,7 +29,7 @@ function MediaListPageResults({
   } = useInfiniteQuery({
     queryKey: ["media_page", query],
     queryFn: async ({ pageParam = 1 }) =>
-      getMediaData({ type: query, page: pageParam }),
+      getMediaList({ type: query, page: pageParam }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.total_pages ? lastPage.page + 1 : null,
@@ -46,10 +47,11 @@ function MediaListPageResults({
         title={item.title ?? item.name ?? "Untitled"}
         rating={item.vote_average ?? 0}
         poster_path={item.poster_path ?? ""}
-        image={item.poster_path ?? item.profile_path ?? ""}
+        image={item.poster_path ?? ""}
         media_type={mediatype}
         known_for_department={item.known_for_department ?? ""}
         id={item.id}
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         relese_date={item.first_air_date ?? item.release_date ?? null}
       />
     ));
@@ -66,13 +68,7 @@ function MediaListPageResults({
   }
 
   if (status === "pending") {
-    return (
-      <section>
-        <div className="xs:gap-4 grid w-full grid-cols-2 gap-3 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {skeletonCards}
-        </div>
-      </section>
-    );
+    return <DefaultLoader />;
   }
 
   return (

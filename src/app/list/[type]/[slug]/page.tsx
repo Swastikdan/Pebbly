@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { MEDIA_PAGE_SLUGS, NAV_ITEMS } from "@/constants";
 import MediaListPageResults from "@/components/media-list-page-results";
-import { type MediaListDataQuery } from "@/types/media";
+import { type MediaListQuery } from "@/types";
+import { notFound } from "next/navigation";
 import { MediaCardSkeleton } from "@/components/media-card";
 
 export async function generateStaticParams() {
@@ -35,9 +36,11 @@ export default async function MediaPage({
   const subNavItem = navItem
     ? navItem.submenu.find((item) => item.slug === slug)
     : null;
-  const query = (type + "_" + slug) as unknown as MediaListDataQuery["type"];
-  const mediatype =
-    type === "movies" ? "movie" : type === "tv-shows" ? "tv" : "person";
+  const query = (type + "_" + slug) as unknown as MediaListQuery["type"];
+  if (!(type === "movies" || type === "tv-shows")) {
+    return notFound();
+  }
+  const mediatype = type === "movies" ? "movie" : "tv";
 
   return (
     <section className="flex min-h-screen w-full justify-center">
@@ -45,6 +48,7 @@ export default async function MediaPage({
         <h1 className="text-start text-2xl font-bold md:text-3xl lg:text-4xl">
           {subNavItem?.name} {navItem?.name}
         </h1>
+
         <Suspense fallback={<MediaPageFallback />}>
           <MediaListPageResults query={query} mediatype={mediatype} />
         </Suspense>

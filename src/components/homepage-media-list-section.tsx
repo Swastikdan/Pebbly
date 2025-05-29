@@ -1,7 +1,7 @@
 "use client";
 import { ScrollContainer } from "@/components/scroll-container";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
-import { getMedia } from "@/lib/getmedia";
+import { getMedia } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 
 function TrendingDayMovies() {
@@ -27,9 +27,11 @@ function TrendingDayMovies() {
                 title={item.title ?? item.name ?? "Untitled"}
                 rating={item.vote_average}
                 image={item.poster_path}
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 poster_path={item.poster_path!}
-                media_type={item.media_type as "movie" | "tv"}
+                media_type={"movie"}
                 id={item.id}
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 relese_date={item.first_air_date ?? item.release_date ?? null}
               />
             ))}
@@ -62,8 +64,9 @@ function TrendingWeekMovies() {
                 rating={item.vote_average}
                 image={item.poster_path}
                 poster_path={item.poster_path ?? ""}
-                media_type={item.media_type as "movie" | "tv"}
+                media_type={"movie"}
                 id={item.id}
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 relese_date={item.first_air_date ?? item.release_date ?? null}
               />
             ))}
@@ -74,8 +77,8 @@ function TrendingWeekMovies() {
 
 function UpcomingMovies() {
   const { data, isFetching, error } = useQuery({
-    queryKey: ["upcoming_movie"],
-    queryFn: async () => await getMedia({ type: "upcoming_movie" }),
+    queryKey: ["movies_upcoming"],
+    queryFn: async () => await getMedia({ type: "movies_upcoming" }),
     staleTime: 1000 * 60 * 60,
   });
 
@@ -99,6 +102,7 @@ function UpcomingMovies() {
                 image={item.backdrop_path}
                 media_type={"movie"}
                 id={item.id}
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 relese_date={item.first_air_date ?? item.release_date ?? null}
               />
             ))}
@@ -109,8 +113,8 @@ function UpcomingMovies() {
 
 function PopularMovies() {
   const { data, isFetching, error } = useQuery({
-    queryKey: ["popular_movie"],
-    queryFn: async () => await getMedia({ type: "popular_movie" }),
+    queryKey: ["movies_popular"],
+    queryFn: async () => await getMedia({ type: "movies_popular" }),
     staleTime: 1000 * 60 * 60,
   });
 
@@ -140,8 +144,8 @@ function PopularMovies() {
 
 function PopularTv() {
   const { data, isFetching, error } = useQuery({
-    queryKey: ["popular_tv"],
-    queryFn: async () => await getMedia({ type: "popular_tv" }),
+    queryKey: ["tv-shows_popular"],
+    queryFn: async () => await getMedia({ type: "tv-shows_popular" }),
     staleTime: 1000 * 60 * 60,
   });
 
@@ -162,6 +166,7 @@ function PopularTv() {
                 title={item.name ?? item.original_name ?? "Untitled"}
                 poster_path={item.poster_path ?? ""}
                 image={item.poster_path}
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 relese_date={item.first_air_date ?? null}
                 rating={item.vote_average}
                 media_type="tv"
@@ -174,8 +179,8 @@ function PopularTv() {
 
 function TopRatedMovies() {
   const { data, isFetching, error } = useQuery({
-    queryKey: ["top_rated_movies"],
-    queryFn: async () => await getMedia({ type: "top_rated_movie" }),
+    queryKey: ["movies_top-rated"],
+    queryFn: async () => await getMedia({ type: "movies_top-rated" }),
     staleTime: 1000 * 60 * 60,
   });
 
@@ -198,6 +203,7 @@ function TopRatedMovies() {
                 poster_path={item.poster_path ?? ""}
                 media_type={"movie"}
                 id={item.id}
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 relese_date={item.first_air_date ?? item.release_date ?? null}
               />
             ))}
@@ -208,8 +214,8 @@ function TopRatedMovies() {
 
 function TopRatedTv() {
   const { data, isFetching, error } = useQuery({
-    queryKey: ["top_rated_tv"],
-    queryFn: async () => await getMedia({ type: "top_rated_tv" }),
+    queryKey: ["tv-shows_top-rated"],
+    queryFn: async () => await getMedia({ type: "tv-shows_top-rated" }),
     staleTime: 1000 * 60 * 60,
   });
 
@@ -232,6 +238,7 @@ function TopRatedTv() {
                 poster_path={item.poster_path ?? ""}
                 media_type={"tv"}
                 id={item.id}
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 relese_date={item.first_air_date ?? item.release_date ?? null}
               />
             ))}

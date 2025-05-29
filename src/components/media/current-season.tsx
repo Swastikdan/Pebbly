@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import type { SeasonsEntity } from "@/types/tv";
+import type { SeasonInfo } from "@/types";
 import Image from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ export default function CurrentSeason({
 }: {
   id: number;
   urltitle: string;
-  season_data: SeasonsEntity;
+  season_data: SeasonInfo;
 }) {
   return (
     <div className="pb-5">

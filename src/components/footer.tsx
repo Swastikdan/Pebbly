@@ -3,11 +3,11 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer
-      className="mx-auto flex w-full items-center justify-center"
+      className="border-border bg-background mx-auto flex w-full items-center justify-center border-t-2"
       role="contentinfo"
       aria-label="Footer"
     >
-      <section className="font-heading flex w-full max-w-screen-xl flex-col items-center justify-between gap-3 p-3 px-3 text-base font-light md:flex-row">
+      <section className="font-heading lg;px-20 flex w-full max-w-screen-xl flex-col items-center justify-between gap-3 px-5 py-10 text-base font-light md:flex-row md:px-10">
         <p>
           Made with{" "}
           <span role="img" aria-label="love">

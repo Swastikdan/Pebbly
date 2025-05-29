@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getVideos } from "@/lib/getvideos";
+import { getVideos } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/skeleton";
 export default function MediaVideos({
   id,

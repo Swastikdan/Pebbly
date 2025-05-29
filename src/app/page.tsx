@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+"use client";
 import {
   TrendingDayMovies,
   TrendingWeekMovies,
@@ -10,12 +10,11 @@ import {
 } from "@/components/homepage-media-list-section";
 import { Searchbar } from "@/components/search/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollContainer } from "@/components/scroll-container";
-import { MediaCardSkeleton } from "@/components/media-card";
+
 export default function Home() {
   return (
     <section className="flex flex-col items-center justify-center">
-      <div className="relative w-full overflow-hidden before:absolute before:start-1/2 before:top-1/2 before:-z-[1] before:h-96 before:w-full before:-translate-x-1/2 before:-translate-y-1/2 before:transform before:bg-[url('https://preline.co/assets/svg/component/hyperdrive.svg')] before:bg-center before:bg-no-repeat dark:before:bg-[url('https://preline.co/assets/svg/component-dark/hyperdrive.svg')]">
+      <div className="relative w-full overflow-hidden before:absolute before:start-1/2 before:top-1/2 before:-z-[1] before:h-96 before:w-full before:-translate-x-1/2 before:-translate-y-1/2 before:transform before:bg-[url('https://preline.co/assets/svg/component-dark/hyperdrive.svg')] before:bg-center before:bg-no-repeat">
         <div className="mx-auto max-w-screen-lg px-4 py-10 pt-5 pb-5 text-center sm:px-6 md:pt-10 lg:px-8 lg:py-14">
           <div className="py-5">
             <h1 className="items-center justify-center text-2xl font-black sm:text-3xl md:text-5xl lg:text-6xl lg:leading-tight">
@@ -54,14 +53,10 @@ export default function Home() {
               </TabsList>
             </div>
             <TabsContent value="trending_day">
-              <Suspense fallback={<Fallback />}>
-                <TrendingDayMovies />
-              </Suspense>
+              <TrendingDayMovies />
             </TabsContent>
             <TabsContent value="trending_week">
-              <Suspense fallback={<Fallback />}>
-                <TrendingWeekMovies />
-              </Suspense>
+              <TrendingWeekMovies />
             </TabsContent>
           </Tabs>
 
@@ -72,9 +67,7 @@ export default function Home() {
               </h2>
             </div>
             <div>
-              <Suspense fallback={<Fallback />}>
-                <UpcomingMovies />
-              </Suspense>
+              <UpcomingMovies />
             </div>
           </section>
 
@@ -97,14 +90,10 @@ export default function Home() {
               </TabsList>
             </div>
             <TabsContent value="popular_movie">
-              <Suspense fallback={<Fallback />}>
-                <PopularMovies />
-              </Suspense>
+              <PopularMovies />
             </TabsContent>
             <TabsContent value="popular_tv">
-              <Suspense fallback={<Fallback />}>
-                <PopularTv />
-              </Suspense>
+              <PopularTv />
             </TabsContent>
           </Tabs>
           <Tabs defaultValue="top_rated_movies">
@@ -128,14 +117,10 @@ export default function Home() {
               </TabsList>
             </div>
             <TabsContent value="top_rated_movies">
-              <Suspense fallback={<Fallback />}>
-                <TopRatedMovies />
-              </Suspense>
+              <TopRatedMovies />
             </TabsContent>
             <TabsContent value="top_rated_tv">
-              <Suspense fallback={<Fallback />}>
-                <TopRatedTv />
-              </Suspense>
+              <TopRatedTv />
             </TabsContent>
           </Tabs>
         </div>
@@ -144,17 +129,5 @@ export default function Home() {
         <div className="h-20"></div>
       </div>
     </section>
-  );
-}
-
-function Fallback() {
-  return (
-    <ScrollContainer isButtonsVisible={false}>
-      <div className="flex flex-wrap gap-4 p-4 first:pl-0 last:pr-0">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <MediaCardSkeleton key={index} />
-        ))}
-      </div>
-    </ScrollContainer>
   );
 }

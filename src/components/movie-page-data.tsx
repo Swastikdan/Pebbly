@@ -1,7 +1,7 @@
 "use client";
 import React, { cache } from "react";
 import { notFound, redirect } from "next/navigation";
-import { getMovieDetails } from "@/lib/getmoviedetails";
+import { getMovieDetails } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import { GENRE_LIST, IMAGE_PREFIX } from "@/constants";
 import MediaTitleContailer from "@/components/media/media-title-container";
@@ -14,7 +14,7 @@ import Collections from "@/components/media/collections";
 import MediaKeywords from "@/components/media/media-keywords";
 import MediaRecomendations from "@/components/media/media-recommendation";
 import DefaultLoader from "@/components/default-loader";
-import type { Movie } from "@/types/movie";
+import type { Movie } from "@/types";
 
 export default function MoviePagedata({
   params,

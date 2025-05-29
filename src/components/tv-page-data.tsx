@@ -1,7 +1,7 @@
 "use client";
 import React, { cache } from "react";
 import { notFound, redirect } from "next/navigation";
-import { getTvDetails } from "@/lib/gettvdetails";
+import { getTvDetails } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
 import DefaultLoader from "@/components/default-loader";
 import { GENRE_LIST, IMAGE_PREFIX } from "@/constants";
@@ -14,7 +14,7 @@ import MediaContainer from "@/components/media/media-container";
 import MediaKeywords from "@/components/media/media-keywords";
 import MediaRecomendations from "@/components/media/media-recommendation";
 import CurrentSeason from "@/components/media/current-season";
-import type { Tv } from "@/types/tv";
+import type { Tv } from "@/types";
 
 export default function TvData({
   params,

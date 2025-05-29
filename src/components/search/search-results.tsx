@@ -3,12 +3,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSearchResult } from "@/lib/getsearchresult";
+import { getSearchResult } from "@/lib/queries";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { SearchResultsEntity } from "@/types/media";
+import type { SearchResultsEntity } from "@/types";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();

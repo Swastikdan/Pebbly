@@ -2,7 +2,7 @@ import React, { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { QueryClient } from "@tanstack/react-query";
-import { getBasicTvDetails } from "@/lib/gettvdetails";
+import { getBasicTvDetails } from "@/lib/queries";
 import TvPageData from "@/components/tv-page-data";
 
 const queryClient = new QueryClient();

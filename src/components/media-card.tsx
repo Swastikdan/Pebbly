@@ -230,7 +230,7 @@ export function PersonCard({
       />
       <div className="flex flex-col gap-1 py-1">
         <h3 className="truncate text-sm font-semibold capitalize">{name}</h3>
-        <span className="truncate text-[10px] font-thin md:text-xs">
+        <span className="truncate text-[10px] md:text-xs">
           {known_for_department}
         </span>
       </div>

@@ -19,13 +19,13 @@ export default function CastSection({
     id: number;
     name: string;
     character: string;
-    profile_path: string;
+    profile_path?: string;
   }>;
   crew: Array<{
     id: number;
     name: string;
     job: string;
-    profile_path: string;
+    profile_path?: string;
   }>;
   is_more_cast_crew: boolean;
   type: "movie" | "tv";
@@ -51,7 +51,7 @@ export default function CastSection({
                       id={cast.id}
                       name={cast.name}
                       known_for_department={cast.character}
-                      profile_path={cast.profile_path}
+                      profile_path={cast.profile_path ?? ""}
                     />
                   ))}
                   {crew.map((crew, index) => (
@@ -60,7 +60,7 @@ export default function CastSection({
                       id={crew.id}
                       name={crew.name}
                       known_for_department={crew.job}
-                      profile_path={crew.profile_path}
+                      profile_path={crew.profile_path ?? ""}
                     />
                   ))}
                   {is_more_cast_crew && (

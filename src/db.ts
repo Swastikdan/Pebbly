@@ -10,7 +10,6 @@ export interface WatchlistItem {
   rating: number;
   release_date: string;
   updated_at: number;
-  deleted: 0 | 1;
 }
 
 class WatchlistDB extends Dexie {
@@ -19,9 +18,8 @@ class WatchlistDB extends Dexie {
   constructor() {
     super("WatchlistDB");
 
-    this.version(2).stores({
-      watchlist:
-        "watchlist_id, [user_id+deleted],[user_id+deleted+external_id], updated_at",
+    this.version(3).stores({
+      watchlist: "watchlist_id, user_id, [user_id+external_id], updated_at",
     });
   }
 }

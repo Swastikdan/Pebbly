@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     ppr: true,
   },
+
   compress: true,
   poweredByHeader: false,
   images: {
@@ -52,7 +53,7 @@ const nextConfig: NextConfig = {
             value: "nosniff",
           },
           {
-            key: "X-Frame-Options", //
+            key: "X-Frame-Options",
             value: "ALLOW-FROM https://www.youtube.com",
           },
           {

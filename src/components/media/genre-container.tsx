@@ -1,5 +1,3 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Badge } from "../ui/badge";
 

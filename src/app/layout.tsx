@@ -60,9 +60,9 @@ export const metadata: Metadata = {
   },
 };
 
-const raleway = DM_Sans({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-raleway",
+  variable: "--font-dm-sans",
   preload: true,
 });
 
@@ -70,7 +70,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={raleway.className}>
+    <html lang="en" suppressHydrationWarning className={dmSans.className}>
       <head>
         <meta
           name="google-site-verification"

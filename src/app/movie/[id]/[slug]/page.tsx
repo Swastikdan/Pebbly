@@ -1,6 +1,6 @@
 import React, { cache } from "react";
 import type { Metadata } from "next";
-import { getBasicMovieDetails } from "@/lib/getmoviedetails";
+import { getBasicMovieDetails } from "@/lib/queries";
 import { QueryClient } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 import MoviePagedata from "@/components/movie-page-data";

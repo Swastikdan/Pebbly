@@ -3,7 +3,7 @@ import React from "react";
 import Image from "@/components/ui/image";
 import { Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getTvDetails } from "@/lib/gettvdetails";
+import { getTvDetails } from "@/lib/queries";
 import DefaultLoader from "@/components/default-loader";
 import { Badge } from "@/components/ui/badge";
 import { IMAGE_PREFIX } from "@/constants";

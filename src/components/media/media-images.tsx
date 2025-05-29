@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogOverlay,
 } from "@/components/ui/dialog";
-import { getImages } from "@/lib/getimages";
+import { getImages } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IMAGE_PREFIX } from "@/constants";
 
