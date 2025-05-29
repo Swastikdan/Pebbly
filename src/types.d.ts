@@ -75,6 +75,7 @@ export interface MediaListResultsEntity {
   poster_path: string;
   release_date?: string;
   first_air_date?: sting;
+  media_type?: string;
   title?: string;
   name?: string;
   video: boolean;

@@ -19,7 +19,6 @@ export default function SearchPage() {
   const [page, setPage] = useState(initialPage);
   const [type, setType] = useState<"movie" | "tv" | null>(null);
   const [isPending, setIsPending] = useState(false);
-
   const { data, error, isFetching, isLoading } = useQuery({
     queryKey: ["search", query, page],
     queryFn: () => getSearchResult(query, page),

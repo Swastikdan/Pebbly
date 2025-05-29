@@ -29,7 +29,7 @@ function TrendingDayMovies() {
                 image={item.poster_path}
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 poster_path={item.poster_path!}
-                media_type={"movie"}
+                media_type={item.media_type as unknown as "movie" | "tv"}
                 id={item.id}
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 relese_date={item.first_air_date ?? item.release_date ?? null}
@@ -64,7 +64,7 @@ function TrendingWeekMovies() {
                 rating={item.vote_average}
                 image={item.poster_path}
                 poster_path={item.poster_path ?? ""}
-                media_type={"movie"}
+                media_type={item.media_type as unknown as "movie" | "tv"}
                 id={item.id}
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                 relese_date={item.first_air_date ?? item.release_date ?? null}
