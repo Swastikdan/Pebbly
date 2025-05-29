@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
-import { Searchbar } from "@/components/search/search-bar";
+import { Searchbar, SearchBarSkeleton } from "@/components/search/search-bar";
 import SearchResults from "@/components/search/search-results";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -41,7 +41,7 @@ export default async function SearchPage(props: {
   return (
     <section className="flex w-full justify-center">
       <div className="mx-auto w-full max-w-screen-xl p-5">
-        <Suspense fallback={<Searchbar />}>
+        <Suspense fallback={<SearchBarSkeleton />}>
           <Searchbar searchterm={queryString} />
         </Suspense>
         <div className="w-full py-5">
