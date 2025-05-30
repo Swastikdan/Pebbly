@@ -4,7 +4,7 @@ import Providers from "@/components/providers";
 import Scroll from "@/components/scroll";
 import "@/styles/globals.css";
 import { type Metadata } from "next";
-import { DM_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Film Fanatic",
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
   },
 };
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-dm-sans",
+  variable: "--font-inter",
   preload: true,
 });
 
@@ -70,7 +70,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={dmSans.className}>
+    <html lang="en" suppressHydrationWarning className={inter.className}>
       <head>
         <meta
           name="google-site-verification"

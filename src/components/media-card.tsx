@@ -148,6 +148,7 @@ export function MediaCard({
                 {rating > 0.0 ? (
                   <>
                     <Star size="16" className="fill-current text-yellow-400" />
+
                     {rating.toFixed(1)}
                   </>
                 ) : (
