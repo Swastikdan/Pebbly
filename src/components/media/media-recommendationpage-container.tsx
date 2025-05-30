@@ -53,6 +53,7 @@ export default function MediaRecommendationPageContainer({
         media_type={type}
         id={item.id}
         relese_date={item.first_air_date ?? item.release_date ?? null}
+        prefetch={false}
       />
     ));
   }, [flattenedResults, type]);

@@ -53,6 +53,7 @@ function MediaListPageResults({
         id={item.id}
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         relese_date={item.first_air_date ?? item.release_date ?? null}
+        prefetch={false}
       />
     ));
   }, [flattenedResults, mediatype]);
