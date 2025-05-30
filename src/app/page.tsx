@@ -34,9 +34,7 @@ export default function Home() {
         <div className="flex w-full flex-col gap-10">
           <Tabs defaultValue="trending_day">
             <div className="flex items-center gap-5">
-              <h2 className="font-heading text-xl font-semibold md:text-2xl">
-                Trending
-              </h2>
+              <h2 className="text-xl font-medium md:text-2xl">Trending</h2>
               <TabsList>
                 <TabsTrigger
                   value="trending_day"
@@ -62,7 +60,7 @@ export default function Home() {
 
           <section>
             <div className="flex items-center gap-5">
-              <h2 className="font-heading text-xl font-semibold md:text-2xl">
+              <h2 className="text-xl font-medium md:text-2xl">
                 Upcoming Movies
               </h2>
             </div>
@@ -73,7 +71,7 @@ export default function Home() {
 
           <Tabs defaultValue="popular_movie">
             <div className="flex items-center gap-5">
-              <h2 className="font-heading text-xl font-semibold md:text-2xl">{`What's Popular`}</h2>
+              <h2 className="text-xl font-medium md:text-2xl">{`What's Popular`}</h2>
               <TabsList>
                 <TabsTrigger
                   value="popular_movie"
@@ -98,9 +96,7 @@ export default function Home() {
           </Tabs>
           <Tabs defaultValue="top_rated_movies">
             <div className="flex items-center gap-5">
-              <h2 className="font-heading text-xl font-semibold md:text-2xl">
-                Top Rated
-              </h2>
+              <h2 className="text-xl font-medium md:text-2xl">Top Rated</h2>
               <TabsList>
                 <TabsTrigger
                   value="top_rated_movies"

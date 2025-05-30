@@ -33,10 +33,10 @@ export function Searchbar({
 
   const clearSearch = () => {
     setSearch("");
-    // const pathname = window.location.pathname;
-    // if (pathname === "/search") {
-    //   router.push("/search");
-    // }
+    const pathname = window.location.pathname;
+    if (pathname === "/search") {
+      router.push("/search");
+    }
   };
 
   return (

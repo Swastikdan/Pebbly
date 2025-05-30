@@ -4,7 +4,7 @@ import Providers from "@/components/providers";
 import Scroll from "@/components/scroll";
 import "@/styles/globals.css";
 import { type Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Sofia_Sans } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Film Fanatic",
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
   },
 };
 
-const inter = Inter({
+const inter = Sofia_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-sofia-sans",
   preload: true,
 });
 
