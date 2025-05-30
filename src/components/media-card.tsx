@@ -17,7 +17,6 @@ export interface MediaCardProps {
   known_for_department?: string;
   card_type?: "horizontal" | "vertical" | "small_card_person";
   is_on_watchlist_page?: boolean;
-  prefetch?: boolean;
 }
 export interface PersonCardProps {
   name: string;
@@ -40,7 +39,6 @@ export function MediaCard({
   known_for_department,
   card_type = "horizontal",
   is_on_watchlist_page = false,
-  prefetch = true,
 }: MediaCardProps) {
   const formattedTitle = title.replace(/ /g, "-").toLowerCase();
   const formattedReleseDate = relese_date
@@ -55,7 +53,6 @@ export function MediaCard({
     return (
       <Link
         href={`/${media_type}/${id}/${formattedTitle}`}
-        prefetch={prefetch}
         className="h-52 w-72 space-y-2 transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70"
         aria-label={title}
       >
