@@ -44,3 +44,13 @@ yarn-error.log*
 
 # idea files
 .idea
+
+# testing
+/coverage
+
+# OpenNext
+/.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
