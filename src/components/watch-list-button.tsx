@@ -79,7 +79,7 @@ export default function WatchListButton({
           </Badge>
         </TooltipTrigger>
         <TooltipContent className="cursor-none select-none">
-          <p className="text-sm font-medium">
+          <p className="text-sm font-light">
             {is_on_watchlist_page
               ? "Remove from Watchlist"
               : isOnWatchList

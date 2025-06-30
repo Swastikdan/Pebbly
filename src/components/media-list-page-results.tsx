@@ -1,12 +1,14 @@
 "use client";
-
 import React, { useMemo, memo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { type MediaListQuery } from "@/types";
+import type { MediaListQuery } from "@/types";
 import { getMediaList } from "@/lib/queries";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
+
 import InfiniteScroll from "react-infinite-scroll-component";
-import DefaultLoader from "./default-loader";
+
+import { Spinner } from "@/components/ui/spinner";
+
 const MemoizedMediaCard = memo(MediaCard);
 const skeletonCards = Array.from({ length: 20 }).map((_, index) => (
   <MediaCardSkeleton key={`skeleton-${index}`} />
@@ -68,7 +70,7 @@ function MediaListPageResults({
   }
 
   if (status === "pending") {
-    return <DefaultLoader />;
+    return <Spinner />;
   }
 
   return (

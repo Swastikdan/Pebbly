@@ -3,7 +3,7 @@ import React, { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { getTvDetails } from "@/lib/queries";
 import { useQuery } from "@tanstack/react-query";
-import DefaultLoader from "@/components/default-loader";
+import { Spinner } from "@/components/ui/spinner";
 import { GENRE_LIST, IMAGE_PREFIX } from "@/constants";
 import MediaTitleContailer from "@/components/media/media-title-container";
 import MediaPosterTrailerContainer from "@/components/media/media-poster-trailer-container";
@@ -31,7 +31,7 @@ export default function TvData({
   });
 
   if (isLoading) {
-    return <DefaultLoader />;
+    return <Spinner />;
   }
   if (!data || error) {
     notFound();

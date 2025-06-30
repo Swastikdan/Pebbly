@@ -101,7 +101,7 @@ export default function DisclaimerPage() {
         </div>
 
         <div className="mt-12 border-t pt-8 text-center">
-          <p className="mb-4 text-gray-300">
+          <p className="text-muted-foreground mb-4">
             By using this service, you acknowledge that you have read and
             understood these terms.
           </p>

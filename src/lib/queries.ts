@@ -74,7 +74,7 @@ export async function getMediaList({
 }
 export async function getSearchResult(
   query: string,
-  page: number,
+  page: number
 ): Promise<Types.SearchResults> {
   const pagenumber: number = page ?? 1;
   const url = `/search/multi?language=en-US&query=${query}&page=${pagenumber}`;

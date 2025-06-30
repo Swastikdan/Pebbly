@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
+import { type Metadata } from "next";
 import { Suspense } from "react";
-import WatchListContatiner from "@/components/watchlist-contatiner";
-import DefaultLoader from "@/components/default-loader";
+import { Spinner } from "@/components/ui/spinner";
 import ExportAndAddWatchlist from "@/components/export-and-add-watchlist";
+import WatchListContatiner from "@/components/watchlist-contatiner";
 
 export const metadata: Metadata = {
-  title: "Watchlist | Film Fanatic",
+  title: "Watchlist",
   description: "Your saved movies and TV shows",
 };
 
@@ -18,7 +18,7 @@ export default function WatchlistPage() {
           Your saved movies and TV shows
         </p>
         <ExportAndAddWatchlist />
-        <Suspense fallback={<DefaultLoader />}>
+        <Suspense fallback={<Spinner />}>
           <WatchListContatiner />
         </Suspense>
       </div>

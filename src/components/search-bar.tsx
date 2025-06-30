@@ -1,28 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
-export function Searchbar({
-  searchterm,
-  clasName,
-}: {
-  searchterm?: string;
-  clasName?: string;
-}) {
+export function Searchbar() {
   const [search, setSearch] = useState("");
   const router = useRouter();
-  useEffect(() => {
-    if (searchterm) {
-      setSearch(searchterm);
-    }
-  }, [searchterm]);
+  const searchParams = useSearchParams();
+  const query = searchParams.get("query") ?? "";
 
+  useEffect(() => {
+    if (query) {
+      setSearch(query);
+    }
+  }, [query]);
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!search) {
@@ -42,9 +37,8 @@ export function Searchbar({
   return (
     <form
       action="/search"
-      className={cn(clasName, "flex w-full p-3")}
+      className="flex w-full p-3"
       onSubmit={handleSearch}
-      role="search"
       aria-label="Search Form"
     >
       <div className="relative w-full text-lg font-medium">
@@ -59,7 +53,7 @@ export function Searchbar({
           placeholder="👀 What movie, show? Let's find it!"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="peer bg-background enabled:bg-background block h-12 w-full rounded-full ps-12 pr-8 placeholder:text-sm sm:h-11 placeholder:md:text-base"
+          className="peer bg-background enabled:bg-background block h-12 w-full rounded-md ps-12 pr-8 placeholder:text-sm sm:h-11 placeholder:md:text-base"
           aria-label="Search Input"
         />
         <div className="pointer-events-none absolute inset-y-0 start-2 flex items-center ps-2 peer-disabled:pointer-events-none peer-disabled:opacity-50">
@@ -78,7 +72,7 @@ export function Searchbar({
       </div>
       <Button
         size="lg"
-        className="font-heading ml-2 hidden h-11 rounded-full text-base sm:block"
+        className="font-heading ml-2 hidden h-11 rounded-md text-base sm:block"
         aria-label="Submit Search"
       >
         Search
@@ -92,7 +86,7 @@ export function SearchBarSkeleton() {
     <div className="flex w-full p-3">
       <div className="relative w-full font-sans text-lg font-medium">
         <Skeleton
-          className="h-12 w-full rounded-full sm:h-11"
+          className="h-12 w-full rounded-md sm:h-11"
           aria-hidden="true"
         />
       </div>

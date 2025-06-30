@@ -13,7 +13,7 @@ import MediaContainer from "@/components/media/media-container";
 import Collections from "@/components/media/collections";
 import MediaKeywords from "@/components/media/media-keywords";
 import MediaRecomendations from "@/components/media/media-recommendation";
-import DefaultLoader from "@/components/default-loader";
+import { Spinner } from "@/components/ui/spinner";
 import type { Movie } from "@/types";
 
 export default function MoviePagedata({
@@ -30,7 +30,7 @@ export default function MoviePagedata({
   });
 
   if (isLoading) {
-    return <DefaultLoader />;
+    return <Spinner />;
   }
   if (!data || error) {
     notFound();

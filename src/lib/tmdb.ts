@@ -21,28 +21,13 @@ export const Tmdb = cache(async function UncachedTmdb<T>(
       accept: "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    // This option applies to Next.js Data Cache on the server
-    // and influences browser caching on the client.
     cache: "force-cache",
-    // These Next.js specific options are for server-side caching.
-    // They will be ignored by the browser's fetch.
-    next: {
-      tags: ["tmdb", url],
-      revalidate: 3600,
-    },
   };
-
-  // console.log(`Workspaceing TMDB data: ${fetchUrl}`);
-  // if (typeof window !== "undefined") {
-  //   console.log("Called from Client-side");
-  // } else {
-  //   console.log("Called from Server-side");
-  // }
 
   try {
     const response = await fetch(fetchUrl, options);
     if (!response.ok) {
-      return { error: `Error: ${response.status} ${response.statusText}` };
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = (await response.json()) as T;
@@ -51,6 +36,6 @@ export const Tmdb = cache(async function UncachedTmdb<T>(
     if (error instanceof Error) {
       return { error: error.message };
     }
-    return { error: "An unknown error occurred" };
+    throw new Error("Unknown error: " + String(error));
   }
 });

@@ -22,7 +22,7 @@ export default function CurrentSeason({
           Current Season
         </span>
         <div
-          className="border-border flex items-start gap-5 rounded-3xl border-2 p-3 md:p-5"
+          className="border-border flex items-start gap-5 rounded-md border-2 p-3 md:p-5"
           role="region"
           aria-label={`Current Season: ${season_data.name}`}
         >
@@ -35,7 +35,7 @@ export default function CurrentSeason({
                 width={200}
                 height={300}
                 src={IMAGE_PREFIX.HD_POSTER + season_data.poster_path}
-                className="h-40 w-28 shrink-0 rounded-xl object-cover md:h-52 md:w-36"
+                className="h-40 w-28 shrink-0 rounded-md object-cover md:h-52 md:w-36"
                 alt={season_data.name}
               />
             </div>

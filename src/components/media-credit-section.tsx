@@ -5,7 +5,7 @@ import { getCredits } from "@/lib/queries";
 import type { CrewMember } from "@/types";
 import { IMAGE_PREFIX } from "@/constants";
 import Image from "@/components/ui/image";
-import DefaultLoader from "./default-loader";
+import { Spinner } from "@/components/ui/spinner";
 import { notFound } from "next/navigation";
 export default function MediaCreditSeaction({
   id,
@@ -20,7 +20,7 @@ export default function MediaCreditSeaction({
     staleTime: 1000 * 60 * 60,
   });
   if (isFetching) {
-    return <DefaultLoader />;
+    return <Spinner />;
   }
   if (!data || error) {
     return notFound();
@@ -53,7 +53,7 @@ export default function MediaCreditSeaction({
                 height={300}
                 loading="eager"
                 src={IMAGE_PREFIX.SD_PROFILE + castMember.profile_path}
-                fallbackImage="https://ik.imagekit.io/swastikdan/Film-Fanatic/placeholder-user-mono.svg"
+                // fallbackImage="https://ik.imagekit.io/swastikdan/Film-Fanatic/placeholder-user-mono.svg"
                 alt={castMember.name}
                 className="aspect-[12/16] h-24 w-auto rounded-lg object-cover"
               />
@@ -84,7 +84,7 @@ export default function MediaCreditSeaction({
                       height={300}
                       loading="eager"
                       src={IMAGE_PREFIX.SD_PROFILE + crewMember.profile_path}
-                      fallbackImage="https://ik.imagekit.io/swastikdan/Film-Fanatic/placeholder-user-mono.svg"
+                      // fallbackImage="https://ik.imagekit.io/swastikdan/Film-Fanatic/placeholder-user-mono.svg"
                       alt={crewMember.name}
                       className="aspect-[12/16] h-24 w-auto rounded-lg object-cover"
                     />

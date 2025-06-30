@@ -56,7 +56,7 @@ const MEDIA_PAGE_SLUGS: MediaPageSlug[] = NAV_ITEMS.flatMap((item) =>
   item.submenu.map((subItem) => ({
     type: item.slug as "movies" | "tv-shows" | "peoples",
     slug: subItem.slug as MediaPageSlug["slug"],
-  })),
+  }))
 );
 
 const GENRE_LIST = [

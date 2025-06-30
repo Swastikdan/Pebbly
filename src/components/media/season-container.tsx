@@ -4,7 +4,7 @@ import Image from "@/components/ui/image";
 import { Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getTvDetails } from "@/lib/queries";
-import DefaultLoader from "@/components/default-loader";
+import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { IMAGE_PREFIX } from "@/constants";
 import { notFound } from "next/navigation";
@@ -38,7 +38,7 @@ export default function SeasonContainer({
   });
 
   if (isLoading) {
-    return <DefaultLoader />;
+    return <Spinner />;
   }
 
   if (!data || error) {
