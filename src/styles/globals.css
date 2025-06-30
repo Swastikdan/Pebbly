@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-
 @theme {
   --font-sans:
     var(--font-karla), ui-sans-serif, system-ui, sans-serif,
@@ -45,10 +44,17 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 }
 
 :root {
   --radius: 0rem;
+  --tracking-normal: 0.5px;
   --background: oklch(0.99 0 0);
   --foreground: oklch(0 0 0);
   --card: oklch(1 0 0);
@@ -120,6 +126,14 @@
 
 @layer base {
   * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+@layer base {
+  * {
     @apply border-border outline-ring/50 lining-nums;
   }
   body {
@@ -134,7 +148,6 @@ body {
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
 }
-/* From Uiverse.io by barisdogansutcu */
 .loader {
   width: 3.25em;
   transform-origin: center;
