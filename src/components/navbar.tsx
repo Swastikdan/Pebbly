@@ -1,7 +1,12 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,11 +69,13 @@ const MobileNavMenuItem: React.FC<{
       <Link
         href={subitem.url}
         key={subitem.slug}
-        className="w-full cursor-pointer justify-start px-3"
+        className="w-full cursor-pointer justify-start pl-3"
       >
-        <Button variant="ghost" className="w-full justify-start">
-          {subitem.name}
-        </Button>
+        <SheetClose asChild>
+          <Button variant="outline" className="h-10 w-full justify-start">
+            {subitem.name}
+          </Button>
+        </SheetClose>
       </Link>
     ))}
   </div>
@@ -122,10 +129,12 @@ export default function Navbar() {
                   <MobileNavMenuItem key={item.slug} item={item} />
                 ))}
                 <Link href="/watchlist" className="w-full">
-                  <Button className="h-10 w-full justify-start">
-                    <Bookmark size={32} className="fill-current" />
-                    Watchlist
-                  </Button>
+                  <SheetClose asChild>
+                    <Button className="h-10 w-full justify-start">
+                      <Bookmark size={32} className="fill-current" />
+                      Watchlist
+                    </Button>
+                  </SheetClose>
                 </Link>
               </div>
             </SheetContent>
