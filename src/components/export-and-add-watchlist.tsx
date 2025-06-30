@@ -1,17 +1,19 @@
 "use client";
 import React, { useState, useRef, useCallback } from "react";
 import { useWatchlist } from "@/hooks/usewatchlist";
+import { useWatchlistStore } from "@/store/usewatchliststore";
+import type { WatchlistItem } from "@/store/usewatchliststore";
 import { Button } from "@/components/ui/button";
 import { Loader2, FileDown, FileUp } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { db, type WatchlistItem } from "@/db";
 import { LOCAL_GUEST_USER_ID } from "@/constants";
 
 export default function ExportAndAddWatchlist() {
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  // Use the Dexie-based hook that provides live query data with a loading indicator.
+  // Use the Zustand-based hook that provides live query data.
   const { watchlist, loading } = useWatchlist();
+  const setWatchlist = useWatchlistStore((state) => state.setWatchlist); // Get the setWatchlist action
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const exportWatchlist = useCallback(async () => {
@@ -30,10 +32,28 @@ export default function ExportAndAddWatchlist() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error exporting watchlist:", error);
+      alert("Failed to export watchlist."); // User-friendly error
     } finally {
       setExportLoading(false);
     }
   }, [watchlist]);
+
+  // Type guard to check if an object is a valid WatchlistItem (for import)
+  function isValidImportedWatchlistItem(
+    item: unknown,
+  ): item is Omit<WatchlistItem, "watchlist_id" | "user_id" | "updated_at"> &
+    Partial<Pick<WatchlistItem, "watchlist_id">> {
+    if (typeof item !== "object" || item === null) return false;
+    const obj = item as Record<string, unknown>;
+    return (
+      typeof obj.title === "string" &&
+      typeof obj.rating === "number" &&
+      typeof obj.image === "string" &&
+      typeof obj.external_id === "string" &&
+      (obj.type === "tv" || obj.type === "movie") &&
+      typeof obj.release_date === "string"
+    );
+  }
 
   const importWatchlist = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,31 +68,46 @@ export default function ExportAndAddWatchlist() {
       reader.onload = async (e) => {
         try {
           const content = e.target?.result as string;
+          const importedData = JSON.parse(content) as unknown; // Parse as unknown first
 
-          const importedData = JSON.parse(
-            content,
-          ) as unknown as WatchlistItem[];
-          // Expect the imported data to be a JSON array.
-          const validatedList = Array.isArray(importedData) ? importedData : [];
+          // Validate if importedData is an array and its items resemble WatchlistItem
+          if (!Array.isArray(importedData)) {
+            throw new Error("Invalid file format: Expected a JSON array.");
+          }
 
-          // Map each imported item to ensure it has the correct fields:
+          const validatedList: WatchlistItem[] = importedData
+            .map((item) => {
+              if (!isValidImportedWatchlistItem(item)) {
+                console.warn("Skipping invalid item during import:", item);
+                return null;
+              }
+              return {
+                watchlist_id:
+                  "watchlist_id" in item &&
+                  typeof item.watchlist_id === "string"
+                    ? (item.watchlist_id ?? crypto.randomUUID())
+                    : crypto.randomUUID(),
+                user_id: LOCAL_GUEST_USER_ID,
+                title: item.title,
+                type: item.type,
+                external_id: item.external_id,
+                image: item.image,
+                rating: item.rating,
+                release_date: item.release_date,
+                updated_at: Date.now(),
+              };
+            })
+            .filter((item): item is WatchlistItem => Boolean(item)); // Filter out any nulls from invalid items
 
-          const itemsToImport = validatedList.map((item: WatchlistItem) => ({
-            ...item,
-            // Force the watchlist items to belong to 'local-guest-user'
-            user_id: LOCAL_GUEST_USER_ID,
-            // Set/update the timestamp
-            updated_at: Date.now(),
-          }));
-
-          // Use Dexie's bulkPut to add or update all imported items.
-          await db.watchlist.bulkPut(itemsToImport);
-          console.log("Imported Watchlist:", itemsToImport);
+          // Update the Zustand store with the new watchlist
+          setWatchlist(validatedList);
+          console.log("Imported Watchlist:", validatedList);
         } catch (error) {
           console.error("Error importing watchlist:", error);
-          alert("Invalid watchlist file format");
+          alert(`Invalid watchlist file format: ${(error as Error).message}`);
         } finally {
           setImportLoading(false);
+          // Clear the file input to allow selecting the same file again
           if (fileInputRef.current) {
             fileInputRef.current.value = "";
           }
@@ -81,18 +116,21 @@ export default function ExportAndAddWatchlist() {
 
       reader.onerror = () => {
         console.error("Error reading file");
+        alert("Error reading file.");
         setImportLoading(false);
       };
 
       reader.readAsText(file);
     },
-    [],
+    [setWatchlist], // Depend on setWatchlist from Zustand
   );
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Loader2 className="sr-only animate-spin opacity-0" size={24} />
+        {/* Adjusted loader for better visibility when loading */}
+        <Loader2 className="text-primary animate-spin" size={24} />
+        <span className="sr-only">Loading watchlist...</span>
       </div>
     );
   }

@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { SearchResultsEntity } from "@/types";
 
-export default function SearchPage() {
+export function SearchResults() {
   const searchParams = useSearchParams();
+  const query = searchParams.get("query") ?? "";
   const router = useRouter();
 
-  const query = searchParams.get("query") ?? "";
-  const initialPage = parseInt(searchParams.get("page") ?? "1", 10);
+  const initialPage = parseInt(searchParams.get("page") ?? "1", 10) || 1;
   const [page, setPage] = useState(initialPage);
   const [type, setType] = useState<"movie" | "tv" | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -49,7 +48,7 @@ export default function SearchPage() {
     params.set("page", String(newPage));
     if (query) params.set("query", query);
 
-    router.push(`?${params.toString()}`);
+    router.push(`/search?${params.toString()}`);
   };
 
   const handleTypeChange = (newType: "movie" | "tv" | null) => {
@@ -197,7 +196,7 @@ function EmptySearchState({ hasResults }: { hasResults: boolean }) {
 
 function LoadingState() {
   return (
-    <section>
+    <section className="flex h-full flex-col gap-5">
       <div className="flex h-10 items-center justify-between">
         <div></div>
         <div className="flex items-center gap-2">

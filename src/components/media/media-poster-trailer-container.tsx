@@ -26,7 +26,7 @@ export default function MediaPosterTrailerContainer({
         alt={title}
         width={300}
         height={450}
-        className="bg-accent aspect-[11/16] h-full w-full rounded-xl object-center sm:h-56 sm:w-auto md:h-70 lg:h-80"
+        className="bg-accent aspect-[11/16] h-full w-full rounded-md object-center sm:h-56 sm:w-auto md:h-70 lg:h-80"
       />
 
       {trailervideos.length > 0 ? (
@@ -42,7 +42,7 @@ export default function MediaPosterTrailerContainer({
                       height={450}
                       quality={100}
                       alt={video.name}
-                      className="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
+                      className="bg-accent aspect-video h-48 w-auto rounded-md object-cover sm:h-56 md:h-70 lg:h-80"
                     />
                     <span className="absolute top-4 left-4 truncate text-base font-semibold text-white">
                       {video.name.slice(0, 30) +
@@ -62,14 +62,14 @@ export default function MediaPosterTrailerContainer({
                   </div>
                 </DialogTrigger>
                 <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-                  <DialogContent className="aspect-video w-full max-w-5xl rounded-2xl border-0 bg-transparent p-0 ring-0">
+                  <DialogContent className="aspect-video w-full max-w-5xl rounded-md border-0 bg-transparent p-0 ring-0">
                     <DialogHeader className="sr-only">
                       <DialogTitle>{video.name}</DialogTitle>
                     </DialogHeader>
-                    <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+                    <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-md p-0">
                       <iframe
                         src={`https://www.youtube.com/embed/${video.key}`}
-                        className="size-full rounded-2xl"
+                        className="size-full rounded-md"
                         allowFullScreen
                         allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
                       ></iframe>
@@ -81,7 +81,7 @@ export default function MediaPosterTrailerContainer({
           </div>
         </ScrollContainer>
       ) : (
-        <div className="bg-accent/50 hidden aspect-video h-0 w-full items-center justify-center rounded-xl object-cover text-center sm:h-56 md:flex md:h-70 lg:h-80">
+        <div className="bg-accent/50 hidden aspect-video h-0 w-full items-center justify-center rounded-md object-cover text-center sm:h-56 md:flex md:h-70 lg:h-80">
           <span className="text-muted-foreground text-lg font-medium">
             No Trailer Available
           </span>

@@ -1,48 +1,18 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
-import { Searchbar, SearchBarSkeleton } from "@/components/search/search-bar";
-import SearchResults from "@/components/search/search-results";
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+import { Searchbar, SearchBarSkeleton } from "@/components/search-bar";
+import { SearchResults } from "@/components/search-results";
 
-function normalizeQuery(rawQuery: string | string[] | undefined): string {
-  if (!rawQuery) return "";
-  return Array.isArray(rawQuery) ? rawQuery.join(" ") : rawQuery;
-}
-
-export async function generateMetadata(props: {
-  searchParams: SearchParams;
-}): Promise<Metadata> {
-  const searchParams = await props.searchParams;
-  const query = searchParams.query;
-
-  // Ensure query is a string (join if it's an array)
-  const queryString = normalizeQuery(query);
-
-  if (!queryString || queryString.length === 0) {
-    return {
-      title: "Search",
-      description: "Search for movies and TV shows",
-    };
-  }
-
-  return {
-    title: `Search results for ${queryString}`,
-    description: `Search results for ${queryString}`,
-  };
-}
-export default async function SearchPage(props: {
-  searchParams: SearchParams;
-}) {
-  const searchParams = await props.searchParams;
-  const query = searchParams.query;
-
-  // Ensure query is a string (join if it's an array)
-  const queryString = normalizeQuery(query);
+export const metadata: Metadata = {
+  title: "Search Results | Film Fanatic",
+  description: "Search for movies and TV shows",
+};
+export default async function SearchPage() {
   return (
     <section className="flex w-full justify-center">
       <div className="mx-auto w-full max-w-screen-xl p-5">
         <Suspense fallback={<SearchBarSkeleton />}>
-          <Searchbar searchterm={queryString} />
+          <Searchbar />
         </Suspense>
         <Suspense fallback={<div className="h-[80vh] w-full py-5"></div>}>
           <div className="w-full py-5">

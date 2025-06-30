@@ -82,11 +82,11 @@ export default function MediaContainer({
               Media
             </Link>
 
-            <TabsList>
+            <TabsList className="bg-transparent">
               {youtubeclips.length > 0 && (
                 <TabsTrigger
                   value="videos"
-                  className="h-full w-full rounded-xl px-5 md:rounded-2xl md:px-10"
+                  className="data-[state=active]:bg-secondary dark:data-[state=active]:bg-secondary h-8 px-5 data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:shadow-none"
                 >
                   Videos
                 </TabsTrigger>
@@ -94,7 +94,7 @@ export default function MediaContainer({
               {backdrops.length > 0 && (
                 <TabsTrigger
                   value="backdrops"
-                  className="h-full w-full rounded-xl px-5 md:rounded-2xl md:px-10"
+                  className="data-[state=active]:bg-secondary dark:data-[state=active]:bg-secondary h-8 px-5 data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:shadow-none"
                 >
                   Backdrops
                 </TabsTrigger>
@@ -102,7 +102,7 @@ export default function MediaContainer({
               {posters.length > 0 && (
                 <TabsTrigger
                   value="posters"
-                  className="h-full w-full rounded-xl px-5 md:rounded-2xl md:px-10"
+                  className="data-[state=active]:bg-secondary dark:data-[state=active]:bg-secondary h-8 px-5 data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:shadow-none"
                 >
                   Posters
                 </TabsTrigger>
@@ -123,7 +123,7 @@ export default function MediaContainer({
                             height={450}
                             quality={100}
                             alt={video.name}
-                            className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+                            className="bg-accent aspect-video h-44 w-auto rounded-md object-cover md:h-52 lg:h-60"
                           />
                           <span className="absolute top-4 left-4 truncate text-xs text-white md:text-sm">
                             {video.name.slice(0, 30) +
@@ -143,14 +143,14 @@ export default function MediaContainer({
                         </div>
                       </DialogTrigger>
                       <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-                        <DialogContent className="aspect-video w-full max-w-5xl rounded-2xl border-0 bg-transparent p-0 ring-0">
+                        <DialogContent className="aspect-video w-full max-w-5xl rounded-md border-0 bg-transparent p-0 ring-0">
                           <DialogHeader className="sr-only">
                             <DialogTitle>{video.name}</DialogTitle>
                           </DialogHeader>
-                          <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+                          <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-md p-0">
                             <iframe
                               src={`https://www.youtube.com/embed/${video.key}`}
-                              className="size-full rounded-2xl"
+                              className="size-full rounded-md"
                               allowFullScreen
                               allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
                             ></iframe>
@@ -190,21 +190,21 @@ export default function MediaContainer({
                           width={300}
                           height={450}
                           quality={100}
-                          className="bg-accent aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+                          className="bg-accent aspect-video h-44 w-auto cursor-pointer rounded-md object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
                         />
                       </DialogTrigger>
                       <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-                        <DialogContent className="aspect-video w-full max-w-5xl rounded-2xl border-0 bg-transparent p-0 ring-0">
+                        <DialogContent className="aspect-video w-full max-w-5xl rounded-md border-0 bg-transparent p-0 ring-0">
                           <DialogHeader className="sr-only">
                             <DialogTitle>{title} Backdrop Image</DialogTitle>
                           </DialogHeader>
-                          <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+                          <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-md p-0">
                             <Image
                               src={image.backdrop_image_raw ?? ""}
                               alt={title}
                               width={450}
                               height={300}
-                              className="aspect-video size-full rounded-2xl object-cover"
+                              className="aspect-video size-full rounded-md object-cover"
                             />
                           </div>
                         </DialogContent>
@@ -241,21 +241,21 @@ export default function MediaContainer({
                           width={450}
                           height={300}
                           quality={100}
-                          className="bg-accent aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+                          className="bg-accent aspect-[11/16] h-44 w-auto cursor-pointer rounded-md object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
                         />
                       </DialogTrigger>
                       <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-                        <DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0 bg-transparent p-0 ring-0 sm:h-full sm:w-auto">
+                        <DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-md border-0 bg-transparent p-0 ring-0 sm:h-full sm:w-auto">
                           <DialogHeader className="sr-only">
                             <DialogTitle>{title} Poster Image</DialogTitle>
                           </DialogHeader>
-                          <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+                          <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-md p-0">
                             <Image
                               src={image.poster_image_raw ?? ""}
                               width={450}
                               height={300}
                               alt={title}
-                              className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
+                              className="aspect-[11/16] h-auto w-full rounded-md object-center"
                             />
                           </div>
                         </DialogContent>

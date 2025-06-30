@@ -88,17 +88,16 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
       {isButtonsVisible && canScrollLeft && (
         <Button
           onClick={scrollLeftFunc}
-          variant="secondary"
           size="icon"
           aria-label="Scroll left"
-          className="hover:bg-secondary absolute top-1/2 left-2 z-10 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-full shadow-md transition-all duration-150 active:scale-90 sm:flex sm:scale-100"
+          className="absolute top-1/2 left-2 z-10 hidden size-10 -translate-y-1/2 transform cursor-pointer items-center justify-center rounded-md shadow-md transition-all duration-150 active:scale-90 sm:flex sm:scale-100"
         >
           <ChevronLeft size={32} className="size-5" />
         </Button>
       )}
       <div
         ref={scrollRef}
-        className="scrollbar-hidden relative w-full overflow-x-auto scroll-smooth rounded-xl"
+        className="scrollbar-hidden relative w-full overflow-x-auto scroll-smooth rounded-md"
         role="region"
         aria-label="Scrollable content"
       >
@@ -109,9 +108,8 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
       {isButtonsVisible && canScrollRight && (
         <Button
           onClick={scrollRightFunc}
-          variant="secondary"
           size="icon"
-          className="hover:bg-secondary absolute top-1/2 right-2 z-10 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-full shadow-md transition-all duration-150 active:scale-90 sm:flex sm:scale-100"
+          className="absolute top-1/2 right-2 z-10 hidden size-10 -translate-y-1/2 transform cursor-pointer items-center justify-center rounded-md shadow-md transition-all duration-150 active:scale-90 sm:flex sm:scale-100"
           aria-label="Scroll right"
         >
           <ChevronRight size={32} className="size-5" />

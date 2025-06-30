@@ -1,10 +1,10 @@
+import { type Metadata } from "next";
 import Footer from "@/components/footer";
 import Navbar from "@/components/navbar";
 import Providers from "@/components/providers";
-import Scroll from "@/components/scroll";
 import "@/styles/globals.css";
-import { type Metadata } from "next";
-import { Sofia_Sans } from "next/font/google";
+
+import { Karla } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Film Fanatic",
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
   },
 };
 
-const inter = Sofia_Sans({
+const karla = Karla({
   subsets: ["latin"],
-  variable: "--font-sofia-sans",
+  variable: "--font-karla",
   preload: true,
 });
 
@@ -70,14 +70,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.className}>
+    <html lang="en" suppressHydrationWarning className={karla.className}>
       <head>
         <meta
           name="google-site-verification"
           content="uHvrTYV7MI9jil_qDblV-QDi9qjXlpdb_8XJUtCLGLQ"
         />
       </head>
-      <Scroll />
+      {/* <Scroll /> */}
       <body className="min-h-screen font-sans leading-relaxed antialiased">
         <Providers>
           <Navbar />

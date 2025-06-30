@@ -13,7 +13,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function validateId(id: number): void {
   if (id < VALID_ID_RANGE.min || id > VALID_ID_RANGE.max) {
-    throw new Error(INVALID_ID_ERROR + id);
+    throw new Error(`${INVALID_ID_ERROR} ${id}`);
   }
 }
 

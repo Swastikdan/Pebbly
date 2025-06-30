@@ -17,12 +17,12 @@ export default function Collections({ id }: { id: number }) {
       <>
         {isLoading ? (
           <Skeleton
-            className="h-48 w-full rounded-2xl md:h-52 lg:h-60"
+            className="h-48 w-full rounded-md md:h-52 lg:h-60"
             aria-label="Loading collection"
           />
         ) : (
           <div
-            className="bg-secondary relative h-48 w-full overflow-hidden rounded-2xl md:h-52 lg:h-60"
+            className="bg-secondary relative h-48 w-full overflow-hidden rounded-md md:h-52 lg:h-60"
             role="region"
             aria-label={`Collection: ${data?.name}`}
           >
@@ -49,7 +49,7 @@ export default function Collections({ id }: { id: number }) {
                 <Button
                   variant="default"
                   size="lg"
-                  className="mt-3 rounded-full font-medium shadow"
+                  className="mt-3 rounded-md font-medium shadow"
                 >
                   View Collection
                 </Button>

@@ -1,22 +1,18 @@
 "use client";
 import React from "react";
 import { useWatchlist } from "@/hooks/usewatchlist";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { MediaCard } from "@/components/media-card";
-import DefaultLoader from "@/components/default-loader";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function WatchListContainer() {
   const { watchlist, loading } = useWatchlist();
-  const [watchlistAnimationParent] = useAutoAnimate();
+
   return (
     <div className="flex min-h-96 w-full items-center justify-center">
       {loading ? (
-        <DefaultLoader />
+        <Spinner />
       ) : watchlist && watchlist.length > 0 ? (
-        <div
-          className="xs:gap-4 grid w-full grid-cols-2 gap-3 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-          ref={watchlistAnimationParent}
-        >
+        <div className="xs:gap-4 grid w-full grid-cols-2 gap-3 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {watchlist.map(
             (item) =>
               item && (

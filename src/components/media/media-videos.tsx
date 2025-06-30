@@ -34,7 +34,7 @@ export default function MediaVideos({
           ? Array.from({ length: 6 }).map((_, index) => (
               <Skeleton
                 key={index}
-                className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+                className="bg-accent aspect-video h-44 w-auto rounded-md object-cover md:h-52 lg:h-60"
               />
             ))
           : data?.map((video, index) => (
@@ -47,7 +47,7 @@ export default function MediaVideos({
                       height={450}
                       quality={100}
                       alt={video.name}
-                      className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+                      className="bg-accent aspect-video h-44 w-auto rounded-md object-cover md:h-52 lg:h-60"
                     />
                     <span className="absolute top-4 left-4 truncate text-xs text-white md:text-sm">
                       {video.name.slice(0, 30) +
@@ -67,14 +67,14 @@ export default function MediaVideos({
                   </div>
                 </DialogTrigger>
                 <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-                  <DialogContent className="aspect-video w-full max-w-5xl rounded-2xl border-0 bg-transparent p-0 ring-0">
+                  <DialogContent className="aspect-video w-full max-w-5xl rounded-md border-0 bg-transparent p-0 ring-0">
                     <DialogHeader className="sr-only">
                       <DialogTitle>{video.name}</DialogTitle>
                     </DialogHeader>
-                    <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+                    <div className="bg-accent relative isolate z-[1] size-full h-full overflow-hidden rounded-md p-0">
                       <iframe
                         src={`https://www.youtube.com/embed/${video.key}`}
-                        className="size-full rounded-2xl"
+                        className="size-full rounded-md"
                         allowFullScreen
                         allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
                       ></iframe>
