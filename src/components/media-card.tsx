@@ -96,7 +96,7 @@ export function MediaCard({
           </div>
         </div>
         <div className="flex h-[40px] flex-col gap-2 md:h-[52px]">
-          <h3 className="truncate text-sm capitalize">{title}</h3>
+          <h3 className="truncate text-sm font-semibold capitalize">{title}</h3>
           <span className="text-xs">
             {media_type === "person"
               ? known_for_department
@@ -160,7 +160,7 @@ export function MediaCard({
         ) : null}
       </div>
       <div className="flex flex-col gap-2">
-        <h3 className="truncate text-sm capitalize">{title}</h3>
+        <h3 className="truncate text-sm font-semibold capitalize">{title}</h3>
         <span className="text-xs">
           {media_type === "person" ? known_for_department : formattedReleseDate}
         </span>

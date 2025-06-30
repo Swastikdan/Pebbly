@@ -50,7 +50,7 @@ export default function SeasonContainer({
       {data?.seasons?.map((season: Season) => (
         <div
           key={season.id}
-          className="border-border flex items-start gap-5 rounded-3xl border-2 p-3 md:p-5"
+          className="border-border flex items-start gap-5 rounded-md border-2 p-3 md:p-5"
           role="region"
           aria-label={`Current Season: ${season.name}`}
         >
