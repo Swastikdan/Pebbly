@@ -38,7 +38,14 @@ export default function Collections({ id }: { id: number }) {
               <span className="text-primary text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
                 Part of the {data?.name}
               </span>
-              <span className="text-primary mt-2 flex flex-wrap text-xs font-light md:text-sm lg:text-base">
+              <span
+                className="text-primary mt-2 max-h-32 overflow-hidden text-xs font-light text-ellipsis md:text-sm lg:text-base"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 4,
+                  WebkitBoxOrient: "vertical",
+                }}
+              >
                 Includes{" "}
                 {data?.parts?.map((part) => part.title)?.join(", ") ?? ""}
               </span>
