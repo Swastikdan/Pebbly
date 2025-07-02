@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, memo, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import Image, { type ImageProps } from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,38 @@ type ImageWithFallbackProps = ImageProps & {
   fallbackImage?: string;
 };
 
+/**
+ * Custom hook to observe an element's intersection with the viewport.
+ * @param elementRef The ref to the DOM element to observe.
+ * @param options Options for the IntersectionObserver.
+ * @returns A boolean indicating whether the element is currently intersecting.
+ */
+function useIntersectionObserver(
+  elementRef: React.RefObject<Element | null>,
+  options?: IntersectionObserverInit,
+): boolean {
+  const [isIntersecting, setIsIntersecting] = useState(false);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry) {
+        setIsIntersecting(entry.isIntersecting);
+      }
+    }, options);
+
+    observer.observe(element);
+
+    return () => {
+      observer.unobserve(element);
+    };
+  }, [elementRef, options]);
+
+  return isIntersecting;
+}
+
 const ImageComponent = ({
   src,
   alt,
@@ -20,34 +52,58 @@ const ImageComponent = ({
   fallbackImage = DEFAULT_PLACEHOLDER_IMAGE,
   ...props
 }: ImageWithFallbackProps) => {
-  const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
   const [imageSrc, setImageSrc] = useState(src);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inView = useIntersectionObserver(containerRef, {
+    root: null,
+    rootMargin: "0px",
+    threshold: 0,
+  });
 
   const handleLoad = useCallback(() => {
-    setLoading(false);
+    setLoaded(true);
   }, []);
 
   const handleError = useCallback(() => {
     setImageSrc(fallbackImage);
+    setLoaded(true);
   }, [fallbackImage]);
+
   return (
-    <div className={cn("bg-accent/80 relative", className)}>
+    <div
+      ref={containerRef}
+      className={cn("relative overflow-hidden", className)}
+    >
       <Skeleton
-        style={{ display: loading ? "block" : "none" }}
-        className={className}
+        className={cn(
+          "absolute inset-0 animate-none transition-opacity duration-300",
+          className,
+          {
+            "opacity-0": loaded,
+            "opacity-100": !loaded,
+          },
+        )}
       />
-      <Image
-        src={imageSrc}
-        alt={alt}
-        className={cn(className)}
-        loading="eager"
-        fetchPriority="high"
-        unoptimized={true}
-        onLoad={handleLoad}
-        onError={handleError}
-        style={{ display: loading ? "none" : "block" }}
-        {...props}
-      />
+
+      {inView && (
+        <Image
+          src={imageSrc}
+          alt={alt}
+          className={cn(
+            "absolute inset-0 rounded-md object-cover transition-opacity duration-300",
+            {
+              "opacity-100": loaded,
+              "opacity-0": !loaded,
+            },
+          )}
+          fetchPriority="high"
+          unoptimized={true}
+          onLoad={handleLoad}
+          onError={handleError}
+          {...props}
+        />
+      )}
     </div>
   );
 };

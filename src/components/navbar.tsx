@@ -130,7 +130,10 @@ export default function Navbar() {
                 ))}
                 <Link href="/watchlist" className="w-full">
                   <SheetClose asChild>
-                    <Button className="h-10 w-full justify-start">
+                    <Button
+                      variant="secondary"
+                      className="h-10 w-full justify-start"
+                    >
                       <Bookmark size={32} className="fill-current" />
                       Watchlist
                     </Button>

@@ -60,7 +60,10 @@ export default function WatchListButton({
         <TooltipTrigger asChild>
           <Badge
             variant="default"
-            className={cn(className, "z-20 cursor-pointer p-2 [&>svg]:size-4")}
+            className={cn(
+              className,
+              "bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground z-20 cursor-pointer p-2 [&>svg]:size-4",
+            )}
             aria-label={
               is_on_watchlist_page || isOnWatchList
                 ? "Remove from watchlist"

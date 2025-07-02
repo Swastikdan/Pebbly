@@ -77,12 +77,15 @@ export function MediaCard({
             aria-label={`Add ${title} to watchlist`}
           />
           <div className="absolute right-2 bottom-2 flex items-center gap-2 text-sm md:text-base">
-            <Badge variant="default" className="h-7 rounded-sm px-2 uppercase">
+            <Badge
+              variant="default"
+              className="bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground h-7 rounded-sm px-2 uppercase"
+            >
               {media_type}
             </Badge>
             <Badge
               variant="default"
-              className="flex h-7 items-center gap-1 rounded-sm px-2"
+              className="bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground flex h-7 items-center gap-1 rounded-sm px-2"
             >
               {rating > 0.0 ? (
                 <>
@@ -137,13 +140,13 @@ export function MediaCard({
             <div className="absolute right-2 bottom-2 flex items-center gap-2 text-sm md:text-base">
               <Badge
                 variant="default"
-                className="h-7 rounded-sm px-2 uppercase"
+                className="bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground h-7 rounded-sm px-2 uppercase"
               >
                 {media_type}
               </Badge>
               <Badge
                 variant="default"
-                className="flex h-7 items-center gap-1 rounded-sm px-2"
+                className="bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground flex h-7 items-center gap-1 rounded-sm px-2"
               >
                 {rating > 0.0 ? (
                   <>
@@ -231,7 +234,7 @@ export function PersonCard({
       />
       <div className="flex flex-col gap-1 py-1">
         <h3 className="truncate text-sm font-semibold capitalize">{name}</h3>
-        <span className="truncate text-[10px] md:text-xs">
+        <span className="text-secondary-foreground dark:text-primary-foreground truncate text-[10px] md:text-xs">
           {known_for_department}
         </span>
       </div>
