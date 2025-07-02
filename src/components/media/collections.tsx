@@ -35,11 +35,11 @@ export default function Collections({ id }: { id: number }) {
             />
 
             <div className="relative flex h-full flex-col items-start justify-center p-5">
-              <span className="text-primary text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
+              <span className="text-primary-foreground dark:text-primary text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
                 Part of the {data?.name}
               </span>
               <span
-                className="text-primary mt-2 max-h-32 overflow-hidden text-xs font-light text-ellipsis md:text-sm lg:text-base"
+                className="text-primary-foreground dark:text-primary mt-2 max-h-32 overflow-hidden text-xs font-light text-ellipsis md:text-sm lg:text-base"
                 style={{
                   display: "-webkit-box",
                   WebkitLineClamp: 4,
@@ -54,9 +54,9 @@ export default function Collections({ id }: { id: number }) {
                 aria-label={`View collection: ${data?.name}`}
               >
                 <Button
-                  variant="default"
+                  variant="link"
                   size="lg"
-                  className="mt-3 rounded-md font-medium shadow"
+                  className="bg-primary-foreground dark:bg-primary text-primary dark:text-primary-foreground hover:bg-primary-foreground/90 dark:hover:bg-primary/90 mt-3 rounded-md font-medium shadow"
                 >
                   View Collection
                 </Button>
