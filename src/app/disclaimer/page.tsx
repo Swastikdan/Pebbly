@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 export default function DisclaimerPage() {
   return (
     <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl rounded-lg p-8 shadow-sm">
+      <div className="mx-auto max-w-4xl rounded-md p-8">
         <div className="space-y-12">
           <section>
             <h2 className="mb-4 border-b pb-2 text-2xl font-semibold">
@@ -22,7 +22,7 @@ export default function DisclaimerPage() {
                 cannot guarantee the security of any information entered into
                 this application and users proceed at their own risk.
               </p>
-              <div className="bg-accent rounded-lg p-4">
+              <div className="bg-accent rounded-md p-4">
                 <h3 className="mb-2 font-medium">Important Notice</h3>
                 <p className="">
                   This service is provided &quot;as-is&quot; without any
@@ -88,7 +88,7 @@ export default function DisclaimerPage() {
                 </p>
               </div>
 
-              <div className="bg-accent rounded-lg p-4">
+              <div className="bg-accent rounded-md p-4">
                 <h3 className="mb-2 font-medium">Changes to Terms</h3>
                 <p>
                   We reserve the right to modify these terms at any time. Users
