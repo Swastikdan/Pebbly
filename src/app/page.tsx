@@ -7,8 +7,9 @@ import {
   TopRatedMovies,
   TopRatedTv,
 } from "@/components/homepage-media-list-section";
-import { Searchbar } from "@/components/search-bar";
+import { Searchbar, SearchBarSkeleton } from "@/components/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Suspense } from "react";
 export default function Home() {
   return (
     <section className="flex flex-col items-center justify-center">
@@ -24,7 +25,9 @@ export default function Home() {
             </p>
           </div>
 
-          <Searchbar />
+          <Suspense fallback={<SearchBarSkeleton />}>
+            <Searchbar />
+          </Suspense>
         </div>
       </div>
 

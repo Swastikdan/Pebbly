@@ -79,13 +79,13 @@ export function MediaCard({
           <div className="absolute right-2 bottom-2 flex items-center gap-2 text-sm md:text-base">
             <Badge
               variant="default"
-              className="bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground h-7 rounded-sm px-2 uppercase"
+              className="bg-primary-foreground dark:bg-primary text-secondary-foreground dark:text-primary-foreground h-7 rounded-sm px-2 uppercase"
             >
               {media_type}
             </Badge>
             <Badge
               variant="default"
-              className="bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground flex h-7 items-center gap-1 rounded-sm px-2"
+              className="bg-primary-foreground dark:bg-primary text-secondary-foreground dark:text-primary-foreground flex h-7 items-center gap-1 rounded-sm px-2"
             >
               {rating > 0.0 ? (
                 <>
@@ -140,13 +140,13 @@ export function MediaCard({
             <div className="absolute right-2 bottom-2 flex items-center gap-2 text-sm md:text-base">
               <Badge
                 variant="default"
-                className="bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground h-7 rounded-sm px-2 uppercase"
+                className="bg-primary-foreground dark:bg-primary text-secondary-foreground dark:text-primary-foreground h-7 rounded-sm px-2 uppercase"
               >
                 {media_type}
               </Badge>
               <Badge
                 variant="default"
-                className="bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground flex h-7 items-center gap-1 rounded-sm px-2"
+                className="bg-primary-foreground dark:bg-primary text-secondary-foreground dark:text-primary-foreground flex h-7 items-center gap-1 rounded-sm px-2"
               >
                 {rating > 0.0 ? (
                   <>

@@ -6,8 +6,7 @@ import { getMediaList } from "@/lib/queries";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 
 import InfiniteScroll from "react-infinite-scroll-component";
-
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from "./ui/spinner";
 
 const MemoizedMediaCard = memo(MediaCard);
 const skeletonCards = Array.from({ length: 20 }).map((_, index) => (
@@ -70,7 +69,11 @@ function MediaListPageResults({
   }
 
   if (status === "pending") {
-    return <Spinner />;
+    return (
+      <div className="flex h-[70vh] items-center justify-center">
+        <Spinner aria-label="Loading" aria-busy="true" aria-live="polite" />
+      </div>
+    );
   }
 
   return (

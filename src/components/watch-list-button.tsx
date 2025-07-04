@@ -62,7 +62,7 @@ export default function WatchListButton({
             variant="default"
             className={cn(
               className,
-              "bg-secondary dark:bg-primary text-secondary-foreground dark:text-primary-foreground z-20 cursor-pointer p-2 [&>svg]:size-4",
+              "bg-primary-foreground dark:bg-primary text-secondary-foreground dark:text-primary-foreground z-20 cursor-pointer p-2 [&>svg]:size-4",
             )}
             aria-label={
               is_on_watchlist_page || isOnWatchList

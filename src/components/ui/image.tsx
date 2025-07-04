@@ -5,7 +5,7 @@ import Image, { type ImageProps } from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const DEFAULT_PLACEHOLDER_IMAGE =
-  "data:image/svg+xml;base64,PHN2ZyB3aWd0aD0iNTAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA1MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTM1LjYxNTQgMjBIMTQuMzg0NkMxNC4wMTc0IDIwIDEzLjY2NTIgMjAuMTUwOSAxMy40MDU2IDIwLjQxOTRDMTMuMTQ1OSAyMC42NjE5IDEzIDIxLjA1MjEgMTMgMjEuNDMxOFYzOS41NjgyQzEzIDM5LjU4NzkgMTMuMTQ1OSA0MC4zMTIxIDEzLjQwNTYgNDAuNTgwNkMxMy42NjUyIDQwLjg0OTEgMTQuMDE3NCA0MSAxNC4zODQ2IDQxSDM1LjYxNTRDMzUuOTgyNiA0MSAzNi4zMzQ4IDQwLjg0OTEgMzYuNTk0NCA0MC41ODA2QzM2Ljg1NDEgNDAuMzEyMSAzNyAzOS45NDc5IDM3IDM5LjU2ODJWMjEuNDMxOEMzNyAyMS4wNTIxIDM2LjgyNTEgMjAuNjg3OSAzNi41OTQ0IDIwLjQxOTRDMzYuMzM0OCAyMC4xNTA5IDM1Ljk4MjYgMjAgMzUuNjE1NCAyMFpNMzQuMjMwOCAzMi44ODY0TDI5LjgwNTMgMjcuODk0QzI5LjcyMTYgMjcuNzk4MyAyOS42MTk4IDI3LjcyMTIgMjkuNTA2MiAyNy42Njc2QzI5LjM5MjcgMjcuNjEzOSAyOS4yNjk4IDI3LjU4NDggMjkuMTQ1IDI3LjU4MkMyOS4wMjAyIDI3LjU3OTIgMjguODk2MSAyNy42MDI4IDI4LjE3ODA0IDI3LjY1MTMJMjguNjY0NyAyNy42OTk4IDI4LjU1OTggMjcuNzcyMiAyOC40NzIxIDI3Ljg2NDFM MjMuNTM2MSAzMi45Njg0TDI4LjUzMzYgMzguMTM2NEgyNS45MjMxTDIxLjQ5ODkgMzMuNTYxMkMyMS4zMjU3IDMzLjM4MjMgMjEuMDkwOSAzMy4yODE4IDIwLjg0NjIgMzMuMjgxOEMyMC42MDE0IDMzLjI4MTggMjAuMzY2NiAzMy4zODIzIDIwLjE5MzUgMzMuNTYxMkwxNS43NjkyIDM4LjEzNjRWMjIuODYzNkgzNC4yMzA4VjMyLjg4NjRaTTE3LjcwNzcgMjcuMTU5MUMxNy43MDc3IDI2LjcwNiAxNy44Mzc2IDI2LjI2MzEgMTguMDgxMSAyNS44ODYzQzE4LjMyNDUgMjUuNTA5NiAxOC42NzY1IDI1LjIxNiAxOS4wNzUzIDI1LjA0MjZDMTkuNDgwMSAyNC44NjkyIDE5LjkyNTUgMjQuODI2OCAyMC4zNTUzIDI0LjkyMjJDIDIwLjM3ODUgMjUuMDAwNiAyMS4xNzk4IDI1LjIxODggMjEuNDg5NiAyNS41MzkyQzIxLjc5OTQgMjUuODU5NiAyMi4wMTA0IDI2LjI2NzggMjIuMDk1OSAyNi43MTIyQzIyLjE4MTQgMjcuMTU2NSAyMi4xMzc1IDI3LjYxNzIgMjEuOTY5OCAyOC4wMzU4QzIxLjgwMjEgMjguNDU0NCAyMS41MTgyIDI4LjgxMjIgMjEuMTUzOSAyOS4wNjM5QzIwLjc4OTYgMjkuMzE1NiAyMC4zNjEyIDI5LjQ1IDE5LjkyMzEgMjkuNDVDMTkuMzM1NSAyOS40NSAxOC43NzIgMjkuMjA4NiAxOC4zNTY2IDI4LjY1OTRDMTcuOTQxMSAyOC4zNDk0IDE3.NzA3NyAyNy43NjY3IDE3.NzA3NyAyNy4xNTkxWiIgZmlsbD0iI0I1QjVCNSIvPgo8L3N2Zz4K";
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA1MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTM1LjYxNTQgMjBIMTQuMzg0NkMxNC4wMTc0IDIwIDEzLjY2NTIgMjAuMTUwOSAxMy40MDU2IDIwLjQxOTRDMTMuMTQ1OSAyMC42ODc5IDEzIDIxLjA1MjEgMTMgMjEuNDMxOFYzOS41NjgyQzEzIDM5Ljk0NzkgMTMuMTQ1OSA0MC4zMTIxIDEzLjQwNTYgNDAuNTgwNkMxMy42NjUyIDQwLjg0OTEgMTQuMDE3NCA0MSAxNC4zODQ2IDQxSDM1LjYxNTRDMzUuOTgyNiA0MSAzNi4zMzQ4IDQwLjg0OTEgMzYuNTk0NCA0MC41ODA2QzM2Ljg1NDEgNDAuMzEyMSAzNyAzOS45NDc5IDM3IDM5LjU2ODJWMjEuNDMxOEMzNyAyMS4wNTIxIDM2Ljg1NDEgMjAuNjg3OSAzNi41OTQ0IDIwLjQxOTRDMzYuMzM0OCAyMC4xNTA5IDM1Ljk4MjYgMjAgMzUuNjE1NCAyMFpNMzQuMjMwOCAzMi44ODY0TDI5LjgwNTMgMjcuODk0QzI5LjcyMTYgMjcuNzk4MyAyOS42MTk4IDI3LjcyMTIgMjkuNTA2MiAyNy42Njc2QzI5LjM5MjcgMjcuNjEzOSAyOS4yNjk4IDI3LjU4NDggMjkuMTQ1IDI3LjU4MkMyOS4wMjAyIDI3LjU3OTIgMjguODk2MSAyNy42MDI4IDI4Ljc4MDQgMjcuNjUxM0MyOC42NjQ3IDI3LjY5OTggMjguNTU5OCAyNy43NzIyIDI4LjQ3MjEgMjcuODY0MUwyMy41MzYxIDMyLjk2ODRMMjguNTMzNiAzOC4xMzY0SDI1LjkyMzFMMjEuNDk4OSAzMy41NjEyQzIxLjMyNTcgMzMuMzgyMyAyMS4wOTA5IDMzLjI4MTggMjAuODQ2MiAzMy4yODE4QzIwLjYwMTQgMzMuMjgxOCAyMC4zNjY2IDMzLjM4MjMgMjAuMTkzNSAzMy41NjEyTDE1Ljc2OTIgMzguMTM2NFYyMi44NjM2SDM0LjIzMDhWMzIuODg2NFpNMTcuNzA3NyAyNy4xNTkxQzE3LjcwNzcgMjYuNzA2IDE3LjgzNzYgMjYuMjYzMSAxOC4wODExIDI1Ljg4NjNDMTguMzI0NSAyNS41MDk2IDE4LjY3MDUgMjUuMjE2IDE5LjA3NTMgMjUuMDQyNkMxOS40ODAxIDI0Ljg2OTIgMTkuOTI1NSAyNC44MjM4IDIwLjM1NTMgMjQuOTEyMkMyMC43ODUgMjUuMDAwNiAyMS4xNzk4IDI1LjIxODggMjEuNDg5NiAyNS41MzkyQzIxLjc5OTQgMjUuODU5NiAyMi4wMTA0IDI2LjI2NzggMjIuMDk1OSAyNi43MTIyQzIyLjE4MTQgMjcuMTU2NSAyMi4xMzc1IDI3LjYxNzIgMjEuOTY5OCAyOC4wMzU4QzIxLjgwMjEgMjguNDU0NCAyMS41MTgyIDI4LjgxMjIgMjEuMTUzOSAyOS4wNjM5QzIwLjc4OTYgMjkuMzE1NiAyMC4zNjEyIDI5LjQ1IDE5LjkyMzEgMjkuNDVDMTkuMzM1NSAyOS40NSAxOC43NzIgMjkuMjA4NiAxOC4zNTY2IDI4Ljc3OUMxNy45NDExIDI4LjM0OTQgMTcuNzA3NyAyNy43NjY3IDE3LjcwNzcgMjcuMTU5MVoiIGZpbGw9IiNCNUI1QjUiLz4KPC9zdmc+Cg==";
 
 type ImageWithFallbackProps = ImageProps & {
   src: string;
@@ -21,7 +21,7 @@ type ImageWithFallbackProps = ImageProps & {
  * @param options Options for the IntersectionObserver.
  * @returns A boolean indicating whether the element has intersected.
  */
-function useIntersectionObserverOnceOptimized(
+function useIntersectionObserverOnce(
   elementRef: React.RefObject<Element | null>,
   options?: IntersectionObserverInit,
 ): boolean {
@@ -30,42 +30,32 @@ function useIntersectionObserverOnceOptimized(
 
   useEffect(() => {
     const element = elementRef.current;
-    if (!element) return;
-
-    // If it has already intersected, no need to set up an observer.
-    // Also disconnect any existing observer if hasIntersected is true.
-    if (hasIntersected) {
+    if (!element || hasIntersected) {
+      // If no element or already intersected, no need to observe.
       observerRef.current?.disconnect();
-      observerRef.current = null;
       return;
     }
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      const entry = entries[0]; // Get the first entry
-
+      const entry = entries[0];
       if (entry?.isIntersecting) {
         setHasIntersected(true);
-        // Disconnect immediately after intersection
-        observerRef.current?.disconnect();
-        observerRef.current = null;
+        observerRef.current?.disconnect(); // Disconnect once intersected
       }
     };
 
-    // Create a new IntersectionObserver instance and store it in the ref
     observerRef.current = new IntersectionObserver(observerCallback, options);
     observerRef.current.observe(element);
 
     return () => {
-      // Clean up the observer when the component unmounts or dependencies change
       observerRef.current?.disconnect();
-      observerRef.current = null;
     };
-  }, [elementRef, options, hasIntersected]); // hasIntersected in dependencies ensures effect re-runs when it becomes true
+  }, [elementRef, options, hasIntersected]);
 
   return hasIntersected;
 }
 
-const ImageComponent = ({
+const ImageWithFallback = ({
   src,
   alt,
   className,
@@ -73,48 +63,45 @@ const ImageComponent = ({
   ...props
 }: ImageWithFallbackProps) => {
   const [loaded, setLoaded] = useState(false);
-  // Reverted to useState for imageSrc. This is necessary for React to re-render the <Image>
-  // component when the src changes from null to the actual image URL.
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [currentImageSrc, setCurrentImageSrc] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const shouldLoadImage = useIntersectionObserverOnceOptimized(containerRef, {
+  // Determine if the image should load based on intersection
+  const shouldLoadImage = useIntersectionObserverOnce(containerRef, {
     root: null,
-    rootMargin: "0px", // Load when 0px away from viewport
-    threshold: 0, // Trigger when any part of the target is visible
+    rootMargin: "0px",
+    threshold: 0,
   });
 
-  // Effect to set the imageSrc state when the component comes into view.
-  // This will trigger a re-render and cause the <Image> component to load.
+  // Set the actual image source when it comes into view
   useEffect(() => {
-    if (shouldLoadImage && imageSrc === null) {
-      // Only set if in view AND not already set
-      setImageSrc(src);
+    if (shouldLoadImage && currentImageSrc === null) {
+      setCurrentImageSrc(src);
     }
-  }, [shouldLoadImage, src, imageSrc]); // imageSrc dependency is crucial to avoid infinite loop
+  }, [shouldLoadImage, src, currentImageSrc]);
 
+  // Handler for successful image load
   const handleLoad = useCallback(() => {
     setLoaded(true);
   }, []);
 
+  // Handler for image load errors
   const handleError = useCallback(() => {
-    // Only set fallback if the current imageSrc is not already the fallback
-    if (imageSrc !== fallbackImage) {
-      setImageSrc(fallbackImage);
-      setLoaded(true); // Treat fallback load as "loaded" for skeleton removal
+    if (currentImageSrc !== fallbackImage) {
+      setCurrentImageSrc(fallbackImage);
+      setLoaded(true); // Treat fallback image as loaded to hide skeleton
     }
-  }, [imageSrc, fallbackImage]); // Dependency on imageSrc ensures correct check
+  }, [currentImageSrc, fallbackImage]);
 
-  // Memoize the Image component rendering to prevent re-renders if props haven't changed.
+  // Memoize the Image component rendering for performance
   const renderImage = useCallback(() => {
-    // Only render the Image component if it should load and its src is available
-    if (!shouldLoadImage || imageSrc === null) {
-      return null;
+    if (!shouldLoadImage || currentImageSrc === null) {
+      return null; // Don't render Image component until it's in view and src is set
     }
 
     return (
       <Image
-        src={imageSrc} // Use the state variable here
+        src={currentImageSrc}
         alt={alt}
         className={cn(
           "absolute inset-0 h-full w-full rounded-md object-cover transition-opacity duration-300",
@@ -123,8 +110,9 @@ const ImageComponent = ({
             "opacity-0": !loaded,
           },
         )}
+        // Set fetchPriority to "high" when the image is in view, otherwise default or auto
         fetchPriority={
-          props.fetchPriority ?? (shouldLoadImage ? "high" : "auto") ?? "auto"
+          shouldLoadImage ? (props.fetchPriority ?? "high") : "auto"
         }
         unoptimized={props.unoptimized ?? false}
         onLoad={handleLoad}
@@ -132,14 +120,22 @@ const ImageComponent = ({
         {...props}
       />
     );
-  }, [shouldLoadImage, imageSrc, loaded, alt, handleLoad, handleError, props]);
+  }, [
+    shouldLoadImage,
+    currentImageSrc,
+    loaded,
+    alt,
+    handleLoad,
+    handleError,
+    props,
+  ]);
 
   return (
     <div
       ref={containerRef}
-      className={cn("relative overflow-hidden", className)}
+      className={cn("bg-secondary relative overflow-hidden", className)}
     >
-      {/* Skeleton is always present but its opacity is controlled */}
+      {/* Skeleton always present, its opacity toggled based on `loaded` state */}
       <Skeleton
         className={cn(
           "absolute inset-0 animate-none transition-opacity duration-300",
@@ -156,4 +152,4 @@ const ImageComponent = ({
   );
 };
 
-export default memo(ImageComponent);
+export default memo(ImageWithFallback);
