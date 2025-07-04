@@ -67,7 +67,7 @@ export default function MediaVideos({
                   </div>
                 </DialogTrigger>
                 <DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-                  <DialogContent className="aspect-video w-full max-w-5xl rounded-md border-0 bg-transparent p-0 ring-0">
+                  <DialogContent className="aspect-video w-full rounded-md border-0 bg-transparent p-0 ring-0">
                     <DialogHeader className="sr-only">
                       <DialogTitle>{video.name}</DialogTitle>
                     </DialogHeader>

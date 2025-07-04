@@ -79,7 +79,7 @@ export default async function CollectionsPage({
             width={200}
             height={300}
             src={IMAGE_PREFIX.HD_POSTER + poster_path}
-            className="h-[280px] w-[200px] shrink-0 rounded-xl object-cover sm:h-52 sm:w-36"
+            className="h-[280px] w-[200px] shrink-0 rounded-md object-cover sm:h-52 sm:w-36"
             alt={name}
           />
         </div>
@@ -94,7 +94,10 @@ export default async function CollectionsPage({
                 variant="secondary"
                 className="inline-flex items-center gap-1 rounded-md px-3 text-sm font-light"
               >
-                <Star size={16} className="size-3 fill-current" />
+                <Star
+                  size={16}
+                  className="size-3 fill-current text-yellow-400"
+                />
                 {user_rating} %
               </Badge>
             )}
