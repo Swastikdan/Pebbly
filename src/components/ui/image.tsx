@@ -114,7 +114,7 @@ const ImageWithFallback = ({
         fetchPriority={
           shouldLoadImage ? (props.fetchPriority ?? "high") : "auto"
         }
-        unoptimized={props.unoptimized ?? false}
+        unoptimized={true}
         onLoad={handleLoad}
         onError={handleError}
         {...props}
