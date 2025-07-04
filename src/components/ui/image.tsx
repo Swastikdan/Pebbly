@@ -35,23 +35,19 @@ function useIntersectionObserverOnceOptimized(
     // If it has already intersected, no need to set up an observer.
     // Also disconnect any existing observer if hasIntersected is true.
     if (hasIntersected) {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
+      observerRef.current?.disconnect();
+      observerRef.current = null;
       return;
     }
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       const entry = entries[0]; // Get the first entry
 
-      if (entry && entry.isIntersecting) {
+      if (entry?.isIntersecting) {
         setHasIntersected(true);
         // Disconnect immediately after intersection
-        if (observerRef.current) {
-          observerRef.current.disconnect();
-          observerRef.current = null;
-        }
+        observerRef.current?.disconnect();
+        observerRef.current = null;
       }
     };
 
@@ -61,10 +57,8 @@ function useIntersectionObserverOnceOptimized(
 
     return () => {
       // Clean up the observer when the component unmounts or dependencies change
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
+      observerRef.current?.disconnect();
+      observerRef.current = null;
     };
   }, [elementRef, options, hasIntersected]); // hasIntersected in dependencies ensures effect re-runs when it becomes true
 
@@ -130,24 +124,15 @@ const ImageComponent = ({
           },
         )}
         fetchPriority={
-          props.fetchPriority || (shouldLoadImage ? "high" : "auto") || "auto"
+          props.fetchPriority ?? (shouldLoadImage ? "high" : "auto") ?? "auto"
         }
-        unoptimized={props.unoptimized || false}
+        unoptimized={props.unoptimized ?? false}
         onLoad={handleLoad}
         onError={handleError}
         {...props}
       />
     );
-  }, [
-    shouldLoadImage,
-    imageSrc,
-    loaded,
-    alt,
-    className,
-    handleLoad,
-    handleError,
-    props,
-  ]);
+  }, [shouldLoadImage, imageSrc, loaded, alt, handleLoad, handleError, props]);
 
   return (
     <div
