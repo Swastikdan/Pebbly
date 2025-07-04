@@ -54,7 +54,7 @@ export default function Collections({ id }: { id: number }) {
                 aria-label={`View collection: ${data?.name}`}
               >
                 <Button
-                  variant="link"
+                  variant="outline"
                   size="lg"
                   className="bg-primary-foreground dark:bg-primary text-primary dark:text-primary-foreground hover:bg-primary-foreground/90 dark:hover:bg-primary/90 mt-3 rounded-md font-medium shadow"
                 >
