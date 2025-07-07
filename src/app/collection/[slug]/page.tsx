@@ -96,7 +96,7 @@ export default async function CollectionsPage({
               >
                 <Star
                   size={16}
-                  className="size-3 fill-current text-yellow-400"
+                  className="size-3 fill-current"
                 />
                 {user_rating} %
               </Badge>
