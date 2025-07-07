@@ -77,7 +77,6 @@ export default function RootLayout({
           content="uHvrTYV7MI9jil_qDblV-QDi9qjXlpdb_8XJUtCLGLQ"
         />
       </head>
-      {/* <Scroll /> */}
       <body className="min-h-screen font-sans leading-relaxed antialiased">
         <Providers>
           <Navbar />
