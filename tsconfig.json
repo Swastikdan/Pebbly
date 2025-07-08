@@ -36,7 +36,8 @@
     "**/*.tsx",
     "**/*.cjs",
     "**/*.js",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "src/app/.well-known/appspecific/com.chrome.devtools.json/route.ts"
   ],
   "exclude": ["node_modules"]
 }

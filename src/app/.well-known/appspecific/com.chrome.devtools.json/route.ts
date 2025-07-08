@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-
+import { env } from "@/env";
 export function GET() {
+  //   if (env.NODE_ENV === "production") {
+  //     return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  //   }
   const response = {
     workspace: {
       root: process.cwd(),
