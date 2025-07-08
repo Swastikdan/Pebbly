@@ -26,7 +26,7 @@ export default function MediaPosterTrailerContainer({
         alt={title}
         width={300}
         height={450}
-        className="bg-accent aspect-[11/16] h-full w-full rounded-md object-center sm:h-56 sm:w-auto md:h-70 lg:h-80"
+        className="bg-accent h-full w-full rounded-md object-center sm:h-56 sm:w-auto md:h-70 lg:h-80"
       />
 
       {trailervideos.length > 0 ? (
@@ -81,7 +81,7 @@ export default function MediaPosterTrailerContainer({
           </div>
         </ScrollContainer>
       ) : (
-        <div className="bg-accent/50 hidden aspect-video h-0 w-full items-center justify-center rounded-md object-cover text-center sm:h-56 md:flex md:h-70 lg:h-80">
+        <div className="bg-accent/50 relative hidden h-0 w-full items-center justify-center rounded-md object-cover text-center sm:h-56 md:flex md:h-70 lg:h-80">
           <span className="text-muted-foreground text-lg font-medium">
             No Trailer Available
           </span>

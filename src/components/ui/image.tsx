@@ -39,7 +39,7 @@ function ImageWithFallback(props: ImageWithFallbackProps) {
       alt={props.alt}
       className={cn(
         loading ? "blur-[2px]" : "blur-0",
-        "bg-secondary animate-in fade-in-0 relative h-full w-full overflow-hidden",
+        "bg-secondary relative h-full w-full overflow-hidden",
         props.className,
       )}
       decoding="async"
