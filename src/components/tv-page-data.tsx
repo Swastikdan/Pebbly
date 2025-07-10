@@ -69,10 +69,7 @@ export default function TvData({
 
   const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
   const tvtitle = name ?? original_name;
-  const tvimage =
-    poster_path && poster_path !== "" && poster_path !== null
-      ? `${IMAGE_PREFIX.HD_POSTER}${poster_path}`
-      : `https://placehold.co/300x450?text=Image+Not+Found`;
+  const tvimage = `${IMAGE_PREFIX.HD_POSTER}${poster_path}`;
   const tvreleaseyear = release_date
     ? new Date(release_date).getFullYear()
     : null;

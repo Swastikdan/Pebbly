@@ -69,10 +69,7 @@ export default function MoviePagedata({
 
   const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
   const movietitle = title ?? original_title;
-  const movieimage =
-    poster_path && poster_path !== "" && poster_path !== null
-      ? `${IMAGE_PREFIX.HD_POSTER}${poster_path}`
-      : `https://placehold.co/300x450?text=Image+Not+Found`;
+  const movieimage = `${IMAGE_PREFIX.HD_POSTER}${poster_path}`;
   const moviereleaseyear = release_date
     ? new Date(release_date).getFullYear()
     : null;
