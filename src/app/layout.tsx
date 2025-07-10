@@ -4,7 +4,7 @@ import Navbar from "@/components/navbar";
 import Providers from "@/components/providers";
 import "@/styles/globals.css";
 
-import { Libre_Franklin } from "next/font/google";
+import { Karla, Libre_Franklin } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Film Fanatic",

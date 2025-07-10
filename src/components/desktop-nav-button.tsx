@@ -20,7 +20,6 @@ function DesktopNavButton({
 }) {
   const pathname = usePathname();
   const isActive = pathname === href;
-
   return (
     <Link href={href} aria-label={label} className="cursor-pointer">
       <Button

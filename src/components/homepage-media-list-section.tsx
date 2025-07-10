@@ -10,6 +10,7 @@ function TrendingDayMovies() {
     queryFn: async () => await getMedia({ type: "trending_day" }),
     staleTime: 1000 * 60 * 60,
   });
+  console.log(data);
   return (
     <ScrollContainer
       isButtonsVisible={!isFetching}
