@@ -18,6 +18,7 @@ interface WatchListButtonProps {
   id: number;
   media_type: "movie" | "tv";
   relese_date: string | null;
+  is_on_homepage?: boolean;
   is_on_watchlist_page?: boolean;
   className?: string;
 }
@@ -29,6 +30,7 @@ export default function WatchListButton({
   id,
   media_type,
   relese_date,
+  is_on_homepage = false,
   is_on_watchlist_page = false,
   className,
 }: WatchListButtonProps) {
@@ -62,7 +64,10 @@ export default function WatchListButton({
             variant="default"
             className={cn(
               className,
-              "bg-primary-foreground dark:bg-primary text-secondary-foreground dark:text-primary-foreground z-20 cursor-pointer p-2 [&>svg]:size-4",
+              "z-20 cursor-pointer p-2 [&>svg]:size-4",
+              is_on_homepage
+                ? ""
+                : "bg-primary-foreground dark:bg-primary text-secondary-foreground dark:text-primary-foreground",
             )}
             aria-label={
               is_on_watchlist_page || isOnWatchList

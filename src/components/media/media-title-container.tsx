@@ -50,6 +50,7 @@ export default function MediaTitleContailer({
               image={poster_path}
               id={id}
               media_type={media_type}
+              is_on_homepage={true}
               relese_date={relese_date}
             />
             <ShareButton title={title} />
@@ -72,7 +73,7 @@ export default function MediaTitleContailer({
         {tagline && <h2 className="hidden sm:flex">{tagline}</h2>}
       </div>
       <div className="flex flex-col items-start justify-start space-y-3 sm:flex-row sm:items-center sm:justify-between">
-        <span className="space-x-1 font-light whitespace-nowrap sm:text-lg">
+        <span className="space-x-1 font-light whitespace-nowrap">
           <span className="py-1">{releaseyear}</span>
 
           <span className="py-1">•</span>
