@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
     reactCompiler: true,
     optimizeCss: true,
     scrollRestoration: true,
+    dynamicOnHover: true,
+    optimisticClientCache: true,
   },
 
   compress: true,

@@ -3,7 +3,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-
+import { type Route } from "next";
 export default function GoBack({
   title,
   link,
@@ -12,9 +12,10 @@ export default function GoBack({
   link?: string;
 }) {
   const router = useRouter();
+
   function goBack() {
     if (link) {
-      router.push(link);
+      router.push({ pathname: link } as unknown as Route);
     } else {
       router.back();
     }

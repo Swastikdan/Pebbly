@@ -101,9 +101,7 @@ export default function ExportAndAddWatchlist() {
 
           // Update the Zustand store with the new watchlist
           setWatchlist(validatedList);
-          console.log("Imported Watchlist:", validatedList);
         } catch (error) {
-          console.error("Error importing watchlist:", error);
           alert(`Invalid watchlist file format: ${(error as Error).message}`);
         } finally {
           setImportLoading(false);
