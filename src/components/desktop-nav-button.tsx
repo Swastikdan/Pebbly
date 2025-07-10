@@ -47,7 +47,7 @@ export default function DesktopNavButtons() {
         href="/watchlist"
         label="Watchlist"
         icon={Bookmark}
-        className="hidden items-center justify-center md:flex"
+        className="hidden md:block"
       />
       <DesktopNavButton href="/search" label="Search" icon={Search} />
       <ThemeToggle />
