@@ -4,8 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 @theme {
   --font-sans:
-    var(--font-libre-franklin), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 @theme inline {
@@ -140,6 +140,10 @@ body {
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
 }
+.scrollbar-hidden::-moz-scrollbar {
+  display: none;
+}
+
 .loader {
   width: 3.25em;
   transform-origin: center;

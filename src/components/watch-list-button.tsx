@@ -50,7 +50,7 @@ export default function WatchListButton({
         media_type,
         release_date: relese_date ?? "",
       }).catch((error) => {
-        console.error(error);
+        alert("Error adding to watchlist" + error);
       });
     },
     [title, rating, image, itemId, media_type, relese_date, toggle],

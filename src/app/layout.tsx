@@ -4,7 +4,7 @@ import Navbar from "@/components/navbar";
 import Providers from "@/components/providers";
 import "@/styles/globals.css";
 
-import { Karla, Libre_Franklin } from "next/font/google";
+// import { Karla, Libre_Franklin } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Film Fanatic",
@@ -60,21 +60,17 @@ export const metadata: Metadata = {
   },
 };
 
-const libreFranklin = Libre_Franklin({
-  subsets: ["latin"],
-  variable: "--font-libre-franklin",
-  preload: true,
-});
+// const libreFranklin = Libre_Franklin({
+//   subsets: ["latin"],
+//   variable: "--font-libre-franklin",
+//   preload: true,
+// });
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={libreFranklin.className}
-    >
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta
           name="google-site-verification"

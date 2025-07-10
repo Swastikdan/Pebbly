@@ -11,15 +11,13 @@ import { LOCAL_GUEST_USER_ID } from "@/constants";
 export default function ExportAndAddWatchlist() {
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  // Use the Zustand-based hook that provides live query data.
   const { watchlist, loading } = useWatchlist();
-  const setWatchlist = useWatchlistStore((state) => state.setWatchlist); // Get the setWatchlist action
+  const setWatchlist = useWatchlistStore((state) => state.setWatchlist);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const exportWatchlist = useCallback(async () => {
     try {
       setExportLoading(true);
-      // Export the watchlist as a plain JSON array.
       const json = JSON.stringify(watchlist ?? [], null, 2);
       const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -31,8 +29,7 @@ export default function ExportAndAddWatchlist() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error exporting watchlist:", error);
-      alert("Failed to export watchlist."); // User-friendly error
+      alert("Failed to export watchlist.");
     } finally {
       setExportLoading(false);
     }
@@ -78,7 +75,6 @@ export default function ExportAndAddWatchlist() {
           const validatedList: WatchlistItem[] = importedData
             .map((item) => {
               if (!isValidImportedWatchlistItem(item)) {
-                console.warn("Skipping invalid item during import:", item);
                 return null;
               }
               return {
@@ -101,9 +97,7 @@ export default function ExportAndAddWatchlist() {
 
           // Update the Zustand store with the new watchlist
           setWatchlist(validatedList);
-          console.log("Imported Watchlist:", validatedList);
         } catch (error) {
-          console.error("Error importing watchlist:", error);
           alert(`Invalid watchlist file format: ${(error as Error).message}`);
         } finally {
           setImportLoading(false);
@@ -115,7 +109,6 @@ export default function ExportAndAddWatchlist() {
       };
 
       reader.onerror = () => {
-        console.error("Error reading file");
         alert("Error reading file.");
         setImportLoading(false);
       };
@@ -128,7 +121,6 @@ export default function ExportAndAddWatchlist() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        {/* Adjusted loader for better visibility when loading */}
         <Loader2 className="text-primary animate-spin" size={24} />
         <span className="sr-only">Loading watchlist...</span>
       </div>

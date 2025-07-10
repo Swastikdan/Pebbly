@@ -23,8 +23,7 @@ export default function ShareButton({ title }: { title?: string }) {
         alert("Link copied to clipboard");
       }
     } catch (error) {
-      console.error("Error sharing:", error);
-      // Optional: Show user-friendly error message
+      alert("Error sharing");
     }
   }
 

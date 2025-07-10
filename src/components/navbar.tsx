@@ -5,6 +5,7 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
@@ -124,6 +125,7 @@ export default function Navbar() {
               className="border-none px-2 duration-0"
               aria-label="Mobile Navigation"
             >
+              <SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
               <div className="scrollbar-small flex h-full flex-col gap-6 overflow-y-auto py-12 pt-20">
                 {NAV_ITEMS.map((item) => (
                   <MobileNavMenuItem key={item.slug} item={item} />

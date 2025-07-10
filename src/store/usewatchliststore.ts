@@ -37,17 +37,21 @@ export const useWatchlistStore = create<WatchlistState>()(
         const existingIndex = currentWatchlist.findIndex(
           (wlItem) =>
             wlItem.user_id === LOCAL_GUEST_USER_ID &&
-            wlItem.external_id === item.id
+            wlItem.external_id === item.id,
         );
 
         if (existingIndex !== -1) {
           const updatedWatchlist = currentWatchlist.filter(
-            (_, index) => index !== existingIndex
+            (_, index) => index !== existingIndex,
           );
           set({ watchlist: updatedWatchlist });
         } else {
           const newItem: WatchlistItem = {
-            watchlist_id: crypto.randomUUID(),
+            watchlist_id:
+              typeof crypto !== "undefined" && crypto.randomUUID
+                ? crypto.randomUUID()
+                : Math.random().toString(36).substring(2) +
+                  Date.now().toString(36),
             user_id: LOCAL_GUEST_USER_ID,
             title: item.title,
             type: item.media_type,
@@ -58,7 +62,7 @@ export const useWatchlistStore = create<WatchlistState>()(
             updated_at: Date.now(),
           };
           const updatedWatchlist = [newItem, ...currentWatchlist].sort(
-            (a, b) => b.updated_at - a.updated_at
+            (a, b) => b.updated_at - a.updated_at,
           );
           set({ watchlist: updatedWatchlist });
         }
@@ -72,6 +76,6 @@ export const useWatchlistStore = create<WatchlistState>()(
     {
       name: "watchlist-storage",
       storage: createJSONStorage(() => localStorage),
-    }
-  )
+    },
+  ),
 );
