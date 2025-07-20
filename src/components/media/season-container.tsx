@@ -35,6 +35,8 @@ export default function SeasonContainer({
     queryKey: ["tv_details", tv_id_param],
     queryFn: async () => await getTvDetails({ id: tv_id_param }),
     staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading) {

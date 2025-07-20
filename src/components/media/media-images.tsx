@@ -26,6 +26,8 @@ export default function MediaImages({
     queryKey: ["media_images", id, media_type],
     queryFn: async () => getImages({ id, type: media_type }),
     staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   return (

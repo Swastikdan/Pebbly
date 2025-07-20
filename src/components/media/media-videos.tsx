@@ -25,6 +25,8 @@ export default function MediaVideos({
     queryKey: ["media_videos", id, media_type],
     queryFn: async () => getVideos({ id, type: media_type }),
     staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   return (

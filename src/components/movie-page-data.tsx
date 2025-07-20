@@ -27,6 +27,8 @@ export default function MoviePagedata({
     queryKey: ["movie_details", movie_id_param],
     queryFn: cache(async () => await getMovieDetails({ id: movie_id_param })),
     staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading) {

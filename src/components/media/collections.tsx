@@ -10,6 +10,9 @@ export default function Collections({ id }: { id: number }) {
   const { data, isLoading } = useQuery({
     queryKey: ["collection", id],
     queryFn: async () => await getCollection({ id }),
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   if (!isLoading) {

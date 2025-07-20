@@ -1,5 +1,11 @@
+import { type Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+export const metadata: Metadata = {
+  title: "Disclaimer | Film Fanatic",
+  description:
+    "Disclaimer and terms of use for Film Fanatic, a personal project showcasing movie and TV information.",
+};
 
 export default function DisclaimerPage() {
   return (

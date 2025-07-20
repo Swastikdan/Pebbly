@@ -22,6 +22,8 @@ export default function Recomendations({
     queryKey: ["recomendations", media_id],
     queryFn: async () => await getMovieRecommendations({ id: media_id }),
     staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
     enabled: media_type === "movie",
   });
   const {
@@ -32,6 +34,8 @@ export default function Recomendations({
     queryKey: ["recomendations", media_id],
     queryFn: async () => await getTvSeriesRecommendations({ id: media_id }),
     staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
     enabled: media_type === "tv",
   });
 

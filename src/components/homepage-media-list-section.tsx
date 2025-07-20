@@ -9,6 +9,9 @@ function TrendingDayMovies() {
     queryKey: ["trending_day"],
     queryFn: async () => await getMedia({ type: "trending_day" }),
     staleTime: 1000 * 60 * 60,
+
+    gcTime: 1000 * 60 * 60,
+    refetchOnWindowFocus: false,
   });
   return (
     <ScrollContainer
@@ -43,7 +46,9 @@ function TrendingWeekMovies() {
   const { data, isFetching, error } = useQuery({
     queryKey: ["trending_week"],
     queryFn: async () => await getMedia({ type: "trending_week" }),
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   return (
@@ -78,7 +83,9 @@ function UpcomingMovies() {
   const { data, isFetching, error } = useQuery({
     queryKey: ["movies_upcoming"],
     queryFn: async () => await getMedia({ type: "movies_upcoming" }),
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   return (
@@ -114,7 +121,9 @@ function PopularMovies() {
   const { data, isFetching, error } = useQuery({
     queryKey: ["movies_popular"],
     queryFn: async () => await getMedia({ type: "movies_popular" }),
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   return (
@@ -145,7 +154,9 @@ function PopularTv() {
   const { data, isFetching, error } = useQuery({
     queryKey: ["tv-shows_popular"],
     queryFn: async () => await getMedia({ type: "tv-shows_popular" }),
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   return (
@@ -180,7 +191,9 @@ function TopRatedMovies() {
   const { data, isFetching, error } = useQuery({
     queryKey: ["movies_top-rated"],
     queryFn: async () => await getMedia({ type: "movies_top-rated" }),
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   return (
@@ -215,7 +228,9 @@ function TopRatedTv() {
   const { data, isFetching, error } = useQuery({
     queryKey: ["tv-shows_top-rated"],
     queryFn: async () => await getMedia({ type: "tv-shows_top-rated" }),
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
 
   return (

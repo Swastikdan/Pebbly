@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function Searchbar() {
   const [search, setSearch] = useState("");
@@ -84,12 +83,32 @@ export function Searchbar() {
 export function SearchBarSkeleton() {
   return (
     <div className="flex w-full p-3">
-      <div className="relative w-full font-sans text-lg font-medium">
-        <Skeleton
-          className="h-12 w-full rounded-md sm:h-11"
-          aria-hidden="true"
+      <div className="relative w-full text-lg font-medium">
+        <Label htmlFor="search" className="sr-only">
+          Search
+        </Label>
+        <Input
+          id="search"
+          type="text"
+          name="query"
+          autoComplete="false"
+          placeholder="👀 What movie, show? Let's find it!"
+          readOnly
+          disabled
+          className="peer bg-background enabled:bg-background block h-12 w-full rounded-md ps-12 pr-8 placeholder:text-sm sm:h-11 placeholder:md:text-base"
+          aria-label="Search Input"
         />
+        <div className="pointer-events-none absolute inset-y-0 start-2 flex items-center ps-2 peer-disabled:pointer-events-none peer-disabled:opacity-50">
+          <Search aria-hidden="true" size={20} />
+        </div>
       </div>
+      <Button
+        size="lg"
+        className="font-heading ml-2 hidden h-11 rounded-md text-base sm:block"
+        aria-label="Submit Search"
+      >
+        Search
+      </Button>
     </div>
   );
 }

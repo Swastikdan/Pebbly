@@ -17,7 +17,9 @@ export default function MediaCreditSeaction({
   const { data, isFetching, error } = useQuery({
     queryKey: ["media-credits", id, type],
     queryFn: async () => getCredits({ id, type }),
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnWindowFocus: false,
   });
   if (isFetching) {
     return <Spinner />;
