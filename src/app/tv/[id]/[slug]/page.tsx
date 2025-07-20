@@ -3,16 +3,18 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { isValidId } from "@/lib/utils";
 import TvPageData from "@/components/tv-page-data";
+import { env } from "@/env";
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string; slug: string }>;
 }): Promise<Metadata> {
-  if (!isValidId(Number((await params).id))) {
+  const { id, slug } = await params;
+  if (!isValidId(Number(id))) {
     notFound();
   }
-  const title = decodeURIComponent((await params).slug)
+  const title = decodeURIComponent(slug)
     .replace(/-/g, " ")
     .replace(/\b\w/g, (l) => l.toUpperCase());
 
@@ -23,6 +25,13 @@ export async function generateMetadata({
       type: "website",
       title: ` ${title} | Film Fanatic`,
       description: `Explore detailed information about this show, including cast, crew, reviews, and more  about ${title}.`,
+      images: [
+        {
+          url: `${env.NEXT_PUBLIC_APP_URL}/api/metaimage?id=${id}&type=movie`,
+          width: 300,
+          height: 450,
+        },
+      ],
     },
   };
 }

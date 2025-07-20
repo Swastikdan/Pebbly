@@ -74,7 +74,7 @@ export async function getMediaList({
 }
 export async function getSearchResult(
   query: string,
-  page: number
+  page: number,
 ): Promise<Types.SearchResults> {
   const pagenumber: number = page ?? 1;
   const url = `/search/multi?language=en-US&query=${query}&page=${pagenumber}`;
@@ -101,7 +101,7 @@ export async function getBasicMovieDetails({
 }): Promise<Types.BasicMovie> {
   validateId(id);
   const url = `/movie/${id}?include_adult=true`;
-  const response = await Tmdb<Types.BasicMovie>(url);
+  const response = await Tmdb<Types.BasicMovie>(url, 1000 * 60 * 60 * 48);
   const validatedResponse = validateResponse(response);
   return validatedResponse;
 }
@@ -164,7 +164,7 @@ export async function getBasicTvDetails({
 }): Promise<Types.BasicTv> {
   validateId(id);
   const url = `/tv/${id}?&include_adult=true`;
-  const response = await Tmdb<Types.BasicTv>(url);
+  const response = await Tmdb<Types.BasicTv>(url, 1000 * 60 * 60 * 48);
 
   const validatedResponse = validateResponse(response);
   return validatedResponse;

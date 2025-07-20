@@ -12,6 +12,7 @@ interface FetchTmdbDataResult<T> {
 
 export const Tmdb = cache(async function UncachedTmdb<T>(
   url: string,
+  customCacheTime?: number,
 ): Promise<FetchTmdbDataResult<T>> {
   const fetchUrl = `${baseUrl}${url}`;
 
@@ -21,6 +22,11 @@ export const Tmdb = cache(async function UncachedTmdb<T>(
       accept: "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
+    next: {
+      revalidate: customCacheTime ?? 0,
+      tags: ["tmdb", url],
+    },
+
     cache: "force-cache",
   };
 
