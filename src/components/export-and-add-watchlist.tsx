@@ -6,7 +6,6 @@ import type { WatchlistItem } from "@/store/usewatchliststore";
 import { Button } from "@/components/ui/button";
 import { Loader2, FileDown, FileUp } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { LOCAL_GUEST_USER_ID } from "@/constants";
 
 export default function ExportAndAddWatchlist() {
   const [importLoading, setImportLoading] = useState(false);
@@ -28,7 +27,7 @@ export default function ExportAndAddWatchlist() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch {
       alert("Failed to export watchlist.");
     } finally {
       setExportLoading(false);
@@ -38,8 +37,7 @@ export default function ExportAndAddWatchlist() {
   // Type guard to check if an object is a valid WatchlistItem (for import)
   function isValidImportedWatchlistItem(
     item: unknown,
-  ): item is Omit<WatchlistItem, "watchlist_id" | "user_id" | "updated_at"> &
-    Partial<Pick<WatchlistItem, "watchlist_id">> {
+  ): item is Omit<WatchlistItem, "updated_at"> & Partial<WatchlistItem> {
     if (typeof item !== "object" || item === null) return false;
     const obj = item as Record<string, unknown>;
     return (
@@ -78,12 +76,6 @@ export default function ExportAndAddWatchlist() {
                 return null;
               }
               return {
-                watchlist_id:
-                  "watchlist_id" in item &&
-                  typeof item.watchlist_id === "string"
-                    ? (item.watchlist_id ?? crypto.randomUUID())
-                    : crypto.randomUUID(),
-                user_id: LOCAL_GUEST_USER_ID,
                 title: item.title,
                 type: item.type,
                 external_id: item.external_id,

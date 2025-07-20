@@ -29,7 +29,7 @@ export default function MediaPosterTrailerContainer({
         className="bg-accent h-full w-full rounded-md object-center sm:h-56 sm:w-auto md:h-70 lg:h-80"
       />
 
-      {trailervideos.length > 0 ? (
+      {trailervideos.length > 0 && (
         <ScrollContainer className="h-full flex-1">
           <div className="flex h-full gap-3">
             {trailervideos.map((video, index) => (
@@ -80,12 +80,6 @@ export default function MediaPosterTrailerContainer({
             ))}
           </div>
         </ScrollContainer>
-      ) : (
-        <div className="bg-accent/50 relative hidden h-0 w-full items-center justify-center rounded-md object-cover text-center sm:h-56 md:flex md:h-70 lg:h-80">
-          <span className="text-muted-foreground text-lg font-medium">
-            No Trailer Available
-          </span>
-        </div>
       )}
     </div>
   );

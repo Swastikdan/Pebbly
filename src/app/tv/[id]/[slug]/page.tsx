@@ -17,9 +17,6 @@ export async function generateMetadata({
   const title = decodeURIComponent(slug)
     .replace(/-/g, " ")
     .replace(/\b\w/g, (l) => l.toUpperCase());
-  const metaImage = new URL(
-    `${env.NEXT_PUBLIC_APP_URL}/api/metaimage?id=${id}&type=tv`,
-  ).toString();
 
   return {
     title: `${title} | Film Fanatic`,

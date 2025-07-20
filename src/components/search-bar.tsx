@@ -69,13 +69,15 @@ export function Searchbar() {
           </button>
         )}
       </div>
-      <Button
-        size="lg"
-        className="font-heading ml-2 hidden h-11 rounded-xl text-base sm:block"
-        aria-label="Submit Search"
-      >
-        Search
-      </Button>
+      {search && (
+        <Button
+          size="lg"
+          className="font-heading ml-2 hidden h-11 rounded-xl text-base sm:block"
+          aria-label="Submit Search"
+        >
+          Search
+        </Button>
+      )}
     </form>
   );
 }
@@ -102,13 +104,6 @@ export function SearchBarSkeleton() {
           <Search aria-hidden="true" size={20} />
         </div>
       </div>
-      <Button
-        size="lg"
-        className="font-heading ml-2 hidden h-11 rounded-xl text-base sm:block"
-        aria-label="Submit Search"
-      >
-        Search
-      </Button>
     </div>
   );
 }

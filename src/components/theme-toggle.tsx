@@ -14,7 +14,7 @@ export default function ThemeToggle() {
     <Button
       variant="secondary"
       size="icon"
-      className="font-heading size-11 cursor-pointer rounded-md px-2 text-base font-normal sm:size-9"
+      className="font-heading size-11 cursor-pointer rounded-xl px-2 text-base font-normal sm:size-9"
       onClick={toggleTheme}
       title="Toggle theme"
     >

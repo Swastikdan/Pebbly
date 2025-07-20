@@ -38,7 +38,7 @@ export default function TvData({
   if (!data || error) {
     notFound();
   }
-
+  console.log(data, isLoading, error);
   const {
     genres,
     id,

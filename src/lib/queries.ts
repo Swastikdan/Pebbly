@@ -174,7 +174,7 @@ export async function getTvDetails({ id }: { id: number }): Promise<Types.Tv> {
   if (id < -2147483648 || id > 2147483647) {
     throw new Error("Invalid ID");
   }
-  const url = `/tv/${id}?include_adult=true&append_to_response=external_ids,images,credits,image,videos,collections,release_dates,recommendations,keywords`;
+  const url = `/tv/${id}?include_adult=true&append_to_response=external_ids,images,credits,image,videos,collections,release_dates,recommendations,keywords,content_ratings`;
   const response = await Tmdb<Types.Tv>(url);
 
   const validatedResponse = validateResponse(response);

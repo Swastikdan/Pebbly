@@ -77,7 +77,7 @@ export default function MediaTitleContailer({
           <span className="py-1">{releaseyear}</span>
 
           <span className="py-1">•</span>
-          <span className="ring-ring rounded-md px-2 py-1 ring-1">
+          <span className="ring-ring rounded-[.65rem] px-2 py-1 ring-1">
             {uscertification}
           </span>
           {Runtime && (
