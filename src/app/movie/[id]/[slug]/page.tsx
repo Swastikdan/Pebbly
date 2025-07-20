@@ -27,7 +27,7 @@ export async function generateMetadata({
       description: `Explore detailed information about this movie, including cast, crew, reviews, and more  about ${title}.`,
       images: [
         {
-          url: `${env.NEXT_PUBLIC_APP_URL}/api/metaimage?id=${id}&type=movie`,
+          url: `${env.NEXT_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(id)}&type=movie`,
           width: 300,
           height: 450,
         },
