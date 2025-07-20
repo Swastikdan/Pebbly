@@ -4,7 +4,7 @@ import Navbar from "@/components/navbar";
 import Providers from "@/components/providers";
 import "@/styles/globals.css";
 
-import { Karla } from "next/font/google";
+import { Geist } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Film Fanatic",
@@ -60,9 +60,10 @@ export const metadata: Metadata = {
   },
 };
 
-const karla = Karla({
+const karla = Geist({
   subsets: ["latin"],
-  variable: "--font-karla",
+  variable: "--font-geist",
+
   preload: true,
 });
 export default function RootLayout({

@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { useWatchlistStore } from "@/store/usewatchliststore";
-import { LOCAL_GUEST_USER_ID } from "@/constants";
 
 export function useToggleWatchlistItem() {
   // The actual toggle logic is now within the Zustand store action
@@ -23,11 +22,7 @@ export function useToggleWatchlistItem() {
 export function useWatchlistItem(id: string) {
   const isOnWatchList = useWatchlistStore(
     useCallback(
-      (state) =>
-        state.watchlist.some(
-          (item) =>
-            item.user_id === LOCAL_GUEST_USER_ID && item.external_id === id,
-        ),
+      (state) => state.watchlist.some((item) => item.external_id === id),
       [id],
     ),
   );

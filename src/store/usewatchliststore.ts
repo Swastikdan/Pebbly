@@ -1,10 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { LOCAL_GUEST_USER_ID } from "@/constants";
 
 export type WatchlistItem = {
-  watchlist_id: string;
-  user_id: string;
   title: string;
   type: "tv" | "movie";
   external_id: string;
@@ -35,9 +32,7 @@ export const useWatchlistStore = create<WatchlistState>()(
       toggleWatchlistItem: async (item) => {
         const currentWatchlist = get().watchlist;
         const existingIndex = currentWatchlist.findIndex(
-          (wlItem) =>
-            wlItem.user_id === LOCAL_GUEST_USER_ID &&
-            wlItem.external_id === item.id,
+          (wlItem) => wlItem.external_id === item.id,
         );
 
         if (existingIndex !== -1) {
@@ -47,12 +42,6 @@ export const useWatchlistStore = create<WatchlistState>()(
           set({ watchlist: updatedWatchlist });
         } else {
           const newItem: WatchlistItem = {
-            watchlist_id:
-              typeof crypto !== "undefined" && crypto.randomUUID
-                ? crypto.randomUUID()
-                : Math.random().toString(36).substring(2) +
-                  Date.now().toString(36),
-            user_id: LOCAL_GUEST_USER_ID,
             title: item.title,
             type: item.media_type,
             external_id: item.id,

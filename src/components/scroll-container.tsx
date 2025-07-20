@@ -91,7 +91,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
           variant="link"
           size="icon"
           aria-label="Scroll left"
-          className="bg-secondary hover:bg-secondary/90 dark:bg-primary hover:dark:bg-primary/90 text-secondary-foreground dark:text-primary-foreground absolute top-1/2 left-4 z-10 hidden size-10 -translate-y-1/2 transform cursor-pointer items-center justify-center rounded-md shadow-md transition-all duration-150 active:scale-90 sm:flex sm:scale-100"
+          className="bg-secondary hover:bg-secondary/90 dark:bg-primary hover:dark:bg-primary/90 text-secondary-foreground dark:text-primary-foreground absolute top-1/2 left-4 z-10 hidden size-10 -translate-y-1/2 transform cursor-pointer items-center justify-center rounded-xl shadow-md transition-all duration-150 active:scale-90 sm:flex sm:scale-100"
         >
           <ChevronLeft size={32} className="size-5" />
         </Button>
@@ -111,7 +111,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
           onClick={scrollRightFunc}
           variant="link"
           size="icon"
-          className="bg-background dark:bg-foreground text-foreground dark:text-background absolute top-1/2 right-4 z-10 hidden size-10 -translate-y-1/2 transform cursor-pointer items-center justify-center rounded-md shadow-md transition-all duration-150 active:scale-90 sm:flex sm:scale-100"
+          className="bg-background dark:bg-foreground text-foreground dark:text-background absolute top-1/2 right-4 z-10 hidden size-10 -translate-y-1/2 transform cursor-pointer items-center justify-center rounded-xl shadow-md transition-all duration-150 active:scale-90 sm:flex sm:scale-100"
           aria-label="Scroll right"
         >
           <ChevronRight size={32} className="size-5" />

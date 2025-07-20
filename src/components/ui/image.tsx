@@ -30,7 +30,7 @@ const ImageWithFallback = ({ ...props }: ImageWithFallbackProps) => {
   }, [props.fallbackImage]);
 
   return (
-    <div className={cn("relative", props.className)}>
+    <div className={cn("bg-accent relative", props.className)}>
       {loading && (
         <Skeleton
           className={cn("absolute inset-0 h-full w-full", props.className)}
