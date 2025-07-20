@@ -6,30 +6,26 @@ import { Button } from "@/components/ui/button";
 
 export default function ShareButton({ title }: { title?: string }) {
   async function handleShare() {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: title,
-          url: window.location.href,
-        });
-      } else {
-        // Fallback solution for browsers that do not support Web Share API
-        const textArea = document.createElement("textarea");
-        textArea.value = `${title} ${window.location.href}`;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-        alert("Link copied to clipboard");
-      }
-    } catch (error) {
-      alert("Error sharing");
+    if (navigator.share) {
+      await navigator.share({
+        title: title,
+        url: window.location.href,
+      });
+    } else {
+      // Fallback solution for browsers that do not support Web Share API
+      const textArea = document.createElement("textarea");
+      textArea.value = `${title} ${window.location.href}`;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      alert("Link copied to clipboard");
     }
   }
 
   return (
     <Button
-      onClick={() => void handleShare()} // Explicitly mark promise as void
+      onClick={() => void handleShare()}
       variant="outline"
       aria-label="Share this content"
     >
