@@ -1,10 +1,10 @@
-import React from "react";
+import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import MoviePagedata from "@/components/movie-page-data";
 import { isValidId } from "@/lib/utils";
 import { env } from "@/env";
-
+import { Spinner } from "@/components/ui/spinner";
 export async function generateMetadata({
   params,
 }: {
@@ -43,5 +43,9 @@ export default async function page({
   if (!isValidId(Number((await params).id))) {
     notFound();
   }
-  return <MoviePagedata params={await params} />;
+  return (
+    <Suspense fallback={<Spinner />}>
+      <MoviePagedata params={await params} />
+    </Suspense>
+  );
 }

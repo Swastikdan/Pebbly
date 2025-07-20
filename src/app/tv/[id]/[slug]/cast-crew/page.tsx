@@ -3,6 +3,8 @@ import GoBack from "@/components/go-back";
 import { notFound } from "next/navigation";
 import ShareButton from "@/components/share-button";
 import MediaCreditSeaction from "@/components/media-credit-section";
+import { Suspense } from "react";
+import { Spinner } from "@/components/ui/spinner";
 export async function generateMetadata({
   params,
 }: {
@@ -33,17 +35,19 @@ export default async function CastCrewPage({
   }
 
   return (
-    <section className="mx-auto block max-w-screen-xl items-center px-4">
-      <div className="space-y-3 py-5">
-        <div className="flex items-center justify-between">
-          <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
-          <ShareButton />
+    <Suspense fallback={<Spinner />}>
+      <section className="mx-auto block max-w-screen-xl items-center px-4">
+        <div className="space-y-3 py-5">
+          <div className="flex items-center justify-between">
+            <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
+            <ShareButton />
+          </div>
+          <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
+            {title}
+          </h1>
         </div>
-        <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
-          {title}
-        </h1>
-      </div>
-      <MediaCreditSeaction id={Number(id)} type="tv" />
-    </section>
+        <MediaCreditSeaction id={Number(id)} type="tv" />
+      </section>
+    </Suspense>
   );
 }

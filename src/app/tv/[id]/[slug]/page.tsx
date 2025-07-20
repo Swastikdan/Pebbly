@@ -1,10 +1,10 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { isValidId } from "@/lib/utils";
 import TvPageData from "@/components/tv-page-data";
 import { env } from "@/env";
-
+import { Spinner } from "@/components/ui/spinner";
 export async function generateMetadata({
   params,
 }: {
@@ -44,5 +44,9 @@ export default async function TvSeriesDataPage({
   if (!isValidId(Number((await params).id))) {
     notFound();
   }
-  return <TvPageData params={await params} />;
+  return (
+    <Suspense fallback={<Spinner />}>
+      <TvPageData params={await params} />
+    </Suspense>
+  );
 }

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import GoBack from "@/components/go-back";
 import { notFound } from "next/navigation";
-import React from "react";
+import React, { Suspense } from "react";
 import SeasonContainer from "@/components/media/season-container";
 import ShareButton from "@/components/share-button";
+import { Spinner } from "@/components/ui/spinner";
 
 export async function generateMetadata({
   params,
@@ -35,17 +36,19 @@ export default async function TvSeasonsPage({
     return notFound();
   }
   return (
-    <section className="mx-auto block min-h-[90vh] max-w-screen-xl items-center px-4">
-      <div className="space-y-3 py-5">
-        <div className="flex items-center justify-between">
-          <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
-          <ShareButton />
+    <Suspense fallback={<Spinner />}>
+      <section className="mx-auto block min-h-[90vh] max-w-screen-xl items-center px-4">
+        <div className="space-y-3 py-5">
+          <div className="flex items-center justify-between">
+            <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
+            <ShareButton />
+          </div>
+          <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
+            {title}
+          </h1>
         </div>
-        <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
-          {title}
-        </h1>
-      </div>
-      <SeasonContainer tv_id_param={parseInt(id)} id={id} urltitle={slug} />
-    </section>
+        <SeasonContainer tv_id_param={parseInt(id)} id={id} urltitle={slug} />
+      </section>
+    </Suspense>
   );
 }

@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { type Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isValidId } from "@/lib/utils";
 import MediaCollection from "@/components/media/media-collection";
+import { Spinner } from "@/components/ui/spinner";
 
 export const metadata: Metadata = {
   title: "Movie Collection | Film Fanatic",
@@ -16,5 +18,9 @@ export default async function CollectionsPage({
   if (!isValidId(Number(id))) {
     notFound();
   }
-  return <MediaCollection id={id} />;
+  return (
+    <Suspense fallback={<Spinner />}>
+      <MediaCollection id={id} />
+    </Suspense>
+  );
 }
