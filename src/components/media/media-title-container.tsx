@@ -42,7 +42,7 @@ export default function MediaTitleContailer({
     <div className="pt-5 pb-5">
       <div className="space-y-3 pb-5">
         <div className="flex items-center justify-between">
-          <GoBack link="/" />
+          <GoBack link="/" title="Go to Home" />
           <div className="flex items-center gap-3">
             <WatchListButton
               title={title}
