@@ -115,7 +115,7 @@ export default function Navbar() {
               <Button
                 variant="outline"
                 size="icon"
-                className="font-heading size-11 rounded-md px-2 text-base font-light sm:size-9"
+                className="font-heading size-11 rounded-xl px-2 text-base font-light sm:size-9"
                 aria-label="Menu"
               >
                 <Menu size={32} className="fill-current" />
