@@ -11,7 +11,7 @@ export function Searchbar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get("query") ?? "";
-
+  const pathname = window.location.pathname;
   useEffect(() => {
     if (query) {
       setSearch(query);
@@ -27,7 +27,7 @@ export function Searchbar() {
 
   const clearSearch = () => {
     setSearch("");
-    const pathname = window.location.pathname;
+
     if (pathname === "/search") {
       router.push("/search");
     }

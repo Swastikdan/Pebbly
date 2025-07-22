@@ -42,7 +42,11 @@ const ImageWithFallback = ({ ...props }: ImageWithFallbackProps) => {
         alt={props.alt || "Image"}
         onLoad={handleLoad}
         onError={handleError}
-        className={cn("object-cover", props.className)}
+        className={cn(
+          "object-cover",
+          loading ? "opacity-0" : "opacity-100",
+          props.className,
+        )}
       />
     </div>
   );

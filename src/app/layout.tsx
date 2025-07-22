@@ -63,7 +63,7 @@ export const metadata: Metadata = {
 const karla = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
-
+  display: "swap",
   preload: true,
 });
 export default function RootLayout({

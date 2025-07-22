@@ -45,7 +45,12 @@ const DesktopNavMenuItem: React.FC<{
       className="mt-2 w-40 p-2"
     >
       {item.submenu.map((subitem) => (
-        <Link key={subitem.slug} href={subitem.url} className="cursor-pointer">
+        <Link
+          prefetch={false}
+          key={subitem.slug}
+          href={subitem.url}
+          className="cursor-pointer"
+        >
           <DropdownMenuItem className="h-9 cursor-pointer px-3 text-base">
             {subitem.name}
           </DropdownMenuItem>
@@ -68,6 +73,7 @@ const MobileNavMenuItem: React.FC<{
     </Button>
     {item.submenu.map((subitem) => (
       <Link
+        prefetch={false}
         href={subitem.url}
         key={subitem.slug}
         className="w-full cursor-pointer justify-start pl-3"
@@ -89,7 +95,12 @@ export default function Navbar() {
         className="flex w-full max-w-screen-xl items-center justify-between p-3"
         aria-label="Main Navigation"
       >
-        <Link href="/" className="flex items-center gap-3" aria-label="Home">
+        <Link
+          prefetch={false}
+          href="/"
+          className="flex items-center gap-3"
+          aria-label="Home"
+        >
           <Image
             src="/logo.svg"
             alt="Film Fanatic logo"
@@ -130,7 +141,7 @@ export default function Navbar() {
                 {NAV_ITEMS.map((item) => (
                   <MobileNavMenuItem key={item.slug} item={item} />
                 ))}
-                <Link href="/watchlist" className="w-full">
+                <Link prefetch={false} href="/watchlist" className="w-full">
                   <SheetClose asChild>
                     <Button
                       variant="secondary"

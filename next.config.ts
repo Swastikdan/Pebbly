@@ -11,10 +11,16 @@ const nextConfig: NextConfig = {
     reactCompiler: true,
     optimizeCss: true,
     scrollRestoration: true,
+    clientSegmentCache: true,
+    ppr: true,
+    optimisticClientCache: true,
+    serverMinification: true,
+    cssChunking: true,
+    preloadEntriesOnStart: true,
   },
 
   compress: true,
-  poweredByHeader: false,
+
   images: {
     minimumCacheTTL: 31536000,
     unoptimized: true,
@@ -33,7 +39,22 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-
+  // Add bundle analyzer in development
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      config.optimization.splitChunks = {
+        chunks: "all",
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: "vendors",
+            chunks: "all",
+          },
+        },
+      };
+    }
+    return config as NextConfig;
+  },
   async headers() {
     return [
       {

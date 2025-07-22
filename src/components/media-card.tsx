@@ -52,6 +52,7 @@ export function MediaCard({
   if (card_type === "vertical") {
     return (
       <Link
+        prefetch={false}
         href={`/${media_type}/${id}/${formattedTitle}`}
         className="h-52 w-72 space-y-2 transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70"
         aria-label={title}
@@ -111,6 +112,7 @@ export function MediaCard({
   }
   return (
     <Link
+      prefetch={false}
       href={`/${media_type}/${id}/${formattedTitle}`}
       className="h-full w-44 space-y-2 transition-opacity duration-200 ease-in-out hover:opacity-90 md:w-48 dark:hover:opacity-70"
       aria-label={title}

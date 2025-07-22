@@ -72,6 +72,7 @@ export default function CurrentSeason({
           </div>
         </div>
         <Link
+          prefetch={false}
           href={`/tv/${id}/${urltitle}/seasons`}
           className="w-fit text-lg hover:opacity-70"
           aria-label={`View all episodes of season`}
