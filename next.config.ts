@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     scrollRestoration: true,
     clientSegmentCache: true,
-    ppr: true,
+
     optimisticClientCache: true,
     serverMinification: true,
     cssChunking: true,
@@ -71,6 +71,21 @@ const nextConfig: NextConfig = {
           {
             key: "X-XSS-Protection",
             value: "1; mode=block",
+          },
+        ],
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/_next/static/:path*",
+        destination: "/_next/static/:path*",
+        has: [
+          {
+            type: "header",
+            key: "cache-control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },

@@ -112,9 +112,7 @@ export default function DisclaimerPage() {
             understood these terms.
           </p>
           <Button asChild variant="outline">
-            <Link prefetch={false} href="/">
-              Return to Home Page
-            </Link>
+            <Link href="/">Return to Home Page</Link>
           </Button>
         </div>
       </div>

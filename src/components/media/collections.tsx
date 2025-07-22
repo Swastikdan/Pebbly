@@ -53,7 +53,6 @@ export default function Collections({ id }: { id: number }) {
                 {data?.parts?.map((part) => part.title)?.join(", ") ?? ""}
               </span>
               <Link
-                prefetch={false}
                 href={`/collection/${id}`}
                 aria-label={`View collection: ${data?.name}`}
               >

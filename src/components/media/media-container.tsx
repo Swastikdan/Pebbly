@@ -76,7 +76,6 @@ export default function MediaContainer({
         >
           <div className="flex items-center justify-start gap-5 pb-3 md:gap-10">
             <Link
-              prefetch={false}
               href={`/${type}/${id}/${urltitle}/media`}
               className="w-fit text-xl font-semibold hover:opacity-70 md:text-2xl"
             >
@@ -161,10 +160,7 @@ export default function MediaContainer({
                     </Dialog>
                   ))}
                   {is_more_clips_available && (
-                    <Link
-                      prefetch={false}
-                      href={`/${type}/${id}/${urltitle}/media`}
-                    >
+                    <Link href={`/${type}/${id}/${urltitle}/media`}>
                       <Button
                         variant="secondary"
                         size="lg"
@@ -216,10 +212,7 @@ export default function MediaContainer({
                     </Dialog>
                   ))}
                   {is_more_backdrops_available && (
-                    <Link
-                      prefetch={false}
-                      href={`/${type}/${id}/${urltitle}/media`}
-                    >
+                    <Link href={`/${type}/${id}/${urltitle}/media`}>
                       <Button
                         variant="secondary"
                         size="lg"
@@ -270,10 +263,7 @@ export default function MediaContainer({
                     </Dialog>
                   ))}
                   {is_more_posters_available && (
-                    <Link
-                      prefetch={false}
-                      href={`/${type}/${id}/${urltitle}/media`}
-                    >
+                    <Link href={`/${type}/${id}/${urltitle}/media`}>
                       <Button
                         variant="secondary"
                         size="lg"
@@ -295,7 +285,6 @@ export default function MediaContainer({
         is_more_backdrops_available ||
         is_more_clips_available) && (
         <Link
-          prefetch={false}
           href={`/${type}/${id}/${urltitle}/media`}
           className="w-fit text-lg hover:opacity-70"
         >

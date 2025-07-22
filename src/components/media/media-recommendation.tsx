@@ -14,7 +14,6 @@ export default function MediaRecomendations({
     <div className="pb-5">
       <div className="flex flex-col gap-3">
         <Link
-          prefetch={false}
           href={`/${type}/${id}/${urltitle}/recommendations`}
           className="w-fit text-xl font-semibold hover:opacity-70 md:text-2xl"
         >

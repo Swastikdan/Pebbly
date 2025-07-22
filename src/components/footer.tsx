@@ -17,7 +17,6 @@ export default function Footer() {
         </p>
         <div className="flex items-center gap-5">
           <Link
-            prefetch={false}
             href="/disclaimer"
             className="underline"
             aria-label="User disclaimer"

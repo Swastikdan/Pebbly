@@ -36,7 +36,6 @@ export default function CastSection({
         {cast.length > 0 && crew.length > 0 ? (
           <>
             <Link
-              prefetch={false}
               href={`/${type}/${id}/${urltitle}/cast-crew`}
               className="w-fit text-xl font-semibold hover:opacity-70 md:text-2xl"
               aria-label="View full cast and crew"
@@ -66,7 +65,6 @@ export default function CastSection({
                   ))}
                   {is_more_cast_crew && (
                     <Link
-                      prefetch={false}
                       href={`/${type}/${id}/${urltitle}/cast-crew`}
                       aria-label="View more cast and crew"
                     >
@@ -83,7 +81,6 @@ export default function CastSection({
                 </div>
               </ScrollContainer>
               <Link
-                prefetch={false}
                 href={`/${type}/${id}/${urltitle}/cast-crew`}
                 className="w-fit text-lg hover:opacity-70"
                 aria-label="View full cast and crew"

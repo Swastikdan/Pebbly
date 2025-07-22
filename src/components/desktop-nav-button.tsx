@@ -21,12 +21,7 @@ function DesktopNavButton({
   const pathname = usePathname();
   const isActive = pathname === href;
   return (
-    <Link
-      prefetch={false}
-      href={href}
-      aria-label={label}
-      className="cursor-pointer"
-    >
+    <Link href={href} aria-label={label} className="cursor-pointer">
       <Button
         variant={isActive ? "secondary" : "outline"}
         size="icon"
