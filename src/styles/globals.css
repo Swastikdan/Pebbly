@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @theme {
   --font-sans:
-    var(--font-geist), ui-sans-serif, system-ui, sans-serif,
+    var(--font-roboto-flex), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 @custom-variant dark (&:is(.dark *));

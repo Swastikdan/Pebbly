@@ -4,8 +4,8 @@ import Navbar from "@/components/navbar";
 import Providers from "@/components/providers";
 import "@/styles/globals.css";
 
-import { Geist } from "next/font/google";
-
+import { Roboto_Flex } from "next/font/google";
+import Script from "next/script";
 export const metadata: Metadata = {
   title: "Film Fanatic",
   description:
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
   },
 };
 
-const karla = Geist({
+const robotoFLex = Roboto_Flex({
   subsets: ["latin"],
-  variable: "--font-geist",
+  variable: "--font-roboto-flex",
   display: "swap",
   preload: true,
 });
@@ -70,13 +70,17 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={karla.variable}>
+    <html lang="en" suppressHydrationWarning className={robotoFLex.variable}>
       <head>
         <meta
           name="google-site-verification"
           content="uHvrTYV7MI9jil_qDblV-QDi9qjXlpdb_8XJUtCLGLQ"
         />
+        <Script strategy="afterInteractive" id="debugger">
+          debugger;
+        </Script>
       </head>
+
       <body className="min-h-screen font-sans leading-relaxed antialiased">
         <Providers>
           <Navbar />

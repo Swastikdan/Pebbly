@@ -12,18 +12,22 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     scrollRestoration: true,
     clientSegmentCache: true,
-
+    ppr: true,
     optimisticClientCache: true,
     serverMinification: true,
     cssChunking: true,
     preloadEntriesOnStart: true,
+    serverSourceMaps: process.env.NODE_ENV === "production",
   },
 
   compress: true,
 
   images: {
+    unoptimized: !!(process.env.VERCEL === "1"),
     minimumCacheTTL: 31536000,
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: "https",
@@ -39,22 +43,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Add bundle analyzer in development
-  webpack: (config, { dev, isServer }) => {
-    if (dev && !isServer) {
-      config.optimization.splitChunks = {
-        chunks: "all",
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: "vendors",
-            chunks: "all",
-          },
-        },
-      };
-    }
-    return config as NextConfig;
-  },
+
   async headers() {
     return [
       {
