@@ -12,7 +12,8 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     scrollRestoration: true,
     clientSegmentCache: true,
-    ppr: true,
+
+    // ppr: true,
     optimisticClientCache: true,
     serverMinification: true,
     cssChunking: true,
