@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
@@ -11,7 +11,7 @@ export function Searchbar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get("query") ?? "";
-  const pathname = window.location.pathname;
+  const pathname = usePathname();
   useEffect(() => {
     if (query) {
       setSearch(query);

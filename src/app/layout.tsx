@@ -5,7 +5,6 @@ import Providers from "@/components/providers";
 import "@/styles/globals.css";
 
 import { Roboto_Flex } from "next/font/google";
-import Script from "next/script";
 export const metadata: Metadata = {
   title: "Film Fanatic",
   description:
@@ -76,9 +75,6 @@ export default function RootLayout({
           name="google-site-verification"
           content="uHvrTYV7MI9jil_qDblV-QDi9qjXlpdb_8XJUtCLGLQ"
         />
-        <Script strategy="afterInteractive" id="debugger">
-          debugger;
-        </Script>
       </head>
 
       <body className="min-h-screen font-sans leading-relaxed antialiased">
