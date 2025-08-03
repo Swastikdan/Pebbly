@@ -13,18 +13,17 @@ const nextConfig: NextConfig = {
     scrollRestoration: true,
     clientSegmentCache: true,
 
-    // ppr: true,
+    ppr: true,
     optimisticClientCache: true,
     serverMinification: true,
     cssChunking: true,
     preloadEntriesOnStart: true,
     serverSourceMaps: process.env.NODE_ENV === "production",
   },
-
   compress: true,
 
   images: {
-    unoptimized: !!(process.env.VERCEL === "1"),
+    unoptimized: true, 
     minimumCacheTTL: 31536000,
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

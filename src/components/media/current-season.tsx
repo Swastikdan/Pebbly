@@ -22,7 +22,7 @@ export default function CurrentSeason({
           Current Season
         </span>
         <div
-          className="border-border flex items-start gap-5 rounded-xl border-2 p-3 md:p-5"
+          className="border-border flex items-start gap-5 rounded-md border-2 p-3 md:p-5"
           role="region"
           aria-label={`Current Season: ${season_data.name}`}
         >

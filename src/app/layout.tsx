@@ -4,7 +4,7 @@ import Navbar from "@/components/navbar";
 import Providers from "@/components/providers";
 import "@/styles/globals.css";
 
-import { Roboto_Flex } from "next/font/google";
+import { DM_Sans , Raleway } from "next/font/google";
 export const metadata: Metadata = {
   title: "Film Fanatic",
   description:
@@ -59,7 +59,8 @@ export const metadata: Metadata = {
   },
 };
 
-const robotoFLex = Roboto_Flex({
+const robotoFLex = DM_Sans
+({
   subsets: ["latin"],
   variable: "--font-roboto-flex",
   display: "swap",

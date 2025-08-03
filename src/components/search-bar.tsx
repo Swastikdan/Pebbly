@@ -52,7 +52,7 @@ export function Searchbar() {
           placeholder="👀 What movie, show? Let's find it!"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="peer bg-background enabled:bg-background block h-12 w-full rounded-xl ps-12 pr-8 placeholder:text-sm sm:h-11 placeholder:md:text-base"
+          className="peer bg-background enabled:bg-background block h-12 w-full rounded-md ps-12 pr-8 placeholder:text-sm sm:h-11 placeholder:md:text-base"
           aria-label="Search Input"
         />
         <div className="pointer-events-none absolute inset-y-0 start-2 flex items-center ps-2 peer-disabled:pointer-events-none peer-disabled:opacity-50">
@@ -72,7 +72,7 @@ export function Searchbar() {
       {search && (
         <Button
           size="lg"
-          className="font-heading ml-2 hidden h-11 rounded-xl text-base sm:block"
+          className="font-heading ml-2 hidden h-11 rounded-md text-base sm:block"
           aria-label="Submit Search"
         >
           Search
@@ -97,7 +97,7 @@ export function SearchBarSkeleton() {
           placeholder="👀 What movie, show? Let's find it!"
           readOnly
           disabled
-          className="peer bg-background enabled:bg-background block h-12 w-full rounded-xl ps-12 pr-8 placeholder:text-sm sm:h-11 placeholder:md:text-base"
+          className="peer bg-background enabled:bg-background block h-12 w-full rounded-md ps-12 pr-8 placeholder:text-sm sm:h-11 placeholder:md:text-base"
           aria-label="Search Input"
         />
         <div className="pointer-events-none absolute inset-y-0 start-2 flex items-center ps-2 peer-disabled:pointer-events-none peer-disabled:opacity-50">

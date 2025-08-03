@@ -26,7 +26,7 @@ function DesktopNavButton({
         variant={isActive ? "secondary" : "outline"}
         size="icon"
         className={cn(
-          "font-heading size-11 cursor-pointer rounded-xl px-2 text-base font-normal sm:size-9",
+          "font-heading size-11 cursor-pointer rounded-md px-2 text-base font-normal sm:size-9",
           className,
         )}
         aria-label={label}
