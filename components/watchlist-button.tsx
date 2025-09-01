@@ -26,6 +26,7 @@ export function WatchlistButton({
   image,
   id,
   is_on_watchlist_page,
+  is_on_homepage,
   media_type,
   release_date,
   className,
@@ -72,6 +73,7 @@ export function WatchlistButton({
           aria-label={
             isOnWatchList ? "Remove from watchlist" : "Add to watchlist"
           }
+          className={`${is_on_homepage ? "" : "w-12 h-12.5 md:w-9 md:h-10"}`}
           startContent={
             showTrash ? (
               <TrashBin className="size-5" />

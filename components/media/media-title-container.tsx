@@ -104,7 +104,7 @@ export const MediaTitleContailer = memo(
         </div>
       </div>
     );
-  },
+  }
 );
 
 MediaTitleContailer.displayName = "MediaTitleContailer";

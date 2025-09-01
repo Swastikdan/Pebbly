@@ -92,6 +92,7 @@ export const MediaContainer = ({
         aria-label="Media tabs"
         className="pb-2"
         defaultSelectedKey={defaultSelectedKey}
+        size="lg"
       >
         {hasVideos && (
           <Tab key="videos" title="Videos">

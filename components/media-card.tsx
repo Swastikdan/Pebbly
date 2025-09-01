@@ -22,6 +22,7 @@ export interface MediaCardProps {
   known_for_department?: string;
   card_type?: "horizontal" | "vertical";
   is_on_watchlist_page?: boolean;
+  is_on_homepage?: boolean;
 }
 
 export interface PersonCardProps {
@@ -43,6 +44,7 @@ export function MediaCard({
   poster_path,
   media_type,
   release_date,
+  is_on_homepage,
   is_on_watchlist_page,
   card_type = "horizontal",
 }: MediaCardProps) {
@@ -67,6 +69,7 @@ export function MediaCard({
           className="absolute top-4 right-4 z-20"
           id={id}
           image={poster_path}
+          is_on_homepage={is_on_homepage}
           is_on_watchlist_page={is_on_watchlist_page}
           media_type={media_type}
           rating={rating}
@@ -132,6 +135,7 @@ export function MediaCard({
         className="absolute top-4 right-4 z-20"
         id={id}
         image={poster_path}
+        is_on_homepage={is_on_homepage}
         is_on_watchlist_page={is_on_watchlist_page}
         media_type={media_type}
         rating={rating}
