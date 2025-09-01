@@ -6,7 +6,7 @@ import { Tooltip } from "@heroui/tooltip";
 
 import { useToggleWatchlistItem, useWatchlistItem } from "@/hooks/usewatchlist";
 
-import { BookMarkFilledIcon, BookMarkIcon } from "./icons";
+import { BookMarkFilledIcon, BookMarkIcon, TrashBin } from "./icons";
 
 interface WatchListButtonProps {
   title: string;
@@ -25,6 +25,7 @@ export function WatchlistButton({
   rating,
   image,
   id,
+  is_on_watchlist_page,
   media_type,
   release_date,
   className,
@@ -49,9 +50,14 @@ export function WatchlistButton({
     }
   }, [title, rating, image, itemId, media_type, release_date, toggle]);
 
+  const showTrash = isOnWatchList && is_on_watchlist_page;
+  const showFilled = isOnWatchList && !is_on_watchlist_page;
+
   return (
     <div className={className}>
       <Tooltip
+        showArrow
+        className="opacity-90 shadow-xl border-default border-1"
         content={
           <div className="px-1 py-2">
             <div className="">
@@ -67,7 +73,9 @@ export function WatchlistButton({
             isOnWatchList ? "Remove from watchlist" : "Add to watchlist"
           }
           startContent={
-            isOnWatchList ? (
+            showTrash ? (
+              <TrashBin className="size-5" />
+            ) : showFilled ? (
               <BookMarkFilledIcon className="size-5" />
             ) : (
               <BookMarkIcon className="size-5" />

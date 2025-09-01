@@ -39,7 +39,7 @@ export const ExportAndAddWatchlist = () => {
 
   // Type guard to check if an object is a valid WatchlistItem (for import)
   function isValidImportedWatchlistItem(
-    item: unknown,
+    item: unknown
   ): item is Omit<WatchlistItem, "updated_at"> & Partial<WatchlistItem> {
     if (typeof item !== "object" || item === null) return false;
     const obj = item as Record<string, unknown>;
@@ -115,13 +115,13 @@ export const ExportAndAddWatchlist = () => {
 
       reader.readAsText(file);
     },
-    [setWatchlist], // Depend on setWatchlist from Zustand
+    [setWatchlist] // Depend on setWatchlist from Zustand
   );
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <Spinner />
+        <Spinner color="current" />
         <span className="sr-only">Loading watchlist...</span>
       </div>
     );
@@ -137,7 +137,11 @@ export const ExportAndAddWatchlist = () => {
             variant="solid"
             onPress={exportWatchlist}
           >
-            {exportLoading ? <Spinner /> : <Download size={20} />}
+            {exportLoading ? (
+              <Spinner color="current" />
+            ) : (
+              <Download size={20} />
+            )}
             Export
           </Button>
         )}
@@ -162,7 +166,16 @@ export const ExportAndAddWatchlist = () => {
             type="file"
             onChange={importWatchlist}
           />
-          {importLoading ? <Spinner /> : <Upload size={20} />}
+          {importLoading ? (
+            <Spinner
+              classNames={{
+                wrapper: "size-5",
+              }}
+              color="current"
+            />
+          ) : (
+            <Upload size={20} />
+          )}
           Import
         </Button>
       </div>

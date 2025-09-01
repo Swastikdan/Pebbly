@@ -39,7 +39,7 @@ export default async function CollectionsPage({
     <Suspense
       fallback={
         <div className="grid h-full min-h-screen place-content-center items-center justify-center">
-          <Spinner />
+          <Spinner color="current" />
         </div>
       }
     >

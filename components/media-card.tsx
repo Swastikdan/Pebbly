@@ -43,6 +43,7 @@ export function MediaCard({
   poster_path,
   media_type,
   release_date,
+  is_on_watchlist_page,
   card_type = "horizontal",
 }: MediaCardProps) {
   const formattedTitle = formatMediaTitle.encode(title);
@@ -66,6 +67,7 @@ export function MediaCard({
           className="absolute top-4 right-4 z-20"
           id={id}
           image={poster_path}
+          is_on_watchlist_page={is_on_watchlist_page}
           media_type={media_type}
           rating={rating}
           release_date={release_date ?? ""}
@@ -130,6 +132,7 @@ export function MediaCard({
         className="absolute top-4 right-4 z-20"
         id={id}
         image={poster_path}
+        is_on_watchlist_page={is_on_watchlist_page}
         media_type={media_type}
         rating={rating}
         release_date={release_date ?? ""}
@@ -197,7 +200,7 @@ export const PersonCard = memo(function PersonCard({
 
   return (
     <Card
-      className="relative h-[13.25rem] md:h-[15.5rem] md:w-36 space-y-2  p-2"
+      className="relative h-[13.25rem] md:h-[15.5rem] w-30 md:w-36 space-y-2  p-2"
       shadow="none"
     >
       <Image

@@ -36,7 +36,7 @@ export function MoviePagedata({
   if (isLoading) {
     return (
       <div className="grid h-full min-h-screen place-content-center items-center justify-center">
-        <Spinner />
+        <Spinner color="current" />
       </div>
     );
   }
@@ -81,7 +81,7 @@ export function MoviePagedata({
     : null;
 
   const usrelease = release_dates?.results?.find(
-    (release) => release.iso_3166_1 === "US",
+    (release) => release.iso_3166_1 === "US"
   );
 
   let uscertification = "NR";

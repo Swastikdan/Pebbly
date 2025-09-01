@@ -26,14 +26,14 @@ export const MovieCollectionsPage = ({
   } = useQuery<Collection>({
     queryKey: ["movie_details", collection_id],
     queryFn: cache(
-      async () => await getCollection({ id: Number(collection_id) }),
+      async () => await getCollection({ id: Number(collection_id) })
     ),
   });
 
   if (isLoading) {
     return (
       <div className="grid h-full min-h-screen place-content-center items-center justify-center">
-        <Spinner />
+        <Spinner color="current" />
       </div>
     );
   }
@@ -57,7 +57,7 @@ export const MovieCollectionsPage = ({
             (parts.map((part) => part.vote_average).reduce((a, b) => a + b, 0) /
               parts.length) *
             10
-          ).toFixed(0),
+          ).toFixed(0)
         )
       : 0;
 

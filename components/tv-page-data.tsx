@@ -36,7 +36,7 @@ export function TvPageData({
   if (isLoading) {
     return (
       <div className="grid h-full min-h-screen place-content-center items-center justify-center">
-        <Spinner />
+        <Spinner color="current" />
       </div>
     );
   }
@@ -91,7 +91,7 @@ export function TvPageData({
     ? genres
         .map((genre) => {
           return GENRE_LIST.find(
-            (genreListItem) => genreListItem.id === genre.id,
+            (genreListItem) => genreListItem.id === genre.id
           );
         })
         .filter((genre) => genre !== undefined)
@@ -180,7 +180,7 @@ export function TvPageData({
       .find(
         (season) =>
           season.air_date &&
-          new Date(season.air_date).getTime() <= new Date().getTime(),
+          new Date(season.air_date).getTime() <= new Date().getTime()
       ) ?? data.seasons?.[data.seasons.length - 1];
 
   return (

@@ -11,7 +11,7 @@ export const WatchListContainer = () => {
   return (
     <div className="flex min-h-96 w-full items-center justify-center">
       {loading ? (
-        <Spinner />
+        <Spinner color="current" />
       ) : watchlist && watchlist.length > 0 ? (
         <div className="xs:gap-4 grid w-full grid-cols-2 gap-3 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {watchlist.map(
@@ -28,7 +28,7 @@ export const WatchListContainer = () => {
                   release_date={item.release_date ?? null}
                   title={item.title}
                 />
-              ),
+              )
           )}
         </div>
       ) : (
