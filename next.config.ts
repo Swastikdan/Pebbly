@@ -4,26 +4,20 @@
  */
 
 import type { NextConfig } from "next";
-import "./src/env.js";
+import "./env.js";
 const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
     reactCompiler: true,
-    optimizeCss: true,
     scrollRestoration: true,
-    clientSegmentCache: true,
-
     ppr: true,
     optimisticClientCache: true,
-    serverMinification: true,
-    cssChunking: true,
-    preloadEntriesOnStart: true,
-    serverSourceMaps: process.env.NODE_ENV === "production",
+    //typedRoutes: true,
   },
   compress: true,
 
   images: {
-    unoptimized: true, 
+    unoptimized: true,
     minimumCacheTTL: 31536000,
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

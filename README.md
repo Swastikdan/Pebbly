@@ -1,253 +1,255 @@
+## Security Notice
+
+`NEXT_PUBLIC_TMDB_ACCESS_TOKEN` is exposed to the client. Any environment variable prefixed with `NEXT_PUBLIC_` in Next.js will be available in the browser. If you do not want to expose your TMDB access token to users, remove the `NEXT_PUBLIC_` prefix and use server-side rendering (SSR) or API routes to keep your token secure. Refer to the Next.js documentation for best practices.
+
 # Film Fanatic
 
-**Film Fanatic** is a web application for exploring and discovering movies and TV shows. Built with the **T3 Stack**, this project provides a robust foundation for a modern, high-performance web experience.
+A modern, responsive web application for discovering and exploring movies and TV shows. Built with Next.js 15, TypeScript, and powered by The Movie Database (TMDB) API.
 
-## ✨ Features
+![Film Fanatic](https://img.shields.io/badge/Film-Fanatic-blue?style=for-the-badge)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?style=for-the-badge&logo=typescript)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1-38B2AC?style=for-the-badge&logo=tailwind-css)
 
-- **Discover Content:** Browse popular, top-rated, and upcoming movies and TV shows.
-- **Detailed Information:** View comprehensive details about individual movies and TV shows, including cast, crew, trailers, and more.
-- **Search Functionality:** Find specific titles with a powerful, fast search.
-- **Responsive Design:** A seamless viewing experience on any device, thanks to a mobile-first approach.
-- **Powered by TMDb:** All movie and TV data is fetched from The Movie Database (TMDb) API.
+## Features
 
----
+### Core Functionality
 
-## 🛠️ Technologies Used
+- Movie & TV Show Discovery: Browse popular, top-rated, now playing, and upcoming content
+- Advanced Search: Search across movies, TV shows, and people with real-time results
+- Detailed Information: Comprehensive details including cast, crew, trailers, images, and reviews
+- Personal Watchlist: Save and manage your favorite movies and TV shows locally
+- Collections: Explore movie collections and franchises
+- Responsive Design: Optimized for desktop, tablet, and mobile devices
 
-This project is built on the **T3 Stack**, a modern web development stack designed for building scalable, type-safe applications.
+### User Experience
 
-- **Next.js:** A React framework for building full-stack applications.
-- **NextAuth.js:** For authentication (currently a placeholder, but ready to be integrated).
-- **Prisma** or **Drizzle:** You can choose between these two powerful ORMs for database interaction.
-- **tRPC:** A type-safe API layer that allows you to build APIs with great developer experience.
-- **Tailwind CSS:** A utility-first CSS framework for rapid and responsive UI development.
-- **shadcn/ui:** A collection of beautifully designed, reusable UI components built with Radix UI and Tailwind CSS.
-- **TanStack Query:** For managing and caching server-state data.
-- **Zustand:** A small, fast, and scalable state-management solution.
+- Dark/Light Theme: Toggle between themes with system preference detection
+- Smooth Animations: Powered by Framer Motion for fluid interactions
+- Fast Loading: Optimized with React Query for efficient data fetching and caching
+- SEO Optimized: Dynamic meta tags and Open Graph support
+- Progressive Web App: Installable with offline capabilities
 
----
+### Navigation & Organization
 
-## 🚀 Getting Started
+- Intuitive Navigation: Easy-to-use navbar with dropdown menus
+- Smart Routing: SEO-friendly URLs with proper slug handling
+- Pagination: Efficient browsing through large datasets
+- Share Functionality: Share movies and shows with others
+- Export Watchlist: Export your watchlist data
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-To run this project, you'll need the following installed:
-
-- Node.js (v18 or newer)
-- pnpm (or another package manager like npm or yarn)
+- Node.js 18+
+- pnpm (recommended) or npm/yarn
+- TMDB API access token
 
 ### Installation
 
-1. **Clone the repository:**
+1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/Swastikdan/Film-Fanatic
-   cd film-fanatic
+   git clone https://github.com/Swastikdan/Film-Fanatic.git
+   cd Film-Fanatic
    ```
 
-2. **Install dependencies:**
+2. **Install dependencies**
 
    ```bash
    pnpm install
    ```
 
-3. **Set up environment variables:**
+3. **Environment Setup**
+   Create a `.env.local` file in the root directory:
 
-   Copy the `.env.example` file to a new file named `.env`:
-
-   ```bash
-   cp .env.example .env
+   ```env
+   NEXT_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_access_token_here
+   NEXT_PUBLIC_TMDB_API_URL=https://api.themoviedb.org/3
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
    ```
 
-   Then, fill in the required values from your TMDb account:
-   - `NEXT_PUBLIC_TMDB_ACCESS_TOKEN`: Your bearer token for the TMDb API.
-   - `NEXT_PUBLIC_TMDB_API_URL`: The base URL for the TMDb API.
-
-4. **Start the development server:**
+4. **Start the development server**
 
    ```bash
    pnpm dev
    ```
 
-   Open [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000) in your browser to see the application.
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
----
+### Getting TMDB API Access
 
-## 📦 Scripts
+1. Create an account at [The Movie Database](https://www.themoviedb.org/)
+2. Go to your account settings → API
+3. Request an API key
+4. Use the "API Read Access Token" in your environment variables
 
-This project includes several useful scripts to help with development:
+## 🛠️ Tech Stack
 
-| Script              | Description                                       |
-| :------------------ | :------------------------------------------------ |
-| `pnpm dev`          | Starts the development server with hot reloading. |
-| `pnpm build`        | Compiles the application for production.          |
-| `pnpm start`        | Starts a production-ready server after building.  |
-| `pnpm lint`         | Runs ESLint to check for code style issues.       |
-| `pnpm lint:fix`     | Automatically fixes linting errors.               |
-| `pnpm format:check` | Checks for formatting issues with Prettier.       |
-| `pnpm format:write` | Automatically formats code with Prettier.         |
-| `pnpm typecheck`    | Runs TypeScript to check for type errors.         |
+### Frontend Framework
 
----
+- **Next.js 15** - React framework with App Router
+- **React 18** - UI library with latest features
+- **TypeScript 5.6** - Type-safe development
 
-## 🗺️ Project Structure
+### Styling & UI
 
-- `src/`: The main source directory for the application.
-  - `app/`: Next.js App Router for pages and API routes.
-  - `components/`: Reusable React components, including a dedicated `ui` folder for `shadcn/ui`.
-  - `constants.ts`: Contains constant values like navigation items, API image prefixes, and genre lists.
-  - `env.js`: Handles environment variable validation using `@t3-oss/env-nextjs`.
-  - `styles/`: Global CSS styles.
-  - `types.d.ts`: Contains shared TypeScript interfaces for API responses and data structures.
+- **TailwindCSS 4.1** - Utility-first CSS framework
+- **HeroUI** - Modern React component library
+- **Framer Motion** - Animation library
+- **next-themes** - Theme management
 
-  ### File Structure
+### State Management & Data Fetching
+
+- **TanStack Query (React Query)** - Server state management
+- **Zustand** - Client state management for watchlist
+- **Zod** - Runtime type validation
+
+### Development Tools
+
+- **ESLint** - Code linting with Next.js config
+- **Prettier** - Code formatting
+- **TypeScript** - Static type checking
+- **pnpm** - Fast, disk space efficient package manager
+
+## 📁 Project Structure
 
 ```
-  Directory structure:
-
-  ├── README.md
-  ├── components.json
-  ├── eslint.config.js
-  ├── next.config.ts
-  ├── package.json
-  ├── postcss.config.js
-  ├── prettier.config.js
-  ├── tsconfig.json
-  ├── .env.example
-  ├── .npmrc
-  └── src/
-  ├── constants.ts
-  ├── env.js
-  ├── types.d.ts
-  ├── app/
-  │ ├── layout.tsx
-  │ ├── manifest.ts
-  │ ├── not-found.tsx
-  │ ├── ogimage.webp
-  │ ├── page.tsx
-  │ ├── robots.ts
-  │ ├── sitemap.ts
-  │ ├── api/
-  │ │ └── metaimage/
-  │ │ └── route.ts
-  │ ├── collection/
-  │ │ └── [id]/
-  │ │ └── page.tsx
-  │ ├── disclaimer/
-  │ │ └── page.tsx
-  │ ├── list/
-  │ │ └── [type]/
-  │ │ └── [slug]/
-  │ │ └── page.tsx
-  │ ├── movie/
-  │ │ └── [id]/
-  │ │ └── [slug]/
-  │ │ ├── page.tsx
-  │ │ ├── cast-crew/
-  │ │ │ └── page.tsx
-  │ │ ├── media/
-  │ │ │ └── page.tsx
-  │ │ └── recommendations/
-  │ │ └── page.tsx
-  │ ├── search/
-  │ │ └── page.tsx
-  │ ├── tv/
-  │ │ └── [id]/
-  │ │ └── [slug]/
-  │ │ ├── page.tsx
-  │ │ ├── cast-crew/
-  │ │ │ └── page.tsx
-  │ │ ├── media/
-  │ │ │ └── page.tsx
-  │ │ ├── recommendations/
-  │ │ │ └── page.tsx
-  │ │ └── seasons/
-  │ │ └── page.tsx
-  │ └── watchlist/
-  │ └── page.tsx
-  ├── components/
-  │ ├── desktop-nav-button.tsx
-  │ ├── export-and-add-watchlist.tsx
-  │ ├── footer.tsx
-  │ ├── go-back.tsx
-  │ ├── homepage-media-list-section.tsx
-  │ ├── media-card.tsx
-  │ ├── media-credit-section.tsx
-  │ ├── media-list-page-results.tsx
-  │ ├── movie-page-data.tsx
-  │ ├── navbar.tsx
-  │ ├── pagination.tsx
-  │ ├── providers.tsx
-  │ ├── scroll-container.tsx
-  │ ├── scroll.tsx
-  │ ├── search-bar.tsx
-  │ ├── search-results.tsx
-  │ ├── share-button.tsx
-  │ ├── theme-provider.tsx
-  │ ├── theme-toggle.tsx
-  │ ├── tv-page-data.tsx
-  │ ├── watch-list-button.tsx
-  │ ├── watchlist-contatiner.tsx
-  │ ├── media/
-  │ │ ├── cast-section.tsx
-  │ │ ├── collections.tsx
-  │ │ ├── current-season.tsx
-  │ │ ├── genre-container.tsx
-  │ │ ├── media-collection.tsx
-  │ │ ├── media-container.tsx
-  │ │ ├── media-description.tsx
-  │ │ ├── media-images.tsx
-  │ │ ├── media-keywords.tsx
-  │ │ ├── media-poster-trailer-container.tsx
-  │ │ ├── media-recommendation.tsx
-  │ │ ├── media-recommendationpage-container.tsx
-  │ │ ├── media-title-container.tsx
-  │ │ ├── media-videos.tsx
-  │ │ ├── rating-count.tsx
-  │ │ ├── recomendations.tsx
-  │ │ └── season-container.tsx
-  │ └── ui/
-  │ ├── accordion.tsx
-  │ ├── badge.tsx
-  │ ├── button.tsx
-  │ ├── card.tsx
-  │ ├── dialog.tsx
-  │ ├── dropdown-menu.tsx
-  │ ├── image.tsx
-  │ ├── input.tsx
-  │ ├── label.tsx
-  │ ├── sheet.tsx
-  │ ├── skeleton.tsx
-  │ ├── spinner.tsx
-  │ ├── tabs.tsx
-  │ └── tooltip.tsx
-  ├── hooks/
-  │ └── usewatchlist.ts
-  ├── lib/
-  │ ├── queries.ts
-  │ ├── query-client.ts
-  │ ├── tmdb.ts
-  │ └── utils.ts
-  ├── store/
-  │ └── usewatchliststore.ts
-  └── styles/
-  └── globals.css
+film-fanatic/
+├── app/                    # Next.js App Router pages
+│   ├── api/               # API routes
+│   ├── collection/        # Movie collections
+│   ├── list/             # Movie/TV lists
+│   ├── movie/            # Movie detail pages
+│   ├── search/           # Search functionality
+│   ├── tv/               # TV show detail pages
+│   └── watchlist/        # User watchlist
+├── components/            # Reusable React components
+│   ├── media/            # Media-specific components
+│   └── primitives.ts     # Base component definitions
+├── config/               # Configuration files
+├── hooks/                # Custom React hooks
+├── lib/                  # Utility functions and API clients
+├── public/               # Static assets
+├── styles/               # Global styles
+└── types.d.ts           # TypeScript type definitions
 ```
 
----
+## 🎯 Available Scripts
 
-## ⚙️ Configuration
+```bash
+# Development
+pnpm dev          # Start development server with Turbo
+pnpm build        # Build for production
+pnpm start        # Start production server
+pnpm preview      # Build and start production server
 
-- **Next.js (`next.config.ts`):** Includes performance optimizations like image compression, experimental features (like CSS chunking and React Compiler), and security headers.
-- **ESLint (`eslint.config.js`):** A custom configuration for Next.js and TypeScript, with specific rules to maintain code quality.
-- **Tailwind CSS (`tailwind.config.js`, `postcss.config.js`):** Configured for use with `@tailwindcss/postcss`.
-- **Prettier (`prettier.config.js`):** Ensures consistent code formatting across the project.
-- **TypeScript (`tsconfig.json`):** Configured for strict type checking and path aliases (`@/`).
+# Code Quality
+pnpm lint         # Run ESLint
+pnpm lint:fix     # Fix ESLint issues
+pnpm typecheck    # Run TypeScript compiler check
+pnpm check        # Run both lint and typecheck
 
-## 🤝 Contributing
+# Formatting
+pnpm format:check # Check code formatting
+pnpm format:write # Format code with Prettier
+```
 
-We welcome contributions\! If you have suggestions or find a bug, please feel free to open an issue or submit a pull request.
+## 🌟 Key Features Deep Dive
+
+### Movie & TV Show Pages
+
+- Comprehensive information display
+- Cast and crew details with photos
+- Trailers and video content
+- Image galleries (posters, backdrops)
+- User ratings and reviews
+- Recommendations based on current selection
+- Collection information for movie franchises
+
+### Search Functionality
+
+- Multi-search across movies, TV shows, and people
+- Real-time search results
+- Filter by content type
+- Pagination for large result sets
+- Search history and suggestions
+
+### Watchlist Management
+
+- Add/remove movies and TV shows
+- Persistent storage using localStorage
+- Export functionality for backup
+- Quick access from any page
+- Visual indicators for watchlisted items
+
+### Responsive Design
+
+- Mobile-first approach
+- Adaptive layouts for all screen sizes
+- Touch-friendly interactions
+- Optimized images with lazy loading
+- Fast loading on all devices
+
+## 🔧 Configuration
+
+### Environment Variables
+
+| Variable                        | Description           | Required |
+| ------------------------------- | --------------------- | -------- |
+| `NEXT_PUBLIC_TMDB_ACCESS_TOKEN` | TMDB API access token | Yes      |
+| `NEXT_PUBLIC_TMDB_API_URL`      | TMDB API base URL     | Yes      |
+| `NEXT_PUBLIC_APP_URL`           | Your app's URL        | Yes      |
+
+### Customization
+
+- **Themes**: Modify theme configuration in `tailwind.config.cjs`
+- **Site Config**: Update site information in `config/site.ts`
+- **Navigation**: Customize navigation items in the site config
+- **Styling**: Global styles in `styles/globals.css`
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy automatically on every push
+
+### Other Platforms
+
+The app can be deployed on any platform that supports Next.js:
+
+- Netlify
+- Railway
+- DigitalOcean App Platform
+- AWS Amplify
+- Self-hosted with Docker ( Docker file is not provided in the root directory )
+
+## Contributing
+
+We welcome contributions to Film Fanatic.
+
+How to contribute:
+
+1. Fork the repository and create your branch from `main`.
+2. Follow the existing code style and use TypeScript for type safety.
+3. Add proper error handling and test your changes thoroughly.
+4. Update documentation as needed.
+5. Submit a Pull Request with a clear description of your changes.
+
+For major changes, please open an issue first to discuss your proposal before submitting a pull request.
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is open source and available under the [MIT License](LICENSE).
+
+## Acknowledgments
+
+- [The Movie Database (TMDB)](https://www.themoviedb.org/) for providing the comprehensive movie and TV show data
+- [HeroUI](https://heroui.com/) for the beautiful component library
+- [Next.js](https://nextjs.org/) team for the amazing framework
+- All contributors and users of this project
