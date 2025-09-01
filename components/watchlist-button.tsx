@@ -73,7 +73,7 @@ export function WatchlistButton({
           aria-label={
             isOnWatchList ? "Remove from watchlist" : "Add to watchlist"
           }
-          className={`${is_on_homepage ? "" : "w-12 h-12.5 md:w-9 md:h-10"}`}
+          className={`${is_on_homepage ? "" : "w-10 h-11 md:w-9 md:h-10"}`}
           startContent={
             showTrash ? (
               <TrashBin className="size-5" />
