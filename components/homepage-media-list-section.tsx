@@ -174,7 +174,7 @@ export function HomepageMediaListSection() {
           <h2 className="px-1 pb-2 text-xl font-medium md:text-2xl">
             Trending
           </h2>
-          <Tabs key="trending_section" aria-label="Trending" size="lg">
+          <Tabs key="trending_section" aria-label="Trending">
             <Tab key="trending_day" title="Today">
               <MediaList
                 ariaLabel="Trending Movies of the Day"
@@ -193,7 +193,7 @@ export function HomepageMediaListSection() {
         {/* Popular */}
         <section>
           <h2 className="px-1 pb-2 text-xl font-medium md:text-2xl">{`What's Popular`}</h2>
-          <Tabs key="popular_section" aria-label="Popular" size="lg">
+          <Tabs key="popular_section" aria-label="Popular">
             <Tab key="popular_movie" title="In Theaters">
               <MediaList
                 ariaLabel="Popular Movies"
@@ -216,7 +216,7 @@ export function HomepageMediaListSection() {
           <h2 className="px-1 pb-2 text-xl font-medium md:text-2xl">
             Top Rated
           </h2>
-          <Tabs key="top_rated_section" aria-label="Top Rated" size="lg">
+          <Tabs key="top_rated_section" aria-label="Top Rated">
             <Tab key="top_rated_movies" title="Movies">
               <MediaList
                 ariaLabel="Top Rated Movies"

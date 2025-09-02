@@ -82,7 +82,7 @@ export default function RootLayout({
       <body
         className={cn(
           "text-foreground bg-background min-h-screen font-sans antialiased",
-          fontSans.variable,
+          fontSans.variable
         )}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "system" }}>

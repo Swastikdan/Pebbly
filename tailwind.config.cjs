@@ -11,13 +11,26 @@ const config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-sans)"],
-        mono: ["var(--font-mono)"],
       },
     },
   },
   darkMode: "class",
   plugins: [
     heroui({
+      themes: {
+        light: {
+          colors: {
+            background: "#ffffff",
+            foreground: "#111111",
+          },
+        },
+        dark: {
+          colors: {
+            background: "#111111",
+            foreground: "#ffffff",
+          },
+        },
+      },
       layout: {
         radius: {
           small: "8px",
