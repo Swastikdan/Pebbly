@@ -5,23 +5,29 @@
 
 import type { NextConfig } from "next";
 import "./env.js";
+
 const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
+    optimizeCss: true,
+    useCache: true,
     reactCompiler: true,
     scrollRestoration: true,
-    ppr: true,
+    clientSegmentCache: "client-only",
     optimisticClientCache: true,
-    //typedRoutes: true,
   },
+
   compress: true,
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+    incomingRequests: true,
+  },
 
   images: {
     unoptimized: true,
     minimumCacheTTL: 31536000,
-    formats: ["image/avif", "image/webp"],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: "https",
@@ -40,34 +46,34 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
+      // Security headers
       {
         source: "/:path*",
         headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          // Prefer CSP with frame-ancestors over X-Frame-Options
+          // If CSP set elsewhere, remove the next two headers.
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-XSS-Protection", value: "1; mode=block" },
+        ],
+      },
+      // Long-term caching for static assets in /public (except HTML)
+      {
+        source:
+          "/:all*(svg|jpg|jpeg|png|gif|webp|ico|avif|mp4|mp3|woff|woff2|ttf|otf|eot)",
+        headers: [
           {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "ALLOW-FROM https://www.youtube.com",
-          },
-          {
-            key: "X-XSS-Protection",
-            value: "1; mode=block",
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
-    ];
-  },
-  async rewrites() {
-    return [
+      // Next build assets are already immutable; this is usually redundant, but safe
       {
         source: "/_next/static/:path*",
-        destination: "/_next/static/:path*",
-        has: [
+        headers: [
           {
-            type: "header",
-            key: "cache-control",
+            key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
           },
         ],
