@@ -1,255 +1,228 @@
-## Security Notice
-
-`NEXT_PUBLIC_TMDB_ACCESS_TOKEN` is exposed to the client. Any environment variable prefixed with `NEXT_PUBLIC_` in Next.js will be available in the browser. If you do not want to expose your TMDB access token to users, remove the `NEXT_PUBLIC_` prefix and use server-side rendering (SSR) or API routes to keep your token secure. Refer to the Next.js documentation for best practices.
-
 # Film Fanatic
 
-A modern, responsive web application for discovering and exploring movies and TV shows. Built with Next.js 15, TypeScript, and powered by The Movie Database (TMDB) API.
+A modern, responsive web application for discovering and exploring movies and TV shows. Built with **TanStack Start**, **React Compiler**, **TypeScript**, **Biome** (linting/formatting), **Nitro** with `nitroV2Plugin` for server deployment, and **shadcn/ui** for UI components. Powered by The Movie Database (TMDB) API.
 
-![Film Fanatic](https://img.shields.io/badge/Film-Fanatic-blue?style=for-the-badge)
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?style=for-the-badge&logo=typescript)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1-38B2AC?style=for-the-badge&logo=tailwind-css)
+
+
+## Security notice
+
+`VITE_TMDB_ACCESS_TOKEN` is exposed to the client. Any environment variable prefixed with `VITE_` will be available in the browser via `import.meta.env`. If you do not want to expose your TMDB access token, remove the `VITE_` prefix and use server functions to keep the token on the server side.
+
+
 
 ## Features
 
-### Core Functionality
+### Core functionality
 
-- Movie & TV Show Discovery: Browse popular, top-rated, now playing, and upcoming content
-- Advanced Search: Search across movies, TV shows, and people with real-time results
-- Detailed Information: Comprehensive details including cast, crew, trailers, images, and reviews
-- Personal Watchlist: Save and manage your favorite movies and TV shows locally
-- Collections: Explore movie collections and franchises
-- Responsive Design: Optimized for desktop, tablet, and mobile devices
+* **Discovery:** Browse popular, top-rated, now-playing, and upcoming movies and TV shows
+* **Advanced search:** Real-time search across movies, TV shows, and people
+* **Detailed pages:** Cast, crew, trailers, images, reviews, and recommendations
+* **Personal watchlist:** Save and manage favorites locally with export support
+* **Collections:** Explore franchises and collection pages
+* **Responsive:** Optimized for desktop, tablet, and mobile
 
-### User Experience
+### User experience
 
-- Dark/Light Theme: Toggle between themes with system preference detection
-- Smooth Animations: Powered by Framer Motion for fluid interactions
-- Fast Loading: Optimized with React Query for efficient data fetching and caching
-- SEO Optimized: Dynamic meta tags and Open Graph support
-- Progressive Web App: Installable with offline capabilities
+* **Dark / Light theme** with system preference detection
+* **Smooth animations** powered by Framer Motion
+* **Fast loading** via TanStack Query caching and optimized requests
+* **SEO friendly**: dynamic meta tags and Open Graph support
+* **Progressive Web App**: installable, offline-capable
 
-### Navigation & Organization
+### Navigation & organization
 
-- Intuitive Navigation: Easy-to-use navbar with dropdown menus
-- Smart Routing: SEO-friendly URLs with proper slug handling
-- Pagination: Efficient browsing through large datasets
-- Share Functionality: Share movies and shows with others
-- Export Watchlist: Export your watchlist data
+* Intuitive navbar with dropdowns
+* SEO-friendly routing and slugs via TanStack Router
+* Pagination for large result sets
+* Share and export watchlist functionality
 
-## 🚀 Quick Start
+
+## Quick start
 
 ### Prerequisites
 
-- Node.js 18+
-- pnpm (recommended) or npm/yarn
-- TMDB API access token
+* Node.js 20+
+* pnpm (recommended) or npm / yarn
+* TMDB API access token
 
 ### Installation
 
 1. **Clone the repository**
 
-   ```bash
-   git clone https://github.com/Swastikdan/Film-Fanatic.git
-   cd Film-Fanatic
-   ```
+```bash
+git clone https://github.com/Swastikdan/Film-Fanatic.git
+cd Film-Fanatic
+```
 
 2. **Install dependencies**
 
-   ```bash
-   pnpm install
-   ```
+```bash
+pnpm install
+```
 
-3. **Environment Setup**
-   Create a `.env.local` file in the root directory:
+3. **Environment setup**
 
-   ```env
-   NEXT_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_access_token_here
-   NEXT_PUBLIC_TMDB_API_URL=https://api.themoviedb.org/3
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
-   ```
+Create `.env` in the project root:
 
-4. **Start the development server**
+```text
+VITE_TMDB_ACCESS_TOKEN=your_tmdb_access_token_here
+VITE_TMDB_API_URL=https://api.themoviedb.org/3
+VITE_APP_URL=http://localhost:3000
+```
 
-   ```bash
-   pnpm dev
-   ```
+For local-only overrides, create `.env.local` (add to `.gitignore`):
 
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+```text
+VITE_TMDB_ACCESS_TOKEN=your_local_token_here
+```
 
-### Getting TMDB API Access
+4. **Start development server**
 
-1. Create an account at [The Movie Database](https://www.themoviedb.org/)
-2. Go to your account settings → API
-3. Request an API key
-4. Use the "API Read Access Token" in your environment variables
+```bash
+pnpm dev
+```
 
-## 🛠️ Tech Stack
+5. Open browser: `http://localhost:3000`
 
-### Frontend Framework
+### Getting a TMDB API token
 
-- **Next.js 15** - React framework with App Router
-- **React 18** - UI library with latest features
-- **TypeScript 5.6** - Type-safe development
+1. Create an account at The Movie Database (TMDB)
+2. Account → Settings → API
+3. Request an API key and use the **API Read Access Token** in your environment variables
+
+
+
+## Tech stack
+
+### Frontend
+
+* **TanStack Start** — full-stack React framework with streaming SSR
+* **TanStack Router** — type-safe routing
+* **React 19**
+* **React Compiler 1.0** — automatic memoization/optimizations
+* **TypeScript 5.6**
 
 ### Styling & UI
 
-- **TailwindCSS 4.1** - Utility-first CSS framework
-- **HeroUI** - Modern React component library
-- **Framer Motion** - Animation library
-- **next-themes** - Theme management
+* **Tailwind CSS 4.1**
+* **shadcn/ui** (Radix-based components)
 
-### State Management & Data Fetching
+### State & data
 
-- **TanStack Query (React Query)** - Server state management
-- **Zustand** - Client state management for watchlist
-- **Zod** - Runtime type validation
+* **TanStack Query (React Query)** — server state and caching
+* **Zustand** — client state for watchlist
+* **Zod** — runtime validation
 
-### Development Tools
+### Dev tools & build
 
-- **ESLint** - Code linting with Next.js config
-- **Prettier** - Code formatting
-- **TypeScript** - Static type checking
-- **pnpm** - Fast, disk space efficient package manager
+* **Vite** — dev server and build tool
+* **Biome** — linting, formatting, import sorting
+* **Nitro** with `nitroV2Plugin` — universal server deployment
+* **pnpm** — package manager
+* **T3 Env** — type-safe env validation
 
-## 📁 Project Structure
 
-```
-film-fanatic/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   ├── collection/        # Movie collections
-│   ├── list/             # Movie/TV lists
-│   ├── movie/            # Movie detail pages
-│   ├── search/           # Search functionality
-│   ├── tv/               # TV show detail pages
-│   └── watchlist/        # User watchlist
-├── components/            # Reusable React components
-│   ├── media/            # Media-specific components
-│   └── primitives.ts     # Base component definitions
-├── config/               # Configuration files
-├── hooks/                # Custom React hooks
-├── lib/                  # Utility functions and API clients
-├── public/               # Static assets
-├── styles/               # Global styles
-└── types.d.ts           # TypeScript type definitions
-```
 
-## 🎯 Available Scripts
+## Available scripts
 
 ```bash
 # Development
-pnpm dev          # Start development server with Turbo
+pnpm dev          # Start dev server
 pnpm build        # Build for production
 pnpm start        # Start production server
-pnpm preview      # Build and start production server
+pnpm preview      # Preview production build
 
-# Code Quality
-pnpm lint         # Run ESLint
-pnpm lint:fix     # Fix ESLint issues
+# Code quality (Biome)
+pnpm lint         # Run Biome linter
+pnpm lint:fix     # Fix Biome issues
+pnpm format       # Format code with Biome
 pnpm typecheck    # Run TypeScript compiler check
 pnpm check        # Run both lint and typecheck
-
-# Formatting
-pnpm format:check # Check code formatting
-pnpm format:write # Format code with Prettier
 ```
 
-## 🌟 Key Features Deep Dive
 
-### Movie & TV Show Pages
 
-- Comprehensive information display
-- Cast and crew details with photos
-- Trailers and video content
-- Image galleries (posters, backdrops)
-- User ratings and reviews
-- Recommendations based on current selection
-- Collection information for movie franchises
+## Deep dives
 
-### Search Functionality
+### Movie & TV show pages
 
-- Multi-search across movies, TV shows, and people
-- Real-time search results
-- Filter by content type
-- Pagination for large result sets
-- Search history and suggestions
+* Server-side rendered details
+* Cast and crew profiles with photos
+* Embedded trailers and image galleries
+* Ratings, reviews, and recommendations
+* Collection/franchise pages
 
-### Watchlist Management
+### Search
 
-- Add/remove movies and TV shows
-- Persistent storage using localStorage
-- Export functionality for backup
-- Quick access from any page
-- Visual indicators for watchlisted items
+* Multi-search across movies, TV shows, and people
+* Real-time results with TanStack Query
+* Filters by content type and pagination
+* Search history and suggestions
 
-### Responsive Design
+### Watchlist
 
-- Mobile-first approach
-- Adaptive layouts for all screen sizes
-- Touch-friendly interactions
-- Optimized images with lazy loading
-- Fast loading on all devices
+* Add/remove items with persistent `localStorage` storage
+* Export/backup watchlist data
+* Quick access across the app
 
-## 🔧 Configuration
+### Responsive design
 
-### Environment Variables
+* Mobile-first layouts and touch-friendly interactions
+* Lazy-loaded images for performance
+* Adaptive UI for all screen sizes
 
-| Variable                        | Description           | Required |
-| ------------------------------- | --------------------- | -------- |
-| `NEXT_PUBLIC_TMDB_ACCESS_TOKEN` | TMDB API access token | Yes      |
-| `NEXT_PUBLIC_TMDB_API_URL`      | TMDB API base URL     | Yes      |
-| `NEXT_PUBLIC_APP_URL`           | Your app's URL        | Yes      |
+
+
+## Configuration
+
+### Environment variables
+
+TanStack Start uses Vite environment variables with T3 Env for validation.
+
+|                 Variable | Description           | Context | Required |
+| -----------------------: | --------------------- | ------: | :------: |
+| `VITE_TMDB_ACCESS_TOKEN` | TMDB API access token |  Client |    Yes   |
+| `VITE_TMDB_API_URL`      | TMDB API base URL     |  Client |    Yes   |
+| `VITE_APP_URL`           | App URL               |  Client |    Yes   |
+
+**Environment file load order**
+
+1. `.env.local` — local overrides (ignore in VCS)
+2. `.env` — default variables (committed)
 
 ### Customization
 
-- **Themes**: Modify theme configuration in `tailwind.config.cjs`
-- **Site Config**: Update site information in `config/site.ts`
-- **Navigation**: Customize navigation items in the site config
-- **Styling**: Global styles in `styles/globals.css`
+* **Themes:** `tailwind.config.cjs`
+* **Site config:** `config/site.ts`
+* **Navigation:** update site config navigation items
+* **Global styles:** `styles/globals.css`
+* **Routing:** `app/router.tsx` or file-based routes
+* **shadcn/ui components:** `components/` directory
 
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy automatically on every push
-
-### Other Platforms
-
-The app can be deployed on any platform that supports Next.js:
-
-- Netlify
-- Railway
-- DigitalOcean App Platform
-- AWS Amplify
-- Self-hosted with Docker ( Docker file is not provided in the root directory )
 
 ## Contributing
 
-We welcome contributions to Film Fanatic.
+1. Fork the repository and create a branch from `main`
+2. Follow code style and use TypeScript
+3. Use Biome for lint/format (`pnpm lint:fix`, `pnpm format`)
+4. Add error handling and tests where appropriate
+5. Update documentation for breaking changes
+6. Open a pull request with a clear description
 
-How to contribute:
+For major changes, open an issue first to discuss the proposal.
 
-1. Fork the repository and create your branch from `main`.
-2. Follow the existing code style and use TypeScript for type safety.
-3. Add proper error handling and test your changes thoroughly.
-4. Update documentation as needed.
-5. Submit a Pull Request with a clear description of your changes.
 
-For major changes, please open an issue first to discuss your proposal before submitting a pull request.
+## License
 
-## 📄 License
+This project is open source under the **MIT License**.
 
-This project is open source and available under the [MIT License](LICENSE).
 
 ## Acknowledgments
 
-- [The Movie Database (TMDB)](https://www.themoviedb.org/) for providing the comprehensive movie and TV show data
-- [HeroUI](https://heroui.com/) for the beautiful component library
-- [Next.js](https://nextjs.org/) team for the amazing framework
-- All contributors and users of this project
+* The Movie Database (TMDB) — data provider
+* TanStack — Start, Router, Query libraries
+* shadcn/ui — component library
+* Biome — linting and formatting
+* Vite — build tool
+* Nitro — server deployment
+* React Team — React Compiler and React ecosystem
