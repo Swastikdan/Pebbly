@@ -24,20 +24,6 @@ const config = defineConfig({
       },
     }),
   ],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (id.includes("node_modules")) {
-            if (id.match(/react-dom/)) return "react-dom";
-            if (id.match(/react/)) return "react";
-            if (id.match(/@radix-ui/)) return "radix-ui";
-            if (id.match(/zod/)) return "zod-core";
-          }
-        },
-      },
-    },
-  },
 });
 
 export default config;
