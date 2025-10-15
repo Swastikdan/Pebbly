@@ -1,8 +1,7 @@
-"use client";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "./theme-provider";
-import { SunFilledIcon, MoonFilledIcon } from "@/components/ui/icons";
+import { MoonFilledIcon, SunFilledIcon } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "./theme-provider";
 
 export const ThemeSwitch = () => {
 	const { theme, setTheme } = useTheme();

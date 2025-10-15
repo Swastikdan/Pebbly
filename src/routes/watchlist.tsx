@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { Spinner } from "@/components/ui/spinner";
-
 import { ExportAndAddWatchlist } from "@/components/export-and-add-watchlist";
+import { Spinner } from "@/components/ui/spinner";
 import { WatchListContainer } from "@/components/watchlist-contatiner";
 export const Route = createFileRoute("/watchlist")({
 	head: () => ({

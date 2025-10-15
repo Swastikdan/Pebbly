@@ -1,88 +1,128 @@
-"use client";
-import { useState, useRef, useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Download, Upload } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/spinner";
+import {
+	useWatchlist,
+	useWatchlistStore,
+	type WatchlistItem,
+} from "@/store/usewatchlist";
 
-import { useWatchlist } from "@/store/usewatchlist";
-import { useWatchlistStore, type WatchlistItem } from "@/store/usewatchlist";
-
-import { Upload, Download } from "@/components/ui/icons";
+type ImportError = {
+	message: string;
+	invalidItems?: number;
+};
 
 export const ExportAndAddWatchlist = () => {
 	const [importLoading, setImportLoading] = useState(false);
 	const [exportLoading, setExportLoading] = useState(false);
+	const [error, setError] = useState<ImportError | null>(null);
 	const { watchlist, loading } = useWatchlist();
 	const setWatchlist = useWatchlistStore((state) => state.setWatchlist);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const exportWatchlist = useCallback(async () => {
+		if (!watchlist || watchlist.length === 0) return;
+
 		try {
 			setExportLoading(true);
-			const json = JSON.stringify(watchlist ?? [], null, 2);
+			setError(null);
+
+			const json = JSON.stringify(watchlist, null, 2);
 			const blob = new Blob([json], { type: "application/json" });
 			const url = URL.createObjectURL(blob);
 			const link = document.createElement("a");
+			const timestamp = new Date().toISOString().split("T")[0];
 
 			link.href = url;
-			link.download = `watchlist-${new Date().toISOString()}.json`;
+			link.download = `watchlist-${timestamp}.json`;
 			document.body.appendChild(link);
 			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(url);
-		} catch {
-			alert("Failed to export watchlist.");
+
+			// Cleanup
+			setTimeout(() => {
+				document.body.removeChild(link);
+				URL.revokeObjectURL(url);
+			}, 100);
+		} catch (err) {
+			setError({
+				message: "Failed to export watchlist. Please try again.",
+			});
+			console.error("Export error:", err);
 		} finally {
 			setExportLoading(false);
 		}
 	}, [watchlist]);
 
-	// Type guard to check if an object is a valid WatchlistItem (for import)
-	function isValidImportedWatchlistItem(
-		item: unknown,
-	): item is Omit<WatchlistItem, "updated_at"> & Partial<WatchlistItem> {
-		if (typeof item !== "object" || item === null) return false;
-		const obj = item as Record<string, unknown>;
+	const isValidWatchlistItem = useCallback(
+		(item: unknown): item is Omit<WatchlistItem, "updated_at"> => {
+			if (typeof item !== "object" || item === null) return false;
 
-		return (
-			typeof obj.title === "string" &&
-			typeof obj.rating === "number" &&
-			typeof obj.image === "string" &&
-			typeof obj.external_id === "string" &&
-			(obj.type === "tv" || obj.type === "movie") &&
-			typeof obj.release_date === "string"
-		);
-	}
+			const obj = item as Record<string, unknown>;
+			const hasRequiredFields =
+				typeof obj.title === "string" &&
+				typeof obj.rating === "number" &&
+				typeof obj.image === "string" &&
+				typeof obj.external_id === "string" &&
+				(obj.type === "tv" || obj.type === "movie") &&
+				typeof obj.release_date === "string";
+
+			// Additional validation
+			const isValidRating =
+				(obj.rating as number) >= 0 && (obj.rating as number) <= 10;
+			const isValidTitle = (obj.title as string).trim().length > 0;
+
+			return hasRequiredFields && isValidRating && isValidTitle;
+		},
+		[],
+	);
 
 	const importWatchlist = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>) => {
-			setImportLoading(true);
+		async (event: React.ChangeEvent<HTMLInputElement>) => {
 			const file = event.target.files?.[0];
+			if (!file) return;
 
-			if (!file) {
-				setImportLoading(false);
-
+			// Validate file type
+			if (!file.name.endsWith(".json")) {
+				setError({ message: "Please select a valid JSON file." });
 				return;
 			}
+
+			// Validate file size (10MB max)
+			const MAX_FILE_SIZE = 10 * 1024 * 1024;
+			if (file.size > MAX_FILE_SIZE) {
+				setError({ message: "File size exceeds 10MB limit." });
+				return;
+			}
+
+			setImportLoading(true);
+			setError(null);
 
 			const reader = new FileReader();
 
 			reader.onload = async (e) => {
 				try {
 					const content = e.target?.result as string;
-					const importedData = JSON.parse(content) as unknown; // Parse as unknown first
+					if (!content || content.trim().length === 0) {
+						throw new Error("File is empty.");
+					}
 
-					// Validate if importedData is an array and its items resemble WatchlistItem
+					const importedData = JSON.parse(content) as unknown;
+
 					if (!Array.isArray(importedData)) {
 						throw new Error("Invalid file format: Expected a JSON array.");
 					}
 
-					const validatedList: WatchlistItem[] = importedData
-						.map((item) => {
-							if (!isValidImportedWatchlistItem(item)) {
-								return null;
-							}
+					if (importedData.length === 0) {
+						throw new Error("Watchlist is empty.");
+					}
 
-							return {
+					let invalidItemCount = 0;
+					const validatedList: WatchlistItem[] = [];
+
+					for (const item of importedData) {
+						if (isValidWatchlistItem(item)) {
+							validatedList.push({
 								title: item.title,
 								type: item.type,
 								external_id: item.external_id,
@@ -90,17 +130,36 @@ export const ExportAndAddWatchlist = () => {
 								rating: item.rating,
 								release_date: item.release_date,
 								updated_at: Date.now(),
-							};
-						})
-						.filter((item): item is WatchlistItem => Boolean(item)); // Filter out any nulls from invalid items
+							});
+						} else {
+							invalidItemCount++;
+						}
+					}
 
-					// Update the Zustand store with the new watchlist
+					if (validatedList.length === 0) {
+						throw new Error("No valid items found in the watchlist file.");
+					}
+
+					// Update store with validated items
 					setWatchlist(validatedList);
-				} catch (error) {
-					alert(`Invalid watchlist file format: ${(error as Error).message}`);
+
+					// Show warning if some items were invalid
+					if (invalidItemCount > 0) {
+						setError({
+							message: `Successfully imported ${validatedList.length} items. ${invalidItemCount} invalid items were skipped.`,
+							invalidItems: invalidItemCount,
+						});
+					}
+				} catch (err) {
+					const errorMessage =
+						err instanceof Error ? err.message : "Unknown error occurred";
+					setError({
+						message: `Import failed: ${errorMessage}`,
+					});
+					console.error("Import error:", err);
 				} finally {
 					setImportLoading(false);
-					// Clear the file input to allow selecting the same file again
+					// Clear file input
 					if (fileInputRef.current) {
 						fileInputRef.current.value = "";
 					}
@@ -108,13 +167,31 @@ export const ExportAndAddWatchlist = () => {
 			};
 
 			reader.onerror = () => {
-				alert("Error reading file.");
+				setError({ message: "Error reading file. Please try again." });
 				setImportLoading(false);
+				if (fileInputRef.current) {
+					fileInputRef.current.value = "";
+				}
 			};
 
 			reader.readAsText(file);
 		},
-		[setWatchlist],
+		[isValidWatchlistItem, setWatchlist],
+	);
+
+	const handleImportClick = useCallback(() => {
+		setError(null);
+		fileInputRef.current?.click();
+	}, []);
+
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLButtonElement>) => {
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				handleImportClick();
+			}
+		},
+		[handleImportClick],
 	);
 
 	if (loading) {
@@ -127,48 +204,59 @@ export const ExportAndAddWatchlist = () => {
 	}
 
 	return (
-		<div className="flex justify-end pt-5">
-			<div className="flex gap-4">
-				{(watchlist?.length ?? 0) > 0 && (
+		<div className="flex flex-col gap-2 pt-5">
+			{error && (
+				<div
+					className={`rounded-md p-3 text-sm ${
+						error.invalidItems
+							? "bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
+							: "bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-200"
+					}`}
+					role="alert"
+				>
+					{error.message}
+				</div>
+			)}
+			<div className="flex justify-end">
+				<div className="flex gap-4">
+					{(watchlist?.length ?? 0) > 0 && (
+						<Button
+							className="gap-2 rounded-[calc(var(--radius-md)+3px)]"
+							disabled={exportLoading || importLoading}
+							variant="secondary"
+							onClick={exportWatchlist}
+							aria-label="Export watchlist to JSON file"
+						>
+							{exportLoading ? (
+								<Spinner color="current" />
+							) : (
+								<Download size={20} />
+							)}
+							Export
+						</Button>
+					)}
 					<Button
 						className="gap-2 rounded-[calc(var(--radius-md)+3px)]"
-						disabled={exportLoading}
+						disabled={importLoading || exportLoading}
 						variant="secondary"
-						onClick={exportWatchlist}
+						onClick={handleImportClick}
+						onKeyDown={handleKeyDown}
+						aria-label="Import watchlist from JSON file"
 					>
-						{exportLoading ? (
-							<Spinner color="current" />
-						) : (
-							<Download size={20} />
-						)}
-						Export
+						{/** biome-ignore lint: not needed */}
+						<input
+							ref={fileInputRef}
+							accept=".json,application/json"
+							className="hidden"
+							disabled={importLoading || exportLoading}
+							id="watchlist-import"
+							type="file"
+							onChange={importWatchlist}
+						/>
+						{importLoading ? <Spinner color="current" /> : <Upload size={20} />}
+						Import
 					</Button>
-				)}
-				<Button
-					aria-label="Import watchlist"
-					className={`${importLoading ? "cursor-not-allowed" : ""} rounded-[calc(var(--radius-md)+3px)]`}
-					tabIndex={0}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === " ") {
-							e.preventDefault();
-							fileInputRef.current?.click();
-						}
-					}}
-					variant="secondary"
-					onClick={() => fileInputRef.current?.click()}
-				>
-					<input
-						ref={fileInputRef}
-						accept=".json"
-						className="hidden"
-						disabled={importLoading}
-						id="watchlist-import"
-						type="file"
-						onChange={importWatchlist}
-					/>
-					{importLoading ? <Spinner /> : <Upload size={20} />}
-					Import
-				</Button>
+				</div>
 			</div>
 		</div>
 	);

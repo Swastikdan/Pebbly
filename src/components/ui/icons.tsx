@@ -29,6 +29,7 @@ export const Logo: React.FC<IconSvgProps> = ({ ...props }) => (
 			</g>
 		</g>
 		<defs>
+			{/** biome-ignore lint: not needed */}
 			<linearGradient
 				gradientUnits="userSpaceOnUse"
 				id="a"
@@ -40,6 +41,7 @@ export const Logo: React.FC<IconSvgProps> = ({ ...props }) => (
 				<stop offset="0.05" stopColor="#67D7FE" />
 				<stop offset="0.95" stopColor="#6F6EF9" />
 			</linearGradient>
+			{/** biome-ignore lint: not needed */}
 			<linearGradient
 				gradientUnits="userSpaceOnUse"
 				id="b"

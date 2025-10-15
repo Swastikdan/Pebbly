@@ -1,10 +1,10 @@
-"use client";
-import { memo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ScrollContainer } from "@/components/scroll-container";
+import { memo } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
+import { ScrollContainer } from "@/components/scroll-container";
 import { getMedia } from "@/lib/queries";
 import type { MediaListResultsEntity } from "@/types";
+
 interface MediaListProps extends MediaListResultsEntity {
 	is_on_watchlist_page?: boolean;
 	is_on_homepage?: boolean;
@@ -105,7 +105,7 @@ function TrendingWeekMovies() {
 }
 
 function UpcomingMovies() {
-	const { data, isFetching, error, cardType, mediaType } = useMediaQuery(
+	const { data, isFetching, error, cardType } = useMediaQuery(
 		"movies_upcoming",
 		{ cardType: "vertical", mediaType: "movie" },
 	);
@@ -117,7 +117,7 @@ function UpcomingMovies() {
 }
 
 function PopularMovies() {
-	const { data, isFetching, error, cardType, mediaType } = useMediaQuery(
+	const { data, isFetching, error, cardType } = useMediaQuery(
 		"movies_popular",
 		{ mediaType: "movie" },
 	);
@@ -129,7 +129,7 @@ function PopularMovies() {
 }
 
 function PopularTv() {
-	const { data, isFetching, error, cardType, mediaType } = useMediaQuery(
+	const { data, isFetching, error, cardType } = useMediaQuery(
 		"tv-shows_popular",
 		{ mediaType: "tv" },
 	);
@@ -141,7 +141,7 @@ function PopularTv() {
 }
 
 function TopRatedMovies() {
-	const { data, isFetching, error, cardType, mediaType } = useMediaQuery(
+	const { data, isFetching, error, cardType } = useMediaQuery(
 		"movies_top-rated",
 		{ mediaType: "movie" },
 	);
@@ -153,7 +153,7 @@ function TopRatedMovies() {
 }
 
 function TopRatedTv() {
-	const { data, isFetching, error, cardType, mediaType } = useMediaQuery(
+	const { data, isFetching, error, cardType } = useMediaQuery(
 		"tv-shows_top-rated",
 		{ mediaType: "tv" },
 	);

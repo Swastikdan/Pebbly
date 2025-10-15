@@ -1,7 +1,6 @@
 import { DefaultLoader } from "@/components/default-loader";
-
-import { useWatchlist } from "@/store/usewatchlist";
 import { MediaCard } from "@/components/media-card";
+import { useWatchlist } from "@/store/usewatchlist";
 
 export const WatchListContainer = () => {
 	const { watchlist, loading } = useWatchlist();
@@ -18,7 +17,7 @@ export const WatchListContainer = () => {
 								<MediaCard
 									card_type="horizontal"
 									key={item.external_id}
-									id={Number(item.external_id)}
+									id={parseInt(item.external_id, 10)}
 									image={item.image ?? ""}
 									is_on_watchlist_page={true}
 									media_type={item.type}

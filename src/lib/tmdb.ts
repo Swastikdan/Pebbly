@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { env } from "@/env";
+
 const ACCESS_TOKEN = env.VITE_PUBLIC_TMDB_ACCESS_TOKEN;
 const BASE_URL = env.VITE_PUBLIC_TMDB_API_URL;
 

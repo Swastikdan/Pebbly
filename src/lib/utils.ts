@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 interface ApiResponse<T> {
@@ -48,9 +48,9 @@ export function validateId(id: number): asserts id is number {
 export function parseAndValidateId(
 	input: string | number,
 ): ValidationResult<number> {
-	const id = typeof input === "string" ? Number.parseInt(input, 10) : input;
+	const id = typeof input === "string" ? parseInt(input, 10) : input;
 
-	if (isNaN(id)) {
+	if (Number.isNaN(id)) {
 		return {
 			success: false,
 			error: `${ERROR_MESSAGES.INVALID_ID}: "${input}" is not a valid number`,

@@ -1,7 +1,7 @@
 import type * as Types from "@/types";
 
 import { tmdb } from "./tmdb";
-import { validateResponse, validateId } from "./utils";
+import { validateId, validateResponse } from "./utils";
 
 /** Get only array of results from media list endpoints */
 export async function getMedia({

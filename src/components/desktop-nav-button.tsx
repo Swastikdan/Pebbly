@@ -1,10 +1,8 @@
-"use client";
-import { useLocation } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
+import { Link, useLocation } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ThemeSwitch } from "./theme-switch";
 import { BookMarkFilledIcon, SearchFilledIcon } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
+import { ThemeSwitch } from "./theme-switch";
 
 const DesktopNavButton = ({
 	href,

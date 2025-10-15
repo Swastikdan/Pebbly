@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import {
 	ChevronLeft,
@@ -42,7 +40,7 @@ export function Pagination({
 			{/* Previous Button */}
 			<Button
 				variant="outline"
-				className="rounded-[calc(var(--radius-md)+3px)] border border-input px-2 pr-4 text-lg md:border-transparent md:text-base px-5"
+				className="rounded-[calc(var(--radius-md)+3px)] border border-input  pr-4 text-lg md:border-transparent md:text-base px-5"
 				onClick={() => onPageChange(currentPage - 1)}
 				disabled={currentPage === 1} //Disable if on the first page
 				aria-label="Previous Page"
@@ -50,7 +48,7 @@ export function Pagination({
 				<ChevronLeft />
 				<span>Prev</span>
 			</Button>
-			<div className="flex h-9 items-center justify-center gap-2 rounded-[calc(var(--radius-md)+3px)] rounded-lg bg-secondary px-4 py-2 md:hidden">
+			<div className="flex h-9 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2 md:hidden">
 				<span className="font-medium text-base text-primary">Page</span>
 				<div className="flex items-center gap-2">
 					<span className="text-base" aria-current="page">
@@ -135,7 +133,7 @@ export function Pagination({
 			{/* Next Button */}
 			<Button
 				variant="outline"
-				className="rounded-[calc(var(--radius-md)+3px)] border border-input px-2 pl-4 text-lg md:border-transparent md:text-base px-5"
+				className="rounded-[calc(var(--radius-md)+3px)] border border-input  pl-4 text-lg md:border-transparent md:text-base px-5"
 				onClick={() => onPageChange(currentPage + 1)}
 				disabled={currentPage === totalPages} //Disable if on the last page
 				aria-label="Next Page"

@@ -13,25 +13,16 @@ import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as ApiMetaimageRouteImport } from './routes/api.metaimage'
 import { Route as ListTypeSlugRouteImport } from './routes/list.$type.$slug'
-import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
-import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
-import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
-import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
 import { Route as CollectionIdChar123SlugChar125RouteImport } from './routes/collection.$id.{-$slug}'
 import { Route as TvIdChar123SlugChar125IndexRouteImport } from './routes/tv/$id/{-$slug}/index'
 import { Route as MovieIdChar123SlugChar125IndexRouteImport } from './routes/movie/$id/{-$slug}/index'
-import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
 import { Route as TvIdChar123SlugChar125SeasonsRouteImport } from './routes/tv/$id/{-$slug}/seasons'
 import { Route as TvIdChar123SlugChar125MediaRouteImport } from './routes/tv/$id/{-$slug}/media'
 import { Route as TvIdChar123SlugChar125CastCrewRouteImport } from './routes/tv/$id/{-$slug}/cast-crew'
 import { Route as MovieIdChar123SlugChar125MediaRouteImport } from './routes/movie/$id/{-$slug}/media'
 import { Route as MovieIdChar123SlugChar125CastCrewRouteImport } from './routes/movie/$id/{-$slug}/cast-crew'
-import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
-import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
-import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ssr.data-only'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -53,11 +44,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
-  id: '/demo/tanstack-query',
-  path: '/demo/tanstack-query',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiMetaimageRoute = ApiMetaimageRouteImport.update({
   id: '/api/metaimage',
   path: '/api/metaimage',
@@ -66,26 +52,6 @@ const ApiMetaimageRoute = ApiMetaimageRouteImport.update({
 const ListTypeSlugRoute = ListTypeSlugRouteImport.update({
   id: '/list/$type/$slug',
   path: '/list/$type/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
-  id: '/demo/start/server-funcs',
-  path: '/demo/start/server-funcs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartApiRequestRoute = DemoStartApiRequestRouteImport.update({
-  id: '/demo/start/api-request',
-  path: '/demo/start/api-request',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoApiTqTodosRoute = DemoApiTqTodosRouteImport.update({
-  id: '/demo/api/tq-todos',
-  path: '/demo/api/tq-todos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
-  id: '/demo/api/names',
-  path: '/demo/api/names',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CollectionIdChar123SlugChar125Route =
@@ -106,11 +72,6 @@ const MovieIdChar123SlugChar125IndexRoute =
     path: '/movie/$id/{-$slug}/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const DemoStartSsrIndexRoute = DemoStartSsrIndexRouteImport.update({
-  id: '/demo/start/ssr/',
-  path: '/demo/start/ssr/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TvIdChar123SlugChar125SeasonsRoute =
   TvIdChar123SlugChar125SeasonsRouteImport.update({
     id: '/tv/$id/{-$slug}/seasons',
@@ -141,21 +102,6 @@ const MovieIdChar123SlugChar125CastCrewRoute =
     path: '/movie/$id/{-$slug}/cast-crew',
     getParentRoute: () => rootRouteImport,
   } as any)
-const DemoStartSsrSpaModeRoute = DemoStartSsrSpaModeRouteImport.update({
-  id: '/demo/start/ssr/spa-mode',
-  path: '/demo/start/ssr/spa-mode',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartSsrFullSsrRoute = DemoStartSsrFullSsrRouteImport.update({
-  id: '/demo/start/ssr/full-ssr',
-  path: '/demo/start/ssr/full-ssr',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
-  id: '/demo/start/ssr/data-only',
-  path: '/demo/start/ssr/data-only',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -163,22 +109,13 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
-  '/demo/api/names': typeof DemoApiNamesRoute
-  '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
   '/list/$type/$slug': typeof ListTypeSlugRoute
-  '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
-  '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
-  '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
   '/movie/$id/{-$slug}/media': typeof MovieIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/cast-crew': typeof TvIdChar123SlugChar125CastCrewRoute
   '/tv/$id/{-$slug}/media': typeof TvIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/seasons': typeof TvIdChar123SlugChar125SeasonsRoute
-  '/demo/start/ssr': typeof DemoStartSsrIndexRoute
   '/movie/$id/{-$slug}': typeof MovieIdChar123SlugChar125IndexRoute
   '/tv/$id/{-$slug}': typeof TvIdChar123SlugChar125IndexRoute
 }
@@ -188,22 +125,13 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
-  '/demo/api/names': typeof DemoApiNamesRoute
-  '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
   '/list/$type/$slug': typeof ListTypeSlugRoute
-  '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
-  '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
-  '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
   '/movie/$id/{-$slug}/media': typeof MovieIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/cast-crew': typeof TvIdChar123SlugChar125CastCrewRoute
   '/tv/$id/{-$slug}/media': typeof TvIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/seasons': typeof TvIdChar123SlugChar125SeasonsRoute
-  '/demo/start/ssr': typeof DemoStartSsrIndexRoute
   '/movie/$id/{-$slug}': typeof MovieIdChar123SlugChar125IndexRoute
   '/tv/$id/{-$slug}': typeof TvIdChar123SlugChar125IndexRoute
 }
@@ -214,22 +142,13 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
-  '/demo/api/names': typeof DemoApiNamesRoute
-  '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
   '/list/$type/$slug': typeof ListTypeSlugRoute
-  '/demo/start/ssr/data-only': typeof DemoStartSsrDataOnlyRoute
-  '/demo/start/ssr/full-ssr': typeof DemoStartSsrFullSsrRoute
-  '/demo/start/ssr/spa-mode': typeof DemoStartSsrSpaModeRoute
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
   '/movie/$id/{-$slug}/media': typeof MovieIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/cast-crew': typeof TvIdChar123SlugChar125CastCrewRoute
   '/tv/$id/{-$slug}/media': typeof TvIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/seasons': typeof TvIdChar123SlugChar125SeasonsRoute
-  '/demo/start/ssr/': typeof DemoStartSsrIndexRoute
   '/movie/$id/{-$slug}/': typeof MovieIdChar123SlugChar125IndexRoute
   '/tv/$id/{-$slug}/': typeof TvIdChar123SlugChar125IndexRoute
 }
@@ -241,22 +160,13 @@ export interface FileRouteTypes {
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
-    | '/demo/tanstack-query'
     | '/collection/$id/{-$slug}'
-    | '/demo/api/names'
-    | '/demo/api/tq-todos'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
     | '/list/$type/$slug'
-    | '/demo/start/ssr/data-only'
-    | '/demo/start/ssr/full-ssr'
-    | '/demo/start/ssr/spa-mode'
     | '/movie/$id/{-$slug}/cast-crew'
     | '/movie/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/cast-crew'
     | '/tv/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/seasons'
-    | '/demo/start/ssr'
     | '/movie/$id/{-$slug}'
     | '/tv/$id/{-$slug}'
   fileRoutesByTo: FileRoutesByTo
@@ -266,22 +176,13 @@ export interface FileRouteTypes {
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
-    | '/demo/tanstack-query'
     | '/collection/$id/{-$slug}'
-    | '/demo/api/names'
-    | '/demo/api/tq-todos'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
     | '/list/$type/$slug'
-    | '/demo/start/ssr/data-only'
-    | '/demo/start/ssr/full-ssr'
-    | '/demo/start/ssr/spa-mode'
     | '/movie/$id/{-$slug}/cast-crew'
     | '/movie/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/cast-crew'
     | '/tv/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/seasons'
-    | '/demo/start/ssr'
     | '/movie/$id/{-$slug}'
     | '/tv/$id/{-$slug}'
   id:
@@ -291,22 +192,13 @@ export interface FileRouteTypes {
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
-    | '/demo/tanstack-query'
     | '/collection/$id/{-$slug}'
-    | '/demo/api/names'
-    | '/demo/api/tq-todos'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
     | '/list/$type/$slug'
-    | '/demo/start/ssr/data-only'
-    | '/demo/start/ssr/full-ssr'
-    | '/demo/start/ssr/spa-mode'
     | '/movie/$id/{-$slug}/cast-crew'
     | '/movie/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/cast-crew'
     | '/tv/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/seasons'
-    | '/demo/start/ssr/'
     | '/movie/$id/{-$slug}/'
     | '/tv/$id/{-$slug}/'
   fileRoutesById: FileRoutesById
@@ -317,22 +209,13 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   WatchlistRoute: typeof WatchlistRoute
   ApiMetaimageRoute: typeof ApiMetaimageRoute
-  DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   CollectionIdChar123SlugChar125Route: typeof CollectionIdChar123SlugChar125Route
-  DemoApiNamesRoute: typeof DemoApiNamesRoute
-  DemoApiTqTodosRoute: typeof DemoApiTqTodosRoute
-  DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
-  DemoStartServerFuncsRoute: typeof DemoStartServerFuncsRoute
   ListTypeSlugRoute: typeof ListTypeSlugRoute
-  DemoStartSsrDataOnlyRoute: typeof DemoStartSsrDataOnlyRoute
-  DemoStartSsrFullSsrRoute: typeof DemoStartSsrFullSsrRoute
-  DemoStartSsrSpaModeRoute: typeof DemoStartSsrSpaModeRoute
   MovieIdChar123SlugChar125CastCrewRoute: typeof MovieIdChar123SlugChar125CastCrewRoute
   MovieIdChar123SlugChar125MediaRoute: typeof MovieIdChar123SlugChar125MediaRoute
   TvIdChar123SlugChar125CastCrewRoute: typeof TvIdChar123SlugChar125CastCrewRoute
   TvIdChar123SlugChar125MediaRoute: typeof TvIdChar123SlugChar125MediaRoute
   TvIdChar123SlugChar125SeasonsRoute: typeof TvIdChar123SlugChar125SeasonsRoute
-  DemoStartSsrIndexRoute: typeof DemoStartSsrIndexRoute
   MovieIdChar123SlugChar125IndexRoute: typeof MovieIdChar123SlugChar125IndexRoute
   TvIdChar123SlugChar125IndexRoute: typeof TvIdChar123SlugChar125IndexRoute
 }
@@ -367,13 +250,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/tanstack-query': {
-      id: '/demo/tanstack-query'
-      path: '/demo/tanstack-query'
-      fullPath: '/demo/tanstack-query'
-      preLoaderRoute: typeof DemoTanstackQueryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/metaimage': {
       id: '/api/metaimage'
       path: '/api/metaimage'
@@ -386,34 +262,6 @@ declare module '@tanstack/react-router' {
       path: '/list/$type/$slug'
       fullPath: '/list/$type/$slug'
       preLoaderRoute: typeof ListTypeSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/server-funcs': {
-      id: '/demo/start/server-funcs'
-      path: '/demo/start/server-funcs'
-      fullPath: '/demo/start/server-funcs'
-      preLoaderRoute: typeof DemoStartServerFuncsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/api-request': {
-      id: '/demo/start/api-request'
-      path: '/demo/start/api-request'
-      fullPath: '/demo/start/api-request'
-      preLoaderRoute: typeof DemoStartApiRequestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/api/tq-todos': {
-      id: '/demo/api/tq-todos'
-      path: '/demo/api/tq-todos'
-      fullPath: '/demo/api/tq-todos'
-      preLoaderRoute: typeof DemoApiTqTodosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/api/names': {
-      id: '/demo/api/names'
-      path: '/demo/api/names'
-      fullPath: '/demo/api/names'
-      preLoaderRoute: typeof DemoApiNamesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/collection/$id/{-$slug}': {
@@ -435,13 +283,6 @@ declare module '@tanstack/react-router' {
       path: '/movie/$id/{-$slug}'
       fullPath: '/movie/$id/{-$slug}'
       preLoaderRoute: typeof MovieIdChar123SlugChar125IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/ssr/': {
-      id: '/demo/start/ssr/'
-      path: '/demo/start/ssr'
-      fullPath: '/demo/start/ssr'
-      preLoaderRoute: typeof DemoStartSsrIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tv/$id/{-$slug}/seasons': {
@@ -479,27 +320,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MovieIdChar123SlugChar125CastCrewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/start/ssr/spa-mode': {
-      id: '/demo/start/ssr/spa-mode'
-      path: '/demo/start/ssr/spa-mode'
-      fullPath: '/demo/start/ssr/spa-mode'
-      preLoaderRoute: typeof DemoStartSsrSpaModeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/ssr/full-ssr': {
-      id: '/demo/start/ssr/full-ssr'
-      path: '/demo/start/ssr/full-ssr'
-      fullPath: '/demo/start/ssr/full-ssr'
-      preLoaderRoute: typeof DemoStartSsrFullSsrRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/start/ssr/data-only': {
-      id: '/demo/start/ssr/data-only'
-      path: '/demo/start/ssr/data-only'
-      fullPath: '/demo/start/ssr/data-only'
-      preLoaderRoute: typeof DemoStartSsrDataOnlyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -509,23 +329,14 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   WatchlistRoute: WatchlistRoute,
   ApiMetaimageRoute: ApiMetaimageRoute,
-  DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   CollectionIdChar123SlugChar125Route: CollectionIdChar123SlugChar125Route,
-  DemoApiNamesRoute: DemoApiNamesRoute,
-  DemoApiTqTodosRoute: DemoApiTqTodosRoute,
-  DemoStartApiRequestRoute: DemoStartApiRequestRoute,
-  DemoStartServerFuncsRoute: DemoStartServerFuncsRoute,
   ListTypeSlugRoute: ListTypeSlugRoute,
-  DemoStartSsrDataOnlyRoute: DemoStartSsrDataOnlyRoute,
-  DemoStartSsrFullSsrRoute: DemoStartSsrFullSsrRoute,
-  DemoStartSsrSpaModeRoute: DemoStartSsrSpaModeRoute,
   MovieIdChar123SlugChar125CastCrewRoute:
     MovieIdChar123SlugChar125CastCrewRoute,
   MovieIdChar123SlugChar125MediaRoute: MovieIdChar123SlugChar125MediaRoute,
   TvIdChar123SlugChar125CastCrewRoute: TvIdChar123SlugChar125CastCrewRoute,
   TvIdChar123SlugChar125MediaRoute: TvIdChar123SlugChar125MediaRoute,
   TvIdChar123SlugChar125SeasonsRoute: TvIdChar123SlugChar125SeasonsRoute,
-  DemoStartSsrIndexRoute: DemoStartSsrIndexRoute,
   MovieIdChar123SlugChar125IndexRoute: MovieIdChar123SlugChar125IndexRoute,
   TvIdChar123SlugChar125IndexRoute: TvIdChar123SlugChar125IndexRoute,
 }

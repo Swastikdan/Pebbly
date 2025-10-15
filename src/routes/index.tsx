@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-	TrendingDayMovies,
-	TrendingWeekMovies,
-	UpcomingMovies,
 	PopularMovies,
 	PopularTv,
 	TopRatedMovies,
 	TopRatedTv,
+	TrendingDayMovies,
+	TrendingWeekMovies,
+	UpcomingMovies,
 } from "@/components/homepage-media";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
