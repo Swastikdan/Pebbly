@@ -1,255 +1,319 @@
-## Security Notice
+Welcome to your new TanStack app! 
 
-`NEXT_PUBLIC_TMDB_ACCESS_TOKEN` is exposed to the client. Any environment variable prefixed with `NEXT_PUBLIC_` in Next.js will be available in the browser. If you do not want to expose your TMDB access token to users, remove the `NEXT_PUBLIC_` prefix and use server-side rendering (SSR) or API routes to keep your token secure. Refer to the Next.js documentation for best practices.
+# Getting Started
 
-# Film Fanatic
-
-A modern, responsive web application for discovering and exploring movies and TV shows. Built with Next.js 15, TypeScript, and powered by The Movie Database (TMDB) API.
-
-![Film Fanatic](https://img.shields.io/badge/Film-Fanatic-blue?style=for-the-badge)
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?style=for-the-badge&logo=typescript)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1-38B2AC?style=for-the-badge&logo=tailwind-css)
-
-## Features
-
-### Core Functionality
-
-- Movie & TV Show Discovery: Browse popular, top-rated, now playing, and upcoming content
-- Advanced Search: Search across movies, TV shows, and people with real-time results
-- Detailed Information: Comprehensive details including cast, crew, trailers, images, and reviews
-- Personal Watchlist: Save and manage your favorite movies and TV shows locally
-- Collections: Explore movie collections and franchises
-- Responsive Design: Optimized for desktop, tablet, and mobile devices
-
-### User Experience
-
-- Dark/Light Theme: Toggle between themes with system preference detection
-- Smooth Animations: Powered by Framer Motion for fluid interactions
-- Fast Loading: Optimized with React Query for efficient data fetching and caching
-- SEO Optimized: Dynamic meta tags and Open Graph support
-- Progressive Web App: Installable with offline capabilities
-
-### Navigation & Organization
-
-- Intuitive Navigation: Easy-to-use navbar with dropdown menus
-- Smart Routing: SEO-friendly URLs with proper slug handling
-- Pagination: Efficient browsing through large datasets
-- Share Functionality: Share movies and shows with others
-- Export Watchlist: Export your watchlist data
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- pnpm (recommended) or npm/yarn
-- TMDB API access token
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/Swastikdan/Film-Fanatic.git
-   cd Film-Fanatic
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   pnpm install
-   ```
-
-3. **Environment Setup**
-   Create a `.env.local` file in the root directory:
-
-   ```env
-   NEXT_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_access_token_here
-   NEXT_PUBLIC_TMDB_API_URL=https://api.themoviedb.org/3
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
-   ```
-
-4. **Start the development server**
-
-   ```bash
-   pnpm dev
-   ```
-
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-### Getting TMDB API Access
-
-1. Create an account at [The Movie Database](https://www.themoviedb.org/)
-2. Go to your account settings → API
-3. Request an API key
-4. Use the "API Read Access Token" in your environment variables
-
-## 🛠️ Tech Stack
-
-### Frontend Framework
-
-- **Next.js 15** - React framework with App Router
-- **React 18** - UI library with latest features
-- **TypeScript 5.6** - Type-safe development
-
-### Styling & UI
-
-- **TailwindCSS 4.1** - Utility-first CSS framework
-- **HeroUI** - Modern React component library
-- **Framer Motion** - Animation library
-- **next-themes** - Theme management
-
-### State Management & Data Fetching
-
-- **TanStack Query (React Query)** - Server state management
-- **Zustand** - Client state management for watchlist
-- **Zod** - Runtime type validation
-
-### Development Tools
-
-- **ESLint** - Code linting with Next.js config
-- **Prettier** - Code formatting
-- **TypeScript** - Static type checking
-- **pnpm** - Fast, disk space efficient package manager
-
-## 📁 Project Structure
-
-```
-film-fanatic/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   ├── collection/        # Movie collections
-│   ├── list/             # Movie/TV lists
-│   ├── movie/            # Movie detail pages
-│   ├── search/           # Search functionality
-│   ├── tv/               # TV show detail pages
-│   └── watchlist/        # User watchlist
-├── components/            # Reusable React components
-│   ├── media/            # Media-specific components
-│   └── primitives.ts     # Base component definitions
-├── config/               # Configuration files
-├── hooks/                # Custom React hooks
-├── lib/                  # Utility functions and API clients
-├── public/               # Static assets
-├── styles/               # Global styles
-└── types.d.ts           # TypeScript type definitions
-```
-
-## 🎯 Available Scripts
+To run this application:
 
 ```bash
-# Development
-pnpm dev          # Start development server with Turbo
-pnpm build        # Build for production
-pnpm start        # Start production server
-pnpm preview      # Build and start production server
-
-# Code Quality
-pnpm lint         # Run ESLint
-pnpm lint:fix     # Fix ESLint issues
-pnpm typecheck    # Run TypeScript compiler check
-pnpm check        # Run both lint and typecheck
-
-# Formatting
-pnpm format:check # Check code formatting
-pnpm format:write # Format code with Prettier
+pnpm install
+pnpm start
 ```
 
-## 🌟 Key Features Deep Dive
+# Building For Production
 
-### Movie & TV Show Pages
+To build this application for production:
 
-- Comprehensive information display
-- Cast and crew details with photos
-- Trailers and video content
-- Image galleries (posters, backdrops)
-- User ratings and reviews
-- Recommendations based on current selection
-- Collection information for movie franchises
+```bash
+pnpm build
+```
 
-### Search Functionality
+## Testing
 
-- Multi-search across movies, TV shows, and people
-- Real-time search results
-- Filter by content type
-- Pagination for large result sets
-- Search history and suggestions
+This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
 
-### Watchlist Management
+```bash
+pnpm test
+```
 
-- Add/remove movies and TV shows
-- Persistent storage using localStorage
-- Export functionality for backup
-- Quick access from any page
-- Visual indicators for watchlisted items
+## Styling
 
-### Responsive Design
+This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
 
-- Mobile-first approach
-- Adaptive layouts for all screen sizes
-- Touch-friendly interactions
-- Optimized images with lazy loading
-- Fast loading on all devices
 
-## 🔧 Configuration
+## Linting & Formatting
 
-### Environment Variables
+This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
 
-| Variable                        | Description           | Required |
-| ------------------------------- | --------------------- | -------- |
-| `NEXT_PUBLIC_TMDB_ACCESS_TOKEN` | TMDB API access token | Yes      |
-| `NEXT_PUBLIC_TMDB_API_URL`      | TMDB API base URL     | Yes      |
-| `NEXT_PUBLIC_APP_URL`           | Your app's URL        | Yes      |
 
-### Customization
+```bash
+pnpm lint
+pnpm format
+pnpm check
+```
 
-- **Themes**: Modify theme configuration in `tailwind.config.cjs`
-- **Site Config**: Update site information in `config/site.ts`
-- **Navigation**: Customize navigation items in the site config
-- **Styling**: Global styles in `styles/globals.css`
 
-## 🚀 Deployment
+## T3Env
 
-### Vercel (Recommended)
+- You can use T3Env to add type safety to your environment variables.
+- Add Environment variables to the `src/env.mjs` file.
+- Use the environment variables in your code.
 
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy automatically on every push
+### Usage
 
-### Other Platforms
+```ts
+import { env } from "@/env";
 
-The app can be deployed on any platform that supports Next.js:
+console.log(env.VITE_APP_TITLE);
+```
 
-- Netlify
-- Railway
-- DigitalOcean App Platform
-- AWS Amplify
-- Self-hosted with Docker ( Docker file is not provided in the root directory )
 
-## Contributing
 
-We welcome contributions to Film Fanatic.
 
-How to contribute:
 
-1. Fork the repository and create your branch from `main`.
-2. Follow the existing code style and use TypeScript for type safety.
-3. Add proper error handling and test your changes thoroughly.
-4. Update documentation as needed.
-5. Submit a Pull Request with a clear description of your changes.
 
-For major changes, please open an issue first to discuss your proposal before submitting a pull request.
+## Routing
+This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
 
-## 📄 License
+### Adding A Route
 
-This project is open source and available under the [MIT License](LICENSE).
+To add a new route to your application just add another a new file in the `./src/routes` directory.
 
-## Acknowledgments
+TanStack will automatically generate the content of the route file for you.
 
-- [The Movie Database (TMDB)](https://www.themoviedb.org/) for providing the comprehensive movie and TV show data
-- [HeroUI](https://heroui.com/) for the beautiful component library
-- [Next.js](https://nextjs.org/) team for the amazing framework
-- All contributors and users of this project
+Now that you have two routes you can use a `Link` component to navigate between them.
+
+### Adding Links
+
+To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
+
+```tsx
+import { Link } from "@tanstack/react-router";
+```
+
+Then anywhere in your JSX you can use it like so:
+
+```tsx
+<Link to="/about">About</Link>
+```
+
+This will create a link that will navigate to the `/about` route.
+
+More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+
+### Using A Layout
+
+In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
+
+Here is an example layout that includes a header:
+
+```tsx
+import { Outlet, createRootRoute } from '@tanstack/react-router'
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
+
+import { Link } from "@tanstack/react-router";
+
+export const Route = createRootRoute({
+  component: () => (
+    <>
+      <header>
+        <nav>
+          <Link to="/">Home</Link>
+          <Link to="/about">About</Link>
+        </nav>
+      </header>
+      <Outlet />
+      <TanStackRouterDevtools />
+    </>
+  ),
+})
+```
+
+The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
+
+More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
+
+
+## Data Fetching
+
+There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
+
+For example:
+
+```tsx
+const peopleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/people",
+  loader: async () => {
+    const response = await fetch("https://swapi.dev/api/people");
+    return response.json() as Promise<{
+      results: {
+        name: string;
+      }[];
+    }>;
+  },
+  component: () => {
+    const data = peopleRoute.useLoaderData();
+    return (
+      <ul>
+        {data.results.map((person) => (
+          <li key={person.name}>{person.name}</li>
+        ))}
+      </ul>
+    );
+  },
+});
+```
+
+Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
+
+### React-Query
+
+React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
+
+First add your dependencies:
+
+```bash
+pnpm add @tanstack/react-query @tanstack/react-query-devtools
+```
+
+Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
+
+```tsx
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// ...
+
+const queryClient = new QueryClient();
+
+// ...
+
+if (!rootElement.innerHTML) {
+  const root = ReactDOM.createRoot(rootElement);
+
+  root.render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  );
+}
+```
+
+You can also add TanStack Query Devtools to the root route (optional).
+
+```tsx
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+const rootRoute = createRootRoute({
+  component: () => (
+    <>
+      <Outlet />
+      <ReactQueryDevtools buttonPosition="top-right" />
+      <TanStackRouterDevtools />
+    </>
+  ),
+});
+```
+
+Now you can use `useQuery` to fetch your data.
+
+```tsx
+import { useQuery } from "@tanstack/react-query";
+
+import "./App.css";
+
+function App() {
+  const { data } = useQuery({
+    queryKey: ["people"],
+    queryFn: () =>
+      fetch("https://swapi.dev/api/people")
+        .then((res) => res.json())
+        .then((data) => data.results as { name: string }[]),
+    initialData: [],
+  });
+
+  return (
+    <div>
+      <ul>
+        {data.map((person) => (
+          <li key={person.name}>{person.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default App;
+```
+
+You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
+
+## State Management
+
+Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
+
+First you need to add TanStack Store as a dependency:
+
+```bash
+pnpm add @tanstack/store
+```
+
+Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
+
+```tsx
+import { useStore } from "@tanstack/react-store";
+import { Store } from "@tanstack/store";
+import "./App.css";
+
+const countStore = new Store(0);
+
+function App() {
+  const count = useStore(countStore);
+  return (
+    <div>
+      <button onClick={() => countStore.setState((n) => n + 1)}>
+        Increment - {count}
+      </button>
+    </div>
+  );
+}
+
+export default App;
+```
+
+One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
+
+Let's check this out by doubling the count using derived state.
+
+```tsx
+import { useStore } from "@tanstack/react-store";
+import { Store, Derived } from "@tanstack/store";
+import "./App.css";
+
+const countStore = new Store(0);
+
+const doubledStore = new Derived({
+  fn: () => countStore.state * 2,
+  deps: [countStore],
+});
+doubledStore.mount();
+
+function App() {
+  const count = useStore(countStore);
+  const doubledCount = useStore(doubledStore);
+
+  return (
+    <div>
+      <button onClick={() => countStore.setState((n) => n + 1)}>
+        Increment - {count}
+      </button>
+      <div>Doubled - {doubledCount}</div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
+
+Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
+
+You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
+
+# Demo files
+
+Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
+
+# Learn More
+
+You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
