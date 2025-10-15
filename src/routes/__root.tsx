@@ -1,18 +1,18 @@
-// import { TanStackDevtools } from "@tanstack/react-devtools";
+import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-// import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SITE_CONFIG } from "@/constants";
 
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
-// import TanStackQueryDevtools from "@/lib/query/devtools";
+import TanStackQueryDevtools from "@/lib/query/devtools";
 import appCss from "@/styles.css?url";
 
 interface RouterContext {
@@ -125,7 +125,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <Navbar />
           {children}
           <Footer />
-          {/*
+
           {!import.meta.env.PROD && (
             <TanStackDevtools
               config={{
@@ -139,7 +139,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 TanStackQueryDevtools,
               ]}
             />
-          )}*/}
+          )}
 
           <Scripts />
         </ThemeProvider>

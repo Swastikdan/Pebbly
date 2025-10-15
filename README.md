@@ -1,319 +1,228 @@
-Welcome to your new TanStack app! 
+# Film Fanatic
 
-# Getting Started
+A modern, responsive web application for discovering and exploring movies and TV shows. Built with **TanStack Start**, **React Compiler**, **TypeScript**, **Biome** (linting/formatting), **Nitro** with `nitroV2Plugin` for server deployment, and **shadcn/ui** for UI components. Powered by The Movie Database (TMDB) API.
 
-To run this application:
+
+
+## Security notice
+
+`VITE_TMDB_ACCESS_TOKEN` is exposed to the client. Any environment variable prefixed with `VITE_` will be available in the browser via `import.meta.env`. If you do not want to expose your TMDB access token, remove the `VITE_` prefix and use server functions to keep the token on the server side.
+
+
+
+## Features
+
+### Core functionality
+
+* **Discovery:** Browse popular, top-rated, now-playing, and upcoming movies and TV shows
+* **Advanced search:** Real-time search across movies, TV shows, and people
+* **Detailed pages:** Cast, crew, trailers, images, reviews, and recommendations
+* **Personal watchlist:** Save and manage favorites locally with export support
+* **Collections:** Explore franchises and collection pages
+* **Responsive:** Optimized for desktop, tablet, and mobile
+
+### User experience
+
+* **Dark / Light theme** with system preference detection
+* **Smooth animations** powered by Framer Motion
+* **Fast loading** via TanStack Query caching and optimized requests
+* **SEO friendly**: dynamic meta tags and Open Graph support
+* **Progressive Web App**: installable, offline-capable
+
+### Navigation & organization
+
+* Intuitive navbar with dropdowns
+* SEO-friendly routing and slugs via TanStack Router
+* Pagination for large result sets
+* Share and export watchlist functionality
+
+
+## Quick start
+
+### Prerequisites
+
+* Node.js 20+
+* pnpm (recommended) or npm / yarn
+* TMDB API access token
+
+### Installation
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/Swastikdan/Film-Fanatic.git
+cd Film-Fanatic
+```
+
+2. **Install dependencies**
 
 ```bash
 pnpm install
-pnpm start
 ```
 
-# Building For Production
+3. **Environment setup**
 
-To build this application for production:
+Create `.env` in the project root:
+
+```text
+VITE_TMDB_ACCESS_TOKEN=your_tmdb_access_token_here
+VITE_TMDB_API_URL=https://api.themoviedb.org/3
+VITE_APP_URL=http://localhost:3000
+```
+
+For local-only overrides, create `.env.local` (add to `.gitignore`):
+
+```text
+VITE_TMDB_ACCESS_TOKEN=your_local_token_here
+```
+
+4. **Start development server**
 
 ```bash
-pnpm build
+pnpm dev
 ```
 
-## Testing
+5. Open browser: `http://localhost:3000`
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+### Getting a TMDB API token
+
+1. Create an account at The Movie Database (TMDB)
+2. Account → Settings → API
+3. Request an API key and use the **API Read Access Token** in your environment variables
+
+
+
+## Tech stack
+
+### Frontend
+
+* **TanStack Start** — full-stack React framework with streaming SSR
+* **TanStack Router** — type-safe routing
+* **React 19**
+* **React Compiler 1.0** — automatic memoization/optimizations
+* **TypeScript 5.6**
+
+### Styling & UI
+
+* **Tailwind CSS 4.1**
+* **shadcn/ui** (Radix-based components)
+
+### State & data
+
+* **TanStack Query (React Query)** — server state and caching
+* **Zustand** — client state for watchlist
+* **Zod** — runtime validation
+
+### Dev tools & build
+
+* **Vite** — dev server and build tool
+* **Biome** — linting, formatting, import sorting
+* **Nitro** with `nitroV2Plugin` — universal server deployment
+* **pnpm** — package manager
+* **T3 Env** — type-safe env validation
+
+
+
+## Available scripts
 
 ```bash
-pnpm test
-```
+# Development
+pnpm dev          # Start dev server
+pnpm build        # Build for production
+pnpm start        # Start production server
+pnpm preview      # Preview production build
 
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
-
-```bash
-pnpm lint
-pnpm format
-pnpm check
-```
-
-
-## T3Env
-
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
-
-```ts
-import { env } from "@/env";
-
-console.log(env.VITE_APP_TITLE);
+# Code quality (Biome)
+pnpm lint         # Run Biome linter
+pnpm lint:fix     # Fix Biome issues
+pnpm format       # Format code with Biome
+pnpm typecheck    # Run TypeScript compiler check
+pnpm check        # Run both lint and typecheck
 ```
 
 
 
+## Deep dives
 
+### Movie & TV show pages
 
+* Server-side rendered details
+* Cast and crew profiles with photos
+* Embedded trailers and image galleries
+* Ratings, reviews, and recommendations
+* Collection/franchise pages
 
-## Routing
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
+### Search
 
-### Adding A Route
+* Multi-search across movies, TV shows, and people
+* Real-time results with TanStack Query
+* Filters by content type and pagination
+* Search history and suggestions
 
-To add a new route to your application just add another a new file in the `./src/routes` directory.
+### Watchlist
 
-TanStack will automatically generate the content of the route file for you.
+* Add/remove items with persistent `localStorage` storage
+* Export/backup watchlist data
+* Quick access across the app
 
-Now that you have two routes you can use a `Link` component to navigate between them.
+### Responsive design
 
-### Adding Links
+* Mobile-first layouts and touch-friendly interactions
+* Lazy-loaded images for performance
+* Adaptive UI for all screen sizes
 
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
 
-```tsx
-import { Link } from "@tanstack/react-router";
-```
 
-Then anywhere in your JSX you can use it like so:
+## Configuration
 
-```tsx
-<Link to="/about">About</Link>
-```
+### Environment variables
 
-This will create a link that will navigate to the `/about` route.
+TanStack Start uses Vite environment variables with T3 Env for validation.
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+|                 Variable | Description           | Context | Required |
+| -----------------------: | --------------------- | ------: | :------: |
+| `VITE_TMDB_ACCESS_TOKEN` | TMDB API access token |  Client |    Yes   |
+| `VITE_TMDB_API_URL`      | TMDB API base URL     |  Client |    Yes   |
+| `VITE_APP_URL`           | App URL               |  Client |    Yes   |
 
-### Using A Layout
+**Environment file load order**
 
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
+1. `.env.local` — local overrides (ignore in VCS)
+2. `.env` — default variables (committed)
 
-Here is an example layout that includes a header:
+### Customization
 
-```tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
+* **Themes:** `tailwind.config.cjs`
+* **Site config:** `config/site.ts`
+* **Navigation:** update site config navigation items
+* **Global styles:** `styles/globals.css`
+* **Routing:** `app/router.tsx` or file-based routes
+* **shadcn/ui components:** `components/` directory
 
-import { Link } from "@tanstack/react-router";
 
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <header>
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/about">About</Link>
-        </nav>
-      </header>
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
-})
-```
+## Contributing
 
-The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
+1. Fork the repository and create a branch from `main`
+2. Follow code style and use TypeScript
+3. Use Biome for lint/format (`pnpm lint:fix`, `pnpm format`)
+4. Add error handling and tests where appropriate
+5. Update documentation for breaking changes
+6. Open a pull request with a clear description
 
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
+For major changes, open an issue first to discuss the proposal.
 
 
-## Data Fetching
+## License
 
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
+This project is open source under the **MIT License**.
 
-For example:
 
-```tsx
-const peopleRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/people",
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
-    }>;
-  },
-  component: () => {
-    const data = peopleRoute.useLoaderData();
-    return (
-      <ul>
-        {data.results.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    );
-  },
-});
-```
+## Acknowledgments
 
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-### React-Query
-
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
-
-First add your dependencies:
-
-```bash
-pnpm add @tanstack/react-query @tanstack/react-query-devtools
-```
-
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
-
-```tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// ...
-
-const queryClient = new QueryClient();
-
-// ...
-
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-
-  root.render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
-}
-```
-
-You can also add TanStack Query Devtools to the root route (optional).
-
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
-});
-```
-
-Now you can use `useQuery` to fetch your data.
-
-```tsx
-import { useQuery } from "@tanstack/react-query";
-
-import "./App.css";
-
-function App() {
-  const { data } = useQuery({
-    queryKey: ["people"],
-    queryFn: () =>
-      fetch("https://swapi.dev/api/people")
-        .then((res) => res.json())
-        .then((data) => data.results as { name: string }[]),
-    initialData: [],
-  });
-
-  return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export default App;
-```
-
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
-
-## State Management
-
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
-
-First you need to add TanStack Store as a dependency:
-
-```bash
-pnpm add @tanstack/store
-```
-
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-function App() {
-  const count = useStore(countStore);
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
-  );
-}
-
-export default App;
-```
-
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
-
-Let's check this out by doubling the count using derived state.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store, Derived } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-const doubledStore = new Derived({
-  fn: () => countStore.state * 2,
-  deps: [countStore],
-});
-doubledStore.mount();
-
-function App() {
-  const count = useStore(countStore);
-  const doubledCount = useStore(doubledStore);
-
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-      <div>Doubled - {doubledCount}</div>
-    </div>
-  );
-}
-
-export default App;
-```
-
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
-
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
-
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+* The Movie Database (TMDB) — data provider
+* TanStack — Start, Router, Query libraries
+* shadcn/ui — component library
+* Biome — linting and formatting
+* Vite — build tool
+* Nitro — server deployment
+* React Team — React Compiler and React ecosystem
