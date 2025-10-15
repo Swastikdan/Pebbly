@@ -2,7 +2,9 @@ import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
 export const env = createEnv({
-  server: {},
+  server: {
+    NODE_ENV: z.enum(["development", "production"]),
+  },
 
   /**
    * The prefix that client-side variables must have. This is enforced both at
@@ -21,6 +23,7 @@ export const env = createEnv({
    * `process.env` or `import.meta.env`.
    */
   runtimeEnv: {
+    NODE_ENV: process.env.NODE_ENV,
     VITE_PUBLIC_TMDB_ACCESS_TOKEN: import.meta.env
       .VITE_PUBLIC_TMDB_ACCESS_TOKEN,
     VITE_PUBLIC_TMDB_API_URL: import.meta.env.VITE_PUBLIC_TMDB_API_URL,

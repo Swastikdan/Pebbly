@@ -7,14 +7,17 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
+import appCss from "@/styles.css?url";
+
 import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 
+import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import TanStackQueryDevtools from "@/lib/query/devtools";
-import appCss from "@/styles.css?url";
+
 import { SITE_CONFIG } from "@/constants";
+import { env } from "@/env";
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -127,18 +130,20 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           {children}
           <Footer />
 
-          <TanStackDevtools
-            config={{
-              position: "bottom-right",
-            }}
-            plugins={[
-              {
-                name: "Tanstack Router",
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-              TanStackQueryDevtools,
-            ]}
-          />
+          {!import.meta.env.PROD && (
+            <TanStackDevtools
+              config={{
+                position: "bottom-right",
+              }}
+              plugins={[
+                {
+                  name: "Tanstack Router",
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+                TanStackQueryDevtools,
+              ]}
+            />
+          )}
 
           <Scripts />
         </ThemeProvider>
