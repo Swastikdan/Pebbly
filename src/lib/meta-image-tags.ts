@@ -3,7 +3,7 @@ export const MetaImageTagsGenerator = (props: {
 	title: string;
 	description: string;
 	ogImage?: string;
-	url: string;
+	url?: string;
 	siteName?: string;
 	imageWidth?: string;
 	imageHeight?: string;
@@ -12,7 +12,7 @@ export const MetaImageTagsGenerator = (props: {
 		title,
 		description,
 		ogImage = SITE_CONFIG.defaultMetaImage,
-		url,
+		url = SITE_CONFIG.url,
 		siteName = "Film Fanatic",
 		imageWidth = "1200",
 		imageHeight = "630",

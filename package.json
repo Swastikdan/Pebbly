@@ -4,12 +4,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000 --host",
-    "build": "vite build",
-    "serve": "vite build && node .output/server/index.mjs",
-    "format": "biome format",
+    "build": "biome format && biome check --fix --max-diagnostics 1000 && tsc --noEmit && vite build",
+    "serve": "biome format && biome check --fix --max-diagnostics 1000 && tsc --noEmit && vite build && node .output/server/index.mjs",
+    "vite:serve": "vite preview",
+    "format": "biome format --write",
     "lint": "biome lint --max-diagnostics 20",
     "lint:fix": "biome lint --fix --max-diagnostics 1000",
-    "check": "biome check --max-diagnostics 20",
+    "check": "biome check && tsc --noEmit",
     "check:fix": "biome check --fix --max-diagnostics 1000"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.0.6",
+    "valibot": "^1.1.0",
     "vite-tsconfig-paths": "^5.1.4",
     "zod": "^4.1.11",
     "zustand": "^5.0.8"

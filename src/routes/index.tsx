@@ -37,7 +37,7 @@ function HomePage() {
 				</div>
 			</div>
 
-			<div className="mx-auto flex w-full max-w-screen-xl px-5 py-5 pt-5 pb-5 md:pt-10">
+			<div className="mx-auto flex w-full max-w-screen-xl pt-5 md:pt-10 pb-20">
 				<div className="flex w-full flex-col gap-10">
 					<Tabs defaultValue="trending_day">
 						<div className="flex items-center gap-5">
@@ -127,9 +127,6 @@ function HomePage() {
 						</TabsContent>
 					</Tabs>
 				</div>
-			</div>
-			<div>
-				<div className="h-20" />
 			</div>
 		</section>
 	);

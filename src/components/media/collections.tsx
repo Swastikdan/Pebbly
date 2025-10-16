@@ -41,7 +41,7 @@ export const Collections = (props: { id: number }) => {
 								?.slice(0, 5)
 								.map((part) => part.title)
 								.join(", ") ?? ""}{" "}
-							{data?.parts?.length > 5 && (
+							{data?.parts && data?.parts?.length > 5 && (
 								<>and {data?.parts?.length - 5} more</>
 							)}
 						</span>

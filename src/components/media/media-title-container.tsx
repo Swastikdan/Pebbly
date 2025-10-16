@@ -37,6 +37,7 @@ export const MediaTitleContailer = (props: {
 		imdb_url,
 		tv_status,
 	} = props;
+
 	return (
 		<div className="pt-5 pb-5">
 			<div className="space-y-3 pb-5">
@@ -73,9 +74,13 @@ export const MediaTitleContailer = (props: {
 			</div>
 			<div className="flex flex-col items-start justify-start space-y-3 sm:flex-row sm:items-center sm:justify-between">
 				<span className="space-x-1 font-light whitespace-nowrap">
-					<span className="py-1">{releaseyear}</span>
+					{releaseyear && releaseyear !== "null" && (
+						<>
+							<span className="py-1">{releaseyear}</span>
+							<span className="py-1">•</span>
+						</>
+					)}
 
-					<span className="py-1">•</span>
 					<span className="ring-ring rounded-md px-2 py-1 ring-1">
 						{uscertification}
 					</span>

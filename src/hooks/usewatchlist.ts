@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -15,6 +15,8 @@ export type WatchlistItem = {
 
 export interface WatchlistState {
 	watchlist: WatchlistItem[];
+	_hasHydrated: boolean;
+	setHasHydrated: (state: boolean) => void;
 	toggleWatchlistItem: (item: {
 		title: string;
 		rating: number;
@@ -31,6 +33,13 @@ export const useWatchlistStore = create<WatchlistState>()(
 	persist(
 		(set, get) => ({
 			watchlist: [],
+			_hasHydrated: false,
+
+			setHasHydrated: (state) => {
+				set({
+					_hasHydrated: state,
+				});
+			},
 
 			async toggleWatchlistItem({
 				id,
@@ -49,7 +58,6 @@ export const useWatchlistStore = create<WatchlistState>()(
 					if (existingIndex !== -1) {
 						// Remove if already there - more efficient filtering
 						const newWatchlist = [...current];
-
 						newWatchlist.splice(existingIndex, 1);
 						set({ watchlist: newWatchlist });
 					} else {
@@ -67,7 +75,6 @@ export const useWatchlistStore = create<WatchlistState>()(
 						set({ watchlist: [newItem, ...current] });
 					}
 				} catch (error) {
-					// eslint-disable-next-line no-console
 					console.error("Failed to update watchlist. Please try again.", error);
 				}
 			},
@@ -78,9 +85,11 @@ export const useWatchlistStore = create<WatchlistState>()(
 		}),
 		{
 			name: "watchlist-storage",
-			// eslint-disable-next-line no-undef
 			storage: createJSONStorage(() => localStorage),
-			partialize: (state) => ({ watchlist: state.watchlist }), // Only persist watchlist
+			partialize: (state) => ({ watchlist: state.watchlist }),
+			onRehydrateStorage: () => (state) => {
+				state?.setHasHydrated(true);
+			},
 		},
 	),
 );
@@ -104,11 +113,12 @@ export function useWatchlistItem(id: string) {
 	return { isOnWatchList };
 }
 
-/** Returns { watchlist, loading }. Loading is always false (local). */
+/** Returns { watchlist, loading }. Loading tracks hydration state. */
 export function useWatchlist() {
 	const watchlist = useWatchlistStore((state) => state.watchlist);
+	const hasHydrated = useWatchlistStore((state) => state._hasHydrated);
 
-	return { watchlist, loading: false };
+	return { watchlist, loading: !hasHydrated };
 }
 
 /** Get watchlist count - useful for badges */
@@ -124,4 +134,28 @@ export function useIsInWatchlist(id: string) {
 			[id],
 		),
 	);
+}
+
+/** Custom hook to track hydration status - Alternative approach */
+export function useHydration() {
+	const [hydrated, setHydrated] = useState(false);
+
+	useEffect(() => {
+		// Note: This is just in case you want to take into account manual rehydration.
+		const unsubHydrate = useWatchlistStore.persist.onHydrate(() =>
+			setHydrated(false),
+		);
+		const unsubFinishHydration = useWatchlistStore.persist.onFinishHydration(
+			() => setHydrated(true),
+		);
+
+		setHydrated(useWatchlistStore.persist.hasHydrated());
+
+		return () => {
+			unsubHydrate();
+			unsubFinishHydration();
+		};
+	}, []);
+
+	return hydrated;
 }
