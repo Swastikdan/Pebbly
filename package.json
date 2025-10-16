@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000 --host",
-    "build": "biome format && biome check --fix --max-diagnostics 1000 && tsc --noEmit && vite build",
+    "build": "biome format && biome check --max-diagnostics 1000 && tsc --noEmit && vite build",
     "serve": "biome format && biome check --fix --max-diagnostics 1000 && tsc --noEmit && vite build && node .output/server/index.mjs",
     "vite:serve": "vite preview",
     "format": "biome format --write",

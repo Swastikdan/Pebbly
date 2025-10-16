@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@fontsource-variable/ibm-plex-sans";
+/*@import "@fontsource-variable/ibm-plex-sans";*/
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -186,7 +186,7 @@
 @layer base {
 	* {
 		@apply border-border outline-ring/50;
-		font-family: "IBM Plex Sans Variable", sans-serif;
+		/*font-family: "IBM Plex Sans Variable", sans-serif;*/
 	}
 	body {
 		@apply bg-background text-foreground;
