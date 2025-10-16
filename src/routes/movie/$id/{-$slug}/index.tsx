@@ -29,10 +29,19 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/")({
 	head: ({ loaderData }) => ({
 		meta: [
 			...MetaImageTagsGenerator({
-				title: `${loaderData?.title} | Film Fanatic`,
-				description: `Explore detailed information about this movie, including cast, crew, reviews, and more about ${loaderData?.title}.`,
-				ogImage: `${VITE_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(loaderData?.id ?? "")}&type=movie`,
-				url: `${VITE_PUBLIC_APP_URL}/movie/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}`,
+				title: loaderData?.title
+					? `${loaderData.title} | Film Fanatic`
+					: "Page Not Found | Film Fanatic",
+				description: loaderData?.title
+					? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
+					: "Explore detailed information about movies on Film Fanatic.",
+				ogImage:
+					loaderData?.id &&
+					`${VITE_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(loaderData?.id ?? "")}&type=movie`,
+				url:
+					loaderData?.id &&
+					loaderData?.title &&
+					`${VITE_PUBLIC_APP_URL}/movie/${loaderData.id}/${encodeURIComponent(loaderData.title)}`,
 			}),
 		],
 	}),

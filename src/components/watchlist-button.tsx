@@ -5,8 +5,8 @@ import {
 	BookMarkIcon,
 	TrashBin,
 } from "@/components/ui/icons";
+import { useToggleWatchlistItem, useWatchlistItem } from "@/hooks/usewatchlist";
 import { cn } from "@/lib/utils";
-import { useToggleWatchlistItem, useWatchlistItem } from "@/store/usewatchlist";
 
 interface WatchlistButtonProps {
 	id: number;
@@ -22,7 +22,6 @@ interface WatchlistButtonProps {
 
 const WatchlistButton = (props: WatchlistButtonProps) => {
 	const {
-		id,
 		title,
 		rating,
 		image,

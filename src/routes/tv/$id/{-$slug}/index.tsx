@@ -31,10 +31,19 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/")({
 	head: ({ loaderData }) => ({
 		meta: [
 			...MetaImageTagsGenerator({
-				title: `${loaderData?.title} | Film Fanatic`,
-				description: `Explore detailed information about this movie, including cast, crew, reviews, and more about ${loaderData?.title}.`,
-				ogImage: `${VITE_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(loaderData?.id ?? "")}&type=tv`,
-				url: `${VITE_PUBLIC_APP_URL}/tv/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}`,
+				title: loaderData?.title
+					? `${loaderData.title} | Film Fanatic`
+					: "Page Not Found | Film Fanatic",
+				description: loaderData?.title
+					? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
+					: "Explore detailed information about movies and shows on Film Fanatic.",
+				ogImage:
+					loaderData?.id &&
+					`${VITE_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(loaderData?.id ?? "")}&type=tv`,
+				url:
+					loaderData?.id &&
+					loaderData?.title &&
+					`${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${encodeURIComponent(loaderData.title)}`,
 			}),
 		],
 	}),
@@ -191,8 +200,7 @@ function TvHomePage() {
 			.reverse()
 			.find(
 				(season) =>
-					season.air_date &&
-					new Date(season.air_date).getTime() <= new Date().getTime(),
+					season.air_date && new Date(season.air_date).getTime() <= Date.now(),
 			) ?? data.seasons?.[data.seasons.length - 1];
 
 	return (

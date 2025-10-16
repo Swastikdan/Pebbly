@@ -2,15 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
-import { MediaImages } from "@/components/media/media-images";
-import { MediaVideos } from "@/components/media/media-videos";
+import { MediaVideoImageContainer } from "@/components/media/media-video-image-container";
 import { ShareButton } from "@/components/share-button";
-
+import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicMovieDetails } from "@/lib/queries";
 import { formatMediaTitle, isValidId } from "@/lib/utils";
-import { VITE_PUBLIC_APP_URL } from "@/constants";
 
 export const Route = createFileRoute("/movie/$id/{-$slug}/media")({
 	loader: async ({ params }) => {
@@ -24,9 +22,16 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/media")({
 	head: ({ loaderData }) => ({
 		meta: [
 			...MetaImageTagsGenerator({
-				title: `${loaderData?.title} - Media | Film Fanatic`,
-				description: `Watch the latest videos and images of ${loaderData?.title}`,
-				url: `${VITE_PUBLIC_APP_URL}/movie/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}/media`,
+				title: loaderData?.title
+					? `${loaderData.title} - Media | Film Fanatic`
+					: "Page Not Found | Film Fanatic",
+				description: loaderData?.title
+					? `Watch the latest videos and images of ${loaderData.title}.`
+					: "Explore the latest movie videos and images on Film Fanatic.",
+				url:
+					loaderData?.id &&
+					loaderData?.title &&
+					`${VITE_PUBLIC_APP_URL}/movie/${loaderData.id}/${encodeURIComponent(loaderData.title)}/media`,
 			}),
 		],
 	}),
@@ -68,15 +73,7 @@ function MovieMediaPage() {
 					{title}
 				</h1>
 			</div>
-
-			<div className="flex flex-col gap-5 py-3">
-				<span className="w-fit text-xl font-semibold md:text-2xl">Videos</span>
-				<MediaVideos id={parseInt(id, 10)} media_type="movie" />
-			</div>
-			<div className="flex flex-col gap-5 py-3 pb-32">
-				<span className="w-fit text-xl font-semibold md:text-2xl">Images</span>
-				<MediaImages id={parseInt(id, 10)} media_type="movie" />
-			</div>
+			<MediaVideoImageContainer id={parseInt(id, 10)} media_type="movie" />
 		</section>
 	);
 }
