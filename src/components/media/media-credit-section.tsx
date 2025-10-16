@@ -51,7 +51,7 @@ export const MediaCreditSection = (props: {
 						<div key={castMember.id} className="flex items-center pb-0">
 							<Image
 								alt={castMember.name}
-								className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-default/40"
+								className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10"
 								height={300}
 								loading="eager"
 								src={IMAGE_PREFIX.SD_PROFILE + castMember.profile_path}
@@ -81,7 +81,7 @@ export const MediaCreditSection = (props: {
 									<div key={crewMember.id} className="flex items-center pb-0">
 										<Image
 											alt={crewMember.name}
-											className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-default/40"
+											className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10"
 											height={300}
 											loading="eager"
 											src={IMAGE_PREFIX.SD_PROFILE + crewMember.profile_path}

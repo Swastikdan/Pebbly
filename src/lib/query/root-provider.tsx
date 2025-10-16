@@ -6,8 +6,7 @@ export function getContext() {
 			queries: {
 				staleTime: 24 * 60 * 60 * 1000,
 				gcTime: 60 * 60 * 1000,
-				retry: 2,
-				refetchOnWindowFocus: true,
+				retry: 0,
 			},
 		},
 	});

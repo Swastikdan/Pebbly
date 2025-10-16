@@ -5,11 +5,12 @@ import { GoBack } from "@/components/go-back";
 import { MediaImages } from "@/components/media/media-images";
 import { MediaVideos } from "@/components/media/media-videos";
 import { ShareButton } from "@/components/share-button";
-import { env } from "@/env";
+
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicTvDetails } from "@/lib/queries";
 import { formatMediaTitle, isValidId } from "@/lib/utils";
+import { VITE_PUBLIC_APP_URL } from "@/constants";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/media")({
 	loader: async ({ params }) => {
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/media")({
 			...MetaImageTagsGenerator({
 				title: `${loaderData?.title} - Media | Film Fanatic`,
 				description: `Watch the latest videos and images of ${loaderData?.title}`,
-				url: `${env.VITE_PUBLIC_APP_URL}/tv/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}/media`,
+				url: `${VITE_PUBLIC_APP_URL}/tv/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}/media`,
 			}),
 		],
 	}),

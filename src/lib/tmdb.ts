@@ -1,9 +1,11 @@
 import { cache } from "react";
-import { env } from "@/env";
 
-const ACCESS_TOKEN = env.VITE_PUBLIC_TMDB_ACCESS_TOKEN;
-const BASE_URL = env.VITE_PUBLIC_TMDB_API_URL;
+const ACCESS_TOKEN = import.meta.env.VITE_PUBLIC_TMDB_ACCESS_TOKEN;
+const BASE_URL = import.meta.env.VITE_PUBLIC_TMDB_API_URL;
 
+if (ACCESS_TOKEN === undefined || BASE_URL === undefined) {
+	throw new Error("Missing TMDB env variables");
+}
 interface TmdbApiResult<T> {
 	data?: T;
 	error?: string;

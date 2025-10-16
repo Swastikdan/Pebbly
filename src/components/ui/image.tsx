@@ -1,7 +1,6 @@
-import { Image as ImageComponenet, type ImageProps } from "@unpic/react";
+import { type ImageProps, Image as ReactImage } from "@unpic/react";
 import { memo, useCallback, useState } from "react";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { DEFAULT_PLACEHOLDER_IMAGE } from "@/constants";
 import { cn } from "@/lib/utils";
 
@@ -15,10 +14,8 @@ const ImageComponent = ({
 }) => {
 	const [src, setSrc] = useState(initialSrc);
 	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState(false);
 
 	const handleError = useCallback(() => {
-		setError(true);
 		setLoading(false);
 		setSrc(fallbackImage ?? DEFAULT_PLACEHOLDER_IMAGE);
 	}, [fallbackImage]);
@@ -28,28 +25,18 @@ const ImageComponent = ({
 	}, []);
 
 	return (
-		<div className="relative rounded-xl bg-foreground/10 overflow-hidden">
-			<Skeleton
-				className={cn(
-					"absolute inset-0 z-10 h-full w-full rounded-xl transition-opacity duration-500",
-					loading && !error
-						? "opacity-100"
-						: "opacity-0 animate-none pointer-events-none",
-				)}
-			/>
-			<ImageComponenet
-				alt={alt ?? "Image"}
-				className={cn(
-					"bg-foreground/10 transition-opacity duration-500",
-					loading && !error ? "opacity-0" : "opacity-100",
-					props.className,
-				)}
-				{...props}
-				src={src}
-				onError={handleError}
-				onLoad={handleLoad}
-			/>
-		</div>
+		<ReactImage
+			alt={alt ?? "Image"}
+			className={cn(
+				"bg-foreground/10",
+				loading ?? "animate-pulse",
+				props.className,
+			)}
+			{...props}
+			src={src}
+			onError={handleError}
+			onLoad={handleLoad}
+		/>
 	);
 };
 
