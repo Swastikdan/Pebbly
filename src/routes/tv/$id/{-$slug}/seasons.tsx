@@ -4,11 +4,12 @@ import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
 import { SeasonContainer } from "@/components/media/season-container";
 import { ShareButton } from "@/components/share-button";
-import { env } from "@/env";
+
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicTvDetails } from "@/lib/queries";
 import { formatMediaTitle, isValidId } from "@/lib/utils";
+import { VITE_PUBLIC_APP_URL } from "@/constants";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
 	loader: async ({ params }) => {
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
 			...MetaImageTagsGenerator({
 				title: `${loaderData?.title} - Cast & Crew | Film Fanatic`,
 				description: `Explore the cast and crew of  ${loaderData?.title}`,
-				url: `${env.VITE_PUBLIC_APP_URL}/tv/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}/seasons`,
+				url: `${VITE_PUBLIC_APP_URL}/tv/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}/seasons`,
 			}),
 		],
 	}),

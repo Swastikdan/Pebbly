@@ -18,7 +18,7 @@ export const CurrentSeason = (props: {
 				<span className="w-fit text-xl font-semibold md:text-2xl">
 					Current Season
 				</span>
-				<div className="flex items-start gap-5 rounded-3xl p-3 md:p-5 border-2 border-default bg-default-50">
+				<div className="flex items-start gap-5 rounded-3xl p-3 md:p-5 border-2 border-default bg-secondary/10">
 					<div className="min-w-[7rem] md:min-w-[9rem]">
 						<div className="transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70">
 							<Image

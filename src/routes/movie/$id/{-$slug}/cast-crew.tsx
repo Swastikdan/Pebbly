@@ -4,11 +4,12 @@ import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
 import { MediaCreditSection } from "@/components/media/media-credit-section";
 import { ShareButton } from "@/components/share-button";
-import { env } from "@/env";
+
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicMovieDetails } from "@/lib/queries";
 import { formatMediaTitle, isValidId } from "@/lib/utils";
+import { VITE_PUBLIC_APP_URL } from "@/constants";
 
 export const Route = createFileRoute("/movie/$id/{-$slug}/cast-crew")({
 	loader: async ({ params }) => {
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/cast-crew")({
 			...MetaImageTagsGenerator({
 				title: `${loaderData?.title} - Cast & Crew | Film Fanatic`,
 				description: `Explore the cast and crew of  ${loaderData?.title}`,
-				url: `${env.VITE_PUBLIC_APP_URL}/movie/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}/cast-crew`,
+				url: `${VITE_PUBLIC_APP_URL}/movie/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}/cast-crew`,
 			}),
 		],
 	}),

@@ -65,7 +65,7 @@ export function MediaPosterTrailerContainer(props: {
 										<DialogHeader className="sr-only">
 											<DialogTitle>{video.name}</DialogTitle>
 										</DialogHeader>
-										<div className="bg-default/80 relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
+										<div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
 											<iframe
 												allowFullScreen
 												allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"

@@ -7,7 +7,7 @@ import {
 	getTvSeriesRecommendations,
 } from "@/lib/queries";
 
-export const MediaRecomendations = (props: {
+export const MediaRecommendations = (props: {
 	id: number;
 	urltitle: string;
 	type: "movie" | "tv";
@@ -18,7 +18,7 @@ export const MediaRecomendations = (props: {
 		isLoading: movie_is_loading,
 		isError: movie_is_error,
 	} = useQuery({
-		queryKey: ["recomendations", id],
+		queryKey: ["movie_recommendations", id],
 		queryFn: async () => await getMovieRecommendations({ id }),
 		enabled: type === "movie",
 	});
@@ -27,7 +27,7 @@ export const MediaRecomendations = (props: {
 		isLoading: tv_is_loading,
 		isError: tv_is_error,
 	} = useQuery({
-		queryKey: ["recomendations", id],
+		queryKey: ["tv_recommendations", id],
 		queryFn: async () => await getTvSeriesRecommendations({ id: id }),
 		enabled: type === "tv",
 	});
@@ -35,18 +35,25 @@ export const MediaRecomendations = (props: {
 	const isError = movie_is_error || tv_is_error;
 	if (isLoading || isError) {
 		return (
-			<ScrollContainer isButtonsVisible={false}>
-				<div className="flex gap-4 p-4 first:pl-0 last:pr-0">
-					{Array.from({ length: 6 }).map((_, index) => (
-						<MediaCardSkeleton key={index} card_type="vertical" />
-					))}
+			<div className="pb-5">
+				<div className="flex flex-col gap-3">
+					<span className="w-fit text-xl font-semibold md:text-2xl">
+						Recommendations
+					</span>
+					<ScrollContainer isButtonsVisible={false}>
+						<div className="flex gap-4 p-4 first:pl-0 last:pr-0">
+							{Array.from({ length: 6 }).map((_, index) => (
+								<MediaCardSkeleton key={index} card_type="vertical" />
+							))}
+						</div>
+					</ScrollContainer>
 				</div>
-			</ScrollContainer>
+			</div>
 		);
 	}
-	const hasMediaRecomendations =
+	const hasMediaRecommendations =
 		(movie_data && movie_data?.length > 0) || (tv_data && tv_data?.length > 0);
-	if (!hasMediaRecomendations) return null;
+	if (!hasMediaRecommendations) return null;
 	return (
 		<div className="pb-5">
 			<div className="flex flex-col gap-3">

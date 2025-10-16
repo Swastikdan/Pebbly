@@ -45,7 +45,7 @@ export const SeasonContainer = (props: { tv_id: number }) => {
 			{seasons.map((season: Season) => (
 				<div
 					key={season.id}
-					className="border-2 border-default bg-default-50 flex items-start gap-5 rounded-3xl p-3 md:p-5"
+					className="border-2 border-default bg-secondary/10 flex items-start gap-5 rounded-3xl p-3 md:p-5"
 				>
 					<div className="min-w-[7rem] md:min-w-[9rem]">
 						<div className="transition-opacity duration-200 ease-in-out hover:opacity-90 dark:hover:opacity-70">

@@ -1,10 +1,10 @@
-import { env } from "./env";
-
+export const VITE_PUBLIC_APP_URL = import.meta.env
+	.VITE_PUBLIC_APP_URL as string;
 export const SITE_CONFIG = {
 	name: "Film Fanatic",
 	description:
 		"Explore a vast collection of movies and TV shows with Film Fanatic.",
-	url: env.VITE_PUBLIC_APP_URL,
+	url: VITE_PUBLIC_APP_URL,
 	defaultMetaImage:
 		"https://ik.imagekit.io/swastikdan/Film-Fanatic/public/ogimage.webp",
 	navItems: [

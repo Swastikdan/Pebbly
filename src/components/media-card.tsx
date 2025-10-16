@@ -232,7 +232,7 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 		<div className="relative h-[13.25rem] md:h-[15.5rem] w-30 md:w-36 space-y-2  p-2">
 			<Image
 				alt={name}
-				className="h-36 w-full rounded-xl md:h-44 "
+				className="h-36 w-full rounded-xl md:h-44 bg-foreground/10"
 				height={225}
 				src={imageUrl}
 				width={150}

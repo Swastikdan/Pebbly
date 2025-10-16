@@ -64,18 +64,18 @@ export const MediaImages = (props: {
 								<Image
 									key={index}
 									alt={image.file_path}
-									className="bg-default/80 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+									className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
 									height={450}
 									src={IMAGE_PREFIX.SD_BACKDROP + image.file_path}
 									width={300}
 								/>
 							</DialogTrigger>
 							<DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-								<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[90vw] rounded-2xl border-0 bg-transparent p-0 ring-0">
+								<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0">
 									<DialogHeader className="sr-only">
 										<DialogTitle>{image.file_path} Backdrop Image</DialogTitle>
 									</DialogHeader>
-									<div className="bg-default/80 relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+									<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
 										<Image
 											alt={image.file_path}
 											className="aspect-video size-full rounded-2xl object-cover"
@@ -99,18 +99,18 @@ export const MediaImages = (props: {
 								<Image
 									key={index}
 									alt={image.file_path}
-									className="bg-default/80 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+									className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
 									height={300}
 									src={IMAGE_PREFIX.SD_POSTER + image.file_path}
 									width={450}
 								/>
 							</DialogTrigger>
 							<DialogOverlay className="bg-white/40 backdrop-blur-lg dark:bg-black/0">
-								<DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0  p-0 ring-0 sm:h-full sm:w-auto">
+								<DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 sm:h-full sm:w-auto">
 									<DialogHeader className="sr-only">
 										<DialogTitle>{image.file_path} Poster Image</DialogTitle>
 									</DialogHeader>
-									<div className="bg-default/80 relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+									<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
 										<Image
 											alt={image.file_path}
 											className="aspect-[11/16] h-auto w-full rounded-2xl object-center"

@@ -115,7 +115,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 											<div className="group relative cursor-pointer">
 												<Image
 													alt={video.name}
-													className="bg-default/80 aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+													className="bg-foreground/10 aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
 													height={450}
 													src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
 													width={300}
@@ -144,7 +144,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 												<DialogHeader className="sr-only">
 													<DialogTitle>{video.name}</DialogTitle>
 												</DialogHeader>
-												<div className="bg-default/80 relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+												<div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
 													<iframe
 														allowFullScreen
 														allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
@@ -183,18 +183,18 @@ export const MediaContainer = (props: MediaContainerProps) => {
 										<DialogTrigger asChild>
 											<Image
 												alt={title}
-												className="bg-default/80 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+												className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
 												height={450}
 												src={image.backdrop_image ?? ""}
 												width={300}
 											/>
 										</DialogTrigger>
 										<DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-											<DialogContent className="aspect-video w-full max-w-[90vw]  rounded-2xl border-0 bg-transparent p-0 ring-0">
+											<DialogContent className="aspect-video w-full max-w-[90vw]  rounded-2xl border-0 bg-secondary p-0 ring-0">
 												<DialogHeader className="sr-only">
 													<DialogTitle>{title} Backdrop Image</DialogTitle>
 												</DialogHeader>
-												<div className="bg-default/80 relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
 													<Image
 														alt={title}
 														className="aspect-video size-full rounded-2xl object-cover"
@@ -233,18 +233,18 @@ export const MediaContainer = (props: MediaContainerProps) => {
 										<DialogTrigger asChild>
 											<Image
 												alt={title}
-												className="bg-default/80 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70 "
+												className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70 "
 												height={300}
 												src={image.poster_image ?? ""}
 												width={450}
 											/>
 										</DialogTrigger>
 										<DialogOverlay className="bg-white/40 backdrop-blur-lg dark:bg-black/0">
-											<DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0  p-0 ring-0 sm:h-full sm:w-auto">
+											<DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0  p-0 ring-0 sm:h-full sm:w-auto bg-secondary">
 												<DialogHeader className="sr-only">
 													<DialogTitle>{title} Poster Image</DialogTitle>
 												</DialogHeader>
-												<div className="bg-default/80 relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
 													<Image
 														alt={title}
 														className="aspect-[11/16] h-auto w-full rounded-2xl object-center"

@@ -9,10 +9,10 @@ import { MediaContainer } from "@/components/media/media-container";
 import { MediaDescription } from "@/components/media/media-description";
 import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
-import { MediaRecomendations } from "@/components/media/media-recommendation";
+import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContailer } from "@/components/media/media-title-container";
-import { GENRE_LIST, IMAGE_PREFIX } from "@/constants";
-import { env } from "@/env";
+import { GENRE_LIST, IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
@@ -33,8 +33,8 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/")({
 			...MetaImageTagsGenerator({
 				title: `${loaderData?.title} | Film Fanatic`,
 				description: `Explore detailed information about this movie, including cast, crew, reviews, and more about ${loaderData?.title}.`,
-				ogImage: `${env.VITE_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(loaderData?.id ?? "")}&type=tv`,
-				url: `${env.VITE_PUBLIC_APP_URL}/tv/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}`,
+				ogImage: `${VITE_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(loaderData?.id ?? "")}&type=tv`,
+				url: `${VITE_PUBLIC_APP_URL}/tv/${loaderData?.id}/${encodeURIComponent(loaderData?.title ?? "")}`,
 			}),
 		],
 	}),
@@ -248,7 +248,7 @@ function TvHomePage() {
 				youtubeclips={youtubeclips}
 			/>
 			{keywords && <MediaKeywords keywords={tvkeywords} />}
-			<MediaRecomendations id={id} type="tv" urltitle={urltitle} />
+			<MediaRecommendations id={id} type="tv" urltitle={urltitle} />
 		</section>
 	);
 }

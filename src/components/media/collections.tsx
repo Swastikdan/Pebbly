@@ -37,7 +37,13 @@ export const Collections = (props: { id: number }) => {
 						</span>
 						<span className="text-background dark:text-foreground mt-2 flex flex-wrap text-xs font-light md:text-sm lg:text-base">
 							Includes{" "}
-							{data?.parts?.map((part) => part.title)?.join(", ") ?? ""}
+							{data?.parts
+								?.slice(0, 5)
+								.map((part) => part.title)
+								.join(", ") ?? ""}{" "}
+							{data?.parts?.length > 5 && (
+								<>and {data?.parts?.length - 5} more</>
+							)}
 						</span>
 						<Link
 							// @ts-expect-error - correct link
