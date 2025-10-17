@@ -160,7 +160,7 @@ function SearchPage() {
 						<div className="flex h-10 items-center justify-end">
 							<div className="flex items-center gap-2">
 								{Array.from({ length: 3 }).map((_, index) => (
-									<Skeleton key={index} className="h-9 w-[84px] rounded-lgm" />
+									<Skeleton key={index} className="h-9 w-[84px] rounded-lg" />
 								))}
 							</div>
 						</div>
@@ -213,6 +213,11 @@ function SearchPage() {
 								? "No movies or TV shows found with the selected filter"
 								: "No movies or TV shows found matching your search"
 						}
+					/>
+					<Pagination
+						currentPage={page}
+						totalPages={totalPages}
+						onPageChange={handlePageChange}
 					/>
 				</div>
 			</section>

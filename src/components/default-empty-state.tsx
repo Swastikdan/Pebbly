@@ -37,7 +37,7 @@ export const DefaultEmptyState = (props: {
 				<EmptyContent>
 					<Button
 						onClick={props.onReset}
-						variant="outline"
+						variant="secondary"
 						size="lg"
 						className="rounded-lg h-9"
 					>
