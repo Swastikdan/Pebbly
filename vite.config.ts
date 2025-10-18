@@ -16,17 +16,14 @@ const config = defineConfig(({ mode }) => ({
       projects: ["./tsconfig.json"],
     }),
     tailwindcss(),
-    tanstackStart({
-      spa: {
-        enabled: true,
-      },
-    }),
+    tanstackStart({}),
     viteReact({
       babel: {
         plugins: [reactCompiler],
       },
     }),
   ],
+
   ssr: {
     external: ["@tanstack/react-devtools", "@tanstack/react-router-devtools"],
     noExternal: mode === "production" ? true : undefined,

@@ -36,6 +36,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
+    "nitro": "3.0.1-alpha.0",
     "postcss": "^8.5.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -43,13 +44,11 @@
     "tailwindcss": "^4.0.6",
     "valibot": "^1.1.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "zod": "^4.1.11",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
-    "@fontsource-variable/open-sans": "^5.2.7",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
