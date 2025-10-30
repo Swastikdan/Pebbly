@@ -7,6 +7,9 @@ import reactCompiler from "babel-plugin-react-compiler";
 import { nitroV2Plugin } from "@tanstack/nitro-v2-vite-plugin";
 
 const config = defineConfig(({ mode }) => ({
+  server: {
+    port: 3000,
+  },
   plugins: [
     nitroV2Plugin({
       compatibilityDate: "latest",
@@ -16,7 +19,16 @@ const config = defineConfig(({ mode }) => ({
       projects: ["./tsconfig.json"],
     }),
     tailwindcss(),
-    tanstackStart({}),
+    tanstackStart({
+      prerender: {
+        enabled: true,
+        autoSubfolderIndex: true,
+        crawlLinks: true,
+      },
+      spa: {
+        enabled: true,
+      },
+    }),
     viteReact({
       babel: {
         plugins: [reactCompiler],
