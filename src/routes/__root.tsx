@@ -111,10 +111,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         rel: "preconnect",
         href: "https://fonts.gstatic.com",
-        crossOrigin: "true",
+        crossOrigin: "anonymous",
       },
       {
-        href: "https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Zalando+Sans:ital,wght@0,200..900;1,200..900&display=swap",
         rel: "stylesheet",
       },
     ],
