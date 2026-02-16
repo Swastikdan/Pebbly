@@ -23,7 +23,7 @@ export const CurrentSeason = (props: {
 					to={`/tv/${id}/${urltitle}/season/${season_data.season_number}`}
 					className="pressable-small block"
 				>
-					<div className="flex items-start gap-5 rounded-3xl border-2 border-default bg-secondary/10 p-3 transition-all duration-300 hover:border-foreground/20 hover:bg-secondary/20 hover:shadow-lg md:p-5">
+					<div className="flex items-start gap-5 rounded-3xl border-2 border-default bg-secondary/10 p-3 transition-all duration-300 hover:border-foreground/20 hover:bg-secondary/20 hover: md:p-5">
 						<div className="min-w-[7rem] md:min-w-[9rem]">
 							<Image
 								alt={season_data.name}

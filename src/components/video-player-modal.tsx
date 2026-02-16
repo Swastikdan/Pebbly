@@ -81,14 +81,14 @@ export function VideoPlayerModal({
 						}}
 					>
 						<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover/play:scale-110 group-hover/play:bg-black/80">
-							<Play className="size-6 fill-white text-white drop-shadow-lg" />
+							<Play className="size-6 fill-white text-white drop-" />
 						</div>
 					</button>
 				) : variant === "episode" ? (
 					<button
 						type="button"
 						className={cn(
-							"pressable inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background shadow-lg transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
+							"pressable inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background  transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
 							className,
 						)}
 						aria-label={`Play ${title}`}
@@ -100,7 +100,7 @@ export function VideoPlayerModal({
 					<button
 						type="button"
 						className={cn(
-							"pressable inline-flex items-center gap-2.5 rounded-2xl bg-foreground px-7 py-3.5 text-base font-semibold text-background shadow-lg transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
+							"pressable inline-flex items-center gap-2.5 rounded-2xl bg-foreground px-7 py-3.5 text-base font-semibold text-background  transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
 							className,
 						)}
 						aria-label={`Play ${title}`}

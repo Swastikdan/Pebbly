@@ -108,7 +108,7 @@ function TvSeasonDetailPage() {
 						to={`/tv/${id}/${urltitle}/season/${s.season_number}`}
 						className={`pressable-small whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 ${
 							s.season_number === seasonNumber
-								? "bg-foreground text-background shadow-md"
+								? "bg-foreground text-background "
 								: "bg-secondary/50 text-foreground hover:bg-secondary"
 						}`}
 					>
@@ -122,7 +122,7 @@ function TvSeasonDetailPage() {
 				{episodes.map((episode) => (
 					<div
 						key={episode.id}
-						className="group relative overflow-hidden rounded-2xl border-2 border-default bg-secondary/10 transition-all duration-300 hover:border-foreground/20 hover:bg-secondary/20 hover:shadow-lg"
+						className="group relative overflow-hidden rounded-2xl border-2 border-default bg-secondary/10 transition-all duration-300 hover:border-foreground/20 hover:bg-secondary/20 hover:"
 					>
 						<div className="flex flex-col gap-4 p-3 sm:flex-row sm:items-start md:p-4">
 							{/* Episode Still Image */}

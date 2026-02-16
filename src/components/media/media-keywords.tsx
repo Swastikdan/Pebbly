@@ -1,6 +1,9 @@
+import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 
-export const MediaKeywords = (props: { keywords: Array<{ name: string }> }) => {
+export const MediaKeywords = (props: {
+	keywords: Array<{ name: string; id: number }>;
+}) => {
 	const hasKeywords = props.keywords.length > 0;
 	if (!hasKeywords) return null;
 	return (
@@ -10,14 +13,20 @@ export const MediaKeywords = (props: { keywords: Array<{ name: string }> }) => {
 					Keywords
 				</span>
 				<div className="flex flex-wrap gap-2">
-					{props.keywords.map((keyword, index) => (
-						<Badge
-							key={index}
-							className="[a&]:hover:bg-primary h-6 cursor-auto rounded-md px-4 text-xs  md:text-sm"
-							variant="secondary"
+					{props.keywords.map((keyword) => (
+						<Link
+							key={keyword.id}
+							to="/keyword/$id"
+							params={{ id: String(keyword.id) }}
+							className="pressable-small"
 						>
-							{keyword.name}
-						</Badge>
+							<Badge
+								className="[a&]:hover:bg-primary h-6 cursor-pointer rounded-md px-4 text-xs md:text-sm"
+								variant="secondary"
+							>
+								{keyword.name}
+							</Badge>
+						</Link>
 					))}
 				</div>
 			</div>

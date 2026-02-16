@@ -226,7 +226,7 @@ function WatchlistPage() {
 									onClick={() => setActiveFilter(filter)}
 									className={`pressable-small whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 ${
 										activeFilter === filter
-											? "bg-foreground text-background shadow-md"
+											? "bg-foreground text-background "
 											: "bg-secondary/40 text-foreground/70 hover:bg-secondary/70"
 									}`}
 								>
@@ -292,7 +292,7 @@ function WatchlistPage() {
 									onClick={() => setMediaFilter(mf)}
 									className={`pressable-small rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
 										mediaFilter === mf
-											? "bg-foreground text-background shadow-sm"
+											? "bg-foreground text-background "
 											: "text-foreground/60 hover:text-foreground"
 									}`}
 								>
@@ -382,7 +382,7 @@ function WatchlistCard({
 							: status === "dropped"
 								? "border-zinc-500/20 bg-zinc-500/5"
 								: "border-default bg-secondary/5 hover:border-foreground/15 hover:bg-secondary/15"
-			} hover:shadow-md`}
+			} hover:`}
 		>
 			<div className="flex gap-3 p-3">
 				{/* Poster */}

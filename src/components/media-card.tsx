@@ -108,7 +108,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 						/>
 						{isWatched && (
 							<div className="absolute inset-0 z-10 flex items-center justify-center">
-								<div className="rounded-full bg-emerald-500/90 p-2 shadow-lg backdrop-blur-sm">
+								<div className="rounded-full bg-emerald-500/90 p-2  backdrop-blur-sm">
 									<svg
 										className="size-5 text-white"
 										fill="none"
@@ -215,7 +215,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 						/>
 						{isWatched && (
 							<div className="absolute inset-0 z-10 flex items-center justify-center">
-								<div className="rounded-full bg-emerald-500/90 p-2 shadow-lg backdrop-blur-sm">
+								<div className="rounded-full bg-emerald-500/90 p-2  backdrop-blur-sm">
 									<svg
 										className="size-5 text-white"
 										fill="none"

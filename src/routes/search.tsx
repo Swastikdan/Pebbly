@@ -265,7 +265,7 @@ function SearchPage() {
 								type="button"
 								className={`pressable-small rounded-lg px-4 py-1.5 text-xs font-medium transition-all ${
 									!type
-										? "bg-foreground text-background shadow-sm"
+										? "bg-foreground text-background "
 										: "text-foreground/60 hover:text-foreground"
 								}`}
 								onClick={handleAllClick}
@@ -276,7 +276,7 @@ function SearchPage() {
 								type="button"
 								className={`pressable-small rounded-lg px-4 py-1.5 text-xs font-medium transition-all ${
 									type === "movie"
-										? "bg-foreground text-background shadow-sm"
+										? "bg-foreground text-background "
 										: "text-foreground/60 hover:text-foreground"
 								}`}
 								onClick={handleMovieClick}
@@ -288,7 +288,7 @@ function SearchPage() {
 								type="button"
 								className={`pressable-small rounded-lg px-4 py-1.5 text-xs font-medium transition-all ${
 									type === "tv"
-										? "bg-foreground text-background shadow-sm"
+										? "bg-foreground text-background "
 										: "text-foreground/60 hover:text-foreground"
 								}`}
 								onClick={handleTVClick}

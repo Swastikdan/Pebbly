@@ -267,3 +267,43 @@ export async function getTvSeasonDetails({
 
 	return validateResponse(response);
 }
+/** Get keyword details */
+export async function getKeywordDetails({
+	id,
+}: {
+	id: number;
+}): Promise<{ id: number; name: string }> {
+	validateId(id);
+	const url = `/keyword/${id}`;
+	const response = await tmdb<{ id: number; name: string }>(url);
+	return validateResponse(response);
+}
+
+/** Discover movies by keyword */
+export async function getDiscoverMovies({
+	with_keywords,
+	page,
+}: {
+	with_keywords: string;
+	page: number;
+}): Promise<Types.MediaListResults> {
+	const pagenumber = page ?? 1;
+	const url = `/discover/movie?include_adult=true&include_video=false&language=en-US&page=${pagenumber}&sort_by=popularity.desc&with_keywords=${with_keywords}`;
+	const response = await tmdb<Types.MediaListResults>(url);
+	return validateResponse(response);
+}
+
+/** Discover movies by genre */
+export async function getDiscoverMoviesByGenre({
+	with_genres,
+	page,
+}: {
+	with_genres: string;
+	page: number;
+}): Promise<Types.MediaListResults> {
+	const pagenumber = page ?? 1;
+	// Sort by popularity, include adult
+	const url = `/discover/movie?include_adult=true&include_video=false&language=en-US&page=${pagenumber}&sort_by=popularity.desc&with_genres=${with_genres}`;
+	const response = await tmdb<Types.MediaListResults>(url);
+	return validateResponse(response);
+}

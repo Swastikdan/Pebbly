@@ -105,7 +105,7 @@ export const MediaTitleContailer = (props: {
 								}
 							>
 								<SelectTrigger
-									className={`h-9 gap-2 rounded-lg border px-3 text-xs font-semibold shadow-sm transition-all ${STATUS_COLORS[status]}`}
+									className={`h-9 gap-2 rounded-lg border px-3 text-xs font-semibold  transition-all ${STATUS_COLORS[status]}`}
 								>
 									<span
 										className={`size-1.5 rounded-full ${STATUS_DOT_COLORS[status]}`}

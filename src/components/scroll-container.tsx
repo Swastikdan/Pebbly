@@ -117,7 +117,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 			{isButtonsVisible && canScrollLeft && (
 				<Button
 					aria-label="Scroll left"
-					className="absolute left-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl shadow-md backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
+					className="absolute left-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl  backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
 					variant="light"
 					size="icon-lg"
 					onClick={scrollLeft}
@@ -138,7 +138,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 			{isButtonsVisible && canScrollRight && (
 				<Button
 					aria-label="Scroll right"
-					className="absolute right-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl shadow-md backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
+					className="absolute right-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl  backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
 					variant="light"
 					size="icon-lg"
 					onClick={scrollRight}

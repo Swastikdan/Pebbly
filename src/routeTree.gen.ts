@@ -13,6 +13,7 @@ import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as KeywordIdRouteImport } from './routes/keyword.$id'
 import { Route as ApiMetaimageRouteImport } from './routes/api.metaimage'
 import { Route as ListTypeSlugRouteImport } from './routes/list.$type.$slug'
 import { Route as CollectionIdChar123SlugChar125RouteImport } from './routes/collection.$id.{-$slug}'
@@ -43,6 +44,11 @@ const DisclaimerRoute = DisclaimerRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KeywordIdRoute = KeywordIdRouteImport.update({
+  id: '/keyword/$id',
+  path: '/keyword/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMetaimageRoute = ApiMetaimageRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
+  '/keyword/$id': typeof KeywordIdRoute
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
   '/list/$type/$slug': typeof ListTypeSlugRoute
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
+  '/keyword/$id': typeof KeywordIdRoute
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
   '/list/$type/$slug': typeof ListTypeSlugRoute
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
+  '/keyword/$id': typeof KeywordIdRoute
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
   '/list/$type/$slug': typeof ListTypeSlugRoute
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
+    | '/keyword/$id'
     | '/collection/$id/{-$slug}'
     | '/list/$type/$slug'
     | '/movie/$id/{-$slug}/cast-crew'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
+    | '/keyword/$id'
     | '/collection/$id/{-$slug}'
     | '/list/$type/$slug'
     | '/movie/$id/{-$slug}/cast-crew'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
+    | '/keyword/$id'
     | '/collection/$id/{-$slug}'
     | '/list/$type/$slug'
     | '/movie/$id/{-$slug}/cast-crew'
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   WatchlistRoute: typeof WatchlistRoute
   ApiMetaimageRoute: typeof ApiMetaimageRoute
+  KeywordIdRoute: typeof KeywordIdRoute
   CollectionIdChar123SlugChar125Route: typeof CollectionIdChar123SlugChar125Route
   ListTypeSlugRoute: typeof ListTypeSlugRoute
   MovieIdChar123SlugChar125CastCrewRoute: typeof MovieIdChar123SlugChar125CastCrewRoute
@@ -262,6 +275,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/keyword/$id': {
+      id: '/keyword/$id'
+      path: '/keyword/$id'
+      fullPath: '/keyword/$id'
+      preLoaderRoute: typeof KeywordIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/metaimage': {
@@ -350,6 +370,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   WatchlistRoute: WatchlistRoute,
   ApiMetaimageRoute: ApiMetaimageRoute,
+  KeywordIdRoute: KeywordIdRoute,
   CollectionIdChar123SlugChar125Route: CollectionIdChar123SlugChar125Route,
   ListTypeSlugRoute: ListTypeSlugRoute,
   MovieIdChar123SlugChar125CastCrewRoute:

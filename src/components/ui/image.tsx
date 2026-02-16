@@ -29,7 +29,7 @@ const ImageComponent = ({
 			alt={alt ?? "Image"}
 			className={cn(
 				"bg-foreground/10",
-				loading ?? "animate-pulse",
+				loading ? "animate-pulse" : "",
 				props.className,
 			)}
 			{...props}
