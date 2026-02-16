@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite dev --port 3000 --host",
     "build": "tsc --noEmit && vite build",
-    "prepare": "biome format --write && biome lint --fix --max-diagnostics 1000 && biome check --fix --max-diagnostics 1000",
+    "prepare": "biome format --write",
     "serve": "vite build && node .output/server/index.mjs",
     "vite:serve": "vite preview",
     "format": "biome format --write",
