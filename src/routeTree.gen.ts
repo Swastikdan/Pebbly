@@ -23,6 +23,7 @@ import { Route as TvIdChar123SlugChar125MediaRouteImport } from './routes/tv/$id
 import { Route as TvIdChar123SlugChar125CastCrewRouteImport } from './routes/tv/$id/{-$slug}/cast-crew'
 import { Route as MovieIdChar123SlugChar125MediaRouteImport } from './routes/movie/$id/{-$slug}/media'
 import { Route as MovieIdChar123SlugChar125CastCrewRouteImport } from './routes/movie/$id/{-$slug}/cast-crew'
+import { Route as TvIdChar123SlugChar125SeasonSeasonNumberRouteImport } from './routes/tv/$id/{-$slug}/season.$seasonNumber'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -102,6 +103,12 @@ const MovieIdChar123SlugChar125CastCrewRoute =
     path: '/movie/$id/{-$slug}/cast-crew',
     getParentRoute: () => rootRouteImport,
   } as any)
+const TvIdChar123SlugChar125SeasonSeasonNumberRoute =
+  TvIdChar123SlugChar125SeasonSeasonNumberRouteImport.update({
+    id: '/tv/$id/{-$slug}/season/$seasonNumber',
+    path: '/tv/$id/{-$slug}/season/$seasonNumber',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/tv/$id/{-$slug}/seasons': typeof TvIdChar123SlugChar125SeasonsRoute
   '/movie/$id/{-$slug}': typeof MovieIdChar123SlugChar125IndexRoute
   '/tv/$id/{-$slug}': typeof TvIdChar123SlugChar125IndexRoute
+  '/tv/$id/{-$slug}/season/$seasonNumber': typeof TvIdChar123SlugChar125SeasonSeasonNumberRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -134,6 +142,7 @@ export interface FileRoutesByTo {
   '/tv/$id/{-$slug}/seasons': typeof TvIdChar123SlugChar125SeasonsRoute
   '/movie/$id/{-$slug}': typeof MovieIdChar123SlugChar125IndexRoute
   '/tv/$id/{-$slug}': typeof TvIdChar123SlugChar125IndexRoute
+  '/tv/$id/{-$slug}/season/$seasonNumber': typeof TvIdChar123SlugChar125SeasonSeasonNumberRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -151,6 +160,7 @@ export interface FileRoutesById {
   '/tv/$id/{-$slug}/seasons': typeof TvIdChar123SlugChar125SeasonsRoute
   '/movie/$id/{-$slug}/': typeof MovieIdChar123SlugChar125IndexRoute
   '/tv/$id/{-$slug}/': typeof TvIdChar123SlugChar125IndexRoute
+  '/tv/$id/{-$slug}/season/$seasonNumber': typeof TvIdChar123SlugChar125SeasonSeasonNumberRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/tv/$id/{-$slug}/seasons'
     | '/movie/$id/{-$slug}'
     | '/tv/$id/{-$slug}'
+    | '/tv/$id/{-$slug}/season/$seasonNumber'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/tv/$id/{-$slug}/seasons'
     | '/movie/$id/{-$slug}'
     | '/tv/$id/{-$slug}'
+    | '/tv/$id/{-$slug}/season/$seasonNumber'
   id:
     | '__root__'
     | '/'
@@ -201,6 +213,7 @@ export interface FileRouteTypes {
     | '/tv/$id/{-$slug}/seasons'
     | '/movie/$id/{-$slug}/'
     | '/tv/$id/{-$slug}/'
+    | '/tv/$id/{-$slug}/season/$seasonNumber'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -218,6 +231,7 @@ export interface RootRouteChildren {
   TvIdChar123SlugChar125SeasonsRoute: typeof TvIdChar123SlugChar125SeasonsRoute
   MovieIdChar123SlugChar125IndexRoute: typeof MovieIdChar123SlugChar125IndexRoute
   TvIdChar123SlugChar125IndexRoute: typeof TvIdChar123SlugChar125IndexRoute
+  TvIdChar123SlugChar125SeasonSeasonNumberRoute: typeof TvIdChar123SlugChar125SeasonSeasonNumberRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -320,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MovieIdChar123SlugChar125CastCrewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tv/$id/{-$slug}/season/$seasonNumber': {
+      id: '/tv/$id/{-$slug}/season/$seasonNumber'
+      path: '/tv/$id/{-$slug}/season/$seasonNumber'
+      fullPath: '/tv/$id/{-$slug}/season/$seasonNumber'
+      preLoaderRoute: typeof TvIdChar123SlugChar125SeasonSeasonNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -339,6 +360,8 @@ const rootRouteChildren: RootRouteChildren = {
   TvIdChar123SlugChar125SeasonsRoute: TvIdChar123SlugChar125SeasonsRoute,
   MovieIdChar123SlugChar125IndexRoute: MovieIdChar123SlugChar125IndexRoute,
   TvIdChar123SlugChar125IndexRoute: TvIdChar123SlugChar125IndexRoute,
+  TvIdChar123SlugChar125SeasonSeasonNumberRoute:
+    TvIdChar123SlugChar125SeasonSeasonNumberRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

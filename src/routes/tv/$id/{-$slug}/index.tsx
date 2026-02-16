@@ -3,14 +3,15 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 
 import { DefaultLoader } from "@/components/default-loader";
 import { CastSection } from "@/components/media/cast-section";
-import { CurrentSeason } from "@/components/media/current-season";
 import { GenreContainer } from "@/components/media/genre-container";
+import { InlineEpisodeBrowser } from "@/components/media/inline-episode-browser";
 import { MediaContainer } from "@/components/media/media-container";
 import { MediaDescription } from "@/components/media/media-description";
 import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContailer } from "@/components/media/media-title-container";
+import { VideoPlayerModal } from "@/components/video-player-modal";
 import { GENRE_LIST, IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
@@ -228,6 +229,16 @@ function TvHomePage() {
 				title={tvtitle}
 				trailervideos={trailervideos}
 			/>
+			<div className="pb-4">
+				<VideoPlayerModal
+					tmdbId={id}
+					type="tv"
+					title={tvtitle}
+					season={1}
+					episode={1}
+					variant="page"
+				/>
+			</div>
 			<GenreContainer genres={tvgenres} />
 			<MediaDescription description={overview} />
 			<CastSection
@@ -240,8 +251,13 @@ function TvHomePage() {
 				type="tv"
 				urltitle={urltitle}
 			/>
-			{latestSeason && (
-				<CurrentSeason id={id} season_data={latestSeason} urltitle={urltitle} />
+			{data.seasons && data.seasons.length > 0 && (
+				<InlineEpisodeBrowser
+					tvId={id}
+					showName={tvtitle}
+					seasons={data.seasons}
+					initialSeasonNumber={latestSeason?.season_number}
+				/>
 			)}
 			<MediaContainer
 				backdrops={tvbackdrops}

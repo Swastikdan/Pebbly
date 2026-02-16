@@ -603,3 +603,37 @@ export interface MediaRecommendationsResultsEntity {
 	vote_average: number;
 	vote_count: number;
 }
+
+// TV Season Detail (from /tv/{id}/season/{season_number})
+export interface TvSeasonDetail {
+	_id: string;
+	air_date: string;
+	episodes: TvEpisodeDetail[];
+	name: string;
+	overview: string;
+	id: number;
+	poster_path: string;
+	season_number: number;
+	vote_average: number;
+}
+
+export interface TvEpisodeDetail {
+	air_date: string;
+	episode_number: number;
+	episode_type: string;
+	id: number;
+	name: string;
+	overview: string;
+	production_code: string;
+	runtime: number | null;
+	season_number: number;
+	show_id: number;
+	still_path: string | null;
+	vote_average: number;
+	vote_count: number;
+	crew?: CrewMember[] | null;
+	guest_stars?: CastMember[] | null;
+}
+
+// Watchlist item status for tracking progress
+export type WatchlistStatus = "not-started" | "in-progress" | "watched";

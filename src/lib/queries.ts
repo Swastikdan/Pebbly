@@ -252,3 +252,18 @@ export async function getMediaRecommendations({
 
 	return validateResponse(response);
 }
+
+/** TV Season details with episode list */
+export async function getTvSeasonDetails({
+	tvId,
+	seasonNumber,
+}: {
+	tvId: number;
+	seasonNumber: number;
+}): Promise<Types.TvSeasonDetail> {
+	validateId(tvId);
+	const url = `/tv/${tvId}/season/${seasonNumber}?language=en-US`;
+	const response = await tmdb<Types.TvSeasonDetail>(url);
+
+	return validateResponse(response);
+}

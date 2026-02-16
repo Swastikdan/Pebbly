@@ -8,7 +8,8 @@ export type SubPageEntityType =
 	| "media"
 	| "cast-crew"
 	| "seasons"
-	| "collection";
+	| "collection"
+	| (string & {});
 
 export function useCanonicalSlugRedirect(args: {
 	entity: RedirectEntityType;

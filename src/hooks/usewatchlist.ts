@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { WatchlistStatus } from "@/types";
 
 /* --- Types --- */
 export type WatchlistItem = {
@@ -11,6 +12,7 @@ export type WatchlistItem = {
 	rating: number;
 	release_date: string;
 	updated_at: number;
+	status: WatchlistStatus;
 };
 
 export interface WatchlistState {
@@ -25,6 +27,7 @@ export interface WatchlistState {
 		media_type: "tv" | "movie";
 		release_date: string;
 	}) => Promise<void>;
+	setItemStatus: (id: string, status: WatchlistStatus) => void;
 	setWatchlist: (items: WatchlistItem[]) => void;
 }
 
@@ -70,6 +73,7 @@ export const useWatchlistStore = create<WatchlistState>()(
 							rating,
 							release_date,
 							updated_at: Date.now(),
+							status: "not-started",
 						};
 
 						set({ watchlist: [newItem, ...current] });
@@ -79,8 +83,23 @@ export const useWatchlistStore = create<WatchlistState>()(
 				}
 			},
 
+			setItemStatus(id, status) {
+				const current = get().watchlist;
+				const newWatchlist = current.map((item) =>
+					item.external_id === id
+						? { ...item, status, updated_at: Date.now() }
+						: item,
+				);
+				set({ watchlist: newWatchlist });
+			},
+
 			setWatchlist(items) {
-				set({ watchlist: items });
+				// Migrate old items without status field
+				const migratedItems = items.map((item) => ({
+					...item,
+					status: item.status ?? ("not-started" as WatchlistStatus),
+				}));
+				set({ watchlist: migratedItems });
 			},
 		}),
 		{
@@ -88,7 +107,15 @@ export const useWatchlistStore = create<WatchlistState>()(
 			storage: createJSONStorage(() => localStorage),
 			partialize: (state) => ({ watchlist: state.watchlist }),
 			onRehydrateStorage: () => (state) => {
-				state?.setHasHydrated(true);
+				if (state) {
+					// Migrate old items that don't have a status field
+					const migratedWatchlist = state.watchlist.map((item) => ({
+						...item,
+						status: item.status ?? ("not-started" as WatchlistStatus),
+					}));
+					state.watchlist = migratedWatchlist;
+					state.setHasHydrated(true);
+				}
 			},
 		},
 	),
@@ -99,6 +126,11 @@ export const useWatchlistStore = create<WatchlistState>()(
 /** Toggle watchlist item. Call with media object. */
 export function useToggleWatchlistItem() {
 	return useWatchlistStore((state) => state.toggleWatchlistItem);
+}
+
+/** Set item status. Call with id and status object. */
+export function useSetItemStatus() {
+	return useWatchlistStore((state) => state.setItemStatus);
 }
 
 /** Returns { isOnWatchList } for a given external_id. Optimized selector. */
@@ -131,6 +163,19 @@ export function useIsInWatchlist(id: string) {
 	return useWatchlistStore(
 		useCallback(
 			(state) => state.watchlist.some((item) => item.external_id === id),
+			[id],
+		),
+	);
+}
+
+/** Get item status */
+export function useWatchlistItemStatus(id: string) {
+	return useWatchlistStore(
+		useCallback(
+			(state) => {
+				const item = state.watchlist.find((item) => item.external_id === id);
+				return item?.status ?? null;
+			},
 			[id],
 		),
 	);

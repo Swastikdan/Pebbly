@@ -206,6 +206,31 @@
 	.scrollbar-hidden::-moz-scrollbar {
 		display: none;
 	}
+
+	/* Editorial Typography */
+	.font-serif {
+		font-family: "DM Serif Display", Georgia, "Times New Roman", serif;
+	}
+	.font-mono {
+		font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+	}
+
+	/* Grain Overlay - apply to a container with position:relative */
+	.grain-overlay::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		opacity: 0.035;
+		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+		background-repeat: repeat;
+		background-size: 128px 128px;
+		z-index: 1;
+		mix-blend-mode: overlay;
+	}
+	.dark .grain-overlay::after {
+		opacity: 0.06;
+	}
 }
 
 @layer utilities {
@@ -226,5 +251,146 @@
         duration-300
         ease-out
         will-change-transform;
+	}
+
+	/* --- Card Shadow Presets --- */
+	.card-elevated {
+		box-shadow:
+			0 1px 3px rgba(0, 0, 0, 0.08),
+			0 4px 12px rgba(0, 0, 0, 0.04);
+		transition:
+			box-shadow 0.3s ease,
+			transform 0.3s ease;
+	}
+	.card-elevated:hover {
+		box-shadow:
+			0 4px 16px rgba(0, 0, 0, 0.12),
+			0 8px 32px rgba(0, 0, 0, 0.06);
+	}
+
+	.card-glass {
+		background: oklch(1 0 0 / 4%);
+		backdrop-filter: blur(12px);
+		border: 1px solid oklch(1 0 0 / 8%);
+	}
+	.dark .card-glass {
+		background: oklch(0.2 0 0 / 30%);
+		border: 1px solid oklch(1 0 0 / 6%);
+	}
+
+	/* --- Fade-In Animations --- */
+	.animate-fade-in {
+		animation: fadeIn 0.5s ease-out both;
+	}
+	.animate-fade-in-up {
+		animation: fadeInUp 0.5s ease-out both;
+	}
+	.animate-slide-in-right {
+		animation: slideInRight 0.4s ease-out both;
+	}
+
+	/* --- Staggered Grid Animations --- */
+	.stagger-grid > * {
+		animation: fadeInUp 0.4s ease-out both;
+	}
+	.stagger-grid > *:nth-child(1) {
+		animation-delay: 0ms;
+	}
+	.stagger-grid > *:nth-child(2) {
+		animation-delay: 40ms;
+	}
+	.stagger-grid > *:nth-child(3) {
+		animation-delay: 80ms;
+	}
+	.stagger-grid > *:nth-child(4) {
+		animation-delay: 120ms;
+	}
+	.stagger-grid > *:nth-child(5) {
+		animation-delay: 160ms;
+	}
+	.stagger-grid > *:nth-child(6) {
+		animation-delay: 200ms;
+	}
+	.stagger-grid > *:nth-child(7) {
+		animation-delay: 240ms;
+	}
+	.stagger-grid > *:nth-child(8) {
+		animation-delay: 280ms;
+	}
+	.stagger-grid > *:nth-child(9) {
+		animation-delay: 320ms;
+	}
+	.stagger-grid > *:nth-child(10) {
+		animation-delay: 360ms;
+	}
+	.stagger-grid > *:nth-child(11) {
+		animation-delay: 400ms;
+	}
+	.stagger-grid > *:nth-child(12) {
+		animation-delay: 440ms;
+	}
+	.stagger-grid > *:nth-child(n + 13) {
+		animation-delay: 480ms;
+	}
+
+	/* --- Skeleton Shimmer --- */
+	.shimmer {
+		background: linear-gradient(
+			90deg,
+			oklch(0.92 0 0) 0%,
+			oklch(0.96 0 0) 50%,
+			oklch(0.92 0 0) 100%
+		);
+		background-size: 200% 100%;
+		animation: shimmer 1.5s ease-in-out infinite;
+	}
+	.dark .shimmer {
+		background: linear-gradient(
+			90deg,
+			oklch(0.25 0 0) 0%,
+			oklch(0.3 0 0) 50%,
+			oklch(0.25 0 0) 100%
+		);
+		background-size: 200% 100%;
+	}
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes slideInRight {
+	from {
+		opacity: 0;
+		transform: translateX(-16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
 	}
 }

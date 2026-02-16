@@ -10,6 +10,7 @@ import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContailer } from "@/components/media/media-title-container";
+import { VideoPlayerModal } from "@/components/video-player-modal";
 import { GENRE_LIST, IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
@@ -216,6 +217,14 @@ function MovieHomePage() {
 				title={movietitle}
 				trailervideos={trailervideos}
 			/>
+			<div className="pb-4">
+				<VideoPlayerModal
+					tmdbId={id}
+					type="movie"
+					title={movietitle}
+					variant="page"
+				/>
+			</div>
 
 			<GenreContainer genres={moviegenres} />
 			<MediaDescription description={overview} />

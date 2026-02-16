@@ -151,7 +151,7 @@ function MediaListPage() {
 								description={false}
 							/>
 						) : (
-							<div className="grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+							<div className="stagger-grid grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
 								{results?.map((item) => (
 									<MediaCard
 										card_type="horizontal"

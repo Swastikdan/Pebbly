@@ -8,7 +8,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { number, object, optional, string } from "valibot";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
-import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "@/components/ui/search-bar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,6 +51,7 @@ function SearchPage() {
 	const [page, setPage] = useState(pageNumber ?? 1);
 	const [type, setType] = useState<FilterType>(null);
 	const [isPending, setIsPending] = useState(false);
+	const [minRating, setMinRating] = useState(0);
 
 	const { data, error, isFetching, isLoading } = useQuery({
 		queryKey: ["search", query, page],
@@ -77,10 +77,11 @@ function SearchPage() {
 
 		return data.results.filter((item: SearchResultsEntity) => {
 			if (item.media_type === "person") return false;
-			if (!type) return true;
-			return item.media_type === type;
+			if (type && item.media_type !== type) return false;
+			if (minRating > 0 && (item.vote_average ?? 0) < minRating) return false;
+			return true;
 		});
-	}, [data?.results, type]);
+	}, [data?.results, type, minRating]);
 
 	const activeTypes = useMemo<ActiveTypes>(
 		() => ({
@@ -230,35 +231,65 @@ function SearchPage() {
 			<div className="mx-auto w-full max-w-screen-xl p-5">
 				<SearchBar query={query} updateUrlOnChange />
 				<div className="flex h-full flex-col gap-5 py-5">
-					<div className="flex h-10 items-center justify-end">
-						<div className="flex items-center gap-2">
-							<Button
-								className="w-[84px]"
-								variant={!type ? "secondary" : "outline"}
+					{/* Filter Row */}
+					<div className="flex flex-wrap items-center gap-3">
+						<div className="flex gap-1 rounded-xl bg-secondary/30 p-1">
+							<button
+								type="button"
+								className={`pressable-small rounded-lg px-4 py-1.5 text-xs font-medium transition-all ${
+									!type
+										? "bg-foreground text-background shadow-sm"
+										: "text-foreground/60 hover:text-foreground"
+								}`}
 								onClick={handleAllClick}
 							>
 								All
-							</Button>
-							<Button
-								className="w-[84px]"
-								disabled={!activeTypes.movie}
-								variant={type === "movie" ? "secondary" : "outline"}
+							</button>
+							<button
+								type="button"
+								className={`pressable-small rounded-lg px-4 py-1.5 text-xs font-medium transition-all ${
+									type === "movie"
+										? "bg-foreground text-background shadow-sm"
+										: "text-foreground/60 hover:text-foreground"
+								}`}
 								onClick={handleMovieClick}
+								disabled={!activeTypes.movie}
 							>
 								Movies
-							</Button>
-							<Button
-								className="w-[84px]"
-								disabled={!activeTypes.tv}
-								variant={type === "tv" ? "secondary" : "outline"}
+							</button>
+							<button
+								type="button"
+								className={`pressable-small rounded-lg px-4 py-1.5 text-xs font-medium transition-all ${
+									type === "tv"
+										? "bg-foreground text-background shadow-sm"
+										: "text-foreground/60 hover:text-foreground"
+								}`}
 								onClick={handleTVClick}
+								disabled={!activeTypes.tv}
 							>
-								TV Shows
-							</Button>
+								Series
+							</button>
 						</div>
+
+						{/* Rating Filter */}
+						<select
+							value={minRating}
+							onChange={(e) => setMinRating(Number(e.target.value))}
+							className="pressable-small rounded-xl border border-default bg-secondary/30 px-3 py-2 text-xs font-medium text-foreground outline-none transition-all focus:ring-2 focus:ring-ring/30"
+						>
+							<option value={0}>Any Rating</option>
+							<option value={6}>6+ Rating</option>
+							<option value={7}>7+ Rating</option>
+							<option value={8}>8+ Rating</option>
+						</select>
+
+						<span className="ml-auto font-mono text-[10px] tracking-wider text-muted-foreground">
+							{filteredData.length} result{filteredData.length !== 1 ? "s" : ""}
+						</span>
 					</div>
+
 					<div className="flex min-h-96 w-full items-center justify-center">
-						<div className="grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+						<div className="stagger-grid grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
 							{filteredData.map((item) => (
 								<MediaCard
 									key={item.id}
