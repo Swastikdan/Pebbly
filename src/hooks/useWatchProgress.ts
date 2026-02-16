@@ -36,6 +36,7 @@ interface PlayerEventPayload {
 
 const PROGRESS_PREFIX = "progress_";
 const EPISODE_WATCHED_KEY = "episodes_watched";
+const EPISODE_PROGRESS_PREFIX = "episode_progress_";
 
 /* ─── Storage helpers ─── */
 function getStoredProgress(id: string): WatchProgressData | null {
@@ -53,6 +54,35 @@ function saveProgress(data: WatchProgressData): void {
 		localStorage.setItem(`${PROGRESS_PREFIX}${data.id}`, JSON.stringify(data));
 	} catch (err) {
 		console.error("Failed to save watch progress:", err);
+	}
+}
+
+function saveEpisodeProgress(data: WatchProgressData): void {
+	try {
+		if (data.context?.season && data.context?.episode) {
+			localStorage.setItem(
+				`${EPISODE_PROGRESS_PREFIX}${data.id}_${data.context.season}_${data.context.episode}`,
+				JSON.stringify(data),
+			);
+		}
+	} catch (err) {
+		console.error("Failed to save episode progress:", err);
+	}
+}
+
+function getEpisodeProgress(
+	id: string,
+	s: number,
+	e: number,
+): WatchProgressData | null {
+	try {
+		const raw = localStorage.getItem(
+			`${EPISODE_PROGRESS_PREFIX}${id}_${s}_${e}`,
+		);
+		if (!raw) return null;
+		return JSON.parse(raw) as WatchProgressData;
+	} catch {
+		return null;
 	}
 }
 
@@ -136,6 +166,10 @@ export function usePlayerProgressListener() {
 				};
 
 				saveProgress(watchData);
+
+				if (mediaType === "tv" && season && episode) {
+					saveEpisodeProgress(watchData);
+				}
 
 				// Auto-mark episode as watched when completed (> 95%)
 				if (
@@ -275,6 +309,22 @@ export function useEpisodeWatched(tvId: number | string) {
 		isSeasonFullyWatched,
 		getSeasonWatchedCount,
 	};
+}
+
+/* ─── Hook: Get progress for a specific episode ─── */
+export function useEpisodeProgress(
+	tvId: string | number,
+	season: number,
+	episode: number,
+) {
+	const [percent, setPercent] = useState<number>(0);
+
+	useEffect(() => {
+		const stored = getEpisodeProgress(String(tvId), season, episode);
+		if (stored) setPercent(stored.percent);
+	}, [tvId, season, episode]);
+
+	return percent;
 }
 
 /* ─── URL builder with progress resume ─── */

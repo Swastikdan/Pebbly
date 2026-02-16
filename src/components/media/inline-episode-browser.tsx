@@ -12,7 +12,10 @@ import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VideoPlayerModal } from "@/components/video-player-modal";
 import { IMAGE_PREFIX } from "@/constants";
-import { useEpisodeWatched } from "@/hooks/useWatchProgress";
+import {
+	useEpisodeProgress,
+	useEpisodeWatched,
+} from "@/hooks/useWatchProgress";
 import { getTvSeasonDetails } from "@/lib/queries";
 import type { SeasonInfo, TvEpisodeDetail } from "@/types";
 
@@ -238,6 +241,11 @@ function EpisodeCard({
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const hasLongOverview = (episode.overview?.length ?? 0) > 120;
+	const progress = useEpisodeProgress(
+		tvId,
+		seasonNumber,
+		episode.episode_number,
+	);
 
 	return (
 		<div
@@ -337,6 +345,14 @@ function EpisodeCard({
 							className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-700 border border-emerald-500/25 dark:text-emerald-400"
 						>
 							Seen
+						</Badge>
+					)}
+					{!isWatched && progress > 0 && (
+						<Badge
+							variant="secondary"
+							className="rounded-md border border-amber-500/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-500 dark:text-amber-400"
+						>
+							{Math.round(progress)}%
 						</Badge>
 					)}
 					{episode.vote_average > 0 && (

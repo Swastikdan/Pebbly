@@ -59,7 +59,7 @@
 	--shadow-color: hsl(0 0% 0%);
 	--shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.09);
 	--shadow-xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.09);
-	--:
+	--shadow-sm:
 		0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 1px 2px -1px hsl(0 0% 0% / 0.18);
 	--shadow:
 		0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 1px 2px -1px hsl(0 0% 0% / 0.18);
@@ -114,7 +114,7 @@
 	--shadow-color: hsl(0 0% 0%);
 	--shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.09);
 	--shadow-xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.09);
-	--:
+	--shadow-sm:
 		0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 1px 2px -1px hsl(0 0% 0% / 0.18);
 	--shadow:
 		0px 1px 2px 0px hsl(0 0% 0% / 0.18), 0px 1px 2px -1px hsl(0 0% 0% / 0.18);
@@ -166,7 +166,7 @@
 	--radius-xl: calc(var(--radius) + 4px);
 	--shadow-2xs: var(--shadow-2xs);
 	--shadow-xs: var(--shadow-xs);
-	--: var(--);
+	--shadow-sm: var(--shadow-sm);
 	--shadow: var(--shadow);
 	--shadow-md: var(--shadow-md);
 	--shadow-lg: var(--shadow-lg);

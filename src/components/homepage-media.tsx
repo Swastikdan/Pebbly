@@ -37,6 +37,7 @@ const MediaList = (props: {
 						is_on_watchlist_page={item.is_on_watchlist_page}
 						is_on_homepage={item.is_on_homepage}
 						card_type={props.cardType as unknown as "horizontal" | "vertical"}
+						overview={item.overview}
 					/>
 				))}
 			</div>

@@ -393,30 +393,11 @@ function WatchlistCard({
 				>
 					<Image
 						alt={item.title}
-						className={`h-32 w-22 rounded-xl bg-foreground/10 object-cover transition-all duration-300 ${isCompleted ? "opacity-40 saturate-50" : ""}`}
+						className="h-32 w-22 rounded-xl bg-foreground/10 object-cover transition-all duration-300"
 						height={192}
 						src={imageUrl}
 						width={128}
 					/>
-					{isCompleted && (
-						<div className="absolute inset-0 flex items-center justify-center">
-							<div className="rounded-full bg-emerald-500/90 p-1.5">
-								<svg
-									className="size-4 text-white"
-									fill="none"
-									viewBox="0 0 24 24"
-									strokeWidth={3}
-									stroke="currentColor"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M4.5 12.75l6 6 9-13.5"
-									/>
-								</svg>
-							</div>
-						</div>
-					)}
 				</Link>
 
 				{/* Info */}
@@ -427,11 +408,7 @@ function WatchlistCard({
 							to={`/${item.type}/${item.external_id}/${formattedTitle}`}
 							className="pressable-small"
 						>
-							<h3
-								className={`line-clamp-2 text-sm font-bold ${isCompleted ? " opacity-50" : ""}`}
-							>
-								{item.title}
-							</h3>
+							<h3 className="line-clamp-2 text-sm font-bold">{item.title}</h3>
 						</Link>
 
 						<div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -456,6 +433,11 @@ function WatchlistCard({
 								</span>
 							)}
 						</div>
+						{item.overview && (
+							<p className="mt-2 line-clamp-2 text-xs text-muted-foreground/80">
+								{item.overview}
+							</p>
+						)}
 					</div>
 
 					{/* Status Selector + Actions */}
@@ -499,6 +481,7 @@ function WatchlistCard({
 							release_date={item.release_date ?? ""}
 							title={item.title}
 							className="rounded-lg"
+							overview={item.overview}
 						/>
 					</div>
 				</div>

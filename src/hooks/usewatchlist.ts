@@ -31,9 +31,10 @@ export type WatchlistItem = {
 	type: "tv" | "movie";
 	external_id: string;
 	image: string;
-	rating: number;
+	rating: number; // 0-10
 	release_date: string;
-	updated_at: number;
+	overview?: string;
+	updated_at: number; // timestamp
 	status: WatchlistStatus;
 };
 
@@ -48,6 +49,7 @@ export interface WatchlistState {
 		id: string;
 		media_type: "tv" | "movie";
 		release_date: string;
+		overview?: string;
 	}) => Promise<void>;
 	setItemStatus: (id: string, status: WatchlistStatus) => void;
 	setWatchlist: (items: WatchlistItem[]) => void;
@@ -73,6 +75,7 @@ export const useWatchlistStore = create<WatchlistState>()(
 				image,
 				media_type,
 				release_date,
+				overview,
 			}) {
 				try {
 					const current = get().watchlist;
@@ -81,12 +84,12 @@ export const useWatchlistStore = create<WatchlistState>()(
 					);
 
 					if (existingIndex !== -1) {
-						// Remove if already there - more efficient filtering
+						// Remove if already there
 						const newWatchlist = [...current];
 						newWatchlist.splice(existingIndex, 1);
 						set({ watchlist: newWatchlist });
 					} else {
-						// Add new item at the beginning (most recently added)
+						// Add new item
 						const newItem: WatchlistItem = {
 							title,
 							type: media_type,
@@ -94,6 +97,7 @@ export const useWatchlistStore = create<WatchlistState>()(
 							image,
 							rating,
 							release_date,
+							overview: overview || "",
 							updated_at: Date.now(),
 							status: "plan-to-watch",
 						};

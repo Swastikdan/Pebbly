@@ -11,6 +11,8 @@ import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { VideoPlayerModal } from "@/components/video-player-modal";
 
+import { useWatchProgress } from "@/hooks/useWatchProgress";
+
 export function MediaPosterTrailerContainer(props: {
 	tmdbId: number;
 	type: "movie" | "tv";
@@ -19,6 +21,21 @@ export function MediaPosterTrailerContainer(props: {
 	trailervideos: Array<{ key: string; name: string }>;
 }) {
 	const { tmdbId, type, image, title, trailervideos } = props;
+	const { progress } = useWatchProgress(String(tmdbId));
+
+	let defaultSeason: number | undefined;
+	let defaultEpisode: number | undefined;
+
+	if (type === "tv") {
+		// Resume last watched episode, or start at S1E1
+		if (progress?.context?.season && progress?.context?.episode) {
+			defaultSeason = progress.context.season;
+			defaultEpisode = progress.context.episode;
+		} else {
+			defaultSeason = 1;
+			defaultEpisode = 1;
+		}
+	}
 
 	return (
 		<div className="flex flex-col justify-start gap-3 pb-3 sm:flex-row">
@@ -38,6 +55,8 @@ export function MediaPosterTrailerContainer(props: {
 					title={title}
 					variant="card"
 					className="opacity-100 bg-black/20 hover:bg-black/30 transition-colors"
+					season={defaultSeason}
+					episode={defaultEpisode}
 				/>
 			</div>
 

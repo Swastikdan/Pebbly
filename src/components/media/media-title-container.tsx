@@ -94,39 +94,48 @@ export const MediaTitleContailer = (props: {
 							rating={rateing}
 							release_date={release_date ?? ""}
 							title={title}
+							overview={props.description}
 						/>
 
 						{/* Mood/Status Selector - Only visible when on watchlist */}
 						{status && (
-							<Select
-								value={status}
-								onValueChange={(value) =>
-									setItemStatus(String(id), value as WatchlistStatus)
-								}
-							>
-								<SelectTrigger
-									className={`h-9 gap-2 rounded-lg border px-3 text-xs font-semibold  transition-all ${STATUS_COLORS[status]}`}
+							<div className="flex items-center gap-2">
+								<span className="hidden sr-only text-xs font-medium text-muted-foreground sm:inline-block">
+									Status:
+								</span>
+								<Select
+									value={status}
+									onValueChange={(value) =>
+										setItemStatus(String(id), value as WatchlistStatus)
+									}
 								>
-									<span
-										className={`size-1.5 rounded-full ${STATUS_DOT_COLORS[status]}`}
-									/>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent className="rounded-xl">
-									{(
-										Object.entries(STATUS_LABELS) as [WatchlistStatus, string][]
-									).map(([value, label]) => (
-										<SelectItem key={value} value={value}>
-											<span className="flex items-center gap-2">
-												<span
-													className={`size-2 rounded-full ${STATUS_DOT_COLORS[value]}`}
-												/>
-												{label}
-											</span>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+									<SelectTrigger
+										className={`h-9 gap-2 rounded-lg border px-3 text-xs font-semibold  transition-all ${STATUS_COLORS[status]}`}
+									>
+										<span
+											className={`size-1.5 rounded-full ${STATUS_DOT_COLORS[status]}`}
+										/>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent className="rounded-xl">
+										{(
+											Object.entries(STATUS_LABELS) as [
+												WatchlistStatus,
+												string,
+											][]
+										).map(([value, label]) => (
+											<SelectItem key={value} value={value}>
+												<span className="flex items-center gap-2">
+													<span
+														className={`size-2 rounded-full ${STATUS_DOT_COLORS[value]}`}
+													/>
+													{label}
+												</span>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
 						)}
 
 						<ShareButton title={title} />

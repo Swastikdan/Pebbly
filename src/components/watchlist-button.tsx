@@ -18,6 +18,7 @@ interface WatchlistButtonProps {
 	is_on_homepage?: boolean;
 	is_on_watchlist_page?: boolean;
 	className?: string;
+	overview?: string;
 }
 
 const WatchlistButton = (props: WatchlistButtonProps) => {
@@ -29,6 +30,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 		release_date,
 		is_on_homepage,
 		is_on_watchlist_page,
+		overview,
 	} = props;
 	const itemId = String(props.id);
 	const toggle = useToggleWatchlistItem();
@@ -43,6 +45,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 				id: itemId,
 				media_type,
 				release_date: release_date ?? "",
+				overview,
 			});
 		} catch (error) {
 			console.error("Error toggling watchlist:", error);
