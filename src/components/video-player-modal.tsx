@@ -88,7 +88,7 @@ export function VideoPlayerModal({
 					<button
 						type="button"
 						className={cn(
-							"pressable inline-flex items-center gap-2 rounded-xl bg-[#e50914] px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#c6070f] hover:shadow-xl",
+							"pressable inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background shadow-lg transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
 							className,
 						)}
 						aria-label={`Play ${title}`}
@@ -100,7 +100,7 @@ export function VideoPlayerModal({
 					<button
 						type="button"
 						className={cn(
-							"pressable inline-flex items-center gap-2.5 rounded-2xl bg-[#e50914] px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#c6070f] hover:shadow-xl",
+							"pressable inline-flex items-center gap-2.5 rounded-2xl bg-foreground px-7 py-3.5 text-base font-semibold text-background shadow-lg transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
 							className,
 						)}
 						aria-label={`Play ${title}`}

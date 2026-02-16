@@ -14,6 +14,11 @@ export interface WatchProgressData {
 	};
 }
 
+/** Tracks which episodes a user has manually marked as "seen" */
+export interface EpisodeWatchedMap {
+	[key: string]: boolean; // key = "tvId:season:episode"
+}
+
 interface PlayerEventPayload {
 	type: "PLAYER_EVENT";
 	data: {
@@ -30,6 +35,7 @@ interface PlayerEventPayload {
 }
 
 const PROGRESS_PREFIX = "progress_";
+const EPISODE_WATCHED_KEY = "episodes_watched";
 
 /* ─── Storage helpers ─── */
 function getStoredProgress(id: string): WatchProgressData | null {
@@ -68,6 +74,33 @@ function getAllProgress(): WatchProgressData[] {
 	return items.sort((a, b) => b.lastUpdated - a.lastUpdated);
 }
 
+/* ─── Episode watched helpers ─── */
+function makeEpisodeKey(
+	tvId: number | string,
+	season: number,
+	episode: number,
+): string {
+	return `${tvId}:${season}:${episode}`;
+}
+
+function getEpisodeWatchedMap(): EpisodeWatchedMap {
+	try {
+		const raw = localStorage.getItem(EPISODE_WATCHED_KEY);
+		if (!raw) return {};
+		return JSON.parse(raw) as EpisodeWatchedMap;
+	} catch {
+		return {};
+	}
+}
+
+function saveEpisodeWatchedMap(map: EpisodeWatchedMap): void {
+	try {
+		localStorage.setItem(EPISODE_WATCHED_KEY, JSON.stringify(map));
+	} catch (err) {
+		console.error("Failed to save episode watched map:", err);
+	}
+}
+
 /* ─── Hook: Listen for player events and persist progress ─── */
 export function usePlayerProgressListener() {
 	useEffect(() => {
@@ -86,6 +119,7 @@ export function usePlayerProgressListener() {
 					duration,
 					season,
 					episode,
+					event: playerEvent,
 				} = payload.data;
 
 				// Only save meaningful progress (> 1% and > 10 seconds)
@@ -102,6 +136,16 @@ export function usePlayerProgressListener() {
 				};
 
 				saveProgress(watchData);
+
+				// Auto-mark episode as watched when completed (> 95%)
+				if (
+					playerEvent === "ended" ||
+					(progress > 95 && mediaType === "tv" && season && episode)
+				) {
+					const map = getEpisodeWatchedMap();
+					map[makeEpisodeKey(id, season!, episode!)] = true;
+					saveEpisodeWatchedMap(map);
+				}
 			} catch {
 				// Non-JSON messages or other events — ignore
 			}
@@ -151,6 +195,88 @@ export function useContinueWatching() {
 	return { items: activeItems, allItems: items, refresh };
 }
 
+/* ─── Hook: Track and toggle episode watched status ─── */
+export function useEpisodeWatched(tvId: number | string) {
+	const [watchedMap, setWatchedMap] = useState<EpisodeWatchedMap>({});
+
+	useEffect(() => {
+		setWatchedMap(getEpisodeWatchedMap());
+	}, []);
+
+	const isEpisodeWatched = useCallback(
+		(season: number, episode: number): boolean => {
+			return !!watchedMap[makeEpisodeKey(tvId, season, episode)];
+		},
+		[tvId, watchedMap],
+	);
+
+	const toggleEpisodeWatched = useCallback(
+		(season: number, episode: number) => {
+			const key = makeEpisodeKey(tvId, season, episode);
+			const newMap = { ...getEpisodeWatchedMap() };
+			newMap[key] = !newMap[key];
+			if (!newMap[key]) delete newMap[key];
+			saveEpisodeWatchedMap(newMap);
+			setWatchedMap(newMap);
+		},
+		[tvId],
+	);
+
+	const markSeasonWatched = useCallback(
+		(season: number, episodes: number[]) => {
+			const map = { ...getEpisodeWatchedMap() };
+			for (const ep of episodes) {
+				map[makeEpisodeKey(tvId, season, ep)] = true;
+			}
+			saveEpisodeWatchedMap(map);
+			setWatchedMap(map);
+		},
+		[tvId],
+	);
+
+	const unmarkSeasonWatched = useCallback(
+		(season: number, episodes: number[]) => {
+			const map = { ...getEpisodeWatchedMap() };
+			for (const ep of episodes) {
+				delete map[makeEpisodeKey(tvId, season, ep)];
+			}
+			saveEpisodeWatchedMap(map);
+			setWatchedMap(map);
+		},
+		[tvId],
+	);
+
+	const isSeasonFullyWatched = useCallback(
+		(season: number, totalEpisodes: number): boolean => {
+			for (let ep = 1; ep <= totalEpisodes; ep++) {
+				if (!watchedMap[makeEpisodeKey(tvId, season, ep)]) return false;
+			}
+			return totalEpisodes > 0;
+		},
+		[tvId, watchedMap],
+	);
+
+	const getSeasonWatchedCount = useCallback(
+		(season: number, totalEpisodes: number): number => {
+			let count = 0;
+			for (let ep = 1; ep <= totalEpisodes; ep++) {
+				if (watchedMap[makeEpisodeKey(tvId, season, ep)]) count++;
+			}
+			return count;
+		},
+		[tvId, watchedMap],
+	);
+
+	return {
+		isEpisodeWatched,
+		toggleEpisodeWatched,
+		markSeasonWatched,
+		unmarkSeasonWatched,
+		isSeasonFullyWatched,
+		getSeasonWatchedCount,
+	};
+}
+
 /* ─── URL builder with progress resume ─── */
 export function buildPlayerUrl(opts: {
 	type: "movie" | "tv";
@@ -162,7 +288,6 @@ export function buildPlayerUrl(opts: {
 	const { type, tmdbId, season, episode, savedProgress } = opts;
 
 	const params = new URLSearchParams();
-	params.set("color", "e50914");
 	params.set("autoPlay", "true");
 	params.set("nextEpisode", "true");
 	params.set("episodeSelector", "true");

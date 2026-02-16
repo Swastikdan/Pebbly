@@ -3,6 +3,28 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { WatchlistStatus } from "@/types";
 
+/* --- Migration helpers --- */
+const OLD_TO_NEW_STATUS: Record<string, WatchlistStatus> = {
+	"not-started": "plan-to-watch",
+	"in-progress": "watching",
+	watched: "completed",
+};
+
+function migrateStatus(raw: string | undefined | null): WatchlistStatus {
+	if (!raw) return "plan-to-watch";
+	if (raw in OLD_TO_NEW_STATUS) return OLD_TO_NEW_STATUS[raw];
+	// Already a valid new status
+	const valid: WatchlistStatus[] = [
+		"plan-to-watch",
+		"watching",
+		"completed",
+		"liked",
+		"dropped",
+	];
+	if (valid.includes(raw as WatchlistStatus)) return raw as WatchlistStatus;
+	return "plan-to-watch";
+}
+
 /* --- Types --- */
 export type WatchlistItem = {
 	title: string;
@@ -73,7 +95,7 @@ export const useWatchlistStore = create<WatchlistState>()(
 							rating,
 							release_date,
 							updated_at: Date.now(),
-							status: "not-started",
+							status: "plan-to-watch",
 						};
 
 						set({ watchlist: [newItem, ...current] });
@@ -97,7 +119,7 @@ export const useWatchlistStore = create<WatchlistState>()(
 				// Migrate old items without status field
 				const migratedItems = items.map((item) => ({
 					...item,
-					status: item.status ?? ("not-started" as WatchlistStatus),
+					status: migrateStatus(item.status),
 				}));
 				set({ watchlist: migratedItems });
 			},
@@ -108,10 +130,10 @@ export const useWatchlistStore = create<WatchlistState>()(
 			partialize: (state) => ({ watchlist: state.watchlist }),
 			onRehydrateStorage: () => (state) => {
 				if (state) {
-					// Migrate old items that don't have a status field
+					// Migrate old status values to the new mood system
 					const migratedWatchlist = state.watchlist.map((item) => ({
 						...item,
-						status: item.status ?? ("not-started" as WatchlistStatus),
+						status: migrateStatus(item.status),
 					}));
 					state.watchlist = migratedWatchlist;
 					state.setHasHydrated(true);

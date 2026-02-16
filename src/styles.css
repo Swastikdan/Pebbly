@@ -207,13 +207,13 @@
 		display: none;
 	}
 
-	/* Editorial Typography */
-	.font-serif {
+	/* Editorial Typography
+	. {
 		font-family: "DM Serif Display", Georgia, "Times New Roman", serif;
 	}
-	.font-mono {
+	. {
 		font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
-	}
+	} */
 
 	/* Grain Overlay - apply to a container with position:relative */
 	.grain-overlay::after {

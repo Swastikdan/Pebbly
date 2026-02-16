@@ -1,7 +1,44 @@
 import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
 import { ShareButton } from "@/components/share-button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { WatchlistButton } from "@/components/watchlist-button";
+import {
+	useSetItemStatus,
+	useWatchlistCount,
+	useWatchlistItemStatus,
+} from "@/hooks/usewatchlist";
+import type { WatchlistStatus } from "@/types";
+
+const STATUS_LABELS: Record<WatchlistStatus, string> = {
+	"plan-to-watch": "Plan to Watch",
+	watching: "Watching",
+	completed: "Completed",
+	liked: "Liked",
+	dropped: "Dropped",
+};
+
+const STATUS_COLORS: Record<WatchlistStatus, string> = {
+	"plan-to-watch": "border-zinc-500/20 bg-zinc-500/10 text-zinc-500",
+	watching: "border-amber-500/20 bg-amber-500/10 text-amber-500",
+	completed: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+	liked: "border-rose-500/20 bg-rose-500/10 text-rose-500",
+	dropped: "border-red-500/20 bg-red-500/10 text-red-500",
+};
+
+const STATUS_DOT_COLORS: Record<WatchlistStatus, string> = {
+	"plan-to-watch": "bg-zinc-500",
+	watching: "bg-amber-500",
+	completed: "bg-emerald-500",
+	liked: "bg-rose-500",
+	dropped: "bg-red-500",
+};
 
 export const MediaTitleContailer = (props: {
 	title: string;
@@ -38,6 +75,11 @@ export const MediaTitleContailer = (props: {
 		tv_status,
 	} = props;
 
+	const status = useWatchlistItemStatus(String(id));
+	const setItemStatus = useSetItemStatus();
+	// Subscribe to watchlist count to trigger re-renders when item is added/removed
+	useWatchlistCount();
+
 	return (
 		<div className="pt-5 pb-5">
 			<div className="space-y-3 pb-5">
@@ -53,6 +95,40 @@ export const MediaTitleContailer = (props: {
 							release_date={release_date ?? ""}
 							title={title}
 						/>
+
+						{/* Mood/Status Selector - Only visible when on watchlist */}
+						{status && (
+							<Select
+								value={status}
+								onValueChange={(value) =>
+									setItemStatus(String(id), value as WatchlistStatus)
+								}
+							>
+								<SelectTrigger
+									className={`h-9 gap-2 rounded-lg border px-3 text-xs font-semibold shadow-sm transition-all ${STATUS_COLORS[status]}`}
+								>
+									<span
+										className={`size-1.5 rounded-full ${STATUS_DOT_COLORS[status]}`}
+									/>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent className="rounded-xl">
+									{(
+										Object.entries(STATUS_LABELS) as [WatchlistStatus, string][]
+									).map(([value, label]) => (
+										<SelectItem key={value} value={value}>
+											<span className="flex items-center gap-2">
+												<span
+													className={`size-2 rounded-full ${STATUS_DOT_COLORS[value]}`}
+												/>
+												{label}
+											</span>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						)}
+
 						<ShareButton title={title} />
 					</div>
 				</div>

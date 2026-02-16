@@ -4,8 +4,8 @@ import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
-
 import { IMAGE_PREFIX } from "@/constants";
+import { useWatchlistItemStatus } from "@/hooks/usewatchlist";
 import { formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
@@ -65,6 +65,9 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 		is_on_watchlist_page,
 	} = props;
 
+	const status = useWatchlistItemStatus(String(id));
+	const isWatched = status === "completed";
+
 	const formattedTitle = formatMediaTitle.encode(title);
 	const formattedReleaseDate = release_date
 		? new Date(release_date).toLocaleDateString("en-US", {
@@ -98,20 +101,39 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					<div className="relative">
 						<Image
 							alt={title}
-							className="h-64 w-46 rounded-xl bg-foreground/10 md:h-72 md:w-50"
+							className={`h-64 w-46 rounded-xl bg-foreground/10 md:h-72 md:w-50 ${isWatched ? "opacity-60 saturate-50" : ""}`}
 							height={450}
 							src={imageUrl}
 							width={300}
 						/>
+						{isWatched && (
+							<div className="absolute inset-0 z-10 flex items-center justify-center">
+								<div className="rounded-full bg-emerald-500/90 p-2 shadow-lg backdrop-blur-sm">
+									<svg
+										className="size-5 text-white"
+										fill="none"
+										viewBox="0 0 24 24"
+										strokeWidth={3}
+										stroke="currentColor"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											d="M4.5 12.75l6 6 9-13.5"
+										/>
+									</svg>
+								</div>
+							</div>
+						)}
 						<div className="absolute right-2 bottom-2 z-20 flex items-center gap-2">
 							<Badge
 								className="rounded-md px-2 font-normal text-xs uppercase md:text-sm"
-								variant="light"
+								variant="secondary"
 							>
 								{media_type}
 							</Badge>
 							<Badge
-								variant="light"
+								variant="secondary"
 								className="rounded-md font-normal text-xs md:text-sm"
 							>
 								{rating > 0.0 ? (
@@ -144,12 +166,14 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 		image,
 		id,
 		poster_path,
-
 		media_type,
 		release_date,
 		is_on_homepage,
 		is_on_watchlist_page,
 	} = props;
+
+	const status = useWatchlistItemStatus(String(id));
+	const isWatched = status === "completed";
 
 	const formattedTitle = formatMediaTitle.encode(title);
 	const formattedReleaseDate = release_date
@@ -184,20 +208,39 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					<div className="relative">
 						<Image
 							alt={title}
-							className="bg-foreground/10 h-40 w-74 rounded-xl"
+							className={`bg-foreground/10 h-40 w-74 rounded-xl ${isWatched ? "opacity-60 saturate-50" : ""}`}
 							height={300}
 							src={imageUrl}
 							width={450}
 						/>
+						{isWatched && (
+							<div className="absolute inset-0 z-10 flex items-center justify-center">
+								<div className="rounded-full bg-emerald-500/90 p-2 shadow-lg backdrop-blur-sm">
+									<svg
+										className="size-5 text-white"
+										fill="none"
+										viewBox="0 0 24 24"
+										strokeWidth={3}
+										stroke="currentColor"
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											d="M4.5 12.75l6 6 9-13.5"
+										/>
+									</svg>
+								</div>
+							</div>
+						)}
 						<div className="absolute right-2 bottom-2 z-20 flex items-center gap-2">
 							<Badge
 								className="rounded-md px-2 font-normal text-xs uppercase md:text-sm"
-								variant="light"
+								variant="secondary"
 							>
 								{media_type}
 							</Badge>
 							<Badge
-								variant="light"
+								variant="secondary"
 								className="rounded-md font-normal text-xs md:text-sm"
 							>
 								{rating > 0.0 ? (

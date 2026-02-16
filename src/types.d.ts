@@ -635,5 +635,10 @@ export interface TvEpisodeDetail {
 	guest_stars?: CastMember[] | null;
 }
 
-// Watchlist item status for tracking progress
-export type WatchlistStatus = "not-started" | "in-progress" | "watched";
+// Watchlist item status — the "Mood System"
+export type WatchlistStatus =
+	| "plan-to-watch"
+	| "watching"
+	| "completed"
+	| "liked"
+	| "dropped";

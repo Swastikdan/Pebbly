@@ -10,6 +10,13 @@ import { DefaultEmptyState } from "@/components/default-empty-state";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "@/components/ui/search-bar";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MAX_PAGINATION_LIMIT } from "@/constants";
 import { getSearchResult } from "@/lib/queries";
@@ -41,6 +48,17 @@ export const Route = createFileRoute("/search")({
 	component: SearchPage,
 });
 
+const YEAR_OPTIONS = (() => {
+	const currentYear = new Date().getFullYear();
+	const years: { value: string; label: string }[] = [
+		{ value: "any", label: "Any Year" },
+	];
+	for (let y = currentYear + 1; y >= 1970; y--) {
+		years.push({ value: String(y), label: String(y) });
+	}
+	return years;
+})();
+
 function SearchPage() {
 	const navigate = useNavigate();
 	const { page: pageNumber, query: searchQuery } = useSearch({
@@ -51,7 +69,8 @@ function SearchPage() {
 	const [page, setPage] = useState(pageNumber ?? 1);
 	const [type, setType] = useState<FilterType>(null);
 	const [isPending, setIsPending] = useState(false);
-	const [minRating, setMinRating] = useState(0);
+	const [minRating, setMinRating] = useState("0");
+	const [releaseYear, setReleaseYear] = useState("any");
 
 	const { data, error, isFetching, isLoading } = useQuery({
 		queryKey: ["search", query, page],
@@ -78,10 +97,17 @@ function SearchPage() {
 		return data.results.filter((item: SearchResultsEntity) => {
 			if (item.media_type === "person") return false;
 			if (type && item.media_type !== type) return false;
-			if (minRating > 0 && (item.vote_average ?? 0) < minRating) return false;
+			const ratingMin = Number(minRating);
+			if (ratingMin > 0 && (item.vote_average ?? 0) < ratingMin) return false;
+			if (releaseYear !== "any") {
+				const itemDate = item.first_air_date ?? item.release_date;
+				if (!itemDate) return false;
+				const itemYear = new Date(itemDate).getFullYear();
+				if (itemYear !== Number(releaseYear)) return false;
+			}
 			return true;
 		});
-	}, [data?.results, type, minRating]);
+	}, [data?.results, type, minRating, releaseYear]);
 
 	const activeTypes = useMemo<ActiveTypes>(
 		() => ({
@@ -233,6 +259,7 @@ function SearchPage() {
 				<div className="flex h-full flex-col gap-5 py-5">
 					{/* Filter Row */}
 					<div className="flex flex-wrap items-center gap-3">
+						{/* Media type toggle */}
 						<div className="flex gap-1 rounded-xl bg-secondary/30 p-1">
 							<button
 								type="button"
@@ -271,20 +298,37 @@ function SearchPage() {
 							</button>
 						</div>
 
-						{/* Rating Filter */}
-						<select
-							value={minRating}
-							onChange={(e) => setMinRating(Number(e.target.value))}
-							className="pressable-small rounded-xl border border-default bg-secondary/30 px-3 py-2 text-xs font-medium text-foreground outline-none transition-all focus:ring-2 focus:ring-ring/30"
-						>
-							<option value={0}>Any Rating</option>
-							<option value={6}>6+ Rating</option>
-							<option value={7}>7+ Rating</option>
-							<option value={8}>8+ Rating</option>
-						</select>
+						{/* Rating Filter — Radix Select */}
+						<Select value={minRating} onValueChange={setMinRating}>
+							<SelectTrigger className="h-8 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent className="rounded-xl">
+								<SelectItem value="0">Any Rating</SelectItem>
+								<SelectItem value="6">6+ Rating</SelectItem>
+								<SelectItem value="7">7+ Rating</SelectItem>
+								<SelectItem value="8">8+ Rating</SelectItem>
+								<SelectItem value="9">9+ Rating</SelectItem>
+							</SelectContent>
+						</Select>
 
-						<span className="ml-auto font-mono text-[10px] tracking-wider text-muted-foreground">
-							{filteredData.length} result{filteredData.length !== 1 ? "s" : ""}
+						{/* Year Filter — Radix Select */}
+						<Select value={releaseYear} onValueChange={setReleaseYear}>
+							<SelectTrigger className="h-8 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent className="max-h-60 rounded-xl">
+								{YEAR_OPTIONS.map((opt) => (
+									<SelectItem key={opt.value} value={opt.value}>
+										{opt.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+
+						<span className="ml-auto  text-[10px] tracking-wider text-muted-foreground">
+							{filteredData.length} result
+							{filteredData.length !== 1 ? "s" : ""}
 						</span>
 					</div>
 

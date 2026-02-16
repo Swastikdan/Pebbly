@@ -1,5 +1,4 @@
 import { ScrollContainer } from "@/components/scroll-container";
-
 import {
 	Dialog,
 	DialogContent,
@@ -10,22 +9,37 @@ import {
 } from "@/components/ui/dialog";
 import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
+import { VideoPlayerModal } from "@/components/video-player-modal";
 
 export function MediaPosterTrailerContainer(props: {
+	tmdbId: number;
+	type: "movie" | "tv";
 	image: string;
 	title: string;
 	trailervideos: Array<{ key: string; name: string }>;
 }) {
-	const { image, title, trailervideos } = props;
+	const { tmdbId, type, image, title, trailervideos } = props;
+
 	return (
 		<div className="flex flex-col justify-start gap-3 pb-3 sm:flex-row">
-			<Image
-				alt={title}
-				className="bg-accent h-full w-full rounded-xl object-center sm:h-56 sm:w-auto md:h-70 lg:h-80"
-				height={450}
-				src={image}
-				width={300}
-			/>
+			<div className="relative group shrink-0 w-full sm:w-auto overflow-hidden rounded-xl">
+				<Image
+					alt={title}
+					className="bg-accent h-full w-full rounded-xl object-center sm:h-56 sm:w-auto md:h-70 lg:h-80"
+					height={450}
+					src={image}
+					width={300}
+				/>
+
+				{/* Main Play Button Overlay */}
+				<VideoPlayerModal
+					tmdbId={tmdbId}
+					type={type}
+					title={title}
+					variant="card"
+					className="opacity-100 bg-black/20 hover:bg-black/30 transition-colors"
+				/>
+			</div>
 
 			{trailervideos.length > 0 && (
 				<ScrollContainer className="h-full flex-1">
@@ -33,7 +47,7 @@ export function MediaPosterTrailerContainer(props: {
 						{trailervideos.map((video, index) => (
 							<Dialog key={index}>
 								<DialogTrigger asChild>
-									<div className="group relative cursor-pointer">
+									<div className="group relative cursor-pointer shrink-0">
 										<Image
 											alt={video.name}
 											className="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
@@ -41,26 +55,17 @@ export function MediaPosterTrailerContainer(props: {
 											src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
 											width={300}
 										/>
-										<span className="absolute top-4 left-4 truncate text-sm text-foreground px-2 py-1 rounded-lg bg-background dark:bg-foreground dark:text-background w-min  turnicate max-w-[300px] sm:max-w-[350px] md:max-w-[400px] lg:max-w-[500px]">
+										<span className="absolute top-4 left-4 truncate text-sm text-foreground px-2 py-1 rounded-lg bg-background dark:bg-foreground dark:text-background w-min max-w-[200px] sm:max-w-[250px]">
 											{video.name}
 										</span>
-										<button
-											type="button"
-											className="absolute inset-0 flex items-center justify-center"
-										>
-											<div className="cursor-pointer rounded-full bg-black/60 p-4 transition-transform group-hover:scale-110 pressable">
-												<Play
-													className="size-8 scale-100 fill-white text-white transition-transform duration-200 ease-out group-hover:scale-105 pressable"
-													style={{
-														filter:
-															"drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))",
-													}}
-												/>
+										<div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm">
+												<Play className="size-6 fill-white text-white drop-shadow-lg" />
 											</div>
-										</button>
+										</div>
 									</div>
 								</DialogTrigger>
-								<DialogOverlay className="bg-white/40 backdrop-blur-lg dark:bg-black/0">
+								<DialogOverlay className="bg-black/80 backdrop-blur-md">
 									<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0">
 										<DialogHeader className="sr-only">
 											<DialogTitle>{video.name}</DialogTitle>
@@ -70,7 +75,7 @@ export function MediaPosterTrailerContainer(props: {
 												allowFullScreen
 												allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
 												className="size-full rounded-xl"
-												src={`https://www.youtube.com/embed/${video.key}`}
+												src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
 												title={video.name}
 											/>
 										</div>

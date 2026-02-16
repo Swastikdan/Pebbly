@@ -11,7 +11,6 @@ import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContailer } from "@/components/media/media-title-container";
-import { VideoPlayerModal } from "@/components/video-player-modal";
 import { GENRE_LIST, IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
@@ -195,15 +194,6 @@ function TvHomePage() {
 			id: keyword.id,
 		})) ?? [];
 
-	const latestSeason =
-		data.seasons
-			?.slice()
-			.reverse()
-			.find(
-				(season) =>
-					season.air_date && new Date(season.air_date).getTime() <= Date.now(),
-			) ?? data.seasons?.[data.seasons.length - 1];
-
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4">
 			<MediaTitleContailer
@@ -225,20 +215,12 @@ function TvHomePage() {
 				vote_count={vote_count}
 			/>
 			<MediaPosterTrailerContainer
+				tmdbId={id}
+				type="tv"
 				image={tvimage}
 				title={tvtitle}
 				trailervideos={trailervideos}
 			/>
-			<div className="pb-4">
-				<VideoPlayerModal
-					tmdbId={id}
-					type="tv"
-					title={tvtitle}
-					season={1}
-					episode={1}
-					variant="page"
-				/>
-			</div>
 			<GenreContainer genres={tvgenres} />
 			<MediaDescription description={overview} />
 			<CastSection
@@ -256,7 +238,6 @@ function TvHomePage() {
 					tvId={id}
 					showName={tvtitle}
 					seasons={data.seasons}
-					initialSeasonNumber={latestSeason?.season_number}
 				/>
 			)}
 			<MediaContainer
