@@ -23,9 +23,9 @@ export const GoBack = (props: {
 
 	return (
 		<Button className={className} variant="secondary" onClick={() => goBack()}>
-			<span className="w-full flex items-center gap-1">
+			<span className="flex w-full items-center gap-1">
 				<ArrowLeft size={24} />
-				{title ?? "Go Back"}
+				<span className="hidden sm:inline">{title ?? "Go Back"}</span>
 			</span>
 		</Button>
 	);

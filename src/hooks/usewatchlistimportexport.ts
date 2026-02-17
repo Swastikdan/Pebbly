@@ -123,6 +123,7 @@ export const useWatchlistImportExport = () => {
 								rating: item.rating,
 								release_date: item.release_date,
 								updated_at: Date.now(),
+								created_at: Date.now(),
 								status: "plan-to-watch",
 							});
 						} else {

@@ -1,0 +1,182 @@
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, notFound } from "@tanstack/react-router";
+import { DefaultLoader } from "@/components/default-loader";
+import { GoBack } from "@/components/go-back";
+import { MediaCard } from "@/components/media-card";
+import { Image } from "@/components/ui/image";
+import { IMAGE_PREFIX } from "@/constants";
+import { getPersonDetails } from "@/lib/queries";
+import { isValidId } from "@/lib/utils";
+import type { PersonDetails } from "@/types";
+
+export const Route = createFileRoute("/person/$id")({
+	loader: async ({ params }) => {
+		const { id } = params;
+		if (!isValidId(parseInt(id, 10))) {
+			throw notFound();
+		}
+		return { id };
+	},
+	head: () => ({
+		meta: [
+			{ title: "Person Details | Film Fanatic" },
+			{
+				name: "description",
+				content:
+					"Explore detailed information about cast and crew on Film Fanatic.",
+			},
+		],
+	}),
+	component: PersonPage,
+});
+
+function PersonPage() {
+	const { id } = Route.useLoaderData();
+	const personId = parseInt(id, 10);
+
+	const { data, error, isLoading } = useQuery<PersonDetails>({
+		queryKey: ["person_details", personId],
+		queryFn: async () => await getPersonDetails({ id: personId }),
+	});
+
+	if (isLoading) {
+		return <DefaultLoader />;
+	}
+
+	if (!data || error) {
+		throw notFound();
+	}
+
+	const {
+		name,
+		biography,
+		profile_path,
+		place_of_birth,
+		birthday,
+		deathday,
+		movie_credits,
+		tv_credits,
+		external_ids,
+	} = data;
+
+	const imageUrl = profile_path
+		? `${IMAGE_PREFIX.HD_PROFILE}${profile_path}`
+		: null;
+
+	// Combine and sort credits by popularity
+	const allCast = [
+		...(movie_credits?.cast?.map((c) => ({ ...c, media_type: "movie" })) || []),
+		...(tv_credits?.cast?.map((c) => ({ ...c, media_type: "tv" })) || []),
+	].sort((a, b) => b.popularity - a.popularity);
+
+	// Filter out duplicates if any (sometimes same movie is in both lists? unlikely but safe)
+	const uniqueCast = allCast.filter(
+		(item, index, self) =>
+			index ===
+			self.findIndex(
+				(t) => t.id === item.id && t.media_type === item.media_type,
+			),
+	);
+
+	return (
+		<section className="mx-auto block max-w-screen-xl items-center px-4 py-5">
+			<div className="flex flex-col gap-8 md:flex-row md:items-start">
+				{/* Left Column: Image & Personal Info */}
+				<div className="flex flex-col items-center gap-4 md:w-1/3 md:items-start md:sticky md:top-20">
+					<GoBack />
+					<div className="relative w-64 overflow-hidden rounded-xl shadow-lg md:w-full max-w-sm aspect-[2/3]">
+						{imageUrl ? (
+							<Image
+								src={imageUrl}
+								alt={name}
+								className="h-full w-full object-cover"
+								width={300}
+								height={450}
+							/>
+						) : (
+							<div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
+								No Image
+							</div>
+						)}
+					</div>
+
+					<div className="flex w-full flex-col gap-2">
+						<h1 className="text-3xl font-bold">{name}</h1>
+						{birthday && (
+							<div className="text-sm text-muted-foreground">
+								<span className="font-semibold text-foreground">Born: </span>
+								{new Date(birthday).toLocaleDateString()}
+								{place_of_birth && ` in ${place_of_birth}`}
+							</div>
+						)}
+						{deathday && (
+							<div className="text-sm text-muted-foreground">
+								<span className="font-semibold text-foreground">Died: </span>
+								{new Date(deathday).toLocaleDateString()}
+							</div>
+						)}
+
+						{/* External Links */}
+						<div className="flex gap-4 pt-2">
+							{external_ids.imdb_id && (
+								<a
+									href={`https://www.imdb.com/name/${external_ids.imdb_id}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-sm font-medium hover:underline"
+								>
+									IMDb
+								</a>
+							)}
+							{/* Add more social links if needed */}
+						</div>
+					</div>
+				</div>
+
+				{/* Right Column: Biography & Credits */}
+				<div className="flex flex-col gap-8 md:w-2/3">
+					{biography && (
+						<div className="space-y-2">
+							<h2 className="text-2xl font-semibold">Biography</h2>
+							<div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+								{biography.split("\n\n").map((paragraph, index) => (
+									<p key={index} className="mb-4">
+										{paragraph}
+									</p>
+								)) || "No biography available."}
+							</div>
+						</div>
+					)}
+
+					{uniqueCast.length > 0 && (
+						<div className="space-y-4">
+							<h2 className="text-2xl font-semibold">Known For</h2>
+							<div className="grid w-full grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+								{uniqueCast.map((credit) => (
+									<div
+										key={`${credit.media_type}-${credit.id}`}
+										className="min-h-[300px]"
+									>
+										<MediaCard
+											id={credit.id}
+											title={credit.title || credit.name || "Untitled"}
+											rating={credit.vote_average || 0}
+											poster_path={credit.poster_path || ""}
+											image={credit.poster_path || ""}
+											media_type={credit.media_type as "movie" | "tv"}
+											release_date={
+												credit.release_date || credit.first_air_date || null
+											}
+											card_type="horizontal"
+											className="w-full"
+										/>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+				</div>
+			</div>
+		</section>
+	);
+}

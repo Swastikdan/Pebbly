@@ -4,7 +4,16 @@ import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultLoader } from "@/components/default-loader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Star, Upload } from "@/components/ui/icons";
+import {
+	CheckCircle,
+	Clock,
+	Download,
+	Eye,
+	Heart,
+	Star,
+	Upload,
+	XCircleIcon,
+} from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import {
 	Select,
@@ -45,25 +54,6 @@ const STATUS_LABELS: Record<WatchlistStatus, string> = {
 	completed: "Completed",
 	liked: "Liked",
 	dropped: "Dropped",
-};
-
-const STATUS_COLORS: Record<WatchlistStatus, string> = {
-	"plan-to-watch":
-		"bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/25",
-	watching:
-		"bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/25",
-	completed:
-		"bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/25",
-	liked: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/25",
-	dropped: "bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border-zinc-500/25",
-};
-
-const STATUS_DOT_COLORS: Record<WatchlistStatus, string> = {
-	"plan-to-watch": "bg-blue-500",
-	watching: "bg-amber-500",
-	completed: "bg-emerald-500",
-	liked: "bg-rose-500",
-	dropped: "bg-zinc-500",
 };
 
 type FilterType = "all" | WatchlistStatus;
@@ -120,7 +110,10 @@ function WatchlistPage() {
 					);
 				case "recent":
 				default:
-					return (b.updated_at ?? 0) - (a.updated_at ?? 0);
+					return (
+						(b.created_at ?? b.updated_at ?? 0) -
+						(a.created_at ?? a.updated_at ?? 0)
+					);
 			}
 		});
 	}, [watchlistData, activeFilter, mediaFilter, sortBy]);
@@ -359,7 +352,6 @@ function WatchlistCard({
 	onStatusChange: (id: string, status: WatchlistStatus) => void;
 }) {
 	const status = item.status ?? "plan-to-watch";
-	const isCompleted = status === "completed";
 	const formattedTitle = formatMediaTitle.encode(item.title);
 	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${item.image}`;
 	const formattedDate = item.release_date
@@ -371,19 +363,7 @@ function WatchlistCard({
 		: "";
 
 	return (
-		<div
-			className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${
-				isCompleted
-					? "border-emerald-500/20 bg-emerald-500/5"
-					: status === "watching"
-						? "border-amber-500/20 bg-amber-500/5"
-						: status === "liked"
-							? "border-rose-500/20 bg-rose-500/5"
-							: status === "dropped"
-								? "border-zinc-500/20 bg-zinc-500/5"
-								: "border-default bg-secondary/5 hover:border-foreground/15 hover:bg-secondary/15"
-			} hover:`}
-		>
+		<div className="group relative overflow-hidden rounded-2xl border border-default bg-secondary/5 transition-all duration-300 hover:border-foreground/15 hover:bg-secondary/15">
 			<div className="flex gap-3 p-3">
 				{/* Poster */}
 				<Link
@@ -448,27 +428,40 @@ function WatchlistCard({
 								onStatusChange(item.external_id, value as WatchlistStatus)
 							}
 						>
-							<SelectTrigger
-								className={`h-7 gap-1.5 rounded-lg border px-2.5 text-[11px] font-semibold shadow-none ${STATUS_COLORS[status]}`}
-							>
-								<span
-									className={`size-1.5 rounded-full ${STATUS_DOT_COLORS[status]}`}
-								/>
+							<SelectTrigger className="h-7 min-w-[130px] gap-1.5 rounded-lg border px-2.5 text-[11px] font-semibold shadow-none">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent className="rounded-xl">
-								{(
-									Object.entries(STATUS_LABELS) as [WatchlistStatus, string][]
-								).map(([value, label]) => (
-									<SelectItem key={value} value={value}>
-										<span className="flex items-center gap-2">
-											<span
-												className={`size-2 rounded-full ${STATUS_DOT_COLORS[value]}`}
-											/>
-											{label}
-										</span>
-									</SelectItem>
-								))}
+								<SelectItem value="plan-to-watch">
+									<span className="flex items-center gap-2">
+										<Clock size={14} />
+										Plan to Watch
+									</span>
+								</SelectItem>
+								<SelectItem value="watching">
+									<span className="flex items-center gap-2">
+										<Eye size={14} />
+										Watching
+									</span>
+								</SelectItem>
+								<SelectItem value="completed">
+									<span className="flex items-center gap-2">
+										<CheckCircle size={14} />
+										Completed
+									</span>
+								</SelectItem>
+								<SelectItem value="liked">
+									<span className="flex items-center gap-2">
+										<Heart size={14} />
+										Liked
+									</span>
+								</SelectItem>
+								<SelectItem value="dropped">
+									<span className="flex items-center gap-2">
+										<XCircleIcon size={14} />
+										Dropped
+									</span>
+								</SelectItem>
 							</SelectContent>
 						</Select>
 

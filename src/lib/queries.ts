@@ -307,3 +307,15 @@ export async function getDiscoverMoviesByGenre({
 	const response = await tmdb<Types.MediaListResults>(url);
 	return validateResponse(response);
 }
+
+/** Get person details with credits and images */
+export async function getPersonDetails({
+	id,
+}: {
+	id: number;
+}): Promise<Types.PersonDetails> {
+	validateId(id);
+	const url = `/person/${id}?language=en-US&append_to_response=movie_credits,tv_credits,images,external_ids`;
+	const response = await tmdb<Types.PersonDetails>(url);
+	return validateResponse(response);
+}

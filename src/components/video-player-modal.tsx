@@ -3,7 +3,6 @@ import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
-	DialogOverlay,
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
@@ -12,7 +11,6 @@ import { Spinner } from "@/components/ui/spinner";
 import {
 	buildPlayerUrl,
 	usePlayerProgressListener,
-	useWatchProgress,
 } from "@/hooks/useWatchProgress";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +35,7 @@ export function VideoPlayerModal({
 }: VideoPlayerModalProps) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isOpen, setIsOpen] = useState(false);
-	const { progress } = useWatchProgress(tmdbId);
+	// const { progress } = useWatchProgress(tmdbId);
 
 	// Listen for player progress events
 	usePlayerProgressListener();
@@ -47,15 +45,13 @@ export function VideoPlayerModal({
 		tmdbId,
 		season,
 		episode,
-		savedProgress: progress?.timestamp,
+		// savedProgress: progress?.timestamp, // Disable auto-resume
 	});
 
 	const label =
 		type === "tv" && season && episode
 			? `Play S${season}E${episode}`
-			: progress && progress.percent > 2
-				? `Resume ${Math.round(progress.percent)}%`
-				: "Play Now";
+			: "Play Now";
 
 	return (
 		<Dialog
@@ -110,28 +106,26 @@ export function VideoPlayerModal({
 					</button>
 				)}
 			</DialogTrigger>
-			<DialogOverlay className="bg-black/80 backdrop-blur-md">
-				<DialogContent className="aspect-video w-full max-w-[95vw] rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]">
-					<DialogHeader className="sr-only">
-						<DialogTitle>{title}</DialogTitle>
-					</DialogHeader>
-					<div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-xl bg-foreground/10 p-0">
-						{isLoading && (
-							<div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
-								<Spinner size="md" className="bg-white" />
-							</div>
-						)}
-						<iframe
-							allowFullScreen
-							allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-							className="size-full rounded-xl"
-							src={videoUrl}
-							title={title}
-							onLoad={() => setIsLoading(false)}
-						/>
-					</div>
-				</DialogContent>
-			</DialogOverlay>
+			<DialogContent className="aspect-video w-full max-w-[95vw] overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]">
+				<DialogHeader className="sr-only">
+					<DialogTitle>{title}</DialogTitle>
+				</DialogHeader>
+				<div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-xl bg-foreground/10 p-0">
+					{isLoading && (
+						<div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+							<Spinner size="md" className="bg-white" />
+						</div>
+					)}
+					<iframe
+						allowFullScreen
+						allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+						className="size-full rounded-xl"
+						src={videoUrl}
+						title={title}
+						onLoad={() => setIsLoading(false)}
+					/>
+				</div>
+			</DialogContent>
 		</Dialog>
 	);
 }

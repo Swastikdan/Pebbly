@@ -528,3 +528,82 @@ export const MoreHorizontal = ({ ...props }: IconSvgProps) => (
 		/>
 	</svg>
 );
+
+export const Eye = ({ ...props }: IconSvgProps) => (
+	<svg
+		height={props.size ?? 24}
+		width={props.size ?? 24}
+		className={props.className}
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		viewBox="0 0 24 24"
+		xmlns="http://www.w3.org/2000/svg"
+		{...props}
+	>
+		<title> Icon </title>
+		<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+		<circle cx="12" cy="12" r="3" />
+	</svg>
+);
+
+export const CheckCircle = ({ ...props }: IconSvgProps) => (
+	<svg
+		height={props.size ?? 24}
+		width={props.size ?? 24}
+		className={props.className}
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		viewBox="0 0 24 24"
+		xmlns="http://www.w3.org/2000/svg"
+		{...props}
+	>
+		<title> Icon </title>
+		<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+		<polyline points="22 4 12 14.01 9 11.01" />
+	</svg>
+);
+
+export const Heart = ({ ...props }: IconSvgProps) => (
+	<svg
+		height={props.size ?? 24}
+		width={props.size ?? 24}
+		className={props.className}
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		viewBox="0 0 24 24"
+		xmlns="http://www.w3.org/2000/svg"
+		{...props}
+	>
+		<title> Icon </title>
+		<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+	</svg>
+);
+
+export const Clock = ({ ...props }: IconSvgProps) => (
+	<svg
+		height={props.size ?? 24}
+		width={props.size ?? 24}
+		className={props.className}
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		viewBox="0 0 24 24"
+		xmlns="http://www.w3.org/2000/svg"
+		{...props}
+	>
+		<title> Icon </title>
+		<circle cx="12" cy="12" r="10" />
+		<polyline points="12 6 12 12 16 14" />
+	</svg>
+);

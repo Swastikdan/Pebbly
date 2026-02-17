@@ -31,9 +31,9 @@ export const ShareButton = (props: { title?: string }) => {
 
 	return (
 		<Button variant="secondary" onClick={() => void handleShare()}>
-			<span className="w-full flex items-center gap-1">
+			<span className="flex w-full items-center gap-1">
 				<ShareBold size={24} />
-				Share
+				<span className="hidden sm:inline">Share</span>
 			</span>
 		</Button>
 	);

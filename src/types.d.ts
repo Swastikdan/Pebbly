@@ -642,3 +642,87 @@ export type WatchlistStatus =
 	| "completed"
 	| "liked"
 	| "dropped";
+
+// Person Specific Interfaces
+export interface PersonDetails {
+	adult: boolean;
+	also_known_as: string[];
+	biography: string;
+	birthday: string | null;
+	deathday: string | null;
+	gender: number;
+	homepage: string | null;
+	id: number;
+	imdb_id: string;
+	known_for_department: string;
+	name: string;
+	place_of_birth: string | null;
+	popularity: number;
+	profile_path: string | null;
+	movie_credits: PersonResultCredits;
+	tv_credits: PersonResultCredits;
+	images: { profiles: ImageAsset[] };
+	external_ids: {
+		imdb_id?: string;
+		facebook_id?: string;
+		instagram_id?: string;
+		twitter_id?: string;
+		tiktok_id?: string;
+		youtube_id?: string;
+	};
+}
+
+export interface PersonResultCredits {
+	cast: PersonCreditCast[];
+	crew: PersonCreditCrew[];
+}
+
+export interface PersonCreditCast {
+	adult: boolean;
+	backdrop_path: string | null;
+	genre_ids: number[];
+	id: number;
+	original_language: string;
+	original_title?: string;
+	original_name?: string;
+	overview: string;
+	popularity: number;
+	poster_path: string | null;
+	release_date?: string;
+	first_air_date?: string;
+	title?: string;
+	name?: string;
+	video?: boolean;
+	vote_average: number;
+	vote_count: number;
+	character: string;
+	credit_id: string;
+	order?: number;
+	media_type: "movie" | "tv";
+	episode_count?: number;
+}
+
+export interface PersonCreditCrew {
+	adult: boolean;
+	backdrop_path: string | null;
+	genre_ids: number[];
+	id: number;
+	original_language: string;
+	original_title?: string;
+	original_name?: string;
+	overview: string;
+	popularity: number;
+	poster_path: string | null;
+	release_date?: string;
+	first_air_date?: string;
+	title?: string;
+	name?: string;
+	video?: boolean;
+	vote_average: number;
+	vote_count: number;
+	credit_id: string;
+	department: string;
+	job: string;
+	media_type: "movie" | "tv";
+	episode_count?: number;
+}

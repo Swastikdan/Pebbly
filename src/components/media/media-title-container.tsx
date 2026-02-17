@@ -2,6 +2,13 @@ import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
 import { ShareButton } from "@/components/share-button";
 import {
+	CheckCircle,
+	Clock,
+	Eye,
+	Heart,
+	XCircleIcon,
+} from "@/components/ui/icons";
+import {
 	Select,
 	SelectContent,
 	SelectItem,
@@ -15,30 +22,6 @@ import {
 	useWatchlistItemStatus,
 } from "@/hooks/usewatchlist";
 import type { WatchlistStatus } from "@/types";
-
-const STATUS_LABELS: Record<WatchlistStatus, string> = {
-	"plan-to-watch": "Plan to Watch",
-	watching: "Watching",
-	completed: "Completed",
-	liked: "Liked",
-	dropped: "Dropped",
-};
-
-const STATUS_COLORS: Record<WatchlistStatus, string> = {
-	"plan-to-watch": "border-zinc-500/20 bg-zinc-500/10 text-zinc-500",
-	watching: "border-amber-500/20 bg-amber-500/10 text-amber-500",
-	completed: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
-	liked: "border-rose-500/20 bg-rose-500/10 text-rose-500",
-	dropped: "border-red-500/20 bg-red-500/10 text-red-500",
-};
-
-const STATUS_DOT_COLORS: Record<WatchlistStatus, string> = {
-	"plan-to-watch": "bg-zinc-500",
-	watching: "bg-amber-500",
-	completed: "bg-emerald-500",
-	liked: "bg-rose-500",
-	dropped: "bg-red-500",
-};
 
 export const MediaTitleContailer = (props: {
 	title: string;
@@ -84,7 +67,7 @@ export const MediaTitleContailer = (props: {
 		<div className="pt-5 pb-5">
 			<div className="space-y-3 pb-5">
 				<div className="flex items-center justify-between">
-					<GoBack link="/" title="Go to Home" />
+					<GoBack title="Back" />
 					<div className="flex items-center gap-3">
 						<WatchlistButton
 							id={id}
@@ -109,30 +92,40 @@ export const MediaTitleContailer = (props: {
 										setItemStatus(String(id), value as WatchlistStatus)
 									}
 								>
-									<SelectTrigger
-										className={`h-9 gap-2 rounded-lg border px-3 text-xs font-semibold  transition-all ${STATUS_COLORS[status]}`}
-									>
-										<span
-											className={`size-1.5 rounded-full ${STATUS_DOT_COLORS[status]}`}
-										/>
+									<SelectTrigger className="h-10 min-w-[140px] gap-2 rounded-lg border px-3 text-xs font-semibold  transition-all">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent className="rounded-xl">
-										{(
-											Object.entries(STATUS_LABELS) as [
-												WatchlistStatus,
-												string,
-											][]
-										).map(([value, label]) => (
-											<SelectItem key={value} value={value}>
-												<span className="flex items-center gap-2">
-													<span
-														className={`size-2 rounded-full ${STATUS_DOT_COLORS[value]}`}
-													/>
-													{label}
-												</span>
-											</SelectItem>
-										))}
+										<SelectItem value="plan-to-watch">
+											<span className="flex items-center gap-2">
+												<Clock size={16} />
+												Plan to Watch
+											</span>
+										</SelectItem>
+										<SelectItem value="watching">
+											<span className="flex items-center gap-2">
+												<Eye size={16} />
+												Watching
+											</span>
+										</SelectItem>
+										<SelectItem value="completed">
+											<span className="flex items-center gap-2">
+												<CheckCircle size={16} />
+												Completed
+											</span>
+										</SelectItem>
+										<SelectItem value="liked">
+											<span className="flex items-center gap-2">
+												<Heart size={16} />
+												Liked
+											</span>
+										</SelectItem>
+										<SelectItem value="dropped">
+											<span className="flex items-center gap-2">
+												<XCircleIcon size={16} />
+												Dropped
+											</span>
+										</SelectItem>
 									</SelectContent>
 								</Select>
 							</div>

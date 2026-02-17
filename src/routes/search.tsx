@@ -172,7 +172,6 @@ function SearchPage() {
 			<section className="flex w-full justify-center">
 				<div className="mx-auto w-full max-w-screen-xl p-5">
 					<SearchBar query={query} updateUrlOnChange />
-					{/*<DefaultEmptyState message="Enter a search query to find movies and TV shows" />*/}
 					<div className="my-10 min-h-[calc(100vh-200px)] w-full" />
 				</div>
 			</section>

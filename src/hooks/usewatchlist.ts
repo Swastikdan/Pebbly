@@ -35,6 +35,7 @@ export type WatchlistItem = {
 	release_date: string;
 	overview?: string;
 	updated_at: number; // timestamp
+	created_at: number; // timestamp
 	status: WatchlistStatus;
 };
 
@@ -90,6 +91,7 @@ export const useWatchlistStore = create<WatchlistState>()(
 						set({ watchlist: newWatchlist });
 					} else {
 						// Add new item
+						const now = Date.now();
 						const newItem: WatchlistItem = {
 							title,
 							type: media_type,
@@ -98,7 +100,8 @@ export const useWatchlistStore = create<WatchlistState>()(
 							rating,
 							release_date,
 							overview: overview || "",
-							updated_at: Date.now(),
+							updated_at: now,
+							created_at: now,
 							status: "plan-to-watch",
 						};
 
@@ -124,6 +127,7 @@ export const useWatchlistStore = create<WatchlistState>()(
 				const migratedItems = items.map((item) => ({
 					...item,
 					status: migrateStatus(item.status),
+					created_at: item.created_at || item.updated_at || Date.now(),
 				}));
 				set({ watchlist: migratedItems });
 			},
@@ -138,6 +142,7 @@ export const useWatchlistStore = create<WatchlistState>()(
 					const migratedWatchlist = state.watchlist.map((item) => ({
 						...item,
 						status: migrateStatus(item.status),
+						created_at: item.created_at || item.updated_at || Date.now(),
 					}));
 					state.watchlist = migratedWatchlist;
 					state.setHasHydrated(true);

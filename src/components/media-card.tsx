@@ -230,15 +230,19 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 };
 
 const PersonCard = (props: PersonCardSpecificProps) => {
-	const { name, profile_path, known_for_department } = props;
+	const { id, name, profile_path, known_for_department } = props;
 
 	const imageUrl = `${IMAGE_PREFIX.SD_PROFILE}${profile_path}`;
 
 	return (
-		<div className="relative h-[13.25rem] md:h-[15.5rem] w-30 md:w-36 space-y-2  p-2">
+		<Link
+			className="pressable-small relative h-[13.25rem] w-30 block space-y-2 p-2 md:h-[15.5rem] md:w-36"
+			to="/person/$id"
+			params={{ id: String(id) }}
+		>
 			<Image
 				alt={name}
-				className="h-36 w-full rounded-xl md:h-44 bg-foreground/10"
+				className="h-36 w-full rounded-xl bg-foreground/10 md:h-44"
 				height={225}
 				src={imageUrl}
 				width={150}
@@ -247,9 +251,9 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 			<div className="flex w-full flex-col gap-1">
 				<h3 className="truncate text-sm font-semibold">{name}</h3>
 
-				<span className="text-xs truncate">{known_for_department}</span>
+				<span className="truncate text-xs">{known_for_department}</span>
 			</div>
-		</div>
+		</Link>
 	);
 };
 
