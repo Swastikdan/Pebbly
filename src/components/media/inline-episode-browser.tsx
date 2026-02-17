@@ -51,11 +51,7 @@ export function InlineEpisodeBrowser({
 			</div>
 
 			{/* Accordion-based Season Browser */}
-			<Accordion
-				type="single"
-				collapsible
-				className="w-full rounded-2xl border border-default bg-secondary/5 overflow-hidden"
-			>
+			<Accordion type="single" collapsible className="w-full space-y-2">
 				{displayedSeasons.map((s) => {
 					const seenAll = episodeTracker.isSeasonFullyWatched(
 						s.season_number,
@@ -70,12 +66,12 @@ export function InlineEpisodeBrowser({
 						<AccordionItem
 							key={s.id}
 							value={`season-${s.season_number}`}
-							className="border-b border-default last:border-none"
+							className="mb-3 rounded-xl border border-default/40 bg-card overflow-hidden"
 						>
 							<AccordionTrigger className="px-4 py-3.5 text-sm font-semibold hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
 								<div className="flex items-center gap-3">
 									<span className="text-base font-bold">
-										Season {s.season_number}
+										{`Season ${s.season_number}`}
 									</span>
 									<Badge
 										variant="secondary"
@@ -249,13 +245,13 @@ function EpisodeCard({
 
 	return (
 		<div
-			className={`group relative flex flex-col gap-3 px-4 py-3 transition-colors duration-200 hover:bg-secondary/8 sm:flex-row sm:items-start ${isWatched ? "opacity-60" : ""}`}
+			className={`group relative flex flex-row items-start gap-3 px-4 py-3 transition-colors duration-200 hover:bg-secondary/8 ${isWatched ? "opacity-60" : ""}`}
 		>
 			{/* Episode Still with hover play icon */}
 			<div className="relative shrink-0 overflow-hidden rounded-xl">
 				<Image
 					alt={episode.name}
-					className={`h-24 w-full rounded-xl bg-foreground/10 object-cover sm:h-20 sm:w-36 md:h-24 md:w-42 ${isWatched ? "saturate-50" : ""}`}
+					className={`h-20 w-32 rounded-xl bg-foreground/10 object-cover xs:h-24 xs:w-40 sm:w-44 md:h-28 md:w-48 ${isWatched ? "saturate-50" : ""}`}
 					height={140}
 					src={
 						episode.still_path
@@ -284,7 +280,7 @@ function EpisodeCard({
 						</span>
 						{/* Full title — no truncation */}
 						<h3
-							className={`text-sm font-bold md:text-base ${isWatched ? "text-muted-foreground" : ""}`}
+							className={`text-sm font-bold md:text-base truncate max-w-[150px] xs:max-w-[200px] sm:max-w-none ${isWatched ? "text-muted-foreground" : ""}`}
 						>
 							{episode.name}
 						</h3>
@@ -309,6 +305,7 @@ function EpisodeCard({
 								strokeWidth={2.5}
 								stroke="currentColor"
 							>
+								<title>Mark as unwatched</title>
 								<path
 									strokeLinecap="round"
 									strokeLinejoin="round"
@@ -323,6 +320,7 @@ function EpisodeCard({
 								strokeWidth={2}
 								stroke="currentColor"
 							>
+								<title>Mark as watched</title>
 								<path
 									strokeLinecap="round"
 									strokeLinejoin="round"
@@ -382,7 +380,7 @@ function EpisodeCard({
 
 				{/* Description with Read More toggle */}
 				{episode.overview ? (
-					<div className="mt-0.5">
+					<div className="mt-0.5 hidden sm:block">
 						<p className="text-xs leading-relaxed text-muted-foreground">
 							{expanded || !hasLongOverview
 								? episode.overview

@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,75 +67,75 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 	} = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
-	const formattedReleaseDate = release_date
-		? new Date(release_date).toLocaleDateString("en-US", {
-				month: "short",
-				day: "numeric",
-				year: "numeric",
-			})
-		: "";
 	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
+	const year = release_date ? new Date(release_date).getFullYear() : "";
 
 	return (
-		<div className="relative w-47 md:w-51">
-			<WatchlistButton
-				className="absolute top-4 right-4 z-20 rounded-[calc(var(--radius-sm)+3px)] "
-				id={id}
-				image={poster_path}
-				is_on_homepage={is_on_homepage}
-				is_on_watchlist_page={is_on_watchlist_page}
-				media_type={media_type}
-				rating={rating}
-				release_date={release_date ?? ""}
-				title={title}
-				overview={overview}
-			/>
-
+		<div className="group relative w-40 md:w-44 lg:w-48">
 			<Link
-				className="pressable-small block h-full w-full rounded-[calc(var(--radius-xl)+6px)]"
 				// @ts-expect-error - correct link
 				to={`/${media_type}/${id}/${formattedTitle}`}
+				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
-				<div className="relative flex flex-col h-full w-full cursor-pointer gap-2 rounded-[calc(var(--radius-xl)+6px)] border-transparent bg-transparent p-2 shadow-none outline-none transition-all duration-300 hover:bg-secondary focus:bg-secondary focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 ">
-					<div className="relative">
-						<Image
-							alt={title}
-							className="h-64 w-46 rounded-xl bg-foreground/10 md:h-72 md:w-50"
-							height={450}
-							src={imageUrl}
-							width={300}
-						/>
+				{/* Image Container */}
+				<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted shadow-md transition-all duration-500 group-hover:shadow-xl group-hover:shadow-primary/5">
+					<Image
+						alt={title}
+						src={imageUrl}
+						className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
+						width={300}
+						height={450}
+					/>
 
-						<div className="absolute right-2 bottom-2 z-20 flex items-center gap-2">
-							<Badge
-								className="rounded-md px-2 font-normal text-xs uppercase md:text-sm"
-								variant="secondary"
-							>
-								{media_type}
-							</Badge>
-							<Badge
-								variant="secondary"
-								className="rounded-md font-normal text-xs md:text-sm"
-							>
-								{rating > 0.0 ? (
-									<span className="flex w-full items-center gap-1">
-										<Star className="size-4 fill-current text-yellow-400" />
-										{rating.toFixed(1)}
-									</span>
-								) : (
-									"NR"
-								)}
-							</Badge>
-						</div>
+					{/* Gradient Overlay */}
+					<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 transition-opacity duration-300" />
+
+					{/* Top Left Badges */}
+					<div className="absolute left-2 top-2 flex flex-col gap-1.5 transition-all duration-300">
+						<span className="flex items-center justify-center rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
+							{media_type === "movie" ? "Movie" : "TV"}
+						</span>
 					</div>
-					<div className="flex w-full flex-col gap-2">
-						<h3 className="truncate text-start text-sm font-semibold capitalize">
-							{title}
-						</h3>
-						<span className="text-start text-xs">{formattedReleaseDate}</span>
+
+					{/* Rating Badge (Bottom Left) */}
+					{rating > 0 && (
+						<div className="absolute bottom-2 left-2 transition-all duration-300">
+							<div className="flex items-center gap-1 rounded-lg bg-black/60 px-2 py-1 backdrop-blur-md">
+								<Star className="size-3 fill-yellow-400 text-yellow-400" />
+								<span className="text-xs font-bold text-white">
+									{rating.toFixed(1)}
+								</span>
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* Content */}
+				<div className="mt-3 flex flex-col gap-0.5 overflow-hidden">
+					<h3 className="truncate text-sm font-bold leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary">
+						{title}
+					</h3>
+					<div className="flex items-center gap-2 text-xs font-medium text-muted-foreground/80">
+						<span>{year}</span>
 					</div>
 				</div>
 			</Link>
+
+			{/* Watchlist Button (Positioned over image) */}
+			<div className="absolute right-2 top-2 z-10 transition-transform duration-300 hover:scale-110">
+				<WatchlistButton
+					id={id}
+					image={poster_path}
+					is_on_homepage={is_on_homepage}
+					is_on_watchlist_page={is_on_watchlist_page}
+					media_type={media_type}
+					rating={rating}
+					release_date={release_date ?? ""}
+					title={title}
+					overview={overview}
+					className="h-8 w-8 rounded-full bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
+				/>
+			</div>
 		</div>
 	);
 };
@@ -156,102 +155,106 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 	} = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
-	const formattedReleaseDate = release_date
-		? new Date(release_date).toLocaleDateString("en-US", {
-				month: "short",
-				day: "numeric",
-				year: "numeric",
-			})
-		: "";
 	const imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${image}`;
+	const year = release_date ? new Date(release_date).getFullYear() : "";
 
 	return (
-		<div className="relative ">
-			<WatchlistButton
-				className="absolute top-4 right-4 z-20 rounded-[calc(var(--radius-sm)+3px)] "
-				id={id}
-				image={poster_path}
-				is_on_homepage={is_on_homepage}
-				is_on_watchlist_page={is_on_watchlist_page}
-				media_type={media_type}
-				rating={rating}
-				release_date={release_date ?? ""}
-				title={title}
-				overview={overview}
-			/>
-
+		// Slightly wider card for backdrop images
+		<div className="group relative w-64 md:w-72 lg:w-80">
 			<Link
-				className="pressable-small block  rounded-[calc(var(--radius-xl)+6px)]  h-56 w-74"
 				// @ts-expect-error - correct link
 				to={`/${media_type}/${id}/${formattedTitle}`}
+				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
-				<div className="relative h-full w-full cursor-pointer gap-2 rounded-[calc(var(--radius-xl)+6px)] border-transparent bg-transparent p-2 shadow-none outline-none transition-all duration-300 hover:bg-secondary focus:bg-secondary focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 flex flex-col">
-					<div className="relative">
-						<Image
-							alt={title}
-							className="bg-foreground/10 h-40 w-74 rounded-xl"
-							height={300}
-							src={imageUrl}
-							width={450}
-						/>
+				{/* Image Container */}
+				<div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted shadow-md transition-all duration-500 group-hover:shadow-xl group-hover:shadow-primary/5">
+					<Image
+						alt={title}
+						src={imageUrl}
+						className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
+						width={450}
+						height={300}
+					/>
 
-						<div className="absolute right-2 bottom-2 z-20 flex items-center gap-2">
-							<Badge
-								className="rounded-md px-2 font-normal text-xs uppercase md:text-sm"
-								variant="secondary"
-							>
-								{media_type}
-							</Badge>
-							<Badge
-								variant="secondary"
-								className="rounded-md font-normal text-xs md:text-sm"
-							>
-								{rating > 0.0 ? (
-									<span className="flex w-full items-center gap-1">
-										<Star className="size-4 fill-current text-yellow-400" />
-										{rating.toFixed(1)}
-									</span>
-								) : (
-									"NR"
+					{/* Overlay */}
+					<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 transition-opacity duration-300" />
+
+					{/* Meta Overlay */}
+					<div className="absolute bottom-0 left-0 w-full p-3 transition-all duration-300">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								{rating > 0 && (
+									<div className="flex items-center gap-1 font-bold text-white">
+										<Star className="size-3.5 fill-yellow-400 text-yellow-400" />
+										<span className="text-sm">{rating.toFixed(1)}</span>
+									</div>
 								)}
-							</Badge>
+							</div>
+							<span className="rounded-md bg-white/20 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+								{year}
+							</span>
 						</div>
 					</div>
-					<div className="flex w-full flex-col gap-2">
-						<h3 className="truncate text-start font-semibold text-sm capitalize">
-							{title}
-						</h3>
-						<span className="text-start text-xs">{formattedReleaseDate}</span>
-					</div>
+				</div>
+
+				{/* Content */}
+				<div className="mt-3 flex flex-col gap-0.5 overflow-hidden">
+					<h3 className="truncate text-sm font-bold leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary">
+						{title}
+					</h3>
+					<span className="text-xs font-medium text-muted-foreground/80 capitalize">
+						{media_type === "movie" ? "Movie" : "TV Series"}
+					</span>
 				</div>
 			</Link>
+
+			{/* Watchlist Button */}
+			<div className="absolute right-2 top-2 z-10 transition-transform duration-300 group-hover:scale-110">
+				<WatchlistButton
+					id={id}
+					image={poster_path}
+					is_on_homepage={is_on_homepage}
+					is_on_watchlist_page={is_on_watchlist_page}
+					media_type={media_type}
+					rating={rating}
+					release_date={release_date ?? ""}
+					title={title}
+					overview={overview}
+					className="h-8 w-8 rounded-full bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
+				/>
+			</div>
 		</div>
 	);
 };
 
 const PersonCard = (props: PersonCardSpecificProps) => {
 	const { id, name, profile_path, known_for_department } = props;
-
 	const imageUrl = `${IMAGE_PREFIX.SD_PROFILE}${profile_path}`;
 
 	return (
 		<Link
-			className="pressable-small relative h-[13.25rem] w-30 block space-y-2 p-2 md:h-[15.5rem] md:w-36"
 			to="/person/$id"
 			params={{ id: String(id) }}
+			className="group relative block w-32 md:w-36 lg:w-40 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 		>
-			<Image
-				alt={name}
-				className="h-36 w-full rounded-xl bg-foreground/10 md:h-44"
-				height={225}
-				src={imageUrl}
-				width={150}
-			/>
+			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-500 group-hover:shadow-md">
+				<Image
+					alt={name}
+					src={imageUrl}
+					className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
+					width={200}
+					height={300}
+				/>
+				<div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+			</div>
 
-			<div className="flex w-full flex-col gap-1">
-				<h3 className="truncate text-sm font-semibold">{name}</h3>
-
-				<span className="truncate text-xs">{known_for_department}</span>
+			<div className="mt-2.5 flex flex-col items-start text-start overflow-hidden">
+				<h3 className="w-full truncate text-sm font-bold leading-tight text-foreground group-hover:text-primary transition-colors">
+					{name}
+				</h3>
+				<span className="w-full truncate text-[11px] font-medium text-muted-foreground group-hover:text-muted-foreground/80">
+					{known_for_department}
+				</span>
 			</div>
 		</Link>
 	);
@@ -260,35 +263,34 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
 	if (props.card_type === "horizontal") {
 		return (
-			<div className="p-2 w-47 h-81 md:w-51 md:h-89">
-				<Skeleton className="w-43 h-64 md:w-47 md:h-72 rounded-xl" />
-				<div className="flex h-11 flex-col gap-2 pt-2">
-					<Skeleton className="h-4 w-32 rounded-md" />
-					<Skeleton className="h-3 w-24 rounded-md" />
+			<div className="w-40 md:w-44 lg:w-48">
+				<Skeleton className="aspect-[2/3] w-full rounded-xl" />
+				<div className="mt-3 flex flex-col gap-1">
+					<Skeleton className="h-4 w-3/4 rounded-md" />
+					<Skeleton className="h-3 w-1/4 rounded-md" />
 				</div>
 			</div>
 		);
 	}
 	if (props.card_type === "vertical") {
 		return (
-			<div className="h-[224px] w-[296px]">
-				<div className="relative h-full w-full space-y-2 rounded-xl bg-transparent p-2">
-					<Skeleton className="h-[160px] w-[280px] rounded-xl" />
-					<div className="flex w-full flex-col gap-2">
-						<Skeleton className="h-4 w-32 rounded-md" />
-						<Skeleton className="h-3 w-24 rounded-md" />
-					</div>
+			<div className="w-64 md:w-72 lg:w-80">
+				<Skeleton className="aspect-video w-full rounded-xl" />
+				<div className="mt-3 flex flex-col gap-1">
+					<Skeleton className="h-4 w-3/4 rounded-md" />
+					<Skeleton className="h-3 w-1/4 rounded-md" />
 				</div>
 			</div>
 		);
 	}
 
+	// Person skeleton
 	return (
-		<div className="h-32 w-28 space-y-2 md:h-40 md:w-32 p-2">
-			<Skeleton className="relative h-24 w-full md:h-32" />
-			<div className="flex h-[40px] flex-col gap-2 md:h-[52px]">
-				<Skeleton className="h-4 w-24" />
-				<Skeleton className="h-3 w-16" />
+		<div className="w-32 md:w-36 lg:w-40">
+			<Skeleton className="aspect-[2/3] w-full rounded-xl" />
+			<div className="mt-2.5 flex flex-col items-center gap-1.5">
+				<Skeleton className="h-4 w-20 rounded-md" />
+				<Skeleton className="h-3 w-16 rounded-md" />
 			</div>
 		</div>
 	);

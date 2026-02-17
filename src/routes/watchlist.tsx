@@ -217,14 +217,14 @@ function WatchlistPage() {
 									key={filter}
 									type="button"
 									onClick={() => setActiveFilter(filter)}
-									className={`pressable-small whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 ${
+									className={`pressable-small whitespace-nowrap rounded-xl items-center px-4 py-1.5 text-sm font-medium transition-all duration-300 ${
 										activeFilter === filter
 											? "bg-foreground text-background "
 											: "bg-secondary/40 text-foreground/70 hover:bg-secondary/70"
 									}`}
 								>
 									{filter === "all" ? "All" : STATUS_LABELS[filter]}{" "}
-									<span className="ml-1  text-[10px] opacity-60">
+									<span className="ml-1  text-[12px] opacity-60">
 										{counts[filter]}
 									</span>
 								</button>
