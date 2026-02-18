@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMutation } from "convex/react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Accordion,
 	AccordionContent,
@@ -170,7 +170,6 @@ export function InlineEpisodeBrowser({
 									showName={showName}
 									seasonNumber={s.season_number}
 									episodeTracker={episodeTracker}
-									totalEpisodes={s.episode_count}
 								/>
 							</AccordionContent>
 						</AccordionItem>
@@ -197,13 +196,11 @@ function SeasonEpisodeList({
 	showName,
 	seasonNumber,
 	episodeTracker,
-	totalEpisodes,
 }: {
 	tvId: number;
 	showName: string;
 	seasonNumber: number;
 	episodeTracker: ReturnType<typeof useEpisodeWatched>;
-	totalEpisodes: number;
 }) {
 	const { data: seasonData, isLoading } = useQuery({
 		queryKey: ["tv_season_details", tvId, seasonNumber],
@@ -212,19 +209,6 @@ function SeasonEpisodeList({
 	});
 
 	const episodes = seasonData?.episodes ?? [];
-	const seenAll = episodeTracker.isSeasonFullyWatched(
-		seasonNumber,
-		totalEpisodes,
-	);
-
-	const handleMarkAllSeen = useCallback(() => {
-		const epNums = episodes.map((e) => e.episode_number);
-		if (seenAll) {
-			episodeTracker.unmarkSeasonWatched(seasonNumber, epNums);
-		} else {
-			episodeTracker.markSeasonWatched(seasonNumber, epNums);
-		}
-	}, [episodes, seenAll, seasonNumber, episodeTracker]);
 
 	if (isLoading) {
 		return (
@@ -253,8 +237,6 @@ function SeasonEpisodeList({
 
 	return (
 		<div className="flex flex-col divide-y divide-border/50">
-			{/* Bulk action: Mark all as watched */}
-
 			{episodes.map((episode) => (
 				<EpisodeCard
 					key={episode.id}
