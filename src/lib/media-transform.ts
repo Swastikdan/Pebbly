@@ -1,6 +1,7 @@
 import { GENRE_LIST, IMAGE_PREFIX } from "@/constants";
 
 const FEATURED_ITEMS_LIMIT = 10;
+const GENRE_LOOKUP = new Map(GENRE_LIST.map((genre) => [genre.id, genre]));
 
 interface MinimalGenre {
 	id: number;
@@ -35,7 +36,7 @@ export const mapGenres = (genres?: MinimalGenre[] | null) => {
 	}
 
 	return genres
-		.map((genre) => GENRE_LIST.find((genreItem) => genreItem.id === genre.id))
+		.map((genre) => GENRE_LOOKUP.get(genre.id))
 		.filter((genre): genre is NonNullable<typeof genre> => Boolean(genre));
 };
 
