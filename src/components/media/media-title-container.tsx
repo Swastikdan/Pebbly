@@ -67,7 +67,7 @@ export const MediaTitleContailer = (props: {
 		<div className="pt-5 pb-5">
 			<div className="space-y-3 pb-5">
 				<div className="flex items-center justify-between gap-3">
-					<GoBack title="Back" />
+					<GoBack title="Back" hideLabelOnMobile />
 					<div className="flex items-center gap-3">
 						<WatchlistButton
 							id={id}
@@ -131,7 +131,7 @@ export const MediaTitleContailer = (props: {
 							</div>
 						)}
 
-						<ShareButton title={title} />
+						<ShareButton title={title} hideLabelOnMobile />
 					</div>
 				</div>
 				<h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
