@@ -134,7 +134,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-10 w-9 rounded-xl bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
+					className="h-9 w-9 rounded-md border border-white/25 bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30"
 				/>
 			</div>
 		</div>
@@ -224,7 +224,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-10 w-9 rounded-xl bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
+					className="h-9 w-9 rounded-md border border-white/25 bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30"
 				/>
 			</div>
 		</div>
