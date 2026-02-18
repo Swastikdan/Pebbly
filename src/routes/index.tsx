@@ -10,7 +10,6 @@ import {
 	UpcomingMovies,
 } from "@/components/homepage-media";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
-import { TAB_LIST_CLASSNAME, TAB_TRIGGER_CLASSNAME } from "@/lib/tab-styles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/")({
@@ -43,16 +42,16 @@ function HomePage() {
 					<Tabs defaultValue="trending_day">
 						<div className="flex items-center gap-5">
 							<h2 className="font-medium text-xl md:text-2xl">Trending</h2>
-							<TabsList className={TAB_LIST_CLASSNAME}>
+							<TabsList className="h-9.5 rounded-lg bg-transparent ring-2 ring-border ">
 								<TabsTrigger
 									value="trending_day"
-									className={TAB_TRIGGER_CLASSNAME}
+									className="h-8 px-5 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 								>
 									Today
 								</TabsTrigger>
 								<TabsTrigger
 									value="trending_week"
-									className={TAB_TRIGGER_CLASSNAME}
+									className="h-8 px-5 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 								>
 									This Week
 								</TabsTrigger>
@@ -80,16 +79,16 @@ function HomePage() {
 					<Tabs defaultValue="popular_movie">
 						<div className="flex items-center gap-5">
 							<h2 className="font-medium text-xl md:text-2xl">{`What's Popular`}</h2>
-							<TabsList className={TAB_LIST_CLASSNAME}>
+							<TabsList className="h-9.5 rounded-lg bg-transparent ring-2 ring-border ">
 								<TabsTrigger
 									value="popular_movie"
-									className={TAB_TRIGGER_CLASSNAME}
+									className="h-8 px-5 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 								>
 									Theaters
 								</TabsTrigger>
 								<TabsTrigger
 									value="popular_tv"
-									className={TAB_TRIGGER_CLASSNAME}
+									className="h-8 px-5 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 								>
 									On TV
 								</TabsTrigger>
@@ -105,16 +104,16 @@ function HomePage() {
 					<Tabs defaultValue="top_rated_movies">
 						<div className="flex items-center gap-5">
 							<h2 className="font-medium text-xl md:text-2xl">Top Rated</h2>
-							<TabsList className={TAB_LIST_CLASSNAME}>
+							<TabsList className="h-9.5 rounded-lg bg-transparent ring-2 ring-border ">
 								<TabsTrigger
 									value="top_rated_movies"
-									className={TAB_TRIGGER_CLASSNAME}
+									className="h-8 px-5 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 								>
 									Movies
 								</TabsTrigger>
 								<TabsTrigger
 									value="top_rated_tv"
-									className={TAB_TRIGGER_CLASSNAME}
+									className="h-8 px-5 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 								>
 									TV Shows
 								</TabsTrigger>
