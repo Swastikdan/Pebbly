@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMutation } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import {
 	Accordion,
@@ -16,8 +17,10 @@ import {
 	useEpisodeProgress,
 	useEpisodeWatched,
 } from "@/hooks/useWatchProgress";
+import { useWatchlistItemStatus } from "@/hooks/usewatchlist";
 import { getTvSeasonDetails } from "@/lib/queries";
 import type { SeasonInfo, TvEpisodeDetail } from "@/types";
+import { api } from "../../../convex/_generated/api";
 
 interface InlineEpisodeBrowserProps {
 	tvId: number;
@@ -41,17 +44,41 @@ export function InlineEpisodeBrowser({
 	const hasMoreSeasons = allSeasons.length > 3;
 
 	const episodeTracker = useEpisodeWatched(tvId);
+	const currentStatus = useWatchlistItemStatus(String(tvId));
+	const syncShowProgress = useMutation(api.watchlist.syncShowProgress);
 
-	// Automatically mark show as completed (100% watched) if all episodes are watched
+	// Automatically mark show status based on episode progress
 	const totalEpisodes = seasons.reduce((acc, s) => acc + s.episode_count, 0);
+	const watchedCount = episodeTracker.watchedCount;
+
 	useEffect(() => {
-		if (episodeTracker.watchedCount >= totalEpisodes && totalEpisodes > 0) {
-			episodeTracker.markShowCompleted(totalEpisodes);
+		if (totalEpisodes === 0) return;
+
+		// "Completed" -> Mark all episodes (User manually set Completed)
+		if (currentStatus === "completed" && watchedCount < totalEpisodes) {
+			const seasonsToMark = seasons.filter((s) => s.season_number > 0);
+			seasonsToMark.forEach((s) => {
+				const isFullyWatched = episodeTracker.isSeasonFullyWatched(
+					s.season_number,
+					s.episode_count,
+				);
+				if (s.episode_count > 0 && !isFullyWatched) {
+					const epNums = Array.from(
+						{ length: s.episode_count },
+						(_, i) => i + 1,
+					);
+					episodeTracker.markSeasonWatched(s.season_number, epNums);
+				}
+			});
 		}
 	}, [
-		episodeTracker.watchedCount,
+		watchedCount,
 		totalEpisodes,
-		episodeTracker.markShowCompleted,
+		currentStatus,
+		syncShowProgress,
+		tvId,
+		seasons,
+		episodeTracker,
 	]);
 
 	return (
@@ -289,9 +316,7 @@ function EpisodeCard({
 							E{String(episode.episode_number).padStart(2, "0")}
 						</span>
 						{/* Full title — no truncation */}
-						<h3
-							className={`text-sm font-bold md:text-base truncate max-w-[150px] xs:max-w-[200px] sm:max-w-none ${isWatched ? "text-muted-foreground" : ""}`}
-						>
+						<h3 className="text-sm font-bold md:text-base truncate max-w-[150px] xs:max-w-[200px] sm:max-w-none">
 							{episode.name}
 						</h3>
 					</div>

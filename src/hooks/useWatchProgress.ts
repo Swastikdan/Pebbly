@@ -1,7 +1,9 @@
+import { useUser } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { useWatchlistStore } from "./usewatchlist";
 
 /* ─── Types ─── */
 export interface WatchProgressData {
@@ -46,8 +48,14 @@ function makeEpisodeKey(
 
 /* ─── Hook: Listen for player events and persist progress ─── */
 export function usePlayerProgressListener() {
+	const { isSignedIn } = useUser();
 	const updateProgress = useMutation(api.watchlist.updateProgress);
 	const markEpisodeWatched = useMutation(api.watchlist.markEpisodeWatched);
+
+	// Local Store
+	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
+	// We use a ref or direct store access to avoid effect re-running too often on watchlist changes if we were to depend on it?
+	// Actually, we just need `updateLocalStatus`.
 
 	useEffect(() => {
 		let lastSavedPercent = 0;
@@ -70,41 +78,76 @@ export function usePlayerProgressListener() {
 				} = payload.data;
 
 				// Only save meaningful progress (> 1% and > 10s)
-				if (progress < 1 && currentTime < 10 && playerEvent !== "ended") return;
-
-				// Debounce updates (every 5s or strictly on pause/end)
 				if (
+					progress < 1 &&
+					currentTime < 10 &&
+					playerEvent !== "ended" &&
+					playerEvent !== "play"
+				)
+					return;
+
+				if (
+					playerEvent === "play" ||
 					playerEvent === "pause" ||
 					playerEvent === "ended" ||
 					Math.abs(progress - lastSavedPercent) > 2 // Save every 2% change
 				) {
 					lastSavedPercent = progress;
 
-					// Update show/movie progress
-					// For TV shows, this updates the "Show" level generic progress (e.g. "Currently Watching Show X")
-					// We might want to store the "last watched episode" context in the generic item status
-					// But current schema just tracks "status" and "progress".
-
-					updateProgress({
-						tmdbId: Number(id),
-						mediaType,
-						progress: progress,
-						status: progress > 95 ? "completed" : "watching",
-					}).catch(console.error);
-
-					// Handle Episode Completion
-					if (
-						(playerEvent === "ended" || progress > 95) &&
-						mediaType === "tv" &&
-						season !== undefined &&
-						episode !== undefined
-					) {
-						markEpisodeWatched({
+					if (isSignedIn) {
+						// Update show/movie progress
+						updateProgress({
 							tmdbId: Number(id),
-							season: season,
-							episode: episode,
-							isWatched: true,
+							mediaType,
+							progress: progress,
+							status: progress > 95 ? "completed" : "watching",
 						}).catch(console.error);
+
+						// Handle Episode Completion
+						if (
+							(playerEvent === "ended" || progress > 95) &&
+							mediaType === "tv" &&
+							season !== undefined &&
+							episode !== undefined
+						) {
+							markEpisodeWatched({
+								tmdbId: Number(id),
+								season: season,
+								episode: episode,
+								isWatched: true,
+							}).catch(console.error);
+						}
+					} else {
+						// Local Logic
+						// We can only update status if it exists in the store.
+						// We access the store state directly to check existence/status
+						const currentWatchlist = useWatchlistStore.getState().watchlist;
+						const item = currentWatchlist.find(
+							(i) => i.external_id === String(id),
+						);
+
+						if (item) {
+							let newStatus = item.status;
+							// If starting to watch/playing, and status is plan-to-watch, flip to watching
+							if (
+								(playerEvent === "play" || progress > 0) &&
+								item.status === "plan-to-watch"
+							) {
+								newStatus = "watching";
+							}
+
+							// If completed movie
+							if (
+								mediaType === "movie" &&
+								(playerEvent === "ended" || progress > 95)
+							) {
+								newStatus = "completed";
+							}
+
+							if (newStatus !== item.status) {
+								updateLocalStatus(String(id), newStatus);
+							}
+						}
 					}
 				}
 			} catch {
@@ -114,7 +157,7 @@ export function usePlayerProgressListener() {
 
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, [updateProgress, markEpisodeWatched]);
+	}, [updateProgress, markEpisodeWatched, isSignedIn, updateLocalStatus]);
 }
 
 /* ─── Hook: Get progress for a specific item ─── */
@@ -243,6 +286,9 @@ export function useEpisodeWatched(tvId: number | string) {
 		}
 	});
 	const syncShowProgress = useMutation(api.watchlist.syncShowProgress);
+	const markEpisodesWatchedBatch = useMutation(
+		api.watchlist.markSeasonEpisodesWatched,
+	);
 
 	const isEpisodeWatched = useCallback(
 		(season: number, episode: number): boolean => {
@@ -267,26 +313,26 @@ export function useEpisodeWatched(tvId: number | string) {
 	// Logic: Mark Season Watched
 	const markSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
-			// Need to mark all individually? Or batch mutation?
-			// Batch is better. I'll loop for now or add batch mutation.
-			episodes.forEach((ep) => {
-				markEpisodeWatched({ tmdbId, season, episode: ep, isWatched: true });
+			markEpisodesWatchedBatch({
+				tmdbId,
+				season,
+				episodes,
+				isWatched: true,
 			});
-			// TRIGGER SYNC Show Progress
-			// "When all episodes of a show are marked as watched..."
-			// If I just marked a whole season, and this was the last season, it should complete.
-			// Client relies on passed `episodes` list (total for season).
 		},
-		[tmdbId, markEpisodeWatched],
+		[tmdbId, markEpisodesWatchedBatch],
 	);
 
 	const unmarkSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
-			episodes.forEach((ep) => {
-				markEpisodeWatched({ tmdbId, season, episode: ep, isWatched: false });
+			markEpisodesWatchedBatch({
+				tmdbId,
+				season,
+				episodes,
+				isWatched: false,
 			});
 		},
-		[tmdbId, markEpisodeWatched],
+		[tmdbId, markEpisodesWatchedBatch],
 	);
 
 	const isSeasonFullyWatched = useCallback(

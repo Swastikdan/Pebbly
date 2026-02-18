@@ -426,10 +426,10 @@ function WatchlistCard({
 								onStatusChange(item.external_id, value as WatchlistStatus)
 							}
 						>
-							<SelectTrigger className="h-7 min-w-[130px] gap-1.5 rounded-lg border px-2.5 text-[11px] font-semibold shadow-none">
+							<SelectTrigger className="h-7 min-w-[130px] gap-1.5 rounded-lg border px-2.5 text-[11px] font-semibold shadow-none ">
 								<SelectValue />
 							</SelectTrigger>
-							<SelectContent className="rounded-xl">
+							<SelectContent className="rounded-xl ">
 								<SelectItem value="plan-to-watch">
 									<span className="flex items-center gap-2">
 										<Clock size={14} />
