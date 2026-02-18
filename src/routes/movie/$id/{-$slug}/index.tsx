@@ -10,8 +10,19 @@ import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContailer } from "@/components/media/media-title-container";
-import { GENRE_LIST, IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
+import {
+	formatRuntime,
+	getMovieCertification,
+	getPosterImage,
+	mapBackdrops,
+	mapCast,
+	mapCrew,
+	mapGenres,
+	mapPosters,
+	splitVideos,
+} from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getMovieDetails } from "@/lib/queries";
 import { formatMediaTitle, isValidId } from "@/lib/utils";
@@ -95,100 +106,21 @@ function MovieHomePage() {
 	const urltitle = formatMediaTitle.encode(title);
 	const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
 	const movietitle = title ?? original_title;
-	const movieimage = `${IMAGE_PREFIX.HD_POSTER}${poster_path}`;
+	const movieimage = getPosterImage(poster_path);
 	const moviereleaseyear = release_date
 		? new Date(release_date).getFullYear()
 		: null;
 
-	const usrelease = release_dates?.results?.find(
-		(release) => release.iso_3166_1 === "US",
+	const uscertification = getMovieCertification(release_dates?.results);
+	const movieRuntime = formatRuntime(runtime);
+	const moviegenres = mapGenres(genres);
+	const { normalizedVideos, trailervideos, youtubeclips } = splitVideos(
+		videos?.results,
 	);
-
-	let uscertification = "NR";
-
-	if (usrelease?.release_dates) {
-		for (const date of usrelease.release_dates) {
-			if (date?.certification) {
-				uscertification = date.certification;
-				break;
-			}
-		}
-	}
-
-	const movieRuntime = runtime
-		? `${Math.floor(runtime / 60)}h ${runtime % 60}m`
-		: null;
-
-	const moviegenres = genres
-		? genres
-				.map((genre) => GENRE_LIST.find((g) => g.id === genre.id))
-				.filter((g): g is NonNullable<typeof g> => Boolean(g))
-		: [];
-
-	const youtubevideos =
-		videos?.results?.map((video) => ({
-			key: video.key,
-			name: video.name,
-			type: video.type,
-			published_at: video.published_at,
-			official: video.official,
-		})) ?? [];
-
-	const trailervideos = youtubevideos
-		.filter((v) => v.type === "Trailer" || v.type === "Teaser")
-		.sort((a) => (a.type === "Trailer" ? -1 : 1));
-
-	const youtubeclips = youtubevideos
-		.filter((v) => v.type !== "Trailer" && v.type !== "Teaser")
-		.sort((a, b) => {
-			if (a.type !== b.type) return a.type === "Featurette" ? -1 : 1;
-
-			return (
-				new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
-			);
-		})
-		.slice(0, 10);
-
-	const moviecast =
-		credits?.cast
-			?.map((cast) => ({
-				id: cast.id,
-				name: cast.name,
-				profile_path: cast.profile_path,
-				character: cast.character,
-			}))
-			.slice(0, 10) ?? [];
-
-	const moviecrew =
-		credits?.crew
-			?.map((crew) => ({
-				id: crew.id,
-				name: crew.name,
-				profile_path: crew.profile_path,
-				job: crew.job,
-			}))
-			.slice(0, 10) ?? [];
-
-	const moviebackdrops =
-		images?.backdrops
-			?.sort((a, b) => (b.vote_average ?? 0) - (a.vote_average ?? 0))
-			.map((image) => ({
-				backdrop_image: `${IMAGE_PREFIX.SD_BACKDROP}${image.file_path}`,
-				backdrop_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
-				aspect_ratio: image.aspect_ratio,
-			}))
-			.slice(0, 10) ?? [];
-
-	const movieposters =
-		images?.posters
-			?.sort((a, b) => (b.vote_average ?? 0) - (a.vote_average ?? 0))
-			.slice(0, 10)
-			.map((image) => ({
-				poster_image: `${IMAGE_PREFIX.SD_POSTER}${image.file_path}`,
-				poster_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
-				aspect_ratio: image.aspect_ratio,
-			}))
-			.slice(0, 10) ?? [];
+	const moviecast = mapCast(credits?.cast);
+	const moviecrew = mapCrew(credits?.crew);
+	const moviebackdrops = mapBackdrops(images?.backdrops);
+	const movieposters = mapPosters(images?.posters);
 
 	const moviekeywords =
 		keywords?.keywords?.map((k) => ({ name: k.name, id: k.id })) ?? [];
@@ -234,7 +166,7 @@ function MovieHomePage() {
 				backdrops={moviebackdrops}
 				id={id}
 				is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
-				is_more_clips_available={youtubevideos.length > 10}
+				is_more_clips_available={normalizedVideos.length > 10}
 				is_more_posters_available={(images?.posters?.length ?? 0) > 10}
 				posters={movieposters}
 				title={movietitle}
