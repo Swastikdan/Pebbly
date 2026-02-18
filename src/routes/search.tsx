@@ -205,12 +205,13 @@ function SearchPage() {
 				<div className="mx-auto w-full max-w-screen-xl p-5">
 					<SearchBar query={query} updateUrlOnChange />
 					<div className="flex h-full flex-col gap-5 py-5">
-						<div className="flex h-10 items-center justify-end">
+						<div className="flex h-10 items-center justify-between">
 							<div className="flex items-center gap-2">
 								{Array.from({ length: 3 }).map((_, index) => (
 									<Skeleton key={index} className="h-9 w-[84px] rounded-lg" />
 								))}
 							</div>
+							<Skeleton className="h-4 w-20" />
 						</div>
 						<div className="flex min-h-96 w-full items-center justify-center">
 							<div className="grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -255,7 +256,14 @@ function SearchPage() {
 				<div className="mx-auto w-full max-w-screen-xl p-5">
 					<SearchBar query={query} updateUrlOnChange />
 					<DefaultEmptyState
-						onReset={() => navigate({ to: "/search" })}
+						onReset={() => {
+							if (hasResults) {
+								setType(null);
+								setMinRating("0");
+							} else {
+								navigate({ to: "/search" });
+							}
+						}}
 						message={
 							hasResults
 								? "No movies or TV shows found with the selected filter"
@@ -298,7 +306,7 @@ function SearchPage() {
 									type === "movie"
 										? "bg-foreground text-background "
 										: "text-foreground/60 hover:text-foreground"
-								}`}
+								} disabled:cursor-not-allowed disabled:opacity-50`}
 								onClick={handleMovieClick}
 								disabled={!activeTypes.movie}
 							>
@@ -310,7 +318,7 @@ function SearchPage() {
 									type === "tv"
 										? "bg-foreground text-background "
 										: "text-foreground/60 hover:text-foreground"
-								}`}
+								} disabled:cursor-not-allowed disabled:opacity-50`}
 								onClick={handleTVClick}
 								disabled={!activeTypes.tv}
 							>

@@ -54,7 +54,10 @@ function PersonPage() {
 				media_type: "tv" as const,
 			})) ?? [];
 
-		const castMap = new Map<string, (typeof movieCast)[number]>();
+		const castMap = new Map<
+			string,
+			(typeof movieCast)[number] | (typeof tvCast)[number]
+		>();
 
 		for (const credit of [...movieCast, ...tvCast]) {
 			const key = `${credit.media_type}-${credit.id}`;
