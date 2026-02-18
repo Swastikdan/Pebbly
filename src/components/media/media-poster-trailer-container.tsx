@@ -21,7 +21,7 @@ export function MediaPosterTrailerContainer(props: {
 	trailervideos: Array<{ key: string; name: string }>;
 }) {
 	const { tmdbId, type, image, title, trailervideos } = props;
-	const { progress } = useWatchProgress(String(tmdbId));
+	const { progress } = useWatchProgress(tmdbId, type);
 
 	let defaultSeason: number | undefined;
 	let defaultEpisode: number | undefined;

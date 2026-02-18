@@ -1,35 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { useMutation, useQuery } from "convex/react";
+import { useCallback, useMemo } from "react";
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import type { WatchlistStatus } from "@/types";
-
-/* --- Migration helpers --- */
-const OLD_TO_NEW_STATUS: Record<string, WatchlistStatus> = {
-	"not-started": "plan-to-watch",
-	"in-progress": "watching",
-	watched: "completed",
-};
-
-function migrateStatus(raw: string | undefined | null): WatchlistStatus {
-	if (!raw) return "plan-to-watch";
-	if (raw in OLD_TO_NEW_STATUS) return OLD_TO_NEW_STATUS[raw];
-	// Already a valid new status
-	const valid: WatchlistStatus[] = [
-		"plan-to-watch",
-		"watching",
-		"completed",
-		"liked",
-		"dropped",
-	];
-	if (valid.includes(raw as WatchlistStatus)) return raw as WatchlistStatus;
-	return "plan-to-watch";
-}
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 /* --- Types --- */
 export type WatchlistItem = {
 	title: string;
 	type: "tv" | "movie";
-	external_id: string;
+	external_id: string; // cast from number to string for frontend compatibility
 	image: string;
 	rating: number; // 0-10
 	release_date: string;
@@ -39,199 +21,290 @@ export type WatchlistItem = {
 	status: WatchlistStatus;
 };
 
-export interface WatchlistState {
+interface WatchlistStore {
 	watchlist: WatchlistItem[];
-	_hasHydrated: boolean;
-	setHasHydrated: (state: boolean) => void;
-	toggleWatchlistItem: (item: {
-		title: string;
-		rating: number;
-		image: string;
-		id: string;
-		media_type: "tv" | "movie";
-		release_date: string;
-		overview?: string;
-	}) => Promise<void>;
-	setItemStatus: (id: string, status: WatchlistStatus) => void;
-	setWatchlist: (items: WatchlistItem[]) => void;
+	addToWatchlist: (item: WatchlistItem) => void;
+	removeFromWatchlist: (id: string) => void;
+	updateStatus: (id: string, status: WatchlistStatus) => void;
+	setWatchlist: (list: WatchlistItem[]) => void;
 }
 
-/* --- Store --- */
-export const useWatchlistStore = create<WatchlistState>()(
+export const useWatchlistStore = create<WatchlistStore>()(
 	persist(
-		(set, get) => ({
+		(set) => ({
 			watchlist: [],
-			_hasHydrated: false,
-
-			setHasHydrated: (state) => {
-				set({
-					_hasHydrated: state,
-				});
-			},
-
-			async toggleWatchlistItem({
-				id,
-				title,
-				rating,
-				image,
-				media_type,
-				release_date,
-				overview,
-			}) {
-				try {
-					const current = get().watchlist;
-					const existingIndex = current.findIndex(
-						(item) => item.external_id === id,
-					);
-
-					if (existingIndex !== -1) {
-						// Remove if already there
-						const newWatchlist = [...current];
-						newWatchlist.splice(existingIndex, 1);
-						set({ watchlist: newWatchlist });
-					} else {
-						// Add new item
-						const now = Date.now();
-						const newItem: WatchlistItem = {
-							title,
-							type: media_type,
-							external_id: id,
-							image,
-							rating,
-							release_date,
-							overview: overview || "",
-							updated_at: now,
-							created_at: now,
-							status: "plan-to-watch",
-						};
-
-						set({ watchlist: [newItem, ...current] });
-					}
-				} catch (error) {
-					console.error("Failed to update watchlist. Please try again.", error);
-				}
-			},
-
-			setItemStatus(id, status) {
-				const current = get().watchlist;
-				const newWatchlist = current.map((item) =>
-					item.external_id === id
-						? { ...item, status, updated_at: Date.now() }
-						: item,
-				);
-				set({ watchlist: newWatchlist });
-			},
-
-			setWatchlist(items) {
-				// Migrate old items without status field
-				const migratedItems = items.map((item) => ({
-					...item,
-					status: migrateStatus(item.status),
-					created_at: item.created_at || item.updated_at || Date.now(),
-				}));
-				set({ watchlist: migratedItems });
-			},
+			addToWatchlist: (item) =>
+				set((state) => ({ watchlist: [item, ...state.watchlist] })),
+			removeFromWatchlist: (id) =>
+				set((state) => ({
+					watchlist: state.watchlist.filter((i) => i.external_id !== id),
+				})),
+			updateStatus: (id, status) =>
+				set((state) => ({
+					watchlist: state.watchlist.map((i) =>
+						i.external_id === id ? { ...i, status } : i,
+					),
+				})),
+			setWatchlist: (list) => set({ watchlist: list }),
 		}),
-		{
-			name: "watchlist-storage",
-			storage: createJSONStorage(() => localStorage),
-			partialize: (state) => ({ watchlist: state.watchlist }),
-			onRehydrateStorage: () => (state) => {
-				if (state) {
-					// Migrate old status values to the new mood system
-					const migratedWatchlist = state.watchlist.map((item) => ({
-						...item,
-						status: migrateStatus(item.status),
-						created_at: item.created_at || item.updated_at || Date.now(),
-					}));
-					state.watchlist = migratedWatchlist;
-					state.setHasHydrated(true);
-				}
-			},
-		},
+		{ name: "watchlist-storage" },
 	),
 );
 
-/* --- Optimized Hooks --- */
+/* --- Hooks --- */
+
+/** Returns { watchlist, loading }. Loading tracks query state. */
+export function useWatchlist() {
+	const { isSignedIn, isLoaded } = useUser();
+	const convexWatchlistData = useQuery(api.watchlist.getWatchlist);
+	const localWatchlist = useWatchlistStore((state) => state.watchlist);
+
+	const watchlist: WatchlistItem[] = useMemo(() => {
+		if (isSignedIn) {
+			if (!convexWatchlistData) return [];
+			return convexWatchlistData.map((item) => ({
+				title: item.title ?? "Unknown Title",
+				type: item.mediaType as "tv" | "movie",
+				external_id: String(item.tmdbId),
+				image: item.image ?? "",
+				rating: item.rating ?? 0,
+				release_date: item.release_date ?? "",
+				overview: item.overview,
+				updated_at: item.updatedAt,
+				created_at: item.updatedAt,
+				status: (item.status as WatchlistStatus) ?? "plan-to-watch",
+			}));
+		}
+		// If not signed in, use local store
+		return localWatchlist;
+	}, [isSignedIn, convexWatchlistData, localWatchlist]);
+
+	// If signed in, loading is true until data arrives.
+	// If not signed in, loading is false (local data is synchronous).
+	// If Clerk is not loaded yet, we might want to say loading is true?
+	// User asked "when not logged in ... work as usual".
+	const loading =
+		!isLoaded || (isSignedIn && convexWatchlistData === undefined);
+
+	return { watchlist, loading };
+}
 
 /** Toggle watchlist item. Call with media object. */
 export function useToggleWatchlistItem() {
-	return useWatchlistStore((state) => state.toggleWatchlistItem);
+	const { isSignedIn } = useUser();
+
+	// Convex Mutations
+	const upsertItem = useMutation(
+		api.watchlist.upsertWatchlistItem,
+	).withOptimisticUpdate((localStore, args) => {
+		const existing = localStore.getQuery(api.watchlist.getWatchlist);
+		if (!existing) return;
+
+		const now = Date.now();
+		const newItem = {
+			_id: `optimistic_${now}` as Id<"watch_items">,
+			_creationTime: now,
+			userId: "me",
+			tmdbId: args.tmdbId,
+			mediaType: args.mediaType,
+			status: args.status,
+			progress: 0,
+			updatedAt: now,
+			title: args.title,
+			image: args.image,
+			rating: args.rating,
+			release_date: args.release_date,
+			overview: args.overview,
+		};
+
+		const existingItemIndex = existing.findIndex(
+			(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
+		);
+
+		if (existingItemIndex !== -1) {
+			const newItems = [...existing];
+			newItems[existingItemIndex] = {
+				...newItems[existingItemIndex],
+				...newItem,
+				_id: newItems[existingItemIndex]._id,
+			};
+			localStore.setQuery(
+				api.watchlist.getWatchlist,
+				{},
+				newItems.sort((a, b) => b.updatedAt - a.updatedAt),
+			);
+		} else {
+			localStore.setQuery(api.watchlist.getWatchlist, {}, [
+				newItem,
+				...existing,
+			]);
+		}
+	});
+
+	const removeItem = useMutation(
+		api.watchlist.removeWatchlistItem,
+	).withOptimisticUpdate((localStore, args) => {
+		const existing = localStore.getQuery(api.watchlist.getWatchlist);
+		if (!existing) return;
+		const newItems = existing.filter(
+			(i) => !(i.tmdbId === args.tmdbId && i.mediaType === args.mediaType),
+		);
+		localStore.setQuery(api.watchlist.getWatchlist, {}, newItems);
+	});
+
+	// Local Store Actions
+	const addToLocal = useWatchlistStore((state) => state.addToWatchlist);
+	const removeFromLocal = useWatchlistStore(
+		(state) => state.removeFromWatchlist,
+	);
+	const { watchlist } = useWatchlist();
+
+	return useCallback(
+		async (item: {
+			title: string;
+			rating: number;
+			image: string;
+			id: string;
+			media_type: "tv" | "movie";
+			release_date: string;
+			overview?: string;
+		}) => {
+			const exists = watchlist.some((i) => i.external_id === item.id);
+
+			if (isSignedIn) {
+				if (exists) {
+					await removeItem({
+						tmdbId: Number(item.id),
+						mediaType: item.media_type,
+					});
+				} else {
+					await upsertItem({
+						tmdbId: Number(item.id),
+						mediaType: item.media_type,
+						status: "plan-to-watch",
+						title: item.title,
+						image: item.image,
+						rating: item.rating,
+						release_date: item.release_date,
+						overview: item.overview,
+					});
+				}
+			} else {
+				// Local Toggle
+				if (exists) {
+					removeFromLocal(item.id);
+				} else {
+					addToLocal({
+						title: item.title,
+						type: item.media_type,
+						external_id: item.id,
+						image: item.image,
+						rating: item.rating,
+						release_date: item.release_date,
+						overview: item.overview,
+						updated_at: Date.now(),
+						created_at: Date.now(),
+						status: "plan-to-watch",
+					});
+				}
+			}
+		},
+		[
+			watchlist,
+			isSignedIn,
+			upsertItem,
+			removeItem,
+			addToLocal,
+			removeFromLocal,
+		],
+	);
 }
 
 /** Set item status. Call with id and status object. */
 export function useSetItemStatus() {
-	return useWatchlistStore((state) => state.setItemStatus);
+	const { isSignedIn } = useUser();
+
+	// Convex
+	const upsertItem = useMutation(
+		api.watchlist.upsertWatchlistItem,
+	).withOptimisticUpdate((localStore, args) => {
+		const existing = localStore.getQuery(api.watchlist.getWatchlist);
+		if (!existing) return;
+
+		const now = Date.now();
+		const existingItemIndex = existing.findIndex(
+			(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
+		);
+
+		if (existingItemIndex !== -1) {
+			const newItems = [...existing];
+			newItems[existingItemIndex] = {
+				...newItems[existingItemIndex],
+				status: args.status,
+				updatedAt: now,
+			};
+			localStore.setQuery(
+				api.watchlist.getWatchlist,
+				{},
+				newItems.sort((a, b) => b.updatedAt - a.updatedAt),
+			);
+		}
+	});
+
+	// Local
+	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
+	const { watchlist } = useWatchlist();
+
+	return useCallback(
+		(id: string, status: WatchlistStatus) => {
+			const item = watchlist.find((i) => i.external_id === id);
+			if (!item) return;
+
+			if (isSignedIn) {
+				upsertItem({
+					tmdbId: Number(id),
+					mediaType: item.type,
+					status,
+				}).catch(console.error);
+			} else {
+				updateLocalStatus(id, status);
+			}
+		},
+		[watchlist, isSignedIn, upsertItem, updateLocalStatus],
+	);
 }
 
-/** Returns { isOnWatchList } for a given external_id. Optimized selector. */
+/** Returns { isOnWatchList } for a given external_id. */
 export function useWatchlistItem(id: string) {
-	const isOnWatchList = useWatchlistStore(
-		useCallback(
-			(state) => state.watchlist.some((item) => item.external_id === id),
-			[id],
-		),
+	const { watchlist } = useWatchlist();
+	const isOnWatchList = useMemo(
+		() => watchlist.some((item) => item.external_id === id),
+		[watchlist, id],
 	);
-
 	return { isOnWatchList };
 }
 
-/** Returns { watchlist, loading }. Loading tracks hydration state. */
-export function useWatchlist() {
-	const watchlist = useWatchlistStore((state) => state.watchlist);
-	const hasHydrated = useWatchlistStore((state) => state._hasHydrated);
-
-	return { watchlist, loading: !hasHydrated };
-}
-
-/** Get watchlist count - useful for badges */
+/** Get watchlist count */
 export function useWatchlistCount() {
-	return useWatchlistStore((state) => state.watchlist.length);
+	const { watchlist } = useWatchlist();
+	return watchlist.length;
 }
 
-/** Check if item exists without subscribing to the entire watchlist */
+/** Check if item exists without subscribing to the entire watchlist - optimization */
+// For now, reusing the main hook as Convex query subscription is efficient enough
 export function useIsInWatchlist(id: string) {
-	return useWatchlistStore(
-		useCallback(
-			(state) => state.watchlist.some((item) => item.external_id === id),
-			[id],
-		),
-	);
+	const { watchlist } = useWatchlist();
+	return watchlist.some((item) => item.external_id === id);
 }
 
 /** Get item status */
 export function useWatchlistItemStatus(id: string) {
-	return useWatchlistStore(
-		useCallback(
-			(state) => {
-				const item = state.watchlist.find((item) => item.external_id === id);
-				return item?.status ?? null;
-			},
-			[id],
-		),
-	);
+	const { watchlist } = useWatchlist();
+	const item = watchlist.find((item) => item.external_id === id);
+	return item?.status ?? null;
 }
 
-/** Custom hook to track hydration status - Alternative approach */
+/** Mock hydration hook for compatibility */
 export function useHydration() {
-	const [hydrated, setHydrated] = useState(false);
-
-	useEffect(() => {
-		// Note: This is just in case you want to take into account manual rehydration.
-		const unsubHydrate = useWatchlistStore.persist.onHydrate(() =>
-			setHydrated(false),
-		);
-		const unsubFinishHydration = useWatchlistStore.persist.onFinishHydration(
-			() => setHydrated(true),
-		);
-
-		setHydrated(useWatchlistStore.persist.hasHydrated());
-
-		return () => {
-			unsubHydrate();
-			unsubFinishHydration();
-		};
-	}, []);
-
-	return hydrated;
+	return true;
 }

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { UserSync } from "@/components/user-sync";
 import { SITE_CONFIG } from "@/constants";
 
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
@@ -167,6 +168,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="min-h-screen leading-relaxed antialiased">
 				<ThemeProvider>
+					<UserSync />
 					<Navbar />
 					{children}
 					<Footer />

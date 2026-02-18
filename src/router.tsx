@@ -1,10 +1,15 @@
+import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
+import { ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import * as TanstackQuery from "@/lib/query/root-provider";
 // Import the generated route tree
 import { routeTree } from "@/routeTree.gen";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 // Create a new router instance
 export const getRouter = () => {
@@ -16,9 +21,15 @@ export const getRouter = () => {
 		defaultPreload: "viewport",
 		Wrap: (props: { children: React.ReactNode }) => {
 			return (
-				<TanstackQuery.Provider {...rqContext}>
-					{props.children}
-				</TanstackQuery.Provider>
+				<ClerkProvider
+					publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+				>
+					<ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+						<TanstackQuery.Provider {...rqContext}>
+							{props.children}
+						</TanstackQuery.Provider>
+					</ConvexProviderWithClerk>
+				</ClerkProvider>
 			);
 		},
 		scrollRestoration: true,

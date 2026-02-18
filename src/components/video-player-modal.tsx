@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
 import {
 	Dialog,
@@ -35,10 +36,15 @@ export function VideoPlayerModal({
 }: VideoPlayerModalProps) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isOpen, setIsOpen] = useState(false);
+	const { isSignedIn, user } = useUser();
 	// const { progress } = useWatchProgress(tmdbId);
 
 	// Listen for player progress events
 	usePlayerProgressListener();
+
+	const isAdmin = user?.publicMetadata?.isAdmin === true;
+
+	if (!isSignedIn || !isAdmin) return null;
 
 	const videoUrl = buildPlayerUrl({
 		type,

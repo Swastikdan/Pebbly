@@ -1,9 +1,7 @@
+import { useMutation } from "convex/react";
 import { useCallback, useRef, useState } from "react";
-import {
-	useWatchlist,
-	useWatchlistStore,
-	type WatchlistItem,
-} from "@/hooks/usewatchlist";
+import { useWatchlist, type WatchlistItem } from "@/hooks/usewatchlist";
+import { api } from "../../convex/_generated/api";
 
 type ImportError = {
 	message: string;
@@ -15,7 +13,7 @@ export const useWatchlistImportExport = () => {
 	const [exportLoading, setExportLoading] = useState(false);
 	const [error, setError] = useState<ImportError | null>(null);
 	const { watchlist, loading } = useWatchlist();
-	const setWatchlist = useWatchlistStore((state) => state.setWatchlist);
+	const upsertWatchlistItem = useMutation(api.watchlist.upsertWatchlistItem);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const isValidWatchlistItem = useCallback(
@@ -23,19 +21,13 @@ export const useWatchlistImportExport = () => {
 			if (typeof item !== "object" || item === null) return false;
 
 			const obj = item as Record<string, unknown>;
+			// Basic validation
 			const hasRequiredFields =
 				typeof obj.title === "string" &&
-				typeof obj.rating === "number" &&
-				typeof obj.image === "string" &&
 				typeof obj.external_id === "string" &&
-				(obj.type === "tv" || obj.type === "movie") &&
-				typeof obj.release_date === "string";
+				(obj.type === "tv" || obj.type === "movie");
 
-			const isValidRating =
-				(obj.rating as number) >= 0 && (obj.rating as number) <= 10;
-			const isValidTitle = (obj.title as string).trim().length > 0;
-
-			return hasRequiredFields && isValidRating && isValidTitle;
+			return hasRequiredFields;
 		},
 		[],
 	);
@@ -106,25 +98,23 @@ export const useWatchlistImportExport = () => {
 						throw new Error("Invalid file format: Expected a JSON array.");
 					}
 
-					if (importedData.length === 0) {
-						throw new Error("Watchlist is empty.");
-					}
-
 					let invalidItemCount = 0;
 					const validatedList: WatchlistItem[] = [];
 
 					for (const item of importedData) {
+						// Relaxed validation for import
 						if (isValidWatchlistItem(item)) {
 							validatedList.push({
 								title: item.title,
 								type: item.type,
 								external_id: item.external_id,
-								image: item.image,
-								rating: item.rating,
-								release_date: item.release_date,
+								image: item.image || "",
+								rating: item.rating || 0,
+								release_date: item.release_date || "",
 								updated_at: Date.now(),
 								created_at: Date.now(),
-								status: "plan-to-watch",
+								status: item.status || "plan-to-watch",
+								overview: item.overview,
 							});
 						} else {
 							invalidItemCount++;
@@ -135,13 +125,29 @@ export const useWatchlistImportExport = () => {
 						throw new Error("No valid items found in the watchlist file.");
 					}
 
-					setWatchlist(validatedList);
+					// Import items sequentially to avoid rate limits or overload
+					// Ideally this should be a bulk mutation
+					for (const item of validatedList) {
+						await upsertWatchlistItem({
+							tmdbId: Number(item.external_id),
+							mediaType: item.type,
+							status: item.status,
+							title: item.title,
+							image: item.image,
+							rating: item.rating,
+							release_date: item.release_date,
+							overview: item.overview,
+						});
+					}
 
 					if (invalidItemCount > 0) {
 						setError({
 							message: `Successfully imported ${validatedList.length} items. ${invalidItemCount} invalid items were skipped.`,
 							invalidItems: invalidItemCount,
 						});
+					} else {
+						// Success message?
+						// No logic previously for success toast, just clears loading
 					}
 				} catch (err) {
 					const errorMessage =
@@ -168,7 +174,7 @@ export const useWatchlistImportExport = () => {
 
 			reader.readAsText(file);
 		},
-		[isValidWatchlistItem, setWatchlist],
+		[isValidWatchlistItem, upsertWatchlistItem],
 	);
 
 	const handleImportClick = useCallback(() => {

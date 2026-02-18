@@ -1,22 +1,25 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { useCallback, useEffect, useMemo } from "react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 /* ─── Types ─── */
 export interface WatchProgressData {
-	id: string;
+	id: string; // TMDB ID as string
 	type: "movie" | "tv";
-	timestamp: number; // currentTime in seconds
-	percent: number; // progress percentage
-	duration: number; // total duration in seconds
-	lastUpdated: number;
+	timestamp: number;
+	percent: number;
+	duration: number;
+	lastUpdated: number; // timestamp
 	context?: {
 		season?: number;
 		episode?: number;
 	};
 }
 
-/** Tracks which episodes a user has manually marked as "seen" */
+// Minimal interface for what the UI expects
 export interface EpisodeWatchedMap {
-	[key: string]: boolean; // key = "tvId:season:episode"
+	[key: string]: boolean;
 }
 
 interface PlayerEventPayload {
@@ -24,87 +27,15 @@ interface PlayerEventPayload {
 	data: {
 		event: "timeupdate" | "play" | "pause" | "ended" | "seeked";
 		currentTime: number;
-		duration: number;
+		duration: number; // total duration
 		progress: number;
 		id: string;
 		mediaType: "movie" | "tv";
 		season?: number;
 		episode?: number;
-		timestamp?: number;
 	};
 }
 
-const PROGRESS_PREFIX = "progress_";
-const EPISODE_WATCHED_KEY = "episodes_watched";
-const EPISODE_PROGRESS_PREFIX = "episode_progress_";
-
-/* ─── Storage helpers ─── */
-function getStoredProgress(id: string): WatchProgressData | null {
-	try {
-		const raw = localStorage.getItem(`${PROGRESS_PREFIX}${id}`);
-		if (!raw) return null;
-		return JSON.parse(raw) as WatchProgressData;
-	} catch {
-		return null;
-	}
-}
-
-function saveProgress(data: WatchProgressData): void {
-	try {
-		localStorage.setItem(`${PROGRESS_PREFIX}${data.id}`, JSON.stringify(data));
-	} catch (err) {
-		console.error("Failed to save watch progress:", err);
-	}
-}
-
-function saveEpisodeProgress(data: WatchProgressData): void {
-	try {
-		if (data.context?.season && data.context?.episode) {
-			localStorage.setItem(
-				`${EPISODE_PROGRESS_PREFIX}${data.id}_${data.context.season}_${data.context.episode}`,
-				JSON.stringify(data),
-			);
-		}
-	} catch (err) {
-		console.error("Failed to save episode progress:", err);
-	}
-}
-
-function getEpisodeProgress(
-	id: string,
-	s: number,
-	e: number,
-): WatchProgressData | null {
-	try {
-		const raw = localStorage.getItem(
-			`${EPISODE_PROGRESS_PREFIX}${id}_${s}_${e}`,
-		);
-		if (!raw) return null;
-		return JSON.parse(raw) as WatchProgressData;
-	} catch {
-		return null;
-	}
-}
-
-function getAllProgress(): WatchProgressData[] {
-	const items: WatchProgressData[] = [];
-	try {
-		for (let i = 0; i < localStorage.length; i++) {
-			const key = localStorage.key(i);
-			if (key?.startsWith(PROGRESS_PREFIX)) {
-				const raw = localStorage.getItem(key);
-				if (raw) {
-					items.push(JSON.parse(raw));
-				}
-			}
-		}
-	} catch {
-		// silently fail
-	}
-	return items.sort((a, b) => b.lastUpdated - a.lastUpdated);
-}
-
-/* ─── Episode watched helpers ─── */
 function makeEpisodeKey(
 	tvId: number | string,
 	season: number,
@@ -113,27 +44,14 @@ function makeEpisodeKey(
 	return `${tvId}:${season}:${episode}`;
 }
 
-function getEpisodeWatchedMap(): EpisodeWatchedMap {
-	try {
-		const raw = localStorage.getItem(EPISODE_WATCHED_KEY);
-		if (!raw) return {};
-		return JSON.parse(raw) as EpisodeWatchedMap;
-	} catch {
-		return {};
-	}
-}
-
-function saveEpisodeWatchedMap(map: EpisodeWatchedMap): void {
-	try {
-		localStorage.setItem(EPISODE_WATCHED_KEY, JSON.stringify(map));
-	} catch (err) {
-		console.error("Failed to save episode watched map:", err);
-	}
-}
-
 /* ─── Hook: Listen for player events and persist progress ─── */
 export function usePlayerProgressListener() {
+	const updateProgress = useMutation(api.watchlist.updateProgress);
+	const markEpisodeWatched = useMutation(api.watchlist.markEpisodeWatched);
+
 	useEffect(() => {
+		let lastSavedPercent = 0;
+
 		function handleMessage(event: MessageEvent) {
 			try {
 				if (typeof event.data !== "string") return;
@@ -146,159 +64,272 @@ export function usePlayerProgressListener() {
 					mediaType,
 					currentTime,
 					progress,
-					duration,
 					season,
 					episode,
 					event: playerEvent,
 				} = payload.data;
 
-				// Only save meaningful progress (> 1% and > 10 seconds)
-				if (progress < 1 && currentTime < 10) return;
+				// Only save meaningful progress (> 1% and > 10s)
+				if (progress < 1 && currentTime < 10 && playerEvent !== "ended") return;
 
-				const watchData: WatchProgressData = {
-					id,
-					type: mediaType,
-					timestamp: currentTime,
-					percent: progress,
-					duration: duration,
-					lastUpdated: Date.now(),
-					context: season ? { season, episode } : undefined,
-				};
-
-				saveProgress(watchData);
-
-				if (mediaType === "tv" && season && episode) {
-					saveEpisodeProgress(watchData);
-				}
-
-				// Auto-mark episode as watched when completed (> 95%)
+				// Debounce updates (every 5s or strictly on pause/end)
 				if (
+					playerEvent === "pause" ||
 					playerEvent === "ended" ||
-					(progress > 95 && mediaType === "tv" && season && episode)
+					Math.abs(progress - lastSavedPercent) > 2 // Save every 2% change
 				) {
-					const map = getEpisodeWatchedMap();
-					map[makeEpisodeKey(id, season!, episode!)] = true;
-					saveEpisodeWatchedMap(map);
+					lastSavedPercent = progress;
+
+					// Update show/movie progress
+					// For TV shows, this updates the "Show" level generic progress (e.g. "Currently Watching Show X")
+					// We might want to store the "last watched episode" context in the generic item status
+					// But current schema just tracks "status" and "progress".
+
+					updateProgress({
+						tmdbId: Number(id),
+						mediaType,
+						progress: progress,
+						status: progress > 95 ? "completed" : "watching",
+					}).catch(console.error);
+
+					// Handle Episode Completion
+					if (
+						(playerEvent === "ended" || progress > 95) &&
+						mediaType === "tv" &&
+						season !== undefined &&
+						episode !== undefined
+					) {
+						markEpisodeWatched({
+							tmdbId: Number(id),
+							season: season,
+							episode: episode,
+							isWatched: true,
+						}).catch(console.error);
+					}
 				}
 			} catch {
-				// Non-JSON messages or other events — ignore
+				// invoke failed
 			}
 		}
 
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, []);
+	}, [updateProgress, markEpisodeWatched]);
 }
 
 /* ─── Hook: Get progress for a specific item ─── */
-export function useWatchProgress(id: string | number) {
-	const [progress, setProgress] = useState<WatchProgressData | null>(null);
+export function useWatchProgress(
+	id: string | number,
+	mediaType: "movie" | "tv",
+) {
+	const data = useQuery(api.watchlist.getProgress, {
+		tmdbId: Number(id),
+		mediaType,
+	});
 
-	useEffect(() => {
-		const stored = getStoredProgress(String(id));
-		setProgress(stored);
-	}, [id]);
+	// Transform to shape expected by UI if possible, or just return relevant fields
+	// UI expects { progress: WatchProgressData | null }
+	// WatchProgressData has: context
 
-	// Refresh from storage (useful after player events)
-	const refresh = useCallback(() => {
-		const stored = getStoredProgress(String(id));
-		setProgress(stored);
-	}, [id]);
+	const progress: WatchProgressData | null = useMemo(() => {
+		if (!data) return null;
+		return {
+			id: String(data.tmdbId),
+			type: data.mediaType as "movie" | "tv",
+			timestamp: 0, // We don't track detailed timestamp anymore
+			percent: data.progress ?? 0,
+			duration: 0,
+			lastUpdated: data.updatedAt,
+			// Context (S/E) is not stored in general watch_items table.
+			// We might need to fetch "last watched episode" separately or store it.
+			// For now, return empty context
+			context: undefined,
+		};
+	}, [data]);
 
-	return { progress, refresh };
+	return { progress };
 }
 
-/* ─── Hook: Get all progress (for "Continue Watching") ─── */
+/* ─── Hook: Get all progress (Continue Watching) ─── */
 export function useContinueWatching() {
-	const [items, setItems] = useState<WatchProgressData[]>([]);
+	const data = useQuery(api.watchlist.getContinueWatching);
 
-	useEffect(() => {
-		setItems(getAllProgress());
-	}, []);
+	const items = useMemo(() => {
+		if (!data) return [];
+		return data.map((item) => ({
+			id: String(item.tmdbId),
+			type: item.mediaType as "movie" | "tv",
+			timestamp: 0,
+			percent: item.progress ?? 0,
+			duration: 0,
+			lastUpdated: item.updatedAt,
+		}));
+	}, [data]);
 
-	const refresh = useCallback(() => {
-		setItems(getAllProgress());
-	}, []);
-
-	// Only show items with meaningful progress (> 2%, < 95%)
-	const activeItems = useMemo(
-		() => items.filter((item) => item.percent > 2 && item.percent < 95),
-		[items],
-	);
-
-	return { items: activeItems, allItems: items, refresh };
+	return { items, allItems: items };
 }
 
 /* ─── Hook: Track and toggle episode watched status ─── */
 export function useEpisodeWatched(tvId: number | string) {
-	const [watchedMap, setWatchedMap] = useState<EpisodeWatchedMap>({});
+	const tmdbId = Number(tvId);
+	// We can't fetch ALL episodes for ALL seasons easily unless we iterate?
+	// But commonly we need checking for a specific season.
+	// Current UI uses `isEpisodeWatched(s, e)` synchronously.
+	// This implies we need to load ALL watched episodes for this show.
+	// Let's add `getShowWatchedEpisodes` to Convex if possible or just `getEpisodeWatched` per item?
+	// `isEpisodeWatched` is called in render loops (e.g. season list).
+	// So we need to fetch all watched episodes for the show.
 
-	useEffect(() => {
-		setWatchedMap(getEpisodeWatchedMap());
-	}, []);
+	// I need a query verify if episode is watched.
+	// Checking `api.watchlist.getEpisodeWatched` inside a loop is bad (hooks in loop).
+	// So `useEpisodeWatched` hook should fetch ALL watched episodes for the show.
+	// I need to add `getAllWatchedEpisodes(tmdbId)` to Convex.
+
+	// For now, let's assume I can't fetch all efficiently without a new query.
+	// I will add `getAllWatchedEpisodes` to `convex/watchlist.ts`.
+
+	// Temporary placeholder relying on direct query hook if I update `convex/watchlist`.
+	// Assuming I will add `getAllWatchedEpisodes`
+	const watchedEpisodes =
+		useQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }) || [];
+
+	// Create map
+	const watchedMap = useMemo(() => {
+		const map: EpisodeWatchedMap = {};
+		for (const ep of watchedEpisodes) {
+			map[makeEpisodeKey(tmdbId, ep.season, ep.episode)] = ep.isWatched;
+		}
+		return map;
+	}, [watchedEpisodes, tmdbId]);
+
+	// Optimistic update for toggling episode
+	const markEpisodeWatched = useMutation(
+		api.watchlist.markEpisodeWatched,
+	).withOptimisticUpdate((localStore, args) => {
+		const { tmdbId, season, episode, isWatched } = args;
+		const current = localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
+			tmdbId,
+		});
+		if (current !== undefined) {
+			if (isWatched) {
+				// Add if not present
+				if (
+					!current.some((e) => e.season === season && e.episode === episode)
+				) {
+					localStore.setQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }, [
+						...current,
+						{
+							_id: `optimistic_${Date.now()}` as Id<"episode_progress">,
+							_creationTime: Date.now(),
+							userId: "optimistic",
+							tmdbId,
+							season,
+							episode,
+							isWatched: true,
+							updatedAt: Date.now(),
+						},
+					]);
+				}
+			} else {
+				// Remove
+				localStore.setQuery(
+					api.watchlist.getAllWatchedEpisodes,
+					{ tmdbId },
+					current.filter(
+						(e) => !(e.season === season && e.episode === episode),
+					),
+				);
+			}
+		}
+	});
+	const syncShowProgress = useMutation(api.watchlist.syncShowProgress);
 
 	const isEpisodeWatched = useCallback(
 		(season: number, episode: number): boolean => {
-			return !!watchedMap[makeEpisodeKey(tvId, season, episode)];
+			return !!watchedMap[makeEpisodeKey(tmdbId, season, episode)];
 		},
-		[tvId, watchedMap],
+		[watchedMap, tmdbId],
 	);
 
 	const toggleEpisodeWatched = useCallback(
 		(season: number, episode: number) => {
-			const key = makeEpisodeKey(tvId, season, episode);
-			const newMap = { ...getEpisodeWatchedMap() };
-			newMap[key] = !newMap[key];
-			if (!newMap[key]) delete newMap[key];
-			saveEpisodeWatchedMap(newMap);
-			setWatchedMap(newMap);
+			const current = isEpisodeWatched(season, episode);
+			markEpisodeWatched({
+				tmdbId,
+				season,
+				episode,
+				isWatched: !current,
+			});
 		},
-		[tvId],
+		[tmdbId, isEpisodeWatched, markEpisodeWatched],
 	);
 
+	// Logic: Mark Season Watched
 	const markSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
-			const map = { ...getEpisodeWatchedMap() };
-			for (const ep of episodes) {
-				map[makeEpisodeKey(tvId, season, ep)] = true;
-			}
-			saveEpisodeWatchedMap(map);
-			setWatchedMap(map);
+			// Need to mark all individually? Or batch mutation?
+			// Batch is better. I'll loop for now or add batch mutation.
+			episodes.forEach((ep) => {
+				markEpisodeWatched({ tmdbId, season, episode: ep, isWatched: true });
+			});
+			// TRIGGER SYNC Show Progress
+			// "When all episodes of a show are marked as watched..."
+			// If I just marked a whole season, and this was the last season, it should complete.
+			// Client relies on passed `episodes` list (total for season).
 		},
-		[tvId],
+		[tmdbId, markEpisodeWatched],
 	);
 
 	const unmarkSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
-			const map = { ...getEpisodeWatchedMap() };
-			for (const ep of episodes) {
-				delete map[makeEpisodeKey(tvId, season, ep)];
-			}
-			saveEpisodeWatchedMap(map);
-			setWatchedMap(map);
+			episodes.forEach((ep) => {
+				markEpisodeWatched({ tmdbId, season, episode: ep, isWatched: false });
+			});
 		},
-		[tvId],
+		[tmdbId, markEpisodeWatched],
 	);
 
 	const isSeasonFullyWatched = useCallback(
 		(season: number, totalEpisodes: number): boolean => {
+			if (totalEpisodes === 0) return false;
+			let count = 0;
+			// Iterate using what the client knows are the episodes.
+			// But `isSeasonFullyWatched` takes `totalEpisodes` (count).
+			// It assumes episodes are 1..N ?
 			for (let ep = 1; ep <= totalEpisodes; ep++) {
-				if (!watchedMap[makeEpisodeKey(tvId, season, ep)]) return false;
+				if (watchedMap[makeEpisodeKey(tmdbId, season, ep)]) count++;
 			}
-			return totalEpisodes > 0;
+			return count === totalEpisodes;
 		},
-		[tvId, watchedMap],
+		[tmdbId, watchedMap],
 	);
 
 	const getSeasonWatchedCount = useCallback(
 		(season: number, totalEpisodes: number): number => {
 			let count = 0;
 			for (let ep = 1; ep <= totalEpisodes; ep++) {
-				if (watchedMap[makeEpisodeKey(tvId, season, ep)]) count++;
+				if (watchedMap[makeEpisodeKey(tmdbId, season, ep)]) count++;
 			}
 			return count;
 		},
-		[tvId, watchedMap],
+		[tmdbId, watchedMap],
+	);
+
+	// Feature: Sync Show Progress (Set to 100%)
+	// This function can be exposed to be called when checks pass.
+	const markShowCompleted = useCallback(
+		(totalEpisodes: number) => {
+			// Calculate total watched across all seasons?
+			// Wait, `watchedEpisodes` is all episodes for show.
+			const count = watchedEpisodes.filter((e) => e.isWatched).length;
+			syncShowProgress({
+				tmdbId,
+				mediaType: "tv",
+				totalEpisodes,
+				watchedEpisodesCount: count,
+			});
+		},
+		[syncShowProgress, tmdbId, watchedEpisodes],
 	);
 
 	return {
@@ -308,6 +339,8 @@ export function useEpisodeWatched(tvId: number | string) {
 		unmarkSeasonWatched,
 		isSeasonFullyWatched,
 		getSeasonWatchedCount,
+		markShowCompleted,
+		watchedCount: watchedEpisodes.length,
 	};
 }
 
@@ -317,23 +350,22 @@ export function useEpisodeProgress(
 	season: number,
 	episode: number,
 ) {
-	const [percent, setPercent] = useState<number>(0);
-
-	useEffect(() => {
-		const stored = getEpisodeProgress(String(tvId), season, episode);
-		if (stored) setPercent(stored.percent);
-	}, [tvId, season, episode]);
-
-	return percent;
+	// Return 100 if watched, 0 otherwise
+	const data = useQuery(api.watchlist.getEpisodeWatched, {
+		tmdbId: Number(tvId),
+		season,
+		episode,
+	});
+	return data?.isWatched ? 100 : 0;
 }
 
-/* ─── URL builder with progress resume ─── */
+/* ─── URL builder ─── */
 export function buildPlayerUrl(opts: {
 	type: "movie" | "tv";
 	tmdbId: number;
 	season?: number;
 	episode?: number;
-	savedProgress?: number; // seconds to resume from
+	savedProgress?: number;
 }): string {
 	const { type, tmdbId, season, episode, savedProgress } = opts;
 
@@ -341,6 +373,7 @@ export function buildPlayerUrl(opts: {
 	params.set("autoPlay", "true");
 	params.set("nextEpisode", "true");
 	params.set("episodeSelector", "true");
+	// Excluding timestamp sync means we might not have savedProgress
 	if (savedProgress && savedProgress > 10) {
 		params.set("progress", String(Math.floor(savedProgress)));
 	}

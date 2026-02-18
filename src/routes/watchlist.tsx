@@ -73,7 +73,7 @@ function WatchlistPage() {
 		importLoading,
 		exportLoading,
 		error,
-		watchlist,
+		// watchlist, // Data is now managed by Convex, this might be stale or from store
 		fileInputRef,
 		exportWatchlist,
 		importWatchlist,
@@ -185,9 +185,7 @@ function WatchlistPage() {
 										/>
 									</div>
 									<span className="mt-1 block truncate text-xs font-medium">
-										{item.type === "tv" && item.context
-											? `S${item.context.season}E${item.context.episode}`
-											: ""}
+										{item.type === "tv" ? "TV Series" : "Movie"}
 									</span>
 									<span className=" text-[9px] text-muted-foreground">
 										{Math.round(item.percent)}%
@@ -232,7 +230,7 @@ function WatchlistPage() {
 						</div>
 
 						<div className="flex gap-3">
-							{(watchlist?.length ?? 0) > 0 && (
+							{(watchlistData?.length ?? 0) > 0 && (
 								<Button
 									className="gap-2 rounded-xl"
 									disabled={exportLoading || importLoading}

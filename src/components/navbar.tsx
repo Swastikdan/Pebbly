@@ -1,3 +1,10 @@
+import {
+	ClerkLoaded,
+	ClerkLoading,
+	SignedOut,
+	SignInButton,
+	useUser,
+} from "@clerk/clerk-react";
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
@@ -16,6 +23,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import { NAV_ITEMS } from "@/constants";
 
 const DesktopNavMenuItem = ({
@@ -98,6 +106,7 @@ const MobileNavMenuItem = ({
 MobileNavMenuItem.displayName = "MobileNavMenuItem";
 
 const Navbar = () => {
+	const { user } = useUser();
 	return (
 		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border border-b-2 bg-background transition-transform duration-300">
 			<nav
@@ -156,6 +165,29 @@ const Navbar = () => {
 										</Button>
 									</SheetClose>
 								</Link>
+								{user?.publicMetadata?.isAdmin === true && (
+									<Button
+										variant="secondary"
+										className="h-10 w-full justify-start text-red-500"
+									>
+										Admin
+									</Button>
+								)}
+								<ClerkLoading>
+									<Skeleton className="h-10 w-full rounded-[calc(var(--radius-md)+3px)]" />
+								</ClerkLoading>
+								<ClerkLoaded>
+									<SignedOut>
+										<SignInButton mode="modal">
+											<Button
+												variant="secondary"
+												className="h-10 w-full justify-start"
+											>
+												Sign In
+											</Button>
+										</SignInButton>
+									</SignedOut>
+								</ClerkLoaded>
 							</div>
 						</SheetContent>
 					</Sheet>

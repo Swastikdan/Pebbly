@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Accordion,
 	AccordionContent,
@@ -41,6 +41,18 @@ export function InlineEpisodeBrowser({
 	const hasMoreSeasons = allSeasons.length > 3;
 
 	const episodeTracker = useEpisodeWatched(tvId);
+
+	// Automatically mark show as completed (100% watched) if all episodes are watched
+	const totalEpisodes = seasons.reduce((acc, s) => acc + s.episode_count, 0);
+	useEffect(() => {
+		if (episodeTracker.watchedCount >= totalEpisodes && totalEpisodes > 0) {
+			episodeTracker.markShowCompleted(totalEpisodes);
+		}
+	}, [
+		episodeTracker.watchedCount,
+		totalEpisodes,
+		episodeTracker.markShowCompleted,
+	]);
 
 	return (
 		<div className="animate-fade-in-up pb-8">
@@ -244,14 +256,12 @@ function EpisodeCard({
 	);
 
 	return (
-		<div
-			className={`group relative flex flex-row items-start gap-3 px-4 py-3 transition-colors duration-200 hover:bg-secondary/8 ${isWatched ? "opacity-60" : ""}`}
-		>
+		<div className="group relative flex flex-row items-start gap-3 px-4 py-3 transition-colors duration-200 hover:bg-secondary/8">
 			{/* Episode Still with hover play icon */}
 			<div className="relative shrink-0 overflow-hidden rounded-xl">
 				<Image
 					alt={episode.name}
-					className={`h-20 w-32 rounded-xl bg-foreground/10 object-cover xs:h-24 xs:w-40 sm:w-44 md:h-28 md:w-48 ${isWatched ? "saturate-50" : ""}`}
+					className="h-20 w-32 rounded-xl bg-foreground/10 object-cover xs:h-24 xs:w-40 sm:w-44 md:h-28 md:w-48"
 					height={140}
 					src={
 						episode.still_path
