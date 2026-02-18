@@ -108,34 +108,60 @@ export function InlineEpisodeBrowser({
 							className="mb-3 rounded-xl border border-default/40 bg-card overflow-hidden"
 						>
 							<AccordionTrigger className="px-4 py-3.5 text-sm font-semibold hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
-								<div className="flex items-center gap-3">
-									<span className="text-base font-bold">
-										{`Season ${s.season_number}`}
-									</span>
-									<Badge
-										variant="secondary"
-										className="rounded-md px-1.5 py-0.5 text-[10px]"
-									>
-										{s.episode_count} ep{s.episode_count !== 1 ? "s" : ""}
-									</Badge>
-									{s.air_date && (
-										<span className="text-[10px] tracking-wider text-muted-foreground">
-											{new Date(s.air_date).getFullYear()}
+								<div className="flex flex-1 items-center justify-between pr-2">
+									<div className="flex items-center gap-3">
+										<span className="text-base font-bold">
+											{`Season ${s.season_number}`}
 										</span>
-									)}
-									{seenAll && (
 										<Badge
-											variant="default"
-											className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-700 border border-emerald-500/25 dark:text-emerald-400"
+											variant="secondary"
+											className="rounded-md px-1.5 py-0.5 text-[10px]"
 										>
-											✓ Seen
+											{s.episode_count} ep{s.episode_count !== 1 ? "s" : ""}
 										</Badge>
-									)}
-									{!seenAll && watchedCount > 0 && (
-										<span className="text-[10px] text-muted-foreground">
-											{watchedCount}/{s.episode_count} watched
-										</span>
-									)}
+										{s.air_date && (
+											<span className="text-[10px] tracking-wider text-muted-foreground">
+												{new Date(s.air_date).getFullYear()}
+											</span>
+										)}
+										{seenAll && (
+											<Badge
+												variant="default"
+												className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-700 border border-emerald-500/25 dark:text-emerald-400"
+											>
+												✓ Seen
+											</Badge>
+										)}
+										{!seenAll && watchedCount > 0 && (
+											<span className="text-[10px] text-muted-foreground">
+												{watchedCount}/{s.episode_count} watched
+											</span>
+										)}
+									</div>
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											const epNums = Array.from(
+												{ length: s.episode_count },
+												(_, i) => i + 1,
+											);
+											if (seenAll) {
+												episodeTracker.unmarkSeasonWatched(
+													s.season_number,
+													epNums,
+												);
+											} else {
+												episodeTracker.markSeasonWatched(
+													s.season_number,
+													epNums,
+												);
+											}
+										}}
+										className="pressable-small text-[11px] font-medium text-muted-foreground hover:text-foreground hover:no-underline transition-colors z-10 relative"
+									>
+										{seenAll ? "Unmark all as watched" : "Mark all as watched"}
+									</button>
 								</div>
 							</AccordionTrigger>
 							<AccordionContent className="px-0 pb-0 border-t border-default/50">
@@ -150,6 +176,7 @@ export function InlineEpisodeBrowser({
 						</AccordionItem>
 					);
 				})}
+				<AccordionItem value="" className="sr-only"></AccordionItem>
 			</Accordion>
 
 			{!showAllSeasons && hasMoreSeasons && (
@@ -227,15 +254,7 @@ function SeasonEpisodeList({
 	return (
 		<div className="flex flex-col divide-y divide-border/50">
 			{/* Bulk action: Mark all as watched */}
-			<div className="flex items-center justify-end gap-2 px-4 py-2 border-b border-border/30">
-				<button
-					type="button"
-					onClick={handleMarkAllSeen}
-					className="pressable-small text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-				>
-					{seenAll ? "Unmark all as watched" : "Mark all as watched"}
-				</button>
-			</div>
+
 			{episodes.map((episode) => (
 				<EpisodeCard
 					key={episode.id}
