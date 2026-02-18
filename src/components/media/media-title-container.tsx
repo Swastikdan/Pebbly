@@ -66,7 +66,7 @@ export const MediaTitleContailer = (props: {
 	return (
 		<div className="pt-5 pb-5">
 			<div className="space-y-3 pb-5">
-				<div className="flex items-center justify-between">
+				<div className="flex items-center justify-between gap-3">
 					<GoBack title="Back" />
 					<div className="flex items-center gap-3">
 						<WatchlistButton
