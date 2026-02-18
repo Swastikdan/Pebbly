@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowRightLine, Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
-import { TAB_LIST_CLASSNAME, TAB_TRIGGER_CLASSNAME } from "@/constants";
+import { TAB_LIST_CLASSNAME, TAB_TRIGGER_CLASSNAME } from "@/lib/tab-styles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface VideoItem {

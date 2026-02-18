@@ -10,7 +10,7 @@ import {
 	UpcomingMovies,
 } from "@/components/homepage-media";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
-import { TAB_LIST_CLASSNAME, TAB_TRIGGER_CLASSNAME } from "@/constants";
+import { TAB_LIST_CLASSNAME, TAB_TRIGGER_CLASSNAME } from "@/lib/tab-styles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/")({

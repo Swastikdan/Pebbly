@@ -40,6 +40,9 @@ export interface MediaCardSkeletonProps {
 	className?: string;
 }
 
+const WATCHLIST_BADGE_CLASSNAME =
+	"h-9 w-9 rounded-md border border-white/25 bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30";
+
 const MediaCard = (props: CardProps) => {
 	if (props.card_type === "horizontal") {
 		return <HorizontalCard {...props} />;
@@ -134,7 +137,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-9 w-9 rounded-md border border-white/25 bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30"
+					className={WATCHLIST_BADGE_CLASSNAME}
 				/>
 			</div>
 		</div>
@@ -224,7 +227,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-9 w-9 rounded-md border border-white/25 bg-white/20 text-white backdrop-blur-md transition-colors hover:bg-white/30"
+					className={WATCHLIST_BADGE_CLASSNAME}
 				/>
 			</div>
 		</div>
