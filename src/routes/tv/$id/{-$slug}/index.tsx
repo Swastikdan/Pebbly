@@ -11,9 +11,19 @@ import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContailer } from "@/components/media/media-title-container";
-import { GENRE_LIST, IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+import { VITE_PUBLIC_APP_URL } from "@/constants";
 
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
+import {
+	getPosterImage,
+	getTvCertification,
+	mapBackdrops,
+	mapCast,
+	mapCrew,
+	mapGenres,
+	mapPosters,
+	splitVideos,
+} from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
 import { formatMediaTitle, isValidId } from "@/lib/utils";
@@ -63,7 +73,7 @@ function TvHomePage() {
 		subPageEntity: "home",
 		id: data?.id,
 		title: data?.name ?? data?.original_name,
-		incomingPathname: `/movie/${tv_id}/${tv_slug}`,
+		incomingPathname: `/tv/${tv_id}/${tv_slug}`,
 		isLoading,
 	});
 	if (isLoading) {
@@ -96,97 +106,20 @@ function TvHomePage() {
 
 	const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
 	const tvtitle = name ?? original_name;
-	const tvimage =
-		poster_path && poster_path !== "" && poster_path !== null
-			? `${IMAGE_PREFIX.HD_POSTER}${poster_path}`
-			: `https://placehold.co/300x450?text=Image+Not+Found`;
+	const tvimage = getPosterImage(poster_path);
 	const tvreleaseyear = release_date
 		? new Date(release_date).getFullYear()
 		: null;
 
-	const uscertification =
-		content_ratings?.results?.find((result) => result.iso_3166_1 === "US")
-			?.rating ?? "NR";
-
-	const tvgenres = genres
-		? genres
-				.map((genre) => {
-					return GENRE_LIST.find(
-						(genreListItem) => genreListItem.id === genre.id,
-					);
-				})
-				.filter((genre) => genre !== undefined)
-		: [];
-
-	const youtubevideos =
-		videos?.results?.map((video) => ({
-			key: video.key,
-			name: video.name,
-			type: video.type,
-			published_at: video.published_at,
-			official: video.official,
-		})) ?? [];
-
-	// get only the trailers from the youtube videos type = "Trailer" || "Teaser"
-	const trailervideos = youtubevideos
-		?.filter((video) => video.type === "Trailer" || video.type === "Teaser")
-		.sort((a) => {
-			return a.type === "Trailer" ? -1 : 1;
-		});
-	const youtubeclips = youtubevideos
-		.filter((video) => video.type !== "Trailer" && video.type !== "Teaser")
-		.sort((a, b) => {
-			// First sort by type (Featurette takes priority)
-			if (a.type !== b.type) {
-				return a.type === "Featurette" ? -1 : 1;
-			}
-
-			// Then sort by published date (newest first)
-			return (
-				new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
-			);
-		})
-		.slice(0, 10); // Slice after sorting to get the top 10
-
-	const tvcast =
-		credits?.cast
-			?.map((cast) => ({
-				id: cast.id,
-				name: cast.name,
-				profile_path: cast.profile_path,
-				character: cast.character,
-			}))
-			.slice(0, 10) ?? [];
-	const tvcrew =
-		credits?.crew
-			?.map((crew) => ({
-				id: crew.id,
-				name: crew.name,
-				profile_path: crew.profile_path,
-				job: crew.job,
-			}))
-			.slice(0, 10) ?? [];
-
-	const tvbackdrops =
-		images?.backdrops
-			?.sort((a, b) => (b.vote_average ?? 0) - (a.vote_average ?? 0))
-			.map((image) => ({
-				backdrop_image: `${IMAGE_PREFIX.SD_BACKDROP}${image.file_path}`,
-				backdrop_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
-				aspect_ratio: image.aspect_ratio,
-			}))
-			.slice(0, 10) ?? [];
-
-	const tvposters =
-		images?.posters
-			?.sort((a, b) => (b.vote_average ?? 0) - (a.vote_average ?? 0))
-			.slice(0, 10)
-			.map((image) => ({
-				poster_image: `${IMAGE_PREFIX.SD_POSTER}${image.file_path}`,
-				poster_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
-				aspect_ratio: image.aspect_ratio,
-			}))
-			.slice(0, 10) ?? [];
+	const uscertification = getTvCertification(content_ratings?.results);
+	const tvgenres = mapGenres(genres);
+	const { normalizedVideos, trailervideos, youtubeclips } = splitVideos(
+		videos?.results,
+	);
+	const tvcast = mapCast(credits?.cast);
+	const tvcrew = mapCrew(credits?.crew);
+	const tvbackdrops = mapBackdrops(images?.backdrops);
+	const tvposters = mapPosters(images?.posters);
 
 	const tvkeywords =
 		keywords?.results?.map((keyword) => ({
@@ -244,7 +177,7 @@ function TvHomePage() {
 				backdrops={tvbackdrops}
 				id={id}
 				is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
-				is_more_clips_available={youtubevideos.length > 10}
+				is_more_clips_available={normalizedVideos.length > 10}
 				is_more_posters_available={(images?.posters?.length ?? 0) > 10}
 				posters={tvposters}
 				title={tvtitle}

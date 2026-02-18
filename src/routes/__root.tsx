@@ -1,11 +1,10 @@
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
 	Scripts,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { useEffect, useState } from "react";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -124,6 +123,39 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
+
+	useEffect(() => {
+		if (!import.meta.env.DEV) {
+			return;
+		}
+
+		// Keep devtools out of production bundles and only load them on demand.
+		Promise.all([
+			import("@tanstack/react-devtools"),
+			import("@tanstack/react-router-devtools"),
+		]).then(([reactDevtools, routerDevtools]) => {
+			const TanStackDevtoolsComponent = reactDevtools.TanStackDevtools;
+			const TanStackRouterDevtoolsPanelComponent =
+				routerDevtools.TanStackRouterDevtoolsPanel;
+
+			setDevtoolsPlugin(
+				<TanStackDevtoolsComponent
+					config={{
+						position: "bottom-right",
+					}}
+					plugins={[
+						{
+							name: "Tanstack Router",
+							render: <TanStackRouterDevtoolsPanelComponent />,
+						},
+						TanStackQueryDevtools,
+					]}
+				/>,
+			);
+		});
+	}, []);
+
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
@@ -138,20 +170,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 					<Navbar />
 					{children}
 					<Footer />
-					{import.meta.env.DEV && (
-						<TanStackDevtools
-							config={{
-								position: "bottom-right",
-							}}
-							plugins={[
-								{
-									name: "Tanstack Router",
-									render: <TanStackRouterDevtoolsPanel />,
-								},
-								TanStackQueryDevtools,
-							]}
-						/>
-					)}
+					{devtoolsPlugin}
 					<Scripts />
 				</ThemeProvider>
 			</body>

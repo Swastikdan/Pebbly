@@ -87,9 +87,9 @@ function MovieCollnetionPage() {
 
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4 py-5">
-			<div className="space-y-3 py-10 ">
-				<div className="flex items-center justify-between">
-					<GoBack />
+			<div className="space-y-3 py-5">
+				<div className="flex items-center justify-between gap-3">
+					<GoBack title="Back" />
 					<ShareButton />
 				</div>
 			</div>

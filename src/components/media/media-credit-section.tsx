@@ -45,7 +45,7 @@ export const MediaCreditSection = (props: {
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4">
 			<div className="space-y-3 py-5">
-				<div className="flex items-center justify-between">
+				<div className="flex items-center justify-between gap-3">
 					<GoBack link={`/${type}/${id}/${slug}`} title="Back to main" />
 					<ShareButton />
 				</div>

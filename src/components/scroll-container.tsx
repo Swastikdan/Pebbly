@@ -10,6 +10,8 @@ interface ScrollContainerProps {
 	scrollPercentage?: number;
 }
 
+const MOBILE_BREAKPOINT = 640;
+
 export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 	children,
 	isButtonsVisible = true,
@@ -17,21 +19,60 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 	scrollPercentage = 0.9,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
-	const containerRef = useRef<HTMLDivElement>(null);
+	const rafIdRef = useRef<number | null>(null);
+	const scrollStateRef = useRef({ canScrollLeft: false, canScrollRight: false });
 	const [canScrollLeft, setCanScrollLeft] = useState(false);
 	const [canScrollRight, setCanScrollRight] = useState(false);
+	const [isDesktop, setIsDesktop] = useState(false);
 
-	// Memoize the scroll button update function
-	const updateScrollButtons = useCallback(() => {
-		if (!scrollRef.current) return;
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
 
-		const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+		const mediaQuery = window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT}px)`);
+		const updateIsDesktop = () => setIsDesktop(mediaQuery.matches);
+		updateIsDesktop();
+		mediaQuery.addEventListener("change", updateIsDesktop);
 
-		setCanScrollLeft(scrollLeft > 0);
-		setCanScrollRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth);
+		return () => {
+			mediaQuery.removeEventListener("change", updateIsDesktop);
+		};
 	}, []);
 
-	// Memoize scroll functions
+	const isControlsEnabled = isButtonsVisible && isDesktop;
+
+	const updateScrollButtons = useCallback(() => {
+		if (!isControlsEnabled || !scrollRef.current) {
+			return;
+		}
+
+		const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+		const nextCanScrollLeft = scrollLeft > 0;
+		const nextCanScrollRight = Math.ceil(scrollLeft + clientWidth) < scrollWidth;
+
+		if (scrollStateRef.current.canScrollLeft !== nextCanScrollLeft) {
+			scrollStateRef.current.canScrollLeft = nextCanScrollLeft;
+			setCanScrollLeft(nextCanScrollLeft);
+		}
+
+		if (scrollStateRef.current.canScrollRight !== nextCanScrollRight) {
+			scrollStateRef.current.canScrollRight = nextCanScrollRight;
+			setCanScrollRight(nextCanScrollRight);
+		}
+	}, [isControlsEnabled]);
+
+	const scheduleButtonStateUpdate = useCallback(() => {
+		if (rafIdRef.current !== null) {
+			return;
+		}
+
+		rafIdRef.current = requestAnimationFrame(() => {
+			rafIdRef.current = null;
+			updateScrollButtons();
+		});
+	}, [updateScrollButtons]);
+
 	const scrollLeft = useCallback(() => {
 		if (!scrollRef.current) return;
 
@@ -62,10 +103,9 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 		});
 	}, [scrollPercentage]);
 
-	// Handle keyboard navigation
 	const handleKeyDown = useCallback(
 		(e: KeyboardEvent) => {
-			if (!scrollRef.current) return;
+			if (!isControlsEnabled || !scrollRef.current) return;
 
 			if (e.key === "ArrowLeft" && canScrollLeft) {
 				e.preventDefault();
@@ -75,49 +115,52 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 				scrollRight();
 			}
 		},
-		[canScrollLeft, canScrollRight, scrollLeft, scrollRight],
+		[canScrollLeft, canScrollRight, isControlsEnabled, scrollLeft, scrollRight],
 	);
 
 	useEffect(() => {
 		const currentScrollRef = scrollRef.current;
-		if (!currentScrollRef) return;
-
-		// Initial check
-		updateScrollButtons();
-
-		// Set up event listeners
-		currentScrollRef.addEventListener("scroll", updateScrollButtons);
-		window.addEventListener("resize", updateScrollButtons);
-
-		// Set up ResizeObserver for content changes
-		const resizeObserver = new ResizeObserver(updateScrollButtons);
-		resizeObserver.observe(currentScrollRef);
-
-		// Add keyboard navigation
-		if (isButtonsVisible) {
-			window.addEventListener("keydown", handleKeyDown);
+		if (!currentScrollRef || !isControlsEnabled) {
+			if (scrollStateRef.current.canScrollLeft || scrollStateRef.current.canScrollRight) {
+				scrollStateRef.current = { canScrollLeft: false, canScrollRight: false };
+				setCanScrollLeft(false);
+				setCanScrollRight(false);
+			}
+			return;
 		}
 
-		// Cleanup
+		updateScrollButtons();
+		currentScrollRef.addEventListener("scroll", scheduleButtonStateUpdate, {
+			passive: true,
+		});
+		window.addEventListener("resize", updateScrollButtons);
+
+		const resizeObserver = new ResizeObserver(updateScrollButtons);
+		resizeObserver.observe(currentScrollRef);
+		window.addEventListener("keydown", handleKeyDown);
+
 		return () => {
-			currentScrollRef.removeEventListener("scroll", updateScrollButtons);
+			currentScrollRef.removeEventListener("scroll", scheduleButtonStateUpdate);
 			window.removeEventListener("resize", updateScrollButtons);
 			window.removeEventListener("keydown", handleKeyDown);
 			resizeObserver.disconnect();
+			if (rafIdRef.current !== null) {
+				cancelAnimationFrame(rafIdRef.current);
+				rafIdRef.current = null;
+			}
 		};
-	}, [updateScrollButtons, isButtonsVisible, handleKeyDown]);
+	}, [handleKeyDown, isControlsEnabled, scheduleButtonStateUpdate, updateScrollButtons]);
 
-	// Update scroll buttons when children change
 	useEffect(() => {
 		updateScrollButtons();
-	}, [updateScrollButtons]);
+	}, [children, updateScrollButtons]);
 
 	return (
 		<div className={cn("relative w-full overflow-hidden", className)}>
-			{isButtonsVisible && canScrollLeft && (
+			{isControlsEnabled && canScrollLeft && (
 				<Button
 					aria-label="Scroll left"
-					className="absolute left-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl  backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
+					className="absolute left-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
 					variant="light"
 					size="icon-lg"
 					onClick={scrollLeft}
@@ -131,14 +174,12 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 				aria-label="Scrollable content"
 				className="scrollbar-hidden relative w-full overflow-x-auto scroll-smooth rounded-md"
 			>
-				<div ref={containerRef} className="flex w-max items-center">
-					{children}
-				</div>
+				<div className="flex w-max items-center">{children}</div>
 			</section>
-			{isButtonsVisible && canScrollRight && (
+			{isControlsEnabled && canScrollRight && (
 				<Button
 					aria-label="Scroll right"
-					className="absolute right-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl  backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
+					className="absolute right-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
 					variant="light"
 					size="icon-lg"
 					onClick={scrollRight}

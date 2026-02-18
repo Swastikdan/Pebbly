@@ -41,7 +41,7 @@ export const MediaVideoImageContainer = (props: {
 	const mediaVideos = queries[0].data as unknown as MediaVideosResultsEntity[];
 	const mediaImages = queries[1].data as unknown as MediaImages;
 
-	const isGlobalLoading = queries.some((q) => q.isFetching);
+	const isGlobalLoading = queries.some((q) => q.isPending);
 
 	if (isGlobalLoading) return <GLobalMediaVideoImageContainerLoader />;
 
@@ -51,8 +51,8 @@ export const MediaVideoImageContainer = (props: {
 				<span className="w-fit text-xl font-semibold md:text-2xl">Videos</span>
 				<ScrollContainer isButtonsVisible>
 					<div className="flex items-center justify-center gap-3">
-						{mediaVideos?.map((video, index) => (
-							<Dialog key={index}>
+						{mediaVideos?.map((video) => (
+							<Dialog key={video.key}>
 								<DialogTrigger asChild>
 									<button
 										type="button"
@@ -102,11 +102,10 @@ export const MediaVideoImageContainer = (props: {
 					<span className="w-fit text-lg md:text-xl">Backdrops</span>
 					<ScrollContainer isButtonsVisible>
 						<div className="flex items-center justify-center gap-3">
-							{mediaImages?.backdrops?.map((image, index) => (
-								<Dialog key={index}>
+							{mediaImages?.backdrops?.map((image) => (
+								<Dialog key={`backdrop-${image.file_path}`}>
 									<DialogTrigger asChild>
 										<Image
-											key={index}
 											alt={image.file_path}
 											className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
 											height={450}
@@ -139,11 +138,10 @@ export const MediaVideoImageContainer = (props: {
 					<span className="w-fit text-lg md:text-xl">Posters</span>
 					<ScrollContainer isButtonsVisible>
 						<div className="flex items-center justify-center gap-3">
-							{mediaImages?.posters?.map((image, index) => (
-								<Dialog key={index}>
+							{mediaImages?.posters?.map((image) => (
+								<Dialog key={`poster-${image.file_path}`}>
 									<DialogTrigger asChild>
 										<Image
-											key={index}
 											alt={image.file_path}
 											className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
 											height={300}
