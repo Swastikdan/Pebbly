@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { notFound } from "@tanstack/react-router";
+import { Link, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
@@ -61,20 +61,27 @@ export const MediaCreditSection = (props: {
 					</span>
 					<div className="grid grid-cols-1 gap-3 pt-5 lg:grid-cols-2">
 						{cast?.map((castMember) => (
-							<div key={castMember.id} className="flex items-center pb-0">
+							<Link
+								key={castMember.id}
+								to="/person/$id"
+								params={{ id: String(castMember.id) }}
+								className="flex items-center pb-0 group"
+							>
 								<Image
 									alt={castMember.name}
-									className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10"
+									className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10 transition-transform duration-300 group-hover:scale-105"
 									height={300}
 									loading="eager"
 									src={IMAGE_PREFIX.SD_PROFILE + castMember.profile_path}
 									width={200}
 								/>
 								<div className="flex flex-col items-start pl-5">
-									<p className="text-start font-bold">{castMember.name}</p>
+									<p className="text-start font-bold group-hover:text-primary transition-colors">
+										{castMember.name}
+									</p>
 									<p className="text-start text-sm">{castMember.character}</p>
 								</div>
-							</div>
+							</Link>
 						))}
 					</div>
 				</div>
@@ -91,22 +98,27 @@ export const MediaCreditSection = (props: {
 								<h2 className="mt-3 text-lg font-bold">{department}</h2>
 								<div className="grid grid-cols-1 gap-3 pt-5 lg:grid-cols-2">
 									{crewMembers.map((crewMember: CrewMember) => (
-										<div key={crewMember.id} className="flex items-center pb-0">
+										<Link
+											key={crewMember.id}
+											to="/person/$id"
+											params={{ id: String(crewMember.id) }}
+											className="flex items-center pb-0 group"
+										>
 											<Image
 												alt={crewMember.name}
-												className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10"
+												className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10 transition-transform duration-300 group-hover:scale-105"
 												height={300}
 												loading="eager"
 												src={IMAGE_PREFIX.SD_PROFILE + crewMember.profile_path}
 												width={200}
 											/>
 											<div className="flex flex-col items-start pl-5">
-												<p className="text-start font-bold">
+												<p className="text-start font-bold group-hover:text-primary transition-colors">
 													{crewMember.name}
 												</p>
 												<p className="text-start text-sm">{crewMember.job}</p>
 											</div>
-										</div>
+										</Link>
 									))}
 								</div>
 							</div>

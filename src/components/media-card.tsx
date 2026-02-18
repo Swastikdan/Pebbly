@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
-
-import { formatMediaTitle } from "@/lib/utils";
+import { cn, formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
 	id: number;
@@ -90,31 +90,32 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					{/* Gradient Overlay */}
 					<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 transition-opacity duration-300" />
 
-					{/* Top Left Badges */}
-					<div className="absolute left-2 top-2 flex flex-col gap-1.5 transition-all duration-300">
-						<span className="flex items-center justify-center rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
-							{media_type === "movie" ? "Movie" : "TV"}
-						</span>
-					</div>
-
 					{/* Rating Badge (Bottom Left) */}
 					{rating > 0 && (
 						<div className="absolute bottom-2 left-2 transition-all duration-300">
-							<div className="flex items-center gap-1 rounded-lg bg-black/60 px-2 py-1 backdrop-blur-md">
+							<div className="flex items-center gap-1 rounded-md bg-white/20 px-2 py-0.5 backdrop-blur-md">
 								<Star className="size-3 fill-yellow-400 text-yellow-400" />
-								<span className="text-xs font-bold text-white">
+								<span className="text-xs font-medium text-white">
 									{rating.toFixed(1)}
 								</span>
 							</div>
 						</div>
 					)}
+
+					{/* Media Type Badge (Bottom Right) */}
+					<div className="absolute bottom-2 right-2 flex flex-col gap-1.5 transition-all duration-300">
+						<span className="flex items-center justify-center rounded-md bg-white/20 px-2 py-0.5 text-xs font-medium tracking-normal text-white backdrop-blur-md capitalize">
+							{media_type === "movie" ? "Movie" : "TV"}
+						</span>
+					</div>
 				</div>
 
 				{/* Content */}
 				<div className="mt-3 flex flex-col gap-0.5 overflow-hidden">
-					<h3 className="truncate text-sm font-bold leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary">
-						{title}
-					</h3>
+					<AutoScrollTitle
+						text={title}
+						className="text-sm font-bold leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary"
+					/>
 					<div className="flex items-center gap-2 text-xs font-medium text-muted-foreground/80">
 						<span>{year}</span>
 					</div>
@@ -133,7 +134,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-8 w-8 rounded-full bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
+					className="h-10 w-9 rounded-xl bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
 				/>
 			</div>
 		</div>
@@ -184,9 +185,11 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2">
 								{rating > 0 && (
-									<div className="flex items-center gap-1 font-bold text-white">
+									<div className="flex items-center gap-1 rounded-md bg-white/20 px-2 py-0.5 backdrop-blur-md">
 										<Star className="size-3.5 fill-yellow-400 text-yellow-400" />
-										<span className="text-sm">{rating.toFixed(1)}</span>
+										<span className="text-xs font-medium text-white">
+											{rating.toFixed(1)}
+										</span>
 									</div>
 								)}
 							</div>
@@ -199,9 +202,10 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 
 				{/* Content */}
 				<div className="mt-3 flex flex-col gap-0.5 overflow-hidden">
-					<h3 className="truncate text-sm font-bold leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary">
-						{title}
-					</h3>
+					<AutoScrollTitle
+						text={title}
+						className="min-h-5 text-sm font-bold leading-tight tracking-tight text-foreground transition-colors group-hover:text-primary"
+					/>
 					<span className="text-xs font-medium text-muted-foreground/80 capitalize">
 						{media_type === "movie" ? "Movie" : "TV Series"}
 					</span>
@@ -220,7 +224,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-8 w-8 rounded-full bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
+					className="h-10 w-9 rounded-xl bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60"
 				/>
 			</div>
 		</div>
@@ -235,7 +239,7 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 		<Link
 			to="/person/$id"
 			params={{ id: String(id) }}
-			className="group relative block w-32 md:w-36 lg:w-40 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 		>
 			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-500 group-hover:shadow-md">
 				<Image
@@ -286,12 +290,69 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
 
 	// Person skeleton
 	return (
-		<div className="w-32 md:w-36 lg:w-40">
+		<div className="w-24 md:w-28 lg:w-32">
 			<Skeleton className="aspect-[2/3] w-full rounded-xl" />
 			<div className="mt-2.5 flex flex-col items-center gap-1.5">
 				<Skeleton className="h-4 w-20 rounded-md" />
 				<Skeleton className="h-3 w-16 rounded-md" />
 			</div>
+		</div>
+	);
+};
+
+const AutoScrollTitle = ({
+	text,
+	className,
+}: {
+	text: string;
+	className?: string;
+}) => {
+	const [isHovered, setIsHovered] = useState(false);
+	const [shouldScroll, setShouldScroll] = useState(false);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const textRef = useRef<HTMLSpanElement>(null);
+	const [scrollDistance, setScrollDistance] = useState(0);
+
+	useEffect(() => {
+		const checkScroll = () => {
+			if (containerRef.current && textRef.current) {
+				const containerWidth = containerRef.current.clientWidth;
+				const textWidth = textRef.current.scrollWidth;
+				const newShouldScroll = textWidth > containerWidth;
+				setShouldScroll(newShouldScroll);
+				if (newShouldScroll) {
+					setScrollDistance(containerWidth - textWidth);
+				}
+			}
+		};
+
+		checkScroll();
+		window.addEventListener("resize", checkScroll);
+		return () => window.removeEventListener("resize", checkScroll);
+	}, [text]);
+
+	const duration = Math.abs(scrollDistance) * 30; // 30ms per px
+
+	return (
+		<div
+			ref={containerRef}
+			className={cn("overflow-hidden whitespace-nowrap", className)}
+			onMouseEnter={() => setIsHovered(true)}
+			onMouseLeave={() => setIsHovered(false)}
+		>
+			<span
+				ref={textRef}
+				className="inline-block transition-transform ease-linear will-change-transform"
+				style={{
+					transform:
+						shouldScroll && isHovered
+							? `translateX(${scrollDistance}px)`
+							: "translateX(0)",
+					transitionDuration: `${isHovered ? duration : 300}ms`,
+				}}
+			>
+				{text}
+			</span>
 		</div>
 	);
 };

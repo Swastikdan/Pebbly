@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+
 import { SITE_CONFIG } from "@/constants";
 
 const Footer = () => {

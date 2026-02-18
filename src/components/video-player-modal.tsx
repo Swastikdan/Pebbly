@@ -53,6 +53,9 @@ export function VideoPlayerModal({
 			? `Play S${season}E${episode}`
 			: "Play Now";
 
+	// Check for password in localStorage
+	// Reverted feature: No checks
+
 	return (
 		<Dialog
 			open={isOpen}

@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MAX_PAGINATION_LIMIT } from "@/constants";
-import { getSearchResult } from "@/lib/queries";
+import { getMedia, getSearchResult } from "@/lib/queries";
 import type { MediaType, SearchResultsEntity } from "@/types";
 
 type FilterType = MediaType | null;
@@ -48,17 +48,6 @@ export const Route = createFileRoute("/search")({
 	component: SearchPage,
 });
 
-const YEAR_OPTIONS = (() => {
-	const currentYear = new Date().getFullYear();
-	const years: { value: string; label: string }[] = [
-		{ value: "any", label: "Any Year" },
-	];
-	for (let y = currentYear + 1; y >= 1970; y--) {
-		years.push({ value: String(y), label: String(y) });
-	}
-	return years;
-})();
-
 function SearchPage() {
 	const navigate = useNavigate();
 	const { page: pageNumber, query: searchQuery } = useSearch({
@@ -70,7 +59,6 @@ function SearchPage() {
 	const [type, setType] = useState<FilterType>(null);
 	const [isPending, setIsPending] = useState(false);
 	const [minRating, setMinRating] = useState("0");
-	const [releaseYear, setReleaseYear] = useState("any");
 
 	const { data, error, isFetching, isLoading } = useQuery({
 		queryKey: ["search", query, page],
@@ -80,6 +68,16 @@ function SearchPage() {
 		gcTime: 1000 * 60 * 60 * 24,
 		retry: 2,
 		refetchOnWindowFocus: false,
+	});
+
+	const { data: trendingData, isLoading: isTrendingLoading } = useQuery({
+		queryKey: ["trending"],
+		queryFn: () => getMedia({ type: "trending_day", page: 1 }),
+		staleTime: 1000 * 60 * 60 * 24,
+		gcTime: 1000 * 60 * 60 * 24,
+		retry: 2,
+		refetchOnWindowFocus: false,
+		enabled: !query,
 	});
 
 	// Sync local page state with URL parameter
@@ -99,15 +97,9 @@ function SearchPage() {
 			if (type && item.media_type !== type) return false;
 			const ratingMin = Number(minRating);
 			if (ratingMin > 0 && (item.vote_average ?? 0) < ratingMin) return false;
-			if (releaseYear !== "any") {
-				const itemDate = item.first_air_date ?? item.release_date;
-				if (!itemDate) return false;
-				const itemYear = new Date(itemDate).getFullYear();
-				if (itemYear !== Number(releaseYear)) return false;
-			}
 			return true;
 		});
-	}, [data?.results, type, minRating, releaseYear]);
+	}, [data?.results, type, minRating]);
 
 	const activeTypes = useMemo<ActiveTypes>(
 		() => ({
@@ -172,7 +164,36 @@ function SearchPage() {
 			<section className="flex w-full justify-center">
 				<div className="mx-auto w-full max-w-screen-xl p-5">
 					<SearchBar query={query} updateUrlOnChange />
-					<div className="my-10 min-h-[calc(100vh-200px)] w-full" />
+					<div className="flex flex-col gap-5 py-5">
+						<h2 className="text-xl font-bold">Trending Now</h2>
+						{isTrendingLoading ? (
+							<div className="grid w-full grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+								{Array.from({ length: 12 }).map((_, index) => (
+									<MediaCardSkeleton key={index} card_type="horizontal" />
+								))}
+							</div>
+						) : (
+							<div className="stagger-grid grid w-full grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+								{trendingData?.map((item) => (
+									<MediaCard
+										key={item.id}
+										id={item.id}
+										image={item.poster_path ?? ""}
+										known_for_department=""
+										media_type={item.media_type as MediaType}
+										poster_path={item.poster_path ?? ""}
+										rating={item.vote_average ?? 0}
+										release_date={
+											item.first_air_date ?? item.release_date ?? null
+										}
+										title={item.title ?? item.name ?? "Untitled"}
+										overview={item.overview ?? undefined}
+										card_type="horizontal"
+									/>
+								))}
+							</div>
+						)}
+					</div>
 				</div>
 			</section>
 		);
@@ -311,23 +332,8 @@ function SearchPage() {
 							</SelectContent>
 						</Select>
 
-						{/* Year Filter — Radix Select */}
-						<Select value={releaseYear} onValueChange={setReleaseYear}>
-							<SelectTrigger className="h-8 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent className="max-h-60 rounded-xl">
-								{YEAR_OPTIONS.map((opt) => (
-									<SelectItem key={opt.value} value={opt.value}>
-										{opt.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-
-						<span className="ml-auto  text-[10px] tracking-wider text-muted-foreground">
-							{filteredData.length} result
-							{filteredData.length !== 1 ? "s" : ""}
+						<span className="ml-auto text-[10px] tracking-wider text-muted-foreground">
+							Total results: {data?.total_results ?? 0}
 						</span>
 					</div>
 

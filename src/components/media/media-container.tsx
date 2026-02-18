@@ -127,14 +127,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 													type="button"
 													className="absolute inset-0 flex items-center justify-center"
 												>
-													<div className="cursor-pointer rounded-full bg-black/60 p-4 transition-transform group-hover:scale-110">
-														<Play
-															className="size-8 scale-100 fill-white text-white transition-transform duration-200 ease-out group-hover:scale-105"
-															style={{
-																filter:
-																	"drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))",
-															}}
-														/>
+													<div className="absolute inset-0 flex items-center justify-center">
+														<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+															<Play className="size-6 fill-white text-white" />
+														</div>
 													</div>
 												</button>
 											</div>

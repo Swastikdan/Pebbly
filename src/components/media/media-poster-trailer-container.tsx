@@ -66,7 +66,10 @@ export function MediaPosterTrailerContainer(props: {
 						{trailervideos.map((video, index) => (
 							<Dialog key={index}>
 								<DialogTrigger asChild>
-									<div className="group relative cursor-pointer shrink-0">
+									<button
+										type="button"
+										className="group relative cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+									>
 										<Image
 											alt={video.name}
 											className="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
@@ -74,15 +77,15 @@ export function MediaPosterTrailerContainer(props: {
 											src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
 											width={300}
 										/>
-										<span className="absolute top-4 left-4 truncate text-sm text-foreground px-2 py-1 rounded-lg bg-background dark:bg-foreground dark:text-background w-min max-w-[200px] sm:max-w-[250px]">
+										<span className="absolute top-4 left-4 w-min max-w-[200px] truncate rounded-lg bg-background px-2 py-1 text-sm text-foreground sm:max-w-[250px] dark:bg-foreground dark:text-background">
 											{video.name}
 										</span>
-										<div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm">
-												<Play className="size-6 fill-white text-white drop-" />
+										<div className="absolute inset-0 flex items-center justify-center">
+											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+												<Play className="size-6 fill-white text-white" />
 											</div>
 										</div>
-									</div>
+									</button>
 								</DialogTrigger>
 								<DialogOverlay className="bg-black/80 backdrop-blur-md">
 									<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0">

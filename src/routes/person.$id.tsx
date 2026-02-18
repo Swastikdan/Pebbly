@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
 import { MediaCard } from "@/components/media-card";
+import { ShareButton } from "@/components/share-button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getPersonDetails } from "@/lib/queries";
@@ -39,6 +41,38 @@ function PersonPage() {
 		queryFn: async () => await getPersonDetails({ id: personId }),
 	});
 
+	const knownForCredits = useMemo(() => {
+		const movieCast =
+			data?.movie_credits?.cast?.map((credit) => ({
+				...credit,
+				media_type: "movie" as const,
+			})) ?? [];
+
+		const tvCast =
+			data?.tv_credits?.cast?.map((credit) => ({
+				...credit,
+				media_type: "tv" as const,
+			})) ?? [];
+
+		const castMap = new Map<string, (typeof movieCast)[number]>();
+
+		for (const credit of [...movieCast, ...tvCast]) {
+			const key = `${credit.media_type}-${credit.id}`;
+			if (!castMap.has(key)) {
+				castMap.set(key, credit);
+			}
+		}
+
+		return [...castMap.values()]
+			.sort((a, b) => b.popularity - a.popularity)
+			.slice(0, 24);
+	}, [data?.movie_credits?.cast, data?.tv_credits?.cast]);
+
+	const biographyParagraphs = useMemo(
+		() => data?.biography?.split("\n\n").filter(Boolean) ?? [],
+		[data?.biography],
+	);
+
 	if (isLoading) {
 		return <DefaultLoader />;
 	}
@@ -49,13 +83,10 @@ function PersonPage() {
 
 	const {
 		name,
-		biography,
 		profile_path,
 		place_of_birth,
 		birthday,
 		deathday,
-		movie_credits,
-		tv_credits,
 		external_ids,
 	} = data;
 
@@ -63,28 +94,15 @@ function PersonPage() {
 		? `${IMAGE_PREFIX.HD_PROFILE}${profile_path}`
 		: null;
 
-	// Combine and sort credits by popularity
-	const allCast = [
-		...(movie_credits?.cast?.map((c) => ({ ...c, media_type: "movie" })) || []),
-		...(tv_credits?.cast?.map((c) => ({ ...c, media_type: "tv" })) || []),
-	].sort((a, b) => b.popularity - a.popularity);
-
-	// Filter out duplicates if any (sometimes same movie is in both lists? unlikely but safe)
-	const uniqueCast = allCast.filter(
-		(item, index, self) =>
-			index ===
-			self.findIndex(
-				(t) => t.id === item.id && t.media_type === item.media_type,
-			),
-	);
-
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4 py-5">
+			<div className="mb-5 flex items-center justify-between gap-3">
+				<GoBack title="Back" />
+				<ShareButton title={name} />
+			</div>
 			<div className="flex flex-col gap-8 md:flex-row md:items-start">
-				{/* Left Column: Image & Personal Info */}
-				<div className="flex flex-col items-center gap-4 md:w-1/3 md:items-start md:sticky md:top-20">
-					<GoBack />
-					<div className="relative w-64 overflow-hidden rounded-xl shadow-lg md:w-full max-w-sm aspect-[2/3]">
+				<div className="flex flex-col items-center gap-4 md:sticky md:top-20 md:w-1/3 md:items-start">
+					<div className="relative aspect-[2/3] w-64 max-w-sm overflow-hidden rounded-xl shadow-lg md:w-full">
 						{imageUrl ? (
 							<Image
 								src={imageUrl}
@@ -116,7 +134,6 @@ function PersonPage() {
 							</div>
 						)}
 
-						{/* External Links */}
 						<div className="flex gap-4 pt-2">
 							{external_ids.imdb_id && (
 								<a
@@ -128,31 +145,29 @@ function PersonPage() {
 									IMDb
 								</a>
 							)}
-							{/* Add more social links if needed */}
 						</div>
 					</div>
 				</div>
 
-				{/* Right Column: Biography & Credits */}
 				<div className="flex flex-col gap-8 md:w-2/3">
-					{biography && (
+					{biographyParagraphs.length > 0 && (
 						<div className="space-y-2">
 							<h2 className="text-2xl font-semibold">Biography</h2>
 							<div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-								{biography.split("\n\n").map((paragraph, index) => (
+								{biographyParagraphs.map((paragraph, index) => (
 									<p key={index} className="mb-4">
 										{paragraph}
 									</p>
-								)) || "No biography available."}
+								))}
 							</div>
 						</div>
 					)}
 
-					{uniqueCast.length > 0 && (
+					{knownForCredits.length > 0 && (
 						<div className="space-y-4">
 							<h2 className="text-2xl font-semibold">Known For</h2>
 							<div className="grid w-full grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
-								{uniqueCast.map((credit) => (
+								{knownForCredits.map((credit) => (
 									<div
 										key={`${credit.media_type}-${credit.id}`}
 										className="min-h-[300px]"
@@ -163,7 +178,7 @@ function PersonPage() {
 											rating={credit.vote_average || 0}
 											poster_path={credit.poster_path || ""}
 											image={credit.poster_path || ""}
-											media_type={credit.media_type as "movie" | "tv"}
+											media_type={credit.media_type}
 											release_date={
 												credit.release_date || credit.first_air_date || null
 											}

@@ -54,7 +54,10 @@ export const MediaVideoImageContainer = (props: {
 						{mediaVideos?.map((video, index) => (
 							<Dialog key={index}>
 								<DialogTrigger asChild>
-									<div className="group relative cursor-pointer">
+									<button
+										type="button"
+										className="group relative cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+									>
 										<Image
 											alt={video.name}
 											className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
@@ -62,24 +65,15 @@ export const MediaVideoImageContainer = (props: {
 											src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
 											width={300}
 										/>
-										<span className="absolute top-4 left-4 truncate text-sm text-foreground px-2 py-1 rounded-lg bg-background dark:bg-foreground dark:text-background w-min  turnicate max-w-[250px] md:max-w-[300px] lg:max-w-[350px]">
+										<span className="absolute top-4 left-4 truncate text-sm text-foreground px-2 py-1 rounded-lg bg-background dark:bg-foreground dark:text-background w-min turnicate max-w-[250px] md:max-w-[300px] lg:max-w-[350px]">
 											{video.name}
 										</span>
-										<button
-											type="button"
-											className="absolute inset-0 flex cursor-pointer items-center justify-center"
-										>
-											<div className="cursor-pointer rounded-full bg-black/60 p-4 transition-transform group-hover:scale-110">
-												<Play
-													className="size-8 scale-100 fill-white text-white transition-transform duration-200 ease-out group-hover:scale-105"
-													style={{
-														filter:
-															"drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))",
-													}}
-												/>
+										<div className="absolute inset-0 flex items-center justify-center">
+											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+												<Play className="size-6 fill-white text-white" />
 											</div>
-										</button>
-									</div>
+										</div>
+									</button>
 								</DialogTrigger>
 								<DialogOverlay className="bg-white/40 backdrop-blur-lg dark:bg-black/0">
 									<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0">
