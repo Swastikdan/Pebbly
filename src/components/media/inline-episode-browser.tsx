@@ -8,6 +8,7 @@ import {
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -138,7 +139,8 @@ export function InlineEpisodeBrowser({
 											</span>
 										)}
 									</div>
-									<button
+									<Button
+										variant="outline"
 										type="button"
 										onClick={(e) => {
 											e.stopPropagation();
@@ -161,7 +163,7 @@ export function InlineEpisodeBrowser({
 										className="pressable-small text-[11px] font-medium text-muted-foreground hover:text-foreground hover:no-underline transition-colors z-10 relative"
 									>
 										{seenAll ? "Unmark all as watched" : "Mark all as watched"}
-									</button>
+									</Button>
 								</div>
 							</AccordionTrigger>
 							<AccordionContent className="px-0 pb-0 border-t border-default/50">
@@ -212,14 +214,15 @@ function SeasonEpisodeList({
 
 	if (isLoading) {
 		return (
-			<div className="flex flex-col gap-0 divide-y divide-border/50 px-4 pb-3">
+			<div className="flex flex-col gap-0 divide-y divide-border/50">
 				{Array.from({ length: 4 }).map((_, i) => (
-					<div key={`ep-skel-${i}`} className="flex gap-4 py-3">
-						<Skeleton className="h-20 w-36 shrink-0 rounded-xl" />
-						<div className="flex flex-1 flex-col gap-2">
-							<Skeleton className="h-3 w-16" />
-							<Skeleton className="h-5 w-48" />
-							<Skeleton className="h-8 w-full" />
+					<div key={`ep-skel-${i}`} className="flex gap-3 px-4 py-3">
+						<Skeleton className="h-16 w-28 shrink-0 rounded-lg xs:h-20 xs:w-32 sm:h-24 sm:w-40 md:h-28 md:w-48" />
+						<div className="flex flex-1 flex-col gap-2 py-1">
+							<Skeleton className="h-2 w-10" />
+							<Skeleton className="h-4 w-32 sm:w-48" />
+							<Skeleton className="hidden sm:block h-3 w-full max-w-[90%] mt-1" />
+							<Skeleton className="hidden sm:block h-3 w-3/4" />
 						</div>
 					</div>
 				))}
@@ -276,7 +279,8 @@ function EpisodeCard({
 	onToggleWatched: () => void;
 }) {
 	const [expanded, setExpanded] = useState(false);
-	const hasLongOverview = (episode.overview?.length ?? 0) > 120;
+	// Use character count as a proxy for "long content", but rely on CSS line-clamp for visual truncation
+	const hasLongOverview = (episode.overview?.length ?? 0) > 100;
 	const progress = useEpisodeProgress(
 		tvId,
 		seasonNumber,
@@ -284,12 +288,12 @@ function EpisodeCard({
 	);
 
 	return (
-		<div className="group relative flex flex-row items-start gap-3 px-4 py-3 transition-colors duration-200 hover:bg-secondary/8">
+		<div className="group relative flex flex-row items-start gap-3 px-4 py-3 transition-colors duration-200 hover:bg-secondary/5">
 			{/* Episode Still with hover play icon */}
-			<div className="relative shrink-0 overflow-hidden rounded-xl">
+			<div className="relative shrink-0 overflow-hidden rounded-lg">
 				<Image
 					alt={episode.name}
-					className="h-20 w-32 rounded-xl bg-foreground/10 object-cover xs:h-24 xs:w-40 sm:w-44 md:h-28 md:w-48"
+					className="h-16 w-28 rounded-lg bg-foreground/10 object-cover xs:h-20 xs:w-32 sm:h-24 sm:w-40 md:h-28 md:w-48"
 					height={140}
 					src={
 						episode.still_path
@@ -310,14 +314,14 @@ function EpisodeCard({
 			</div>
 
 			{/* Info */}
-			<div className="flex flex-1 flex-col gap-1">
+			<div className="flex flex-1 flex-col gap-1 min-w-0">
 				<div className="flex items-start justify-between gap-2">
 					<div className="flex flex-col gap-0.5 min-w-0">
 						<span className="text-[10px] tracking-widest text-muted-foreground uppercase">
 							E{String(episode.episode_number).padStart(2, "0")}
 						</span>
-						{/* Full title — no truncation */}
-						<h3 className="text-sm font-bold md:text-base truncate max-w-[150px] xs:max-w-[200px] sm:max-w-none">
+						{/* Full title — no truncation if possible, but handle overflow */}
+						<h3 className="text-sm font-bold md:text-base truncate">
 							{episode.name}
 						</h3>
 					</div>

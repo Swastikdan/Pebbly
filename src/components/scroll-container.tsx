@@ -20,7 +20,10 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const rafIdRef = useRef<number | null>(null);
-	const scrollStateRef = useRef({ canScrollLeft: false, canScrollRight: false });
+	const scrollStateRef = useRef({
+		canScrollLeft: false,
+		canScrollRight: false,
+	});
 	const [canScrollLeft, setCanScrollLeft] = useState(false);
 	const [canScrollRight, setCanScrollRight] = useState(false);
 	const [isDesktop, setIsDesktop] = useState(false);
@@ -49,7 +52,8 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 
 		const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
 		const nextCanScrollLeft = scrollLeft > 0;
-		const nextCanScrollRight = Math.ceil(scrollLeft + clientWidth) < scrollWidth;
+		const nextCanScrollRight =
+			Math.ceil(scrollLeft + clientWidth) < scrollWidth;
 
 		if (scrollStateRef.current.canScrollLeft !== nextCanScrollLeft) {
 			scrollStateRef.current.canScrollLeft = nextCanScrollLeft;
@@ -121,8 +125,14 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 	useEffect(() => {
 		const currentScrollRef = scrollRef.current;
 		if (!currentScrollRef || !isControlsEnabled) {
-			if (scrollStateRef.current.canScrollLeft || scrollStateRef.current.canScrollRight) {
-				scrollStateRef.current = { canScrollLeft: false, canScrollRight: false };
+			if (
+				scrollStateRef.current.canScrollLeft ||
+				scrollStateRef.current.canScrollRight
+			) {
+				scrollStateRef.current = {
+					canScrollLeft: false,
+					canScrollRight: false,
+				};
 				setCanScrollLeft(false);
 				setCanScrollRight(false);
 			}
@@ -149,9 +159,15 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 				rafIdRef.current = null;
 			}
 		};
-	}, [handleKeyDown, isControlsEnabled, scheduleButtonStateUpdate, updateScrollButtons]);
+	}, [
+		handleKeyDown,
+		isControlsEnabled,
+		scheduleButtonStateUpdate,
+		updateScrollButtons,
+	]);
 
 	useEffect(() => {
+		void children;
 		updateScrollButtons();
 	}, [children, updateScrollButtons]);
 

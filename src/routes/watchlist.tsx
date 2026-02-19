@@ -108,7 +108,6 @@ function WatchlistPage() {
 						new Date(b.release_date || 0).getTime() -
 						new Date(a.release_date || 0).getTime()
 					);
-				case "recent":
 				default:
 					return (
 						(b.created_at ?? b.updated_at ?? 0) -

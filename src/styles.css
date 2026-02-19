@@ -5,6 +5,7 @@
 
 @theme {
 	--animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
+	--animate-marquee: marquee var(--marquee-duration, 12s) linear infinite;
 
 	@keyframes spinner-leaf-fade {
 		0%,
@@ -13,6 +14,15 @@
 		}
 		50% {
 			opacity: 1;
+		}
+	}
+
+	@keyframes marquee {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-50%);
 		}
 	}
 }

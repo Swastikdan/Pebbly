@@ -39,11 +39,11 @@ export function MediaPosterTrailerContainer(props: {
 
 	return (
 		<div className="flex flex-col justify-start gap-3 pb-3 sm:flex-row">
-			<div className="relative group shrink-0 w-full sm:w-auto overflow-hidden rounded-xl">
+			<div className="relative  group shrink-0 w-full sm:w-auto overflow-hidden rounded-xl">
 				<Image
 					alt={title}
-					className="bg-accent h-full w-full rounded-xl object-center sm:h-56 sm:w-auto md:h-70 lg:h-80"
-					height={450}
+					className="bg-accent h-full w-full rounded-xl object-center sm:h-56 sm:w-auto md:h-70 lg:h-80 "
+					height={550}
 					src={image}
 					width={300}
 				/>

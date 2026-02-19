@@ -50,7 +50,16 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 		} catch (error) {
 			console.error("Error toggling watchlist:", error);
 		}
-	}, [title, rating, image, itemId, media_type, release_date, toggle]);
+	}, [
+		title,
+		rating,
+		image,
+		itemId,
+		media_type,
+		release_date,
+		toggle,
+		overview,
+	]);
 
 	const showTrash = isOnWatchList && is_on_watchlist_page;
 	const showFilled = isOnWatchList && !is_on_watchlist_page;

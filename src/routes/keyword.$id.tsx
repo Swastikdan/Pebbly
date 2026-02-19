@@ -23,7 +23,7 @@ export const Route = createFileRoute("/keyword/$id")({
 	validateSearch: keywordPageSearchSchema,
 	loader: async ({ params }) => {
 		const id = parseInt(params.id, 10);
-		if (isNaN(id)) throw notFound();
+		if (Number.isNaN(id)) throw notFound();
 		try {
 			const keyword = await getKeywordDetails({ id });
 			return { keyword };
