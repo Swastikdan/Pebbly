@@ -6,6 +6,8 @@ import { persist } from "zustand/middleware";
 import type { WatchlistStatus } from "@/types";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { getTvDetails } from "../lib/queries";
+import { useLocalProgressStore } from "./useLocalProgressStore";
 
 /* --- Types --- */
 export type WatchlistItem = {
@@ -37,12 +39,14 @@ export const useWatchlistStore = create<WatchlistStore>()(
 				set((state) => ({ watchlist: [item, ...state.watchlist] })),
 			removeFromWatchlist: (id) =>
 				set((state) => ({
-					watchlist: state.watchlist.filter((i) => i.external_id !== id),
+					watchlist: state.watchlist.filter(
+						(i) => String(i.external_id) !== String(id),
+					),
 				})),
 			updateStatus: (id, status) =>
 				set((state) => ({
 					watchlist: state.watchlist.map((i) =>
-						i.external_id === id ? { ...i, status } : i,
+						String(i.external_id) === String(id) ? { ...i, status } : i,
 					),
 				})),
 			setWatchlist: (list) => set({ watchlist: list }),
@@ -192,12 +196,12 @@ export function useToggleWatchlistItem() {
 			} else {
 				// Local Toggle
 				if (exists) {
-					removeFromLocal(item.id);
+					removeFromLocal(String(item.id));
 				} else {
 					addToLocal({
 						title: item.title,
 						type: item.media_type,
-						external_id: item.id,
+						external_id: String(item.id),
 						image: item.image,
 						rating: item.rating,
 						release_date: item.release_date,
@@ -255,11 +259,22 @@ export function useSetItemStatus() {
 	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
 	const { watchlist } = useWatchlist();
 
+	const clearLocalShowProgress = useLocalProgressStore(
+		(state) => state.clearShowProgress,
+	);
+	const markLocalSeason = useLocalProgressStore(
+		(state) => state.markSeasonWatched,
+	);
+	const markEpisodesWatchedBatch = useMutation(
+		api.watchlist.markSeasonEpisodesWatched,
+	);
+
 	return useCallback(
 		(id: string, status: WatchlistStatus) => {
 			const item = watchlist.find((i) => i.external_id === id);
 			if (!item) return;
 
+			// Handle general item update
 			if (isSignedIn) {
 				upsertItem({
 					tmdbId: Number(id),
@@ -269,8 +284,50 @@ export function useSetItemStatus() {
 			} else {
 				updateLocalStatus(id, status);
 			}
+
+			// Handle episode cascading when marked completed
+			if (status === "completed" && item.type === "tv") {
+				getTvDetails({ id: Number(id) })
+					.then((details) => {
+						const seasonsToMark =
+							details?.seasons?.filter((s) => s.season_number > 0) || [];
+						seasonsToMark.forEach((s) => {
+							if (s.episode_count > 0) {
+								const epNums = Array.from(
+									{ length: s.episode_count },
+									(_, i) => i + 1,
+								);
+								if (isSignedIn) {
+									markEpisodesWatchedBatch({
+										tmdbId: Number(id),
+										season: s.season_number,
+										episodes: epNums,
+										isWatched: true,
+									});
+								} else {
+									markLocalSeason(Number(id), s.season_number, epNums, true);
+								}
+							}
+						});
+					})
+					.catch(console.error);
+			}
+
+			if (status === "plan-to-watch" && item.type === "tv") {
+				if (!isSignedIn) {
+					clearLocalShowProgress(Number(id));
+				}
+			}
 		},
-		[watchlist, isSignedIn, upsertItem, updateLocalStatus],
+		[
+			watchlist,
+			isSignedIn,
+			upsertItem,
+			updateLocalStatus,
+			clearLocalShowProgress,
+			markLocalSeason,
+			markEpisodesWatchedBatch,
+		],
 	);
 }
 

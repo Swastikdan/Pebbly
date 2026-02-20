@@ -1,10 +1,3 @@
-import {
-	ClerkLoaded,
-	ClerkLoading,
-	SignedOut,
-	SignInButton,
-	useUser,
-} from "@clerk/clerk-react";
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
@@ -15,7 +8,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BookMarkFilledIcon, MenuIcon, UserIcon } from "@/components/ui/icons";
+import { BookMarkFilledIcon, MenuIcon } from "@/components/ui/icons";
 import {
 	Sheet,
 	SheetClose,
@@ -23,7 +16,6 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
 import { NAV_ITEMS } from "@/constants";
 
 const DesktopNavMenuItem = ({

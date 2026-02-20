@@ -3,7 +3,8 @@ import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { useWatchlistStore } from "./usewatchlist";
+import { useLocalProgressStore } from "./useLocalProgressStore";
+import { useWatchlistItemStatus, useWatchlistStore } from "./usewatchlist";
 
 /* ─── Types ─── */
 export interface WatchProgressData {
@@ -19,7 +20,6 @@ export interface WatchProgressData {
 	};
 }
 
-// Minimal interface for what the UI expects
 export interface EpisodeWatchedMap {
 	[key: string]: boolean;
 }
@@ -50,12 +50,13 @@ function makeEpisodeKey(
 export function usePlayerProgressListener() {
 	const { isSignedIn } = useUser();
 	const updateProgress = useMutation(api.watchlist.updateProgress);
-	const markEpisodeWatched = useMutation(api.watchlist.markEpisodeWatched);
+	const markEpisodeWatchedMut = useMutation(api.watchlist.markEpisodeWatched);
 
 	// Local Store
 	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
-	// We use a ref or direct store access to avoid effect re-running too often on watchlist changes if we were to depend on it?
-	// Actually, we just need `updateLocalStatus`.
+	const markLocalEpisode = useLocalProgressStore(
+		(state) => state.markEpisodeWatched,
+	);
 
 	useEffect(() => {
 		let lastSavedPercent = 0;
@@ -110,7 +111,7 @@ export function usePlayerProgressListener() {
 							season !== undefined &&
 							episode !== undefined
 						) {
-							markEpisodeWatched({
+							markEpisodeWatchedMut({
 								tmdbId: Number(id),
 								season: season,
 								episode: episode,
@@ -119,8 +120,6 @@ export function usePlayerProgressListener() {
 						}
 					} else {
 						// Local Logic
-						// We can only update status if it exists in the store.
-						// We access the store state directly to check existence/status
 						const currentWatchlist = useWatchlistStore.getState().watchlist;
 						const item = currentWatchlist.find(
 							(i) => i.external_id === String(id),
@@ -148,6 +147,16 @@ export function usePlayerProgressListener() {
 								updateLocalStatus(String(id), newStatus);
 							}
 						}
+
+						// Handle episode completion locally
+						if (
+							(playerEvent === "ended" || progress > 95) &&
+							mediaType === "tv" &&
+							season !== undefined &&
+							episode !== undefined
+						) {
+							markLocalEpisode(Number(id), season, episode, true);
+						}
 					}
 				}
 			} catch {
@@ -157,7 +166,13 @@ export function usePlayerProgressListener() {
 
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, [updateProgress, markEpisodeWatched, isSignedIn, updateLocalStatus]);
+	}, [
+		updateProgress,
+		markEpisodeWatchedMut,
+		isSignedIn,
+		updateLocalStatus,
+		markLocalEpisode,
+	]);
 }
 
 /* ─── Hook: Get progress for a specific item ─── */
@@ -170,22 +185,15 @@ export function useWatchProgress(
 		mediaType,
 	});
 
-	// Transform to shape expected by UI if possible, or just return relevant fields
-	// UI expects { progress: WatchProgressData | null }
-	// WatchProgressData has: context
-
 	const progress: WatchProgressData | null = useMemo(() => {
 		if (!data) return null;
 		return {
 			id: String(data.tmdbId),
 			type: data.mediaType as "movie" | "tv",
-			timestamp: 0, // We don't track detailed timestamp anymore
+			timestamp: 0,
 			percent: data.progress ?? 0,
 			duration: 0,
 			lastUpdated: data.updatedAt,
-			// Context (S/E) is not stored in general watch_items table.
-			// We might need to fetch "last watched episode" separately or store it.
-			// For now, return empty context
 			context: undefined,
 		};
 	}, [data]);
@@ -213,51 +221,63 @@ export function useContinueWatching() {
 }
 
 /* ─── Hook: Track and toggle episode watched status ─── */
-export function useEpisodeWatched(tvId: number | string) {
+export function useEpisodeWatched(
+	tvId: number | string,
+	totalEpisodes?: number,
+) {
 	const tmdbId = Number(tvId);
-	// We can't fetch ALL episodes for ALL seasons easily unless we iterate?
-	// But commonly we need checking for a specific season.
-	// Current UI uses `isEpisodeWatched(s, e)` synchronously.
-	// This implies we need to load ALL watched episodes for this show.
-	// Let's add `getShowWatchedEpisodes` to Convex if possible or just `getEpisodeWatched` per item?
-	// `isEpisodeWatched` is called in render loops (e.g. season list).
-	// So we need to fetch all watched episodes for the show.
+	const { isSignedIn } = useUser();
 
-	// I need a query verify if episode is watched.
-	// Checking `api.watchlist.getEpisodeWatched` inside a loop is bad (hooks in loop).
-	// So `useEpisodeWatched` hook should fetch ALL watched episodes for the show.
-	// I need to add `getAllWatchedEpisodes(tmdbId)` to Convex.
-
-	// For now, let's assume I can't fetch all efficiently without a new query.
-	// I will add `getAllWatchedEpisodes` to `convex/watchlist.ts`.
-
-	// Temporary placeholder relying on direct query hook if I update `convex/watchlist`.
-	// Assuming I will add `getAllWatchedEpisodes`
+	// Remote Data
 	const watchedEpisodes =
 		useQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }) || [];
 
-	// Create map
+	// Local Data
+	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
+	const markLocalEpisode = useLocalProgressStore(
+		(state) => state.markEpisodeWatched,
+	);
+	const markLocalSeason = useLocalProgressStore(
+		(state) => state.markSeasonWatched,
+	);
+
+	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
+	const currentStatus = useWatchlistItemStatus(String(tvId));
+
+	// Create unified map based on logged in state
 	const watchedMap = useMemo(() => {
 		const map: EpisodeWatchedMap = {};
+		if (!isSignedIn) {
+			const prefix = `${tmdbId}:`;
+			for (const [key, val] of Object.entries(localEpisodes)) {
+				if (key.startsWith(prefix) && val) {
+					map[key] = true;
+				}
+			}
+			return map;
+		}
+
 		for (const ep of watchedEpisodes) {
 			map[makeEpisodeKey(tmdbId, ep.season, ep.episode)] = ep.isWatched;
 		}
 		return map;
-	}, [watchedEpisodes, tmdbId]);
+	}, [watchedEpisodes, tmdbId, localEpisodes, isSignedIn]);
 
-	// Optimistic update for toggling episode
-	const markEpisodeWatched = useMutation(
+	const watchedCount = Object.keys(watchedMap).length;
+
+	// Mutations
+	const markEpisodeWatchedMut = useMutation(
 		api.watchlist.markEpisodeWatched,
 	).withOptimisticUpdate((localStore, args) => {
-		const { tmdbId, season, episode, isWatched } = args;
 		const current = localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
 			tmdbId,
 		});
 		if (current !== undefined) {
-			if (isWatched) {
-				// Add if not present
+			if (args.isWatched) {
 				if (
-					!current.some((e) => e.season === season && e.episode === episode)
+					!current.some(
+						(e) => e.season === args.season && e.episode === args.episode,
+					)
 				) {
 					localStore.setQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }, [
 						...current,
@@ -266,28 +286,74 @@ export function useEpisodeWatched(tvId: number | string) {
 							_creationTime: Date.now(),
 							userId: "optimistic",
 							tmdbId,
-							season,
-							episode,
+							season: args.season,
+							episode: args.episode,
 							isWatched: true,
 							updatedAt: Date.now(),
 						},
 					]);
 				}
 			} else {
-				// Remove
 				localStore.setQuery(
 					api.watchlist.getAllWatchedEpisodes,
 					{ tmdbId },
 					current.filter(
-						(e) => !(e.season === season && e.episode === episode),
+						(e) => !(e.season === args.season && e.episode === args.episode),
 					),
 				);
 			}
 		}
 	});
-	const syncShowProgress = useMutation(api.watchlist.syncShowProgress);
+
 	const markEpisodesWatchedBatch = useMutation(
 		api.watchlist.markSeasonEpisodesWatched,
+	);
+	const syncShowProgress = useMutation(api.watchlist.syncShowProgress);
+
+	// Reusable logic to handle side effect updates strictly synchronously during interaction
+	const handleStatusSideEffects = useCallback(
+		(newWatchedCount: number) => {
+			if (
+				totalEpisodes &&
+				totalEpisodes > 0 &&
+				newWatchedCount >= totalEpisodes
+			) {
+				if (currentStatus !== "completed") {
+					if (isSignedIn) {
+						syncShowProgress({
+							tmdbId,
+							mediaType: "tv",
+							totalEpisodes,
+							watchedEpisodesCount: newWatchedCount,
+						}).catch(console.error);
+					} else {
+						updateLocalStatus(String(tvId), "completed");
+					}
+				}
+			} else if (newWatchedCount > 0) {
+				if (currentStatus !== "watching" && currentStatus !== "completed") {
+					if (isSignedIn) {
+						syncShowProgress({
+							tmdbId,
+							mediaType: "tv",
+							totalEpisodes: totalEpisodes ?? 0,
+							watchedEpisodesCount: newWatchedCount,
+						}).catch(console.error);
+					} else {
+						updateLocalStatus(String(tvId), "watching");
+					}
+				}
+			}
+		},
+		[
+			currentStatus,
+			totalEpisodes,
+			isSignedIn,
+			tmdbId,
+			syncShowProgress,
+			updateLocalStatus,
+			tvId,
+		],
 	);
 
 	const isEpisodeWatched = useCallback(
@@ -300,60 +366,90 @@ export function useEpisodeWatched(tvId: number | string) {
 	const toggleEpisodeWatched = useCallback(
 		(season: number, episode: number) => {
 			const current = isEpisodeWatched(season, episode);
-			markEpisodeWatched({
-				tmdbId,
-				season,
-				episode,
-				isWatched: !current,
-			});
+			const isWatched = !current;
+
+			if (isSignedIn) {
+				markEpisodeWatchedMut({
+					tmdbId,
+					season,
+					episode,
+					isWatched,
+				});
+			} else {
+				markLocalEpisode(tmdbId, season, episode, isWatched);
+			}
+
+			const change = isWatched ? 1 : -1;
+			handleStatusSideEffects(watchedCount + change);
 		},
-		[tmdbId, isEpisodeWatched, markEpisodeWatched],
+		[
+			tmdbId,
+			isEpisodeWatched,
+			markEpisodeWatchedMut,
+			markLocalEpisode,
+			isSignedIn,
+			handleStatusSideEffects,
+			watchedCount,
+		],
 	);
 
-	// Logic: Mark Season Watched
 	const markSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
-			markEpisodesWatchedBatch({
-				tmdbId,
-				season,
-				episodes,
-				isWatched: true,
-			});
+			if (isSignedIn) {
+				markEpisodesWatchedBatch({ tmdbId, season, episodes, isWatched: true });
+			} else {
+				markLocalSeason(tmdbId, season, episodes, true);
+			}
+
+			let newlyWatched = 0;
+			for (const ep of episodes) {
+				if (!watchedMap[makeEpisodeKey(tmdbId, season, ep)]) newlyWatched++;
+			}
+			handleStatusSideEffects(watchedCount + newlyWatched);
 		},
-		[tmdbId, markEpisodesWatchedBatch],
+		[
+			tmdbId,
+			markEpisodesWatchedBatch,
+			markLocalSeason,
+			isSignedIn,
+			handleStatusSideEffects,
+			watchedCount,
+			watchedMap,
+		],
 	);
 
 	const unmarkSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
-			markEpisodesWatchedBatch({
-				tmdbId,
-				season,
-				episodes,
-				isWatched: false,
-			});
+			if (isSignedIn) {
+				markEpisodesWatchedBatch({
+					tmdbId,
+					season,
+					episodes,
+					isWatched: false,
+				});
+			} else {
+				markLocalSeason(tmdbId, season, episodes, false);
+			}
 		},
-		[tmdbId, markEpisodesWatchedBatch],
+		[tmdbId, markEpisodesWatchedBatch, markLocalSeason, isSignedIn],
 	);
 
 	const isSeasonFullyWatched = useCallback(
-		(season: number, totalEpisodes: number): boolean => {
-			if (totalEpisodes === 0) return false;
+		(season: number, totalEpisodesCount: number): boolean => {
+			if (totalEpisodesCount === 0) return false;
 			let count = 0;
-			// Iterate using what the client knows are the episodes.
-			// But `isSeasonFullyWatched` takes `totalEpisodes` (count).
-			// It assumes episodes are 1..N ?
-			for (let ep = 1; ep <= totalEpisodes; ep++) {
+			for (let ep = 1; ep <= totalEpisodesCount; ep++) {
 				if (watchedMap[makeEpisodeKey(tmdbId, season, ep)]) count++;
 			}
-			return count === totalEpisodes;
+			return count === totalEpisodesCount;
 		},
 		[tmdbId, watchedMap],
 	);
 
 	const getSeasonWatchedCount = useCallback(
-		(season: number, totalEpisodes: number): number => {
+		(season: number, totalEpisodesCount: number): number => {
 			let count = 0;
-			for (let ep = 1; ep <= totalEpisodes; ep++) {
+			for (let ep = 1; ep <= totalEpisodesCount; ep++) {
 				if (watchedMap[makeEpisodeKey(tmdbId, season, ep)]) count++;
 			}
 			return count;
@@ -361,21 +457,20 @@ export function useEpisodeWatched(tvId: number | string) {
 		[tmdbId, watchedMap],
 	);
 
-	// Feature: Sync Show Progress (Set to 100%)
-	// This function can be exposed to be called when checks pass.
 	const markShowCompleted = useCallback(
-		(totalEpisodes: number) => {
-			// Calculate total watched across all seasons?
-			// Wait, `watchedEpisodes` is all episodes for show.
-			const count = watchedEpisodes.filter((e) => e.isWatched).length;
-			syncShowProgress({
-				tmdbId,
-				mediaType: "tv",
-				totalEpisodes,
-				watchedEpisodesCount: count,
-			});
+		(totalEpisodesOverride: number) => {
+			if (isSignedIn) {
+				syncShowProgress({
+					tmdbId,
+					mediaType: "tv",
+					totalEpisodes: totalEpisodesOverride,
+					watchedEpisodesCount: totalEpisodesOverride,
+				});
+			} else {
+				updateLocalStatus(String(tvId), "completed");
+			}
 		},
-		[syncShowProgress, tmdbId, watchedEpisodes],
+		[syncShowProgress, tmdbId, isSignedIn, tvId, updateLocalStatus],
 	);
 
 	return {
@@ -386,7 +481,7 @@ export function useEpisodeWatched(tvId: number | string) {
 		isSeasonFullyWatched,
 		getSeasonWatchedCount,
 		markShowCompleted,
-		watchedCount: watchedEpisodes.length,
+		watchedCount,
 	};
 }
 
@@ -396,7 +491,6 @@ export function useEpisodeProgress(
 	season: number,
 	episode: number,
 ) {
-	// Return 100 if watched, 0 otherwise
 	const data = useQuery(api.watchlist.getEpisodeWatched, {
 		tmdbId: Number(tvId),
 		season,
@@ -419,7 +513,6 @@ export function buildPlayerUrl(opts: {
 	params.set("autoPlay", "true");
 	params.set("nextEpisode", "true");
 	params.set("episodeSelector", "true");
-	// Excluding timestamp sync means we might not have savedProgress
 	if (savedProgress && savedProgress > 10) {
 		params.set("progress", String(Math.floor(savedProgress)));
 	}

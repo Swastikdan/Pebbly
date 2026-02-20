@@ -127,28 +127,6 @@ export const markEpisodeWatched = mutation({
       });
     }
 
-    // Auto-update show status to "watching" if an episode is watched
-    if (args.isWatched) {
-      const showItem = await ctx.db
-        .query("watch_items")
-        .withIndex("by_user_media", (q) => 
-          q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", "tv")
-        )
-        .first();
-
-      if (showItem) {
-        if (showItem.status === "plan-to-watch" || showItem.status === "dropped") {
-           await ctx.db.patch(showItem._id, {
-             status: "watching",
-             updatedAt: now,
-           });
-        }
-      } else {
-        // Optional: Auto-add to watchlist if not present?
-        // Without metadata (title, image), creating it is problematic.
-        // We skip auto-creation for now to avoid bad data.
-      }
-    }
   },
 });
 
@@ -416,6 +394,7 @@ export const upsertWatchlistItem = mutation({
       await ctx.db.patch(existing._id, {
         status: args.status,
         updatedAt: now,
+        progress: args.status === "plan-to-watch" ? 0 : (args.status === "completed" ? 100 : existing.progress),
         // Update metadata if provided
         title: args.title ?? existing.title,
         image: args.image ?? existing.image,
@@ -429,7 +408,7 @@ export const upsertWatchlistItem = mutation({
         tmdbId: args.tmdbId,
         mediaType: args.mediaType,
         status: args.status,
-        progress: 0,
+        progress: args.status === "completed" ? 100 : 0,
         updatedAt: now,
         title: args.title,
         image: args.image,

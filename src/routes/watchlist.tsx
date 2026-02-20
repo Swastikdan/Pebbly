@@ -25,7 +25,6 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
-import { useContinueWatching } from "@/hooks/useWatchProgress";
 import {
 	useSetItemStatus,
 	useWatchlist,
@@ -65,7 +64,6 @@ function WatchlistPage() {
 	const { watchlist: watchlistData, loading: watchlistLoading } =
 		useWatchlist();
 	const setItemStatus = useSetItemStatus();
-	const { items: continueWatchingItems } = useContinueWatching();
 	const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 	const [mediaFilter, setMediaFilter] = useState<MediaFilter>("all");
 	const [sortBy, setSortBy] = useState<SortType>("recent");
@@ -162,36 +160,6 @@ function WatchlistPage() {
 						role="alert"
 					>
 						{error.message}
-					</div>
-				)}
-
-				{/* Continue Watching Section */}
-				{continueWatchingItems.length > 0 && (
-					<div className="animate-fade-in-up mb-8">
-						<h2 className="mb-4  text-xl font-bold">Continue Watching</h2>
-						<div className="scrollbar-hidden flex gap-3 overflow-x-auto pb-2">
-							{continueWatchingItems.slice(0, 8).map((item) => (
-								<Link
-									key={item.id}
-									// @ts-expect-error - correct link
-									to={`/${item.type}/${item.id}`}
-									className="pressable-small group relative shrink-0"
-								>
-									<div className="relative h-20 w-36 overflow-hidden rounded-xl bg-foreground/10">
-										<div
-											className="absolute bottom-0 left-0 h-[3px] bg-foreground/70"
-											style={{ width: `${Math.min(item.percent, 100)}%` }}
-										/>
-									</div>
-									<span className="mt-1 block truncate text-xs font-medium">
-										{item.type === "tv" ? "TV Series" : "Movie"}
-									</span>
-									<span className=" text-[9px] text-muted-foreground">
-										{Math.round(item.percent)}%
-									</span>
-								</Link>
-							))}
-						</div>
 					</div>
 				)}
 
