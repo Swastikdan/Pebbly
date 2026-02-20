@@ -1,6 +1,11 @@
 import { useMutation } from "convex/react";
+
+import type React from "react";
+
 import { useCallback, useRef, useState } from "react";
+
 import { useWatchlist, type WatchlistItem } from "@/hooks/usewatchlist";
+
 import { api } from "../../convex/_generated/api";
 
 type ImportError = {
@@ -10,18 +15,26 @@ type ImportError = {
 
 export const useWatchlistImportExport = () => {
 	const [importLoading, setImportLoading] = useState(false);
+
 	const [exportLoading, setExportLoading] = useState(false);
+
 	const [error, setError] = useState<ImportError | null>(null);
+
 	const { watchlist, loading } = useWatchlist();
+
 	const upsertWatchlistItem = useMutation(api.watchlist.upsertWatchlistItem);
-	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const isValidWatchlistItem = useCallback(
-		(item: unknown): item is Omit<WatchlistItem, "updated_at"> => {
+		(
+			item: unknown,
+		): item is Pick<WatchlistItem, "title" | "external_id" | "type"> &
+			Partial<Omit<WatchlistItem, "title" | "external_id" | "type">> => {
 			if (typeof item !== "object" || item === null) return false;
 
 			const obj = item as Record<string, unknown>;
-			// Basic validation
+
 			const hasRequiredFields =
 				typeof obj.title === "string" &&
 				typeof obj.external_id === "string" &&
@@ -42,11 +55,13 @@ export const useWatchlistImportExport = () => {
 			const json = JSON.stringify(watchlist, null, 2);
 			const blob = new Blob([json], { type: "application/json" });
 			const url = URL.createObjectURL(blob);
+
 			const link = document.createElement("a");
 			const timestamp = new Date().toISOString().split("T")[0];
 
 			link.href = url;
 			link.download = `watchlist-${timestamp}.json`;
+
 			document.body.appendChild(link);
 			link.click();
 
@@ -55,9 +70,7 @@ export const useWatchlistImportExport = () => {
 				URL.revokeObjectURL(url);
 			}, 100);
 		} catch (err) {
-			setError({
-				message: "Failed to export watchlist. Please try again.",
-			});
+			setError({ message: "Failed to export watchlist. Please try again." });
 			console.error("Export error:", err);
 		} finally {
 			setExportLoading(false);
@@ -75,6 +88,7 @@ export const useWatchlistImportExport = () => {
 			}
 
 			const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 			if (file.size > MAX_FILE_SIZE) {
 				setError({ message: "File size exceeds 10MB limit." });
 				return;
@@ -88,6 +102,7 @@ export const useWatchlistImportExport = () => {
 			reader.onload = async (e) => {
 				try {
 					const content = e.target?.result as string;
+
 					if (!content || content.trim().length === 0) {
 						throw new Error("File is empty.");
 					}
@@ -115,6 +130,7 @@ export const useWatchlistImportExport = () => {
 								created_at: Date.now(),
 								status: item.status || "plan-to-watch",
 								overview: item.overview,
+								progress: item.progress,
 							});
 						} else {
 							invalidItemCount++;
@@ -146,18 +162,16 @@ export const useWatchlistImportExport = () => {
 							invalidItems: invalidItemCount,
 						});
 					} else {
-						// Success message?
-						// No logic previously for success toast, just clears loading
+						setError(null);
 					}
 				} catch (err) {
 					const errorMessage =
 						err instanceof Error ? err.message : "Unknown error occurred";
-					setError({
-						message: `Import failed: ${errorMessage}`,
-					});
+					setError({ message: `Import failed: ${errorMessage}` });
 					console.error("Import error:", err);
 				} finally {
 					setImportLoading(false);
+
 					if (fileInputRef.current) {
 						fileInputRef.current.value = "";
 					}
@@ -167,6 +181,7 @@ export const useWatchlistImportExport = () => {
 			reader.onerror = () => {
 				setError({ message: "Error reading file. Please try again." });
 				setImportLoading(false);
+
 				if (fileInputRef.current) {
 					fileInputRef.current.value = "";
 				}
@@ -195,17 +210,26 @@ export const useWatchlistImportExport = () => {
 	return {
 		// State
 		importLoading,
+
 		exportLoading,
+
 		error,
+
 		loading,
+
 		watchlist,
+
 		fileInputRef,
 
 		// Actions
 		exportWatchlist,
+
 		importWatchlist,
+
 		handleImportClick,
+
 		handleKeyDown,
+
 		setError,
 	};
 };
