@@ -27,23 +27,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 			{
 				name: "viewport",
-				content: "width=device-width, initial-scale=1, viewport-fit=cover",
-			},
-			{
-				name: "mobile-web-app-capable",
-				content: "yes",
-			},
-			{
-				name: "apple-mobile-web-app-capable",
-				content: "yes",
-			},
-			{
-				name: "apple-mobile-web-app-status-bar-style",
-				content: "black-translucent",
-			},
-			{
-				name: "apple-mobile-web-app-title",
-				content: SITE_CONFIG.name,
+				content: "width=device-width, initial-scale=1",
 			},
 			...MetaImageTagsGenerator({
 				title: SITE_CONFIG.name,
@@ -92,10 +76,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 		],
 		links: [
-			{
-				rel: "manifest",
-				href: "/manifest.webmanifest",
-			},
 			{
 				rel: "stylesheet",
 				href: appCss,
@@ -147,16 +127,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
 
 	useEffect(() => {
-		if (
-			!import.meta.env.DEV &&
-			typeof window !== "undefined" &&
-			"serviceWorker" in navigator
-		) {
-			navigator.serviceWorker.register("/sw.js").catch((error) => {
-				console.error("Service worker registration failed", error);
-			});
-		}
-
 		if (!import.meta.env.DEV) {
 			return;
 		}
