@@ -44,7 +44,9 @@ export function InlineEpisodeBrowser({
 	const hasMoreSeasons = allSeasons.length > 3;
 
 	const totalEpisodes = seasons.reduce((acc, s) => acc + s.episode_count, 0);
-	const episodeTracker = useEpisodeWatched(tvId, totalEpisodes);
+	const episodeTracker = useEpisodeWatched(tvId, totalEpisodes, {
+		title: showName,
+	});
 
 	const handleSeasonToggle = (
 		s: SeasonInfo,

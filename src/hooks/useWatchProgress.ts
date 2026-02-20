@@ -224,6 +224,13 @@ export function useContinueWatching() {
 export function useEpisodeWatched(
 	tvId: number | string,
 	totalEpisodes?: number,
+	showMeta?: {
+		title?: string;
+		image?: string;
+		release_date?: string;
+		overview?: string;
+		rating?: number;
+	},
 ) {
 	const tmdbId = Number(tvId);
 	const { isSignedIn } = useUser();
@@ -242,6 +249,10 @@ export function useEpisodeWatched(
 	);
 
 	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
+	const addToLocalWatchlist = useWatchlistStore(
+		(state) => state.addToWatchlist,
+	);
+	const localWatchlist = useWatchlistStore((state) => state.watchlist);
 	const currentStatus = useWatchlistItemStatus(String(tvId));
 
 	// Create unified map based on logged in state
@@ -310,49 +321,76 @@ export function useEpisodeWatched(
 	);
 	const syncShowProgress = useMutation(api.watchlist.syncShowProgress);
 
-	// Reusable logic to handle side effect updates strictly synchronously during interaction
-	const handleStatusSideEffects = useCallback(
-		(newWatchedCount: number) => {
+	const getShowStatusFromCounts = useCallback(
+		(newWatchedCount: number): "plan-to-watch" | "watching" | "completed" => {
+			if (newWatchedCount === 0) return "plan-to-watch";
 			if (
 				totalEpisodes &&
 				totalEpisodes > 0 &&
 				newWatchedCount >= totalEpisodes
 			) {
-				if (currentStatus !== "completed") {
-					if (isSignedIn) {
-						syncShowProgress({
-							tmdbId,
-							mediaType: "tv",
-							totalEpisodes,
-							watchedEpisodesCount: newWatchedCount,
-						}).catch(console.error);
-					} else {
-						updateLocalStatus(String(tvId), "completed");
+				return "completed";
+			}
+			return "watching";
+		},
+		[totalEpisodes],
+	);
+
+	const ensureLocalWatchlistItem = useCallback(
+		(status: "plan-to-watch" | "watching" | "completed") => {
+			const exists = localWatchlist.some(
+				(item) => String(item.external_id) === String(tvId),
+			);
+
+			if (!exists) {
+				addToLocalWatchlist({
+					title: showMeta?.title ?? `TV Show ${tvId}`,
+					type: "tv",
+					external_id: String(tvId),
+					image: showMeta?.image ?? "",
+					rating: showMeta?.rating ?? 0,
+					release_date: showMeta?.release_date ?? "",
+					overview: showMeta?.overview,
+					updated_at: Date.now(),
+					created_at: Date.now(),
+					status,
+				});
+			}
+		},
+		[addToLocalWatchlist, localWatchlist, showMeta, tvId],
+	);
+
+	// Reusable logic to handle side effect updates strictly synchronously during interaction
+	const handleStatusSideEffects = useCallback(
+		(newWatchedCount: number) => {
+			const newStatus = getShowStatusFromCounts(newWatchedCount);
+
+			if (currentStatus !== newStatus) {
+				if (isSignedIn) {
+					syncShowProgress({
+						tmdbId,
+						mediaType: "tv",
+						totalEpisodes: totalEpisodes ?? 0,
+						watchedEpisodesCount: newWatchedCount,
+					}).catch(console.error);
+				} else {
+					if (newWatchedCount > 0) {
+						ensureLocalWatchlistItem(newStatus);
 					}
-				}
-			} else if (newWatchedCount > 0) {
-				if (currentStatus !== "watching" && currentStatus !== "completed") {
-					if (isSignedIn) {
-						syncShowProgress({
-							tmdbId,
-							mediaType: "tv",
-							totalEpisodes: totalEpisodes ?? 0,
-							watchedEpisodesCount: newWatchedCount,
-						}).catch(console.error);
-					} else {
-						updateLocalStatus(String(tvId), "watching");
-					}
+					updateLocalStatus(String(tvId), newStatus);
 				}
 			}
 		},
 		[
 			currentStatus,
+			getShowStatusFromCounts,
 			totalEpisodes,
 			isSignedIn,
 			tmdbId,
 			syncShowProgress,
 			updateLocalStatus,
 			tvId,
+			ensureLocalWatchlistItem,
 		],
 	);
 
@@ -420,6 +458,11 @@ export function useEpisodeWatched(
 
 	const unmarkSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
+			let watchedToRemove = 0;
+			for (const ep of episodes) {
+				if (watchedMap[makeEpisodeKey(tmdbId, season, ep)]) watchedToRemove++;
+			}
+
 			if (isSignedIn) {
 				markEpisodesWatchedBatch({
 					tmdbId,
@@ -430,8 +473,18 @@ export function useEpisodeWatched(
 			} else {
 				markLocalSeason(tmdbId, season, episodes, false);
 			}
+
+			handleStatusSideEffects(Math.max(0, watchedCount - watchedToRemove));
 		},
-		[tmdbId, markEpisodesWatchedBatch, markLocalSeason, isSignedIn],
+		[
+			tmdbId,
+			watchedMap,
+			markEpisodesWatchedBatch,
+			markLocalSeason,
+			isSignedIn,
+			handleStatusSideEffects,
+			watchedCount,
+		],
 	);
 
 	const isSeasonFullyWatched = useCallback(
