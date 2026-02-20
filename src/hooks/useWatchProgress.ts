@@ -310,43 +310,42 @@ export function useEpisodeWatched(
 	);
 	const syncShowProgress = useMutation(api.watchlist.syncShowProgress);
 
-	// Reusable logic to handle side effect updates strictly synchronously during interaction
-	const handleStatusSideEffects = useCallback(
-		(newWatchedCount: number) => {
+	const getShowStatusFromCounts = useCallback(
+		(newWatchedCount: number): "plan-to-watch" | "watching" | "completed" => {
+			if (newWatchedCount === 0) return "plan-to-watch";
 			if (
 				totalEpisodes &&
 				totalEpisodes > 0 &&
 				newWatchedCount >= totalEpisodes
 			) {
-				if (currentStatus !== "completed") {
-					if (isSignedIn) {
-						syncShowProgress({
-							tmdbId,
-							mediaType: "tv",
-							totalEpisodes,
-							watchedEpisodesCount: newWatchedCount,
-						}).catch(console.error);
-					} else {
-						updateLocalStatus(String(tvId), "completed");
-					}
-				}
-			} else if (newWatchedCount > 0) {
-				if (currentStatus !== "watching" && currentStatus !== "completed") {
-					if (isSignedIn) {
-						syncShowProgress({
-							tmdbId,
-							mediaType: "tv",
-							totalEpisodes: totalEpisodes ?? 0,
-							watchedEpisodesCount: newWatchedCount,
-						}).catch(console.error);
-					} else {
-						updateLocalStatus(String(tvId), "watching");
-					}
+				return "completed";
+			}
+			return "watching";
+		},
+		[totalEpisodes],
+	);
+
+	// Reusable logic to handle side effect updates strictly synchronously during interaction
+	const handleStatusSideEffects = useCallback(
+		(newWatchedCount: number) => {
+			const newStatus = getShowStatusFromCounts(newWatchedCount);
+
+			if (currentStatus !== newStatus) {
+				if (isSignedIn) {
+					syncShowProgress({
+						tmdbId,
+						mediaType: "tv",
+						totalEpisodes: totalEpisodes ?? 0,
+						watchedEpisodesCount: newWatchedCount,
+					}).catch(console.error);
+				} else {
+					updateLocalStatus(String(tvId), newStatus);
 				}
 			}
 		},
 		[
 			currentStatus,
+			getShowStatusFromCounts,
 			totalEpisodes,
 			isSignedIn,
 			tmdbId,
@@ -420,6 +419,11 @@ export function useEpisodeWatched(
 
 	const unmarkSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
+			let watchedToRemove = 0;
+			for (const ep of episodes) {
+				if (watchedMap[makeEpisodeKey(tmdbId, season, ep)]) watchedToRemove++;
+			}
+
 			if (isSignedIn) {
 				markEpisodesWatchedBatch({
 					tmdbId,
@@ -430,8 +434,18 @@ export function useEpisodeWatched(
 			} else {
 				markLocalSeason(tmdbId, season, episodes, false);
 			}
+
+			handleStatusSideEffects(Math.max(0, watchedCount - watchedToRemove));
 		},
-		[tmdbId, markEpisodesWatchedBatch, markLocalSeason, isSignedIn],
+		[
+			tmdbId,
+			watchedMap,
+			markEpisodesWatchedBatch,
+			markLocalSeason,
+			isSignedIn,
+			handleStatusSideEffects,
+			watchedCount,
+		],
 	);
 
 	const isSeasonFullyWatched = useCallback(
