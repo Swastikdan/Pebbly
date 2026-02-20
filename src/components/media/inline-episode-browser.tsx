@@ -27,12 +27,20 @@ interface InlineEpisodeBrowserProps {
 	showName: string;
 	seasons: SeasonInfo[];
 	initialSeasonNumber?: number;
+	image?: string;
+	release_date?: string;
+	overview?: string;
+	rating?: number;
 }
 
 export function InlineEpisodeBrowser({
 	tvId,
 	showName,
 	seasons,
+	image,
+	release_date,
+	overview,
+	rating,
 }: InlineEpisodeBrowserProps) {
 	// Filter out specials/season 0 by default, but keep them available
 	const mainSeasons = seasons.filter((s) => s.season_number > 0);
@@ -46,6 +54,10 @@ export function InlineEpisodeBrowser({
 	const totalEpisodes = seasons.reduce((acc, s) => acc + s.episode_count, 0);
 	const episodeTracker = useEpisodeWatched(tvId, totalEpisodes, {
 		title: showName,
+		image,
+		release_date,
+		overview,
+		rating,
 	});
 
 	const handleSeasonToggle = (

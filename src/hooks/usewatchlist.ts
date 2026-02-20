@@ -21,13 +21,18 @@ export type WatchlistItem = {
 	updated_at: number; // timestamp
 	created_at: number; // timestamp
 	status: WatchlistStatus;
+	progress?: number;
 };
 
 interface WatchlistStore {
 	watchlist: WatchlistItem[];
 	addToWatchlist: (item: WatchlistItem) => void;
 	removeFromWatchlist: (id: string) => void;
-	updateStatus: (id: string, status: WatchlistStatus) => void;
+	updateStatus: (
+		id: string,
+		status: WatchlistStatus,
+		progress?: number,
+	) => void;
 	setWatchlist: (list: WatchlistItem[]) => void;
 }
 
@@ -43,10 +48,12 @@ export const useWatchlistStore = create<WatchlistStore>()(
 						(i) => String(i.external_id) !== String(id),
 					),
 				})),
-			updateStatus: (id, status) =>
+			updateStatus: (id, status, progress) =>
 				set((state) => ({
 					watchlist: state.watchlist.map((i) =>
-						String(i.external_id) === String(id) ? { ...i, status } : i,
+						String(i.external_id) === String(id)
+							? { ...i, status, progress: progress ?? i.progress }
+							: i,
 					),
 				})),
 			setWatchlist: (list) => set({ watchlist: list }),
@@ -66,7 +73,7 @@ export function useWatchlist() {
 	const watchlist: WatchlistItem[] = useMemo(() => {
 		if (isSignedIn) {
 			if (!convexWatchlistData) return [];
-			return convexWatchlistData.map((item) => ({
+			const mapped = convexWatchlistData.map((item) => ({
 				title: item.title ?? "Unknown Title",
 				type: item.mediaType as "tv" | "movie",
 				external_id: String(item.tmdbId),
@@ -77,10 +84,12 @@ export function useWatchlist() {
 				updated_at: item.updatedAt,
 				created_at: item.updatedAt,
 				status: (item.status as WatchlistStatus) ?? "plan-to-watch",
+				progress: item.progress ?? 0,
 			}));
+			return mapped.sort((a, b) => b.updated_at - a.updated_at);
 		}
 		// If not signed in, use local store
-		return localWatchlist;
+		return [...localWatchlist].sort((a, b) => b.updated_at - a.updated_at);
 	}, [isSignedIn, convexWatchlistData, localWatchlist]);
 
 	// If signed in, loading is true until data arrives.
@@ -189,8 +198,8 @@ export function useToggleWatchlistItem() {
 						title: item.title,
 						image: item.image,
 						rating: item.rating,
-						release_date: item.release_date,
-						overview: item.overview,
+						release_date: item.release_date || undefined,
+						overview: item.overview || undefined,
 					});
 				}
 			} else {
@@ -240,11 +249,18 @@ export function useSetItemStatus() {
 			(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
 		);
 
+		let optimisticProgress = args.progress;
+		if (optimisticProgress === undefined) {
+			if (args.status === "completed") optimisticProgress = 100;
+			else if (args.status === "plan-to-watch") optimisticProgress = 0;
+		}
+
 		if (existingItemIndex !== -1) {
 			const newItems = [...existing];
 			newItems[existingItemIndex] = {
 				...newItems[existingItemIndex],
 				status: args.status,
+				progress: optimisticProgress ?? newItems[existingItemIndex].progress,
 				updatedAt: now,
 			};
 			localStore.setQuery(
@@ -282,7 +298,15 @@ export function useSetItemStatus() {
 					status,
 				}).catch(console.error);
 			} else {
-				updateLocalStatus(id, status);
+				updateLocalStatus(
+					id,
+					status,
+					status === "completed"
+						? 100
+						: status === "plan-to-watch"
+							? 0
+							: undefined,
+				);
 			}
 
 			// Handle episode cascading when marked completed
@@ -314,9 +338,7 @@ export function useSetItemStatus() {
 			}
 
 			if (status === "plan-to-watch" && item.type === "tv") {
-				if (!isSignedIn) {
-					clearLocalShowProgress(Number(id));
-				}
+				clearLocalShowProgress(Number(id));
 			}
 		},
 		[

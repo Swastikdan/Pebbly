@@ -1,33 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-// Get watch progress for a specific item
-export const getProgress = query({
-  args: {
-    tmdbId: v.number(),
-    mediaType: v.string(), // "movie" | "tv"
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
-      .first();
-
-    if (!user) return null;
-
-    const item = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user_media", (q) => 
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType)
-      )
-      .first();
-
-    return item;
-  },
-});
+// getProgress removed - compute locally over getWatchlist items
 
 // Update watch progress (e.g. from player)
 export const updateProgress = mutation({
@@ -41,7 +15,6 @@ export const updateProgress = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
-
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
@@ -130,128 +103,10 @@ export const markEpisodeWatched = mutation({
   },
 });
 
-// NEW: Sync all episodes and update show progress based on watched count
-export const syncShowProgress = mutation({
-  args: {
-    tmdbId: v.number(),
-    mediaType: v.string(), // "tv"
-    totalEpisodes: v.number(), // Passed from client
-    watchedEpisodesCount: v.number(), // Passed from client
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+// syncShowProgress removed - compute locally and use upsertWatchlistItem
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
-      .first();
-
-    if (!user) throw new Error("User not found");
-
-    // Determine status and progress based on counts
-    let status = "watching";
-    let progress = 0;
-
-    if (args.watchedEpisodesCount === 0) {
-        status = "plan-to-watch";
-        progress = 0;
-    } else if (args.watchedEpisodesCount >= args.totalEpisodes && args.totalEpisodes > 0) {
-        status = "completed";
-        progress = 100;
-    } else {
-        status = "watching";
-        progress = Math.floor((args.watchedEpisodesCount / args.totalEpisodes) * 100);
-    }
-
-    const existing = await ctx.db
-    .query("watch_items")
-    .withIndex("by_user_media", (q) => 
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", "tv")
-    )
-    .first();
-    
-    const now = Date.now();
-    
-    if (existing) {
-        // Only update if status or progress is different to avoid churn? 
-        // Or just update always. safely.
-        await ctx.db.patch(existing._id, {
-            progress,
-            status,
-            updatedAt: now,
-        });
-    } else {
-        await ctx.db.insert("watch_items", {
-            userId: user._id,
-            tmdbId: args.tmdbId,
-            mediaType: "tv",
-            progress,
-            status,
-            updatedAt: now,
-        });
-    }
-  },
-});
-
-// Get watched status for a specific episode
-export const getEpisodeWatched = query({
-  args: {
-    tmdbId: v.number(),
-    season: v.number(),
-    episode: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
-      .first();
-
-    if (!user) return null;
-
-    const item = await ctx.db
-      .query("episode_progress")
-      .withIndex("by_user_episode", (q) =>
-        q.eq("userId", user._id)
-         .eq("tmdbId", args.tmdbId)
-         .eq("season", args.season)
-         .eq("episode", args.episode)
-      )
-      .first();
-
-    return item;
-  },
-});
-
-// Get all watched episodes for a season
-export const getSeasonWatched = query({
-  args: {
-    tmdbId: v.number(),
-    season: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
-      .first();
-
-    if (!user) return [];
-
-    const items = await ctx.db
-      .query("episode_progress")
-      .withIndex("by_user_season", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("season", args.season)
-      )
-      .collect();
-    return items;
-  },
-});
+// getEpisodeWatched removed - compute locally
+// getSeasonWatched removed - compute locally
 
 export const getAllWatchedEpisodes = query({
   args: {
@@ -290,35 +145,7 @@ export const getAllWatchedEpisodes = query({
 
 
 
-export const getContinueWatching = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
-      .first();
-
-    if (!user) return [];
-
-    // Filter by status 'watching' or verify progress
-    // Since we can't sort by lastUpdated easily without index, let's filter in memory for now or add index
-    // We have index by_user_media, but not by_user with sort?
-    // We have .index("by_user", ["userId"])
-    
-    const items = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-
-    // specific filtering for "Continue Watching"
-    return items
-      .filter((item) => item.progress !== undefined && item.progress > 0 && item.progress < 100)
-      .sort((a, b) => b.updatedAt - a.updatedAt);
-  },
-});
+// getContinueWatching removed - compute locally
 
 
 
@@ -342,7 +169,7 @@ export const getWatchlist = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
-    return items.sort((a, b) => b.updatedAt - a.updatedAt);
+    return items;
   },
 });
 
@@ -352,6 +179,7 @@ export const upsertWatchlistItem = mutation({
     tmdbId: v.number(),
     mediaType: v.string(),
     status: v.string(),
+    progress: v.optional(v.number()), // added optional progress
     title: v.optional(v.string()),
     image: v.optional(v.string()),
     rating: v.optional(v.number()),
@@ -390,11 +218,16 @@ export const upsertWatchlistItem = mutation({
         }
     }
 
+    let progress = args.progress;
+    if (progress === undefined) {
+      progress = args.status === "plan-to-watch" ? 0 : (args.status === "completed" ? 100 : (existing?.progress ?? 0));
+    }
+
     if (existing) {
       await ctx.db.patch(existing._id, {
         status: args.status,
         updatedAt: now,
-        progress: args.status === "plan-to-watch" ? 0 : (args.status === "completed" ? 100 : existing.progress),
+        progress,
         // Update metadata if provided
         title: args.title ?? existing.title,
         image: args.image ?? existing.image,
@@ -408,7 +241,7 @@ export const upsertWatchlistItem = mutation({
         tmdbId: args.tmdbId,
         mediaType: args.mediaType,
         status: args.status,
-        progress: args.status === "completed" ? 100 : 0,
+        progress,
         updatedAt: now,
         title: args.title,
         image: args.image,

@@ -171,6 +171,10 @@ function TvHomePage() {
 					tvId={id}
 					showName={tvtitle}
 					seasons={data.seasons}
+					image={tvimage}
+					release_date={release_date}
+					overview={overview}
+					rating={vote_average}
 				/>
 			)}
 			<MediaContainer
