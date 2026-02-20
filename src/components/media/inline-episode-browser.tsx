@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMutation } from "convex/react";
+
 import { useEffect, useState } from "react";
 import {
 	Accordion,
@@ -18,10 +18,9 @@ import {
 	useEpisodeProgress,
 	useEpisodeWatched,
 } from "@/hooks/useWatchProgress";
-import { useWatchlistItemStatus } from "@/hooks/usewatchlist";
+import { useSetItemStatus, useWatchlistItemStatus } from "@/hooks/usewatchlist";
 import { getTvSeasonDetails } from "@/lib/queries";
-import type { SeasonInfo, TvEpisodeDetail } from "@/types";
-import { api } from "../../../convex/_generated/api";
+import type { SeasonInfo, TvEpisodeDetail, WatchlistStatus } from "@/types";
 
 interface InlineEpisodeBrowserProps {
 	tvId: number;
@@ -46,7 +45,7 @@ export function InlineEpisodeBrowser({
 
 	const episodeTracker = useEpisodeWatched(tvId);
 	const currentStatus = useWatchlistItemStatus(String(tvId));
-	const syncShowProgress = useMutation(api.watchlist.syncShowProgress);
+	const setItemStatus = useSetItemStatus();
 
 	// Automatically mark show status based on episode progress
 	const totalEpisodes = seasons.reduce((acc, s) => acc + s.episode_count, 0);
@@ -55,7 +54,7 @@ export function InlineEpisodeBrowser({
 	useEffect(() => {
 		if (totalEpisodes === 0) return;
 
-		// "Completed" -> Mark all episodes (User manually set Completed)
+		// 1. "Completed" -> Mark all episodes (User manually set Completed)
 		if (currentStatus === "completed" && watchedCount < totalEpisodes) {
 			const seasonsToMark = seasons.filter((s) => s.season_number > 0);
 			seasonsToMark.forEach((s) => {
@@ -72,15 +71,74 @@ export function InlineEpisodeBrowser({
 				}
 			});
 		}
-	}, [
-		watchedCount,
-		totalEpisodes,
-		currentStatus,
-		syncShowProgress,
-		tvId,
-		seasons,
-		episodeTracker,
-	]);
+
+		// 2. "Plan to Watch" -> Unmark all episodes (User manually reset status)
+		if (currentStatus === "plan-to-watch" && watchedCount > 0) {
+			const seasonsToMark = seasons.filter((s) => s.season_number > 0);
+			seasonsToMark.forEach((s) => {
+				const count = episodeTracker.getSeasonWatchedCount(
+					s.season_number,
+					s.episode_count,
+				);
+				if (count > 0) {
+					const epNums = Array.from(
+						{ length: s.episode_count },
+						(_, i) => i + 1,
+					);
+					episodeTracker.unmarkSeasonWatched(s.season_number, epNums);
+				}
+			});
+		}
+	}, [watchedCount, totalEpisodes, currentStatus, seasons, episodeTracker]);
+
+	const handleSeasonToggle = (
+		s: SeasonInfo,
+		seenAll: boolean,
+		epNums: number[],
+	) => {
+		if (seenAll) {
+			episodeTracker.unmarkSeasonWatched(s.season_number, epNums);
+		} else {
+			episodeTracker.markSeasonWatched(s.season_number, epNums);
+			// Status Update Logic: if marked watched, update status
+			if (currentStatus === "plan-to-watch") {
+				setItemStatus(String(tvId), "watching");
+			}
+
+			// If this completes the season, check if it completes the show
+			// (Passively checked by next effect or we could check here)
+			// But since we are inside a specific handler, we can't easily know global state instantly
+			// Rely on the fact that if we mark a season, watchedCount increases.
+			// Is it safe to check `watchedCount + s.episode_count === totalEpisodes`?
+			// watchedCount is from hook, might be stale.
+			// Let's rely on a separate Effect for All Watched -> Completed to be safe?
+			// NO, Effect is circular if we use it for both directions.
+			// We must do "Episodes -> Status" here.
+
+			// We don't have the *new* watched count yet.
+			// But we know we just added `s.episode_count - currentSeasonWatchedCount`.
+			// It's complex.
+			// Let's just set "watching".
+			// For "Completed", it's safer to maybe let the user click it, OR
+			// allow the `useEffect` to handle "All Watched -> Completed" IF we are sure it doesn't conflict.
+			// The conflict is "Completed -> Mark All".
+			// If "All Watched -> Completed", then we have stable state.
+			// So yes, we can add that to useEffect!
+		}
+	};
+
+	// We add a THIRD effect for "All Watched -> Set Completed"
+	// This does NOT conflict with "Completed -> Mark All" (Stable)
+	// This DOES NOT conflict with "Plan to Watch -> Unmark All" (Stable)
+	useEffect(() => {
+		if (
+			totalEpisodes > 0 &&
+			watchedCount === totalEpisodes &&
+			currentStatus !== "completed"
+		) {
+			setItemStatus(String(tvId), "completed");
+		}
+	}, [watchedCount, totalEpisodes, currentStatus, setItemStatus, tvId]);
 
 	return (
 		<div className="animate-fade-in-up pb-8">
@@ -139,6 +197,10 @@ export function InlineEpisodeBrowser({
 											</span>
 										)}
 									</div>
+								</div>
+							</AccordionTrigger>
+							<AccordionContent className="px-0 pb-0 border-t border-default/50">
+								<div className="h-full p-2 justify-end items-end flex">
 									<Button
 										variant="outline"
 										type="button"
@@ -148,30 +210,21 @@ export function InlineEpisodeBrowser({
 												{ length: s.episode_count },
 												(_, i) => i + 1,
 											);
-											if (seenAll) {
-												episodeTracker.unmarkSeasonWatched(
-													s.season_number,
-													epNums,
-												);
-											} else {
-												episodeTracker.markSeasonWatched(
-													s.season_number,
-													epNums,
-												);
-											}
+											handleSeasonToggle(s, seenAll, epNums);
 										}}
-										className="pressable-small text-[11px] font-medium text-muted-foreground hover:text-foreground hover:no-underline transition-colors z-10 relative"
+										className="pressable-small text-[11px] font-medium text-muted-foreground hover:text-foreground hover:no-underline transition-colors z-10 relative h-7"
 									>
 										{seenAll ? "Unmark all as watched" : "Mark all as watched"}
 									</Button>
 								</div>
-							</AccordionTrigger>
-							<AccordionContent className="px-0 pb-0 border-t border-default/50">
+
 								<SeasonEpisodeList
 									tvId={tvId}
 									showName={showName}
 									seasonNumber={s.season_number}
 									episodeTracker={episodeTracker}
+									currentStatus={currentStatus ?? null}
+									onStatusChange={setItemStatus}
 								/>
 							</AccordionContent>
 						</AccordionItem>
@@ -198,11 +251,15 @@ function SeasonEpisodeList({
 	showName,
 	seasonNumber,
 	episodeTracker,
+	currentStatus,
+	onStatusChange,
 }: {
 	tvId: number;
 	showName: string;
 	seasonNumber: number;
 	episodeTracker: ReturnType<typeof useEpisodeWatched>;
+	currentStatus: string | null;
+	onStatusChange: (id: string, status: WatchlistStatus) => void;
 }) {
 	const { data: seasonData, isLoading } = useQuery({
 		queryKey: ["tv_season_details", tvId, seasonNumber],
@@ -251,12 +308,19 @@ function SeasonEpisodeList({
 						seasonNumber,
 						episode.episode_number,
 					)}
-					onToggleWatched={() =>
+					onToggleWatched={() => {
+						const isWatched = episodeTracker.isEpisodeWatched(
+							seasonNumber,
+							episode.episode_number,
+						);
 						episodeTracker.toggleEpisodeWatched(
 							seasonNumber,
 							episode.episode_number,
-						)
-					}
+						);
+						if (!isWatched && currentStatus === "plan-to-watch") {
+							onStatusChange(String(tvId), "watching");
+						}
+					}}
 				/>
 			))}
 		</div>

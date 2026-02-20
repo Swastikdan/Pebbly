@@ -6,7 +6,7 @@ export const GoBack = (props: {
 	title?: string;
 	link?: string;
 	className?: string;
-hideLabelOnMobile?: boolean;
+	hideLabelOnMobile?: boolean;
 }) => {
 	const navigate = useNavigate();
 	const router = useRouter();
@@ -26,7 +26,9 @@ hideLabelOnMobile?: boolean;
 		<Button className={className} variant="secondary" onClick={() => goBack()}>
 			<span className="flex w-full items-center gap-1">
 				<ArrowLeft size={24} />
-				<span className={hideLabelOnMobile ? "hidden sm:inline" : "inline"}>{title ?? "Go Back"}</span>
+				<span className={hideLabelOnMobile ? "hidden sm:inline" : "inline"}>
+					{title ?? "Go Back"}
+				</span>
 			</span>
 		</Button>
 	);

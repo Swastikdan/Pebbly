@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { number, object, optional, string } from "valibot";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
+import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "@/components/ui/search-bar";
 import {
@@ -23,11 +24,6 @@ import { getMedia, getSearchResult } from "@/lib/queries";
 import type { MediaType, SearchResultsEntity } from "@/types";
 
 type FilterType = MediaType | null;
-
-interface ActiveTypes {
-	movie: boolean;
-	tv: boolean;
-}
 
 const searchPageSearchSchema = object({
 	page: optional(number()),
@@ -100,15 +96,6 @@ function SearchPage() {
 			return true;
 		});
 	}, [data?.results, type, minRating]);
-
-	const activeTypes = useMemo<ActiveTypes>(
-		() => ({
-			movie:
-				data?.results?.some((item) => item.media_type === "movie") ?? false,
-			tv: data?.results?.some((item) => item.media_type === "tv") ?? false,
-		}),
-		[data?.results],
-	);
 
 	// Reset filter if no results for current type
 	useEffect(() => {
@@ -205,13 +192,17 @@ function SearchPage() {
 				<div className="mx-auto w-full max-w-screen-xl p-5">
 					<SearchBar query={query} updateUrlOnChange />
 					<div className="flex h-full flex-col gap-5 py-5">
-						<div className="flex h-10 items-center justify-between">
-							<div className="flex items-center gap-2">
-								{Array.from({ length: 3 }).map((_, index) => (
-									<Skeleton key={index} className="h-9 w-[84px] rounded-lg" />
-								))}
+						<div className="flex flex-wrap items-center gap-3">
+							<div className="flex gap-1 rounded-lg bg-secondary/30 p-1">
+								<Skeleton className="h-7 w-12 rounded-md" />
+								<Skeleton className="h-7 w-20 rounded-md" />
+								<Skeleton className="h-7 w-20 rounded-md" />
 							</div>
-							<Skeleton className="h-4 w-20" />
+
+							{/* Rating Filter Skeleton */}
+							<Skeleton className="h-7 w-[100px] rounded-lg" />
+
+							<Skeleton className="ml-auto h-3 w-[84px] rounded" />
 						</div>
 						<div className="flex min-h-96 w-full items-center justify-center">
 							<div className="grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -285,58 +276,52 @@ function SearchPage() {
 			<div className="mx-auto w-full max-w-screen-xl p-5">
 				<SearchBar query={query} updateUrlOnChange />
 				<div className="flex h-full flex-col gap-5 py-5">
-					{/* Filter Row */}
 					<div className="flex flex-wrap items-center gap-3">
-						{/* Media type toggle */}
-						<div className="flex gap-1 rounded-xl bg-secondary/30 p-1">
-							<button
-								type="button"
-								className={`pressable-small rounded-lg px-4 py-1.5 text-xs font-medium transition-all ${
-									!type
-										? "bg-foreground text-background "
-										: "text-foreground/60 hover:text-foreground"
-								}`}
+						<div className="flex gap-1 rounded-xl bg-secondary/30 p-1 border-1 border-border h-9 items-center">
+							<Button
+								className="h-7 px-4"
+								variant={!type ? "default" : "ghost"}
 								onClick={handleAllClick}
 							>
 								All
-							</button>
-							<button
-								type="button"
-								className={`pressable-small rounded-lg px-4 py-1.5 text-xs font-medium transition-all ${
-									type === "movie"
-										? "bg-foreground text-background "
-										: "text-foreground/60 hover:text-foreground"
-								} disabled:cursor-not-allowed disabled:opacity-50`}
+							</Button>
+							<Button
+								className="h-7 px-4"
+								variant={type === "movie" ? "default" : "ghost"}
 								onClick={handleMovieClick}
-								disabled={!activeTypes.movie}
 							>
 								Movies
-							</button>
-							<button
-								type="button"
-								className={`pressable-small rounded-lg px-4 py-1.5 text-xs font-medium transition-all ${
-									type === "tv"
-										? "bg-foreground text-background "
-										: "text-foreground/60 hover:text-foreground"
-								} disabled:cursor-not-allowed disabled:opacity-50`}
+							</Button>
+							<Button
+								className="h-7 px-4"
+								variant={type === "tv" ? "default" : "ghost"}
 								onClick={handleTVClick}
-								disabled={!activeTypes.tv}
 							>
 								Series
-							</button>
+							</Button>
 						</div>
 
 						{/* Rating Filter — Radix Select */}
 						<Select value={minRating} onValueChange={setMinRating}>
-							<SelectTrigger className="h-8 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
+							<SelectTrigger className="h-9 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent className="rounded-xl">
-								<SelectItem value="0">Any Rating</SelectItem>
-								<SelectItem value="6">6+ Rating</SelectItem>
-								<SelectItem value="7">7+ Rating</SelectItem>
-								<SelectItem value="8">8+ Rating</SelectItem>
-								<SelectItem value="9">9+ Rating</SelectItem>
+								<SelectItem className="rounded-lg" value="0">
+									Any Rating
+								</SelectItem>
+								<SelectItem className="rounded-lg" value="6">
+									6+ Rating
+								</SelectItem>
+								<SelectItem className="rounded-lg" value="7">
+									7+ Rating
+								</SelectItem>
+								<SelectItem className="rounded-lg" value="8">
+									8+ Rating
+								</SelectItem>
+								<SelectItem className="rounded-lg" value="9">
+									9+ Rating
+								</SelectItem>
 							</SelectContent>
 						</Select>
 

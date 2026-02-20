@@ -63,7 +63,9 @@ export const splitVideos = (videos?: MinimalVideo[] | null) => {
 				return a.type === "Featurette" ? -1 : 1;
 			}
 
-			return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+			return (
+				new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+			);
 		})
 		.slice(0, FEATURED_ITEMS_LIMIT);
 
@@ -123,7 +125,9 @@ export const getMovieCertification = (
 		  }[]
 		| null,
 ) => {
-	const usRelease = releaseDates?.find((release) => release.iso_3166_1 === "US");
+	const usRelease = releaseDates?.find(
+		(release) => release.iso_3166_1 === "US",
+	);
 
 	if (!usRelease?.release_dates) {
 		return "NR";

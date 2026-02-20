@@ -15,7 +15,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BookMarkFilledIcon, MenuIcon } from "@/components/ui/icons";
+import { BookMarkFilledIcon, MenuIcon, UserIcon } from "@/components/ui/icons";
 import {
 	Sheet,
 	SheetClose,
@@ -106,7 +106,6 @@ const MobileNavMenuItem = ({
 MobileNavMenuItem.displayName = "MobileNavMenuItem";
 
 const Navbar = () => {
-	const { user } = useUser();
 	return (
 		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border border-b-2 bg-background transition-transform duration-300">
 			<nav
@@ -165,15 +164,7 @@ const Navbar = () => {
 										</Button>
 									</SheetClose>
 								</Link>
-								{user?.publicMetadata?.isAdmin === true && (
-									<Button
-										variant="secondary"
-										className="h-10 w-full justify-start text-red-500"
-									>
-										Admin
-									</Button>
-								)}
-								<ClerkLoading>
+								{/* <ClerkLoading>
 									<Skeleton className="h-10 w-full rounded-[calc(var(--radius-md)+3px)]" />
 								</ClerkLoading>
 								<ClerkLoaded>
@@ -181,13 +172,14 @@ const Navbar = () => {
 										<SignInButton mode="modal">
 											<Button
 												variant="secondary"
-												className="h-10 w-full justify-start"
+												className="h-10 w-full justify-start gap-2"
 											>
+												<UserIcon className="size-5" />
 												Sign In
 											</Button>
 										</SignInButton>
 									</SignedOut>
-								</ClerkLoaded>
+								</ClerkLoaded> */}
 							</div>
 						</SheetContent>
 					</Sheet>

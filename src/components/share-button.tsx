@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { ShareBold } from "@/components/ui/icons";
 
-export const ShareButton = (props: { title?: string; hideLabelOnMobile?: boolean }) => {
+export const ShareButton = (props: {
+	title?: string;
+	hideLabelOnMobile?: boolean;
+}) => {
 	async function handleShare() {
 		if (navigator.share) {
 			await navigator.share({
@@ -33,7 +36,11 @@ export const ShareButton = (props: { title?: string; hideLabelOnMobile?: boolean
 		<Button variant="secondary" onClick={() => void handleShare()}>
 			<span className="flex w-full items-center gap-1">
 				<ShareBold size={24} />
-				<span className={props.hideLabelOnMobile ? "hidden sm:inline" : "inline"}>Share</span>
+				<span
+					className={props.hideLabelOnMobile ? "hidden sm:inline" : "inline"}
+				>
+					Share
+				</span>
 			</span>
 		</Button>
 	);

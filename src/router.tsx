@@ -1,4 +1,5 @@
 import { ClerkProvider, useAuth } from "@clerk/clerk-react";
+import { dark, shadcn } from "@clerk/themes";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { ConvexReactClient } from "convex/react";
@@ -6,6 +7,7 @@ import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import * as TanstackQuery from "@/lib/query/root-provider";
+
 // Import the generated route tree
 import { routeTree } from "@/routeTree.gen";
 
@@ -23,6 +25,9 @@ export const getRouter = () => {
 			return (
 				<ClerkProvider
 					publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+					appearance={{
+						theme: shadcn,
+					}}
 				>
 					<ConvexProviderWithClerk client={convex} useAuth={useAuth}>
 						<TanstackQuery.Provider {...rqContext}>

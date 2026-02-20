@@ -83,7 +83,7 @@ export const MediaTitleContailer = (props: {
 						{/* Mood/Status Selector - Only visible when on watchlist */}
 						{status && (
 							<div className="flex items-center gap-2">
-								<span className="hidden sr-only text-xs font-medium text-muted-foreground sm:inline-block">
+								<span className="hidden sr-only text-xs font-medium text-muted-foreground sm:inline-block transition-all duration-500">
 									Status:
 								</span>
 								<Select
@@ -92,35 +92,35 @@ export const MediaTitleContailer = (props: {
 										setItemStatus(String(id), value as WatchlistStatus)
 									}
 								>
-									<SelectTrigger className="h-10 min-w-[140px] gap-2 rounded-lg border px-3 text-xs font-semibold  transition-all">
+									<SelectTrigger className="h-10 min-w-[154px] gap-2 rounded-lg border px-3 text-xs font-semibold  transition-all">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent className="rounded-xl">
-										<SelectItem value="plan-to-watch">
+										<SelectItem value="plan-to-watch" className="rounded-lg">
 											<span className="flex items-center gap-2">
 												<Clock size={16} />
 												Plan to Watch
 											</span>
 										</SelectItem>
-										<SelectItem value="watching">
+										<SelectItem value="watching" className="rounded-lg">
 											<span className="flex items-center gap-2">
 												<Eye size={16} />
 												Watching
 											</span>
 										</SelectItem>
-										<SelectItem value="completed">
+										<SelectItem value="completed" className="rounded-lg">
 											<span className="flex items-center gap-2">
 												<CheckCircle size={16} />
 												Completed
 											</span>
 										</SelectItem>
-										<SelectItem value="liked">
+										<SelectItem value="liked" className="rounded-lg">
 											<span className="flex items-center gap-2">
 												<Heart size={16} />
 												Liked
 											</span>
 										</SelectItem>
-										<SelectItem value="dropped">
+										<SelectItem value="dropped" className="rounded-lg">
 											<span className="flex items-center gap-2">
 												<XCircleIcon size={16} />
 												Dropped

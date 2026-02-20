@@ -8,7 +8,11 @@ import {
 } from "@clerk/clerk-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { BookMarkFilledIcon, SearchFilledIcon } from "@/components/ui/icons";
+import {
+	BookMarkFilledIcon,
+	SearchFilledIcon,
+	UserIcon,
+} from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { ThemeSwitch } from "./theme-switch";
@@ -61,21 +65,31 @@ const DesktopNavButtons = () => {
 			/>
 			<ThemeSwitch />
 			<ClerkLoading>
-				<Skeleton className="h-9 w-20 rounded-[calc(var(--radius-md)+3px)]" />
+				<Skeleton className="size-9 rounded-lg" />
 			</ClerkLoading>
 			<ClerkLoaded>
 				<SignedOut>
 					<SignInButton mode="modal">
 						<Button
 							variant="outline"
-							className="rounded-[calc(var(--radius-md)+3px)] h-9 w-20 hidden md:block"
+							className="rounded-lg size-9 flex items-center justify-center  p-0"
 						>
-							Sign In
+							<UserIcon className="size-5" />
 						</Button>
 					</SignInButton>
 				</SignedOut>
 				<SignedIn>
-					<UserButton />
+					<div className="flex size-10 items-center justify-center">
+						<UserButton
+							appearance={{
+								elements: {
+									userButtonAvatarBox:
+										"!size-9 !rounded-lg !border-2 !border-secondary",
+									userButtonTrigger: "!h-9 !w-9 !rounded-lg",
+								},
+							}}
+						/>
+					</div>
 				</SignedIn>
 			</ClerkLoaded>
 		</>
