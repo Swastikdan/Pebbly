@@ -1,13 +1,9 @@
+import { Frown, Meh, Smile } from "lucide-react";
+import type { ComponentType } from "react";
 import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
 import { ShareButton } from "@/components/share-button";
-import {
-	CheckCircle,
-	Clock,
-	Eye,
-	Heart,
-	XCircleIcon,
-} from "@/components/ui/icons";
+import { CheckCircle, Clock, Eye, Heart } from "@/components/ui/icons";
 import {
 	Select,
 	SelectContent,
@@ -17,11 +13,37 @@ import {
 } from "@/components/ui/select";
 import { WatchlistButton } from "@/components/watchlist-button";
 import {
-	useSetItemStatus,
-	useWatchlistCount,
-	useWatchlistItemStatus,
+	useMediaState,
+	useSetProgressStatus,
+	useSetReaction,
+	useToggleWatchlistItem,
+	useWatchlistItem,
 } from "@/hooks/usewatchlist";
-import type { WatchlistStatus } from "@/types";
+import { cn } from "@/lib/utils";
+import type { ProgressStatus, ReactionStatus } from "@/types";
+
+const REMOVE_FROM_WATCHLIST_VALUE = "__remove_watchlist";
+
+const PROGRESS_OPTIONS: Array<{
+	value: ProgressStatus;
+	label: string;
+	icon: ComponentType<{ size?: string | number; className?: string }>;
+}> = [
+	{ value: "want-to-watch", label: "Plan to watch", icon: Clock },
+	{ value: "watching", label: "Watching", icon: Eye },
+	{ value: "finished", label: "Completed", icon: CheckCircle },
+];
+
+const REACTION_OPTIONS: Array<{
+	value: Exclude<ReactionStatus, null>;
+	label: string;
+	icon: ComponentType<{ size?: string | number; className?: string }>;
+}> = [
+	{ value: "loved", label: "Loved", icon: Heart },
+	{ value: "liked", label: "Liked", icon: Smile },
+	{ value: "mixed", label: "Mixed", icon: Meh },
+	{ value: "not-for-me", label: "Not for me", icon: Frown },
+];
 
 export const MediaTitleContailer = (props: {
 	title: string;
@@ -58,82 +80,163 @@ export const MediaTitleContailer = (props: {
 		tv_status,
 	} = props;
 
-	const status = useWatchlistItemStatus(String(id));
-	const setItemStatus = useSetItemStatus();
-	// Subscribe to watchlist count to trigger re-renders when item is added/removed
-	useWatchlistCount();
+	const mediaState = useMediaState(String(id), media_type);
+	const setProgressStatus = useSetProgressStatus();
+	const setReaction = useSetReaction();
+	const toggleWatchlist = useToggleWatchlistItem();
+	const { isOnWatchList } = useWatchlistItem(String(id), media_type);
+	const progressStatus = mediaState?.progressStatus ?? null;
+	const reaction = mediaState?.reaction ?? null;
+
+	const renderWatchListSection = (className?: string) => (
+		<div
+			className={cn("flex flex-wrap items-center justify-end gap-2", className)}
+		>
+			{!isOnWatchList && (
+				<WatchlistButton
+					id={id}
+					image={poster_path}
+					is_on_homepage={true}
+					media_type={media_type}
+					rating={rateing}
+					release_date={release_date ?? ""}
+					title={title}
+					overview={props.description}
+				/>
+			)}
+
+			<div className="flex flex-wrap items-center justify-end gap-2">
+				{isOnWatchList && (
+					<Select
+						value={progressStatus ?? "want-to-watch"}
+						onValueChange={(value) => {
+							if (value === REMOVE_FROM_WATCHLIST_VALUE) {
+								toggleWatchlist({
+									title,
+									rating: rateing,
+									image: poster_path,
+									id: String(id),
+									media_type,
+									release_date: release_date ?? "",
+									overview: props.description,
+								}).catch(console.error);
+								return;
+							}
+
+							setProgressStatus(
+								String(id),
+								media_type,
+								value as ProgressStatus,
+								{
+									title,
+									image: poster_path,
+									rating: rateing,
+									release_date: release_date ?? "",
+									overview: props.description,
+								},
+							);
+						}}
+					>
+						<SelectTrigger className="h-10 min-w-[145px] gap-2 rounded-lg border px-3 text-xs font-semibold transition-all">
+							<SelectValue placeholder="Choose status" />
+						</SelectTrigger>
+						<SelectContent className="rounded-xl">
+							{PROGRESS_OPTIONS.map((option) => {
+								const Icon = option.icon;
+								return (
+									<SelectItem
+										key={option.value}
+										value={option.value}
+										className="rounded-lg"
+									>
+										<span className="flex items-center gap-2">
+											<Icon size={16} />
+											{option.label}
+										</span>
+									</SelectItem>
+								);
+							})}
+							<SelectItem
+								value={REMOVE_FROM_WATCHLIST_VALUE}
+								className="rounded-lg text-destructive focus:text-destructive"
+							>
+								Remove from Watchlist
+							</SelectItem>
+						</SelectContent>
+					</Select>
+				)}
+				<Select
+					value={reaction ?? "none"}
+					onValueChange={(value) => {
+						if (value === REMOVE_FROM_WATCHLIST_VALUE) {
+							toggleWatchlist({
+								title,
+								rating: rateing,
+								image: poster_path,
+								id: String(id),
+								media_type,
+								release_date: release_date ?? "",
+								overview: props.description,
+							}).catch(console.error);
+							return;
+						}
+
+						setReaction(
+							String(id),
+							media_type,
+							value === "none" ? null : (value as ReactionStatus),
+							{
+								title,
+								image: poster_path,
+								rating: rateing,
+								release_date: release_date ?? "",
+								overview: props.description,
+							},
+						);
+					}}
+				>
+					<SelectTrigger className="h-10 min-w-[145px] gap-2 rounded-lg border px-3 text-xs font-semibold transition-all">
+						<SelectValue placeholder="Mood" />
+					</SelectTrigger>
+					<SelectContent className="rounded-xl">
+						<SelectItem value="none" className="rounded-lg">
+							<span className="flex items-center gap-2">
+								<Meh size={16} />
+								No mood
+							</span>
+						</SelectItem>
+						{REACTION_OPTIONS.map((option) => {
+							const Icon = option.icon;
+							return (
+								<SelectItem
+									key={option.value}
+									value={option.value}
+									className="rounded-lg"
+								>
+									<span className="flex items-center gap-2">
+										<Icon size={16} />
+										{option.label}
+									</span>
+								</SelectItem>
+							);
+						})}
+					</SelectContent>
+				</Select>
+			</div>
+		</div>
+	);
 
 	return (
 		<div className="pt-5 pb-5">
 			<div className="space-y-3 pb-5">
 				<div className="flex items-center justify-between gap-3">
 					<GoBack title="Back" hideLabelOnMobile />
-					<div className="flex items-center gap-3">
-						<WatchlistButton
-							id={id}
-							image={poster_path}
-							is_on_homepage={true}
-							media_type={media_type}
-							rating={rateing}
-							release_date={release_date ?? ""}
-							title={title}
-							overview={props.description}
-						/>
-
-						{/* Mood/Status Selector - Only visible when on watchlist */}
-						{status && (
-							<div className="flex items-center gap-2">
-								<span className="hidden sr-only text-xs font-medium text-muted-foreground sm:inline-block transition-all duration-500">
-									Status:
-								</span>
-								<Select
-									value={status}
-									onValueChange={(value) =>
-										setItemStatus(String(id), value as WatchlistStatus)
-									}
-								>
-									<SelectTrigger className="h-10 min-w-[154px] gap-2 rounded-lg border px-3 text-xs font-semibold  transition-all">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent className="rounded-xl">
-										<SelectItem value="plan-to-watch" className="rounded-lg">
-											<span className="flex items-center gap-2">
-												<Clock size={16} />
-												Plan to Watch
-											</span>
-										</SelectItem>
-										<SelectItem value="watching" className="rounded-lg">
-											<span className="flex items-center gap-2">
-												<Eye size={16} />
-												Watching
-											</span>
-										</SelectItem>
-										<SelectItem value="completed" className="rounded-lg">
-											<span className="flex items-center gap-2">
-												<CheckCircle size={16} />
-												Completed
-											</span>
-										</SelectItem>
-										<SelectItem value="liked" className="rounded-lg">
-											<span className="flex items-center gap-2">
-												<Heart size={16} />
-												Liked
-											</span>
-										</SelectItem>
-										<SelectItem value="dropped" className="rounded-lg">
-											<span className="flex items-center gap-2">
-												<XCircleIcon size={16} />
-												Dropped
-											</span>
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						)}
-
+					<div className="flex flex-wrap items-center justify-end gap-2">
+						{renderWatchListSection("hidden sm:flex")}
 						<ShareButton title={title} hideLabelOnMobile />
 					</div>
 				</div>
+				{renderWatchListSection("sm:hidden")}
 				<h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
 					{imdb_url ? (
 						<a
@@ -150,7 +253,7 @@ export const MediaTitleContailer = (props: {
 				</h1>
 				{tagline && <h2 className="hidden sm:flex">{tagline}</h2>}
 			</div>
-			<div className="flex flex-col items-start justify-start space-y-3 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex  space-y-3 flex-row items-center justify-between">
 				<span className="space-x-1 font-light whitespace-nowrap">
 					{releaseyear && releaseyear !== "null" && (
 						<>
@@ -175,7 +278,7 @@ export const MediaTitleContailer = (props: {
 						</>
 					)}
 				</span>
-				<div className="hidden sm:flex">
+				<div className="flex">
 					<RatingCount
 						rating={parseInt(vote_average?.toFixed(1) ?? "0", 10)}
 						ratingcount={vote_count ?? 0}

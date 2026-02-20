@@ -20,7 +20,16 @@ export default defineSchema({
 
     mediaType: v.string(), // "movie" | "tv"
 
-    status: v.string(), // "watching" | "completed" | "plan-to-watch"
+    // Membership is now decoupled from tracking state.
+    // Optional during rollout to support legacy rows before backfill.
+    inWatchlist: v.optional(v.boolean()),
+
+    // New split status model
+    progressStatus: v.optional(v.string()), // "want-to-watch" | "watching" | "finished"
+    reaction: v.optional(v.string()), // "loved" | "liked" | "mixed" | "not-for-me"
+
+    // Legacy combined status kept temporarily for compatibility reads/migration.
+    status: v.optional(v.string()),
 
     progress: v.optional(v.number()), // progress percentage (0-100)
 

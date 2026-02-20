@@ -635,7 +635,11 @@ export interface TvEpisodeDetail {
 	guest_stars?: CastMember[] | null;
 }
 
-// Watchlist item status — the "Mood System"
+export type ProgressStatus = "want-to-watch" | "watching" | "finished";
+
+export type ReactionStatus = "loved" | "liked" | "mixed" | "not-for-me";
+
+// Legacy combined status kept for compatibility during rollout.
 export type WatchlistStatus =
 	| "plan-to-watch"
 	| "watching"

@@ -34,7 +34,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 	} = props;
 	const itemId = String(props.id);
 	const toggle = useToggleWatchlistItem();
-	const { isOnWatchList } = useWatchlistItem(itemId);
+	const { isOnWatchList } = useWatchlistItem(itemId, media_type);
 
 	const handleWatchList = useCallback(async () => {
 		try {

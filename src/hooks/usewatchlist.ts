@@ -8,54 +8,69 @@ import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import type { WatchlistStatus } from "@/types";
+import type { ProgressStatus, ReactionStatus, WatchlistStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
-
-import type { Id } from "../../convex/_generated/dataModel";
 
 import { getTvDetails } from "../lib/queries";
 
 import { useLocalProgressStore } from "./useLocalProgressStore";
 
+type MediaType = "tv" | "movie";
+
+type MediaMetadata = {
+	title?: string;
+	image?: string;
+	rating?: number;
+	release_date?: string;
+	overview?: string;
+};
+
 /* --- Types --- */
 
 export type WatchlistItem = {
 	title: string;
-	type: "tv" | "movie";
-
-	external_id: string; // cast from number to string for frontend compatibility
-
+	type: MediaType;
+	external_id: string;
 	image: string;
-
-	rating: number; // 0-10
-
+	rating: number;
 	release_date: string;
 	overview?: string;
-
-	updated_at: number; // timestamp
-
-	created_at: number; // timestamp
-
-	status: WatchlistStatus;
-
+	updated_at: number;
+	created_at: number;
+	inWatchlist: boolean;
+	progressStatus: ProgressStatus | null;
+	reaction: ReactionStatus | null;
 	progress?: number;
 };
 
 interface WatchlistStore {
-	watchlist: WatchlistItem[];
-
-	addToWatchlist: (item: WatchlistItem) => void;
-
-	removeFromWatchlist: (id: string) => void;
-
-	updateStatus: (
+	mediaState: WatchlistItem[];
+	setWatchlistMembershipLocal: (
 		id: string,
-		status: WatchlistStatus,
-		progress?: number,
+		type: MediaType,
+		inWatchlist: boolean,
+		metadata?: MediaMetadata,
 	) => void;
-
-	setWatchlist: (list: WatchlistItem[]) => void;
+	setProgressStatusLocal: (
+		id: string,
+		type: MediaType,
+		progressStatus: ProgressStatus,
+		progress?: number,
+		metadata?: MediaMetadata,
+	) => void;
+	setReactionLocal: (
+		id: string,
+		type: MediaType,
+		reaction: ReactionStatus | null,
+		metadata?: MediaMetadata,
+	) => void;
+	setProgressLocal: (
+		id: string,
+		type: MediaType,
+		progress: number,
+		metadata?: MediaMetadata,
+	) => void;
 }
 
 const memoryStorage: Storage = (() => {
@@ -78,31 +93,250 @@ const memoryStorage: Storage = (() => {
 	} as Storage;
 })();
 
+function isSameItem(item: WatchlistItem, id: string, type: MediaType) {
+	return (
+		String(item.external_id) === String(id) &&
+		String(item.type) === String(type)
+	);
+}
+
+function buildFallbackItem(
+	id: string,
+	type: MediaType,
+	metadata?: MediaMetadata,
+): WatchlistItem {
+	return {
+		title: metadata?.title ?? `Media ${id}`,
+		type,
+		external_id: String(id),
+		image: metadata?.image ?? "",
+		rating: metadata?.rating ?? 0,
+		release_date: metadata?.release_date ?? "",
+		overview: metadata?.overview,
+		updated_at: Date.now(),
+		created_at: Date.now(),
+		inWatchlist: false,
+		progressStatus: null,
+		reaction: null,
+		progress: 0,
+	};
+}
+
+function mapLegacyStatusToSplit(
+	status?: string,
+	progress?: number,
+): {
+	progressStatus: ProgressStatus | null;
+	reaction: ReactionStatus | null;
+} {
+	if (status === "plan-to-watch") {
+		return { progressStatus: "want-to-watch", reaction: null };
+	}
+
+	if (status === "watching") {
+		return { progressStatus: "watching", reaction: null };
+	}
+
+	if (status === "completed") {
+		return { progressStatus: "finished", reaction: null };
+	}
+
+	if (status === "liked") {
+		return { progressStatus: "finished", reaction: "liked" };
+	}
+
+	if (status === "dropped") {
+		const inferredProgressStatus: ProgressStatus =
+			progress === undefined || progress <= 0
+				? "want-to-watch"
+				: progress >= 100
+					? "finished"
+					: "watching";
+		return { progressStatus: inferredProgressStatus, reaction: "not-for-me" };
+	}
+
+	return { progressStatus: null, reaction: null };
+}
+
+function toLegacyStatus(item: WatchlistItem): WatchlistStatus | null {
+	if (item.reaction === "not-for-me") return "dropped";
+	if (item.reaction === "liked" && item.progressStatus === "finished") {
+		return "liked";
+	}
+
+	if (item.progressStatus === "want-to-watch") return "plan-to-watch";
+	if (item.progressStatus === "watching") return "watching";
+	if (item.progressStatus === "finished") return "completed";
+
+	return null;
+}
+
+function mapConvexItemToWatchlistItem(item: {
+	tmdbId: number;
+	mediaType: string;
+	title?: string;
+	image?: string;
+	rating?: number;
+	release_date?: string;
+	overview?: string;
+	updatedAt: number;
+	progress?: number;
+	inWatchlist?: boolean;
+	progressStatus?: string;
+	reaction?: string;
+	status?: string;
+}): WatchlistItem {
+	const legacy = mapLegacyStatusToSplit(item.status, item.progress);
+
+	return {
+		title: item.title ?? "Unknown Title",
+		type: item.mediaType as MediaType,
+		external_id: String(item.tmdbId),
+		image: item.image ?? "",
+		rating: item.rating ?? 0,
+		release_date: item.release_date ?? "",
+		overview: item.overview,
+		updated_at: item.updatedAt,
+		created_at: item.updatedAt,
+		inWatchlist: item.inWatchlist ?? true,
+		progressStatus:
+			(item.progressStatus as ProgressStatus | undefined) ??
+			legacy.progressStatus,
+		reaction: (item.reaction as ReactionStatus | undefined) ?? legacy.reaction,
+		progress: item.progress ?? 0,
+	};
+}
+
 export const useWatchlistStore = create<WatchlistStore>()(
 	persist(
 		(set) => ({
-			watchlist: [],
+			mediaState: [],
+			setWatchlistMembershipLocal: (id, type, inWatchlist, metadata) =>
+				set((state) => {
+					const existingIndex = state.mediaState.findIndex((item) =>
+						isSameItem(item, id, type),
+					);
 
-			addToWatchlist: (item) =>
-				set((state) => ({ watchlist: [item, ...state.watchlist] })),
+					if (existingIndex === -1) {
+						if (!inWatchlist) return state;
 
-			removeFromWatchlist: (id) =>
-				set((state) => ({
-					watchlist: state.watchlist.filter(
-						(i) => String(i.external_id) !== String(id),
-					),
-				})),
+						const next = buildFallbackItem(id, type, metadata);
+						next.inWatchlist = true;
+						next.progressStatus = "want-to-watch";
+						return { mediaState: [next, ...state.mediaState] };
+					}
 
-			updateStatus: (id, status, progress) =>
-				set((state) => ({
-					watchlist: state.watchlist.map((i) =>
-						String(i.external_id) === String(id)
-							? { ...i, status, progress: progress ?? i.progress }
-							: i,
-					),
-				})),
+					const items = [...state.mediaState];
+					const current = items[existingIndex];
+					items[existingIndex] = {
+						...current,
+						inWatchlist,
+						progressStatus:
+							current.progressStatus ?? (inWatchlist ? "want-to-watch" : null),
+						title: metadata?.title ?? current.title,
+						image: metadata?.image ?? current.image,
+						rating: metadata?.rating ?? current.rating,
+						release_date: metadata?.release_date ?? current.release_date,
+						overview: metadata?.overview ?? current.overview,
+						updated_at: Date.now(),
+					};
+					return { mediaState: items };
+				}),
+			setProgressStatusLocal: (id, type, progressStatus, progress, metadata) =>
+				set((state) => {
+					const existingIndex = state.mediaState.findIndex((item) =>
+						isSameItem(item, id, type),
+					);
 
-			setWatchlist: (list) => set({ watchlist: list }),
+					const nextProgress =
+						progress !== undefined
+							? progress
+							: progressStatus === "finished"
+								? 100
+								: progressStatus === "want-to-watch"
+									? 0
+									: undefined;
+
+					if (existingIndex === -1) {
+						const next = buildFallbackItem(id, type, metadata);
+						next.progressStatus = progressStatus;
+						next.progress = nextProgress ?? 0;
+						return { mediaState: [next, ...state.mediaState] };
+					}
+
+					const items = [...state.mediaState];
+					const current = items[existingIndex];
+					items[existingIndex] = {
+						...current,
+						progressStatus,
+						progress: nextProgress ?? current.progress,
+						title: metadata?.title ?? current.title,
+						image: metadata?.image ?? current.image,
+						rating: metadata?.rating ?? current.rating,
+						release_date: metadata?.release_date ?? current.release_date,
+						overview: metadata?.overview ?? current.overview,
+						updated_at: Date.now(),
+					};
+					return { mediaState: items };
+				}),
+			setReactionLocal: (id, type, reaction, metadata) =>
+				set((state) => {
+					const existingIndex = state.mediaState.findIndex((item) =>
+						isSameItem(item, id, type),
+					);
+
+					if (existingIndex === -1) {
+						const next = buildFallbackItem(id, type, metadata);
+						next.reaction = reaction;
+						return { mediaState: [next, ...state.mediaState] };
+					}
+
+					const items = [...state.mediaState];
+					const current = items[existingIndex];
+					items[existingIndex] = {
+						...current,
+						reaction,
+						title: metadata?.title ?? current.title,
+						image: metadata?.image ?? current.image,
+						rating: metadata?.rating ?? current.rating,
+						release_date: metadata?.release_date ?? current.release_date,
+						overview: metadata?.overview ?? current.overview,
+						updated_at: Date.now(),
+					};
+					return { mediaState: items };
+				}),
+			setProgressLocal: (id, type, progress, metadata) =>
+				set((state) => {
+					const existingIndex = state.mediaState.findIndex((item) =>
+						isSameItem(item, id, type),
+					);
+
+					if (existingIndex === -1) {
+						const next = buildFallbackItem(id, type, metadata);
+						next.progress = progress;
+						if (!next.progressStatus && progress > 0) {
+							next.progressStatus = progress >= 95 ? "finished" : "watching";
+						}
+						return { mediaState: [next, ...state.mediaState] };
+					}
+
+					const items = [...state.mediaState];
+					const current = items[existingIndex];
+					items[existingIndex] = {
+						...current,
+						progress,
+						progressStatus:
+							current.progressStatus ??
+							(progress >= 95 ? "finished" : progress > 0 ? "watching" : null),
+						title: metadata?.title ?? current.title,
+						image: metadata?.image ?? current.image,
+						rating: metadata?.rating ?? current.rating,
+						release_date: metadata?.release_date ?? current.release_date,
+						overview: metadata?.overview ?? current.overview,
+						updated_at: Date.now(),
+					};
+					return { mediaState: items };
+				}),
 		}),
 		{
 			name: "watchlist-storage",
@@ -115,46 +349,25 @@ export const useWatchlistStore = create<WatchlistStore>()(
 
 /* --- Hooks --- */
 
-/** Returns { watchlist, loading }. Loading tracks query state. */
+/** Returns membership watchlist only. */
 export function useWatchlist() {
 	const { isSignedIn, isLoaded } = useUser();
-
 	const convexWatchlistData = useQuery(api.watchlist.getWatchlist);
-
-	const localWatchlist = useWatchlistStore((state) => state.watchlist);
+	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
 	const watchlist: WatchlistItem[] = useMemo(() => {
 		if (isSignedIn) {
 			if (!convexWatchlistData) return [];
-
-			const mapped = convexWatchlistData.map((item) => ({
-				title: item.title ?? "Unknown Title",
-				type: item.mediaType as "tv" | "movie",
-
-				external_id: String(item.tmdbId),
-
-				image: item.image ?? "",
-
-				rating: item.rating ?? 0,
-
-				release_date: item.release_date ?? "",
-				overview: item.overview,
-
-				updated_at: item.updatedAt,
-
-				created_at: item.updatedAt,
-
-				status: (item.status as WatchlistStatus) ?? "plan-to-watch",
-
-				progress: item.progress ?? 0,
-			}));
-
-			return mapped.sort((a, b) => b.updated_at - a.updated_at);
+			return convexWatchlistData
+				.map((item) => mapConvexItemToWatchlistItem(item))
+				.filter((item) => item.inWatchlist)
+				.sort((a, b) => b.updated_at - a.updated_at);
 		}
 
-		// If not signed in, use local store
-		return [...localWatchlist].sort((a, b) => b.updated_at - a.updated_at);
-	}, [isSignedIn, convexWatchlistData, localWatchlist]);
+		return [...localMediaState]
+			.filter((item) => item.inWatchlist)
+			.sort((a, b) => b.updated_at - a.updated_at);
+	}, [isSignedIn, convexWatchlistData, localMediaState]);
 
 	const loading =
 		!isLoaded || (isSignedIn && convexWatchlistData === undefined);
@@ -162,80 +375,34 @@ export function useWatchlist() {
 	return { watchlist, loading };
 }
 
-/** Toggle watchlist item. Call with media object. */
+/** Get full tracking state for one media item independent of membership. */
+export function useMediaState(id: string, mediaType: MediaType) {
+	const { isSignedIn } = useUser();
+	const localMediaState = useWatchlistStore((state) => state.mediaState);
+	const remoteState = useQuery(api.watchlist.getMediaState, {
+		tmdbId: Number(id),
+		mediaType,
+	});
+
+	if (!isSignedIn) {
+		return (
+			localMediaState.find((item) => isSameItem(item, id, mediaType)) ?? null
+		);
+	}
+
+	if (!remoteState) return null;
+	return mapConvexItemToWatchlistItem(remoteState);
+}
+
+/** Toggle watchlist membership. */
 export function useToggleWatchlistItem() {
 	const { isSignedIn } = useUser();
-
-	// Convex Mutations
-	const upsertItem = useMutation(
-		api.watchlist.upsertWatchlistItem,
-	).withOptimisticUpdate((localStore, args) => {
-		const existing = localStore.getQuery(api.watchlist.getWatchlist, {});
-		if (!existing) return;
-
-		const now = Date.now();
-
-		const newItem = {
-			_id: `optimistic_${now}` as Id<"watch_items">,
-			_creationTime: now,
-			userId: "me" as unknown as Id<"users">,
-			tmdbId: args.tmdbId,
-			mediaType: args.mediaType,
-			status: args.status,
-			progress: 0,
-			updatedAt: now,
-			title: args.title,
-			image: args.image,
-			rating: args.rating,
-			release_date: args.release_date,
-			overview: args.overview,
-		};
-
-		const existingItemIndex = existing.findIndex(
-			(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
-		);
-
-		if (existingItemIndex !== -1) {
-			const newItems = [...existing];
-			newItems[existingItemIndex] = {
-				...newItems[existingItemIndex],
-				...newItem,
-				_id: newItems[existingItemIndex]._id,
-			};
-
-			localStore.setQuery(
-				api.watchlist.getWatchlist,
-				{},
-				newItems.sort((a, b) => b.updatedAt - a.updatedAt),
-			);
-		} else {
-			localStore.setQuery(api.watchlist.getWatchlist, {}, [
-				newItem,
-				...existing,
-			]);
-		}
-	});
-
-	const removeItem = useMutation(
-		api.watchlist.removeWatchlistItem,
-	).withOptimisticUpdate((localStore, args) => {
-		const existing = localStore.getQuery(api.watchlist.getWatchlist, {});
-		if (!existing) return;
-
-		const newItems = existing.filter(
-			(i) => !(i.tmdbId === args.tmdbId && i.mediaType === args.mediaType),
-		);
-
-		localStore.setQuery(api.watchlist.getWatchlist, {}, newItems);
-	});
-
-	// Local Store Actions
-	const addToLocal = useWatchlistStore((state) => state.addToWatchlist);
-
-	const removeFromLocal = useWatchlistStore(
-		(state) => state.removeFromWatchlist,
+	const setWatchlistMembership = useMutation(
+		api.watchlist.setWatchlistMembership,
 	);
-
+	const setLocalWatchlistMembership = useWatchlistStore(
+		(state) => state.setWatchlistMembershipLocal,
+	);
 	const { watchlist } = useWatchlist();
 
 	return useCallback(
@@ -244,208 +411,190 @@ export function useToggleWatchlistItem() {
 			rating: number;
 			image: string;
 			id: string;
-			media_type: "tv" | "movie";
+			media_type: MediaType;
 			release_date: string;
 			overview?: string;
 		}) => {
-			// Keep local behavior (id-only) but fix signed-in behavior (id+type) to avoid collisions.
-			const exists = watchlist.some((i) => i.external_id === item.id);
-			const existsWithType = watchlist.some(
-				(i) => i.external_id === item.id && i.type === item.media_type,
+			const isInWatchlist = watchlist.some((i) =>
+				isSameItem(i, item.id, item.media_type),
 			);
+			const inWatchlist = !isInWatchlist;
 
 			if (isSignedIn) {
-				if (existsWithType) {
-					await removeItem({
-						tmdbId: Number(item.id),
-						mediaType: item.media_type,
-					});
-				} else {
-					await upsertItem({
-						tmdbId: Number(item.id),
-						mediaType: item.media_type,
-						status: "plan-to-watch",
-						title: item.title,
-						image: item.image,
-						rating: item.rating,
-						release_date: item.release_date || undefined,
-						overview: item.overview || undefined,
-					});
-				}
-			} else {
-				// Local Toggle
-				if (exists) {
-					removeFromLocal(String(item.id));
-				} else {
-					addToLocal({
-						title: item.title,
-						type: item.media_type,
-
-						external_id: String(item.id),
-
-						image: item.image,
-
-						rating: item.rating,
-
-						release_date: item.release_date,
-						overview: item.overview,
-
-						updated_at: Date.now(),
-
-						created_at: Date.now(),
-
-						status: "plan-to-watch",
-					});
-				}
+				await setWatchlistMembership({
+					tmdbId: Number(item.id),
+					mediaType: item.media_type,
+					inWatchlist,
+					title: item.title,
+					image: item.image,
+					rating: item.rating,
+					release_date: item.release_date || undefined,
+					overview: item.overview || undefined,
+				});
+				return;
 			}
+
+			setLocalWatchlistMembership(item.id, item.media_type, inWatchlist, {
+				title: item.title,
+				image: item.image,
+				rating: item.rating,
+				release_date: item.release_date,
+				overview: item.overview,
+			});
 		},
 		[
 			watchlist,
 			isSignedIn,
-			upsertItem,
-			removeItem,
-			addToLocal,
-			removeFromLocal,
+			setWatchlistMembership,
+			setLocalWatchlistMembership,
 		],
 	);
 }
 
-/** Set item status. Call with id and status object. */
-export function useSetItemStatus() {
+export function useSetProgressStatus() {
 	const { isSignedIn } = useUser();
-
-	// Convex
-	const upsertItem = useMutation(
-		api.watchlist.upsertWatchlistItem,
-	).withOptimisticUpdate((localStore, args) => {
-		const existing = localStore.getQuery(api.watchlist.getWatchlist, {});
-		if (!existing) return;
-
-		const now = Date.now();
-
-		const existingItemIndex = existing.findIndex(
-			(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
-		);
-
-		let optimisticProgress = args.progress;
-
-		if (optimisticProgress === undefined) {
-			if (args.status === "completed") optimisticProgress = 100;
-			else if (args.status === "plan-to-watch") optimisticProgress = 0;
-		}
-
-		if (existingItemIndex !== -1) {
-			const newItems = [...existing];
-			newItems[existingItemIndex] = {
-				...newItems[existingItemIndex],
-				status: args.status,
-				progress: optimisticProgress ?? newItems[existingItemIndex].progress,
-				updatedAt: now,
-			};
-
-			localStore.setQuery(
-				api.watchlist.getWatchlist,
-				{},
-				newItems.sort((a, b) => b.updatedAt - a.updatedAt),
-			);
-		}
-	});
-
-	// Local
-	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
-
-	const { watchlist } = useWatchlist();
-
-	const clearLocalShowProgress = useLocalProgressStore(
-		(state) => state.clearShowProgress,
+	const setProgressStatus = useMutation(api.watchlist.setProgressStatus);
+	const setProgressStatusLocal = useWatchlistStore(
+		(state) => state.setProgressStatusLocal,
 	);
-
+	const markEpisodesWatchedBatch = useMutation(
+		api.watchlist.markSeasonEpisodesWatched,
+	);
 	const markLocalSeason = useLocalProgressStore(
 		(state) => state.markSeasonWatched,
 	);
 
-	const markEpisodesWatchedBatch = useMutation(
-		api.watchlist.markSeasonEpisodesWatched,
-	);
-
 	return useCallback(
-		(id: string, status: WatchlistStatus) => {
-			const item = watchlist.find((i) => i.external_id === id);
-			if (!item) return;
-
-			// Handle general item update
+		(
+			id: string,
+			mediaType: MediaType,
+			progressStatus: ProgressStatus,
+			metadata?: MediaMetadata,
+		) => {
 			if (isSignedIn) {
-				upsertItem({
+				setProgressStatus({
 					tmdbId: Number(id),
-					mediaType: item.type,
-					status,
+					mediaType,
+					progressStatus,
+					title: metadata?.title,
+					image: metadata?.image,
+					rating: metadata?.rating,
+					release_date: metadata?.release_date,
+					overview: metadata?.overview,
 				}).catch(console.error);
 			} else {
-				updateLocalStatus(
+				setProgressStatusLocal(
 					id,
-					status,
-					status === "completed"
-						? 100
-						: status === "plan-to-watch"
-							? 0
-							: undefined,
+					mediaType,
+					progressStatus,
+					undefined,
+					metadata,
 				);
 			}
 
-			// Handle episode cascading when marked completed
-			if (status === "completed" && item.type === "tv") {
+			if (
+				(progressStatus === "finished" || progressStatus === "want-to-watch") &&
+				mediaType === "tv"
+			) {
 				getTvDetails({ id: Number(id) })
 					.then((details) => {
 						const seasonsToMark =
 							details?.seasons?.filter((s) => s.season_number >= 0) || [];
+						const shouldMarkWatched = progressStatus === "finished";
 
 						seasonsToMark.forEach((s) => {
-							if (s.episode_count > 0) {
-								const epNums = Array.from(
-									{ length: s.episode_count },
-									(_, i) => i + 1,
-								);
+							if (s.episode_count <= 0) return;
 
-								if (isSignedIn) {
-									markEpisodesWatchedBatch({
-										tmdbId: Number(id),
-										season: s.season_number,
-										episodes: epNums,
-										isWatched: true,
-									});
-								} else {
-									markLocalSeason(Number(id), s.season_number, epNums, true);
-								}
+							const epNums = Array.from(
+								{ length: s.episode_count },
+								(_, i) => i + 1,
+							);
+
+							if (isSignedIn) {
+								markEpisodesWatchedBatch({
+									tmdbId: Number(id),
+									season: s.season_number,
+									episodes: epNums,
+									isWatched: shouldMarkWatched,
+								});
+							} else {
+								markLocalSeason(
+									Number(id),
+									s.season_number,
+									epNums,
+									shouldMarkWatched,
+								);
 							}
 						});
 					})
 					.catch(console.error);
 			}
-
-			if (status === "plan-to-watch" && item.type === "tv") {
-				clearLocalShowProgress(Number(id));
-			}
 		},
 		[
-			watchlist,
 			isSignedIn,
-			upsertItem,
-			updateLocalStatus,
-			clearLocalShowProgress,
-			markLocalSeason,
+			setProgressStatus,
+			setProgressStatusLocal,
 			markEpisodesWatchedBatch,
+			markLocalSeason,
 		],
 	);
 }
 
+export function useSetReaction() {
+	const { isSignedIn } = useUser();
+	const setReaction = useMutation(api.watchlist.setReaction);
+	const setReactionLocal = useWatchlistStore((state) => state.setReactionLocal);
+
+	return useCallback(
+		(
+			id: string,
+			mediaType: MediaType,
+			reaction: ReactionStatus | null,
+			metadata?: MediaMetadata,
+		) => {
+			if (isSignedIn) {
+				const payload: {
+					tmdbId: number;
+					mediaType: MediaType;
+					reaction?: ReactionStatus;
+					clearReaction?: boolean;
+					title?: string;
+					image?: string;
+					rating?: number;
+					release_date?: string;
+					overview?: string;
+				} = {
+					tmdbId: Number(id),
+					mediaType,
+					title: metadata?.title,
+					image: metadata?.image,
+					rating: metadata?.rating,
+					release_date: metadata?.release_date,
+					overview: metadata?.overview,
+				};
+
+				if (reaction) payload.reaction = reaction;
+				else payload.clearReaction = true;
+				setReaction(payload).catch(console.error);
+				return;
+			}
+
+			setReactionLocal(id, mediaType, reaction, metadata);
+		},
+		[isSignedIn, setReaction, setReactionLocal],
+	);
+}
+
 /** Returns { isOnWatchList } for a given external_id. */
-export function useWatchlistItem(id: string) {
+export function useWatchlistItem(id: string, mediaType?: MediaType) {
 	const { watchlist } = useWatchlist();
 
-	const isOnWatchList = useMemo(
-		() => watchlist.some((item) => item.external_id === id),
-		[watchlist, id],
-	);
+	const isOnWatchList = useMemo(() => {
+		if (!mediaType) {
+			return watchlist.some((item) => item.external_id === id);
+		}
+		return watchlist.some((item) => isSameItem(item, id, mediaType));
+	}, [watchlist, id, mediaType]);
 
 	return { isOnWatchList };
 }
@@ -457,17 +606,17 @@ export function useWatchlistCount() {
 }
 
 /** Check if item exists without subscribing to the entire watchlist - optimization */
-// For now, reusing the main hook as Convex query subscription is efficient enough
-export function useIsInWatchlist(id: string) {
+export function useIsInWatchlist(id: string, mediaType?: MediaType) {
 	const { watchlist } = useWatchlist();
-	return watchlist.some((item) => item.external_id === id);
+	if (!mediaType) return watchlist.some((item) => item.external_id === id);
+	return watchlist.some((item) => isSameItem(item, id, mediaType));
 }
 
-/** Get item status */
-export function useWatchlistItemStatus(id: string) {
-	const { watchlist } = useWatchlist();
-	const item = watchlist.find((item) => item.external_id === id);
-	return item?.status ?? null;
+/** Legacy status accessor for compatibility during rollout. */
+export function useWatchlistItemStatus(id: string, mediaType: MediaType) {
+	const state = useMediaState(id, mediaType);
+	if (!state) return null;
+	return toLegacyStatus(state);
 }
 
 /** Mock hydration hook for compatibility */

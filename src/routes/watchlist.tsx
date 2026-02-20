@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Frown, Meh, Smile } from "lucide-react";
+import type { ComponentType } from "react";
 import { useCallback, useId, useMemo, useState } from "react";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultLoader } from "@/components/default-loader";
@@ -11,8 +13,8 @@ import {
 	Eye,
 	Heart,
 	Star,
+	TrashBin,
 	Upload,
-	XCircleIcon,
 } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import {
@@ -23,16 +25,15 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
 import {
-	useSetItemStatus,
+	useToggleWatchlistItem,
 	useWatchlist,
 	type WatchlistItem,
 } from "@/hooks/usewatchlist";
 import { useWatchlistImportExport } from "@/hooks/usewatchlistimportexport";
 import { formatMediaTitle } from "@/lib/utils";
-import type { WatchlistStatus } from "@/types";
+import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export const Route = createFileRoute("/watchlist")({
 	head: () => ({
@@ -47,31 +48,51 @@ export const Route = createFileRoute("/watchlist")({
 	component: WatchlistPage,
 });
 
-const STATUS_LABELS: Record<WatchlistStatus, string> = {
-	"plan-to-watch": "Plan to Watch",
+const PROGRESS_LABELS: Record<ProgressStatus, string> = {
+	"want-to-watch": "Plan to watch",
 	watching: "Watching",
-	completed: "Completed",
-	liked: "Liked",
-	dropped: "Dropped",
+	finished: "Completed",
 };
 
-type FilterType = "all" | WatchlistStatus;
+const PROGRESS_OPTIONS: Array<{
+	value: ProgressStatus;
+	label: string;
+	icon: ComponentType<{ size?: string | number; className?: string }>;
+}> = [
+	{ value: "want-to-watch", label: "Plan to watch", icon: Clock },
+	{ value: "watching", label: "Watching", icon: Eye },
+	{ value: "finished", label: "Completed", icon: CheckCircle },
+];
+
+const REACTION_OPTIONS: Array<{
+	value: ReactionStatus;
+	label: string;
+	icon: ComponentType<{ size?: string | number; className?: string }>;
+}> = [
+	{ value: "loved", label: "Loved", icon: Heart },
+	{ value: "liked", label: "Liked", icon: Smile },
+	{ value: "mixed", label: "Mixed", icon: Meh },
+	{ value: "not-for-me", label: "Not for me", icon: Frown },
+];
+
+type FilterType = "all" | ProgressStatus;
 type MediaFilter = "all" | "movie" | "tv";
 type SortType = "recent" | "rating" | "title" | "year";
+type ReactionFilter = "all" | "none" | ReactionStatus;
 
 function WatchlistPage() {
 	const importInputId = useId();
 	const { watchlist: watchlistData, loading: watchlistLoading } =
 		useWatchlist();
-	const setItemStatus = useSetItemStatus();
+	const toggleWatchlist = useToggleWatchlistItem();
 	const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+	const [reactionFilter, setReactionFilter] = useState<ReactionFilter>("all");
 	const [mediaFilter, setMediaFilter] = useState<MediaFilter>("all");
 	const [sortBy, setSortBy] = useState<SortType>("recent");
 	const {
 		importLoading,
 		exportLoading,
 		error,
-		// watchlist, // Data is now managed by Convex, this might be stale or from store
 		fileInputRef,
 		exportWatchlist,
 		importWatchlist,
@@ -82,19 +103,24 @@ function WatchlistPage() {
 	const filteredWatchlist = useMemo(() => {
 		let items = watchlistData;
 
-		// Status filter
 		if (activeFilter !== "all") {
 			items = items.filter(
-				(item) => (item.status ?? "plan-to-watch") === activeFilter,
+				(item) => (item.progressStatus ?? "want-to-watch") === activeFilter,
 			);
 		}
 
-		// Media type filter
+		if (reactionFilter !== "all") {
+			items = items.filter((item) =>
+				reactionFilter === "none"
+					? item.reaction == null
+					: item.reaction === reactionFilter,
+			);
+		}
+
 		if (mediaFilter !== "all") {
 			items = items.filter((item) => item.type === mediaFilter);
 		}
 
-		// Sort
 		return [...items].sort((a, b) => {
 			switch (sortBy) {
 				case "rating":
@@ -113,33 +139,40 @@ function WatchlistPage() {
 					);
 			}
 		});
-	}, [watchlistData, activeFilter, mediaFilter, sortBy]);
+	}, [watchlistData, activeFilter, reactionFilter, mediaFilter, sortBy]);
 
 	const counts = useMemo(
 		() => ({
 			all: watchlistData.length,
-			"plan-to-watch": watchlistData.filter(
-				(i) => (i.status ?? "plan-to-watch") === "plan-to-watch",
+			"want-to-watch": watchlistData.filter(
+				(i) => (i.progressStatus ?? "want-to-watch") === "want-to-watch",
 			).length,
-			watching: watchlistData.filter((i) => i.status === "watching").length,
-			completed: watchlistData.filter((i) => i.status === "completed").length,
-			liked: watchlistData.filter((i) => i.status === "liked").length,
-			dropped: watchlistData.filter((i) => i.status === "dropped").length,
+			watching: watchlistData.filter((i) => i.progressStatus === "watching")
+				.length,
+			finished: watchlistData.filter((i) => i.progressStatus === "finished")
+				.length,
 		}),
 		[watchlistData],
 	);
 
-	const handleStatusChange = useCallback(
-		(id: string, newStatus: WatchlistStatus) => {
-			setItemStatus(id, newStatus);
+	const handleRemoveFromWatchlist = useCallback(
+		(item: WatchlistItem) => {
+			toggleWatchlist({
+				title: item.title,
+				rating: item.rating,
+				image: item.image,
+				id: item.external_id,
+				media_type: item.type,
+				release_date: item.release_date ?? "",
+				overview: item.overview,
+			}).catch(console.error);
 		},
-		[setItemStatus],
+		[toggleWatchlist],
 	);
 
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="w-full max-w-screen-xl p-5">
-				{/* Header */}
 				<div className="mb-8">
 					<h1 className=" text-4xl font-bold tracking-tight md:text-5xl">
 						Watchlist
@@ -163,37 +196,28 @@ function WatchlistPage() {
 					</div>
 				)}
 
-				{/* Filters Row */}
 				<div className="mb-6 flex flex-col gap-4">
-					{/* Status Tabs */}
 					<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 						<div className="scrollbar-hidden flex gap-2 overflow-x-auto">
-							{(
-								[
-									"all",
-									"plan-to-watch",
-									"watching",
-									"completed",
-									"liked",
-									"dropped",
-								] as const
-							).map((filter) => (
-								<button
-									key={filter}
-									type="button"
-									onClick={() => setActiveFilter(filter)}
-									className={`pressable-small whitespace-nowrap rounded-xl items-center px-4 py-1.5 text-sm font-medium transition-all duration-300 ${
-										activeFilter === filter
-											? "bg-foreground text-background "
-											: "bg-secondary/40 text-foreground/70 hover:bg-secondary/70"
-									}`}
-								>
-									{filter === "all" ? "All" : STATUS_LABELS[filter]}{" "}
-									<span className="ml-1  text-[12px] opacity-60">
-										{counts[filter]}
-									</span>
-								</button>
-							))}
+							{(["all", "want-to-watch", "watching", "finished"] as const).map(
+								(filter) => (
+									<button
+										key={filter}
+										type="button"
+										onClick={() => setActiveFilter(filter)}
+										className={`pressable-small whitespace-nowrap rounded-xl items-center px-4 py-1.5 text-sm font-medium transition-all duration-300 ${
+											activeFilter === filter
+												? "bg-foreground text-background "
+												: "bg-secondary/40 text-foreground/70 hover:bg-secondary/70"
+										}`}
+									>
+										{filter === "all" ? "All" : PROGRESS_LABELS[filter]}{" "}
+										<span className="ml-1  text-[12px] opacity-60">
+											{counts[filter]}
+										</span>
+									</button>
+								),
+							)}
 						</div>
 
 						<div className="flex gap-3">
@@ -240,7 +264,6 @@ function WatchlistPage() {
 						</div>
 					</div>
 
-					{/* Secondary Filters: Media type + Sort */}
 					<div className="flex flex-wrap items-center gap-3">
 						<div className="flex gap-1 rounded-xl bg-secondary/30 p-1">
 							{(["all", "movie", "tv"] as const).map((mf) => (
@@ -260,6 +283,37 @@ function WatchlistPage() {
 						</div>
 
 						<Select
+							value={reactionFilter}
+							onValueChange={(value) =>
+								setReactionFilter(value as ReactionFilter)
+							}
+						>
+							<SelectTrigger className="h-8 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
+								<SelectValue placeholder="Mood" />
+							</SelectTrigger>
+							<SelectContent className="rounded-xl">
+								<SelectItem value="all">All moods</SelectItem>
+								<SelectItem value="none">
+									<span className="flex items-center gap-2">
+										<Meh size={14} />
+										No mood
+									</span>
+								</SelectItem>
+								{REACTION_OPTIONS.map((option) => {
+									const Icon = option.icon;
+									return (
+										<SelectItem key={option.value} value={option.value}>
+											<span className="flex items-center gap-2">
+												<Icon size={14} />
+												{option.label}
+											</span>
+										</SelectItem>
+									);
+								})}
+							</SelectContent>
+						</Select>
+
+						<Select
 							value={sortBy}
 							onValueChange={(value) => setSortBy(value as SortType)}
 						>
@@ -276,7 +330,6 @@ function WatchlistPage() {
 					</div>
 				</div>
 
-				{/* Content */}
 				{watchlistLoading ? (
 					<DefaultLoader className="min-h-[calc(100vh-112px)] grid h-full place-content-center items-center justify-center" />
 				) : error && filteredWatchlist.length === 0 ? (
@@ -284,7 +337,9 @@ function WatchlistPage() {
 				) : filteredWatchlist?.length === 0 ? (
 					<DefaultEmptyState
 						message={
-							activeFilter === "all" && mediaFilter === "all"
+							activeFilter === "all" &&
+							mediaFilter === "all" &&
+							reactionFilter === "all"
 								? "No items in your watchlist"
 								: "No items match your filters"
 						}
@@ -296,9 +351,9 @@ function WatchlistPage() {
 							(item) =>
 								item && (
 									<WatchlistCard
-										key={item.external_id}
+										key={`${item.type}-${item.external_id}`}
 										item={item}
-										onStatusChange={handleStatusChange}
+										onRemoveFromWatchlist={handleRemoveFromWatchlist}
 									/>
 								),
 						)}
@@ -311,12 +366,21 @@ function WatchlistPage() {
 
 function WatchlistCard({
 	item,
-	onStatusChange,
+	onRemoveFromWatchlist,
 }: {
 	item: WatchlistItem;
-	onStatusChange: (id: string, status: WatchlistStatus) => void;
+	onRemoveFromWatchlist: (item: WatchlistItem) => void;
 }) {
-	const status = item.status ?? "plan-to-watch";
+	const progressStatus = item.progressStatus ?? "want-to-watch";
+	const reaction = item.reaction ?? null;
+	const progressOption =
+		PROGRESS_OPTIONS.find((option) => option.value === progressStatus) ??
+		PROGRESS_OPTIONS[0];
+	const reactionOption = reaction
+		? (REACTION_OPTIONS.find((option) => option.value === reaction) ?? null)
+		: null;
+	const ProgressIcon = progressOption.icon;
+	const ReactionIcon = reactionOption?.icon;
 	const formattedTitle = formatMediaTitle.encode(item.title);
 	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${item.image}`;
 	const formattedDate = item.release_date
@@ -330,7 +394,6 @@ function WatchlistCard({
 	return (
 		<div className="group relative overflow-hidden rounded-2xl border border-default bg-secondary/5 transition-all duration-300 hover:border-foreground/15 hover:bg-secondary/15">
 			<div className="flex gap-3 p-3">
-				{/* Poster */}
 				<Link
 					// @ts-expect-error - correct link
 					to={`/${item.type}/${item.external_id}/${formattedTitle}`}
@@ -345,7 +408,6 @@ function WatchlistCard({
 					/>
 				</Link>
 
-				{/* Info */}
 				<div className="flex min-w-0 flex-1 flex-col justify-between gap-1">
 					<div>
 						<Link
@@ -385,62 +447,36 @@ function WatchlistCard({
 						)}
 					</div>
 
-					{/* Status Selector + Actions */}
 					<div className="flex items-center justify-between gap-2 pt-1">
-						<Select
-							value={status}
-							onValueChange={(value) =>
-								onStatusChange(item.external_id, value as WatchlistStatus)
-							}
-						>
-							<SelectTrigger className="h-7 min-w-[130px] gap-1.5 rounded-lg border px-2.5 text-[11px] font-semibold shadow-none ">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent className="rounded-xl ">
-								<SelectItem value="plan-to-watch">
-									<span className="flex items-center gap-2">
-										<Clock size={14} />
-										Plan to Watch
-									</span>
-								</SelectItem>
-								<SelectItem value="watching">
-									<span className="flex items-center gap-2">
-										<Eye size={14} />
-										Watching
-									</span>
-								</SelectItem>
-								<SelectItem value="completed">
-									<span className="flex items-center gap-2">
-										<CheckCircle size={14} />
-										Completed
-									</span>
-								</SelectItem>
-								<SelectItem value="liked">
-									<span className="flex items-center gap-2">
-										<Heart size={14} />
-										Liked
-									</span>
-								</SelectItem>
-								<SelectItem value="dropped">
-									<span className="flex items-center gap-2">
-										<XCircleIcon size={14} />
-										Dropped
-									</span>
-								</SelectItem>
-							</SelectContent>
-						</Select>
+						<div className="flex flex-row gap-1">
+							<div className="inline-flex items-center gap-2 h-7 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold">
+								<ProgressIcon size={14} />
+								<span>{progressOption.label}</span>
+							</div>
+							<div className="inline-flex items-center h-7 gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold">
+								{reactionOption ? (
+									<>
+										{ReactionIcon && <ReactionIcon size={14} />}
+										<span>{reactionOption.label}</span>
+									</>
+								) : (
+									<>
+										<Meh size={14} />
+										<span>No mood</span>
+									</>
+								)}
+							</div>
+						</div>
 
-						<WatchlistButton
-							id={parseInt(item.external_id, 10)}
-							image={item.image ?? ""}
-							is_on_watchlist_page={true}
-							media_type={item.type}
-							rating={item.rating ?? 0}
-							release_date={item.release_date ?? ""}
-							title={item.title}
-							className="rounded-lg"
-							overview={item.overview}
-						/>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							className="text-muted-foreground hover:text-destructive"
+							aria-label={`Remove ${item.title} from watchlist`}
+							onClick={() => onRemoveFromWatchlist(item)}
+						>
+							<TrashBin size={14} />
+						</Button>
 					</div>
 				</div>
 			</div>

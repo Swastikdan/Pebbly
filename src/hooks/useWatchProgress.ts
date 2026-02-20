@@ -3,7 +3,6 @@ import { useUser } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 
 import { useCallback, useEffect, useMemo } from "react";
-import type { WatchlistStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
 
@@ -11,7 +10,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 
 import { useLocalProgressStore } from "./useLocalProgressStore";
 
-import { useWatchlist, useWatchlistStore } from "./usewatchlist";
+import { useMediaState, useWatchlist, useWatchlistStore } from "./usewatchlist";
 
 /* ─── Types ─── */
 
@@ -37,8 +36,6 @@ export interface WatchProgressData {
 export interface EpisodeWatchedMap {
 	[key: string]: boolean;
 }
-
-type AutoShowStatus = "plan-to-watch" | "watching" | "completed";
 
 interface PlayerEventPayload {
 	type: "PLAYER_EVENT";
@@ -72,7 +69,7 @@ export function usePlayerProgressListener() {
 	const markEpisodeWatchedMut = useMutation(api.watchlist.markEpisodeWatched);
 
 	// Local Store
-	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
+	const setLocalProgress = useWatchlistStore((state) => state.setProgressLocal);
 
 	const markLocalEpisode = useLocalProgressStore(
 		(state) => state.markEpisodeWatched,
@@ -123,12 +120,11 @@ export function usePlayerProgressListener() {
 					lastSavedPercent = safeProgress;
 
 					if (isSignedIn) {
-						// Update show/movie progress
+						// Update progress only; manual status remains authoritative.
 						updateProgress({
 							tmdbId: Number(id),
 							mediaType,
 							progress: safeProgress,
-							status: safeProgress >= 95 ? "completed" : "watching",
 						}).catch(console.error);
 
 						// Handle Episode Completion
@@ -146,51 +142,16 @@ export function usePlayerProgressListener() {
 							}).catch(console.error);
 						}
 					} else {
-						// Local Logic
-						const currentWatchlist = useWatchlistStore.getState().watchlist;
-						const item = currentWatchlist.find(
-							(i) => i.external_id === String(id),
-						);
+						setLocalProgress(String(id), mediaType, safeProgress);
 
-						if (item) {
-							let newStatus = item.status;
-
-							// If starting to watch/playing, and status is plan-to-watch, flip to watching
-							if (
-								(playerEvent === "play" || safeProgress > 0) &&
-								item.status === "plan-to-watch"
-							) {
-								newStatus = "watching";
-							}
-
-							// If completed movie
-							if (
-								mediaType === "movie" &&
-								(playerEvent === "ended" || safeProgress >= 95)
-							) {
-								newStatus = "completed";
-							}
-
-							const nextProgress =
-								mediaType === "movie"
-									? newStatus === "completed"
-										? 100
-										: safeProgress
-									: undefined;
-
-							if (newStatus !== item.status || nextProgress !== item.progress) {
-								updateLocalStatus(String(id), newStatus, nextProgress);
-							}
-
-							// Handle episode completion locally
-							if (
-								(playerEvent === "ended" || safeProgress >= 95) &&
-								mediaType === "tv" &&
-								season !== undefined &&
-								episode !== undefined
-							) {
-								markLocalEpisode(Number(id), season, episode, true);
-							}
+						// Handle episode completion locally
+						if (
+							(playerEvent === "ended" || safeProgress >= 95) &&
+							mediaType === "tv" &&
+							season !== undefined &&
+							episode !== undefined
+						) {
+							markLocalEpisode(Number(id), season, episode, true);
 						}
 					}
 				}
@@ -205,7 +166,7 @@ export function usePlayerProgressListener() {
 		updateProgress,
 		markEpisodeWatchedMut,
 		isSignedIn,
-		updateLocalStatus,
+		setLocalProgress,
 		markLocalEpisode,
 	]);
 }
@@ -216,25 +177,21 @@ export function useWatchProgress(
 	id: string | number,
 	mediaType: "movie" | "tv",
 ) {
-	const { watchlist } = useWatchlist();
+	const mediaState = useMediaState(String(id), mediaType);
 
 	const progress: WatchProgressData | null = useMemo(() => {
-		const item = watchlist.find(
-			(i) => String(i.external_id) === String(id) && i.type === mediaType,
-		);
-
-		if (!item) return null;
+		if (!mediaState) return null;
 
 		return {
-			id: String(item.external_id),
-			type: item.type,
+			id: String(mediaState.external_id),
+			type: mediaState.type,
 			timestamp: 0,
-			percent: item.progress ?? 0,
+			percent: mediaState.progress ?? 0,
 			duration: 0,
-			lastUpdated: item.updated_at,
+			lastUpdated: mediaState.updated_at,
 			context: undefined,
 		};
-	}, [watchlist, id, mediaType]);
+	}, [mediaState]);
 
 	return { progress };
 }
@@ -281,8 +238,7 @@ export function useEpisodeWatched(
 	const tmdbId = Number(tvId);
 
 	const { isSignedIn } = useUser();
-
-	const { watchlist } = useWatchlist();
+	const mediaState = useMediaState(String(tvId), "tv");
 
 	// Remote Data
 	const watchedEpisodes =
@@ -299,13 +255,11 @@ export function useEpisodeWatched(
 		(state) => state.markSeasonWatched,
 	);
 
-	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
+	const setProgressLocal = useWatchlistStore((state) => state.setProgressLocal);
 
-	const addToLocalWatchlist = useWatchlistStore(
-		(state) => state.addToWatchlist,
+	const setProgressStatusLocal = useWatchlistStore(
+		(state) => state.setProgressStatusLocal,
 	);
-
-	const localWatchlist = useWatchlistStore((state) => state.watchlist);
 
 	// Create unified map based on logged in state
 	const watchedMap = useMemo(() => {
@@ -412,217 +366,117 @@ export function useEpisodeWatched(
 		}
 	});
 
-	const syncShowProgress = useMutation(
-		api.watchlist.upsertWatchlistItem,
-	).withOptimisticUpdate((localStore, args) => {
-		const existing = localStore.getQuery(api.watchlist.getWatchlist, {});
-		if (!existing) return;
+	const updateProgress = useMutation(api.watchlist.updateProgress);
+	const setProgressStatus = useMutation(api.watchlist.setProgressStatus);
+	const hasMediaState = !!mediaState;
+	const currentProgress = mediaState?.progress ?? 0;
+	const currentProgressStatus = mediaState?.progressStatus ?? null;
 
-		const now = Date.now();
+	const syncProgressFromWatchedCount = useCallback(
+		(newWatchedCount: number) => {
+			const shouldSkip = !hasMediaState && newWatchedCount === 0;
+			if (shouldSkip) return;
 
-		const existingItemIndex = existing.findIndex(
-			(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
-		);
+			const hasEpisodeTotal =
+				typeof totalEpisodes === "number" && totalEpisodes > 0;
+			const safeTotalEpisodes = hasEpisodeTotal ? totalEpisodes : 0;
 
-		let optimisticProgress = args.progress;
+			const nextProgress =
+				newWatchedCount <= 0
+					? 0
+					: hasEpisodeTotal
+						? Math.min(
+								100,
+								Math.floor((newWatchedCount / safeTotalEpisodes) * 100),
+							)
+						: Math.max(currentProgress, 1);
 
-		if (optimisticProgress === undefined) {
-			if (args.status === "completed") optimisticProgress = 100;
-			else if (args.status === "plan-to-watch") optimisticProgress = 0;
-		}
+			const derivedProgressStatus =
+				newWatchedCount <= 0
+					? "want-to-watch"
+					: hasEpisodeTotal && newWatchedCount >= safeTotalEpisodes
+						? "finished"
+						: "watching";
 
-		if (existingItemIndex !== -1) {
-			const newItems = [...existing];
-			newItems[existingItemIndex] = {
-				...newItems[existingItemIndex],
-				status: args.status,
-				progress: optimisticProgress ?? newItems[existingItemIndex].progress,
-				updatedAt: now,
-			};
+			const shouldWriteProgress =
+				!hasMediaState || currentProgress !== nextProgress;
+			const shouldWriteStatus = currentProgressStatus !== derivedProgressStatus;
 
-			localStore.setQuery(
-				api.watchlist.getWatchlist,
-				{},
-				newItems.sort((a, b) => b.updatedAt - a.updatedAt),
-			);
-		} else {
-			const newItem = {
-				_id: `optimistic_${now}` as Id<"watch_items">,
-				_creationTime: now,
-				userId: "me" as unknown as Id<"users">,
-				tmdbId: args.tmdbId,
-				mediaType: args.mediaType,
-				status: args.status,
-				progress: optimisticProgress ?? 0,
-				updatedAt: now,
-				title: args.title,
-				image: args.image,
-				rating: args.rating,
-				release_date: args.release_date || undefined,
-				overview: args.overview || undefined,
-			};
+			if (isSignedIn) {
+				if (shouldWriteProgress) {
+					updateProgress({
+						tmdbId,
+						mediaType: "tv",
+						progress: nextProgress,
+					}).catch(console.error);
+				}
 
-			localStore.setQuery(api.watchlist.getWatchlist, {}, [
-				newItem,
-				...existing,
-			]);
-		}
-	});
+				if (shouldWriteStatus) {
+					setProgressStatus({
+						tmdbId,
+						mediaType: "tv",
+						progressStatus: derivedProgressStatus,
+						progress: nextProgress,
+						title: showMeta?.title ?? `TV Show ${tvId}`,
+						image: showMeta?.image ?? "",
+						rating: showMeta?.rating ?? 0,
+						release_date: showMeta?.release_date ?? "",
+						overview: showMeta?.overview,
+					}).catch(console.error);
+				}
 
-	const getShowStatusFromCounts = useCallback(
-		(newWatchedCount: number): AutoShowStatus => {
-			if (newWatchedCount === 0) return "plan-to-watch";
-
-			if (
-				totalEpisodes &&
-				totalEpisodes > 0 &&
-				newWatchedCount >= totalEpisodes
-			) {
-				return "completed";
+				return;
 			}
 
-			return "watching";
-		},
-		[totalEpisodes],
-	);
-
-	const ensureLocalWatchlistItem = useCallback(
-		(status: AutoShowStatus, progress: number) => {
-			const exists = localWatchlist.some(
-				(item) => String(item.external_id) === String(tvId),
-			);
-
-			if (!exists) {
-				addToLocalWatchlist({
+			if (shouldWriteProgress) {
+				setProgressLocal(String(tvId), "tv", nextProgress, {
 					title: showMeta?.title ?? `TV Show ${tvId}`,
-					type: "tv",
-					external_id: String(tvId),
 					image: showMeta?.image ?? "",
 					rating: showMeta?.rating ?? 0,
 					release_date: showMeta?.release_date ?? "",
 					overview: showMeta?.overview,
-					updated_at: Date.now(),
-					created_at: Date.now(),
-					status,
-					progress,
 				});
 			}
-		},
-		[
-			addToLocalWatchlist,
-			localWatchlist,
-			showMeta?.image,
-			showMeta?.overview,
-			showMeta?.rating,
-			showMeta?.release_date,
-			showMeta?.title,
-			tvId,
-		],
-	);
 
-	const resolveStatusFromEpisodeSync = useCallback(
-		(
-			currentStatus: WatchlistStatus | undefined,
-			derivedStatus: AutoShowStatus,
-			newWatchedCount: number,
-		): WatchlistStatus => {
-			// "liked" and "dropped" are explicit user moods and should not be auto-overridden.
-			if (currentStatus === "liked" || currentStatus === "dropped") {
-				return currentStatus;
-			}
-
-			// Allow manual "watching" at 0 episodes without snapping back to plan-to-watch.
-			if (currentStatus === "watching" && newWatchedCount === 0) {
-				return "watching";
-			}
-
-			return derivedStatus;
-		},
-		[],
-	);
-
-	// Reusable logic to handle side effect updates strictly synchronously during interaction
-	const handleStatusSideEffects = useCallback(
-		(newWatchedCount: number) => {
-			const derivedStatus = getShowStatusFromCounts(newWatchedCount);
-
-			const progressPercent =
-				totalEpisodes && totalEpisodes > 0 && newWatchedCount > 0
-					? Math.min(100, Math.floor((newWatchedCount / totalEpisodes) * 100))
-					: 0;
-
-			// Keep progress derived from episode counts even when status is manually locked.
-			const nextProgress =
-				derivedStatus === "completed" ? 100 : progressPercent;
-
-			const list = isSignedIn ? watchlist : localWatchlist;
-
-			const currentItem = list.find(
-				(item) => String(item.external_id) === String(tvId),
-			);
-			const nextStatus = resolveStatusFromEpisodeSync(
-				currentItem?.status,
-				derivedStatus,
-				newWatchedCount,
-			);
-
-			// If the show is absent and there are no watched episodes, don't create churn.
-			if (!currentItem && newWatchedCount === 0) return;
-
-			if (
-				currentItem &&
-				currentItem.status === nextStatus &&
-				(currentItem.progress ?? 0) === nextProgress
-			) {
-				return;
-			}
-
-			if (isSignedIn) {
-				syncShowProgress({
-					tmdbId,
-					mediaType: "tv",
-					status: nextStatus,
-					progress: nextProgress,
-					title: showMeta?.title ?? `TV Show ${tvId}`,
-					image: showMeta?.image ?? "",
-					rating: showMeta?.rating ?? 0,
-					release_date: showMeta?.release_date || undefined,
-					overview: showMeta?.overview || undefined,
-				}).catch(console.error);
-			} else {
-				if (!currentItem && newWatchedCount > 0) {
-					ensureLocalWatchlistItem(derivedStatus, nextProgress);
-					return;
-				}
-
-				updateLocalStatus(String(tvId), nextStatus, nextProgress);
+			if (shouldWriteStatus) {
+				setProgressStatusLocal(
+					String(tvId),
+					"tv",
+					derivedProgressStatus,
+					nextProgress,
+					{
+						title: showMeta?.title ?? `TV Show ${tvId}`,
+						image: showMeta?.image ?? "",
+						rating: showMeta?.rating ?? 0,
+						release_date: showMeta?.release_date ?? "",
+						overview: showMeta?.overview,
+					},
+				);
 			}
 		},
 		[
-			getShowStatusFromCounts,
+			hasMediaState,
+			currentProgress,
+			currentProgressStatus,
 			isSignedIn,
-			localWatchlist,
-			watchlist,
-			tmdbId,
-			syncShowProgress,
-			updateLocalStatus,
-			tvId,
-			ensureLocalWatchlistItem,
-			resolveStatusFromEpisodeSync,
 			showMeta?.image,
 			showMeta?.overview,
 			showMeta?.rating,
 			showMeta?.release_date,
 			showMeta?.title,
+			tmdbId,
 			totalEpisodes,
+			tvId,
+			updateProgress,
+			setProgressStatus,
+			setProgressLocal,
+			setProgressStatusLocal,
 		],
 	);
 
-	// Keep show-level status/progress derived from episode counts,
-	// including persisted local episode data and late query hydration.
 	useEffect(() => {
-		handleStatusSideEffects(watchedCount);
-	}, [handleStatusSideEffects, watchedCount]);
+		syncProgressFromWatchedCount(watchedCount);
+	}, [syncProgressFromWatchedCount, watchedCount]);
 
 	const isEpisodeWatched = useCallback(
 		(season: number, episode: number): boolean => {
@@ -643,7 +497,7 @@ export function useEpisodeWatched(
 			}
 
 			const change = isWatched ? 1 : -1;
-			handleStatusSideEffects(Math.max(0, watchedCount + change));
+			syncProgressFromWatchedCount(Math.max(0, watchedCount + change));
 		},
 		[
 			tmdbId,
@@ -651,7 +505,7 @@ export function useEpisodeWatched(
 			markEpisodeWatchedMut,
 			markLocalEpisode,
 			isSignedIn,
-			handleStatusSideEffects,
+			syncProgressFromWatchedCount,
 			watchedCount,
 		],
 	);
@@ -670,14 +524,14 @@ export function useEpisodeWatched(
 				if (!watchedMap[makeEpisodeKey(tmdbId, season, ep)]) newlyWatched++;
 			}
 
-			handleStatusSideEffects(watchedCount + newlyWatched);
+			syncProgressFromWatchedCount(watchedCount + newlyWatched);
 		},
 		[
 			tmdbId,
 			markEpisodesWatchedBatch,
 			markLocalSeason,
 			isSignedIn,
-			handleStatusSideEffects,
+			syncProgressFromWatchedCount,
 			watchedCount,
 			watchedMap,
 		],
@@ -701,7 +555,7 @@ export function useEpisodeWatched(
 				markLocalSeason(tmdbId, season, episodes, false);
 			}
 
-			handleStatusSideEffects(Math.max(0, watchedCount - watchedToRemove));
+			syncProgressFromWatchedCount(Math.max(0, watchedCount - watchedToRemove));
 		},
 		[
 			tmdbId,
@@ -709,7 +563,7 @@ export function useEpisodeWatched(
 			markEpisodesWatchedBatch,
 			markLocalSeason,
 			isSignedIn,
-			handleStatusSideEffects,
+			syncProgressFromWatchedCount,
 			watchedCount,
 		],
 	);
@@ -743,10 +597,10 @@ export function useEpisodeWatched(
 	const markShowCompleted = useCallback(
 		(_totalEpisodesOverride: number) => {
 			if (isSignedIn) {
-				syncShowProgress({
+				setProgressStatus({
 					tmdbId,
 					mediaType: "tv",
-					status: "completed",
+					progressStatus: "finished",
 					progress: 100,
 					title: showMeta?.title ?? `TV Show ${tvId}`,
 					image: showMeta?.image ?? "",
@@ -755,15 +609,21 @@ export function useEpisodeWatched(
 					overview: showMeta?.overview || undefined,
 				}).catch(console.error);
 			} else {
-				updateLocalStatus(String(tvId), "completed", 100);
+				setProgressStatusLocal(String(tvId), "tv", "finished", 100, {
+					title: showMeta?.title ?? `TV Show ${tvId}`,
+					image: showMeta?.image ?? "",
+					rating: showMeta?.rating ?? 0,
+					release_date: showMeta?.release_date ?? "",
+					overview: showMeta?.overview,
+				});
 			}
 		},
 		[
-			syncShowProgress,
+			setProgressStatus,
 			tmdbId,
 			isSignedIn,
 			tvId,
-			updateLocalStatus,
+			setProgressStatusLocal,
 			showMeta?.image,
 			showMeta?.rating,
 			showMeta?.title,
