@@ -224,6 +224,13 @@ export function useContinueWatching() {
 export function useEpisodeWatched(
 	tvId: number | string,
 	totalEpisodes?: number,
+	showMeta?: {
+		title?: string;
+		image?: string;
+		release_date?: string;
+		overview?: string;
+		rating?: number;
+	},
 ) {
 	const tmdbId = Number(tvId);
 	const { isSignedIn } = useUser();
@@ -242,6 +249,10 @@ export function useEpisodeWatched(
 	);
 
 	const updateLocalStatus = useWatchlistStore((state) => state.updateStatus);
+	const addToLocalWatchlist = useWatchlistStore(
+		(state) => state.addToWatchlist,
+	);
+	const localWatchlist = useWatchlistStore((state) => state.watchlist);
 	const currentStatus = useWatchlistItemStatus(String(tvId));
 
 	// Create unified map based on logged in state
@@ -325,6 +336,30 @@ export function useEpisodeWatched(
 		[totalEpisodes],
 	);
 
+	const ensureLocalWatchlistItem = useCallback(
+		(status: "plan-to-watch" | "watching" | "completed") => {
+			const exists = localWatchlist.some(
+				(item) => String(item.external_id) === String(tvId),
+			);
+
+			if (!exists) {
+				addToLocalWatchlist({
+					title: showMeta?.title ?? `TV Show ${tvId}`,
+					type: "tv",
+					external_id: String(tvId),
+					image: showMeta?.image ?? "",
+					rating: showMeta?.rating ?? 0,
+					release_date: showMeta?.release_date ?? "",
+					overview: showMeta?.overview,
+					updated_at: Date.now(),
+					created_at: Date.now(),
+					status,
+				});
+			}
+		},
+		[addToLocalWatchlist, localWatchlist, showMeta, tvId],
+	);
+
 	// Reusable logic to handle side effect updates strictly synchronously during interaction
 	const handleStatusSideEffects = useCallback(
 		(newWatchedCount: number) => {
@@ -339,6 +374,9 @@ export function useEpisodeWatched(
 						watchedEpisodesCount: newWatchedCount,
 					}).catch(console.error);
 				} else {
+					if (newWatchedCount > 0) {
+						ensureLocalWatchlistItem(newStatus);
+					}
 					updateLocalStatus(String(tvId), newStatus);
 				}
 			}
@@ -352,6 +390,7 @@ export function useEpisodeWatched(
 			syncShowProgress,
 			updateLocalStatus,
 			tvId,
+			ensureLocalWatchlistItem,
 		],
 	);
 
