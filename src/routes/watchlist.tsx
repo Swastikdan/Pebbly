@@ -202,7 +202,7 @@ function WatchlistPage() {
 					<div className="flex shrink-0 items-center gap-2 pt-1">
 						{(watchlistData?.length ?? 0) > 0 && (
 							<Button
-								className="gap-1.5 rounded-xl"
+								className="gap-1.5 rounded-xl text-xs sm:text-sm"
 								disabled={exportLoading || importLoading}
 								variant="secondary"
 								size="sm"
@@ -214,11 +214,11 @@ function WatchlistPage() {
 								) : (
 									<Download size={15} />
 								)}
-								<span className="hidden sm:inline">Export</span>
+								<span className="inline">Export</span>
 							</Button>
 						)}
 						<Button
-							className="gap-1.5 rounded-xl"
+							className="gap-1.5 rounded-xl text-xs sm:text-sm"
 							disabled={importLoading || exportLoading}
 							variant="secondary"
 							size="sm"
@@ -240,7 +240,7 @@ function WatchlistPage() {
 							) : (
 								<Upload size={15} />
 							)}
-							<span className="hidden sm:inline">Import</span>
+							<span className="inline">Import</span>
 						</Button>
 					</div>
 				</div>
@@ -506,11 +506,11 @@ function WatchlistCard({
 
 					<div className="flex items-center justify-between gap-2 pt-1">
 						<div className="flex flex-row gap-1">
-							<div className="inline-flex items-center gap-2 h-7 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold">
+							<div className="inline-flex items-center gap-2 h-7 rounded-lg border px-2 py-1.5 text-[9px] sm:text-[10px]">
 								<ProgressIcon size={14} />
 								<span>{progressOption.label}</span>
 							</div>
-							<div className="inline-flex items-center h-7 gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold">
+							<div className="inline-flex items-center h-7 gap-2 rounded-lg border px-2 py-1.5 text-[9px] sm:text-[10px]">
 								{reactionOption ? (
 									<>
 										{ReactionIcon && <ReactionIcon size={14} />}
