@@ -1,9 +1,9 @@
-import { useMutation } from "convex/react";
-
+import { useUser } from "@clerk/clerk-react";
+import { useMutation, useQuery } from "convex/react";
 import type React from "react";
 
 import { useCallback, useRef, useState } from "react";
-
+import { useLocalProgressStore } from "@/hooks/useLocalProgressStore";
 import { useWatchlist, type WatchlistItem } from "@/hooks/usewatchlist";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
@@ -17,6 +17,7 @@ type ImportError = {
 type ImportItem = Pick<WatchlistItem, "title" | "external_id" | "type"> &
 	Partial<Omit<WatchlistItem, "title" | "external_id" | "type">> & {
 		status?: string;
+		watchedEpisodes?: Record<string, boolean>;
 	};
 
 function mapLegacyImportedStatus(
@@ -61,6 +62,17 @@ export const useWatchlistImportExport = () => {
 	const setProgressStatus = useMutation(api.watchlist.setProgressStatus);
 	const setReaction = useMutation(api.watchlist.setReaction);
 
+	const { isSignedIn } = useUser();
+	const allEpisodeProgress = useQuery(
+		isSignedIn ? api.watchlist.getAllEpisodeProgress : ("skip" as any),
+	);
+	const syncEpisodeProgressItem = useMutation(
+		api.watchlist.syncEpisodeProgressItem,
+	);
+	const markEpisodeWatchedLocal = useLocalProgressStore(
+		(state) => state.markEpisodeWatched,
+	);
+
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const isValidWatchlistItem = useCallback(
@@ -85,7 +97,45 @@ export const useWatchlistImportExport = () => {
 			setExportLoading(true);
 			setError(null);
 
-			const json = JSON.stringify(watchlist, null, 2);
+			const localWatchedEpisodes =
+				useLocalProgressStore.getState().watchedEpisodes;
+
+			const enhancedWatchlist = watchlist.map((item) => {
+				const itemWatched: Record<string, boolean> = {};
+
+				if (item.type === "tv") {
+					if (isSignedIn && allEpisodeProgress) {
+						// Filter Convex progress
+						allEpisodeProgress
+							.filter(
+								(ep: any) =>
+									String(ep.tmdbId) === String(item.external_id) &&
+									ep.isWatched,
+							)
+							.forEach((ep: any) => {
+								itemWatched[`${ep.season}:${ep.episode}`] = true;
+							});
+					} else {
+						// Filter local progress
+						const prefix = `${item.external_id}:`;
+						Object.entries(localWatchedEpisodes).forEach(([key, val]) => {
+							if (key.startsWith(prefix) && val) {
+								const suffix = key.slice(prefix.length);
+								itemWatched[suffix] = true;
+							}
+						});
+					}
+				}
+
+				return {
+					...item,
+					...(Object.keys(itemWatched).length > 0
+						? { watchedEpisodes: itemWatched }
+						: {}),
+				};
+			});
+
+			const json = JSON.stringify(enhancedWatchlist, null, 2);
 			const blob = new Blob([json], { type: "application/json" });
 			const url = URL.createObjectURL(blob);
 
@@ -108,7 +158,7 @@ export const useWatchlistImportExport = () => {
 		} finally {
 			setExportLoading(false);
 		}
-	}, [watchlist]);
+	}, [watchlist, isSignedIn, allEpisodeProgress]);
 
 	const importWatchlist = useCallback(
 		async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,6 +249,38 @@ export const useWatchlistImportExport = () => {
 								overview: item.overview,
 							});
 						}
+
+						if (
+							item.watchedEpisodes &&
+							typeof item.watchedEpisodes === "object"
+						) {
+							for (const [key, isWatched] of Object.entries(
+								item.watchedEpisodes,
+							)) {
+								if (!isWatched) continue;
+								const [seasonStr, episodeStr] = key.split(":");
+								const season = Number.parseInt(seasonStr, 10);
+								const episode = Number.parseInt(episodeStr, 10);
+
+								if (!Number.isNaN(season) && !Number.isNaN(episode)) {
+									if (isSignedIn) {
+										await syncEpisodeProgressItem({
+											tmdbId: Number(item.external_id),
+											season,
+											episode,
+											isWatched: true,
+										});
+									} else {
+										markEpisodeWatchedLocal(
+											Number(item.external_id),
+											season,
+											episode,
+											true,
+										);
+									}
+								}
+							}
+						}
 					}
 
 					if (invalidItemCount > 0) {
@@ -233,6 +315,9 @@ export const useWatchlistImportExport = () => {
 			setProgressStatus,
 			setReaction,
 			setWatchlistMembership,
+			isSignedIn,
+			syncEpisodeProgressItem,
+			markEpisodeWatchedLocal,
 		],
 	);
 

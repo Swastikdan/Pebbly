@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Frown, Meh, Smile } from "lucide-react";
+import { Frown, Meh, SlidersHorizontal, Smile, X } from "lucide-react";
 import type { ComponentType } from "react";
 import { useCallback, useId, useMemo, useState } from "react";
 import { DefaultEmptyState } from "@/components/default-empty-state";
@@ -89,6 +89,8 @@ function WatchlistPage() {
 	const [reactionFilter, setReactionFilter] = useState<ReactionFilter>("all");
 	const [mediaFilter, setMediaFilter] = useState<MediaFilter>("all");
 	const [sortBy, setSortBy] = useState<SortType>("recent");
+	// ── NEW: controls the secondary-filter drawer on mobile ──
+	const [filtersOpen, setFiltersOpen] = useState(false);
 	const {
 		importLoading,
 		exportLoading,
@@ -100,15 +102,27 @@ function WatchlistPage() {
 		handleKeyDown,
 	} = useWatchlistImportExport();
 
+	// how many secondary filters deviate from defaults
+	const activeSecondaryCount = [
+		mediaFilter !== "all",
+		reactionFilter !== "all",
+		sortBy !== "recent",
+	].filter(Boolean).length;
+
+	const resetSecondaryFilters = useCallback(() => {
+		setMediaFilter("all");
+		setReactionFilter("all");
+		setSortBy("recent");
+	}, []);
+
+	// ── unchanged logic ──────────────────────────────────────
 	const filteredWatchlist = useMemo(() => {
 		let items = watchlistData;
-
 		if (activeFilter !== "all") {
 			items = items.filter(
 				(item) => (item.progressStatus ?? "want-to-watch") === activeFilter,
 			);
 		}
-
 		if (reactionFilter !== "all") {
 			items = items.filter((item) =>
 				reactionFilter === "none"
@@ -116,11 +130,9 @@ function WatchlistPage() {
 					: item.reaction === reactionFilter,
 			);
 		}
-
 		if (mediaFilter !== "all") {
 			items = items.filter((item) => item.type === mediaFilter);
 		}
-
 		return [...items].sort((a, b) => {
 			switch (sortBy) {
 				case "rating":
@@ -169,18 +181,68 @@ function WatchlistPage() {
 		},
 		[toggleWatchlist],
 	);
+	// ────────────────────────────────────────────────────────
 
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="w-full max-w-screen-xl p-5">
-				<div className="mb-8">
-					<h1 className=" text-4xl font-bold tracking-tight md:text-5xl">
-						Watchlist
-					</h1>
-					<p className="mt-2  text-xs tracking-wider text-muted-foreground uppercase">
-						{watchlistData.length} title{watchlistData.length !== 1 ? "s" : ""}{" "}
-						saved
-					</p>
+				{/* ── Header: title + import/export ── */}
+				<div className="mb-8 flex items-start justify-between gap-4">
+					<div>
+						<h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+							Watchlist
+						</h1>
+						<p className="mt-2 text-xs tracking-wider text-muted-foreground uppercase">
+							{watchlistData.length} title
+							{watchlistData.length !== 1 ? "s" : ""} saved
+						</p>
+					</div>
+
+					{/* Import / Export — moved here, text hidden on mobile */}
+					<div className="flex shrink-0 items-center gap-2 pt-1">
+						{(watchlistData?.length ?? 0) > 0 && (
+							<Button
+								className="gap-1.5 rounded-xl"
+								disabled={exportLoading || importLoading}
+								variant="secondary"
+								size="sm"
+								onClick={exportWatchlist}
+								aria-label="Export watchlist"
+							>
+								{exportLoading ? (
+									<Spinner color="current" />
+								) : (
+									<Download size={15} />
+								)}
+								<span className="hidden sm:inline">Export</span>
+							</Button>
+						)}
+						<Button
+							className="gap-1.5 rounded-xl"
+							disabled={importLoading || exportLoading}
+							variant="secondary"
+							size="sm"
+							onClick={handleImportClick}
+							onKeyDown={handleKeyDown}
+							aria-label="Import watchlist"
+						>
+							<input
+								ref={fileInputRef}
+								accept=".json,application/json"
+								className="hidden"
+								disabled={importLoading || exportLoading}
+								id={importInputId}
+								type="file"
+								onChange={importWatchlist}
+							/>
+							{importLoading ? (
+								<Spinner color="current" />
+							) : (
+								<Upload size={15} />
+							)}
+							<span className="hidden sm:inline">Import</span>
+						</Button>
+					</div>
 				</div>
 
 				{error && (
@@ -196,99 +258,79 @@ function WatchlistPage() {
 					</div>
 				)}
 
-				<div className="mb-6 flex flex-col gap-4">
-					<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-						<div className="scrollbar-hidden flex gap-2 overflow-x-auto">
+				{/* ── Filter bar ── */}
+				<div className="mb-6 space-y-2">
+					{/* Row 1: progress tabs + mobile filter toggle */}
+					<div className="flex items-center gap-2">
+						<div className="scrollbar-hidden flex flex-1 gap-1.5 overflow-x-auto">
 							{(["all", "want-to-watch", "watching", "finished"] as const).map(
 								(filter) => (
-									<button
+									<Button
 										key={filter}
-										type="button"
+										variant={activeFilter === filter ? "default" : "secondary"}
 										onClick={() => setActiveFilter(filter)}
-										className={`pressable-small whitespace-nowrap rounded-xl items-center px-4 py-1.5 text-sm font-medium transition-all duration-300 ${
-											activeFilter === filter
-												? "bg-foreground text-background "
-												: "bg-secondary/40 text-foreground/70 hover:bg-secondary/70"
-										}`}
+										className="gap-1.5 rounded-xl h-8 font-normal text-xs"
 									>
-										{filter === "all" ? "All" : PROGRESS_LABELS[filter]}{" "}
-										<span className="ml-1  text-[12px] opacity-60">
+										{filter === "all" ? "All" : PROGRESS_LABELS[filter]}
+										<span className="ml-1 text-[11px] opacity-60">
 											{counts[filter]}
 										</span>
-									</button>
+									</Button>
 								),
 							)}
 						</div>
 
-						<div className="flex gap-3">
-							{(watchlistData?.length ?? 0) > 0 && (
-								<Button
-									className="gap-2 rounded-xl"
-									disabled={exportLoading || importLoading}
-									variant="secondary"
-									onClick={exportWatchlist}
-									aria-label="Export watchlist"
-								>
-									{exportLoading ? (
-										<Spinner color="current" />
-									) : (
-										<Download size={18} />
-									)}
-									Export
-								</Button>
+						{/* Mobile-only: toggle secondary filters */}
+						<Button
+							onClick={() => setFiltersOpen((prev) => !prev)}
+							aria-expanded={filtersOpen}
+							variant={
+								filtersOpen || activeSecondaryCount > 0
+									? "default"
+									: "secondary"
+							}
+							className="gap-1.5 rounded-xl h-8 text-xs"
+						>
+							<SlidersHorizontal size={13} />
+							Filters
+							{activeSecondaryCount > 0 && (
+								<span className="ml-1 text-[11px] opacity-60">
+									{activeSecondaryCount}
+								</span>
 							)}
-							<Button
-								className="gap-2 rounded-xl"
-								disabled={importLoading || exportLoading}
-								variant="secondary"
-								onClick={handleImportClick}
-								onKeyDown={handleKeyDown}
-								aria-label="Import watchlist"
-							>
-								<input
-									ref={fileInputRef}
-									accept=".json,application/json"
-									className="hidden"
-									disabled={importLoading || exportLoading}
-									id={importInputId}
-									type="file"
-									onChange={importWatchlist}
-								/>
-								{importLoading ? (
-									<Spinner color="current" />
-								) : (
-									<Upload size={18} />
-								)}
-								Import
-							</Button>
-						</div>
+						</Button>
 					</div>
 
-					<div className="flex flex-wrap items-center gap-3">
-						<div className="flex gap-1 rounded-xl bg-secondary/30 p-1">
-							{(["all", "movie", "tv"] as const).map((mf) => (
-								<button
-									key={mf}
-									type="button"
-									onClick={() => setMediaFilter(mf)}
-									className={`pressable-small rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-										mediaFilter === mf
-											? "bg-foreground text-background "
-											: "text-foreground/60 hover:text-foreground"
-									}`}
-								>
-									{mf === "all" ? "All" : mf === "movie" ? "Movies" : "Series"}
-								</button>
-							))}
-						</div>
+					{/* Row 2: secondary filters — always on sm+, toggled on mobile */}
+					<div className="scrollbar-hidden flex flex-1 gap-1.5 overflow-x-auto"></div>
+					<div
+						className={`${
+							filtersOpen ? "flex" : "hidden"
+						} flex-1 items-center gap-2 scrollbar-hidden overflow-x-auto`}
+					>
+						{/* Media Type */}
+						<Select
+							value={mediaFilter}
+							onValueChange={(value) => setMediaFilter(value as MediaFilter)}
+						>
+							<SelectTrigger className="w-auto min-w-[110px] gap-1.5 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium data-[size=default]:h-8 data-[size=sm]:h-8">
+								<SelectValue placeholder="Type" />
+							</SelectTrigger>
+							<SelectContent className="rounded-xl">
+								<SelectItem value="all">All Types</SelectItem>
+								<SelectItem value="movie">Movies</SelectItem>
+								<SelectItem value="tv">Series</SelectItem>
+							</SelectContent>
+						</Select>
 
+						{/* Mood */}
 						<Select
 							value={reactionFilter}
 							onValueChange={(value) =>
 								setReactionFilter(value as ReactionFilter)
 							}
 						>
-							<SelectTrigger className="h-8 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
+							<SelectTrigger className="w-auto min-w-[110px] gap-1.5 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium data-[size=default]:h-8 data-[size=sm]:h-8">
 								<SelectValue placeholder="Mood" />
 							</SelectTrigger>
 							<SelectContent className="rounded-xl">
@@ -313,11 +355,12 @@ function WatchlistPage() {
 							</SelectContent>
 						</Select>
 
+						{/* Sort */}
 						<Select
 							value={sortBy}
 							onValueChange={(value) => setSortBy(value as SortType)}
 						>
-							<SelectTrigger className="h-8 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
+							<SelectTrigger className="w-auto min-w-[130px] gap-1.5 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium data-[size=default]:h-8 data-[size=sm]:h-8">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent className="rounded-xl">
@@ -327,9 +370,22 @@ function WatchlistPage() {
 								<SelectItem value="year">Newest Release</SelectItem>
 							</SelectContent>
 						</Select>
+
+						{/* Reset pill — only shows when filters deviate from defaults */}
+						{activeSecondaryCount > 0 && (
+							<button
+								type="button"
+								onClick={resetSecondaryFilters}
+								className="pressable-small flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+							>
+								<X size={12} />
+								Reset
+							</button>
+						)}
 					</div>
 				</div>
 
+				{/* ── Grid (unchanged) ── */}
 				{watchlistLoading ? (
 					<DefaultLoader className="min-h-[calc(100vh-112px)] grid h-full place-content-center items-center justify-center" />
 				) : error && filteredWatchlist.length === 0 ? (
@@ -364,6 +420,7 @@ function WatchlistPage() {
 	);
 }
 
+// WatchlistCard is unchanged
 function WatchlistCard({
 	item,
 	onRemoveFromWatchlist,
@@ -420,7 +477,7 @@ function WatchlistCard({
 
 						<div className="mt-1 flex flex-wrap items-center gap-1.5">
 							<Badge
-								className="rounded-md px-1.5 py-0.5  text-[9px] font-medium uppercase tracking-wider"
+								className="rounded-md px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider"
 								variant="secondary"
 							>
 								{item.type}
@@ -435,7 +492,7 @@ function WatchlistCard({
 								</Badge>
 							)}
 							{formattedDate && (
-								<span className=" text-[9px] tracking-wider text-muted-foreground">
+								<span className="text-[9px] tracking-wider text-muted-foreground">
 									{formattedDate}
 								</span>
 							)}
@@ -449,11 +506,11 @@ function WatchlistCard({
 
 					<div className="flex items-center justify-between gap-2 pt-1">
 						<div className="flex flex-row gap-1">
-							<div className="inline-flex items-center gap-2 h-7 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold">
+							<div className="inline-flex items-center gap-2 h-7 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold">
 								<ProgressIcon size={14} />
 								<span>{progressOption.label}</span>
 							</div>
-							<div className="inline-flex items-center h-7 gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold">
+							<div className="inline-flex items-center h-7 gap-2 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold">
 								{reactionOption ? (
 									<>
 										{ReactionIcon && <ReactionIcon size={14} />}

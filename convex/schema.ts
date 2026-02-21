@@ -64,5 +64,6 @@ export default defineSchema({
   })
     .index("by_user_episode", ["userId", "tmdbId", "season", "episode"])
     .index("by_user_season", ["userId", "tmdbId", "season"])
-    .index("by_user_media", ["userId", "tmdbId"]),
+    .index("by_user_media", ["userId", "tmdbId"])
+    .index("by_user", ["userId"]),
 });

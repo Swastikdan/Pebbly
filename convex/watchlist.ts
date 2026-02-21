@@ -614,3 +614,63 @@ export const markSeasonEpisodesWatched = mutation({
     }
   },
 });
+
+export const getAllEpisodeProgress = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    return ctx.db
+      .query("episode_progress")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+  },
+});
+
+export const syncEpisodeProgressItem = mutation({
+  args: {
+    tmdbId: v.number(),
+    season: v.number(),
+    episode: v.number(),
+    isWatched: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const existing = await ctx.db
+      .query("episode_progress")
+      .withIndex("by_user_episode", (q) =>
+        q
+          .eq("userId", user._id)
+          .eq("tmdbId", args.tmdbId)
+          .eq("season", args.season)
+          .eq("episode", args.episode),
+      )
+      .first();
+
+    const now = Date.now();
+
+    if (existing) {
+      if (existing.isWatched !== args.isWatched) {
+        await ctx.db.patch(existing._id, {
+          isWatched: args.isWatched,
+          updatedAt: now,
+        });
+      }
+      return;
+    }
+
+    if (!args.isWatched) return;
+
+    await ctx.db.insert("episode_progress", {
+      userId: user._id,
+      tmdbId: args.tmdbId,
+      season: args.season,
+      episode: args.episode,
+      isWatched: args.isWatched,
+      updatedAt: now,
+    });
+  },
+});
