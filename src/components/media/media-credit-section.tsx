@@ -30,6 +30,7 @@ export const MediaCreditSection = (props: {
 
 	const cast = data?.cast ?? [];
 	const crew = data?.crew ?? [];
+	const hasNoCredits = cast.length === 0 && crew.length === 0;
 	const castByDepartment = crew.reduce<Map<string, CrewMember[]>>(
 		(acc, item) => {
 			const dept = acc.get(item.department) ?? [];
@@ -54,77 +55,113 @@ export const MediaCreditSection = (props: {
 				</h1>
 			</div>
 			<div className="my-5 mb-40 grid justify-between gap-3 space-y-10 md:grid-cols-2 md:space-y-0">
-				<div>
-					<span className="flex items-center gap-2">
-						<span className="text-foreground text-2xl font-bold">Cast</span>(
-						{cast?.length})
-					</span>
-					<div className="grid grid-cols-1 gap-3 pt-5 lg:grid-cols-2">
-						{cast?.map((castMember) => (
-							<Link
-								key={castMember.id}
-								to="/person/$id"
-								params={{ id: String(castMember.id) }}
-								className="flex items-center pb-0 group"
-							>
-								<Image
-									alt={castMember.name}
-									className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10 transition-transform duration-300 group-hover:scale-105"
-									height={300}
-									loading="eager"
-									src={IMAGE_PREFIX.SD_PROFILE + castMember.profile_path}
-									width={200}
-								/>
-								<div className="flex flex-col items-start pl-5">
-									<p className="text-start font-bold group-hover:text-primary transition-colors">
-										{castMember.name}
-									</p>
-									<p className="text-start text-sm">{castMember.character}</p>
-								</div>
-							</Link>
-						))}
+				{hasNoCredits ? (
+					<div className="col-span-full rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+						No cast or crew data is available for this title yet.
 					</div>
-				</div>
-
-				<div>
-					<span className="flex items-center gap-2">
-						<span className="text-foreground text-2xl font-bold">Crew</span>(
-						{crew?.length})
-					</span>
-
-					<div className="pt-5">
-						{Array.from(castByDepartment).map(([department, crewMembers]) => (
-							<div key={`dept-${department}`}>
-								<h2 className="mt-3 text-lg font-bold">{department}</h2>
+				) : (
+					<>
+						<div>
+							<span className="flex items-center gap-2">
+								<span className="text-foreground text-2xl font-bold">Cast</span>(
+								{cast.length})
+							</span>
+							{cast.length === 0 ? (
+								<p className="pt-5 text-sm text-muted-foreground">
+									No cast data available.
+								</p>
+							) : (
 								<div className="grid grid-cols-1 gap-3 pt-5 lg:grid-cols-2">
-									{crewMembers.map((crewMember: CrewMember) => (
+									{cast.map((castMember) => (
 										<Link
-											key={crewMember.id}
+											key={castMember.id}
 											to="/person/$id"
-											params={{ id: String(crewMember.id) }}
+											params={{ id: String(castMember.id) }}
 											className="flex items-center pb-0 group"
 										>
-											<Image
-												alt={crewMember.name}
-												className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10 transition-transform duration-300 group-hover:scale-105"
-												height={300}
-												loading="eager"
-												src={IMAGE_PREFIX.SD_PROFILE + crewMember.profile_path}
-												width={200}
-											/>
+											{castMember.profile_path ? (
+												<Image
+													alt={castMember.name}
+													className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10 transition-transform duration-300 group-hover:scale-105"
+													height={300}
+													loading="eager"
+													src={IMAGE_PREFIX.SD_PROFILE + castMember.profile_path}
+													width={200}
+												/>
+											) : (
+												<div className="flex aspect-[12/16] h-24 w-auto min-w-[72px] items-center justify-center rounded-lg bg-muted px-2 text-center text-xs text-muted-foreground">
+													No image
+												</div>
+											)}
 											<div className="flex flex-col items-start pl-5">
 												<p className="text-start font-bold group-hover:text-primary transition-colors">
-													{crewMember.name}
+													{castMember.name}
 												</p>
-												<p className="text-start text-sm">{crewMember.job}</p>
+												<p className="text-start text-sm">
+													{castMember.character || "Role not available"}
+												</p>
 											</div>
 										</Link>
 									))}
 								</div>
-							</div>
-						))}
-					</div>
-				</div>
+							)}
+						</div>
+
+						<div>
+							<span className="flex items-center gap-2">
+								<span className="text-foreground text-2xl font-bold">Crew</span>(
+								{crew.length})
+							</span>
+
+							{crew.length === 0 ? (
+								<p className="pt-5 text-sm text-muted-foreground">
+									No crew data available.
+								</p>
+							) : (
+								<div className="pt-5">
+									{Array.from(castByDepartment).map(([department, crewMembers]) => (
+										<div key={`dept-${department}`}>
+											<h2 className="mt-3 text-lg font-bold">{department}</h2>
+											<div className="grid grid-cols-1 gap-3 pt-5 lg:grid-cols-2">
+												{crewMembers.map((crewMember: CrewMember) => (
+													<Link
+														key={crewMember.id}
+														to="/person/$id"
+														params={{ id: String(crewMember.id) }}
+														className="flex items-center pb-0 group"
+													>
+														{crewMember.profile_path ? (
+															<Image
+																alt={crewMember.name}
+																className="aspect-[12/16] h-24 w-auto rounded-lg object-cover bg-foreground/10 transition-transform duration-300 group-hover:scale-105"
+																height={300}
+																loading="eager"
+																src={IMAGE_PREFIX.SD_PROFILE + crewMember.profile_path}
+																width={200}
+															/>
+														) : (
+															<div className="flex aspect-[12/16] h-24 w-auto min-w-[72px] items-center justify-center rounded-lg bg-muted px-2 text-center text-xs text-muted-foreground">
+																No image
+															</div>
+														)}
+														<div className="flex flex-col items-start pl-5">
+															<p className="text-start font-bold group-hover:text-primary transition-colors">
+																{crewMember.name}
+															</p>
+															<p className="text-start text-sm">
+																{crewMember.job || "Job not available"}
+															</p>
+														</div>
+													</Link>
+												))}
+											</div>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					</>
+				)}
 			</div>
 		</section>
 	);

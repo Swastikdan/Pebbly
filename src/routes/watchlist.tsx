@@ -52,6 +52,7 @@ const PROGRESS_LABELS: Record<ProgressStatus, string> = {
 	"want-to-watch": "Plan to watch",
 	watching: "Watching",
 	finished: "Completed",
+	dropped: "Dropped",
 };
 
 const PROGRESS_OPTIONS: Array<{
@@ -62,6 +63,7 @@ const PROGRESS_OPTIONS: Array<{
 	{ value: "want-to-watch", label: "Plan to watch", icon: Clock },
 	{ value: "watching", label: "Watching", icon: Eye },
 	{ value: "finished", label: "Completed", icon: CheckCircle },
+	{ value: "dropped", label: "Dropped", icon: X },
 ];
 
 const REACTION_OPTIONS: Array<{
@@ -122,6 +124,8 @@ function WatchlistPage() {
 			items = items.filter(
 				(item) => (item.progressStatus ?? "want-to-watch") === activeFilter,
 			);
+		} else {
+			items = items.filter((item) => item.progressStatus !== "dropped");
 		}
 		if (reactionFilter !== "all") {
 			items = items.filter((item) =>
@@ -155,13 +159,15 @@ function WatchlistPage() {
 
 	const counts = useMemo(
 		() => ({
-			all: watchlistData.length,
+			all: watchlistData.filter((i) => i.progressStatus !== "dropped").length,
 			"want-to-watch": watchlistData.filter(
 				(i) => (i.progressStatus ?? "want-to-watch") === "want-to-watch",
 			).length,
 			watching: watchlistData.filter((i) => i.progressStatus === "watching")
 				.length,
 			finished: watchlistData.filter((i) => i.progressStatus === "finished")
+				.length,
+			dropped: watchlistData.filter((i) => i.progressStatus === "dropped")
 				.length,
 		}),
 		[watchlistData],
@@ -263,21 +269,27 @@ function WatchlistPage() {
 					{/* Row 1: progress tabs + mobile filter toggle */}
 					<div className="flex items-center gap-2">
 						<div className="scrollbar-hidden flex flex-1 gap-1.5 overflow-x-auto">
-							{(["all", "want-to-watch", "watching", "finished"] as const).map(
-								(filter) => (
-									<Button
-										key={filter}
-										variant={activeFilter === filter ? "default" : "secondary"}
-										onClick={() => setActiveFilter(filter)}
-										className="gap-1.5 rounded-xl h-8 font-normal text-xs"
-									>
-										{filter === "all" ? "All" : PROGRESS_LABELS[filter]}
-										<span className="ml-1 text-[11px] opacity-60">
-											{counts[filter]}
-										</span>
-									</Button>
-								),
-							)}
+							{(
+								[
+									"all",
+									"want-to-watch",
+									"watching",
+									"finished",
+									"dropped",
+								] as const
+							).map((filter) => (
+								<Button
+									key={filter}
+									variant={activeFilter === filter ? "default" : "secondary"}
+									onClick={() => setActiveFilter(filter)}
+									className="gap-1.5 rounded-xl h-8 font-normal text-xs"
+								>
+									{filter === "all" ? "All" : PROGRESS_LABELS[filter]}
+									<span className="ml-1 text-[11px] opacity-60">
+										{counts[filter]}
+									</span>
+								</Button>
+							))}
 						</div>
 
 						{/* Mobile-only: toggle secondary filters */}

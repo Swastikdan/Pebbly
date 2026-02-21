@@ -11,6 +11,18 @@ import { getPersonDetails } from "@/lib/queries";
 import { isValidId } from "@/lib/utils";
 import type { PersonDetails } from "@/types";
 
+type KnownForCredit = {
+	id: number;
+	popularity: number;
+	vote_average: number;
+	poster_path: string | null;
+	title?: string;
+	name?: string;
+	release_date?: string;
+	first_air_date?: string;
+	media_type: "movie" | "tv";
+};
+
 export const Route = createFileRoute("/person/$id")({
 	loader: async ({ params }) => {
 		const { id } = params;
@@ -42,34 +54,81 @@ function PersonPage() {
 	});
 
 	const knownForCredits = useMemo(() => {
-		const movieCast =
+		const movieCastCredits =
 			data?.movie_credits?.cast?.map((credit) => ({
-				...credit,
+				id: credit.id,
+				popularity: credit.popularity,
+				vote_average: credit.vote_average,
+				poster_path: credit.poster_path,
+				title: credit.title,
+				name: credit.name,
+				release_date: credit.release_date,
+				first_air_date: credit.first_air_date,
 				media_type: "movie" as const,
 			})) ?? [];
 
-		const tvCast =
+		const movieCrewCredits =
+			data?.movie_credits?.crew?.map((credit) => ({
+				id: credit.id,
+				popularity: credit.popularity,
+				vote_average: credit.vote_average,
+				poster_path: credit.poster_path,
+				title: credit.title,
+				name: credit.name,
+				release_date: credit.release_date,
+				first_air_date: credit.first_air_date,
+				media_type: "movie" as const,
+			})) ?? [];
+
+		const tvCastCredits =
 			data?.tv_credits?.cast?.map((credit) => ({
-				...credit,
+				id: credit.id,
+				popularity: credit.popularity,
+				vote_average: credit.vote_average,
+				poster_path: credit.poster_path,
+				title: credit.title,
+				name: credit.name,
+				release_date: credit.release_date,
+				first_air_date: credit.first_air_date,
 				media_type: "tv" as const,
 			})) ?? [];
 
-		const castMap = new Map<
-			string,
-			(typeof movieCast)[number] | (typeof tvCast)[number]
-		>();
+		const tvCrewCredits =
+			data?.tv_credits?.crew?.map((credit) => ({
+				id: credit.id,
+				popularity: credit.popularity,
+				vote_average: credit.vote_average,
+				poster_path: credit.poster_path,
+				title: credit.title,
+				name: credit.name,
+				release_date: credit.release_date,
+				first_air_date: credit.first_air_date,
+				media_type: "tv" as const,
+			})) ?? [];
 
-		for (const credit of [...movieCast, ...tvCast]) {
+		const creditsMap = new Map<string, KnownForCredit>();
+
+		for (const credit of [
+			...movieCastCredits,
+			...tvCastCredits,
+			...movieCrewCredits,
+			...tvCrewCredits,
+		]) {
 			const key = `${credit.media_type}-${credit.id}`;
-			if (!castMap.has(key)) {
-				castMap.set(key, credit);
+			if (!creditsMap.has(key)) {
+				creditsMap.set(key, credit);
 			}
 		}
 
-		return [...castMap.values()]
+		return [...creditsMap.values()]
 			.sort((a, b) => b.popularity - a.popularity)
 			.slice(0, 24);
-	}, [data?.movie_credits?.cast, data?.tv_credits?.cast]);
+	}, [
+		data?.movie_credits?.cast,
+		data?.movie_credits?.crew,
+		data?.tv_credits?.cast,
+		data?.tv_credits?.crew,
+	]);
 
 	const biographyParagraphs = useMemo(
 		() => data?.biography?.split("\n\n").filter(Boolean) ?? [],
@@ -90,8 +149,8 @@ function PersonPage() {
 		place_of_birth,
 		birthday,
 		deathday,
-		external_ids,
 	} = data;
+	const externalIds = data.external_ids ?? {};
 
 	const imageUrl = profile_path
 		? `${IMAGE_PREFIX.HD_PROFILE}${profile_path}`
@@ -115,8 +174,8 @@ function PersonPage() {
 								height={450}
 							/>
 						) : (
-							<div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-								No Image
+							<div className="flex h-full w-full items-center justify-center bg-secondary text-sm text-muted-foreground">
+								No image available
 							</div>
 						)}
 					</div>
@@ -138,9 +197,9 @@ function PersonPage() {
 						)}
 
 						<div className="flex gap-4 pt-2">
-							{external_ids.imdb_id && (
+							{externalIds.imdb_id && (
 								<a
-									href={`https://www.imdb.com/name/${external_ids.imdb_id}`}
+									href={`https://www.imdb.com/name/${externalIds.imdb_id}`}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="text-sm font-medium hover:underline"
@@ -191,6 +250,12 @@ function PersonPage() {
 									</div>
 								))}
 							</div>
+						</div>
+					)}
+
+					{biographyParagraphs.length === 0 && knownForCredits.length === 0 && (
+						<div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+							No additional details are available for this person yet.
 						</div>
 					)}
 				</div>

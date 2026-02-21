@@ -124,10 +124,7 @@ function buildFallbackItem(
 	};
 }
 
-function mapLegacyStatusToSplit(
-	status?: string,
-	progress?: number,
-): {
+function mapLegacyStatusToSplit(status?: string): {
 	progressStatus: ProgressStatus | null;
 	reaction: ReactionStatus | null;
 } {
@@ -148,20 +145,15 @@ function mapLegacyStatusToSplit(
 	}
 
 	if (status === "dropped") {
-		const inferredProgressStatus: ProgressStatus =
-			progress === undefined || progress <= 0
-				? "want-to-watch"
-				: progress >= 100
-					? "finished"
-					: "watching";
-		return { progressStatus: inferredProgressStatus, reaction: "not-for-me" };
+		return { progressStatus: "dropped", reaction: null };
 	}
 
 	return { progressStatus: null, reaction: null };
 }
 
 function toLegacyStatus(item: WatchlistItem): WatchlistStatus | null {
-	if (item.reaction === "not-for-me") return "dropped";
+	if (item.progressStatus === "dropped" || item.reaction === "not-for-me")
+		return "dropped";
 	if (item.reaction === "liked" && item.progressStatus === "finished") {
 		return "liked";
 	}
@@ -188,7 +180,7 @@ function mapConvexItemToWatchlistItem(item: {
 	reaction?: string;
 	status?: string;
 }): WatchlistItem {
-	const legacy = mapLegacyStatusToSplit(item.status, item.progress);
+	const legacy = mapLegacyStatusToSplit(item.status);
 
 	return {
 		title: item.title ?? "Unknown Title",

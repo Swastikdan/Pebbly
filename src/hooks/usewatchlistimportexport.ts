@@ -20,10 +20,7 @@ type ImportItem = Pick<WatchlistItem, "title" | "external_id" | "type"> &
 		watchedEpisodes?: Record<string, boolean>;
 	};
 
-function mapLegacyImportedStatus(
-	status?: string,
-	progress?: number,
-): {
+function mapLegacyImportedStatus(status?: string): {
 	progressStatus: ProgressStatus | null;
 	reaction: ReactionStatus | null;
 } {
@@ -37,13 +34,7 @@ function mapLegacyImportedStatus(
 	if (status === "liked")
 		return { progressStatus: "finished", reaction: "liked" };
 	if (status === "dropped") {
-		const derivedProgress: ProgressStatus =
-			progress === undefined || progress <= 0
-				? "want-to-watch"
-				: progress >= 100
-					? "finished"
-					: "watching";
-		return { progressStatus: derivedProgress, reaction: "not-for-me" };
+		return { progressStatus: "dropped", reaction: null };
 	}
 
 	return { progressStatus: null, reaction: null };
@@ -206,7 +197,7 @@ export const useWatchlistImportExport = () => {
 					}
 
 					for (const item of validatedList) {
-						const legacy = mapLegacyImportedStatus(item.status, item.progress);
+						const legacy = mapLegacyImportedStatus(item.status);
 						const progressStatus =
 							(item.progressStatus as ProgressStatus | undefined) ??
 							legacy.progressStatus ??

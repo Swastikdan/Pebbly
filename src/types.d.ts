@@ -635,7 +635,11 @@ export interface TvEpisodeDetail {
 	guest_stars?: CastMember[] | null;
 }
 
-export type ProgressStatus = "want-to-watch" | "watching" | "finished";
+export type ProgressStatus =
+	| "want-to-watch"
+	| "watching"
+	| "finished"
+	| "dropped";
 
 export type ReactionStatus = "loved" | "liked" | "mixed" | "not-for-me";
 

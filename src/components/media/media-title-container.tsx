@@ -1,4 +1,4 @@
-import { Frown, Meh, Smile } from "lucide-react";
+import { Frown, Meh, Smile, X } from "lucide-react";
 import type { ComponentType } from "react";
 import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
@@ -32,6 +32,7 @@ const PROGRESS_OPTIONS: Array<{
 	{ value: "want-to-watch", label: "Plan to watch", icon: Clock },
 	{ value: "watching", label: "Watching", icon: Eye },
 	{ value: "finished", label: "Completed", icon: CheckCircle },
+	{ value: "dropped", label: "Dropped", icon: X },
 ];
 
 const REACTION_OPTIONS: Array<{
