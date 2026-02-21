@@ -12,6 +12,8 @@ import type { ProgressStatus, ReactionStatus, WatchlistStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
 
+import type { Id } from "../../convex/_generated/dataModel";
+
 import { getTvDetails } from "../lib/queries";
 
 import { useLocalProgressStore } from "./useLocalProgressStore";
@@ -399,7 +401,81 @@ export function useToggleWatchlistItem() {
 	const { isSignedIn } = useUser();
 	const setWatchlistMembership = useMutation(
 		api.watchlist.setWatchlistMembership,
-	);
+	).withOptimisticUpdate((localStore, args) => {
+		const current = localStore.getQuery(api.watchlist.getWatchlist) ?? [];
+		if (args.inWatchlist) {
+			const existing = current.find(
+				(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
+			);
+			if (existing) {
+				localStore.setQuery(
+					api.watchlist.getWatchlist,
+					{},
+					current.map((i) =>
+						i === existing
+							? { ...i, inWatchlist: true, updatedAt: Date.now() }
+							: i,
+					),
+				);
+			} else {
+				localStore.setQuery(api.watchlist.getWatchlist, {}, [
+					...current,
+					{
+						tmdbId: args.tmdbId,
+						mediaType: args.mediaType,
+						title: args.title,
+						image: args.image,
+						rating: args.rating,
+						release_date: args.release_date,
+						overview: args.overview,
+						inWatchlist: true,
+						updatedAt: Date.now(),
+						userId: "optimistic" as unknown as Id<"users">,
+						_id: `optimistic_${Date.now()}` as unknown as Id<"watch_items">,
+						_creationTime: Date.now(),
+					},
+				]);
+			}
+		} else {
+			localStore.setQuery(
+				api.watchlist.getWatchlist,
+				{},
+				current.map((i) =>
+					i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
+						? { ...i, inWatchlist: false }
+						: i,
+				),
+			);
+		}
+
+		const mediaStateArgs = { tmdbId: args.tmdbId, mediaType: args.mediaType };
+		const currentMediaState = localStore.getQuery(
+			api.watchlist.getMediaState,
+			mediaStateArgs,
+		);
+		if (currentMediaState) {
+			localStore.setQuery(api.watchlist.getMediaState, mediaStateArgs, {
+				...currentMediaState,
+				inWatchlist: args.inWatchlist,
+				updatedAt: Date.now(),
+			});
+		} else if (args.inWatchlist) {
+			localStore.setQuery(api.watchlist.getMediaState, mediaStateArgs, {
+				tmdbId: args.tmdbId,
+				mediaType: args.mediaType,
+				title: args.title,
+				image: args.image,
+				rating: args.rating,
+				release_date: args.release_date,
+				overview: args.overview,
+				inWatchlist: true,
+				updatedAt: Date.now(),
+				userId: "optimistic" as unknown as Id<"users">,
+				_id: `optimistic_${Date.now()}` as unknown as Id<"watch_items">,
+				_creationTime: Date.now(),
+			});
+		}
+	});
 	const setLocalWatchlistMembership = useWatchlistStore(
 		(state) => state.setWatchlistMembershipLocal,
 	);
@@ -453,7 +529,39 @@ export function useToggleWatchlistItem() {
 
 export function useSetProgressStatus() {
 	const { isSignedIn } = useUser();
-	const setProgressStatus = useMutation(api.watchlist.setProgressStatus);
+	const setProgressStatus = useMutation(
+		api.watchlist.setProgressStatus,
+	).withOptimisticUpdate((localStore, args) => {
+		const current = localStore.getQuery(api.watchlist.getWatchlist) ?? [];
+		localStore.setQuery(
+			api.watchlist.getWatchlist,
+			{},
+			current.map((i) =>
+				i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
+					? {
+							...i,
+							progressStatus: args.progressStatus,
+							progress: args.progress ?? i.progress,
+							updatedAt: Date.now(),
+						}
+					: i,
+			),
+		);
+
+		const mediaStateArgs = { tmdbId: args.tmdbId, mediaType: args.mediaType };
+		const currentMediaState = localStore.getQuery(
+			api.watchlist.getMediaState,
+			mediaStateArgs,
+		);
+		if (currentMediaState) {
+			localStore.setQuery(api.watchlist.getMediaState, mediaStateArgs, {
+				...currentMediaState,
+				progressStatus: args.progressStatus,
+				progress: args.progress ?? currentMediaState.progress,
+				updatedAt: Date.now(),
+			});
+		}
+	});
 	const setProgressStatusLocal = useWatchlistStore(
 		(state) => state.setProgressStatusLocal,
 	);
@@ -542,7 +650,37 @@ export function useSetProgressStatus() {
 
 export function useSetReaction() {
 	const { isSignedIn } = useUser();
-	const setReaction = useMutation(api.watchlist.setReaction);
+	const setReaction = useMutation(
+		api.watchlist.setReaction,
+	).withOptimisticUpdate((localStore, args) => {
+		const current = localStore.getQuery(api.watchlist.getWatchlist) ?? [];
+		localStore.setQuery(
+			api.watchlist.getWatchlist,
+			{},
+			current.map((i) =>
+				i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
+					? {
+							...i,
+							reaction: args.clearReaction ? undefined : args.reaction,
+							updatedAt: Date.now(),
+						}
+					: i,
+			),
+		);
+
+		const mediaStateArgs = { tmdbId: args.tmdbId, mediaType: args.mediaType };
+		const currentMediaState = localStore.getQuery(
+			api.watchlist.getMediaState,
+			mediaStateArgs,
+		);
+		if (currentMediaState) {
+			localStore.setQuery(api.watchlist.getMediaState, mediaStateArgs, {
+				...currentMediaState,
+				reaction: args.clearReaction ? undefined : args.reaction,
+				updatedAt: Date.now(),
+			});
+		}
+	});
 	const setReactionLocal = useWatchlistStore((state) => state.setReactionLocal);
 
 	return useCallback(
