@@ -5,6 +5,7 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -173,6 +174,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 					{children}
 					<Footer />
 					{devtoolsPlugin}
+					<SpeedInsights />
 					<Scripts />
 				</ThemeProvider>
 			</body>
