@@ -175,6 +175,7 @@ function TvHomePage() {
 					release_date={release_date}
 					overview={overview}
 					rating={vote_average}
+					status={status}
 				/>
 			)}
 			<MediaContainer

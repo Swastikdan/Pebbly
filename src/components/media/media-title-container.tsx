@@ -89,6 +89,18 @@ export const MediaTitleContailer = (props: {
 	const progressStatus = mediaState?.progressStatus ?? null;
 	const reaction = mediaState?.reaction ?? null;
 
+	const isSeriesEnded = media_type === "tv" && tv_status
+		? ["ended", "canceled", "cancelled"].includes(tv_status.trim().toLowerCase())
+		: true; // movies and non-TV always show all options
+
+	const filteredProgressOptions = PROGRESS_OPTIONS.filter((option) => {
+		// Hide "Completed" for returning/in-production series
+		if (option.value === "finished" && media_type === "tv" && !isSeriesEnded) {
+			return false;
+		}
+		return true;
+	});
+
 	const renderWatchListSection = (className?: string) => (
 		<div
 			className={cn("flex flex-wrap items-center justify-end gap-2", className)}
@@ -142,7 +154,7 @@ export const MediaTitleContailer = (props: {
 							<SelectValue placeholder="Choose status" />
 						</SelectTrigger>
 						<SelectContent className="rounded-xl">
-							{PROGRESS_OPTIONS.map((option) => {
+							{filteredProgressOptions.map((option) => {
 								const Icon = option.icon;
 								return (
 									<SelectItem
@@ -231,10 +243,10 @@ export const MediaTitleContailer = (props: {
 		<div className="pt-5 pb-5">
 			<div className="space-y-3 pb-5">
 				<div className="flex items-center justify-between gap-3">
-					<GoBack title="Back" hideLabelOnMobile />
+					<GoBack title="Back" />
 					<div className="flex flex-wrap items-center justify-end gap-2">
 						{renderWatchListSection("hidden sm:flex")}
-						<ShareButton title={title} hideLabelOnMobile />
+						<ShareButton title={title} />
 					</div>
 				</div>
 				{renderWatchListSection("sm:hidden")}

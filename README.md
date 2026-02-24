@@ -1,228 +1,138 @@
 # Film Fanatic
 
-A modern, responsive web application for discovering and exploring movies and TV shows. Built with **TanStack Start**, **React Compiler**, **TypeScript**, **Biome** (linting/formatting), **Nitro** with `nitroV2Plugin` for server deployment, and **shadcn/ui** for UI components. Powered by The Movie Database (TMDB) API.
+A premium, full-stack media discovery and tracking platform built for the modern cinephile. Experience seamless movie and TV show exploration with real-time tracking, powered by a state-of-the-art tech stack.
 
-
-
-## Security notice
-
-`VITE_TMDB_ACCESS_TOKEN` is exposed to the client. Any environment variable prefixed with `VITE_` will be available in the browser via `import.meta.env`. If you do not want to expose your TMDB access token, remove the `VITE_` prefix and use server functions to keep the token on the server side.
-
-
+---
 
 ## Features
 
-### Core functionality
+### Precision Discovery
 
-* **Discovery:** Browse popular, top-rated, now-playing, and upcoming movies and TV shows
-* **Advanced search:** Real-time search across movies, TV shows, and people
-* **Detailed pages:** Cast, crew, trailers, images, reviews, and recommendations
-* **Personal watchlist:** Save and manage favorites locally with export support
-* **Collections:** Explore franchises and collection pages
-* **Responsive:** Optimized for desktop, tablet, and mobile
+* **Intelligent Search:** Real-time, multi-category search across movies, TV series, and people with advanced filtering (rating, type).
+* **Rich Media Context:** Immersive detail pages featuring trailers, cast/crew insights, high-definition galleries, and collections.
+* **Smart Recommendations:** Discover your next favorite film with context-aware suggestions based on what you're viewing.
 
-### User experience
+### Seamless Tracking and Watchlist
 
-* **Dark / Light theme** with system preference detection
-* **Smooth animations** powered by Framer Motion
-* **Fast loading** via TanStack Query caching and optimized requests
-* **SEO friendly**: dynamic meta tags and Open Graph support
-* **Progressive Web App**: installable, offline-capable
+* **Hybrid Storage:** Local-first performance with `localStorage` for guests, seamlessly synchronized to the cloud via **Convex** for authenticated users.
+* **Granular Episode Tracking:** Mark individual episodes as watched. Progress automatically calculates show completion.
+* **Advanced Statuses:** Manage your journey with statuses: *Plan to Watch*, *Watching*, *Completed*, or *Dropped*.
+* **Emotional Reactions:** Log your feelings with reactions like *Loved*, *Liked*, *Mixed*, or *Not for me*.
 
-### Navigation & organization
+### Premium User Experience
 
-* Intuitive navbar with dropdowns
-* SEO-friendly routing and slugs via TanStack Router
-* Pagination for large result sets
-* Share and export watchlist functionality
+* **Aesthetic Design:** A stunning, responsive UI built with Tailwind CSS 4.0, featuring glassmorphism, smooth transitions, and high-fidelity posters.
+* **Optimistic UI:** Actions feel instantaneous thanks to optimistic updates and TanStack Query caching.
+* **Universal Access:** Fully responsive layout optimized for everything from ultra-wide monitors to mobile devices.
+* **Identity Management:** Secure and simple authentication powered by **Clerk**.
 
+---
 
-## Quick start
+## Technology Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **Framework** | [TanStack Start](https://tanstack.com/router/v1/docs/guide/start-overview) (Nitro + React 19) |
+| **Backend** | [Convex](https://www.convex.dev/) (Real-time Database & Functions) |
+| **Authentication** | [Clerk](https://clerk.com/) |
+| **Styling** | [Tailwind CSS 4.0](https://tailwindcss.com/), [Radix UI](https://www.radix-ui.com/), [shadcn/ui](https://ui.shadcn.com/) |
+| **Data Fetching** | [TanStack Query](https://tanstack.com/query/latest) (React Query) |
+| **State Management** | [Zustand](https://zustand-demo.pmnd.rs/) (Client-side) |
+| **Optimization** | [React Compiler](https://react.dev/learn/react-compiler), [@unpic/react](https://unpic.pics/img/react/) |
+| **Code Quality** | [Biome](https://biomejs.dev/) (Lister, Formatter) |
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-* Node.js 20+
-* pnpm (recommended) or npm / yarn
-* TMDB API access token
+* **Node.js** 20+
+* **pnpm** (preferred)
+* **TMDB API Key** ([Get one here](https://www.themoviedb.org/settings/api))
+* **Convex Account**
+* **Clerk Account**
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone the Repository**
 
-```bash
-git clone https://github.com/Swastikdan/Film-Fanatic.git
-cd Film-Fanatic
-```
+   ```bash
+   git clone https://github.com/Swastikdan/Film-Fanatic.git
+   cd film-fanatic
+   ```
 
-2. **Install dependencies**
+2. **Install Dependencies**
 
-```bash
-pnpm install
-```
+   ```bash
+   pnpm install
+   ```
 
-3. **Environment setup**
+3. **Configure Environment Variables**
 
-Create `.env` in the project root:
+   Create a `.env.local` file in the root:
 
-```text
-VITE_TMDB_ACCESS_TOKEN=your_tmdb_access_token_here
-VITE_TMDB_API_URL=https://api.themoviedb.org/3
-VITE_APP_URL=http://localhost:3000
-```
+   ```env
+   # TMDB
+   VITE_TMDB_ACCESS_TOKEN=your_token_here
+   VITE_TMDB_API_URL=https://api.themoviedb.org/3
+   
+   # Clerk (Authentication)
+   VITE_CLERK_PUBLISHABLE_KEY=your_key_here
+   CLERK_SECRET_KEY=your_secret_here
+   
+   # Convex (Backend)
+   CONVEX_DEPLOY_KEY=your_key_here # For deployment
+   VITE_CONVEX_URL=your_convex_url_here
+   ```
 
-For local-only overrides, create `.env.local` (add to `.gitignore`):
+4. **Start Development**
 
-```text
-VITE_TMDB_ACCESS_TOKEN=your_local_token_here
-```
+   ```bash
+   # Runs both Vite and Convex Dev in parallel
+   pnpm dev
+   ```
 
-4. **Start development server**
+5. **Build for Production**
 
-```bash
-pnpm dev
-```
+   ```bash
+   pnpm build
+   ```
 
-5. Open browser: `http://localhost:3000`
+---
 
-### Getting a TMDB API token
+## Project Structure
 
-1. Create an account at The Movie Database (TMDB)
-2. Account → Settings → API
-3. Request an API key and use the **API Read Access Token** in your environment variables
+* **/convex**: Backend schema, mutations, and queries (Convex functions).
+* **/src/components**: Modular UI components (shadcn/ui, media cards, layout).
+* **/src/hooks**: Custom React hooks for data fetching and state sync.
+* **/src/lib**: Utility functions and client instances (Convex, Clerk, API).
+* **/src/routes**: File-based routing system (TanStack Router).
+* **/public**: Static assets and icons.
 
-
-
-## Tech stack
-
-### Frontend
-
-* **TanStack Start** — full-stack React framework with streaming SSR
-* **TanStack Router** — type-safe routing
-* **React 19**
-* **React Compiler 1.0** — automatic memoization/optimizations
-* **TypeScript 5.6**
-
-### Styling & UI
-
-* **Tailwind CSS 4.1**
-* **shadcn/ui** (Radix-based components)
-
-### State & data
-
-* **TanStack Query (React Query)** — server state and caching
-* **Zustand** — client state for watchlist
-* **Zod** — runtime validation
-
-### Dev tools & build
-
-* **Vite** — dev server and build tool
-* **Biome** — linting, formatting, import sorting
-* **Nitro** with `nitroV2Plugin` — universal server deployment
-* **pnpm** — package manager
-* **T3 Env** — type-safe env validation
-
-
-
-## Available scripts
-
-```bash
-# Development
-pnpm dev          # Start dev server
-pnpm build        # Build for production
-pnpm start        # Start production server
-pnpm preview      # Preview production build
-
-# Code quality (Biome)
-pnpm lint         # Run Biome linter
-pnpm lint:fix     # Fix Biome issues
-pnpm format       # Format code with Biome
-pnpm typecheck    # Run TypeScript compiler check
-pnpm check        # Run both lint and typecheck
-```
-
-
-
-## Deep dives
-
-### Movie & TV show pages
-
-* Server-side rendered details
-* Cast and crew profiles with photos
-* Embedded trailers and image galleries
-* Ratings, reviews, and recommendations
-* Collection/franchise pages
-
-### Search
-
-* Multi-search across movies, TV shows, and people
-* Real-time results with TanStack Query
-* Filters by content type and pagination
-* Search history and suggestions
-
-### Watchlist
-
-* Add/remove items with persistent `localStorage` storage
-* Export/backup watchlist data
-* Quick access across the app
-
-### Responsive design
-
-* Mobile-first layouts and touch-friendly interactions
-* Lazy-loaded images for performance
-* Adaptive UI for all screen sizes
-
-
-
-## Configuration
-
-### Environment variables
-
-TanStack Start uses Vite environment variables with T3 Env for validation.
-
-|                 Variable | Description           | Context | Required |
-| -----------------------: | --------------------- | ------: | :------: |
-| `VITE_TMDB_ACCESS_TOKEN` | TMDB API access token |  Client |    Yes   |
-| `VITE_TMDB_API_URL`      | TMDB API base URL     |  Client |    Yes   |
-| `VITE_APP_URL`           | App URL               |  Client |    Yes   |
-
-**Environment file load order**
-
-1. `.env.local` — local overrides (ignore in VCS)
-2. `.env` — default variables (committed)
-
-### Customization
-
-* **Themes:** `tailwind.config.cjs`
-* **Site config:** `config/site.ts`
-* **Navigation:** update site config navigation items
-* **Global styles:** `styles/globals.css`
-* **Routing:** `app/router.tsx` or file-based routes
-* **shadcn/ui components:** `components/` directory
-
+---
 
 ## Contributing
 
-1. Fork the repository and create a branch from `main`
-2. Follow code style and use TypeScript
-3. Use Biome for lint/format (`pnpm lint:fix`, `pnpm format`)
-4. Add error handling and tests where appropriate
-5. Update documentation for breaking changes
-6. Open a pull request with a clear description
+We welcome contributions! Please follow these steps:
 
-For major changes, open an issue first to discuss the proposal.
+1. Fork the project.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Run `pnpm check` to ensure code quality/types.
+5. Push to the branch (`git push origin feature/AmazingFeature`).
+6. Open a Pull Request.
 
+---
 
 ## License
 
-This project is open source under the **MIT License**.
+Distributed under the MIT License. See `LICENSE` for more information.
 
+---
 
 ## Acknowledgments
 
-* The Movie Database (TMDB) — data provider
-* TanStack — Start, Router, Query libraries
-* shadcn/ui — component library
-* Biome — linting and formatting
-* Vite — build tool
-* Nitro — server deployment
-* React Team — React Compiler and React ecosystem
+* [The Movie Database (TMDB)](https://www.themoviedb.org/) for the incredible data.
+* [TanStack Team](https://tanstack.com/) for the world-class routing and data tools.
+* [Vercel](https://vercel.com/) for hosting and deployment support.

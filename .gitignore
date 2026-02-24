@@ -11,3 +11,5 @@ count.txt
 .vinxi
 todos.json
 .vercel
+.gemini/*
+.pnpm-store

@@ -2,7 +2,7 @@ import { useUser } from "@clerk/clerk-react";
 
 import { useMutation, useQuery } from "convex/react";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { api } from "../../convex/_generated/api";
 
@@ -233,6 +233,7 @@ export function useEpisodeWatched(
 		release_date?: string;
 		overview?: string;
 		rating?: number;
+		status?: string;
 	},
 ) {
 	const tmdbId = Number(tvId);
@@ -371,11 +372,25 @@ export function useEpisodeWatched(
 	const hasMediaState = !!mediaState;
 	const currentProgress = mediaState?.progress ?? 0;
 	const currentProgressStatus = mediaState?.progressStatus ?? null;
+	const prevWatchedCountRef = useRef<number | null>(null);
+	const prevTmdbIdRef = useRef<number | null>(null);
 
 	const syncProgressFromWatchedCount = useCallback(
 		(newWatchedCount: number) => {
+			if (
+				prevWatchedCountRef.current === newWatchedCount &&
+				prevTmdbIdRef.current === tmdbId
+			) {
+				return;
+			}
+			prevWatchedCountRef.current = newWatchedCount;
+			prevTmdbIdRef.current = tmdbId;
+
 			const shouldSkip = !hasMediaState && newWatchedCount === 0;
 			if (shouldSkip) return;
+
+			// Never auto-override a manual "dropped" status
+			if (currentProgressStatus === "dropped") return;
 
 			const hasEpisodeTotal =
 				typeof totalEpisodes === "number" && totalEpisodes > 0;
@@ -391,12 +406,53 @@ export function useEpisodeWatched(
 							)
 						: Math.max(currentProgress, 1);
 
+			const normalizedShowStatus = showMeta?.status?.trim().toLowerCase();
+			const isCompletedSeries =
+				normalizedShowStatus === "ended" ||
+				normalizedShowStatus === "canceled" ||
+				normalizedShowStatus === "cancelled";
+
+			const allEpisodesWatched =
+				hasEpisodeTotal && newWatchedCount >= safeTotalEpisodes;
+
 			const derivedProgressStatus =
 				newWatchedCount <= 0
 					? "want-to-watch"
-					: hasEpisodeTotal && newWatchedCount >= safeTotalEpisodes
-						? "finished"
+					: allEpisodesWatched
+						? isCompletedSeries
+							? "finished"
+							: "watching"
 						: "watching";
+
+			// If user manually set "watching" on an ended series with all episodes watched,
+			// don't auto-override back to "finished" — respect the manual choice
+			if (
+				currentProgressStatus === "watching" &&
+				derivedProgressStatus === "finished" &&
+				allEpisodesWatched
+			) {
+				// Still update progress percentage, but don't change the status
+				const shouldWriteProgress =
+					!hasMediaState || currentProgress !== nextProgress;
+				if (shouldWriteProgress) {
+					if (isSignedIn) {
+						updateProgress({
+							tmdbId,
+							mediaType: "tv",
+							progress: nextProgress,
+						}).catch(console.error);
+					} else {
+						setProgressLocal(String(tvId), "tv", nextProgress, {
+							title: showMeta?.title ?? `TV Show ${tvId}`,
+							image: showMeta?.image ?? "",
+							rating: showMeta?.rating ?? 0,
+							release_date: showMeta?.release_date ?? "",
+							overview: showMeta?.overview,
+						});
+					}
+				}
+				return;
+			}
 
 			const shouldWriteProgress =
 				!hasMediaState || currentProgress !== nextProgress;
@@ -463,6 +519,7 @@ export function useEpisodeWatched(
 			showMeta?.overview,
 			showMeta?.rating,
 			showMeta?.release_date,
+			showMeta?.status,
 			showMeta?.title,
 			tmdbId,
 			totalEpisodes,

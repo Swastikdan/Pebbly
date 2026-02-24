@@ -31,6 +31,7 @@ interface InlineEpisodeBrowserProps {
 	release_date?: string;
 	overview?: string;
 	rating?: number;
+	status?: string;
 }
 
 export function InlineEpisodeBrowser({
@@ -41,6 +42,7 @@ export function InlineEpisodeBrowser({
 	release_date,
 	overview,
 	rating,
+	status,
 }: InlineEpisodeBrowserProps) {
 	// Filter out specials/season 0 by default, but keep them available
 	const mainSeasons = seasons.filter((s) => s.season_number > 0);
@@ -58,6 +60,7 @@ export function InlineEpisodeBrowser({
 		release_date,
 		overview,
 		rating,
+		status,
 	});
 
 	const handleSeasonToggle = (
@@ -169,7 +172,7 @@ export function InlineEpisodeBrowser({
 					onClick={() => setShowAllSeasons(true)}
 					className="mt-3 w-full rounded-xl border border-dashed border-border py-3 text-xs font-medium text-muted-foreground hover:bg-secondary/5 hover:text-foreground transition-all"
 				>
-					View all {allSeasons.length} seasons
+					{`View all ${allSeasons.length} seasons`}
 				</button>
 			)}
 		</div>
