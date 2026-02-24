@@ -55,7 +55,8 @@ export const useWatchlistImportExport = () => {
 
 	const { isSignedIn } = useUser();
 	const allEpisodeProgress = useQuery(
-		isSignedIn ? api.watchlist.getAllEpisodeProgress : ("skip" as any),
+		api.watchlist.getAllEpisodeProgress,
+		isSignedIn ? {} : "skip",
 	);
 	const syncEpisodeProgressItem = useMutation(
 		api.watchlist.syncEpisodeProgressItem,

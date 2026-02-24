@@ -346,7 +346,10 @@ export const useWatchlistStore = create<WatchlistStore>()(
 /** Returns membership watchlist only. */
 export function useWatchlist() {
 	const { isSignedIn, isLoaded } = useUser();
-	const convexWatchlistData = useQuery(api.watchlist.getWatchlist);
+	const convexWatchlistData = useQuery(
+		api.watchlist.getWatchlist,
+		isSignedIn ? {} : "skip",
+	);
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
 	const watchlist: WatchlistItem[] = useMemo(() => {
@@ -373,10 +376,15 @@ export function useWatchlist() {
 export function useMediaState(id: string, mediaType: MediaType) {
 	const { isSignedIn } = useUser();
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
-	const remoteState = useQuery(api.watchlist.getMediaState, {
-		tmdbId: Number(id),
-		mediaType,
-	});
+	const remoteState = useQuery(
+		api.watchlist.getMediaState,
+		isSignedIn
+			? {
+					tmdbId: Number(id),
+					mediaType,
+				}
+			: "skip",
+	);
 
 	if (!isSignedIn) {
 		return (

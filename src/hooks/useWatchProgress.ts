@@ -243,7 +243,10 @@ export function useEpisodeWatched(
 
 	// Remote Data
 	const watchedEpisodes =
-		useQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }) || [];
+		useQuery(
+			api.watchlist.getAllWatchedEpisodes,
+			isSignedIn ? { tmdbId } : "skip",
+		) || [];
 
 	// Local Data
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
@@ -710,9 +713,14 @@ export function useEpisodeProgress(
 ) {
 	const { isSignedIn } = useUser();
 
-	const data = useQuery(api.watchlist.getAllWatchedEpisodes, {
-		tmdbId: Number(tvId),
-	});
+	const data = useQuery(
+		api.watchlist.getAllWatchedEpisodes,
+		isSignedIn
+			? {
+					tmdbId: Number(tvId),
+				}
+			: "skip",
+	);
 
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
