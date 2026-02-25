@@ -143,13 +143,7 @@ function PersonPage() {
 		throw notFound();
 	}
 
-	const {
-		name,
-		profile_path,
-		place_of_birth,
-		birthday,
-		deathday,
-	} = data;
+	const { name, profile_path, place_of_birth, birthday, deathday } = data;
 	const externalIds = data.external_ids ?? {};
 
 	const imageUrl = profile_path
