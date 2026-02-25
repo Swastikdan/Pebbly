@@ -75,6 +75,8 @@ interface WatchlistStore {
 	) => void;
 }
 
+const QUERY_SKIP = "skip" as const;
+
 const memoryStorage: Storage = (() => {
 	let store: Record<string, string> = {};
 	return {
@@ -348,7 +350,7 @@ export function useWatchlist() {
 	const { isSignedIn, isLoaded } = useUser();
 	const convexWatchlistData = useQuery(
 		api.watchlist.getWatchlist,
-		isSignedIn ? {} : "skip",
+		isSignedIn ? {} : QUERY_SKIP,
 	);
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
@@ -383,7 +385,7 @@ export function useMediaState(id: string, mediaType: MediaType) {
 					tmdbId: Number(id),
 					mediaType,
 				}
-			: "skip",
+			: QUERY_SKIP,
 	);
 
 	if (!isSignedIn) {
@@ -402,7 +404,7 @@ export function useToggleWatchlistItem() {
 	const setWatchlistMembership = useMutation(
 		api.watchlist.setWatchlistMembership,
 	).withOptimisticUpdate((localStore, args) => {
-		const current = localStore.getQuery(api.watchlist.getWatchlist) ?? [];
+		const current = localStore.getQuery(api.watchlist.getWatchlist, {}) ?? [];
 		if (args.inWatchlist) {
 			const existing = current.find(
 				(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
@@ -532,7 +534,7 @@ export function useSetProgressStatus() {
 	const setProgressStatus = useMutation(
 		api.watchlist.setProgressStatus,
 	).withOptimisticUpdate((localStore, args) => {
-		const current = localStore.getQuery(api.watchlist.getWatchlist) ?? [];
+		const current = localStore.getQuery(api.watchlist.getWatchlist, {}) ?? [];
 		localStore.setQuery(
 			api.watchlist.getWatchlist,
 			{},
@@ -653,7 +655,7 @@ export function useSetReaction() {
 	const setReaction = useMutation(
 		api.watchlist.setReaction,
 	).withOptimisticUpdate((localStore, args) => {
-		const current = localStore.getQuery(api.watchlist.getWatchlist) ?? [];
+		const current = localStore.getQuery(api.watchlist.getWatchlist, {}) ?? [];
 		localStore.setQuery(
 			api.watchlist.getWatchlist,
 			{},

@@ -59,6 +59,8 @@ function makeEpisodeKey(
 	return `${tvId}:${season}:${episode}`;
 }
 
+const QUERY_SKIP = "skip" as const;
+
 /* ─── Hook: Listen for player events and persist progress ─── */
 
 export function usePlayerProgressListener() {
@@ -245,7 +247,7 @@ export function useEpisodeWatched(
 	const watchedEpisodes =
 		useQuery(
 			api.watchlist.getAllWatchedEpisodes,
-			isSignedIn ? { tmdbId } : "skip",
+			isSignedIn ? { tmdbId } : QUERY_SKIP,
 		) || [];
 
 	// Local Data
@@ -719,7 +721,7 @@ export function useEpisodeProgress(
 			? {
 					tmdbId: Number(tvId),
 				}
-			: "skip",
+			: QUERY_SKIP,
 	);
 
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
