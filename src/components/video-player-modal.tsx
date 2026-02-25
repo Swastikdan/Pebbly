@@ -1,3 +1,4 @@
+/** Modal dialog that embeds the video player in an iframe for movies and TV episodes. */
 import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
 import {
@@ -37,9 +38,7 @@ export function VideoPlayerModal({
 	const [isLoading, setIsLoading] = useState(true);
 	const [isOpen, setIsOpen] = useState(false);
 	const { isSignedIn, user } = useUser();
-	// const { progress } = useWatchProgress(tmdbId);
 
-	// Listen for player progress events
 	usePlayerProgressListener();
 
 	const isAdmin = user?.publicMetadata?.isAdmin === true;
@@ -51,7 +50,6 @@ export function VideoPlayerModal({
 		tmdbId,
 		season,
 		episode,
-		// savedProgress: progress?.timestamp, // Disable auto-resume
 	});
 
 	const label =

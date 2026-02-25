@@ -1,3 +1,4 @@
+/** Import/export watchlist data as JSON, supporting both Convex and local storage. */
 import { useUser } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 import type React from "react";

@@ -1,3 +1,4 @@
+/** Reusable media card components for movies, TV shows, and person entries. */
 import { Link } from "@tanstack/react-router";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +103,6 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					</Badge>
 				</div>
 
-				{/* Content */}
 				<div className="mt-3 flex flex-col gap-0.5 overflow-hidden">
 					<AutoScrollTitle
 						text={title}
@@ -114,7 +114,6 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 				</div>
 			</Link>
 
-			{/* Watchlist Button (Positioned over image) */}
 			<div className="absolute right-2 top-2 z-10 transition-transform duration-300 hover:scale-105">
 				<WatchlistButton
 					id={id}
@@ -159,7 +158,6 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
-				{/* Image Container */}
 				<div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted shadow-md transition-all duration-500 group-hover:shadow-xl group-hover:shadow-primary/5">
 					<Image
 						alt={title}
@@ -233,7 +231,6 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 					width={200}
 					height={300}
 				/>
-				{/* <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" /> */}
 			</div>
 
 			<div className="mt-2.5 flex flex-col items-start text-start overflow-hidden">

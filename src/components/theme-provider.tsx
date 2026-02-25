@@ -1,3 +1,7 @@
+/**
+ * Theme provider with system/light/dark mode support.
+ * Based on shadcn/ui dark-mode pattern and next-themes.
+ */
 import { ScriptOnce } from "@tanstack/react-router";
 import {
 	createContext,
@@ -29,9 +33,6 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
-// references:
-// https://ui.shadcn.com/docs/dark-mode/vite
-// https://github.com/pacocoursey/next-themes/blob/main/next-themes/src/index.tsx
 export function ThemeProvider({
 	children,
 	defaultTheme = "system",
@@ -58,7 +59,6 @@ export function ThemeProvider({
 		[theme],
 	);
 
-	// Listen for system preference changes
 	useEffect(() => {
 		const media = window.matchMedia(MEDIA);
 
@@ -81,7 +81,6 @@ export function ThemeProvider({
 			targetTheme = theme;
 		}
 
-		// Only update if the target theme is not already applied
 		if (!root.classList.contains(targetTheme)) {
 			root.classList.remove("light", "dark");
 			root.classList.add(targetTheme);
@@ -99,7 +98,7 @@ export function ThemeProvider({
 	return (
 		<ThemeProviderContext {...props} value={value}>
 			<ScriptOnce>
-				{/* Apply theme early to avoid FOUC */}
+				{/* Prevents flash of wrong theme on initial load */}
 				{`document.documentElement.classList.toggle(
             'dark',
             localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)

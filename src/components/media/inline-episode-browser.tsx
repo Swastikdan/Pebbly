@@ -1,3 +1,8 @@
+/**
+ * Inline episode browser for TV show detail pages.
+ * Renders an accordion-based season list with episode cards,
+ * watch-status toggling, and expandable episode summaries.
+ */
 import { useQuery } from "@tanstack/react-query";
 
 import { useState } from "react";
@@ -44,7 +49,7 @@ export function InlineEpisodeBrowser({
 	rating,
 	status,
 }: InlineEpisodeBrowserProps) {
-	// Filter out specials/season 0 by default, but keep them available
+	/** Separate main seasons from specials (season 0) */
 	const mainSeasons = seasons.filter((s) => s.season_number > 0);
 	const specialSeasons = seasons.filter((s) => s.season_number === 0);
 	const allSeasons = [...mainSeasons, ...specialSeasons];
@@ -83,7 +88,6 @@ export function InlineEpisodeBrowser({
 				</h2>
 			</div>
 
-			{/* Accordion-based Season Browser */}
 			<Accordion type="single" collapsible className="w-full space-y-2">
 				{displayedSeasons.map((s) => {
 					const seenAll = episodeTracker.isSeasonFullyWatched(
@@ -123,7 +127,7 @@ export function InlineEpisodeBrowser({
 												variant="default"
 												className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-700 border border-emerald-500/25 dark:text-emerald-400"
 											>
-												✓ Seen
+												Seen
 											</Badge>
 										)}
 										{!seenAll && watchedCount > 0 && (
@@ -265,7 +269,6 @@ function EpisodeCard({
 	onToggleWatched: () => void;
 }) {
 	const [expanded, setExpanded] = useState(false);
-	// Use character count as a proxy for "long content", but rely on CSS line-clamp for visual truncation
 	const hasLongOverview = (episode.overview?.length ?? 0) > 100;
 	const progress = useEpisodeProgress(
 		tvId,
@@ -275,7 +278,6 @@ function EpisodeCard({
 
 	return (
 		<div className="group relative flex flex-row items-start gap-3 px-4 py-3 transition-colors duration-200 hover:bg-secondary/5">
-			{/* Episode Still with hover play icon */}
 			<div className="relative shrink-0 overflow-hidden rounded-lg">
 				<Image
 					alt={episode.name}
@@ -299,20 +301,17 @@ function EpisodeCard({
 				/>
 			</div>
 
-			{/* Info */}
 			<div className="flex flex-1 flex-col gap-1 min-w-0">
 				<div className="flex items-start justify-between gap-2">
 					<div className="flex flex-col gap-0.5 min-w-0">
 						<span className="text-[10px] tracking-widest text-muted-foreground uppercase">
 							E{String(episode.episode_number).padStart(2, "0")}
 						</span>
-						{/* Full title — no truncation if possible, but handle overflow */}
 						<h3 className="text-sm font-bold md:text-base truncate">
 							{episode.name}
 						</h3>
 					</div>
 
-					{/* Mark as watched toggle */}
 					<button
 						type="button"
 						onClick={onToggleWatched}
@@ -404,7 +403,6 @@ function EpisodeCard({
 					)}
 				</div>
 
-				{/* Description with Read More toggle */}
 				{episode.overview ? (
 					<div className="mt-0.5 hidden sm:block">
 						<p className="text-xs leading-relaxed text-muted-foreground">

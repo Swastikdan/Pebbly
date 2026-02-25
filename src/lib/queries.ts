@@ -1,3 +1,4 @@
+/** TMDB API query functions for movies, TV shows, people, and search. */
 import type * as Types from "@/types";
 
 import { tmdb } from "./tmdb";
@@ -37,8 +38,6 @@ export async function getMedia({
 			throw new Error(`Unknown media type: ${type}`);
 	}
 	const response = await tmdb<Types.MediaListResults>(url);
-
-	// MIGHT use validateArrayResponse here, but default is safer for type mismatch
 	const result = validateResponse(response);
 
 	return result.results ?? [];
@@ -191,7 +190,7 @@ export async function getBasicTvDetails({
 	const url = `/tv/${id}?include_adult=true`;
 	const response = await tmdb<Types.BasicTv>(url, {
 		revalidate: 1000 * 60 * 60 * 48,
-	}); // 48h cache
+	});
 
 	return validateResponse(response);
 }
@@ -302,7 +301,6 @@ export async function getDiscoverMoviesByGenre({
 	page: number;
 }): Promise<Types.MediaListResults> {
 	const pagenumber = page ?? 1;
-	// Sort by popularity, include adult
 	const url = `/discover/movie?include_adult=true&include_video=false&language=en-US&page=${pagenumber}&sort_by=popularity.desc&with_genres=${with_genres}`;
 	const response = await tmdb<Types.MediaListResults>(url);
 	return validateResponse(response);

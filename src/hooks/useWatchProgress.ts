@@ -1,3 +1,8 @@
+/**
+ * Watch progress tracking hooks.
+ * Handles player event persistence, per-item/episode progress,
+ * and synchronisation between local state and Convex backend.
+ */
 import { useUser } from "@clerk/clerk-react";
 
 import { useMutation, useQuery } from "convex/react";
@@ -12,7 +17,7 @@ import { useLocalProgressStore } from "./useLocalProgressStore";
 
 import { useMediaState, useWatchlist, useWatchlistStore } from "./usewatchlist";
 
-/* ─── Types ─── */
+/** Shape of a persisted watch-progress entry. */
 
 export interface WatchProgressData {
 	id: string; // TMDB ID as string
@@ -61,7 +66,7 @@ function makeEpisodeKey(
 
 const QUERY_SKIP = "skip" as const;
 
-/* ─── Hook: Listen for player events and persist progress ─── */
+/** Listens for postMessage player events and persists progress to Convex or localStorage. */
 
 export function usePlayerProgressListener() {
 	const { isSignedIn } = useUser();
@@ -70,7 +75,6 @@ export function usePlayerProgressListener() {
 
 	const markEpisodeWatchedMut = useMutation(api.watchlist.markEpisodeWatched);
 
-	// Local Store
 	const setLocalProgress = useWatchlistStore((state) => state.setProgressLocal);
 
 	const markLocalEpisode = useLocalProgressStore(
@@ -103,7 +107,7 @@ export function usePlayerProgressListener() {
 				const safeProgress = Number.isFinite(progress) ? progress : 0;
 				const safeCurrentTime = Number.isFinite(currentTime) ? currentTime : 0;
 
-				// Only save meaningful progress (> 1% or > 10s), unless it's play/ended.
+				// Skip insignificant updates (< 1% and < 10s) unless play/ended event
 				if (
 					safeProgress < 1 &&
 					safeCurrentTime < 10 &&
@@ -117,19 +121,18 @@ export function usePlayerProgressListener() {
 					playerEvent === "play" ||
 					playerEvent === "pause" ||
 					playerEvent === "ended" ||
-					Math.abs(safeProgress - lastSavedPercent) > 2 // Save every 2% change
+					Math.abs(safeProgress - lastSavedPercent) > 2
 				) {
 					lastSavedPercent = safeProgress;
 
 					if (isSignedIn) {
-						// Update progress only; manual status remains authoritative.
 						updateProgress({
 							tmdbId: Number(id),
 							mediaType,
 							progress: safeProgress,
 						}).catch(console.error);
 
-						// Handle Episode Completion
+						// Auto-mark episode as watched on completion
 						if (
 							(playerEvent === "ended" || safeProgress >= 95) &&
 							mediaType === "tv" &&
@@ -146,7 +149,7 @@ export function usePlayerProgressListener() {
 					} else {
 						setLocalProgress(String(id), mediaType, safeProgress);
 
-						// Handle episode completion locally
+						// Auto-mark episode as watched locally on completion
 						if (
 							(playerEvent === "ended" || safeProgress >= 95) &&
 							mediaType === "tv" &&
@@ -158,7 +161,7 @@ export function usePlayerProgressListener() {
 					}
 				}
 			} catch {
-				// ignore malformed events
+				// Ignore malformed postMessage events
 			}
 		}
 
@@ -173,7 +176,7 @@ export function usePlayerProgressListener() {
 	]);
 }
 
-/* ─── Hook: Get progress for a specific item ─── */
+/** Returns progress data for a specific media item. */
 
 export function useWatchProgress(
 	id: string | number,
@@ -198,7 +201,7 @@ export function useWatchProgress(
 	return { progress };
 }
 
-/* ─── Hook: Get all progress (Continue Watching) ─── */
+/** Returns all in-progress items for the "Continue Watching" section. */
 
 export function useContinueWatching() {
 	const { watchlist } = useWatchlist();
@@ -224,7 +227,7 @@ export function useContinueWatching() {
 	return { items, allItems: items };
 }
 
-/* ─── Hook: Track and toggle episode watched status ─── */
+/** Tracks and toggles episode watched status for a TV show, syncing progress and status. */
 
 export function useEpisodeWatched(
 	tvId: number | string,
@@ -243,14 +246,12 @@ export function useEpisodeWatched(
 	const { isSignedIn } = useUser();
 	const mediaState = useMediaState(String(tvId), "tv");
 
-	// Remote Data
 	const watchedEpisodes =
 		useQuery(
 			api.watchlist.getAllWatchedEpisodes,
 			isSignedIn ? { tmdbId } : QUERY_SKIP,
 		) || [];
 
-	// Local Data
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
 	const markLocalEpisode = useLocalProgressStore(
@@ -267,7 +268,7 @@ export function useEpisodeWatched(
 		(state) => state.setProgressStatusLocal,
 	);
 
-	// Create unified map based on logged in state
+	/** Merge remote and local episode data into a single lookup map. */
 	const watchedMap = useMemo(() => {
 		const map: EpisodeWatchedMap = {};
 
@@ -292,7 +293,6 @@ export function useEpisodeWatched(
 
 	const watchedCount = Object.keys(watchedMap).length;
 
-	// Mutations
 	const markEpisodeWatchedMut = useMutation(
 		api.watchlist.markEpisodeWatched,
 	).withOptimisticUpdate((localStore, args) => {
@@ -429,14 +429,13 @@ export function useEpisodeWatched(
 							: "watching"
 						: "watching";
 
-			// If user manually set "watching" on an ended series with all episodes watched,
-			// don't auto-override back to "finished" — respect the manual choice
+			// Respect manual "watching" override when all episodes are watched on an ended series
 			if (
 				currentProgressStatus === "watching" &&
 				derivedProgressStatus === "finished" &&
 				allEpisodesWatched
 			) {
-				// Still update progress percentage, but don't change the status
+				// Still update progress percentage without changing the status
 				const shouldWriteProgress =
 					!hasMediaState || currentProgress !== nextProgress;
 				if (shouldWriteProgress) {
@@ -706,7 +705,7 @@ export function useEpisodeWatched(
 	};
 }
 
-/* ─── Hook: Get progress for a specific episode ─── */
+/** Returns the watch progress percentage for a specific episode. */
 
 export function useEpisodeProgress(
 	tvId: string | number,
@@ -737,7 +736,7 @@ export function useEpisodeProgress(
 	}, [isSignedIn, data, localEpisodes, tvId, season, episode]);
 }
 
-/* ─── URL builder ─── */
+/** Constructs the embedded player URL with autoplay and progress parameters. */
 
 export function buildPlayerUrl(opts: {
 	type: "movie" | "tv";

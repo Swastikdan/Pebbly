@@ -1,3 +1,7 @@
+/**
+ * Watchlist page: displays saved movies and TV shows with filtering,
+ * sorting, import/export, and removal capabilities.
+ */
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Frown, Meh, SlidersHorizontal, Smile, X } from "lucide-react";
 import type { ComponentType } from "react";
@@ -91,7 +95,6 @@ function WatchlistPage() {
 	const [reactionFilter, setReactionFilter] = useState<ReactionFilter>("all");
 	const [mediaFilter, setMediaFilter] = useState<MediaFilter>("all");
 	const [sortBy, setSortBy] = useState<SortType>("recent");
-	// ── NEW: controls the secondary-filter drawer on mobile ──
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const {
 		importLoading,
@@ -104,7 +107,7 @@ function WatchlistPage() {
 		handleKeyDown,
 	} = useWatchlistImportExport();
 
-	// how many secondary filters deviate from defaults
+	/** Count of active secondary filters (media type, mood, sort) deviating from defaults. */
 	const activeSecondaryCount = [
 		mediaFilter !== "all",
 		reactionFilter !== "all",
@@ -190,12 +193,10 @@ function WatchlistPage() {
 		},
 		[toggleWatchlist],
 	);
-	// ────────────────────────────────────────────────────────
 
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="w-full max-w-screen-xl p-5">
-				{/* ── Header: title + import/export ── */}
 				<div className="mb-8 flex items-start justify-between gap-4">
 					<div>
 						<h1 className="text-4xl font-bold tracking-tight md:text-5xl">
@@ -207,7 +208,6 @@ function WatchlistPage() {
 						</p>
 					</div>
 
-					{/* Import / Export — moved here, text hidden on mobile */}
 					<div className="flex shrink-0 items-center gap-2 pt-1">
 						{(watchlistData?.length ?? 0) > 0 && (
 							<Button
@@ -267,7 +267,6 @@ function WatchlistPage() {
 					</div>
 				)}
 
-				{/* ── Filter bar ── */}
 				<div className="mb-6 space-y-2">
 					{/* Row 1: progress tabs + mobile filter toggle */}
 					<div className="flex items-center gap-2">
@@ -315,8 +314,6 @@ function WatchlistPage() {
 							)}
 						</Button>
 					</div>
-
-					{/* Row 2: secondary filters — always on sm+, toggled on mobile */}
 
 					<div
 						className={`${
@@ -386,7 +383,6 @@ function WatchlistPage() {
 							</SelectContent>
 						</Select>
 
-						{/* Reset pill — only shows when filters deviate from defaults */}
 						{activeSecondaryCount > 0 && (
 							<button
 								type="button"
@@ -400,7 +396,6 @@ function WatchlistPage() {
 					</div>
 				</div>
 
-				{/* ── Grid (unchanged) ── */}
 				{watchlistLoading ? (
 					<DefaultLoader className="min-h-[calc(100vh-112px)] grid h-full place-content-center items-center justify-center" />
 				) : error && filteredWatchlist.length === 0 ? (
@@ -435,7 +430,7 @@ function WatchlistPage() {
 	);
 }
 
-// WatchlistCard is unchanged
+/** Card representing a single watchlist item with status, mood, and actions. */
 function WatchlistCard({
 	item,
 	onRemoveFromWatchlist,

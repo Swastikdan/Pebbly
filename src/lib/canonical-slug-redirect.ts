@@ -1,3 +1,4 @@
+/** Redirects to canonical URL slug when the current path doesn't match the expected format. */
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { formatMediaTitle } from "./utils";
@@ -35,7 +36,6 @@ export function useCanonicalSlugRedirect(args: {
 				: `/${subPageEntity}`
 		}`;
 
-		// Redirect only if the paths don't match
 		if (incomingPathname !== requiredPathname) {
 			console.log("redirecting");
 			navigate({

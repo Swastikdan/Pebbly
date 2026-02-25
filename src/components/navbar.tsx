@@ -1,3 +1,4 @@
+/** Sticky navigation bar with desktop dropdown menus and a mobile slide-out sheet. */
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
 import { DesktopNavButtons } from "@/components/desktop-nav-button";

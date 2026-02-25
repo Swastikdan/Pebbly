@@ -1,3 +1,8 @@
+/**
+ * Server-side API route that resolves a TMDB media ID to its best
+ * available poster/backdrop image and returns a 302 redirect.
+ * Used for Open Graph meta image tags.
+ */
 import { createFileRoute } from "@tanstack/react-router";
 import { IMAGE_PREFIX } from "@/constants";
 import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
@@ -69,13 +74,10 @@ export const Route = createFileRoute("/api/metaimage")({
 	server: {
 		handlers: {
 			GET: async ({ request }) => {
-				// Parse search params from the request URL
 				const url = new URL(request.url);
-				const rawType = url.searchParams.get("type");
 				const rawId = url.searchParams.get("id");
 
-				// Validate query params early
-				const type = rawType?.toLowerCase();
+				const type = url.searchParams.get("type")?.toLowerCase();
 				const idNum = rawId ? parseInt(rawId, 10) : NaN;
 
 				if (
@@ -99,7 +101,6 @@ export const Route = createFileRoute("/api/metaimage")({
 						return await getImageRedirect(movieData, true);
 					}
 
-					// type === 'tv'
 					const tvData = await getBasicTvDetails({ id: idNum });
 					return await getImageRedirect(tvData, false);
 				} catch {

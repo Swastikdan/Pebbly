@@ -1,3 +1,4 @@
+/** Debounced search input with URL-based query state management. */
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { memo, useCallback, useMemo, useState } from "react";
 import { SearchIcon, XCircleIcon } from "@/components/ui/icons";
@@ -177,7 +178,7 @@ const SearchBar = memo(
 						type="text"
 						name="query"
 						autoComplete="off"
-						placeholder={placeholder ?? "👀 What movie, show? Let's find it!"}
+						placeholder={placeholder ?? "Search movies, shows, and more..."}
 						value={value}
 						onChange={handleChange}
 						onKeyDown={handleKeyDown}
