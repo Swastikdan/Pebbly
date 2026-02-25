@@ -57,12 +57,8 @@ const config = defineConfig(({ mode }) => ({
       prerender: {
         enabled: true,
         autoSubfolderIndex: true,
-        crawlLinks: true,
       },
-      sitemap: {
-        enabled: true,
-        host: "https://film-fanatic.vercel.app",
-      },
+
       spa: {
         enabled: true,
       },
