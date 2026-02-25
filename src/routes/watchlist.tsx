@@ -157,21 +157,24 @@ function WatchlistPage() {
 		});
 	}, [watchlistData, activeFilter, reactionFilter, mediaFilter, sortBy]);
 
-	const counts = useMemo(
-		() => ({
-			all: watchlistData.filter((i) => i.progressStatus !== "dropped").length,
-			"want-to-watch": watchlistData.filter(
-				(i) => (i.progressStatus ?? "want-to-watch") === "want-to-watch",
-			).length,
-			watching: watchlistData.filter((i) => i.progressStatus === "watching")
-				.length,
-			finished: watchlistData.filter((i) => i.progressStatus === "finished")
-				.length,
-			dropped: watchlistData.filter((i) => i.progressStatus === "dropped")
-				.length,
-		}),
-		[watchlistData],
-	);
+	const counts = useMemo(() => {
+		const result = {
+			all: 0,
+			"want-to-watch": 0,
+			watching: 0,
+			finished: 0,
+			dropped: 0,
+		};
+		for (const item of watchlistData) {
+			const status = item.progressStatus ?? "want-to-watch";
+			if (status === "want-to-watch") result["want-to-watch"]++;
+			else if (status === "watching") result.watching++;
+			else if (status === "finished") result.finished++;
+			else if (status === "dropped") result.dropped++;
+			if (status !== "dropped") result.all++;
+		}
+		return result;
+	}, [watchlistData]);
 
 	const handleRemoveFromWatchlist = useCallback(
 		(item: WatchlistItem) => {
@@ -314,7 +317,7 @@ function WatchlistPage() {
 					</div>
 
 					{/* Row 2: secondary filters — always on sm+, toggled on mobile */}
-					<div className="scrollbar-hidden flex flex-1 gap-1.5 overflow-x-auto"></div>
+
 					<div
 						className={`${
 							filtersOpen ? "flex" : "hidden"

@@ -2,7 +2,7 @@ import { useUser } from "@clerk/clerk-react";
 
 import { useMutation, useQuery } from "convex/react";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 
 import { create } from "zustand";
 
@@ -98,10 +98,7 @@ const memoryStorage: Storage = (() => {
 })();
 
 function isSameItem(item: WatchlistItem, id: string, type: MediaType) {
-	return (
-		String(item.external_id) === String(id) &&
-		String(item.type) === String(type)
-	);
+	return item.external_id === id && item.type === type;
 }
 
 function buildFallbackItem(
@@ -388,14 +385,16 @@ export function useMediaState(id: string, mediaType: MediaType) {
 			: QUERY_SKIP,
 	);
 
-	if (!isSignedIn) {
-		return (
-			localMediaState.find((item) => isSameItem(item, id, mediaType)) ?? null
-		);
-	}
+	return useMemo(() => {
+		if (!isSignedIn) {
+			return (
+				localMediaState.find((item) => isSameItem(item, id, mediaType)) ?? null
+			);
+		}
 
-	if (!remoteState) return null;
-	return mapConvexItemToWatchlistItem(remoteState);
+		if (!remoteState) return null;
+		return mapConvexItemToWatchlistItem(remoteState);
+	}, [isSignedIn, localMediaState, id, mediaType, remoteState]);
 }
 
 /** Toggle watchlist membership. */
@@ -481,7 +480,10 @@ export function useToggleWatchlistItem() {
 	const setLocalWatchlistMembership = useWatchlistStore(
 		(state) => state.setWatchlistMembershipLocal,
 	);
+	// We use a ref to hold membership-check so toggling doesn't re-subscribe to the full watchlist.
+	const watchlistRef = useRef<WatchlistItem[]>([]);
 	const { watchlist } = useWatchlist();
+	watchlistRef.current = watchlist;
 
 	return useCallback(
 		async (item: {
@@ -493,7 +495,7 @@ export function useToggleWatchlistItem() {
 			release_date: string;
 			overview?: string;
 		}) => {
-			const isInWatchlist = watchlist.some((i) =>
+			const isInWatchlist = watchlistRef.current.some((i) =>
 				isSameItem(i, item.id, item.media_type),
 			);
 			const inWatchlist = !isInWatchlist;
@@ -520,12 +522,7 @@ export function useToggleWatchlistItem() {
 				overview: item.overview,
 			});
 		},
-		[
-			watchlist,
-			isSignedIn,
-			setWatchlistMembership,
-			setLocalWatchlistMembership,
-		],
+		[isSignedIn, setWatchlistMembership, setLocalWatchlistMembership],
 	);
 }
 
@@ -742,14 +739,7 @@ export function useWatchlistItem(id: string, mediaType?: MediaType) {
 /** Get watchlist count */
 export function useWatchlistCount() {
 	const { watchlist } = useWatchlist();
-	return watchlist.length;
-}
-
-/** Check if item exists without subscribing to the entire watchlist - optimization */
-export function useIsInWatchlist(id: string, mediaType?: MediaType) {
-	const { watchlist } = useWatchlist();
-	if (!mediaType) return watchlist.some((item) => item.external_id === id);
-	return watchlist.some((item) => isSameItem(item, id, mediaType));
+	return useMemo(() => watchlist.length, [watchlist]);
 }
 
 /** Legacy status accessor for compatibility during rollout. */
@@ -757,9 +747,4 @@ export function useWatchlistItemStatus(id: string, mediaType: MediaType) {
 	const state = useMediaState(id, mediaType);
 	if (!state) return null;
 	return toLegacyStatus(state);
-}
-
-/** Mock hydration hook for compatibility */
-export function useHydration() {
-	return true;
 }

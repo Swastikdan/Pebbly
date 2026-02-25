@@ -101,6 +101,7 @@ function SearchPage() {
 	useEffect(() => {
 		if (type && filteredData.length === 0 && data?.results?.length) {
 			setType(null);
+			setMinRating("0");
 		}
 	}, [filteredData.length, type, data?.results?.length]);
 

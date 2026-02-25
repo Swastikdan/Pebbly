@@ -726,17 +726,15 @@ export function useEpisodeProgress(
 
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
-	let isWatched = false;
-
-	if (isSignedIn) {
-		isWatched = !!data?.some(
-			(e) => e.season === season && e.episode === episode && e.isWatched,
-		);
-	} else {
-		isWatched = !!localEpisodes[makeEpisodeKey(tvId, season, episode)];
-	}
-
-	return isWatched ? 100 : 0;
+	return useMemo(() => {
+		if (isSignedIn) {
+			const isWatched = !!data?.some(
+				(e) => e.season === season && e.episode === episode && e.isWatched,
+			);
+			return isWatched ? 100 : 0;
+		}
+		return localEpisodes[makeEpisodeKey(tvId, season, episode)] ? 100 : 0;
+	}, [isSignedIn, data, localEpisodes, tvId, season, episode]);
 }
 
 /* ─── URL builder ─── */

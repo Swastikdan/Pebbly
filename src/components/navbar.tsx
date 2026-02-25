@@ -156,22 +156,6 @@ const Navbar = () => {
 										</Button>
 									</SheetClose>
 								</Link>
-								{/* <ClerkLoading>
-									<Skeleton className="h-10 w-full rounded-[calc(var(--radius-md)+3px)]" />
-								</ClerkLoading>
-								<ClerkLoaded>
-									<SignedOut>
-										<SignInButton mode="modal">
-											<Button
-												variant="secondary"
-												className="h-10 w-full justify-start gap-2"
-											>
-												<UserIcon className="size-5" />
-												Sign In
-											</Button>
-										</SignInButton>
-									</SignedOut>
-								</ClerkLoaded> */}
 							</div>
 						</SheetContent>
 					</Sheet>

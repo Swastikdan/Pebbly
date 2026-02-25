@@ -296,7 +296,7 @@ export const MediaTitleContailer = (props: {
 				</span>
 
 				<RatingCount
-					rating={parseInt(vote_average?.toFixed(1) ?? "0", 10)}
+					rating={parseFloat(vote_average?.toFixed(1) ?? "0")}
 					ratingcount={vote_count ?? 0}
 				/>
 			</div>
