@@ -749,7 +749,10 @@ export function buildPlayerUrl(opts: {
 	savedProgress?: number;
 }): string {
 	const { type, tmdbId, season, episode, savedProgress } = opts;
-
+	const videoUrl = import.meta.env.VITE_PUBLIC_VIDEO_URL;
+	if (!videoUrl) {
+		throw new Error("Video URL not set");
+	}
 	const params = new URLSearchParams();
 	params.set("autoPlay", "true");
 	params.set("nextEpisode", "true");
@@ -760,8 +763,8 @@ export function buildPlayerUrl(opts: {
 	}
 
 	if (type === "movie") {
-		return `https://www.vidking.net/embed/movie/${tmdbId}?${params.toString()}`;
+		return `${videoUrl}/embed/movie/${tmdbId}?${params.toString()}`;
 	}
 
-	return `https://www.vidking.net/embed/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}?${params.toString()}`;
+	return `${videoUrl}/embed/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}?${params.toString()}`;
 }
