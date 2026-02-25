@@ -89,9 +89,12 @@ export const MediaTitleContailer = (props: {
 	const progressStatus = mediaState?.progressStatus ?? null;
 	const reaction = mediaState?.reaction ?? null;
 
-	const isSeriesEnded = media_type === "tv" && tv_status
-		? ["ended", "canceled", "cancelled"].includes(tv_status.trim().toLowerCase())
-		: true; // movies and non-TV always show all options
+	const isSeriesEnded =
+		media_type === "tv" && tv_status
+			? ["ended", "canceled", "cancelled"].includes(
+					tv_status.trim().toLowerCase(),
+				)
+			: true; // movies and non-TV always show all options
 
 	const filteredProgressOptions = PROGRESS_OPTIONS.filter((option) => {
 		// Hide "Completed" for returning/in-production series
@@ -291,12 +294,11 @@ export const MediaTitleContailer = (props: {
 						</>
 					)}
 				</span>
-				<div className="flex">
-					<RatingCount
-						rating={parseInt(vote_average?.toFixed(1) ?? "0", 10)}
-						ratingcount={vote_count ?? 0}
-					/>
-				</div>
+
+				<RatingCount
+					rating={parseInt(vote_average?.toFixed(1) ?? "0", 10)}
+					ratingcount={vote_count ?? 0}
+				/>
 			</div>
 		</div>
 	);

@@ -11,7 +11,9 @@ export const RatingCount = (props: { rating: number; ratingcount: number }) => {
 		<div className="flex items-center space-x-1 font-light">
 			<Star className="size-5 fill-yellow-500 text-yellow-500" size={24} />
 			<span>{rating_rounded}/10</span>
-			{props.ratingcount && <span>{`(${formatted_rating_count} users)`}</span>}
+			{props.ratingcount && (
+				<span className="hidden sm:inline-flex ">{`(${formatted_rating_count} users)`}</span>
+			)}
 		</div>
 	);
 };
