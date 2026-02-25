@@ -1,3 +1,4 @@
+/** Generates Open Graph and Twitter meta tags for SEO. */
 import { SITE_CONFIG } from "@/constants";
 export const MetaImageTagsGenerator = (props: {
 	title: string;
@@ -20,9 +21,7 @@ export const MetaImageTagsGenerator = (props: {
 
 	return [
 		{ title },
-		// Basic meta
 		{ name: "description", content: description },
-		// Open Graph
 		{ property: "og:title", content: title },
 		{ property: "og:description", content: description },
 		{ property: "og:url", content: url },
@@ -32,7 +31,6 @@ export const MetaImageTagsGenerator = (props: {
 		{ property: "og:image:height", content: imageHeight },
 		{ property: "og:image:alt", content: siteName },
 		{ property: "og:site_name", content: siteName },
-		// Twitter
 		{ name: "twitter:card", content: "summary_large_image" },
 		{ name: "twitter:title", content: title },
 		{ name: "twitter:description", content: description },

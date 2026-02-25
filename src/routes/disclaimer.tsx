@@ -17,9 +17,9 @@ export const Route = createFileRoute("/disclaimer")({
 
 function DisclaimerPage() {
 	return (
-		<div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
+		<div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8 animate-fade-in">
 			<div className="mx-auto max-w-4xl rounded-xl p-8">
-				<div className="space-y-12">
+				<div className="space-y-12 stagger-grid">
 					<section>
 						<h2 className="mb-4 border-b pb-2 font-semibold text-2xl">
 							Disclaimer
@@ -36,7 +36,7 @@ function DisclaimerPage() {
 								cannot guarantee the security of any information entered into
 								this application and users proceed at their own risk.
 							</p>
-							<div className="rounded-xl bg-foreground/5 p-4">
+							<div className="rounded-xl bg-foreground/5 p-4 transition-colors hover:bg-foreground/10 duration-300">
 								<h3 className="mb-2 font-medium">Important Notice</h3>
 								<p className="">
 									This service is provided &quot;as-is&quot; without any
@@ -102,7 +102,7 @@ function DisclaimerPage() {
 								</p>
 							</div>
 
-							<div className="rounded-xl bg-foreground/5 p-4">
+							<div className="rounded-xl bg-foreground/5 p-4 transition-colors hover:bg-foreground/10 duration-300">
 								<h3 className="mb-2 font-medium">Changes to Terms</h3>
 								<p>
 									We reserve the right to modify these terms at any time. Users
@@ -114,13 +114,21 @@ function DisclaimerPage() {
 					</section>
 				</div>
 
-				<div className="mt-12 border-t pt-8 text-center">
+				<div
+					className="mt-12 border-t pt-8 text-center animate-fade-in-up"
+					style={{ animationDelay: "100ms" }}
+				>
 					<p className="mb-4 text-muted-foreground">
 						By using this service, you acknowledge that you have read and
 						understood these terms.
 					</p>
 					<Link to="/">
-						<Button variant="secondary">Return to Home Page</Button>
+						<Button
+							variant="secondary"
+							className="transition-transform hover:scale-105 active:scale-95"
+						>
+							Return to Home Page
+						</Button>
 					</Link>
 				</div>
 			</div>

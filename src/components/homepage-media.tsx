@@ -1,3 +1,4 @@
+/** Homepage media section components that render trending, popular, and top-rated carousels. */
 import { useQuery } from "@tanstack/react-query";
 import { memo } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";

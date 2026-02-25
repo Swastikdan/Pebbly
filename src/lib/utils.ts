@@ -1,3 +1,4 @@
+/** Shared utility functions: class merging, ID validation, API response handling, and slug formatting. */
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -136,17 +137,14 @@ export function validateIds(ids: number[]): ValidationResult<number[]> {
 
 export const formatMediaTitle = {
 	encode(title: string): string {
-		// Early return for empty/invalid input
 		if (!title || typeof title !== "string") return "";
 
-		// Single pass optimization - combine operations
 		let result = title
 			.toLowerCase()
 			.normalize("NFD")
 			.replace(/[\u0300-\u036f]/g, "") // strip accents
 			.trim();
 
-		// More efficient regex replacements
 		result = result
 			.replace(/\s+/g, "-") // spaces to hyphens
 			.replace(/[^\w-]/g, "") // remove non-word chars except hyphens
@@ -159,7 +157,6 @@ export const formatMediaTitle = {
 	decode(input: string): string {
 		if (!input || typeof input !== "string") return "";
 
-		// Direct transformation without intermediate arrays when possible
 		return input
 			.replace(/-/g, " ")
 			.replace(/\b\w/g, (char) => char.toUpperCase());

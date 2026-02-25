@@ -1,3 +1,4 @@
+/** Authenticated TMDB API client with React cache integration. */
 import { cache } from "react";
 
 const ACCESS_TOKEN = import.meta.env.VITE_PUBLIC_TMDB_ACCESS_TOKEN;
@@ -29,7 +30,6 @@ const tmdbApi = async <T>(
 			accept: "application/json",
 			Authorization: `Bearer ${ACCESS_TOKEN}`,
 		},
-		// Client-side cache control
 		...(options?.revalidate
 			? { cache: "default" as RequestCache }
 			: { cache: "no-store" as RequestCache }),

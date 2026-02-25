@@ -1,3 +1,7 @@
+/**
+ * Search page with query-based results, trending fallback,
+ * media type filtering, minimum rating filter, and pagination.
+ */
 import { useQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
@@ -76,7 +80,7 @@ function SearchPage() {
 		enabled: !query,
 	});
 
-	// Sync local page state with URL parameter
+	/** Keep local page state in sync when URL param changes */
 	useEffect(() => {
 		const urlPage = pageNumber ?? 1;
 		if (page !== urlPage) {
@@ -97,7 +101,7 @@ function SearchPage() {
 		});
 	}, [data?.results, type, minRating]);
 
-	// Reset filter if no results for current type
+	/** Auto-clear filters when current combination yields zero results */
 	useEffect(() => {
 		if (type && filteredData.length === 0 && data?.results?.length) {
 			setType(null);
@@ -200,7 +204,6 @@ function SearchPage() {
 								<Skeleton className="h-7 w-20 rounded-md" />
 							</div>
 
-							{/* Rating Filter Skeleton */}
 							<Skeleton className="h-7 w-[100px] rounded-lg" />
 
 							<Skeleton className="ml-auto h-3 w-[84px] rounded" />
@@ -218,7 +221,6 @@ function SearchPage() {
 		);
 	}
 
-	// Early return for error state
 	if (error) {
 		return (
 			<section className="flex w-full justify-center">
@@ -241,7 +243,6 @@ function SearchPage() {
 		);
 	}
 
-	// Early return for no results
 	if (filteredData.length === 0) {
 		return (
 			<section className="flex w-full justify-center">
@@ -302,7 +303,6 @@ function SearchPage() {
 							</Button>
 						</div>
 
-						{/* Rating Filter — Radix Select */}
 						<Select value={minRating} onValueChange={setMinRating}>
 							<SelectTrigger className="h-9 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
 								<SelectValue />

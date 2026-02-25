@@ -1,3 +1,8 @@
+/**
+ * Watchlist state management and hooks.
+ * Provides Zustand store for local persistence, Convex mutations for
+ * authenticated users, and unified hooks for membership, progress, and reactions.
+ */
 import { useUser } from "@clerk/clerk-react";
 
 import { useMutation, useQuery } from "convex/react";
@@ -28,7 +33,7 @@ type MediaMetadata = {
 	overview?: string;
 };
 
-/* --- Types --- */
+/** Watchlist item shape shared between local and remote state. */
 
 export type WatchlistItem = {
 	title: string;
@@ -340,7 +345,7 @@ export const useWatchlistStore = create<WatchlistStore>()(
 	),
 );
 
-/* --- Hooks --- */
+/** Maps a legacy combined status string to the new split progress/reaction model. */
 
 /** Returns membership watchlist only. */
 export function useWatchlist() {
@@ -480,7 +485,7 @@ export function useToggleWatchlistItem() {
 	const setLocalWatchlistMembership = useWatchlistStore(
 		(state) => state.setWatchlistMembershipLocal,
 	);
-	// We use a ref to hold membership-check so toggling doesn't re-subscribe to the full watchlist.
+	// Ref-based membership check avoids re-subscribing on every watchlist change
 	const watchlistRef = useRef<WatchlistItem[]>([]);
 	const { watchlist } = useWatchlist();
 	watchlistRef.current = watchlist;

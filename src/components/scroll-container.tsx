@@ -1,3 +1,4 @@
+/** Horizontally scrollable container with keyboard-accessible navigation arrows. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftLine, ArrowRightLine } from "@/components/ui/icons";

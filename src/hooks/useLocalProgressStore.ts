@@ -1,3 +1,4 @@
+/** Zustand store for tracking episode watched status in localStorage (logged-out users). */
 import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
