@@ -128,6 +128,7 @@ function buildFallbackItem(
 	};
 }
 
+/** Maps a legacy combined status string to the new split progress/reaction model. */
 function mapLegacyStatusToSplit(status?: string): {
 	progressStatus: ProgressStatus | null;
 	reaction: ReactionStatus | null;
@@ -344,8 +345,6 @@ export const useWatchlistStore = create<WatchlistStore>()(
 		},
 	),
 );
-
-/** Maps a legacy combined status string to the new split progress/reaction model. */
 
 /** Returns membership watchlist only. */
 export function useWatchlist() {
