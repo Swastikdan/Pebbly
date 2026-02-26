@@ -23,14 +23,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MAX_PAGINATION_LIMIT } from "@/constants";
+import { HORIZONTAL_MEDIA_GRID_CLASS, MAX_PAGINATION_LIMIT } from "@/constants";
 import { getMedia, getSearchResult } from "@/lib/queries";
 import type { MediaType, SearchResultsEntity } from "@/types";
 
 type FilterType = MediaType | null;
-
-const HORIZONTAL_MEDIA_GRID_CLASS =
-	"grid w-full grid-cols-2 justify-items-center gap-5 px-1 py-10 sm:grid-cols-3 sm:px-0 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
 
 const searchPageSearchSchema = object({
 	page: optional(number()),
@@ -150,8 +147,11 @@ function SearchPage() {
 	);
 
 	const hasResults = !!data?.results?.length;
+	const baselineNonPersonCount =
+		data?.results?.filter((item) => item.media_type !== "person").length ?? 0;
 	const hasActiveFilters = type !== null || Number(minRating) > 0;
-	const noResultsDueToFilters = hasResults && hasActiveFilters;
+	const noResultsDueToFilters =
+		filteredData.length === 0 && hasActiveFilters && baselineNonPersonCount > 0;
 	const totalPages = Math.min(data?.total_pages ?? 0, MAX_PAGINATION_LIMIT);
 	const showPagination = hasResults && totalPages > 1;
 	const isLoadingState = isLoading || isPending || isFetching;

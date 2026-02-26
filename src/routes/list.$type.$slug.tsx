@@ -11,6 +11,7 @@ import { DefaultEmptyState } from "@/components/default-empty-state";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Pagination } from "@/components/ui/pagination";
 import {
+	HORIZONTAL_MEDIA_GRID_CLASS,
 	MAX_PAGINATION_LIMIT,
 	MEDIA_PAGE_SLUGS,
 	SITE_CONFIG,
@@ -19,9 +20,6 @@ import { getMediaList } from "@/lib/queries";
 import type { MediaListQuery, MediaType } from "@/types";
 
 const NAV_ITEMS = SITE_CONFIG.navItems;
-
-const HORIZONTAL_MEDIA_GRID_CLASS =
-	"grid w-full grid-cols-2 justify-items-center gap-5 px-1 py-10 sm:grid-cols-3 sm:px-0 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
 
 const listPageSearchSchema = object({
 	page: optional(number()),
