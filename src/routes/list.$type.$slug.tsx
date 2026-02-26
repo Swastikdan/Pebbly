@@ -11,6 +11,7 @@ import { DefaultEmptyState } from "@/components/default-empty-state";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Pagination } from "@/components/ui/pagination";
 import {
+	HORIZONTAL_MEDIA_GRID_CLASS,
 	MAX_PAGINATION_LIMIT,
 	MEDIA_PAGE_SLUGS,
 	SITE_CONFIG,
@@ -139,7 +140,7 @@ function MediaListPage() {
 					<div className="flex min-h-96 w-full items-center justify-center">
 						{isLoading ? (
 							<section className="flex h-full flex-col">
-								<div className="grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+								<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
 									{Array.from({ length: 12 }).map((_, index) => (
 										<MediaCardSkeleton key={index} card_type="horizontal" />
 									))}
@@ -151,7 +152,7 @@ function MediaListPage() {
 								description={false}
 							/>
 						) : (
-							<div className="stagger-grid grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+							<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
 								{results?.map((item) => (
 									<MediaCard
 										card_type="horizontal"

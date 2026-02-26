@@ -23,7 +23,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MAX_PAGINATION_LIMIT } from "@/constants";
+import { HORIZONTAL_MEDIA_GRID_CLASS, MAX_PAGINATION_LIMIT } from "@/constants";
 import { getMedia, getSearchResult } from "@/lib/queries";
 import type { MediaType, SearchResultsEntity } from "@/types";
 
@@ -147,6 +147,11 @@ function SearchPage() {
 	);
 
 	const hasResults = !!data?.results?.length;
+	const baselineNonPersonCount =
+		data?.results?.filter((item) => item.media_type !== "person").length ?? 0;
+	const hasActiveFilters = type !== null || Number(minRating) > 0;
+	const noResultsDueToFilters =
+		filteredData.length === 0 && hasActiveFilters && baselineNonPersonCount > 0;
 	const totalPages = Math.min(data?.total_pages ?? 0, MAX_PAGINATION_LIMIT);
 	const showPagination = hasResults && totalPages > 1;
 	const isLoadingState = isLoading || isPending || isFetching;
@@ -159,13 +164,13 @@ function SearchPage() {
 					<div className="flex flex-col gap-5 py-5">
 						<h2 className="text-xl font-bold">Trending Now</h2>
 						{isTrendingLoading ? (
-							<div className="grid w-full grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+							<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
 								{Array.from({ length: 12 }).map((_, index) => (
 									<MediaCardSkeleton key={index} card_type="horizontal" />
 								))}
 							</div>
 						) : (
-							<div className="stagger-grid grid w-full grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+							<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
 								{trendingData?.map((item) => (
 									<MediaCard
 										key={item.id}
@@ -209,7 +214,7 @@ function SearchPage() {
 							<Skeleton className="ml-auto h-3 w-[84px] rounded" />
 						</div>
 						<div className="flex min-h-96 w-full items-center justify-center">
-							<div className="grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+							<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
 								{Array.from({ length: 12 }).map((_, index) => (
 									<MediaCardSkeleton key={index} card_type="horizontal" />
 								))}
@@ -250,7 +255,7 @@ function SearchPage() {
 					<SearchBar query={query} updateUrlOnChange />
 					<DefaultEmptyState
 						onReset={() => {
-							if (hasResults) {
+							if (noResultsDueToFilters) {
 								setType(null);
 								setMinRating("0");
 							} else {
@@ -258,7 +263,7 @@ function SearchPage() {
 							}
 						}}
 						message={
-							hasResults
+							noResultsDueToFilters
 								? "No movies or TV shows found with the selected filter"
 								: "No movies or TV shows found matching your search"
 						}
@@ -332,7 +337,7 @@ function SearchPage() {
 					</div>
 
 					<div className="flex min-h-96 w-full items-center justify-center">
-						<div className="stagger-grid grid w-full grid-cols-2 gap-5 py-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+						<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
 							{filteredData.map((item) => (
 								<MediaCard
 									key={item.id}
