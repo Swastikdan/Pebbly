@@ -3,7 +3,6 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
-import reactCompiler from "babel-plugin-react-compiler";
 import { nitro } from "nitro/vite";
 
 const config = defineConfig(({ mode }) => ({
@@ -15,8 +14,8 @@ const config = defineConfig(({ mode }) => ({
     terserOptions: {
       sourceMap: false,
       compress: {
-        drop_console: true,
-        drop_debugger: true,
+        drop_console: mode === "production",
+        drop_debugger: mode === "production",
         reduce_funcs: true,
         reduce_vars: true,
         keep_classnames: false
@@ -47,7 +46,9 @@ const config = defineConfig(({ mode }) => ({
     },
   },
   plugins: [
-    nitro({}),
+    nitro({
+      compressPublicAssets: true,
+    }),
 
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],
@@ -56,7 +57,6 @@ const config = defineConfig(({ mode }) => ({
     tanstackStart({
       prerender: {
         enabled: true,
-        autoSubfolderIndex: true,
       },
 
       spa: {
@@ -65,13 +65,16 @@ const config = defineConfig(({ mode }) => ({
     }),
     viteReact({
       babel: {
-        plugins: [reactCompiler],
+        plugins: [["babel-plugin-react-compiler", {}]],
       },
     }),
   ],
-
   ssr: {
-    external: ["@tanstack/react-devtools", "@tanstack/react-router-devtools"],
+    external: [
+      "@tanstack/react-devtools",
+      "@tanstack/react-router-devtools",
+      "@tanstack/react-query-devtools",
+    ],
     noExternal: mode === "production" ? true : undefined,
   },
 }));
