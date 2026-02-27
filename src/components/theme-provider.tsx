@@ -33,6 +33,25 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
+const disableTransitions = () => {
+	const style = document.createElement("style");
+	style.appendChild(
+		document.createTextNode(
+			"*,*::before,*::after{transition-property:none !important;animation:none !important}",
+		),
+	);
+	document.head.appendChild(style);
+
+	return () => {
+		window.getComputedStyle(document.body);
+		requestAnimationFrame(() => {
+			if (style.parentNode) {
+				style.parentNode.removeChild(style);
+			}
+		});
+	};
+};
+
 export function ThemeProvider({
 	children,
 	defaultTheme = "system",
@@ -52,8 +71,10 @@ export function ThemeProvider({
 			const root = window.document.documentElement;
 			const targetTheme = e.matches ? "dark" : "light";
 			if (!root.classList.contains(targetTheme)) {
+				const restoreTransitions = disableTransitions();
 				root.classList.remove("light", "dark");
 				root.classList.add(targetTheme);
+				restoreTransitions();
 			}
 		},
 		[theme],
@@ -82,8 +103,10 @@ export function ThemeProvider({
 		}
 
 		if (!root.classList.contains(targetTheme)) {
+			const restoreTransitions = disableTransitions();
 			root.classList.remove("light", "dark");
 			root.classList.add(targetTheme);
+			restoreTransitions();
 		}
 	}, [theme, storageKey]);
 
