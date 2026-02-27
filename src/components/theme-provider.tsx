@@ -45,7 +45,9 @@ const disableTransitions = () => {
 	return () => {
 		window.getComputedStyle(document.body);
 		requestAnimationFrame(() => {
-			document.head.removeChild(style);
+			if (style.parentNode) {
+				style.parentNode.removeChild(style);
+			}
 		});
 	};
 };
@@ -89,7 +91,6 @@ export function ThemeProvider({
 
 	useEffect(() => {
 		const root = window.document.documentElement;
-		const restoreTransitions = disableTransitions();
 
 		let targetTheme: string;
 
@@ -102,11 +103,11 @@ export function ThemeProvider({
 		}
 
 		if (!root.classList.contains(targetTheme)) {
+			const restoreTransitions = disableTransitions();
 			root.classList.remove("light", "dark");
 			root.classList.add(targetTheme);
+			restoreTransitions();
 		}
-
-		restoreTransitions();
 	}, [theme, storageKey]);
 
 	const value = useMemo(
