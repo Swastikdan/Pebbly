@@ -77,11 +77,11 @@ export const MediaContainer = (props: MediaContainerProps) => {
 					>
 						Media
 					</Link>
-					<TabsList className="h-9.5 rounded-lg bg-transparent ring-2 ring-border ">
+					<TabsList className="h-8 rounded-lg bg-transparent ring-2 ring-border ">
 						{hasVideos && (
 							<TabsTrigger
 								value="videos"
-								className="h-8 px-5 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
+								className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 							>
 								Videos
 							</TabsTrigger>
@@ -89,7 +89,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{hasBackdrops && (
 							<TabsTrigger
 								value="backdrops"
-								className="h-8 px-5 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
+								className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 							>
 								Backdrops
 							</TabsTrigger>
@@ -97,7 +97,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{hasPosters && (
 							<TabsTrigger
 								value="posters"
-								className="h-8 px-5 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
+								className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 							>
 								Posters
 							</TabsTrigger>

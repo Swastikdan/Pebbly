@@ -565,11 +565,96 @@ export function useSetProgressStatus() {
 			});
 		}
 	});
+
+	// Batched mutation: updates progressStatus + all episode records in one transaction
+	const markShowEpisodesAndStatus = useMutation(
+		api.watchlist.markShowEpisodesAndStatus,
+	).withOptimisticUpdate((localStore, args) => {
+		// Optimistically update watch_items state
+		if (args.progressStatus !== undefined) {
+			const current = localStore.getQuery(api.watchlist.getWatchlist, {}) ?? [];
+			localStore.setQuery(
+				api.watchlist.getWatchlist,
+				{},
+				current.map((i) =>
+					i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
+						? {
+								...i,
+								progressStatus: args.progressStatus,
+								progress: args.progress ?? i.progress,
+								updatedAt: Date.now(),
+							}
+						: i,
+				),
+			);
+
+			const mediaStateArgs = {
+				tmdbId: args.tmdbId,
+				mediaType: args.mediaType,
+			};
+			const currentMediaState = localStore.getQuery(
+				api.watchlist.getMediaState,
+				mediaStateArgs,
+			);
+			if (currentMediaState) {
+				localStore.setQuery(api.watchlist.getMediaState, mediaStateArgs, {
+					...currentMediaState,
+					progressStatus: args.progressStatus,
+					progress: args.progress ?? currentMediaState.progress,
+					updatedAt: Date.now(),
+				});
+			}
+		}
+
+		// Optimistically update episode progress
+		const current =
+			localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
+				tmdbId: args.tmdbId,
+			}) ?? [];
+
+		if (args.isWatched) {
+			const now = Date.now();
+			const filtered = current.filter(
+				(e) =>
+					!args.seasons.some(
+						(s) => e.season === s.season && s.episodes.includes(e.episode),
+					),
+			);
+
+			const newEpisodes = args.seasons.flatMap((s) =>
+				s.episodes.map((ep) => ({
+					_id: `optimistic_${now}_${s.season}_${ep}` as Id<"episode_progress">,
+					_creationTime: now,
+					userId: "optimistic" as unknown as Id<"users">,
+					tmdbId: args.tmdbId,
+					season: s.season,
+					episode: ep,
+					isWatched: true as const,
+					updatedAt: now,
+				})),
+			);
+
+			localStore.setQuery(
+				api.watchlist.getAllWatchedEpisodes,
+				{ tmdbId: args.tmdbId },
+				[...filtered, ...newEpisodes],
+			);
+		} else {
+			localStore.setQuery(
+				api.watchlist.getAllWatchedEpisodes,
+				{ tmdbId: args.tmdbId },
+				current.filter(
+					(e) =>
+						!args.seasons.some(
+							(s) => e.season === s.season && s.episodes.includes(e.episode),
+						),
+				),
+			);
+		}
+	});
+
 	const setProgressStatusLocal = useWatchlistStore(
 		(state) => state.setProgressStatusLocal,
-	);
-	const markEpisodesWatchedBatch = useMutation(
-		api.watchlist.markSeasonEpisodesWatched,
 	);
 	const markLocalSeason = useLocalProgressStore(
 		(state) => state.markSeasonWatched,
@@ -582,6 +667,83 @@ export function useSetProgressStatus() {
 			progressStatus: ProgressStatus,
 			metadata?: MediaMetadata,
 		) => {
+			// For TV shows changing to finished/want-to-watch, use the batched mutation
+			// that handles both status update and episode marking in one transaction
+			if (
+				(progressStatus === "finished" || progressStatus === "want-to-watch") &&
+				mediaType === "tv"
+			) {
+				const shouldMarkWatched = progressStatus === "finished";
+
+				if (isSignedIn) {
+					// Fetch TV details to get season structure, then make ONE mutation
+					getTvDetails({ id: Number(id) })
+						.then((details) => {
+							const seasonsToMark =
+								details?.seasons?.filter(
+									(s) => s.season_number >= 0 && s.episode_count > 0,
+								) || [];
+
+							const seasons = seasonsToMark.map((s) => ({
+								season: s.season_number,
+								episodes: Array.from(
+									{ length: s.episode_count },
+									(_, i) => i + 1,
+								),
+							}));
+
+							// Single batched mutation: status + all episodes
+							markShowEpisodesAndStatus({
+								tmdbId: Number(id),
+								mediaType,
+								seasons,
+								isWatched: shouldMarkWatched,
+								progressStatus,
+								progress: shouldMarkWatched ? 100 : 0,
+								title: metadata?.title,
+								image: metadata?.image,
+								rating: metadata?.rating,
+								release_date: metadata?.release_date,
+								overview: metadata?.overview,
+							});
+						})
+						.catch(console.error);
+				} else {
+					setProgressStatusLocal(
+						id,
+						mediaType,
+						progressStatus,
+						undefined,
+						metadata,
+					);
+
+					getTvDetails({ id: Number(id) })
+						.then((details) => {
+							const seasonsToMark =
+								details?.seasons?.filter(
+									(s) => s.season_number >= 0 && s.episode_count > 0,
+								) || [];
+
+							for (const s of seasonsToMark) {
+								const epNums = Array.from(
+									{ length: s.episode_count },
+									(_, i) => i + 1,
+								);
+								markLocalSeason(
+									Number(id),
+									s.season_number,
+									epNums,
+									shouldMarkWatched,
+								);
+							}
+						})
+						.catch(console.error);
+				}
+
+				return;
+			}
+
+			// For non-TV or other status changes, use the simple mutation
 			if (isSignedIn) {
 				setProgressStatus({
 					tmdbId: Number(id),
@@ -602,50 +764,12 @@ export function useSetProgressStatus() {
 					metadata,
 				);
 			}
-
-			if (
-				(progressStatus === "finished" || progressStatus === "want-to-watch") &&
-				mediaType === "tv"
-			) {
-				getTvDetails({ id: Number(id) })
-					.then((details) => {
-						const seasonsToMark =
-							details?.seasons?.filter((s) => s.season_number >= 0) || [];
-						const shouldMarkWatched = progressStatus === "finished";
-
-						seasonsToMark.forEach((s) => {
-							if (s.episode_count <= 0) return;
-
-							const epNums = Array.from(
-								{ length: s.episode_count },
-								(_, i) => i + 1,
-							);
-
-							if (isSignedIn) {
-								markEpisodesWatchedBatch({
-									tmdbId: Number(id),
-									season: s.season_number,
-									episodes: epNums,
-									isWatched: shouldMarkWatched,
-								});
-							} else {
-								markLocalSeason(
-									Number(id),
-									s.season_number,
-									epNums,
-									shouldMarkWatched,
-								);
-							}
-						});
-					})
-					.catch(console.error);
-			}
 		},
 		[
 			isSignedIn,
 			setProgressStatus,
+			markShowEpisodesAndStatus,
 			setProgressStatusLocal,
-			markEpisodesWatchedBatch,
 			markLocalSeason,
 		],
 	);

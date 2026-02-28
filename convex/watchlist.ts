@@ -564,6 +564,119 @@ export const backfillWatchItems = mutation({
   },
 });
 
+// Batch mark all episodes across all seasons and update progress status in one transaction.
+// Replaces the N+1 pattern of calling setProgressStatus + markSeasonEpisodesWatched per season.
+export const markShowEpisodesAndStatus = mutation({
+  args: {
+    tmdbId: v.number(),
+    mediaType: v.string(),
+    seasons: v.array(
+      v.object({
+        season: v.number(),
+        episodes: v.array(v.number()),
+      }),
+    ),
+    isWatched: v.boolean(),
+    progressStatus: v.optional(v.string()),
+    progress: v.optional(v.number()),
+    title: v.optional(v.string()),
+    image: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    release_date: v.optional(v.string()),
+    overview: v.optional(v.string()),
+  },
+
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const now = Date.now();
+
+    // 1. Update watch_items (progressStatus + progress) if requested
+    if (args.progressStatus !== undefined) {
+      const existing = await ctx.db
+        .query("watch_items")
+        .withIndex("by_user_media", (q) =>
+          q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
+        )
+        .first();
+
+      if (existing) {
+        await ctx.db.patch(existing._id, {
+          progressStatus: args.progressStatus,
+          progress: args.progress ?? existing.progress,
+          updatedAt: now,
+          title: args.title ?? existing.title,
+          image: args.image ?? existing.image,
+          rating: args.rating ?? existing.rating,
+          release_date: args.release_date ?? existing.release_date,
+          overview: args.overview ?? existing.overview,
+        });
+      } else {
+        await ctx.db.insert("watch_items", {
+          userId: user._id,
+          tmdbId: args.tmdbId,
+          mediaType: args.mediaType,
+          inWatchlist: false,
+          progressStatus: args.progressStatus,
+          progress: args.progress ?? 0,
+          updatedAt: now,
+          title: args.title,
+          image: args.image,
+          rating: args.rating,
+          release_date: args.release_date,
+          overview: args.overview,
+        });
+      }
+    }
+
+    // 2. Bulk-fetch ALL existing episode_progress records for this show in one query
+    const allExisting = await ctx.db
+      .query("episode_progress")
+      .withIndex("by_user_media", (q) =>
+        q.eq("userId", user._id).eq("tmdbId", args.tmdbId),
+      )
+      .collect();
+
+    // Build a lookup map: "season:episode" -> existing record
+    const existingMap = new Map<string, (typeof allExisting)[0]>();
+    for (const ep of allExisting) {
+      existingMap.set(`${ep.season}:${ep.episode}`, ep);
+    }
+
+    // 3. Process all seasons and episodes, only writing deltas
+    for (const seasonData of args.seasons) {
+      for (const epNum of seasonData.episodes) {
+        const key = `${seasonData.season}:${epNum}`;
+        const existing = existingMap.get(key);
+
+        if (existing) {
+          // Only patch if the watched state actually changed
+          if (existing.isWatched !== args.isWatched) {
+            await ctx.db.patch(existing._id, {
+              isWatched: args.isWatched,
+              updatedAt: now,
+            });
+          }
+          continue;
+        }
+
+        // No existing record — only insert if marking as watched
+        if (!args.isWatched) continue;
+
+        await ctx.db.insert("episode_progress", {
+          userId: user._id,
+          tmdbId: args.tmdbId,
+          season: seasonData.season,
+          episode: epNum,
+          isWatched: args.isWatched,
+          updatedAt: now,
+        });
+      }
+    }
+  },
+});
+
 // Batch mark episodes watched (e.g. for a whole season)
 export const markSeasonEpisodesWatched = mutation({
   args: {
