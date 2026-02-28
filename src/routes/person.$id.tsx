@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
 import { MediaCard } from "@/components/media-card";
@@ -50,6 +50,14 @@ function PersonPage() {
 
 	const { id } = Route.useLoaderData();
 	const personId = parseInt(id, 10);
+
+	useEffect(() => {
+		if (!id) {
+			return;
+		}
+
+		setIsBiographyExpanded(false);
+	}, [id]);
 
 	const { data, error, isLoading } = useQuery<PersonDetails>({
 		queryKey: ["person_details", personId],
