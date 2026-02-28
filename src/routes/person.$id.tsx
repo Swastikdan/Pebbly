@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
 import { MediaCard } from "@/components/media-card";
 import { ShareButton } from "@/components/share-button";
+import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getPersonDetails } from "@/lib/queries";
@@ -45,8 +46,18 @@ export const Route = createFileRoute("/person/$id")({
 });
 
 function PersonPage() {
+	const [isBiographyExpanded, setIsBiographyExpanded] = useState(false);
+
 	const { id } = Route.useLoaderData();
 	const personId = parseInt(id, 10);
+
+	useEffect(() => {
+		if (!id) {
+			return;
+		}
+
+		setIsBiographyExpanded(false);
+	}, [id]);
 
 	const { data, error, isLoading } = useQuery<PersonDetails>({
 		queryKey: ["person_details", personId],
@@ -130,10 +141,12 @@ function PersonPage() {
 		data?.tv_credits?.crew,
 	]);
 
+	const biography = data?.biography ?? "";
 	const biographyParagraphs = useMemo(
-		() => data?.biography?.split("\n\n").filter(Boolean) ?? [],
-		[data?.biography],
+		() => biography.split("\n\n").filter(Boolean),
+		[biography],
 	);
+	const biographyPreview = biography.substring(0, 100);
 
 	if (isLoading) {
 		return <DefaultLoader />;
@@ -158,7 +171,7 @@ function PersonPage() {
 			</div>
 			<div className="flex flex-col gap-8 md:flex-row md:items-start">
 				<div className="flex flex-col items-center gap-4 md:sticky md:top-20 md:w-1/3 md:items-start">
-					<div className="relative aspect-[2/3] w-64 max-w-sm overflow-hidden rounded-xl shadow-lg md:w-full">
+					<div className="relative aspect-[2/3] w-64 max-w-sm overflow-hidden rounded-xl md:w-full">
 						{imageUrl ? (
 							<Image
 								src={imageUrl}
@@ -209,12 +222,25 @@ function PersonPage() {
 					{biographyParagraphs.length > 0 && (
 						<div className="space-y-2">
 							<h2 className="text-2xl font-semibold">Biography</h2>
-							<div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-								{biographyParagraphs.map((paragraph, index) => (
-									<p key={index} className="mb-4">
-										{paragraph}
-									</p>
-								))}
+							<div className="leading-relaxed text-muted-foreground whitespace-pre-wrap">
+								<div className="hidden md:block">
+									{biographyParagraphs.map((paragraph, index) => (
+										<p key={index} className="mb-4">
+											{paragraph}
+										</p>
+									))}
+								</div>
+								<div className="flex flex-col md:hidden">
+									{isBiographyExpanded ? biography : biographyPreview}
+									<Button
+										className="w-fit px-0 text-foreground"
+										size="sm"
+										variant="link"
+										onClick={() => setIsBiographyExpanded((prev) => !prev)}
+									>
+										{isBiographyExpanded ? "Read Less" : "Read More"}
+									</Button>
+								</div>
 							</div>
 						</div>
 					)}
