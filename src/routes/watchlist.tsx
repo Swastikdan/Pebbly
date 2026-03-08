@@ -3,7 +3,14 @@
  * sorting, import/export, and removal capabilities.
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Frown, Meh, SlidersHorizontal, Smile, X } from "lucide-react";
+import {
+	Frown,
+	ListChecks,
+	Meh,
+	SlidersHorizontal,
+	Smile,
+	X,
+} from "lucide-react";
 import type { ComponentType } from "react";
 import { useCallback, useId, useMemo, useState } from "react";
 import { DefaultEmptyState } from "@/components/default-empty-state";
@@ -59,6 +66,7 @@ export const Route = createFileRoute("/watchlist")({
 const PROGRESS_LABELS: Record<ProgressStatus, string> = {
 	"want-to-watch": "Plan to watch",
 	watching: "Watching",
+	"caught-up": "Caught Up",
 	finished: "Completed",
 	dropped: "Dropped",
 };
@@ -70,6 +78,7 @@ const PROGRESS_OPTIONS: Array<{
 }> = [
 	{ value: "want-to-watch", label: "Plan to watch", icon: Clock },
 	{ value: "watching", label: "Watching", icon: Eye },
+	{ value: "caught-up", label: "Caught Up", icon: ListChecks },
 	{ value: "finished", label: "Completed", icon: CheckCircle },
 	{ value: "dropped", label: "Dropped", icon: X },
 ];
@@ -169,6 +178,7 @@ function WatchlistPage() {
 			all: 0,
 			"want-to-watch": 0,
 			watching: 0,
+			"caught-up": 0,
 			finished: 0,
 			dropped: 0,
 		};
@@ -176,6 +186,7 @@ function WatchlistPage() {
 			const status = item.progressStatus ?? "want-to-watch";
 			if (status === "want-to-watch") result["want-to-watch"]++;
 			else if (status === "watching") result.watching++;
+			else if (status === "caught-up") result["caught-up"]++;
 			else if (status === "finished") result.finished++;
 			else if (status === "dropped") result.dropped++;
 			if (status !== "dropped") result.all++;
@@ -284,6 +295,7 @@ function WatchlistPage() {
 									"all",
 									"want-to-watch",
 									"watching",
+									"caught-up",
 									"finished",
 									"dropped",
 								] as const

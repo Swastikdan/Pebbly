@@ -303,7 +303,7 @@ export const setProgressStatus = mutation({
     let nextProgress = args.progress;
     if (nextProgress === undefined) {
       if (args.progressStatus === "want-to-watch") nextProgress = 0;
-      else if (args.progressStatus === "finished") nextProgress = 100;
+      else if (args.progressStatus === "finished" || args.progressStatus === "caught-up") nextProgress = 100;
       else nextProgress = existing?.progress;
     }
 
@@ -678,6 +678,7 @@ export const markShowEpisodesAndStatus = mutation({
 });
 
 // Batch mark episodes watched (e.g. for a whole season)
+// Bulk-fetches existing records then writes only deltas (avoids N+1 queries).
 export const markSeasonEpisodesWatched = mutation({
   args: {
     tmdbId: v.number(),
@@ -692,17 +693,25 @@ export const markSeasonEpisodesWatched = mutation({
 
     const now = Date.now();
 
+    // Bulk-fetch all existing episode records for this show in one query
+    const allExisting = await ctx.db
+      .query("episode_progress")
+      .withIndex("by_user_media", (q) =>
+        q.eq("userId", user._id).eq("tmdbId", args.tmdbId),
+      )
+      .collect();
+
+    // Build lookup map for O(1) access: "season:episode" -> record
+    const existingMap = new Map<string, (typeof allExisting)[0]>();
+    for (const ep of allExisting) {
+      if (ep.season === args.season) {
+        existingMap.set(`${ep.season}:${ep.episode}`, ep);
+      }
+    }
+
     for (const epNum of args.episodes) {
-      const existing = await ctx.db
-        .query("episode_progress")
-        .withIndex("by_user_episode", (q) =>
-          q
-            .eq("userId", user._id)
-            .eq("tmdbId", args.tmdbId)
-            .eq("season", args.season)
-            .eq("episode", epNum),
-        )
-        .first();
+      const key = `${args.season}:${epNum}`;
+      const existing = existingMap.get(key);
 
       if (existing) {
         if (existing.isWatched !== args.isWatched) {

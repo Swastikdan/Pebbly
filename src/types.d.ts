@@ -639,6 +639,7 @@ export type ProgressStatus =
 	| "want-to-watch"
 	| "watching"
 	| "finished"
+	| "caught-up"
 	| "dropped";
 
 export type ReactionStatus = "loved" | "liked" | "mixed" | "not-for-me";

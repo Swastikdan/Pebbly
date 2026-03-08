@@ -4,6 +4,7 @@ import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
 import { ShareButton } from "@/components/share-button";
 import { CheckCircle, Clock, Eye, Heart } from "@/components/ui/icons";
+import { ListChecks } from "lucide-react";
 import {
 	Select,
 	SelectContent,
@@ -31,6 +32,7 @@ const PROGRESS_OPTIONS: Array<{
 }> = [
 	{ value: "want-to-watch", label: "Plan to watch", icon: Clock },
 	{ value: "watching", label: "Watching", icon: Eye },
+	{ value: "caught-up", label: "Caught Up", icon: ListChecks },
 	{ value: "finished", label: "Completed", icon: CheckCircle },
 	{ value: "dropped", label: "Dropped", icon: X },
 ];
@@ -99,6 +101,10 @@ export const MediaTitleContailer = (props: {
 	const filteredProgressOptions = PROGRESS_OPTIONS.filter((option) => {
 		// Hide "Completed" for returning/in-production series
 		if (option.value === "finished" && media_type === "tv" && !isSeriesEnded) {
+			return false;
+		}
+		// Hide "Caught Up" for ended series and movies (only relevant for returning shows)
+		if (option.value === "caught-up" && (media_type !== "tv" || isSeriesEnded)) {
 			return false;
 		}
 		return true;

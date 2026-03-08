@@ -294,6 +294,11 @@
 		);
 	}
 
+	/* --- Tab Transition Animation --- */
+	.animate-tab-fade-in {
+		animation: tabFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
 	/* --- Fade-In Animations --- */
 	.animate-fade-in {
 		animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
@@ -372,6 +377,17 @@
 			oklch(0.24 0 0) 100%
 		);
 		background-size: 250% 100%;
+	}
+}
+
+@keyframes tabFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
 	}
 }
 

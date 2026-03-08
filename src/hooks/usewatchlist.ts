@@ -165,6 +165,7 @@ function toLegacyStatus(item: WatchlistItem): WatchlistStatus | null {
 
 	if (item.progressStatus === "want-to-watch") return "plan-to-watch";
 	if (item.progressStatus === "watching") return "watching";
+	if (item.progressStatus === "caught-up") return "watching";
 	if (item.progressStatus === "finished") return "completed";
 
 	return null;
@@ -250,7 +251,7 @@ export const useWatchlistStore = create<WatchlistStore>()(
 					const nextProgress =
 						progress !== undefined
 							? progress
-							: progressStatus === "finished"
+							: progressStatus === "finished" || progressStatus === "caught-up"
 								? 100
 								: progressStatus === "want-to-watch"
 									? 0
@@ -667,83 +668,114 @@ export function useSetProgressStatus() {
 			progressStatus: ProgressStatus,
 			metadata?: MediaMetadata,
 		) => {
-			// For TV shows changing to finished/want-to-watch, use the batched mutation
-			// that handles both status update and episode marking in one transaction
-			if (
-				(progressStatus === "finished" || progressStatus === "want-to-watch") &&
-				mediaType === "tv"
-			) {
-				const shouldMarkWatched = progressStatus === "finished";
+			// For TV shows, use the batched mutation that handles both status update
+			// and episode marking in one transaction. This ensures episode states stay
+			// consistent across all status transitions (e.g. "finished" -> "watching").
+			if (mediaType === "tv") {
+				// "finished", "caught-up", and "want-to-watch" need episode state changes.
+				// "watching" and "dropped" preserve existing episode states.
+				const needsEpisodeUpdate =
+					progressStatus === "finished" ||
+					progressStatus === "caught-up" ||
+					progressStatus === "want-to-watch";
+				const shouldMarkWatched =
+					progressStatus === "finished" || progressStatus === "caught-up";
+
+				const progress =
+					progressStatus === "finished" || progressStatus === "caught-up"
+						? 100
+						: progressStatus === "want-to-watch"
+							? 0
+							: undefined;
 
 				if (isSignedIn) {
-					// Fetch TV details to get season structure, then make ONE mutation
-					getTvDetails({ id: Number(id) })
-						.then((details) => {
-							const seasonsToMark =
-								details?.seasons?.filter(
-									(s) => s.season_number >= 0 && s.episode_count > 0,
-								) || [];
+					if (needsEpisodeUpdate) {
+						// Fetch TV details to get season structure, then make ONE mutation
+						getTvDetails({ id: Number(id) })
+							.then((details) => {
+								const seasonsToMark =
+									details?.seasons?.filter(
+										(s) => s.season_number >= 0 && s.episode_count > 0,
+									) || [];
 
-							const seasons = seasonsToMark.map((s) => ({
-								season: s.season_number,
-								episodes: Array.from(
-									{ length: s.episode_count },
-									(_, i) => i + 1,
-								),
-							}));
+								const seasons = seasonsToMark.map((s) => ({
+									season: s.season_number,
+									episodes: Array.from(
+										{ length: s.episode_count },
+										(_, i) => i + 1,
+									),
+								}));
 
-							// Single batched mutation: status + all episodes
-							markShowEpisodesAndStatus({
-								tmdbId: Number(id),
-								mediaType,
-								seasons,
-								isWatched: shouldMarkWatched,
-								progressStatus,
-								progress: shouldMarkWatched ? 100 : 0,
-								title: metadata?.title,
-								image: metadata?.image,
-								rating: metadata?.rating,
-								release_date: metadata?.release_date,
-								overview: metadata?.overview,
-							});
-						})
-						.catch(console.error);
+								// Single batched mutation: status + all episodes
+								markShowEpisodesAndStatus({
+									tmdbId: Number(id),
+									mediaType,
+									seasons,
+									isWatched: shouldMarkWatched,
+									progressStatus,
+									progress,
+									title: metadata?.title,
+									image: metadata?.image,
+									rating: metadata?.rating,
+									release_date: metadata?.release_date,
+									overview: metadata?.overview,
+								});
+							})
+							.catch(console.error);
+					} else {
+						// "watching"/"dropped": update status only, preserve episode states
+						markShowEpisodesAndStatus({
+							tmdbId: Number(id),
+							mediaType,
+							seasons: [],
+							isWatched: false,
+							progressStatus,
+							progress,
+							title: metadata?.title,
+							image: metadata?.image,
+							rating: metadata?.rating,
+							release_date: metadata?.release_date,
+							overview: metadata?.overview,
+						});
+					}
 				} else {
 					setProgressStatusLocal(
 						id,
 						mediaType,
 						progressStatus,
-						undefined,
+						progress,
 						metadata,
 					);
 
-					getTvDetails({ id: Number(id) })
-						.then((details) => {
-							const seasonsToMark =
-								details?.seasons?.filter(
-									(s) => s.season_number >= 0 && s.episode_count > 0,
-								) || [];
+					if (needsEpisodeUpdate) {
+						getTvDetails({ id: Number(id) })
+							.then((details) => {
+								const seasonsToMark =
+									details?.seasons?.filter(
+										(s) => s.season_number >= 0 && s.episode_count > 0,
+									) || [];
 
-							for (const s of seasonsToMark) {
-								const epNums = Array.from(
-									{ length: s.episode_count },
-									(_, i) => i + 1,
-								);
-								markLocalSeason(
-									Number(id),
-									s.season_number,
-									epNums,
-									shouldMarkWatched,
-								);
-							}
-						})
-						.catch(console.error);
+								for (const s of seasonsToMark) {
+									const epNums = Array.from(
+										{ length: s.episode_count },
+										(_, i) => i + 1,
+									);
+									markLocalSeason(
+										Number(id),
+										s.season_number,
+										epNums,
+										shouldMarkWatched,
+									);
+								}
+							})
+							.catch(console.error);
+					}
 				}
 
 				return;
 			}
 
-			// For non-TV or other status changes, use the simple mutation
+			// For movies, use the simple mutation
 			if (isSignedIn) {
 				setProgressStatus({
 					tmdbId: Number(id),

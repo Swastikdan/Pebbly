@@ -426,13 +426,14 @@ export function useEpisodeWatched(
 					: allEpisodesWatched
 						? isCompletedSeries
 							? "finished"
-							: "watching"
+							: "caught-up"
 						: "watching";
 
-			// Respect manual "watching" override when all episodes are watched on an ended series
+			// Respect manual "watching" override when all episodes are watched
 			if (
 				currentProgressStatus === "watching" &&
-				derivedProgressStatus === "finished" &&
+				(derivedProgressStatus === "finished" ||
+					derivedProgressStatus === "caught-up") &&
 				allEpisodesWatched
 			) {
 				// Still update progress percentage without changing the status
@@ -463,15 +464,8 @@ export function useEpisodeWatched(
 			const shouldWriteStatus = currentProgressStatus !== derivedProgressStatus;
 
 			if (isSignedIn) {
-				if (shouldWriteProgress) {
-					updateProgress({
-						tmdbId,
-						mediaType: "tv",
-						progress: nextProgress,
-					}).catch(console.error);
-				}
-
 				if (shouldWriteStatus) {
+					// setProgressStatus also writes progress, so a single call suffices
 					setProgressStatus({
 						tmdbId,
 						mediaType: "tv",
@@ -482,6 +476,12 @@ export function useEpisodeWatched(
 						rating: showMeta?.rating ?? 0,
 						release_date: showMeta?.release_date ?? "",
 						overview: showMeta?.overview,
+					}).catch(console.error);
+				} else if (shouldWriteProgress) {
+					updateProgress({
+						tmdbId,
+						mediaType: "tv",
+						progress: nextProgress,
 					}).catch(console.error);
 				}
 
