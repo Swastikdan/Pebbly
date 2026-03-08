@@ -524,8 +524,9 @@ function CustomListRow({
 
 				<Button
 					variant="outline"
+					size="sm"
 					onClick={() => setShowCreateList(true)}
-					className="gap-1.5 rounded-xl h-9 px-4 text-sm shrink-0"
+					className="gap-1.5 rounded-xl text-xs shrink-0"
 				>
 					<Plus size={14} />
 					New List
@@ -590,36 +591,29 @@ function CustomListChips({
 				.sort((a, b) => a.sortOrder - b.sortOrder)
 				.map((list) => {
 					const isActive = activeListId === list._id;
-					const chipColor = list.color || undefined;
 					return (
 						<div key={list._id} className="flex items-center shrink-0">
 							<button
 								type="button"
 								onClick={() => handleSelectList(list._id)}
 								className={cn(
-									"inline-flex h-9 items-center gap-2 rounded-l-xl px-4 text-sm font-medium transition-all whitespace-nowrap",
+									"inline-flex h-8 items-center gap-2 rounded-l-xl px-3 text-sm font-medium transition-colors whitespace-nowrap",
 									isActive
-										? "text-white"
-										: "hover:opacity-80",
+										? "bg-foreground text-background"
+										: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
 								)}
-								style={{
-									backgroundColor: isActive
-										? chipColor ?? "var(--foreground)"
-										: chipColor
-											? `color-mix(in oklch, ${chipColor} 15%, var(--secondary))`
-											: "var(--secondary)",
-									color: isActive
-										? "#fff"
-										: chipColor
-											? `color-mix(in oklch, ${chipColor} 70%, var(--foreground))`
-											: undefined,
-								}}
 							>
+								{list.color && (
+									<span
+										className="size-2.5 rounded-full shrink-0"
+										style={{ backgroundColor: list.color }}
+									/>
+								)}
 								{list.name}
 								{isActive && (
 									<X
 										size={14}
-										className="opacity-70"
+										className="opacity-60"
 										onClick={(e) => {
 											e.stopPropagation();
 											setActiveListId(null);
@@ -634,23 +628,11 @@ function CustomListChips({
 									<button
 										type="button"
 										className={cn(
-											"flex h-9 items-center rounded-r-xl px-2 transition-all",
+											"flex h-8 items-center rounded-r-xl border-l px-1.5 transition-colors",
 											isActive
-												? "text-white/70 hover:text-white"
-												: "text-muted-foreground hover:text-foreground",
+												? "border-background/20 bg-foreground text-background hover:bg-foreground/90"
+												: "border-border/40 bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
 										)}
-										style={{
-											backgroundColor: isActive
-												? chipColor
-													? `color-mix(in oklch, ${chipColor} 85%, black)`
-													: "var(--foreground)"
-												: chipColor
-													? `color-mix(in oklch, ${chipColor} 10%, var(--secondary))`
-													: "var(--secondary)",
-											borderLeft: isActive
-												? "1px solid rgba(255,255,255,0.2)"
-												: "1px solid var(--border)",
-										}}
 										aria-label={`Options for ${list.name}`}
 									>
 										<EllipsisVertical size={14} />
@@ -658,7 +640,7 @@ function CustomListChips({
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="start" className="w-36 rounded-xl">
 									<DropdownMenuItem
-										className="rounded-lg gap-2"
+										className="rounded-lg gap-2 text-xs"
 										onSelect={() =>
 											setEditingList({
 												id: list._id,
@@ -672,7 +654,7 @@ function CustomListChips({
 									</DropdownMenuItem>
 									<DropdownMenuItem
 										variant="destructive"
-										className="rounded-lg gap-2"
+										className="rounded-lg gap-2 text-xs"
 										onSelect={() => {
 											if (activeListId === list._id) {
 												setActiveListId(null);

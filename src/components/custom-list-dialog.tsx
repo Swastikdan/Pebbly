@@ -156,17 +156,13 @@ export function CustomListDialog({
 								<span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">
 									Preview
 								</span>
-								<span
-									className="inline-flex items-center rounded-xl px-4 py-1.5 text-sm font-medium"
-									style={{
-										backgroundColor: color
-											? `color-mix(in oklch, ${color} 35%, var(--secondary))`
-											: "var(--secondary)",
-										color: color
-											? `color-mix(in oklch, ${color} 70%, var(--foreground))`
-											: undefined,
-									}}
-								>
+								<span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium">
+									{color && (
+										<span
+											className="size-2 rounded-full"
+											style={{ backgroundColor: color }}
+										/>
+									)}
 									{name.trim()}
 								</span>
 							</div>
