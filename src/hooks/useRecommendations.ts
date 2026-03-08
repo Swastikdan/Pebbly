@@ -1,8 +1,8 @@
 import { useUser } from "@clerk/clerk-react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { useCallback, useState } from "react";
-import { api } from "../../convex/_generated/api";
 import type { AIRecommendation } from "@/types";
+import { api } from "../../convex/_generated/api";
 
 const QUERY_SKIP = "skip" as const;
 
@@ -25,6 +25,7 @@ export interface GenerateOptions {
 	generationType?: "watchlist" | "genre";
 	mediaTypePreference?: "movie" | "tv";
 	genrePreference?: string;
+	excludeTmdbIds?: number[];
 }
 
 export interface RecommendationHistoryEntry {
@@ -63,17 +64,13 @@ export function useRecommendations() {
 		isSignedIn ? {} : QUERY_SKIP,
 	);
 
-	const generateAction = useAction(
-		api.recommendations.generateRecommendations,
-	);
-	const deleteMutation = useMutation(
-		api.recommendations.deleteRecommendation,
-	);
+	const generateAction = useAction(api.recommendations.generateRecommendations);
+	const deleteMutation = useMutation(api.recommendations.deleteRecommendation);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<
-		Set<string>
-	>(new Set());
+	const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<Set<string>>(
+		new Set(),
+	);
 
 	const history: RecommendationHistoryEntry[] = (rawHistory ?? [])
 		.filter((entry) => !optimisticDeletedIds.has(entry._id))
@@ -92,9 +89,7 @@ export function useRecommendations() {
 			setIsGenerating(true);
 			setError(null);
 			try {
-				const result = (await generateAction(
-					options ?? {},
-				)) as GenerateResult;
+				const result = (await generateAction(options ?? {})) as GenerateResult;
 				if ("error" in result) {
 					setError(result.error);
 				}

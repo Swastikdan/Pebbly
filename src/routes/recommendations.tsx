@@ -3,15 +3,23 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowUpRight,
 	Clock,
+	Film,
+	Plus,
 	RefreshCw,
-	Search,
 	Sparkles,
 	Trash2,
+	Tv,
 } from "lucide-react";
 import { useState } from "react";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GENRE_LIST, HORIZONTAL_MEDIA_GRID_CLASS } from "@/constants";
@@ -116,9 +124,8 @@ function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 }
 
 function getScoreColor(score: number) {
-	if (score >= 80) return "bg-green-500/15 text-green-700 dark:text-green-400";
-	if (score >= 60)
-		return "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400";
+	if (score >= 80) return "bg-green-100/90 text-green-600";
+	if (score >= 60) return "bg-yellow-100/90 text-yellow-600";
 	return "bg-secondary text-muted-foreground";
 }
 
@@ -201,6 +208,36 @@ function RecommendationsContent() {
 		setActiveId(null); // will show newest when it arrives
 	};
 
+	const handleGenerateAgain = (entry: RecommendationHistoryEntry) => {
+		const options: GenerateOptions = {
+			generationType:
+				(entry.generationType as "watchlist" | "genre") || "watchlist",
+		};
+		if (entry.mediaTypePreference)
+			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
+		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
+		generate(options);
+		setActiveId(null);
+	};
+
+	const handleGenerateMore = (entry: RecommendationHistoryEntry) => {
+		const options: GenerateOptions = {
+			generationType:
+				(entry.generationType as "watchlist" | "genre") || "watchlist",
+		};
+		if (entry.mediaTypePreference)
+			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
+		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
+
+		// Exclude previously recommended items from this specific entry to avoid duplicates
+		options.excludeTmdbIds = entry.recommendations
+			.map((r) => r.tmdbId)
+			.filter((id): id is number => id !== null);
+
+		generate(options);
+		setActiveId(null);
+	};
+
 	const handleDelete = async (id: string) => {
 		await deleteEntry(id);
 		if (activeId === id) setActiveId(null);
@@ -221,6 +258,8 @@ function RecommendationsContent() {
 			"The AI returned an unexpected response. Please try again.",
 		rate_limited:
 			"Please wait a couple minutes before generating new recommendations.",
+		high_demand:
+			"The AI model is currently experiencing high demand. Please try again later.",
 	};
 
 	return (
@@ -378,91 +417,254 @@ function RecommendationsContent() {
 				</div>
 			)}
 
-			{/* ── History ────────────────────────────────────── */}
+			{/* ── History (Accordion) ────────────────────────── */}
 			{history.length > 1 && (
 				<div className="space-y-3">
 					<h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
 						<Clock className="size-4" />
 						History
 					</h2>
-					<div className="space-y-1.5">
+					<Accordion type="single" collapsible className="space-y-2 mb-10">
 						{history.map((entry) => (
-							<HistoryRow
+							<HistoryAccordionItem
 								key={entry._id}
 								entry={entry}
 								isActive={entry._id === activeEntry?._id}
 								onSelect={() => setActiveId(entry._id)}
 								onDelete={() => handleDelete(entry._id)}
+								onGenerateAgain={() => handleGenerateAgain(entry)}
+								onGenerateMore={() => handleGenerateMore(entry)}
+								isGenerating={isGenerating}
 							/>
 						))}
-					</div>
+					</Accordion>
 				</div>
 			)}
 		</div>
 	);
 }
 
-// ─── History Row ────────────────────────────────────────────────────
+// ─── History Accordion Item ─────────────────────────────────────────
 
-function HistoryRow({
+function HistoryAccordionItem({
 	entry,
 	isActive,
 	onSelect,
 	onDelete,
+	onGenerateAgain,
+	onGenerateMore,
+	isGenerating,
 }: {
 	entry: RecommendationHistoryEntry;
 	isActive: boolean;
 	onSelect: () => void;
 	onDelete: () => void;
+	onGenerateAgain: () => void;
+	onGenerateMore: () => void;
+	isGenerating: boolean;
 }) {
+	const movieCount = entry.recommendations.filter(
+		(r) => r.mediaType === "movie",
+	).length;
+	const tvCount = entry.recommendations.filter(
+		(r) => r.mediaType === "tv",
+	).length;
+	const avgScore = entry.recommendations.length
+		? Math.round(
+				entry.recommendations.reduce((s, r) => s + r.relevanceScore, 0) /
+					entry.recommendations.length,
+			)
+		: 0;
+
 	return (
-		<div
+		<AccordionItem
+			value={entry._id}
 			className={cn(
-				"flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors cursor-pointer group",
-				isActive
-					? "bg-secondary ring-1 ring-border/60"
-					: "hover:bg-secondary/50",
+				"rounded-xl border border-border/40 bg-card overflow-hidden transition-colors",
+				isActive && "ring-1 ring-border/60",
 			)}
-			onClick={onSelect}
-			onKeyDown={(e) => e.key === "Enter" && onSelect()}
-			role="button"
-			tabIndex={0}
 		>
-			<Badge
-				variant="outline"
-				className="text-[10px] font-medium capitalize shrink-0"
-			>
-				{entry.generationType === "genre" ? "Genre" : "Watchlist"}
-			</Badge>
+			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
+				<div className="flex flex-1 items-center gap-3 pr-2 min-w-0">
+					{/* Type badge */}
+					<Badge
+						variant="outline"
+						className="text-[10px] font-medium capitalize shrink-0"
+					>
+						{entry.generationType === "genre" ? "Genre" : "Watchlist"}
+					</Badge>
 
-			<span className="text-xs text-muted-foreground truncate">
-				{entry.genrePreference
-					? entry.genrePreference
-					: `${entry.inputStats.movieCount} movies, ${entry.inputStats.tvCount} TV`}
-				{entry.mediaTypePreference &&
-					` · ${entry.mediaTypePreference === "movie" ? "Movies" : "TV"}`}
-			</span>
+					{/* Description */}
+					<span className="text-xs text-muted-foreground truncate min-w-0">
+						{entry.genrePreference
+							? entry.genrePreference
+							: `${entry.inputStats.movieCount} movies, ${entry.inputStats.tvCount} TV`}
+						{entry.mediaTypePreference &&
+							` · ${entry.mediaTypePreference === "movie" ? "Movies" : "TV"}`}
+					</span>
 
-			<span className="text-[11px] text-muted-foreground/60 shrink-0 ml-auto">
-				{formatTimestamp(entry.createdAt)}
-			</span>
+					{/* Stats */}
+					<div className="hidden sm:flex items-center gap-2 shrink-0 ml-auto">
+						{movieCount > 0 && (
+							<span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60">
+								<Film className="size-3" />
+								{movieCount}
+							</span>
+						)}
+						{tvCount > 0 && (
+							<span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60">
+								<Tv className="size-3" />
+								{tvCount}
+							</span>
+						)}
+						<Badge
+							className={cn(
+								"text-[9px] tabular-nums font-semibold",
+								getScoreColor(avgScore),
+							)}
+						>
+							avg {avgScore}%
+						</Badge>
+					</div>
 
-			<span className="text-[11px] text-muted-foreground/50 shrink-0">
-				{entry.recommendations.length} results
-			</span>
+					{/* Timestamp */}
+					<span className="text-[11px] text-muted-foreground/60 shrink-0 ml-auto sm:ml-0">
+						{formatTimestamp(entry.createdAt)}
+					</span>
 
-			<button
-				type="button"
-				className="shrink-0 p-1 rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
-				onClick={(e) => {
-					e.stopPropagation();
-					onDelete();
-				}}
-				title="Delete"
-			>
-				<Trash2 className="size-3.5" />
-			</button>
-		</div>
+					{/* Result count */}
+					<span className="text-[11px] text-muted-foreground/50 shrink-0">
+						{entry.recommendations.length} results
+					</span>
+				</div>
+			</AccordionTrigger>
+
+			<AccordionContent className="px-4 pb-4">
+				{/* Expanded details */}
+				<div className="space-y-4">
+					{/* Actions */}
+					<div className="flex items-center gap-2 pb-1">
+						<Button
+							size="sm"
+							variant="secondary"
+							className="gap-1.5 text-xs h-8"
+							onClick={(e) => {
+								e.stopPropagation();
+								onSelect();
+								// scroll to top
+								window.scrollTo({ top: 0, behavior: "smooth" });
+							}}
+						>
+							<ArrowUpRight className="size-3.5" />
+							View Cards
+						</Button>
+						<Button
+							size="sm"
+							variant="secondary"
+							className="gap-1.5 text-xs h-8"
+							disabled={isGenerating}
+							onClick={(e) => {
+								e.stopPropagation();
+								onGenerateAgain();
+							}}
+						>
+							<RefreshCw
+								className={cn("size-3.5", isGenerating && "animate-spin")}
+							/>
+							Generate Again
+						</Button>
+						<Button
+							size="sm"
+							variant="secondary"
+							className="gap-1.5 text-xs h-8"
+							disabled={isGenerating}
+							onClick={(e) => {
+								e.stopPropagation();
+								onGenerateMore();
+							}}
+						>
+							<Plus className="size-3.5" />
+							Generate More
+						</Button>
+						<Button
+							size="sm"
+							variant="ghost"
+							className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-auto"
+							onClick={(e) => {
+								e.stopPropagation();
+								onDelete();
+							}}
+						>
+							<Trash2 className="size-3.5" />
+							Delete
+						</Button>
+					</div>
+
+					{/* Stats row */}
+					<div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+						<span className="flex items-center gap-1">
+							<Film className="size-3.5" />
+							{movieCount} {movieCount === 1 ? "movie" : "movies"}
+						</span>
+						<span className="text-muted-foreground/30">·</span>
+						<span className="flex items-center gap-1">
+							<Tv className="size-3.5" />
+							{tvCount} TV {tvCount === 1 ? "show" : "shows"}
+						</span>
+						<span className="text-muted-foreground/30">·</span>
+						<span>
+							Avg relevance:{" "}
+							<span
+								className={cn(
+									"font-semibold",
+									avgScore >= 80
+										? "text-green-600 dark:text-green-400"
+										: avgScore >= 60
+											? "text-yellow-600 dark:text-yellow-400"
+											: "text-muted-foreground",
+								)}
+							>
+								{avgScore}%
+							</span>
+						</span>
+						{entry.inputStats.totalItems > 0 && (
+							<>
+								<span className="text-muted-foreground/30">·</span>
+								<span>
+									Based on {entry.inputStats.totalItems} watchlist{" "}
+									{entry.inputStats.totalItems === 1 ? "item" : "items"}
+								</span>
+							</>
+						)}
+						{entry.mediaTypePreference && (
+							<>
+								<span className="text-muted-foreground/30">·</span>
+								<span className="capitalize">
+									{entry.mediaTypePreference === "movie"
+										? "Movies only"
+										: "TV only"}
+								</span>
+							</>
+						)}
+					</div>
+
+					{/* Generation params */}
+					{entry.genrePreference && (
+						<div className="flex flex-wrap gap-1.5">
+							{entry.genrePreference.split(", ").map((g) => (
+								<Badge
+									key={g}
+									variant="secondary"
+									className="text-[10px] font-medium"
+								>
+									{g}
+								</Badge>
+							))}
+						</div>
+					)}
+				</div>
+			</AccordionContent>
+		</AccordionItem>
 	);
 }
 

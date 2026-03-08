@@ -1,6 +1,7 @@
 /** Sticky navigation bar with desktop dropdown menus and a mobile slide-out sheet. */
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
+import { Sparkles } from "lucide-react";
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +10,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sparkles } from "lucide-react";
 import { BookMarkFilledIcon, MenuIcon } from "@/components/ui/icons";
 import {
 	Sheet,
@@ -19,6 +19,8 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { NAV_ITEMS } from "@/constants";
+import { useRecommendationAccess } from "@/hooks/useRecommendations";
+import { cn } from "@/lib/utils";
 
 const DesktopNavMenuItem = ({
 	item,
@@ -70,10 +72,10 @@ const MobileNavMenuItem = ({
 	};
 }) => {
 	return (
-		<div className="flex flex-col items-start justify-start gap-2">
+		<div className="flex flex-col items-start justify-start gap-1.5">
 			<Button
 				variant="secondary"
-				className="w-full justify-start rounded-lg font-bold"
+				className="w-full justify-start rounded-lg font-bold text-sm h-9"
 			>
 				{item.name}
 			</Button>
@@ -86,7 +88,7 @@ const MobileNavMenuItem = ({
 					<SheetClose asChild>
 						<Button
 							variant="outline"
-							className="h-10 w-full justify-start rounded-lg"
+							className="h-9 w-full justify-start rounded-lg text-sm"
 						>
 							{subitem.name}
 						</Button>
@@ -100,6 +102,8 @@ const MobileNavMenuItem = ({
 MobileNavMenuItem.displayName = "MobileNavMenuItem";
 
 const Navbar = () => {
+	const { hasAccess } = useRecommendationAccess();
+
 	return (
 		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border/60 border-b bg-background/80 backdrop-blur-xl backdrop-saturate-150 transition-all duration-300">
 			<nav
@@ -118,7 +122,13 @@ const Navbar = () => {
 						height={100}
 						className="size-9"
 					/>
-					<h1 className="font-bold font-heading text-lg md:text-xl">
+
+					<h1
+						className={cn(
+							"font-bold font-heading text-lg md:text-xl",
+							hasAccess && "hidden sm:block",
+						)}
+					>
 						Film Fanatic
 					</h1>
 				</Link>
@@ -141,36 +151,40 @@ const Navbar = () => {
 							</Button>
 						</SheetTrigger>
 						<SheetContent
-							className="border-none px-2 duration-0"
+							className="border-none px-3 duration-0"
 							aria-label="Mobile Navigation"
 						>
 							<SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
-							<div className="scrollbar-small flex h-full flex-col gap-6 overflow-y-auto py-12 pt-20">
+							<div className="scrollbar-small flex h-full flex-col gap-4 overflow-y-auto py-12 pt-16">
 								{NAV_ITEMS.map((item) => (
 									<MobileNavMenuItem key={item.slug} item={item} />
 								))}
-								<Link to="/watchlist" className="w-full">
-									<SheetClose asChild>
-										<Button
-											variant="secondary"
-											className="h-10 w-full justify-start"
-										>
-											<BookMarkFilledIcon className="fill-current" />
-											Watchlist
-										</Button>
-									</SheetClose>
-								</Link>
-								<Link to="/recommendations" className="w-full">
-									<SheetClose asChild>
-										<Button
-											variant="outline"
-											className="h-10 w-full justify-start"
-										>
-											<Sparkles className="size-4" />
-											AI Recommendations
-										</Button>
-									</SheetClose>
-								</Link>
+								<div className="flex flex-col gap-1.5 mt-1">
+									<Link to="/watchlist" className="w-full">
+										<SheetClose asChild>
+											<Button
+												variant="secondary"
+												className="h-9 w-full justify-start gap-2 text-sm"
+											>
+												<BookMarkFilledIcon className="size-4 fill-current" />
+												Watchlist
+											</Button>
+										</SheetClose>
+									</Link>
+									{hasAccess && (
+										<Link to="/recommendations" className="w-full">
+											<SheetClose asChild>
+												<Button
+													variant="outline"
+													className="h-9 w-full justify-start gap-2 text-sm"
+												>
+													<Sparkles className="size-4" />
+													AI Recommendations
+												</Button>
+											</SheetClose>
+										</Link>
+									)}
+								</div>
 							</div>
 						</SheetContent>
 					</Sheet>

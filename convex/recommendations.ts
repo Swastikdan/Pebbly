@@ -17,14 +17,12 @@ export const getAuthorizedUser = internalQuery({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
-console.log("identity", identity);
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q: any) =>
         q.eq("tokenIdentifier", identity.subject),
       )
       .first();
-    console.log("user", user);
     if (!user) throw new Error("Unauthorized");
     if (!user.aiGenerationEnabled)
       throw new Error("Unauthorized: feature not enabled");
@@ -217,8 +215,15 @@ export const deleteRecommendation = mutation({
 
 // ─── Action: generate recommendations ────────────────────────────────
 
-const PRIMARY_MODEL = "gemini-3-flash-preview";
-const FALLBACK_MODEL = "gemini-3.1-flash-lite-preview";
+// The user experienced 503 errors with gemini-3-flash-preview.
+// We'll use a list of fallback models and try them sequentially.
+const MODELS_TO_TRY = [
+  "gemini-2.5-flash",
+  "gemini-3-flash-preview", 
+  "gemini-3.1-flash-lite-preview",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash"
+];
 const RATE_LIMIT_MS = 2 * 60 * 1000; // 2 minutes
 
 function computeHash(
@@ -261,6 +266,7 @@ type WatchlistData = {
 function buildWatchlistPrompt(
   data: WatchlistData,
   mediaTypePreference?: string,
+  excludeTmdbIds: number[] = [],
 ): string {
   const { watchItems, lists, listItems, inputStats } = data;
 
@@ -295,7 +301,7 @@ function buildWatchlistPrompt(
       .slice(0, 50)
       .map((i) => i.tmdbId),
   );
-  const existingIds = watchItems.map((i) => i.tmdbId);
+  const existingIds = [...watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
   const inScope = (i: (typeof watchItems)[0]) => prioritized.has(i.tmdbId);
 
   let prompt = `Here is my watchlist data:\n\n`;
@@ -359,8 +365,9 @@ function buildGenrePrompt(
   data: WatchlistData,
   mediaTypePreference?: string,
   genrePreference?: string,
+  excludeTmdbIds: number[] = [],
 ): string {
-  const existingIds = data.watchItems.map((i) => i.tmdbId);
+  const existingIds = [...data.watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
 
   const mediaLabel = mediaTypePreference === "movie" ? "movies" : mediaTypePreference === "tv" ? "TV shows" : "movies and TV shows";
 
@@ -438,9 +445,11 @@ export const generateRecommendations = action({
     generationType: v.optional(v.union(v.literal("watchlist"), v.literal("genre"))),
     mediaTypePreference: v.optional(v.union(v.literal("movie"), v.literal("tv"))),
     genrePreference: v.optional(v.string()),
+    excludeTmdbIds: v.optional(v.array(v.number())),
   },
   handler: async (ctx, args): Promise<GenerateResult> => {
     const genType = args.generationType ?? "watchlist";
+    const excludeTmdbIds = args.excludeTmdbIds ?? [];
 
     // 1. Auth check
     const user = await ctx.runQuery(
@@ -457,20 +466,21 @@ export const generateRecommendations = action({
       return { error: "empty_watchlist" };
     }
 
-    // 4. Rate limit: check most recent entry
+    // 4. Rate limit: check most recent entry (skip if we are generating more)
+    const isGenerateMore = excludeTmdbIds.length > 0;
     const mostRecent = await ctx.runQuery(
       internal.recommendations.getMostRecentEntry,
       { userId: user._id },
     );
 
-    if (mostRecent && Date.now() - mostRecent.createdAt < RATE_LIMIT_MS) {
+    if (!isGenerateMore && mostRecent && Date.now() - mostRecent.createdAt < RATE_LIMIT_MS) {
       return { error: "rate_limited" };
     }
 
     // 5. Build prompt based on generation type
     const userPrompt = genType === "watchlist"
-      ? buildWatchlistPrompt(data, args.mediaTypePreference)
-      : buildGenrePrompt(data, args.mediaTypePreference, args.genrePreference);
+      ? buildWatchlistPrompt(data, args.mediaTypePreference, excludeTmdbIds)
+      : buildGenrePrompt(data, args.mediaTypePreference, args.genrePreference, excludeTmdbIds);
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -482,37 +492,52 @@ export const generateRecommendations = action({
     const systemInstruction =
       "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
 
-    // 6. Call Gemini (primary model, fallback on rate limit / error)
-    let responseText: string;
-    let usedModel = PRIMARY_MODEL;
-    try {
-      const response = await ai.models.generateContent({
-        model: PRIMARY_MODEL,
-        contents: userPrompt,
-        config: {
-          responseMimeType: "application/json",
-          systemInstruction,
-        },
-      });
-      responseText = response.text ?? "";
-    } catch (err: any) {
-      console.error(`Gemini primary model (${PRIMARY_MODEL}) error:`, err?.message ?? err);
-      // Fallback to lite model
-      try {
-        usedModel = FALLBACK_MODEL;
-        const fallbackResponse = await ai.models.generateContent({
-          model: FALLBACK_MODEL,
-          contents: userPrompt,
-          config: {
-            responseMimeType: "application/json",
-            systemInstruction,
-          },
-        });
-        responseText = fallbackResponse.text ?? "";
-      } catch (fallbackErr: any) {
-        console.error(`Gemini fallback model (${FALLBACK_MODEL}) error:`, fallbackErr?.message ?? fallbackErr);
+    // 6. Call Gemini (try models sequentially)
+    let responseText = "";
+    let usedModel = MODELS_TO_TRY[0];
+    let success = false;
+    let highDemandError = false;
+
+    // A small helper to delay between retries
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    for (let i = 0; i < MODELS_TO_TRY.length; i++) {
+        usedModel = MODELS_TO_TRY[i];
+        try {
+            const response = await ai.models.generateContent({
+              model: usedModel,
+              contents: userPrompt,
+              config: {
+                responseMimeType: "application/json",
+                systemInstruction,
+              },
+            });
+            responseText = response.text ?? "";
+            
+            if (responseText) {
+                success = true;
+                break;
+            }
+        } catch (err: any) {
+            console.error(`Gemini model (${usedModel}) error:`, err?.message ?? err);
+            
+            // Check if it's a 503 high demand error
+            if (err?.status === 503 || err?.message?.includes("high demand") || err?.message?.includes("503")) {
+                highDemandError = true;
+            }
+            
+            // Wait slightly before trying the next model
+            if (i < MODELS_TO_TRY.length - 1) {
+                await delay(1000); // 1s second delay before next fallback
+            }
+        }
+    }
+
+    if (!success) {
+        if (highDemandError) {
+             return { error: "high_demand" };
+        }
         return { error: "api_unavailable" };
-      }
     }
 
     // 7. Parse and validate
