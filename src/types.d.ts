@@ -636,10 +636,9 @@ export interface TvEpisodeDetail {
 }
 
 export type ProgressStatus =
-	| "want-to-watch"
+	| "watch-later"
 	| "watching"
-	| "finished"
-	| "caught-up"
+	| "done"
 	| "dropped";
 
 export type ReactionStatus = "loved" | "liked" | "mixed" | "not-for-me";

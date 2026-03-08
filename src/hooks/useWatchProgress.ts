@@ -411,22 +411,15 @@ export function useEpisodeWatched(
 							)
 						: Math.max(currentProgress, 1);
 
-			const normalizedShowStatus = showMeta?.status?.trim().toLowerCase();
-			const isCompletedSeries =
-				normalizedShowStatus === "ended" ||
-				normalizedShowStatus === "canceled" ||
-				normalizedShowStatus === "cancelled";
-
+	
 			const allEpisodesWatched =
 				hasEpisodeTotal && newWatchedCount >= safeTotalEpisodes;
 
 			const derivedProgressStatus =
 				newWatchedCount <= 0
-					? "want-to-watch"
+					? "watch-later"
 					: allEpisodesWatched
-						? isCompletedSeries
-							? "finished"
-							: "caught-up"
+						? "done"
 						: "watching";
 
 			// Respect manual "watching" override — never auto-change from "watching".
@@ -661,7 +654,7 @@ export function useEpisodeWatched(
 				setProgressStatus({
 					tmdbId,
 					mediaType: "tv",
-					progressStatus: "finished",
+					progressStatus: "done",
 					progress: 100,
 					title: showMeta?.title ?? `TV Show ${tvId}`,
 					image: showMeta?.image ?? "",
@@ -670,7 +663,7 @@ export function useEpisodeWatched(
 					overview: showMeta?.overview || undefined,
 				}).catch(console.error);
 			} else {
-				setProgressStatusLocal(String(tvId), "tv", "finished", 100, {
+				setProgressStatusLocal(String(tvId), "tv", "done", 100, {
 					title: showMeta?.title ?? `TV Show ${tvId}`,
 					image: showMeta?.image ?? "",
 					rating: showMeta?.rating ?? 0,

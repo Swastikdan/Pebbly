@@ -12,7 +12,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
-import { createMemoryStorage, mapLegacyStatusToSplit } from "@/lib/utils";
+import { createMemoryStorage, mapLegacyStatusToSplit, normalizeProgressStatus } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus, WatchlistStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
@@ -113,14 +113,13 @@ function buildFallbackItem(
 function toLegacyStatus(item: WatchlistItem): WatchlistStatus | null {
 	if (item.progressStatus === "dropped" || item.reaction === "not-for-me")
 		return "dropped";
-	if (item.reaction === "liked" && item.progressStatus === "finished") {
+	if (item.reaction === "liked" && item.progressStatus === "done") {
 		return "liked";
 	}
 
-	if (item.progressStatus === "want-to-watch") return "plan-to-watch";
+	if (item.progressStatus === "watch-later") return "plan-to-watch";
 	if (item.progressStatus === "watching") return "watching";
-	if (item.progressStatus === "caught-up") return "watching";
-	if (item.progressStatus === "finished") return "completed";
+	if (item.progressStatus === "done") return "completed";
 
 	return null;
 }
@@ -154,7 +153,7 @@ function mapConvexItemToWatchlistItem(item: {
 		created_at: item.updatedAt,
 		inWatchlist: item.inWatchlist ?? true,
 		progressStatus:
-			(item.progressStatus as ProgressStatus | undefined) ??
+			normalizeProgressStatus(item.progressStatus) ??
 			legacy.progressStatus,
 		reaction: (item.reaction as ReactionStatus | undefined) ?? legacy.reaction,
 		progress: item.progress ?? 0,
@@ -176,7 +175,7 @@ export const useWatchlistStore = create<WatchlistStore>()(
 
 						const next = buildFallbackItem(id, type, metadata);
 						next.inWatchlist = true;
-						next.progressStatus = "want-to-watch";
+						next.progressStatus = "watch-later";
 						return { mediaState: [next, ...state.mediaState] };
 					}
 
@@ -186,7 +185,7 @@ export const useWatchlistStore = create<WatchlistStore>()(
 						...current,
 						inWatchlist,
 						progressStatus:
-							current.progressStatus ?? (inWatchlist ? "want-to-watch" : null),
+							current.progressStatus ?? (inWatchlist ? "watch-later" : null),
 						title: metadata?.title ?? current.title,
 						image: metadata?.image ?? current.image,
 						rating: metadata?.rating ?? current.rating,
@@ -205,9 +204,9 @@ export const useWatchlistStore = create<WatchlistStore>()(
 					const nextProgress =
 						progress !== undefined
 							? progress
-							: progressStatus === "finished" || progressStatus === "caught-up"
+							: progressStatus === "done"
 								? 100
-								: progressStatus === "want-to-watch"
+								: progressStatus === "watch-later"
 									? 0
 									: undefined;
 
@@ -269,7 +268,7 @@ export const useWatchlistStore = create<WatchlistStore>()(
 						const next = buildFallbackItem(id, type, metadata);
 						next.progress = progress;
 						if (!next.progressStatus && progress > 0) {
-							next.progressStatus = progress >= 95 ? "finished" : "watching";
+							next.progressStatus = progress >= 95 ? "done" : "watching";
 						}
 						return { mediaState: [next, ...state.mediaState] };
 					}
@@ -281,7 +280,7 @@ export const useWatchlistStore = create<WatchlistStore>()(
 						progress,
 						progressStatus:
 							current.progressStatus ??
-							(progress >= 95 ? "finished" : progress > 0 ? "watching" : null),
+							(progress >= 95 ? "done" : progress > 0 ? "watching" : null),
 						title: metadata?.title ?? current.title,
 						image: metadata?.image ?? current.image,
 						rating: metadata?.rating ?? current.rating,
@@ -626,27 +625,27 @@ export function useSetProgressStatus() {
 		) => {
 			// For TV shows, use the batched mutation that handles both status update
 			// and episode marking in one transaction. This ensures episode states stay
-			// consistent across all status transitions (e.g. "finished" -> "watching").
+			// consistent across all status transitions (e.g. "done" -> "watching").
 			if (mediaType === "tv") {
 				const shouldMarkWatched =
-					progressStatus === "finished" || progressStatus === "caught-up";
+					progressStatus === "done";
 
 				// Leaving a completion state: always clear episodes
 				const isLeavingCompletion =
-					(currentStatus === "finished" || currentStatus === "caught-up") &&
+					(currentStatus === "done") &&
 					!shouldMarkWatched;
 
-				// "finished", "caught-up", and "want-to-watch" need episode state changes.
-				// Also clear when leaving a completion state (e.g. "finished" → "watching").
+				// "done" and "watch-later" need episode state changes.
+				// Also clear when leaving a completion state (e.g. "done" → "watching").
 				const needsEpisodeUpdate =
 					shouldMarkWatched ||
-					progressStatus === "want-to-watch" ||
+					progressStatus === "watch-later" ||
 					isLeavingCompletion;
 
 				const progress =
-					progressStatus === "finished" || progressStatus === "caught-up"
+					progressStatus === "done"
 						? 100
-						: progressStatus === "want-to-watch" || isLeavingCompletion
+						: progressStatus === "watch-later" || isLeavingCompletion
 							? 0
 							: undefined;
 

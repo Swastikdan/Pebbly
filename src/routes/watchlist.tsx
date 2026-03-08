@@ -1,31 +1,42 @@
 /**
  * Watchlist page: displays saved movies and TV shows with filtering,
- * sorting, import/export, and removal capabilities.
+ * sorting, import/export, custom list chips, and removal capabilities.
  */
+import { useUser } from "@clerk/clerk-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery } from "convex/react";
 import {
-	Frown,
-	ListChecks,
-	Meh,
+	EllipsisVertical,
+	Pencil,
+	Plus,
 	SlidersHorizontal,
-	Smile,
+	Trash2,
 	X,
 } from "lucide-react";
-import type { ComponentType } from "react";
-import { useCallback, useId, useMemo, useState } from "react";
+import {
+	Component,
+	type ErrorInfo,
+	type ReactNode,
+	useCallback,
+	useId,
+	useMemo,
+	useState,
+} from "react";
+import { CustomListDialog } from "@/components/custom-list-dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	BookMarkFilledIcon,
-	CheckCircle,
-	Clock,
 	Download,
-	Eye,
-	Heart,
 	SearchFilledIcon,
 	Star,
 	TrashBin,
@@ -42,13 +53,19 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { IMAGE_PREFIX } from "@/constants";
 import {
+	REACTION_OPTIONS,
+	getProgressOption,
+	getReactionOption,
+} from "@/constants/watchlist";
+import {
 	useToggleWatchlistItem,
 	useWatchlist,
 	type WatchlistItem,
 } from "@/hooks/usewatchlist";
 import { useWatchlistImportExport } from "@/hooks/usewatchlistimportexport";
-import { formatMediaTitle } from "@/lib/utils";
+import { cn, formatMediaTitle } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
+import { api } from "../../convex/_generated/api";
 
 export const Route = createFileRoute("/watchlist")({
 	head: () => ({
@@ -63,36 +80,23 @@ export const Route = createFileRoute("/watchlist")({
 	component: WatchlistPage,
 });
 
-const PROGRESS_LABELS: Record<ProgressStatus, string> = {
-	"want-to-watch": "Plan to watch",
-	watching: "Watching",
-	"caught-up": "Caught Up",
-	finished: "Completed",
-	dropped: "Dropped",
-};
-
-const PROGRESS_OPTIONS: Array<{
-	value: ProgressStatus;
-	label: string;
-	icon: ComponentType<{ size?: string | number; className?: string }>;
-}> = [
-	{ value: "want-to-watch", label: "Plan to watch", icon: Clock },
-	{ value: "watching", label: "Watching", icon: Eye },
-	{ value: "caught-up", label: "Caught Up", icon: ListChecks },
-	{ value: "finished", label: "Completed", icon: CheckCircle },
-	{ value: "dropped", label: "Dropped", icon: X },
-];
-
-const REACTION_OPTIONS: Array<{
-	value: ReactionStatus;
-	label: string;
-	icon: ComponentType<{ size?: string | number; className?: string }>;
-}> = [
-	{ value: "loved", label: "Loved", icon: Heart },
-	{ value: "liked", label: "Liked", icon: Smile },
-	{ value: "mixed", label: "Mixed", icon: Meh },
-	{ value: "not-for-me", label: "Not for me", icon: Frown },
-];
+/** Silently swallows errors from children (e.g. Convex table-not-found). */
+class SilentErrorBoundary extends Component<
+	{ children: ReactNode },
+	{ hasError: boolean }
+> {
+	state = { hasError: false };
+	static getDerivedStateFromError() {
+		return { hasError: true };
+	}
+	componentDidCatch(_error: Error, _info: ErrorInfo) {
+		// intentionally silent
+	}
+	render() {
+		if (this.state.hasError) return null;
+		return this.props.children;
+	}
+}
 
 type FilterType = "all" | ProgressStatus;
 type MediaFilter = "all" | "movie" | "tv";
@@ -101,6 +105,7 @@ type ReactionFilter = "all" | "none" | ReactionStatus;
 
 function WatchlistPage() {
 	const importInputId = useId();
+	const { isSignedIn } = useUser();
 	const { watchlist: watchlistData, loading: watchlistLoading } =
 		useWatchlist();
 	const toggleWatchlist = useToggleWatchlistItem();
@@ -109,6 +114,8 @@ function WatchlistPage() {
 	const [mediaFilter, setMediaFilter] = useState<MediaFilter>("all");
 	const [sortBy, setSortBy] = useState<SortType>("recent");
 	const [filtersOpen, setFiltersOpen] = useState(false);
+	const [listFilterIds, setListFilterIds] = useState<Set<string> | null>(null);
+
 	const {
 		importLoading,
 		exportLoading,
@@ -119,7 +126,6 @@ function WatchlistPage() {
 		handleImportClick,
 	} = useWatchlistImportExport();
 
-	/** Count of active secondary filters (media type, mood, sort) deviating from defaults. */
 	const activeSecondaryCount = [
 		mediaFilter !== "all",
 		reactionFilter !== "all",
@@ -132,12 +138,19 @@ function WatchlistPage() {
 		setSortBy("recent");
 	}, []);
 
-	// ── unchanged logic ──────────────────────────────────────
 	const filteredWatchlist = useMemo(() => {
 		let items = watchlistData;
+
+		// Filter by custom list
+		if (listFilterIds) {
+			items = items.filter((item) =>
+				listFilterIds.has(`${item.external_id}:${item.type}`),
+			);
+		}
+
 		if (activeFilter !== "all") {
 			items = items.filter(
-				(item) => (item.progressStatus ?? "want-to-watch") === activeFilter,
+				(item) => (item.progressStatus ?? "watch-later") === activeFilter,
 			);
 		} else {
 			items = items.filter((item) => item.progressStatus !== "dropped");
@@ -170,23 +183,21 @@ function WatchlistPage() {
 					);
 			}
 		});
-	}, [watchlistData, activeFilter, reactionFilter, mediaFilter, sortBy]);
+	}, [watchlistData, activeFilter, reactionFilter, mediaFilter, sortBy, listFilterIds]);
 
 	const counts = useMemo(() => {
 		const result = {
 			all: 0,
-			"want-to-watch": 0,
+			"watch-later": 0,
 			watching: 0,
-			"caught-up": 0,
-			finished: 0,
+			done: 0,
 			dropped: 0,
 		};
 		for (const item of watchlistData) {
-			const status = item.progressStatus ?? "want-to-watch";
-			if (status === "want-to-watch") result["want-to-watch"]++;
+			const status = item.progressStatus ?? "watch-later";
+			if (status === "watch-later") result["watch-later"]++;
 			else if (status === "watching") result.watching++;
-			else if (status === "caught-up") result["caught-up"]++;
-			else if (status === "finished") result.finished++;
+			else if (status === "done") result.done++;
 			else if (status === "dropped") result.dropped++;
 			if (status !== "dropped") result.all++;
 		}
@@ -208,30 +219,28 @@ function WatchlistPage() {
 		[toggleWatchlist],
 	);
 
+	const primaryTabs: Array<{ value: FilterType; label: string }> = [
+		{ value: "all", label: "All" },
+		{ value: "watch-later", label: "Watch Later" },
+		{ value: "watching", label: "Watching" },
+		{ value: "done", label: "Done" },
+	];
+
+	const showDroppedTab = counts.dropped > 0;
+	const hasActiveListFilter = listFilterIds !== null;
+
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="w-full max-w-screen-xl p-5">
-				<div className="mb-4 flex items-center justify-between gap-3">
+				{/* Top nav */}
+				<div className="mb-6 flex items-center justify-between gap-3">
 					<GoBack title="Back" hideLabelOnMobile />
-					<ShareButton title="My Watchlist" hideLabelOnMobile />
-				</div>
-				<div className="mb-8 flex items-start justify-between gap-4">
-					<div>
-						<h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-							Watchlist
-						</h1>
-						<p className="mt-2 text-xs tracking-wider text-muted-foreground uppercase">
-							{watchlistData.length} title
-							{watchlistData.length !== 1 ? "s" : ""} saved
-						</p>
-					</div>
-
-					<div className="flex shrink-0 items-center gap-2 pt-1">
+					<div className="flex items-center gap-2">
 						{(watchlistData?.length ?? 0) > 0 && (
 							<Button
-								className="gap-1.5 rounded-xl text-xs sm:text-sm"
+								className="gap-1.5 rounded-xl text-xs"
 								disabled={exportLoading || importLoading}
-								variant="secondary"
+								variant="ghost"
 								size="sm"
 								onClick={exportWatchlist}
 								aria-label="Export watchlist"
@@ -239,15 +248,15 @@ function WatchlistPage() {
 								{exportLoading ? (
 									<Spinner color="current" />
 								) : (
-									<Download size={15} />
+									<Download size={14} />
 								)}
-								<span className="inline">Export</span>
+								<span className="hidden sm:inline">Export</span>
 							</Button>
 						)}
 						<Button
-							className="gap-1.5 rounded-xl text-xs sm:text-sm"
+							className="gap-1.5 rounded-xl text-xs"
 							disabled={importLoading || exportLoading}
-							variant="secondary"
+							variant="ghost"
 							size="sm"
 							onClick={handleImportClick}
 							aria-label="Import watchlist"
@@ -264,11 +273,23 @@ function WatchlistPage() {
 							{importLoading ? (
 								<Spinner color="current" />
 							) : (
-								<Upload size={15} />
+								<Upload size={14} />
 							)}
-							<span className="inline">Import</span>
+							<span className="hidden sm:inline">Import</span>
 						</Button>
+						<ShareButton title="My Watchlist" hideLabelOnMobile />
 					</div>
+				</div>
+
+				{/* Header */}
+				<div className="mb-6">
+					<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+						Watchlist
+					</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
+						{watchlistData.length} title
+						{watchlistData.length !== 1 ? "s" : ""} saved
+					</p>
 				</div>
 
 				{error && (
@@ -284,49 +305,74 @@ function WatchlistPage() {
 					</div>
 				)}
 
-				<div className="mb-6 space-y-2">
-					{/* Row 1: progress tabs + mobile filter toggle */}
+				{/* Custom lists row (auth-only) */}
+				{isSignedIn && (
+					<CustomListRow onFilterChange={setListFilterIds} />
+				)}
+
+				{/* Status tabs + filters */}
+				<div className="mb-6 space-y-3">
 					<div className="flex items-center gap-2">
-						<div className="scrollbar-hidden flex flex-1 gap-1.5 overflow-x-auto">
-							{(
-								[
-									"all",
-									"want-to-watch",
-									"watching",
-									"caught-up",
-									"finished",
-									"dropped",
-								] as const
-							).map((filter) => (
-								<Button
-									key={filter}
-									variant={activeFilter === filter ? "default" : "secondary"}
-									onClick={() => setActiveFilter(filter)}
-									className="gap-1.5 rounded-xl h-8 font-normal text-xs"
+						<div className="scrollbar-hidden flex flex-1 gap-1 overflow-x-auto">
+							{primaryTabs.map((tab) => {
+								const isActive = activeFilter === tab.value;
+								return (
+									<button
+										key={tab.value}
+										type="button"
+										onClick={() => setActiveFilter(tab.value)}
+										className={cn(
+											"inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
+											isActive
+												? "bg-foreground text-background"
+												: "text-muted-foreground hover:bg-secondary hover:text-foreground",
+										)}
+									>
+										{tab.label}
+										<span
+											className={cn(
+												"text-[10px] tabular-nums",
+												isActive ? "opacity-70" : "opacity-50",
+											)}
+										>
+											{counts[tab.value as keyof typeof counts] ?? 0}
+										</span>
+									</button>
+								);
+							})}
+							{showDroppedTab && (
+								<button
+									type="button"
+									onClick={() => setActiveFilter("dropped")}
+									className={cn(
+										"inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
+										activeFilter === "dropped"
+											? "bg-foreground text-background"
+											: "text-muted-foreground/60 hover:bg-secondary hover:text-foreground",
+									)}
 								>
-									{filter === "all" ? "All" : PROGRESS_LABELS[filter]}
-									<span className="ml-1 text-[11px] opacity-60">
-										{counts[filter]}
+									Dropped
+									<span className="text-[10px] tabular-nums opacity-50">
+										{counts.dropped}
 									</span>
-								</Button>
-							))}
+								</button>
+							)}
 						</div>
 
-						{/* Toggle secondary filters on mobile */}
 						<Button
 							onClick={() => setFiltersOpen((prev) => !prev)}
 							aria-expanded={filtersOpen}
 							variant={
 								filtersOpen || activeSecondaryCount > 0
 									? "default"
-									: "secondary"
+									: "ghost"
 							}
-							className="gap-1.5 rounded-xl h-8 text-xs md:hidden"
+							size="sm"
+							className="gap-1.5 rounded-lg text-xs md:hidden"
 						>
 							<SlidersHorizontal size={13} />
-							Filters
 							{activeSecondaryCount > 0 && (
-								<span className="ml-1 text-[11px] opacity-60">
+								<span className="text-[10px] opacity-70">
 									{activeSecondaryCount}
 								</span>
 							)}
@@ -334,16 +380,16 @@ function WatchlistPage() {
 					</div>
 
 					<div
-						className={`${
-							filtersOpen ? "flex" : "hidden"
-						} md:flex flex-1 items-center gap-2 scrollbar-hidden overflow-x-auto`}
+						className={cn(
+							"flex-1 items-center gap-2 scrollbar-hidden overflow-x-auto",
+							filtersOpen ? "flex" : "hidden md:flex",
+						)}
 					>
-						{/* Media Type */}
 						<Select
 							value={mediaFilter}
 							onValueChange={(value) => setMediaFilter(value as MediaFilter)}
 						>
-							<SelectTrigger className="w-auto min-w-[110px] gap-1.5 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium data-[size=default]:h-8 data-[size=sm]:h-8">
+							<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-lg border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
 								<SelectValue placeholder="Type" />
 							</SelectTrigger>
 							<SelectContent className="rounded-xl">
@@ -353,44 +399,33 @@ function WatchlistPage() {
 							</SelectContent>
 						</Select>
 
-						{/* Mood */}
 						<Select
 							value={reactionFilter}
 							onValueChange={(value) =>
 								setReactionFilter(value as ReactionFilter)
 							}
 						>
-							<SelectTrigger className="w-auto min-w-[110px] gap-1.5 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium data-[size=default]:h-8 data-[size=sm]:h-8">
+							<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-lg border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
 								<SelectValue placeholder="Mood" />
 							</SelectTrigger>
 							<SelectContent className="rounded-xl">
 								<SelectItem value="all">All moods</SelectItem>
-								<SelectItem value="none">
-									<span className="flex items-center gap-2">
-										<Meh size={14} />
-										No mood
-									</span>
-								</SelectItem>
-								{REACTION_OPTIONS.map((option) => {
-									const Icon = option.icon;
-									return (
-										<SelectItem key={option.value} value={option.value}>
-											<span className="flex items-center gap-2">
-												<Icon size={14} />
-												{option.label}
-											</span>
-										</SelectItem>
-									);
-								})}
+								<SelectItem value="none">No mood</SelectItem>
+								{REACTION_OPTIONS.map((option) => (
+									<SelectItem key={option.value} value={option.value}>
+										<span className="flex items-center gap-2">
+											{option.emoji} {option.label}
+										</span>
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 
-						{/* Sort */}
 						<Select
 							value={sortBy}
 							onValueChange={(value) => setSortBy(value as SortType)}
 						>
-							<SelectTrigger className="w-auto min-w-[130px] gap-1.5 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium data-[size=default]:h-8 data-[size=sm]:h-8">
+							<SelectTrigger className="w-auto min-w-[120px] gap-1.5 rounded-lg border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent className="rounded-xl">
@@ -405,7 +440,7 @@ function WatchlistPage() {
 							<button
 								type="button"
 								onClick={resetSecondaryFilters}
-								className="pressable-small flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+								className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
 							>
 								<X size={12} />
 								Reset
@@ -414,6 +449,7 @@ function WatchlistPage() {
 					</div>
 				</div>
 
+				{/* Content */}
 				{watchlistLoading ? (
 					<DefaultLoader className="min-h-[calc(100vh-112px)] grid h-full place-content-center items-center justify-center" />
 				) : error && filteredWatchlist.length === 0 ? (
@@ -421,7 +457,8 @@ function WatchlistPage() {
 				) : filteredWatchlist?.length === 0 ? (
 					activeFilter === "all" &&
 					mediaFilter === "all" &&
-					reactionFilter === "all" ? (
+					reactionFilter === "all" &&
+					!hasActiveListFilter ? (
 						<div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center animate-fade-in-up">
 							<div className="flex size-16 items-center justify-center rounded-2xl bg-secondary">
 								<BookMarkFilledIcon className="size-7 text-muted-foreground" />
@@ -436,7 +473,7 @@ function WatchlistPage() {
 								</p>
 							</div>
 							<Link to="/search">
-								<Button variant="secondary" size="lg" className="gap-2">
+								<Button variant="secondary" size="lg" className="gap-2 rounded-xl">
 									<SearchFilledIcon className="size-4" />
 									Browse titles
 								</Button>
@@ -449,7 +486,7 @@ function WatchlistPage() {
 						/>
 					)
 				) : (
-					<div className="stagger-grid grid w-full grid-cols-1 gap-4 py-4 sm:grid-cols-2 lg:grid-cols-3">
+					<div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 						{filteredWatchlist.map(
 							(item) =>
 								item && (
@@ -467,7 +504,207 @@ function WatchlistPage() {
 	);
 }
 
-/** Card representing a single watchlist item with status, mood, and actions. */
+/**
+ * Wrapper that keeps the "New List" button always visible even if
+ * the Convex queries inside CustomListChips throw (table not deployed).
+ */
+function CustomListRow({
+	onFilterChange,
+}: {
+	onFilterChange: (ids: Set<string> | null) => void;
+}) {
+	const [showCreateList, setShowCreateList] = useState(false);
+
+	return (
+		<>
+			<div className="mb-5 flex items-center gap-2 overflow-x-auto scrollbar-hidden">
+				<SilentErrorBoundary>
+					<CustomListChips onFilterChange={onFilterChange} />
+				</SilentErrorBoundary>
+
+				<Button
+					variant="outline"
+					onClick={() => setShowCreateList(true)}
+					className="gap-1.5 rounded-xl h-9 px-4 text-sm shrink-0"
+				>
+					<Plus size={14} />
+					New List
+				</Button>
+			</div>
+
+			<CustomListDialog
+				open={showCreateList}
+				onOpenChange={setShowCreateList}
+			/>
+		</>
+	);
+}
+
+/** Custom list chips — makes Convex queries so must be inside error boundary. */
+function CustomListChips({
+	onFilterChange,
+}: {
+	onFilterChange: (ids: Set<string> | null) => void;
+}) {
+	const customLists = useQuery(api.watchlist.getCustomLists) ?? [];
+	const deleteCustomList = useMutation(api.watchlist.deleteCustomList);
+	const [activeListId, setActiveListId] = useState<string | null>(null);
+	const [editingList, setEditingList] = useState<{
+		id: string;
+		name: string;
+		color?: string;
+	} | null>(null);
+
+	const activeListItems = useQuery(
+		api.watchlist.getListItems,
+		activeListId ? { listId: activeListId as any } : "skip",
+	);
+
+	useMemo(() => {
+		if (!activeListId || !activeListItems) {
+			onFilterChange(null);
+			return;
+		}
+		const ids = new Set(
+			activeListItems.map((i) => `${i.tmdbId}:${i.mediaType}`),
+		);
+		onFilterChange(ids);
+	}, [activeListId, activeListItems, onFilterChange]);
+
+	const handleSelectList = useCallback(
+		(listId: string) => {
+			setActiveListId((prev) => {
+				const next = prev === listId ? null : listId;
+				if (!next) onFilterChange(null);
+				return next;
+			});
+		},
+		[onFilterChange],
+	);
+
+	if (customLists.length === 0) return null;
+
+	return (
+		<>
+			{customLists
+				.sort((a, b) => a.sortOrder - b.sortOrder)
+				.map((list) => {
+					const isActive = activeListId === list._id;
+					const chipColor = list.color || undefined;
+					return (
+						<div key={list._id} className="flex items-center shrink-0">
+							<button
+								type="button"
+								onClick={() => handleSelectList(list._id)}
+								className={cn(
+									"inline-flex h-9 items-center gap-2 rounded-l-xl px-4 text-sm font-medium transition-all whitespace-nowrap",
+									isActive
+										? "text-white"
+										: "hover:opacity-80",
+								)}
+								style={{
+									backgroundColor: isActive
+										? chipColor ?? "var(--foreground)"
+										: chipColor
+											? `color-mix(in oklch, ${chipColor} 15%, var(--secondary))`
+											: "var(--secondary)",
+									color: isActive
+										? "#fff"
+										: chipColor
+											? `color-mix(in oklch, ${chipColor} 70%, var(--foreground))`
+											: undefined,
+								}}
+							>
+								{list.name}
+								{isActive && (
+									<X
+										size={14}
+										className="opacity-70"
+										onClick={(e) => {
+											e.stopPropagation();
+											setActiveListId(null);
+											onFilterChange(null);
+										}}
+									/>
+								)}
+							</button>
+
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<button
+										type="button"
+										className={cn(
+											"flex h-9 items-center rounded-r-xl px-2 transition-all",
+											isActive
+												? "text-white/70 hover:text-white"
+												: "text-muted-foreground hover:text-foreground",
+										)}
+										style={{
+											backgroundColor: isActive
+												? chipColor
+													? `color-mix(in oklch, ${chipColor} 85%, black)`
+													: "var(--foreground)"
+												: chipColor
+													? `color-mix(in oklch, ${chipColor} 10%, var(--secondary))`
+													: "var(--secondary)",
+											borderLeft: isActive
+												? "1px solid rgba(255,255,255,0.2)"
+												: "1px solid var(--border)",
+										}}
+										aria-label={`Options for ${list.name}`}
+									>
+										<EllipsisVertical size={14} />
+									</button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="start" className="w-36 rounded-xl">
+									<DropdownMenuItem
+										className="rounded-lg gap-2"
+										onSelect={() =>
+											setEditingList({
+												id: list._id,
+												name: list.name,
+												color: list.color,
+											})
+										}
+									>
+										<Pencil size={14} />
+										Edit
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										variant="destructive"
+										className="rounded-lg gap-2"
+										onSelect={() => {
+											if (activeListId === list._id) {
+												setActiveListId(null);
+												onFilterChange(null);
+											}
+											deleteCustomList({ listId: list._id });
+										}}
+									>
+										<Trash2 size={14} />
+										Delete
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					);
+				})}
+
+			{editingList && (
+				<CustomListDialog
+					open={true}
+					onOpenChange={(open) => {
+						if (!open) setEditingList(null);
+					}}
+					listId={editingList.id}
+					initialName={editingList.name}
+					initialColor={editingList.color}
+				/>
+			)}
+		</>
+	);
+}
+
 function WatchlistCard({
 	item,
 	onRemoveFromWatchlist,
@@ -475,113 +712,91 @@ function WatchlistCard({
 	item: WatchlistItem;
 	onRemoveFromWatchlist: (item: WatchlistItem) => void;
 }) {
-	const progressStatus = item.progressStatus ?? "want-to-watch";
+	const progressStatus = item.progressStatus ?? "watch-later";
 	const reaction = item.reaction ?? null;
-	const progressOption =
-		PROGRESS_OPTIONS.find((option) => option.value === progressStatus) ??
-		PROGRESS_OPTIONS[0];
-	const reactionOption = reaction
-		? (REACTION_OPTIONS.find((option) => option.value === reaction) ?? null)
-		: null;
+	const progressOption = getProgressOption(progressStatus);
+	const reactionOption = reaction ? getReactionOption(reaction) : null;
 	const ProgressIcon = progressOption.icon;
-	const ReactionIcon = reactionOption?.icon;
 	const formattedTitle = formatMediaTitle.encode(item.title);
 	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${item.image}`;
-	const formattedDate = item.release_date
-		? new Date(item.release_date).toLocaleDateString("en-US", {
-				month: "short",
-				day: "numeric",
-				year: "numeric",
-			})
-		: "";
+	const year = item.release_date
+		? new Date(item.release_date).getFullYear()
+		: null;
 
 	return (
-		<div className="group relative overflow-hidden rounded-2xl border border-default bg-secondary/5 transition-all duration-300 hover:border-foreground/15 hover:bg-secondary/15">
-			<div className="flex gap-3 p-3">
-				<Link
-					// @ts-expect-error - correct link
-					to={`/${item.type}/${item.external_id}/${formattedTitle}`}
-					className="pressable-small relative shrink-0"
-				>
-					<Image
-						alt={item.title}
-						className="h-32 w-22 rounded-xl bg-foreground/10 object-cover transition-all duration-300"
-						height={192}
-						src={imageUrl}
-						width={128}
-					/>
-				</Link>
+		<div className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70">
+			<Link
+				// @ts-expect-error - correct link
+				to={`/${item.type}/${item.external_id}/${formattedTitle}`}
+				className="relative shrink-0"
+			>
+				<Image
+					alt={item.title}
+					className="h-[140px] w-[93px] rounded-xl bg-muted object-cover"
+					height={210}
+					src={imageUrl}
+					width={140}
+				/>
+			</Link>
 
-				<div className="flex min-w-0 flex-1 flex-col justify-between gap-1">
-					<div>
+			<div className="flex min-w-0 flex-1 flex-col justify-between">
+				<div>
+					<div className="flex items-start justify-between gap-2">
 						<Link
 							// @ts-expect-error - correct link
 							to={`/${item.type}/${item.external_id}/${formattedTitle}`}
-							className="pressable-small"
 						>
-							<h3 className="line-clamp-2 text-sm font-bold">{item.title}</h3>
+							<h3 className="line-clamp-2 text-sm font-semibold leading-snug">
+								{item.title}
+							</h3>
 						</Link>
 
-						<div className="mt-1 flex flex-wrap items-center gap-1.5">
-							<Badge
-								className="rounded-md px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider"
-								variant="secondary"
-							>
-								{item.type}
-							</Badge>
-							{item.rating > 0 && (
-								<Badge
-									className="rounded-md px-1.5 py-0.5 text-[10px] font-medium"
-									variant="secondary"
-								>
-									<Star className="mr-0.5 size-2.5 fill-current text-yellow-400" />
-									{item.rating.toFixed(1)}
-								</Badge>
-							)}
-							{formattedDate && (
-								<span className="text-[9px] tracking-wider text-muted-foreground">
-									{formattedDate}
-								</span>
-							)}
-						</div>
-						{item.overview && (
-							<p className="mt-2 line-clamp-2 text-xs text-muted-foreground/80">
-								{item.overview}
-							</p>
-						)}
-					</div>
-
-					<div className="flex items-center justify-between gap-2 pt-1">
-						<div className="flex flex-row gap-1">
-							<div className="inline-flex items-center gap-2 h-7 rounded-lg border px-2 py-1.5 text-[9px] sm:text-[10px]">
-								<ProgressIcon size={14} />
-								<span>{progressOption.label}</span>
-							</div>
-							<div className="inline-flex items-center h-7 gap-2 rounded-lg border px-2 py-1.5 text-[9px] sm:text-[10px]">
-								{reactionOption ? (
-									<>
-										{ReactionIcon && <ReactionIcon size={14} />}
-										<span>{reactionOption.label}</span>
-									</>
-								) : (
-									<>
-										<Meh size={14} />
-										<span>No mood</span>
-									</>
-								)}
-							</div>
-						</div>
-
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							className="text-muted-foreground hover:text-destructive"
+						<button
+							type="button"
+							className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive"
 							aria-label={`Remove ${item.title} from watchlist`}
 							onClick={() => onRemoveFromWatchlist(item)}
 						>
 							<TrashBin size={14} />
-						</Button>
+						</button>
 					</div>
+
+					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+						<span className="uppercase">{item.type}</span>
+						{year && (
+							<>
+								<span className="text-border">·</span>
+								<span>{year}</span>
+							</>
+						)}
+						{item.rating > 0 && (
+							<>
+								<span className="text-border">·</span>
+								<span className="flex items-center gap-0.5">
+									<Star className="size-2.5 fill-yellow-400 text-yellow-400" />
+									{item.rating.toFixed(1)}
+								</span>
+							</>
+						)}
+					</div>
+
+					{item.overview && (
+						<p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/60">
+							{item.overview}
+						</p>
+					)}
+				</div>
+
+				<div className="flex items-center gap-1.5 pt-2">
+					<span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground">
+						<ProgressIcon size={12} />
+						{progressOption.label}
+					</span>
+					{reactionOption && (
+						<span className="text-sm" title={reactionOption.label}>
+							{reactionOption.emoji}
+						</span>
+					)}
 				</div>
 			</div>
 		</div>

@@ -1,17 +1,7 @@
-import { Frown, ListChecks, Meh, Smile, X } from "lucide-react";
-import type { ComponentType } from "react";
 import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
+import { WatchlistStatusMenu } from "@/components/media/watchlist-status-menu";
 import { ShareButton } from "@/components/share-button";
-import { CheckCircle, Clock, Eye, Heart } from "@/components/ui/icons";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { WatchlistButton } from "@/components/watchlist-button";
 import {
 	useMediaState,
 	useSetProgressStatus,
@@ -19,33 +9,7 @@ import {
 	useToggleWatchlistItem,
 	useWatchlistItem,
 } from "@/hooks/usewatchlist";
-import { cn } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
-
-const REMOVE_FROM_WATCHLIST_VALUE = "__remove_watchlist";
-
-const PROGRESS_OPTIONS: Array<{
-	value: ProgressStatus;
-	label: string;
-	icon: ComponentType<{ size?: string | number; className?: string }>;
-}> = [
-	{ value: "want-to-watch", label: "Plan to watch", icon: Clock },
-	{ value: "watching", label: "Watching", icon: Eye },
-	{ value: "caught-up", label: "Caught Up", icon: ListChecks },
-	{ value: "finished", label: "Completed", icon: CheckCircle },
-	{ value: "dropped", label: "Dropped", icon: X },
-];
-
-const REACTION_OPTIONS: Array<{
-	value: Exclude<ReactionStatus, null>;
-	label: string;
-	icon: ComponentType<{ size?: string | number; className?: string }>;
-}> = [
-	{ value: "loved", label: "Loved", icon: Heart },
-	{ value: "liked", label: "Liked", icon: Smile },
-	{ value: "mixed", label: "Mixed", icon: Meh },
-	{ value: "not-for-me", label: "Not for me", icon: Frown },
-];
 
 export const MediaTitleContainer = (props: {
 	title: string;
@@ -90,164 +54,57 @@ export const MediaTitleContainer = (props: {
 	const progressStatus = mediaState?.progressStatus ?? null;
 	const reaction = mediaState?.reaction ?? null;
 
-	const isSeriesEnded =
-		media_type === "tv" && tv_status
-			? ["ended", "canceled", "cancelled"].includes(
-					tv_status.trim().toLowerCase(),
-				)
-			: true; // movies and non-TV always show all options
+	const metadata = {
+		title,
+		image: poster_path,
+		rating,
+		release_date: release_date ?? "",
+		overview: props.description,
+	};
 
-	const filteredProgressOptions = PROGRESS_OPTIONS.filter((option) => {
-		// Hide "Completed" for returning/in-production series
-		if (option.value === "finished" && media_type === "tv" && !isSeriesEnded) {
-			return false;
-		}
-		// Hide "Caught Up" for ended series and movies (only relevant for returning shows)
-		if (
-			option.value === "caught-up" &&
-			(media_type !== "tv" || isSeriesEnded)
-		) {
-			return false;
-		}
-		return true;
-	});
+	const handleAdd = () => {
+		toggleWatchlist({
+			...metadata,
+			id: String(id),
+			media_type,
+		}).catch(console.error);
+	};
+
+	const handleStatusChange = (status: ProgressStatus) => {
+		setProgressStatus(
+			String(id),
+			media_type,
+			status,
+			metadata,
+			progressStatus,
+		);
+	};
+
+	const handleReactionChange = (r: ReactionStatus | null) => {
+		setReaction(String(id), media_type, r, metadata);
+	};
+
+	const handleRemove = () => {
+		toggleWatchlist({
+			...metadata,
+			id: String(id),
+			media_type,
+		}).catch(console.error);
+	};
 
 	const renderWatchListSection = (className?: string) => (
-		<div
-			className={cn("flex flex-wrap items-center justify-end gap-2", className)}
-		>
-			{!isOnWatchList && (
-				<WatchlistButton
-					id={id}
-					image={poster_path}
-					is_on_homepage={true}
-					media_type={media_type}
-					rating={rating}
-					release_date={release_date ?? ""}
-					title={title}
-					overview={props.description}
-				/>
-			)}
-
-			<div className="flex flex-wrap items-center justify-end gap-2">
-				{isOnWatchList && (
-					<Select
-						value={progressStatus ?? "want-to-watch"}
-						onValueChange={(value) => {
-							if (value === REMOVE_FROM_WATCHLIST_VALUE) {
-								toggleWatchlist({
-									title,
-									rating: rating,
-									image: poster_path,
-									id: String(id),
-									media_type,
-									release_date: release_date ?? "",
-									overview: props.description,
-								}).catch(console.error);
-								return;
-							}
-
-							setProgressStatus(
-								String(id),
-								media_type,
-								value as ProgressStatus,
-								{
-									title,
-									image: poster_path,
-									rating: rating,
-									release_date: release_date ?? "",
-									overview: props.description,
-								},
-								progressStatus,
-							);
-						}}
-					>
-						<SelectTrigger className="h-10 min-w-[145px] gap-2 rounded-lg border px-3 text-xs font-semibold transition-all">
-							<SelectValue placeholder="Choose status" />
-						</SelectTrigger>
-						<SelectContent className="rounded-xl">
-							{filteredProgressOptions.map((option) => {
-								const Icon = option.icon;
-								return (
-									<SelectItem
-										key={option.value}
-										value={option.value}
-										className="rounded-lg"
-									>
-										<span className="flex items-center gap-2">
-											<Icon size={16} />
-											{option.label}
-										</span>
-									</SelectItem>
-								);
-							})}
-							<SelectItem
-								value={REMOVE_FROM_WATCHLIST_VALUE}
-								className="rounded-lg text-destructive focus:text-destructive"
-							>
-								Remove from Watchlist
-							</SelectItem>
-						</SelectContent>
-					</Select>
-				)}
-				<Select
-					value={reaction ?? "none"}
-					onValueChange={(value) => {
-						if (value === REMOVE_FROM_WATCHLIST_VALUE) {
-							toggleWatchlist({
-								title,
-								rating: rating,
-								image: poster_path,
-								id: String(id),
-								media_type,
-								release_date: release_date ?? "",
-								overview: props.description,
-							}).catch(console.error);
-							return;
-						}
-
-						setReaction(
-							String(id),
-							media_type,
-							value === "none" ? null : (value as ReactionStatus),
-							{
-								title,
-								image: poster_path,
-								rating: rating,
-								release_date: release_date ?? "",
-								overview: props.description,
-							},
-						);
-					}}
-				>
-					<SelectTrigger className="h-10 min-w-[145px] gap-2 rounded-lg border px-3 text-xs font-semibold transition-all">
-						<SelectValue placeholder="Mood" />
-					</SelectTrigger>
-					<SelectContent className="rounded-xl">
-						<SelectItem value="none" className="rounded-lg">
-							<span className="flex items-center gap-2">
-								<Meh size={16} />
-								No mood
-							</span>
-						</SelectItem>
-						{REACTION_OPTIONS.map((option) => {
-							const Icon = option.icon;
-							return (
-								<SelectItem
-									key={option.value}
-									value={option.value}
-									className="rounded-lg"
-								>
-									<span className="flex items-center gap-2">
-										<Icon size={16} />
-										{option.label}
-									</span>
-								</SelectItem>
-							);
-						})}
-					</SelectContent>
-				</Select>
-			</div>
+		<div className={className}>
+			<WatchlistStatusMenu
+				isOnWatchlist={isOnWatchList}
+				progressStatus={progressStatus}
+				reaction={reaction}
+				mediaType={media_type}
+				tmdbId={id}
+				onAdd={handleAdd}
+				onStatusChange={handleStatusChange}
+				onReactionChange={handleReactionChange}
+				onRemove={handleRemove}
+			/>
 		</div>
 	);
 

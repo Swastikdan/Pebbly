@@ -25,7 +25,7 @@ export default defineSchema({
     inWatchlist: v.optional(v.boolean()),
 
     // New split status model
-    progressStatus: v.optional(v.string()), // "want-to-watch" | "watching" | "finished"
+    progressStatus: v.optional(v.string()), // "watch-later" | "watching" | "done" | "dropped"
     reaction: v.optional(v.string()), // "loved" | "liked" | "mixed" | "not-for-me"
 
     // Legacy combined status kept temporarily for compatibility reads/migration.
@@ -46,6 +46,28 @@ export default defineSchema({
 
     updatedAt: v.number(),
   })
+    .index("by_user_media", ["userId", "tmdbId", "mediaType"])
+    .index("by_user", ["userId"]),
+
+  lists: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    color: v.optional(v.string()),
+    sortOrder: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_name", ["userId", "name"]),
+
+  list_items: defineTable({
+    userId: v.id("users"),
+    listId: v.id("lists"),
+    tmdbId: v.number(),
+    mediaType: v.string(),
+    addedAt: v.number(),
+  })
+    .index("by_list", ["listId"])
     .index("by_user_media", ["userId", "tmdbId", "mediaType"])
     .index("by_user", ["userId"]),
 

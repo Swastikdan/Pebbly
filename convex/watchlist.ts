@@ -2,25 +2,39 @@ import { mutation, query } from "./_generated/server";
 
 import { v } from "convex/values";
 
+/** Normalise any legacy or old-format progressStatus string to current values. */
+function normalizeProgressStatus(status?: string): string | undefined {
+  if (!status) return undefined;
+  if (status === "want-to-watch" || status === "plan-to-watch") return "watch-later";
+  if (status === "finished" || status === "completed") return "done";
+  if (status === "caught-up") return "watching";
+  if (status === "liked") return "done";
+  // Already valid
+  if (status === "watch-later" || status === "watching" || status === "done" || status === "dropped") return status;
+  return undefined;
+}
+
 function mapLegacyStatusFields(
   status?: string,
   progress?: number,
 ): { progressStatus?: string; reaction?: string } {
   if (!status) return {};
 
-  if (status === "plan-to-watch") return { progressStatus: "want-to-watch" };
+  if (status === "plan-to-watch") return { progressStatus: "watch-later" };
+  if (status === "want-to-watch") return { progressStatus: "watch-later" };
   if (status === "watching") return { progressStatus: "watching" };
-  if (status === "completed") return { progressStatus: "finished" };
+  if (status === "completed" || status === "finished") return { progressStatus: "done" };
+  if (status === "caught-up") return { progressStatus: "watching" };
   if (status === "liked") {
-    return { progressStatus: "finished", reaction: "liked" };
+    return { progressStatus: "done", reaction: "liked" };
   }
 
   if (status === "dropped") {
     const derivedProgressStatus =
       progress === undefined || progress <= 0
-        ? "want-to-watch"
+        ? "watch-later"
         : progress >= 100
-          ? "finished"
+          ? "done"
           : "watching";
 
     return {
@@ -70,16 +84,16 @@ export const updateProgress = mutation({
     const existingDerived = mapLegacyStatusFields(existing?.status, existing?.progress)
       .progressStatus;
 
-    const currentProgressStatus = existing?.progressStatus ?? existingDerived;
+    const currentProgressStatus = normalizeProgressStatus(existing?.progressStatus) ?? existingDerived;
 
     const argDerived = mapLegacyStatusFields(args.status, nextProgress).progressStatus;
 
     const inferredProgressStatus =
       args.isWatched === true
-        ? "finished"
+        ? "done"
         : argDerived ??
           (nextProgress >= 95
-            ? "finished"
+            ? "done"
             : nextProgress > 0
               ? "watching"
               : undefined);
@@ -237,13 +251,14 @@ export const setWatchlistMembership = mutation({
     if (existing) {
       const existingDerived = mapLegacyStatusFields(existing.status, existing.progress);
 
+      const normalizedExisting = normalizeProgressStatus(existing.progressStatus);
       await ctx.db.patch(existing._id, {
         inWatchlist: args.inWatchlist,
         updatedAt: now,
         progressStatus:
-          existing.progressStatus ??
+          normalizedExisting ??
           existingDerived.progressStatus ??
-          (args.inWatchlist ? "want-to-watch" : undefined),
+          (args.inWatchlist ? "watch-later" : undefined),
         reaction: existing.reaction ?? existingDerived.reaction,
         title: args.title ?? existing.title,
         image: args.image ?? existing.image,
@@ -262,7 +277,7 @@ export const setWatchlistMembership = mutation({
       tmdbId: args.tmdbId,
       mediaType: args.mediaType,
       inWatchlist: true,
-      progressStatus: "want-to-watch",
+      progressStatus: "watch-later",
       progress: 0,
       updatedAt: now,
       title: args.title,
@@ -300,16 +315,18 @@ export const setProgressStatus = mutation({
 
     const now = Date.now();
 
+    const normalized = normalizeProgressStatus(args.progressStatus) ?? args.progressStatus;
+
     let nextProgress = args.progress;
     if (nextProgress === undefined) {
-      if (args.progressStatus === "want-to-watch") nextProgress = 0;
-      else if (args.progressStatus === "finished" || args.progressStatus === "caught-up") nextProgress = 100;
+      if (normalized === "watch-later") nextProgress = 0;
+      else if (normalized === "done") nextProgress = 100;
       else nextProgress = existing?.progress;
     }
 
     if (existing) {
       await ctx.db.patch(existing._id, {
-        progressStatus: args.progressStatus,
+        progressStatus: normalized,
         progress: nextProgress,
         updatedAt: now,
         title: args.title ?? existing.title,
@@ -326,7 +343,7 @@ export const setProgressStatus = mutation({
       tmdbId: args.tmdbId,
       mediaType: args.mediaType,
       inWatchlist: false,
-      progressStatus: args.progressStatus,
+      progressStatus: normalized,
       progress: nextProgress,
       updatedAt: now,
       title: args.title,
@@ -451,8 +468,8 @@ export const upsertWatchlistItem = mutation({
 
     let progress = args.progress;
     if (progress === undefined) {
-      if (mapped.progressStatus === "want-to-watch") progress = 0;
-      else if (mapped.progressStatus === "finished") progress = 100;
+      if (mapped.progressStatus === "watch-later") progress = 0;
+      else if (mapped.progressStatus === "done") progress = 100;
       else progress = existing?.progress ?? 0;
     }
 
@@ -461,7 +478,7 @@ export const upsertWatchlistItem = mutation({
         inWatchlist: true,
         status: args.status,
         progressStatus:
-          mapped.progressStatus ?? existing.progressStatus ?? "want-to-watch",
+          mapped.progressStatus ?? normalizeProgressStatus(existing.progressStatus) ?? "watch-later",
         reaction: mapped.reaction ?? existing.reaction,
         progress,
         updatedAt: now,
@@ -480,7 +497,7 @@ export const upsertWatchlistItem = mutation({
       mediaType: args.mediaType,
       inWatchlist: true,
       status: args.status,
-      progressStatus: mapped.progressStatus ?? "want-to-watch",
+      progressStatus: mapped.progressStatus ?? "watch-later",
       reaction: mapped.reaction,
       progress,
       updatedAt: now,
@@ -808,5 +825,198 @@ export const syncEpisodeProgressItem = mutation({
       isWatched: args.isWatched,
       updatedAt: now,
     });
+  },
+});
+
+// ── Status migration ────────────────────────────────────────────────────
+// Migrates old progressStatus values to new names. Idempotent.
+export const migrateStatusCategories = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const items = await ctx.db
+      .query("watch_items")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const now = Date.now();
+    let migrated = 0;
+
+    for (const item of items) {
+      const normalized = normalizeProgressStatus(item.progressStatus);
+      if (normalized && normalized !== item.progressStatus) {
+        await ctx.db.patch(item._id, {
+          progressStatus: normalized,
+          updatedAt: now,
+        });
+        migrated++;
+      }
+    }
+
+    return { migrated, total: items.length };
+  },
+});
+
+// ── Custom Lists CRUD ───────────────────────────────────────────────────
+export const getCustomLists = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    return ctx.db
+      .query("lists")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+  },
+});
+
+export const createCustomList = mutation({
+  args: {
+    name: v.string(),
+    color: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const existing = await ctx.db
+      .query("lists")
+      .withIndex("by_user_name", (q) => q.eq("userId", user._id).eq("name", args.name))
+      .first();
+    if (existing) throw new Error("A list with this name already exists");
+
+    const lists = await ctx.db
+      .query("lists")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const maxSort = lists.reduce((max, l) => Math.max(max, l.sortOrder), 0);
+
+    const now = Date.now();
+    return ctx.db.insert("lists", {
+      userId: user._id,
+      name: args.name,
+      color: args.color,
+      sortOrder: maxSort + 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+export const updateCustomList = mutation({
+  args: {
+    listId: v.id("lists"),
+    name: v.optional(v.string()),
+    color: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.userId !== user._id) throw new Error("List not found");
+
+    if (args.name !== undefined && args.name !== list.name) {
+      const nameToCheck = args.name;
+      const dup = await ctx.db
+        .query("lists")
+        .withIndex("by_user_name", (q) => q.eq("userId", user._id).eq("name", nameToCheck))
+        .first();
+      if (dup) throw new Error("A list with this name already exists");
+    }
+
+    await ctx.db.patch(args.listId, {
+      ...(args.name !== undefined ? { name: args.name } : {}),
+      ...(args.color !== undefined ? { color: args.color } : {}),
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const deleteCustomList = mutation({
+  args: { listId: v.id("lists") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.userId !== user._id) throw new Error("List not found");
+
+    const items = await ctx.db
+      .query("list_items")
+      .withIndex("by_list", (q) => q.eq("listId", args.listId))
+      .collect();
+    for (const item of items) {
+      await ctx.db.delete(item._id);
+    }
+
+    await ctx.db.delete(args.listId);
+  },
+});
+
+export const getListItems = query({
+  args: { listId: v.id("lists") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    return ctx.db
+      .query("list_items")
+      .withIndex("by_list", (q) => q.eq("listId", args.listId))
+      .collect();
+  },
+});
+
+export const getItemLists = query({
+  args: { tmdbId: v.number(), mediaType: v.string() },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    const items = await ctx.db
+      .query("list_items")
+      .withIndex("by_user_media", (q) =>
+        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
+      )
+      .collect();
+
+    return items.map((i) => i.listId);
+  },
+});
+
+export const toggleListItem = mutation({
+  args: {
+    listId: v.id("lists"),
+    tmdbId: v.number(),
+    mediaType: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const items = await ctx.db
+      .query("list_items")
+      .withIndex("by_user_media", (q) =>
+        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
+      )
+      .collect();
+
+    const existing = items.find((i) => i.listId === args.listId);
+    if (existing) {
+      await ctx.db.delete(existing._id);
+      return false;
+    }
+
+    await ctx.db.insert("list_items", {
+      userId: user._id,
+      listId: args.listId,
+      tmdbId: args.tmdbId,
+      mediaType: args.mediaType,
+      addedAt: Date.now(),
+    });
+    return true;
   },
 });

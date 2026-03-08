@@ -44,25 +44,47 @@ export function createMemoryStorage(): Storage {
 	} as Storage;
 }
 
-/** Maps a legacy combined status string to the split progress/reaction model. */
+/** Maps a legacy combined status string to the split progress/reaction model.
+ *  Also normalises old progressStatus values (want-to-watch, finished, caught-up)
+ *  to the new names (watch-later, done, watching). */
 export function mapLegacyStatusToSplit(status?: string): {
 	progressStatus: ProgressStatus | null;
 	reaction: ReactionStatus | null;
 } {
 	switch (status) {
+		// Legacy combined statuses
 		case "plan-to-watch":
-			return { progressStatus: "want-to-watch", reaction: null };
+			return { progressStatus: "watch-later", reaction: null };
+		case "completed":
+			return { progressStatus: "done", reaction: null };
+		case "liked":
+			return { progressStatus: "done", reaction: "liked" };
+		// Old progressStatus values → new names
+		case "want-to-watch":
+			return { progressStatus: "watch-later", reaction: null };
+		case "finished":
+			return { progressStatus: "done", reaction: null };
+		case "caught-up":
+			return { progressStatus: "watching", reaction: null };
+		// Already-valid values
 		case "watching":
 			return { progressStatus: "watching", reaction: null };
-		case "completed":
-			return { progressStatus: "finished", reaction: null };
-		case "liked":
-			return { progressStatus: "finished", reaction: "liked" };
 		case "dropped":
 			return { progressStatus: "dropped", reaction: null };
+		case "watch-later":
+			return { progressStatus: "watch-later", reaction: null };
+		case "done":
+			return { progressStatus: "done", reaction: null };
 		default:
 			return { progressStatus: null, reaction: null };
 	}
+}
+
+/** Normalise a stored progressStatus string to the current ProgressStatus type. */
+export function normalizeProgressStatus(status?: string | null): ProgressStatus | null {
+	if (!status) return null;
+	const mapped = mapLegacyStatusToSplit(status);
+	return mapped.progressStatus;
 }
 
 const VALID_ID_RANGE = {
