@@ -199,7 +199,7 @@ function WatchlistPage() {
 			<div className="w-full max-w-screen-xl p-5">
 				<div className="mb-8 flex items-start justify-between gap-4">
 					<div>
-						<h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+						<h1 className="text-3xl font-bold tracking-tight md:text-4xl">
 							Watchlist
 						</h1>
 						<p className="mt-2 text-xs tracking-wider text-muted-foreground uppercase">
@@ -294,7 +294,7 @@ function WatchlistPage() {
 							))}
 						</div>
 
-						{/* Mobile-only: toggle secondary filters */}
+						{/* Toggle secondary filters on mobile */}
 						<Button
 							onClick={() => setFiltersOpen((prev) => !prev)}
 							aria-expanded={filtersOpen}
@@ -303,7 +303,7 @@ function WatchlistPage() {
 									? "default"
 									: "secondary"
 							}
-							className="gap-1.5 rounded-xl h-8 text-xs"
+							className="gap-1.5 rounded-xl h-8 text-xs md:hidden"
 						>
 							<SlidersHorizontal size={13} />
 							Filters
@@ -318,7 +318,7 @@ function WatchlistPage() {
 					<div
 						className={`${
 							filtersOpen ? "flex" : "hidden"
-						} flex-1 items-center gap-2 scrollbar-hidden overflow-x-auto`}
+						} md:flex flex-1 items-center gap-2 scrollbar-hidden overflow-x-auto`}
 					>
 						{/* Media Type */}
 						<Select

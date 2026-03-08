@@ -16,43 +16,43 @@ export const Route = createFileRoute("/")({
 	component: HomePage,
 });
 
+const SECTION_TAB_LIST_CLASS = "h-8 rounded-lg bg-transparent ring-1 ring-border p-0.5";
+const SECTION_TAB_TRIGGER_CLASS = "h-7 px-3.5 text-xs font-semibold data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none";
+
 function HomePage() {
 	return (
 		<section className="flex flex-col items-center justify-center">
-			<div className="before:-z-[1] before:-translate-x-1/2 before:-translate-y-1/2 relative w-full overflow-hidden before:absolute before:start-1/2 before:top-1/2 before:h-96 before:w-full before:transform before:bg-[url('https://preline.co/assets/svg/component/hyperdrive.svg')] before:bg-center before:bg-no-repeat dark:before:bg-[url('https://preline.co/assets/svg/component-dark/hyperdrive.svg')]">
-				<div className="mx-auto max-w-screen-lg px-4 py-10 pt-5 pb-5 text-center sm:px-6 md:pt-10 lg:px-8 lg:py-14">
-					<div className="py-5">
-						<h1 className="items-center justify-center font-black text-2xl sm:text-5xl md:text-[4rem] lg:text-[5rem] lg:leading-tight">
+			<div className="relative w-full overflow-hidden">
+				<div className="absolute inset-0 -z-[1] bg-[radial-gradient(ellipse_at_top,var(--color-secondary)_0%,transparent_60%)] opacity-60 dark:opacity-30" />
+				<div className="mx-auto max-w-screen-lg px-4 py-8 pt-6 pb-6 text-center sm:px-6 md:pt-12 md:pb-8 lg:px-8">
+					<div className="py-4 animate-fade-in-up">
+						<h1 className="items-center justify-center font-black text-2xl tracking-tight sm:text-5xl md:text-[4rem] lg:text-[4.5rem] lg:leading-[1.1]">
 							Welcome to
 							<span className="px-2 text-blue-500">Film Fanatic</span>
 						</h1>
-						<p className="mb-3 text-[10px] text-accent-foreground tracking-wide sm:text-xs">
+						<p className="mt-2 mb-4 text-xs text-muted-foreground tracking-wide sm:text-sm">
 							Millions of movies, TV shows, and people to discover.
 						</p>
 					</div>
 
-					<Suspense fallback={<SearchBarSkeleton />}>
-						<SearchBar />
-					</Suspense>
+					<div className="animate-fade-in" style={{ animationDelay: "150ms" }}>
+						<Suspense fallback={<SearchBarSkeleton />}>
+							<SearchBar />
+						</Suspense>
+					</div>
 				</div>
 			</div>
 
-			<div className="mx-auto flex w-full max-w-screen-xl px-5 py-5 pt-5 pb-5 md:pt-10">
+			<div className="mx-auto flex w-full max-w-screen-xl px-5 py-6 md:pt-10 md:pb-8">
 				<div className="flex w-full flex-col gap-10">
 					<Tabs defaultValue="trending_day">
-						<div className="flex items-center gap-5">
-							<h2 className="font-medium text-xl md:text-2xl">Trending</h2>
-							<TabsList className="h-8 rounded-lg bg-transparent ring-2 ring-border ">
-								<TabsTrigger
-									value="trending_day"
-									className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
-								>
+						<div className="flex items-center gap-4">
+							<h2 className="font-semibold text-lg md:text-xl">Trending</h2>
+							<TabsList className={SECTION_TAB_LIST_CLASS}>
+								<TabsTrigger value="trending_day" className={SECTION_TAB_TRIGGER_CLASS}>
 									Today
 								</TabsTrigger>
-								<TabsTrigger
-									value="trending_week"
-									className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
-								>
+								<TabsTrigger value="trending_week" className={SECTION_TAB_TRIGGER_CLASS}>
 									This Week
 								</TabsTrigger>
 							</TabsList>
@@ -66,8 +66,8 @@ function HomePage() {
 					</Tabs>
 
 					<section>
-						<div className="flex items-center gap-5">
-							<h2 className="font-medium text-xl md:text-2xl">
+						<div className="flex items-center gap-4">
+							<h2 className="font-semibold text-lg md:text-xl">
 								Upcoming Movies
 							</h2>
 						</div>
@@ -77,19 +77,13 @@ function HomePage() {
 					</section>
 
 					<Tabs defaultValue="popular_movie">
-						<div className="flex items-center gap-5">
-							<h2 className="font-medium text-xl md:text-2xl">{`What's Popular`}</h2>
-							<TabsList className="h-8 rounded-lg bg-transparent ring-2 ring-border ">
-								<TabsTrigger
-									value="popular_movie"
-									className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
-								>
+						<div className="flex items-center gap-4">
+							<h2 className="font-semibold text-lg md:text-xl">{`What's Popular`}</h2>
+							<TabsList className={SECTION_TAB_LIST_CLASS}>
+								<TabsTrigger value="popular_movie" className={SECTION_TAB_TRIGGER_CLASS}>
 									Theaters
 								</TabsTrigger>
-								<TabsTrigger
-									value="popular_tv"
-									className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
-								>
+								<TabsTrigger value="popular_tv" className={SECTION_TAB_TRIGGER_CLASS}>
 									On TV
 								</TabsTrigger>
 							</TabsList>
@@ -101,20 +95,15 @@ function HomePage() {
 							<PopularTv />
 						</TabsContent>
 					</Tabs>
+
 					<Tabs defaultValue="top_rated_movies">
-						<div className="flex items-center gap-5">
-							<h2 className="font-medium text-xl md:text-2xl">Top Rated</h2>
-							<TabsList className="h-8 rounded-lg bg-transparent ring-2 ring-border ">
-								<TabsTrigger
-									value="top_rated_movies"
-									className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
-								>
+						<div className="flex items-center gap-4">
+							<h2 className="font-semibold text-lg md:text-xl">Top Rated</h2>
+							<TabsList className={SECTION_TAB_LIST_CLASS}>
+								<TabsTrigger value="top_rated_movies" className={SECTION_TAB_TRIGGER_CLASS}>
 									Movies
 								</TabsTrigger>
-								<TabsTrigger
-									value="top_rated_tv"
-									className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
-								>
+								<TabsTrigger value="top_rated_tv" className={SECTION_TAB_TRIGGER_CLASS}>
 									TV Shows
 								</TabsTrigger>
 							</TabsList>

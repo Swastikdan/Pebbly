@@ -30,7 +30,7 @@ export const CastSection = (props: {
 			<div className="flex flex-col gap-3">
 				<Link
 					aria-label="View full cast and crew"
-					className="w-fit text-xl font-semibold hover:opacity-70 md:text-2xl"
+					className="w-fit text-lg font-semibold transition-opacity hover:opacity-70 md:text-xl"
 					// @ts-expect-error - correct link
 					to={`/${type}/${id}/${encodeURIComponent(urltitle)}/cast-crew`}
 				>
@@ -75,11 +75,15 @@ export const CastSection = (props: {
 						</div>
 					</ScrollContainer>
 					<Link
-						className="w-fit text-lg hover:opacity-70"
+						className="group w-fit text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
 						// @ts-expect-error - correct link
 						to={`/${type}/${id}/${urltitle}/cast-crew`}
 					>
-						Full Cast & Crew
+						View full cast & crew
+						<ArrowRightLine
+							size={14}
+							className="ml-1 inline-block transition-transform group-hover:translate-x-0.5"
+						/>
 					</Link>
 				</div>
 			</div>

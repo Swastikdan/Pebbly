@@ -175,16 +175,19 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 	return (
 		<div className={cn("relative w-full overflow-hidden", className)}>
 			{isControlsEnabled && canScrollLeft && (
-				<Button
-					aria-label="Scroll left"
-					className="absolute left-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
-					variant="light"
-					size="icon-lg"
-					onClick={scrollLeft}
-					tabIndex={0}
-				>
-					<ArrowLeftLine className="size-5" />
-				</Button>
+				<>
+					<div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
+					<Button
+						aria-label="Scroll left"
+						className="absolute left-2 top-1/2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-all duration-200 hover:scale-105 sm:flex"
+						variant="light"
+						size="icon"
+						onClick={scrollLeft}
+						tabIndex={0}
+					>
+						<ArrowLeftLine className="size-4" />
+					</Button>
+				</>
 			)}
 			<section
 				ref={scrollRef}
@@ -194,16 +197,19 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 				<div className="flex w-max items-center">{children}</div>
 			</section>
 			{isControlsEnabled && canScrollRight && (
-				<Button
-					aria-label="Scroll right"
-					className="absolute right-4 top-1/2 z-20 hidden size-10 -translate-y-1/2 transform items-center justify-center rounded-xl backdrop-blur-sm transition-opacity hover:opacity-90 sm:flex"
-					variant="light"
-					size="icon-lg"
-					onClick={scrollRight}
-					tabIndex={0}
-				>
-					<ArrowRightLine className="size-5" />
-				</Button>
+				<>
+					<div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
+					<Button
+						aria-label="Scroll right"
+						className="absolute right-2 top-1/2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-all duration-200 hover:scale-105 sm:flex"
+						variant="light"
+						size="icon"
+						onClick={scrollRight}
+						tabIndex={0}
+					>
+						<ArrowRightLine className="size-4" />
+					</Button>
+				</>
 			)}
 		</div>
 	);

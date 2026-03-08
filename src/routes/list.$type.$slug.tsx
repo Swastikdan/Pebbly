@@ -132,7 +132,7 @@ function MediaListPage() {
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="top-0 w-full max-w-screen-xl items-center justify-center p-5">
-				<h1 className="text-start font-bold text-2xl md:text-3xl lg:text-4xl">
+				<h1 className="text-start font-bold text-2xl tracking-tight md:text-3xl animate-fade-in-up">
 					{subNavItem.name} {navItem.name}
 				</h1>
 

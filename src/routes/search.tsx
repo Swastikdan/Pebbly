@@ -13,8 +13,14 @@ import { number, object, optional, string } from "valibot";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Button } from "@/components/ui/button";
+import { XCircleIcon } from "@/components/ui/icons";
 import { Pagination } from "@/components/ui/pagination";
-import { SearchBar } from "@/components/ui/search-bar";
+import {
+	SearchBar,
+	clearSearchHistory,
+	getSearchHistory,
+	removeFromSearchHistory,
+} from "@/components/ui/search-bar";
 import {
 	Select,
 	SelectContent,
@@ -161,8 +167,9 @@ function SearchPage() {
 			<section className="flex w-full justify-center">
 				<div className="mx-auto w-full max-w-screen-xl p-5">
 					<SearchBar query={query} updateUrlOnChange />
+					<SearchHistory navigate={navigate} />
 					<div className="flex flex-col gap-5 py-5">
-						<h2 className="text-xl font-bold">Trending Now</h2>
+						<h2 className="text-lg font-semibold">Trending Now</h2>
 						{isTrendingLoading ? (
 							<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
 								{Array.from({ length: 12 }).map((_, index) => (
@@ -202,16 +209,16 @@ function SearchPage() {
 				<div className="mx-auto w-full max-w-screen-xl p-5">
 					<SearchBar query={query} updateUrlOnChange />
 					<div className="flex h-full flex-col gap-5 py-5">
-						<div className="flex flex-wrap items-center gap-3">
-							<div className="flex gap-1 rounded-lg bg-secondary/30 p-1">
-								<Skeleton className="h-7 w-12 rounded-md" />
-								<Skeleton className="h-7 w-20 rounded-md" />
-								<Skeleton className="h-7 w-20 rounded-md" />
+						<div className="flex flex-wrap items-center gap-2">
+							<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 ring-1 ring-border/40">
+								<Skeleton className="h-7 w-10 rounded-md" />
+								<Skeleton className="h-7 w-16 rounded-md" />
+								<Skeleton className="h-7 w-14 rounded-md" />
 							</div>
 
-							<Skeleton className="h-7 w-[100px] rounded-lg" />
+							<Skeleton className="h-8 w-[100px] rounded-lg" />
 
-							<Skeleton className="ml-auto h-3 w-[84px] rounded" />
+							<Skeleton className="ml-auto h-3 w-[70px] rounded" />
 						</div>
 						<div className="flex min-h-96 w-full items-center justify-center">
 							<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
@@ -283,24 +290,24 @@ function SearchPage() {
 			<div className="mx-auto w-full max-w-screen-xl p-5">
 				<SearchBar query={query} updateUrlOnChange />
 				<div className="flex h-full flex-col gap-5 py-5">
-					<div className="flex flex-wrap items-center gap-3">
-						<div className="flex gap-1 rounded-xl bg-secondary/30 p-1 border-1 border-border h-9 items-center">
+					<div className="flex flex-wrap items-center gap-2">
+						<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-8 items-center ring-1 ring-border/40">
 							<Button
-								className="h-7 px-4"
+								className="h-7 px-3 text-xs font-semibold rounded-md"
 								variant={!type ? "default" : "ghost"}
 								onClick={handleAllClick}
 							>
 								All
 							</Button>
 							<Button
-								className="h-7 px-4"
+								className="h-7 px-3 text-xs font-semibold rounded-md"
 								variant={type === "movie" ? "default" : "ghost"}
 								onClick={handleMovieClick}
 							>
 								Movies
 							</Button>
 							<Button
-								className="h-7 px-4"
+								className="h-7 px-3 text-xs font-semibold rounded-md"
 								variant={type === "tv" ? "default" : "ghost"}
 								onClick={handleTVClick}
 							>
@@ -309,7 +316,7 @@ function SearchPage() {
 						</div>
 
 						<Select value={minRating} onValueChange={setMinRating}>
-							<SelectTrigger className="h-9 gap-2 rounded-xl border-default bg-secondary/30 px-3 text-xs font-medium">
+							<SelectTrigger className="h-8 gap-2 rounded-lg border-border/60 bg-secondary/30 px-3 text-xs font-medium">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent className="rounded-xl">
@@ -332,7 +339,7 @@ function SearchPage() {
 						</Select>
 
 						<span className="ml-auto text-[10px] tracking-wider text-muted-foreground">
-							Total results: {data?.total_results ?? 0}
+							{data?.total_results ?? 0} results
 						</span>
 					</div>
 
@@ -367,5 +374,71 @@ function SearchPage() {
 				</div>
 			</div>
 		</section>
+	);
+}
+
+function SearchHistory({
+	navigate,
+}: {
+	navigate: ReturnType<typeof useNavigate>;
+}) {
+	const [history, setHistory] = useState<string[]>([]);
+
+	useEffect(() => {
+		setHistory(getSearchHistory());
+	}, []);
+
+	if (history.length === 0) return null;
+
+	return (
+		<div className="flex flex-col gap-2 pt-4 pb-1">
+			<div className="flex items-center justify-between">
+				<h3 className="text-sm font-medium text-muted-foreground">
+					Recent searches
+				</h3>
+				<button
+					type="button"
+					onClick={() => {
+						clearSearchHistory();
+						setHistory([]);
+					}}
+					className="text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
+				>
+					Clear all
+				</button>
+			</div>
+			<div className="flex flex-wrap gap-1.5">
+				{history.map((item) => (
+					<div
+						key={item}
+						className="group flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-sm transition-colors hover:bg-secondary"
+					>
+						<button
+							type="button"
+							className="cursor-pointer"
+							onClick={() =>
+								navigate({
+									to: "/search",
+									search: { query: item },
+								})
+							}
+						>
+							{item}
+						</button>
+						<button
+							type="button"
+							className="cursor-pointer opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100"
+							onClick={() => {
+								removeFromSearchHistory(item);
+								setHistory((prev) => prev.filter((h) => h !== item));
+							}}
+							aria-label={`Remove "${item}" from history`}
+						>
+							<XCircleIcon size={14} />
+						</button>
+					</div>
+				))}
+			</div>
+		</div>
 	);
 }

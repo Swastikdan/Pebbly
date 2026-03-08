@@ -6,12 +6,12 @@ export const GenreContainer = (props: {
 }) => {
 	return (
 		<ScrollContainer>
-			<div className="flex gap-2 py-1">
+			<div className="flex gap-1.5 py-1">
 				{props.genres.map((genre) => (
 					<Badge
 						key={genre.id}
 						aria-label={`Genre: ${genre.name}`}
-						className=" text-xs md:text-sm rounded-md"
+						className="text-xs rounded-lg px-3 py-1 font-medium"
 						role="listitem"
 						variant="secondary"
 					>

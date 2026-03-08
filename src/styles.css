@@ -216,14 +216,10 @@
 	.scrollbar-hidden::-moz-scrollbar {
 		display: none;
 	}
-
-	/* Editorial Typography
-	. {
-		font-family: "DM Serif Display", Georgia, "Times New Roman", serif;
+	.scrollbar-hidden {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
 	}
-	. {
-		font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
-	} */
 
 	/* Grain Overlay - apply to a container with position:relative */
 	.grain-overlay::after {
@@ -248,17 +244,16 @@
 		@apply cursor-pointer
            select-none
            transition-all
-           duration-300
+           duration-200
            ease-out
-           active:scale-95
-           active:brightness-95
+           active:scale-[0.97]
            will-change-transform;
 	}
 	.pressable-small {
 		@apply active:opacity-70
 		dark:active:opacity-50
         transition-all
-        duration-300
+        duration-200
         ease-out
         will-change-transform;
 	}
@@ -266,16 +261,16 @@
 	/* --- Card Shadow Presets --- */
 	.card-elevated {
 		box-shadow:
-			0 1px 3px rgba(0, 0, 0, 0.08),
-			0 4px 12px rgba(0, 0, 0, 0.04);
+			0 1px 3px rgba(0, 0, 0, 0.06),
+			0 4px 12px rgba(0, 0, 0, 0.03);
 		transition:
-			box-shadow 0.3s ease,
-			transform 0.3s ease;
+			box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+			transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 	.card-elevated:hover {
 		box-shadow:
-			0 4px 16px rgba(0, 0, 0, 0.12),
-			0 8px 32px rgba(0, 0, 0, 0.06);
+			0 8px 24px rgba(0, 0, 0, 0.1),
+			0 16px 48px rgba(0, 0, 0, 0.05);
 	}
 
 	.card-glass {
@@ -288,80 +283,95 @@
 		border: 1px solid oklch(1 0 0 / 6%);
 	}
 
+	/* --- Scroll fade edges --- */
+	.scroll-fade-edges {
+		mask-image: linear-gradient(
+			to right,
+			transparent 0%,
+			black 2%,
+			black 98%,
+			transparent 100%
+		);
+	}
+
 	/* --- Fade-In Animations --- */
 	.animate-fade-in {
-		animation: fadeIn 0.5s ease-out both;
+		animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
 	}
 	.animate-fade-in-up {
-		animation: fadeInUp 0.5s ease-out both;
+		animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 	.animate-slide-in-right {
-		animation: slideInRight 0.4s ease-out both;
+		animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 
 	/* --- Staggered Grid Animations --- */
 	.stagger-grid > * {
-		animation: fadeInUp 0.4s ease-out both;
+		animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 	.stagger-grid > *:nth-child(1) {
 		animation-delay: 0ms;
 	}
 	.stagger-grid > *:nth-child(2) {
-		animation-delay: 40ms;
+		animation-delay: 30ms;
 	}
 	.stagger-grid > *:nth-child(3) {
-		animation-delay: 80ms;
+		animation-delay: 60ms;
 	}
 	.stagger-grid > *:nth-child(4) {
-		animation-delay: 120ms;
+		animation-delay: 90ms;
 	}
 	.stagger-grid > *:nth-child(5) {
-		animation-delay: 160ms;
+		animation-delay: 120ms;
 	}
 	.stagger-grid > *:nth-child(6) {
-		animation-delay: 200ms;
+		animation-delay: 150ms;
 	}
 	.stagger-grid > *:nth-child(7) {
-		animation-delay: 240ms;
+		animation-delay: 180ms;
 	}
 	.stagger-grid > *:nth-child(8) {
-		animation-delay: 280ms;
+		animation-delay: 210ms;
 	}
 	.stagger-grid > *:nth-child(9) {
-		animation-delay: 320ms;
+		animation-delay: 240ms;
 	}
 	.stagger-grid > *:nth-child(10) {
-		animation-delay: 360ms;
+		animation-delay: 270ms;
 	}
 	.stagger-grid > *:nth-child(11) {
-		animation-delay: 400ms;
+		animation-delay: 300ms;
 	}
 	.stagger-grid > *:nth-child(12) {
-		animation-delay: 440ms;
+		animation-delay: 330ms;
 	}
 	.stagger-grid > *:nth-child(n + 13) {
-		animation-delay: 480ms;
+		animation-delay: 360ms;
 	}
 
 	/* --- Skeleton Shimmer --- */
 	.shimmer {
 		background: linear-gradient(
-			90deg,
-			oklch(0.92 0 0) 0%,
+			100deg,
+			oklch(0.93 0 0) 0%,
+			oklch(0.93 0 0) 35%,
 			oklch(0.96 0 0) 50%,
-			oklch(0.92 0 0) 100%
+			oklch(0.93 0 0) 65%,
+			oklch(0.93 0 0) 100%
 		);
-		background-size: 200% 100%;
-		animation: shimmer 1.5s ease-in-out infinite;
+		background-size: 250% 100%;
+		animation: shimmer 2s ease-in-out infinite;
 	}
 	.dark .shimmer {
 		background: linear-gradient(
-			90deg,
-			oklch(0.25 0 0) 0%,
-			oklch(0.3 0 0) 50%,
-			oklch(0.25 0 0) 100%
+			100deg,
+			oklch(0.24 0 0) 0%,
+			oklch(0.24 0 0) 35%,
+			oklch(0.29 0 0) 50%,
+			oklch(0.24 0 0) 65%,
+			oklch(0.24 0 0) 100%
 		);
-		background-size: 200% 100%;
+		background-size: 250% 100%;
 	}
 }
 
@@ -377,7 +387,7 @@
 @keyframes fadeInUp {
 	from {
 		opacity: 0;
-		transform: translateY(12px);
+		transform: translateY(10px);
 	}
 	to {
 		opacity: 1;
@@ -388,7 +398,7 @@
 @keyframes slideInRight {
 	from {
 		opacity: 0;
-		transform: translateX(-16px);
+		transform: translateX(-12px);
 	}
 	to {
 		opacity: 1;

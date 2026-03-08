@@ -167,7 +167,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				/>
 				<HeadContent />
 			</head>
-			<body className="min-h-screen leading-relaxed antialiased">
+			<body className="min-h-screen antialiased">
 				<ThemeProvider>
 					<UserSync />
 					<Navbar />

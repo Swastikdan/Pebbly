@@ -34,35 +34,35 @@ export function Pagination({
 
 	return (
 		<nav
-			className="flex items-center justify-center gap-5 font-medium md:gap-1"
+			className="flex items-center justify-center gap-3 font-medium md:gap-1 py-4"
 			aria-label="Pagination Navigation"
 		>
 			{/* Previous Button */}
 			<Button
 				variant="outline"
-				className="rounded-[calc(var(--radius-md)+3px)] border border-input  pr-4 text-lg md:border-transparent md:text-base px-5"
+				className="rounded-lg border-border/60 pr-4 text-sm px-4"
 				onClick={() => onPageChange(currentPage - 1)}
-				disabled={currentPage === 1} //Disable if on the first page
+				disabled={currentPage === 1}
 				aria-label="Previous Page"
 			>
 				<ChevronLeft />
 				<span>Prev</span>
 			</Button>
-			<div className="flex h-9 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2 md:hidden">
-				<span className="font-medium text-base text-primary">Page</span>
-				<div className="flex items-center gap-2">
-					<span className="text-base" aria-current="page">
+			<div className="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-secondary/60 px-3 py-1.5 md:hidden">
+				<span className="font-medium text-sm text-foreground">Page</span>
+				<div className="flex items-center gap-1.5">
+					<span className="text-sm font-semibold" aria-current="page">
 						{currentPage}
 					</span>
-					<span className="text-muted-foreground">/</span>
-					<span className="text-base text-muted-foreground">{totalPages}</span>
+					<span className="text-muted-foreground/50">/</span>
+					<span className="text-sm text-muted-foreground">{totalPages}</span>
 				</div>
 			</div>
-			<div className="hidden gap-2 px-2 md:flex">
+			<div className="hidden gap-1 px-1 md:flex">
 				{/* Page 1 */}
 				<Button
-					variant={currentPage === 1 ? "secondary" : "outline"} //Highlight if on page 1
-					className="text-base px-5"
+					variant={currentPage === 1 ? "secondary" : "ghost"}
+					className="text-sm px-3 rounded-lg"
 					onClick={() => onPageChange(1)}
 					aria-label="Page 1"
 					size="icon"
@@ -74,8 +74,8 @@ export function Pagination({
 				{/* Ellipsis after Page 1 */}
 				{currentPage > 4 && (
 					<Button
-						variant="link"
-						className="cursor-default text-base px-5"
+						variant="ghost"
+						className="cursor-default text-sm px-2"
 						disabled
 						aria-hidden="true"
 					>
@@ -90,8 +90,8 @@ export function Pagination({
 						return (
 							<Button
 								key={pageNumber}
-								variant={pageNumber === currentPage ? "secondary" : "outline"} //Highlight current page
-								className="text-base px-5"
+								variant={pageNumber === currentPage ? "secondary" : "ghost"}
+								className="text-sm px-3 rounded-lg"
 								size="icon"
 								onClick={() => onPageChange(pageNumber)}
 								aria-label={`Page ${pageNumber}`}
@@ -107,8 +107,8 @@ export function Pagination({
 				{/* Ellipsis before Last Page */}
 				{currentPage < totalPages - 3 && (
 					<Button
-						variant="link"
-						className="cursor-default text-base px-5"
+						variant="ghost"
+						className="cursor-default text-sm px-2"
 						disabled
 						aria-hidden="true"
 					>
@@ -119,8 +119,8 @@ export function Pagination({
 				{/* Last Page */}
 				{totalPages > 1 && (
 					<Button
-						variant={currentPage === totalPages ? "secondary" : "outline"} //Highlight if on last page
-						className="text-base px-5"
+						variant={currentPage === totalPages ? "secondary" : "ghost"}
+						className="text-sm px-3 rounded-lg"
 						onClick={() => onPageChange(totalPages)}
 						aria-label={`Page ${totalPages}`}
 						size="icon"
@@ -133,9 +133,9 @@ export function Pagination({
 			{/* Next Button */}
 			<Button
 				variant="outline"
-				className="rounded-[calc(var(--radius-md)+3px)] border border-input  pl-4 text-lg md:border-transparent md:text-base px-5"
+				className="rounded-lg border-border/60 pl-4 text-sm px-4"
 				onClick={() => onPageChange(currentPage + 1)}
-				disabled={currentPage === totalPages} //Disable if on the last page
+				disabled={currentPage === totalPages}
 				aria-label="Next Page"
 			>
 				Next

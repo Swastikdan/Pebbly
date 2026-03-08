@@ -16,6 +16,25 @@ import { IMAGE_PREFIX } from "@/constants";
 import { getImages, getVideos } from "@/lib/queries";
 import type { MediaImages, MediaVideosResultsEntity } from "@/types";
 
+const sortVideos = (videos: MediaVideosResultsEntity[] | undefined | null) => {
+	if (!videos) return [];
+	return [...videos].sort((a, b) => {
+		// Trailers first, then Teasers, then Featurettes, then others
+		const typeOrder: Record<string, number> = {
+			Trailer: 0,
+			Teaser: 1,
+			Featurette: 2,
+		};
+		const aOrder = typeOrder[a.type] ?? 3;
+		const bOrder = typeOrder[b.type] ?? 3;
+		if (aOrder !== bOrder) return aOrder - bOrder;
+		// Within the same type, sort by newest first
+		return (
+			new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+		);
+	});
+};
+
 export const MediaVideoImageContainer = (props: {
 	id: number;
 	media_type: "movie" | "tv";
@@ -38,8 +57,9 @@ export const MediaVideoImageContainer = (props: {
 
 	const queries = useQueries({ queries: queryConfigs });
 
-	const mediaVideos = queries[0].data as unknown as MediaVideosResultsEntity[];
+	const rawVideos = queries[0].data as unknown as MediaVideosResultsEntity[];
 	const mediaImages = queries[1].data as unknown as MediaImages;
+	const mediaVideos = useMemo(() => sortVideos(rawVideos), [rawVideos]);
 
 	const isGlobalLoading = queries.some((q) => q.isPending);
 
@@ -65,9 +85,14 @@ export const MediaVideoImageContainer = (props: {
 											src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
 											width={300}
 										/>
-										<span className="absolute top-4 left-4 truncate text-sm text-foreground px-2 py-1 rounded-lg bg-background dark:bg-foreground dark:text-background w-min turnicate max-w-[250px] md:max-w-[300px] lg:max-w-[350px]">
-											{video.name}
-										</span>
+										<div className="absolute top-3 left-3 flex items-center gap-1.5 max-w-[80%]">
+											<span className="truncate text-sm text-foreground px-2 py-0.5 rounded-lg bg-background/90 dark:bg-foreground/90 dark:text-background backdrop-blur-sm">
+												{video.name}
+											</span>
+											<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-white/90 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm">
+												{video.type}
+											</span>
+										</div>
 										<div className="absolute inset-0 flex items-center justify-center">
 											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
 												<Play className="size-6 fill-white text-white" />

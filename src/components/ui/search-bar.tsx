@@ -1,4 +1,4 @@
-/** Debounced search input with URL-based query state management. */
+/** Debounced search input with URL-based query state management and search history. */
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { memo, useCallback, useMemo, useState } from "react";
 import { SearchIcon, XCircleIcon } from "@/components/ui/icons";
@@ -7,6 +7,39 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+
+const SEARCH_HISTORY_KEY = "search-history";
+const MAX_HISTORY_ITEMS = 8;
+
+function getSearchHistory(): string[] {
+	if (typeof window === "undefined") return [];
+	try {
+		return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) ?? "[]");
+	} catch {
+		return [];
+	}
+}
+
+function addToSearchHistory(query: string) {
+	if (!query.trim()) return;
+	const history = getSearchHistory().filter(
+		(item) => item.toLowerCase() !== query.trim().toLowerCase(),
+	);
+	history.unshift(query.trim());
+	localStorage.setItem(
+		SEARCH_HISTORY_KEY,
+		JSON.stringify(history.slice(0, MAX_HISTORY_ITEMS)),
+	);
+}
+
+function removeFromSearchHistory(query: string) {
+	const history = getSearchHistory().filter((item) => item !== query);
+	localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+}
+
+function clearSearchHistory() {
+	localStorage.removeItem(SEARCH_HISTORY_KEY);
+}
 
 interface SearchBarProps {
 	className?: string;
@@ -54,22 +87,19 @@ const SearchBar = memo(
 				}
 
 				const timeout = setTimeout(() => {
-					// Call onChange callback if provided
 					if (onChange) {
 						onChange(newValue);
 					}
 
-					// Update URL on change if flag is enabled
 					if (updateUrlOnChange) {
 						if (newValue.trim()) {
-							// If there's a value, set it in the URL
+							addToSearchHistory(newValue.trim());
 							navigate({
 								to: "/search",
 								search: { query: newValue.trim() },
 								replace: true,
 							});
 						} else {
-							// If empty, clear the search params entirely
 							navigate({
 								to: "/search",
 								search: {},
@@ -118,7 +148,6 @@ const SearchBar = memo(
 				}
 
 				if (!value.trim()) {
-					// If submitting empty value, clear search params
 					navigate({
 						to: "/search",
 						search: {},
@@ -127,11 +156,13 @@ const SearchBar = memo(
 					return;
 				}
 
+				// Save to search history
+				addToSearchHistory(value.trim());
+
 				if (onSubmit) {
 					onSubmit(value.trim());
 				}
 
-				// Update URL on submit if not already updating on change
 				if (!updateUrlOnChange) {
 					navigate({
 						to: "/search",
@@ -185,13 +216,13 @@ const SearchBar = memo(
 						disabled={disabled || isLoading}
 						autoFocus={autoFocus}
 						className={cn(
-							"peer h-12 w-full rounded-xl bg-transparent ps-12 pr-10  sm:h-11 text-[16px] md:text-[16px] border-2 border-secondary dark:border-border shadow-none",
+							"peer h-11 w-full rounded-xl bg-secondary/40 ps-11 pr-10 text-[16px] md:text-[15px] border border-border/60 shadow-none transition-all duration-200 placeholder:text-muted-foreground/50 focus:bg-background focus:border-ring/30 focus:ring-2 focus:ring-ring/10 dark:bg-input/20 dark:focus:bg-background",
 							disabled && "cursor-not-allowed opacity-50",
 						)}
 						aria-label="Search Input"
 						aria-busy={isLoading}
 					/>
-					<div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 peer-disabled:opacity-50">
+					<div className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5 text-muted-foreground/60 peer-disabled:opacity-50">
 						{icon}
 					</div>
 					{showClearButton && (
@@ -213,9 +244,15 @@ const SearchBar = memo(
 SearchBar.displayName = "SearchBar";
 
 const SearchBarSkeleton = memo(function SearchBarSkeleton() {
-	return <Skeleton className="h-12 w-full rounded-xl" />;
+	return <Skeleton className="h-11 w-full rounded-xl" />;
 });
 
 SearchBarSkeleton.displayName = "SearchBarSkeleton";
 
-export { SearchBar, SearchBarSkeleton };
+export {
+	SearchBar,
+	SearchBarSkeleton,
+	getSearchHistory,
+	removeFromSearchHistory,
+	clearSearchHistory,
+};

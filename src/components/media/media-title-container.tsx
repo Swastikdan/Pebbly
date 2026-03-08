@@ -243,8 +243,8 @@ export const MediaTitleContailer = (props: {
 	);
 
 	return (
-		<div className="pt-5 pb-5">
-			<div className="space-y-3 pb-5">
+		<div className="pt-5 pb-4 animate-fade-in">
+			<div className="space-y-3 pb-4">
 				<div className="flex items-center justify-between gap-3">
 					<GoBack title="Back" />
 					<div className="flex flex-wrap items-center justify-end gap-2">
@@ -253,10 +253,10 @@ export const MediaTitleContailer = (props: {
 					</div>
 				</div>
 				{renderWatchListSection("sm:hidden")}
-				<h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
+				<h1 className="text-[19px] font-bold tracking-tight sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
 					{imdb_url ? (
 						<a
-							className="hover:text-foreground hover:opacity-70"
+							className="transition-opacity hover:opacity-70"
 							href={imdb_url}
 							rel="noopener noreferrer"
 							target="_blank"
@@ -267,30 +267,34 @@ export const MediaTitleContailer = (props: {
 						title
 					)}
 				</h1>
-				{tagline && <h2 className="hidden sm:flex">{tagline}</h2>}
+				{tagline && (
+					<h2 className="hidden text-muted-foreground/80 italic sm:flex">
+						{tagline}
+					</h2>
+				)}
 			</div>
-			<div className="flex  space-y-3 flex-row items-center justify-between">
-				<span className="space-x-1 font-light whitespace-nowrap">
+			<div className="flex flex-row items-center justify-between">
+				<span className="flex items-center gap-1.5 text-sm font-light text-muted-foreground whitespace-nowrap">
 					{releaseyear && releaseyear !== "null" && (
 						<>
-							<span className="py-1">{releaseyear}</span>
-							<span className="py-1">•</span>
+							<span>{releaseyear}</span>
+							<span className="text-border">·</span>
 						</>
 					)}
 
-					<span className="ring-ring rounded-md px-2 py-1 ring-1">
+					<span className="rounded-md border border-border/80 px-1.5 py-0.5 text-xs font-medium text-foreground">
 						{uscertification}
 					</span>
 					{runtime && (
 						<>
-							<span className="py-1">•</span>
-							<span className="py-1">{runtime}</span>
+							<span className="text-border">·</span>
+							<span>{runtime}</span>
 						</>
 					)}
 					{tv_status && (
 						<>
-							<span className="py-1">•</span>
-							<span className="py-1">{tv_status}</span>
+							<span className="text-border">·</span>
+							<span>{tv_status}</span>
 						</>
 					)}
 				</span>

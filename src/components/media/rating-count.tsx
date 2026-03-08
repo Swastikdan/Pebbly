@@ -8,11 +8,12 @@ export const RatingCount = (props: { rating: number; ratingcount: number }) => {
 			: props.ratingcount.toLocaleString();
 
 	return (
-		<div className="flex items-center space-x-1 font-light">
-			<Star className="size-5 fill-yellow-500 text-yellow-500" size={24} />
-			<span>{rating_rounded}/10</span>
-			{props.ratingcount && (
-				<span className="hidden sm:inline-flex ">{`(${formatted_rating_count} users)`}</span>
+		<div className="flex items-center gap-1.5 text-sm">
+			<Star className="size-4 fill-yellow-500 text-yellow-500" />
+			<span className="font-semibold">{rating_rounded}</span>
+			<span className="text-muted-foreground/60">/10</span>
+			{props.ratingcount > 0 && (
+				<span className="hidden text-xs text-muted-foreground sm:inline-flex">{`(${formatted_rating_count})`}</span>
 			)}
 		</div>
 	);

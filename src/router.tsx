@@ -5,7 +5,10 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { DefaultLoader } from "@/components/default-loader";
-import { DefaultNotFoundComponent } from "@/components/default-not-found";
+import {
+	DefaultErrorComponent,
+	DefaultNotFoundComponent,
+} from "@/components/default-not-found";
 import * as TanstackQuery from "@/lib/query/root-provider";
 
 // Import the generated route tree
@@ -43,7 +46,7 @@ export const getRouter = () => {
 
 		defaultPendingComponent: () => <DefaultLoader />,
 		defaultNotFoundComponent: () => <DefaultNotFoundComponent />,
-		defaultErrorComponent: () => <DefaultNotFoundComponent />,
+		defaultErrorComponent: () => <DefaultErrorComponent />,
 	});
 
 	setupRouterSsrQueryIntegration({

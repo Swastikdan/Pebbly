@@ -70,18 +70,18 @@ export const MediaContainer = (props: MediaContainerProps) => {
 	return (
 		<div className="pb-5">
 			<Tabs defaultValue={defaultSelectedKey} className="pb-2">
-				<div className="flex items-center justify-start gap-5 pb-3 md:gap-10">
+				<div className="flex items-center justify-start gap-4 pb-3">
 					<Link
-						className="w-fit text-xl font-semibold hover:opacity-70 md:text-2xl"
+						className="w-fit text-lg font-semibold transition-opacity hover:opacity-70 md:text-xl"
 						to={mediaHref}
 					>
 						Media
 					</Link>
-					<TabsList className="h-8 rounded-lg bg-transparent ring-2 ring-border ">
+					<TabsList className="h-8 rounded-lg bg-transparent ring-1 ring-border">
 						{hasVideos && (
 							<TabsTrigger
 								value="videos"
-								className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
+								className="h-7 px-4 text-xs font-semibold data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 							>
 								Videos
 							</TabsTrigger>
@@ -89,7 +89,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{hasBackdrops && (
 							<TabsTrigger
 								value="backdrops"
-								className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
+								className="h-7 px-4 text-xs font-semibold data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 							>
 								Backdrops
 							</TabsTrigger>
@@ -97,7 +97,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{hasPosters && (
 							<TabsTrigger
 								value="posters"
-								className="h-7 px-4 data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
+								className="h-7 px-4 text-xs font-semibold data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
 							>
 								Posters
 							</TabsTrigger>
@@ -274,8 +274,15 @@ export const MediaContainer = (props: MediaContainerProps) => {
 			{(is_more_posters_available ||
 				is_more_backdrops_available ||
 				is_more_clips_available) && (
-				<Link className="w-fit text-lg hover:opacity-70" to={mediaHref}>
-					View All Media
+				<Link
+					className="group w-fit text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+					to={mediaHref}
+				>
+					View all videos, backdrops & posters
+					<ArrowRightLine
+						size={14}
+						className="ml-1 inline-block transition-transform group-hover:translate-x-0.5"
+					/>
 				</Link>
 			)}
 		</div>

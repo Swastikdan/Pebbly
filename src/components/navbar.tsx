@@ -100,27 +100,25 @@ MobileNavMenuItem.displayName = "MobileNavMenuItem";
 
 const Navbar = () => {
 	return (
-		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border border-b-2 bg-background transition-transform duration-300">
+		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border/60 border-b bg-background/80 backdrop-blur-xl backdrop-saturate-150 transition-all duration-300">
 			<nav
-				className="flex w-full max-w-screen-xl items-center justify-between p-3"
+				className="flex w-full max-w-screen-xl items-center justify-between px-4 py-2.5 md:px-5"
 				aria-label="Main Navigation"
 			>
-				<Link to="/" className="flex items-center gap-3" aria-label="Home">
+				<Link to="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80" aria-label="Home">
 					<Image
 						src="/logo.svg"
 						alt="Film Fanatic logo"
 						width={100}
 						height={100}
-						className="size-10"
+						className="size-9"
 					/>
-					<div className="flex items-start">
-						<h1 className="font-bold font-heading text-lg md:text-xl xl:text-2xl">
-							Film Fanatic
-						</h1>
-					</div>
+					<h1 className="font-bold font-heading text-lg md:text-xl">
+						Film Fanatic
+					</h1>
 				</Link>
-				<section className="flex items-center gap-2 md:gap-3">
-					<ul className="hidden gap-2 md:flex">
+				<section className="flex items-center gap-1.5 md:gap-2">
+					<ul className="hidden gap-1.5 md:flex">
 						{NAV_ITEMS.map((item) => (
 							<DesktopNavMenuItem key={item.slug} item={item} />
 						))}
@@ -131,7 +129,7 @@ const Navbar = () => {
 							<Button
 								variant="outline"
 								size="icon"
-								className="rounded-md px-2 font-heading font-light text-base"
+								className="rounded-[calc(var(--radius-md)+3px)] font-heading font-light text-base"
 								aria-label="Menu"
 							>
 								<MenuIcon />

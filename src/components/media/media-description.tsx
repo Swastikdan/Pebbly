@@ -7,17 +7,17 @@ export const MediaDescription = ({ description }: { description: string }) => {
 
 	return (
 		<div className="py-3">
-			<span className="text-xl font-semibold md:text-2xl">Overview</span>
-			<div className="py-1 text-sm sm:text-base">
+			<h3 className="text-lg font-semibold md:text-xl">Overview</h3>
+			<div className="py-1.5 text-sm leading-relaxed text-foreground/90 sm:text-[15px]">
 				<span className="hidden md:flex">{description}</span>
 				<span className="flex flex-col md:hidden">
 					{isFullTextVisible ? (
 						<span>{description}</span>
 					) : (
-						<span>{description.substring(0, 100)}</span>
+						<span>{description.substring(0, 100)}...</span>
 					)}
 					<Button
-						className="text-foreground  w-fit justify-end md:hidden"
+						className="text-foreground w-fit justify-end text-xs md:hidden"
 						size="sm"
 						variant="link"
 						onClick={toggleText}
