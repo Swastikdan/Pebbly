@@ -23,17 +23,17 @@ import {
 	useState,
 } from "react";
 import { CustomListDialog } from "@/components/custom-list-dialog";
+import { DefaultEmptyState } from "@/components/default-empty-state";
+import { DefaultLoader } from "@/components/default-loader";
+import { GoBack } from "@/components/go-back";
+import { ShareButton } from "@/components/share-button";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DefaultEmptyState } from "@/components/default-empty-state";
-import { DefaultLoader } from "@/components/default-loader";
-import { GoBack } from "@/components/go-back";
-import { ShareButton } from "@/components/share-button";
-import { Button } from "@/components/ui/button";
 import {
 	BookMarkFilledIcon,
 	Download,
@@ -53,9 +53,9 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { IMAGE_PREFIX } from "@/constants";
 import {
-	REACTION_OPTIONS,
 	getProgressOption,
 	getReactionOption,
+	REACTION_OPTIONS,
 } from "@/constants/watchlist";
 import {
 	useToggleWatchlistItem,
@@ -66,6 +66,7 @@ import { useWatchlistImportExport } from "@/hooks/usewatchlistimportexport";
 import { cn, formatMediaTitle } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/watchlist")({
 	head: () => ({
@@ -183,7 +184,14 @@ function WatchlistPage() {
 					);
 			}
 		});
-	}, [watchlistData, activeFilter, reactionFilter, mediaFilter, sortBy, listFilterIds]);
+	}, [
+		watchlistData,
+		activeFilter,
+		reactionFilter,
+		mediaFilter,
+		sortBy,
+		listFilterIds,
+	]);
 
 	const counts = useMemo(() => {
 		const result = {
@@ -238,10 +246,9 @@ function WatchlistPage() {
 					<div className="flex items-center gap-2">
 						{(watchlistData?.length ?? 0) > 0 && (
 							<Button
-								className="gap-1.5 rounded-xl text-xs"
+								className="gap-1.5  text-xs"
 								disabled={exportLoading || importLoading}
-								variant="ghost"
-								size="sm"
+								variant="secondary"
 								onClick={exportWatchlist}
 								aria-label="Export watchlist"
 							>
@@ -254,10 +261,9 @@ function WatchlistPage() {
 							</Button>
 						)}
 						<Button
-							className="gap-1.5 rounded-xl text-xs"
+							className="gap-1.5  text-xs"
 							disabled={importLoading || exportLoading}
-							variant="ghost"
-							size="sm"
+							variant="secondary"
 							onClick={handleImportClick}
 							aria-label="Import watchlist"
 						>
@@ -306,9 +312,7 @@ function WatchlistPage() {
 				)}
 
 				{/* Custom lists row (auth-only) */}
-				{isSignedIn && (
-					<CustomListRow onFilterChange={setListFilterIds} />
-				)}
+				{isSignedIn && <CustomListRow onFilterChange={setListFilterIds} />}
 
 				{/* Status tabs + filters */}
 				<div className="mb-6 space-y-3">
@@ -363,9 +367,7 @@ function WatchlistPage() {
 							onClick={() => setFiltersOpen((prev) => !prev)}
 							aria-expanded={filtersOpen}
 							variant={
-								filtersOpen || activeSecondaryCount > 0
-									? "default"
-									: "ghost"
+								filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"
 							}
 							size="sm"
 							className="gap-1.5 rounded-lg text-xs md:hidden"
@@ -473,7 +475,11 @@ function WatchlistPage() {
 								</p>
 							</div>
 							<Link to="/search">
-								<Button variant="secondary" size="lg" className="gap-2 rounded-xl">
+								<Button
+									variant="secondary"
+									size="lg"
+									className="gap-2 rounded-xl"
+								>
 									<SearchFilledIcon className="size-4" />
 									Browse titles
 								</Button>
@@ -558,7 +564,7 @@ function CustomListChips({
 
 	const activeListItems = useQuery(
 		api.watchlist.getListItems,
-		activeListId ? { listId: activeListId as any } : "skip",
+		activeListId ? { listId: activeListId as Id<"lists"> } : "skip",
 	);
 
 	useMemo(() => {

@@ -97,7 +97,7 @@ function titlesMatch(aiTitle: string, tmdbTitle: string): boolean {
 function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 	const movieResult = useQuery({
 		queryKey: ["basic_movie_details", tmdbId],
-		queryFn: () => getBasicMovieDetails({ id: tmdbId! }),
+		queryFn: () => getBasicMovieDetails({ id: tmdbId as number }),
 		enabled: !!tmdbId && mediaType === "movie",
 		staleTime: 1000 * 60 * 60 * 48,
 		retry: false,
@@ -106,7 +106,7 @@ function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 
 	const tvResult = useQuery({
 		queryKey: ["basic_tv_details", tmdbId],
-		queryFn: () => getBasicTvDetails({ id: tmdbId! }),
+		queryFn: () => getBasicTvDetails({ id: tmdbId as number }),
 		enabled: !!tmdbId && mediaType === "tv",
 		staleTime: 1000 * 60 * 60 * 48,
 		retry: false,

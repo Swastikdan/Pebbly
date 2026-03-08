@@ -77,11 +77,16 @@ export const useWatchlistImportExport = () => {
 						// Filter Convex progress
 						allEpisodeProgress
 							.filter(
-								(ep: any) =>
+								(ep: {
+									tmdbId: number;
+									isWatched: boolean;
+									season: number;
+									episode: number;
+								}) =>
 									String(ep.tmdbId) === String(item.external_id) &&
 									ep.isWatched,
 							)
-							.forEach((ep: any) => {
+							.forEach((ep: { season: number; episode: number }) => {
 								itemWatched[`${ep.season}:${ep.episode}`] = true;
 							});
 					} else {

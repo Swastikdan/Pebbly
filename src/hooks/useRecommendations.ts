@@ -3,6 +3,7 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { useCallback, useState } from "react";
 import type { AIRecommendation } from "@/types";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 const QUERY_SKIP = "skip" as const;
 
@@ -107,7 +108,7 @@ export function useRecommendations() {
 			// Optimistic: hide immediately
 			setOptimisticDeletedIds((prev) => new Set(prev).add(id));
 			try {
-				await deleteMutation({ id: id as any });
+				await deleteMutation({ id: id as Id<"ai_recommendations"> });
 			} catch {
 				// Rollback on failure
 				setOptimisticDeletedIds((prev) => {

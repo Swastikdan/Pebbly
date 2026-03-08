@@ -1,6 +1,6 @@
 import { useMutation } from "convex/react";
 import { Check, Palette } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 const PRESET_COLORS = [
 	{ hex: "#ef4444", name: "Red" },
@@ -47,6 +48,7 @@ export function CustomListDialog({
 	const updateList = useMutation(api.watchlist.updateCustomList);
 
 	const isEditing = !!listId;
+	const listNameId = useId();
 
 	// Reset state when dialog opens
 	useEffect(() => {
@@ -73,7 +75,7 @@ export function CustomListDialog({
 		try {
 			if (isEditing) {
 				await updateList({
-					listId: listId as any,
+					listId: listId as Id<"lists">,
 					name: trimmed,
 					color: color || undefined,
 				});
@@ -123,13 +125,13 @@ export function CustomListDialog({
 					{/* Name input */}
 					<div className="space-y-2">
 						<label
-							htmlFor="list-name-input"
+							htmlFor={listNameId}
 							className="text-xs font-medium text-muted-foreground"
 						>
 							Name
 						</label>
 						<input
-							id="list-name-input"
+							id={listNameId}
 							type="text"
 							placeholder="e.g. Weekend Binge, Sci-Fi Picks..."
 							value={name}
@@ -172,10 +174,10 @@ export function CustomListDialog({
 					{/* Color picker */}
 					<div className="space-y-2.5">
 						<div className="flex items-center justify-between">
-							<label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+							<div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
 								<Palette size={12} />
 								Color
-							</label>
+							</div>
 							{selectedColorName && (
 								<span className="text-[10px] text-muted-foreground/60">
 									{selectedColorName}
