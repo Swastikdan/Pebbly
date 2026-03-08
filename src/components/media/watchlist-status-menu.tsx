@@ -11,12 +11,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import {
-	Component,
-	type ErrorInfo,
-	type ReactNode,
-	useState,
-} from "react";
+import { Component, type ErrorInfo, type ReactNode, useState } from "react";
 import { CustomListDialog } from "@/components/custom-list-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +27,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { REACTION_OPTIONS, getProgressOption } from "@/constants/watchlist";
+import { getProgressOption, REACTION_OPTIONS } from "@/constants/watchlist";
 import { cn } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 import { api } from "../../../convex/_generated/api";
@@ -180,12 +175,10 @@ export function WatchlistStatusMenu({
 										onClick={(e) => {
 											e.preventDefault();
 											e.stopPropagation();
-											onReactionChange(
-												isSelected ? null : option.value,
-											);
+											onReactionChange(isSelected ? null : option.value);
 										}}
 									>
-										<span className="text-2xl">{option.emoji}</span>
+										<option.icon size={20} />
 										<span className="text-[10px] font-medium text-muted-foreground">
 											{option.label}
 										</span>
@@ -340,9 +333,7 @@ function AddToListDialog({
 										type="button"
 										className={cn(
 											"flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
-											isInList
-												? "bg-primary/10"
-												: "hover:bg-secondary/60",
+											isInList ? "bg-primary/10" : "hover:bg-secondary/60",
 										)}
 										onClick={() =>
 											toggleListItem({
@@ -360,9 +351,7 @@ function AddToListDialog({
 													: "border-border",
 											)}
 										>
-											{isInList && (
-												<Check size={12} strokeWidth={3} />
-											)}
+											{isInList && <Check size={12} strokeWidth={3} />}
 										</div>
 										{list.color && (
 											<span
@@ -370,9 +359,7 @@ function AddToListDialog({
 												style={{ backgroundColor: list.color }}
 											/>
 										)}
-										<span className="truncate font-medium">
-											{list.name}
-										</span>
+										<span className="truncate font-medium">{list.name}</span>
 									</button>
 								);
 							})}

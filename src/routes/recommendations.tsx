@@ -418,7 +418,7 @@ function RecommendationsContent() {
 			)}
 
 			{/* ── History (Accordion) ────────────────────────── */}
-			{history.length > 1 && (
+			{history.length > 0 && (
 				<div className="space-y-3">
 					<h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
 						<Clock className="size-4" />

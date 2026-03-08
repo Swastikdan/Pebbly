@@ -29,7 +29,7 @@ export function ReactionSelector({
 							onChange(isSelected ? null : option.value);
 						}}
 					>
-						{option.emoji}
+						<option.icon size={16} />
 					</button>
 				);
 			})}

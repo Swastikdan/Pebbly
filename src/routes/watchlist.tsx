@@ -416,7 +416,7 @@ function WatchlistPage() {
 								{REACTION_OPTIONS.map((option) => (
 									<SelectItem key={option.value} value={option.value}>
 										<span className="flex items-center gap-2">
-											{option.emoji} {option.label}
+											<option.icon size={14} /> {option.label}
 										</span>
 									</SelectItem>
 								))}
@@ -781,8 +781,12 @@ function WatchlistCard({
 						{progressOption.label}
 					</span>
 					{reactionOption && (
-						<span className="text-sm" title={reactionOption.label}>
-							{reactionOption.emoji}
+						<span
+							className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground"
+							title={reactionOption.label}
+						>
+							<reactionOption.icon size={12} />
+							{reactionOption.label}
 						</span>
 					)}
 				</div>
