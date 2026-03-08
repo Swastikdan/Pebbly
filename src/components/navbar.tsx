@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/sheet";
 import { NAV_ITEMS } from "@/constants";
 import { useRecommendationAccess } from "@/hooks/useRecommendations";
-import { cn } from "@/lib/utils";
 
 const DesktopNavMenuItem = ({
 	item,
@@ -123,12 +122,7 @@ const Navbar = () => {
 						className="size-9"
 					/>
 
-					<h1
-						className={cn(
-							"font-bold font-heading text-lg md:text-xl",
-							hasAccess && "hidden sm:block",
-						)}
-					>
+					<h1 className="font-bold font-heading text-lg md:text-xl">
 						Film Fanatic
 					</h1>
 				</Link>
@@ -155,7 +149,7 @@ const Navbar = () => {
 							aria-label="Mobile Navigation"
 						>
 							<SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
-							<div className="scrollbar-small flex h-full flex-col gap-4 overflow-y-auto py-12 pt-16">
+							<div className="scrollbar-small flex h-full flex-col gap-4 overflow-y-auto py-12 pt-20">
 								{NAV_ITEMS.map((item) => (
 									<MobileNavMenuItem key={item.slug} item={item} />
 								))}

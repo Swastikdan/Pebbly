@@ -61,6 +61,7 @@ const DesktopNavButtons = () => {
 				<DesktopNavButton
 					href="/recommendations"
 					label="AI Recommendations"
+					className="hidden sm:block"
 					icon={<Sparkles className="size-5" />}
 				/>
 			)}
