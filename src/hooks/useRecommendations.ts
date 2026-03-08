@@ -7,16 +7,16 @@ import type { AIRecommendation } from "@/types";
 const QUERY_SKIP = "skip" as const;
 
 export function useRecommendationAccess() {
-	const { isSignedIn } = useUser();
-	const access = useQuery(
-		api.recommendations.getUserRecommendationAccess,
-		isSignedIn ? {} : QUERY_SKIP,
-	);
+	const { isSignedIn, isLoaded, user } = useUser();
+
+	const hasAccess =
+		isLoaded &&
+		isSignedIn === true &&
+		user?.publicMetadata?.aiGenerationEnabled === true;
 
 	return {
-		hasAccess: access?.hasAccess ?? false,
-		loading: isSignedIn && access === undefined,
-		reason: access?.reason,
+		hasAccess,
+		loading: !isLoaded,
 		isSignedIn: !!isSignedIn,
 	};
 }

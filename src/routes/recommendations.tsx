@@ -1,23 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Clock, RefreshCw, Search, Sparkles, Trash2 } from "lucide-react";
+import {
+	ArrowUpRight,
+	Clock,
+	RefreshCw,
+	Search,
+	Sparkles,
+	Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	GENRE_LIST,
-	HORIZONTAL_MEDIA_GRID_CLASS,
-} from "@/constants";
-import {
-	useRecommendationAccess,
-	useRecommendations,
-} from "@/hooks/useRecommendations";
+import { GENRE_LIST, HORIZONTAL_MEDIA_GRID_CLASS } from "@/constants";
 import type {
 	GenerateOptions,
 	RecommendationHistoryEntry,
+} from "@/hooks/useRecommendations";
+import {
+	useRecommendationAccess,
+	useRecommendations,
 } from "@/hooks/useRecommendations";
 import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
 import { cn } from "@/lib/utils";
@@ -76,10 +80,7 @@ function normalizeTmdbData(
 }
 
 function titlesMatch(aiTitle: string, tmdbTitle: string): boolean {
-	const normalize = (s: string) =>
-		s
-			.toLowerCase()
-			.replace(/[^a-z0-9]/g, "");
+	const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 	const a = normalize(aiTitle);
 	const b = normalize(tmdbTitle);
 	return a === b || a.includes(b) || b.includes(a);
@@ -115,8 +116,7 @@ function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 }
 
 function getScoreColor(score: number) {
-	if (score >= 80)
-		return "bg-green-500/15 text-green-700 dark:text-green-400";
+	if (score >= 80) return "bg-green-500/15 text-green-700 dark:text-green-400";
 	if (score >= 60)
 		return "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400";
 	return "bg-secondary text-muted-foreground";
@@ -134,12 +134,11 @@ function formatTimestamp(ts: number) {
 // ─── Page ───────────────────────────────────────────────────────────
 
 function RecommendationsPage() {
-	const { hasAccess, loading: accessLoading, isSignedIn } =
-		useRecommendationAccess();
-
-	if (!isSignedIn || (!accessLoading && !hasAccess)) {
-		return <DefaultNotFoundComponent />;
-	}
+	const {
+		hasAccess,
+		loading: accessLoading,
+		isSignedIn,
+	} = useRecommendationAccess();
 
 	if (accessLoading) {
 		return (
@@ -147,6 +146,10 @@ function RecommendationsPage() {
 				<LoadingSkeletons />
 			</PageShell>
 		);
+	}
+
+	if (!isSignedIn || !hasAccess) {
+		return <DefaultNotFoundComponent />;
 	}
 
 	return (
@@ -286,9 +289,7 @@ function RecommendationsContent() {
 						) : (
 							<Sparkles className="size-4" />
 						)}
-						{isGenerating
-							? "Generating..."
-							: "Generate"}
+						{isGenerating ? "Generating..." : "Generate"}
 					</Button>
 				</div>
 
@@ -469,7 +470,9 @@ function HistoryRow({
 
 function RecommendationCard({
 	recommendation,
-}: { recommendation: AIRecommendation }) {
+}: {
+	recommendation: AIRecommendation;
+}) {
 	const { title, tmdbId, mediaType, relevanceScore, reasoning } =
 		recommendation;
 	const navigate = useNavigate();
@@ -481,8 +484,7 @@ function RecommendationCard({
 	}
 
 	// Verified: TMDB data exists AND title matches
-	const isVerified =
-		tmdbData && exists && titlesMatch(title, tmdbData.title);
+	const isVerified = tmdbData && exists && titlesMatch(title, tmdbData.title);
 
 	if (isVerified && tmdbData) {
 		return (
@@ -510,77 +512,47 @@ function RecommendationCard({
 					release_date={tmdbData.releaseDate}
 					overview={tmdbData.overview}
 				/>
-
-				{/* Search link */}
-				<button
-					type="button"
-					className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors"
-					onClick={() =>
-						navigate({
-							to: "/search",
-							search: { query: tmdbData.title },
-						})
-					}
-				>
-					<Search size={11} />
-					Search
-				</button>
 			</div>
 		);
 	}
 
 	// Fallback card — no poster available
 	return (
-		<div className="w-40 md:w-44 lg:w-48">
-			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-gradient-to-br from-zinc-100 via-zinc-200 to-zinc-300 ring-1 ring-border/40 dark:from-zinc-800 dark:via-zinc-900 dark:to-black dark:ring-white/10">
-				{/* Subtle pattern overlay */}
-				<div
-					className="absolute inset-0 opacity-[0.04] dark:opacity-[0.03]"
-					style={{
-						backgroundImage:
-							"radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
-						backgroundSize: "20px 20px",
-					}}
-				/>
-
-				{/* Relevance badge */}
-				<Badge
-					className={cn(
-						"absolute top-2 left-2 z-10 tabular-nums font-semibold text-[10px]",
-						getScoreColor(relevanceScore),
-					)}
-				>
-					{relevanceScore}%
-				</Badge>
-
-				{/* Content */}
-				<div className="absolute inset-0 flex flex-col justify-end p-3">
-					<span className="text-[13px] font-bold leading-tight text-foreground line-clamp-2 mb-1.5">
-						{title}
+		<div className="group/card w-40 md:w-44 lg:w-48">
+			<button
+				type="button"
+				className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 text-left cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] "
+				onClick={() => navigate({ to: "/search", search: { query: title } })}
+			>
+				{/* Top badges */}
+				<div className="absolute top-0 left-0 right-0 z-10 flex items-start justify-between p-2.5">
+					<Badge
+						className={cn(
+							"tabular-nums font-semibold text-[10px]",
+							getScoreColor(relevanceScore),
+						)}
+					>
+						{relevanceScore}%
+					</Badge>
+					<span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground capitalize">
+						{mediaType === "movie" ? "Movie" : "TV"}
 					</span>
-					<p className="text-[10px] text-muted-foreground line-clamp-3 leading-relaxed">
-						{reasoning}
-					</p>
 				</div>
 
-				{/* Media type badge */}
-				<Badge className="absolute bottom-2 right-2 rounded-md bg-black/10 dark:bg-white/10 px-2 py-1 text-[11px] font-medium text-foreground/70 capitalize border-0">
-					{mediaType === "movie" ? "Movie" : "TV"}
-				</Badge>
-			</div>
-
-			<div className="mt-2">
-				<button
-					type="button"
-					className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors"
-					onClick={() =>
-						navigate({ to: "/search", search: { query: title } })
-					}
-				>
-					<Search size={11} />
-					Search for this title
-				</button>
-			</div>
+				{/* Content — anchored to bottom */}
+				<div className="absolute bottom-0 left-0 right-0 z-10 flex flex-col gap-1.5 p-3">
+					<h3 className="text-[15px] font-bold leading-snug text-foreground line-clamp-2">
+						{title}
+					</h3>
+					<p className="text-[10.5px] leading-relaxed text-muted-foreground line-clamp-3">
+						{reasoning}
+					</p>
+					<span className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground/50 transition-colors duration-200 group-hover/card:text-foreground">
+						<ArrowUpRight size={11} />
+						Search
+					</span>
+				</div>
+			</button>
 		</div>
 	);
 }

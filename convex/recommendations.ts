@@ -7,6 +7,7 @@ import {
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import { GoogleGenAI } from "@google/genai";
 
 // ─── Internal helpers ────────────────────────────────────────────────
 
@@ -16,14 +17,14 @@ export const getAuthorizedUser = internalQuery({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
-
+console.log("identity", identity);
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q: any) =>
         q.eq("tokenIdentifier", identity.subject),
       )
       .first();
-
+    console.log("user", user);
     if (!user) throw new Error("Unauthorized");
     if (!user.aiGenerationEnabled)
       throw new Error("Unauthorized: feature not enabled");
@@ -216,7 +217,8 @@ export const deleteRecommendation = mutation({
 
 // ─── Action: generate recommendations ────────────────────────────────
 
-const MODEL = "openai/gpt-oss-120b:free";
+const PRIMARY_MODEL = "gemini-3-flash-preview";
+const FALLBACK_MODEL = "gemini-3.1-flash-lite-preview";
 const RATE_LIMIT_MS = 2 * 60 * 1000; // 2 minutes
 
 function computeHash(
@@ -470,52 +472,47 @@ export const generateRecommendations = action({
       ? buildWatchlistPrompt(data, args.mediaTypePreference)
       : buildGenrePrompt(data, args.mediaTypePreference, args.genrePreference);
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error("OPENROUTER_API_KEY is not set in Convex environment variables");
+      console.error("GEMINI_API_KEY is not set in Convex environment variables");
       return { error: "api_unavailable" };
     }
 
-    // 6. Call OpenRouter
-    let responseText: string;
-    try {
-      const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: MODEL,
-            response_format: { type: "json_object" },
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.",
-              },
-              {
-                role: "user",
-                content: userPrompt,
-              },
-            ],
-          }),
-        },
-      );
+    const ai = new GoogleGenAI({ apiKey });
+    const systemInstruction =
+      "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
 
-      if (!response.ok) {
-        const errorBody = await response.text().catch(() => "");
-        console.error(`OpenRouter API error: ${response.status} ${response.statusText}`, errorBody);
+    // 6. Call Gemini (primary model, fallback on rate limit / error)
+    let responseText: string;
+    let usedModel = PRIMARY_MODEL;
+    try {
+      const response = await ai.models.generateContent({
+        model: PRIMARY_MODEL,
+        contents: userPrompt,
+        config: {
+          responseMimeType: "application/json",
+          systemInstruction,
+        },
+      });
+      responseText = response.text ?? "";
+    } catch (err: any) {
+      console.error(`Gemini primary model (${PRIMARY_MODEL}) error:`, err?.message ?? err);
+      // Fallback to lite model
+      try {
+        usedModel = FALLBACK_MODEL;
+        const fallbackResponse = await ai.models.generateContent({
+          model: FALLBACK_MODEL,
+          contents: userPrompt,
+          config: {
+            responseMimeType: "application/json",
+            systemInstruction,
+          },
+        });
+        responseText = fallbackResponse.text ?? "";
+      } catch (fallbackErr: any) {
+        console.error(`Gemini fallback model (${FALLBACK_MODEL}) error:`, fallbackErr?.message ?? fallbackErr);
         return { error: "api_unavailable" };
       }
-
-      const result = await response.json();
-      responseText = result.choices?.[0]?.message?.content ?? "";
-    } catch (err) {
-      console.error("OpenRouter fetch error:", err);
-      return { error: "api_unavailable" };
     }
 
     // 7. Parse and validate
@@ -542,7 +539,7 @@ export const generateRecommendations = action({
       recommendations: JSON.stringify(parsed.recommendations),
       watchlistHash,
       inputStats: data.inputStats,
-      model: MODEL,
+      model: usedModel,
       mediaTypePreference: args.mediaTypePreference,
       genrePreference: args.genrePreference,
       generationType: genType,

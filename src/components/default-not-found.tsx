@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export function DefaultNotFoundComponent() {
 	return (
-		<div className="grid h-full min-h-[calc(100vh-200px)] place-content-center items-center justify-center px-6">
+		<div className="grid h-full min-h-[calc(100vh-100px)] place-content-center items-center justify-center px-6">
 			<div className="flex flex-col items-center justify-center gap-6 text-center animate-fade-in-up">
 				<div className="text-8xl font-black tracking-tighter text-foreground select-none">
 					404
