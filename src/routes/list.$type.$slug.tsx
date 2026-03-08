@@ -8,6 +8,8 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { number, object, optional } from "valibot";
 import { DefaultEmptyState } from "@/components/default-empty-state";
+import { GoBack } from "@/components/go-back";
+import { ShareButton } from "@/components/share-button";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Pagination } from "@/components/ui/pagination";
 import {
@@ -132,6 +134,13 @@ function MediaListPage() {
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="top-0 w-full max-w-screen-xl items-center justify-center p-5">
+				<div className="mb-4 flex items-center justify-between gap-3">
+					<GoBack title="Back" hideLabelOnMobile />
+					<ShareButton
+						title={`${subNavItem.name} ${navItem.name}`}
+						hideLabelOnMobile
+					/>
+				</div>
 				<h1 className="text-start font-bold text-2xl tracking-tight md:text-3xl animate-fade-in-up">
 					{subNavItem.name} {navItem.name}
 				</h1>

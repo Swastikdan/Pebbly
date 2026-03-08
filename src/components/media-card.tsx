@@ -90,7 +90,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/30 px-1.5 py-0.5 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
 							<span className="font-semibold text-white">
 								{rating.toFixed(1)}
@@ -98,7 +98,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/30 px-1.5 py-0.5 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize border-0">
 						{media_type === "movie" ? "Movie" : "TV"}
 					</Badge>
 				</div>
@@ -169,7 +169,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/30 px-1.5 py-0.5 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
 							<span className="font-semibold text-white">
 								{rating.toFixed(1)}
@@ -177,7 +177,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/30 px-1.5 py-0.5 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize border-0">
 						{media_type === "movie" ? "Movie" : "TV Series"}
 					</Badge>
 				</div>

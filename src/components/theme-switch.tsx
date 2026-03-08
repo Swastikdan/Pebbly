@@ -14,7 +14,7 @@ export const ThemeSwitch = () => {
 			variant="outline"
 			size="icon"
 			onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-			className="pressable rounded-[calc(var(--radius-md)+3px)]"
+			className="pressable rounded-lg"
 		>
 			{theme === "light" ? (
 				<SunFilledIcon className="size-5" />

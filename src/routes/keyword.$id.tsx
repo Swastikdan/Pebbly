@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { number, object, optional } from "valibot";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { GoBack } from "@/components/go-back";
+import { ShareButton } from "@/components/share-button";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Pagination } from "@/components/ui/pagination";
 import { HORIZONTAL_MEDIA_GRID_CLASS, MAX_PAGINATION_LIMIT } from "@/constants";
@@ -107,12 +108,16 @@ function KeywordPage() {
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="top-0 w-full max-w-screen-xl items-center justify-center p-5">
-				<div className="flex flex-col gap-4 pb-5">
-					<GoBack className="w-fit" />
-					<h1 className="text-start font-bold text-2xl md:text-3xl lg:text-4xl capitalize">
-						{keyword.name} Movies
-					</h1>
+				<div className="mb-4 flex items-center justify-between gap-3">
+					<GoBack title="Back" hideLabelOnMobile />
+					<ShareButton
+						title={`${keyword.name} Movies`}
+						hideLabelOnMobile
+					/>
 				</div>
+				<h1 className="text-start font-bold text-2xl md:text-3xl lg:text-4xl capitalize pb-5">
+					{keyword.name} Movies
+				</h1>
 
 				<section className="flex h-full flex-col">
 					<div className="flex min-h-96 w-full items-center justify-center">

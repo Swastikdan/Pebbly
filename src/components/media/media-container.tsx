@@ -140,7 +140,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 												<DialogHeader className="sr-only">
 													<DialogTitle>{video.name}</DialogTitle>
 												</DialogHeader>
-												<div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+												<div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
 													<iframe
 														allowFullScreen
 														allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
@@ -190,7 +190,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 												<DialogHeader className="sr-only">
 													<DialogTitle>{title} Backdrop Image</DialogTitle>
 												</DialogHeader>
-												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
 													<Image
 														alt={title}
 														className="aspect-video size-full rounded-2xl object-cover"
@@ -240,7 +240,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 												<DialogHeader className="sr-only">
 													<DialogTitle>{title} Poster Image</DialogTitle>
 												</DialogHeader>
-												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
 													<Image
 														alt={title}
 														className="aspect-[11/16] h-auto w-full rounded-2xl object-center"

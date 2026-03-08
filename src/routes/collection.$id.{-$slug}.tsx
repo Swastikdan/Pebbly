@@ -10,13 +10,13 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { getCollection } from "@/lib/queries";
-import { formatMediaTitle, isValidId } from "@/lib/utils";
+import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Collection } from "@/types";
 
 export const Route = createFileRoute("/collection/$id/{-$slug}")({
 	loader: async ({ params }) => {
 		const { id, slug } = params;
-		if (!isValidId(parseInt(id, 10))) {
+		if (!parseAndValidateId(id).success) {
 			throw notFound();
 		}
 		const title = slug ? formatMediaTitle.decode(slug) : "Collections";

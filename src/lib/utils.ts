@@ -49,6 +49,14 @@ export function validateId(id: number): asserts id is number {
 export function parseAndValidateId(
 	input: string | number,
 ): ValidationResult<number> {
+	// Strictly reject strings that aren't purely numeric (parseInt would silently ignore trailing garbage)
+	if (typeof input === "string" && !/^\d+$/.test(input)) {
+		return {
+			success: false,
+			error: `${ERROR_MESSAGES.INVALID_ID}: "${input}" is not a valid number`,
+		};
+	}
+
 	const id = typeof input === "string" ? parseInt(input, 10) : input;
 
 	if (Number.isNaN(id)) {

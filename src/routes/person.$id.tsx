@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getPersonDetails } from "@/lib/queries";
-import { isValidId } from "@/lib/utils";
+import { parseAndValidateId } from "@/lib/utils";
 import type { PersonDetails } from "@/types";
 
 type KnownForCredit = {
@@ -27,7 +27,8 @@ type KnownForCredit = {
 export const Route = createFileRoute("/person/$id")({
 	loader: async ({ params }) => {
 		const { id } = params;
-		if (!isValidId(parseInt(id, 10))) {
+		const parsed = parseAndValidateId(id);
+		if (!parsed.success) {
 			throw notFound();
 		}
 		return { id };

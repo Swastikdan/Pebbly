@@ -11,14 +11,14 @@ import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails, getTvSeasonDetails } from "@/lib/queries";
-import { formatMediaTitle, isValidId } from "@/lib/utils";
+import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
 	loader: async ({ params }) => {
 		const { id, slug, seasonNumber } = params;
 		if (
-			!isValidId(parseInt(id, 10)) ||
-			!isValidId(parseInt(seasonNumber, 10))
+			!parseAndValidateId(id).success ||
+			!parseAndValidateId(seasonNumber).success
 		) {
 			throw notFound();
 		}

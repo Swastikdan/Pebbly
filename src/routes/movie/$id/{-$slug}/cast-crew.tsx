@@ -6,12 +6,12 @@ import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicMovieDetails } from "@/lib/queries";
-import { formatMediaTitle, isValidId } from "@/lib/utils";
+import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
 export const Route = createFileRoute("/movie/$id/{-$slug}/cast-crew")({
 	loader: async ({ params }) => {
 		const { id, slug } = params;
-		if (!isValidId(parseInt(id, 10))) {
+		if (!parseAndValidateId(id).success) {
 			throw notFound();
 		}
 		const title = formatMediaTitle.decode(slug ?? "");

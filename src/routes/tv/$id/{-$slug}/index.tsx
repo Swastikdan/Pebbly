@@ -26,13 +26,13 @@ import {
 } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
-import { formatMediaTitle, isValidId } from "@/lib/utils";
+import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/")({
 	loader: async ({ params }) => {
 		const { id, slug } = params;
-		if (!isValidId(parseInt(id, 10))) {
+		if (!parseAndValidateId(id).success) {
 			throw notFound();
 		}
 		const title = slug ? formatMediaTitle.decode(slug) : "Tv Page";

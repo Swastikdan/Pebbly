@@ -166,9 +166,17 @@ function SearchPage() {
 		return (
 			<section className="flex w-full justify-center">
 				<div className="mx-auto w-full max-w-screen-xl p-5">
-					<SearchBar query={query} updateUrlOnChange />
+					<div className="mb-6 flex flex-col gap-1">
+						<h1 className="text-2xl font-bold tracking-tight md:text-3xl animate-fade-in">
+							Search
+						</h1>
+						<p className="text-sm text-muted-foreground">
+							Find movies, TV shows, and more
+						</p>
+					</div>
+					<SearchBar query={query} updateUrlOnChange autoFocus />
 					<SearchHistory navigate={navigate} />
-					<div className="flex flex-col gap-5 py-5">
+					<div className="flex flex-col gap-5 py-6">
 						<h2 className="text-lg font-semibold">Trending Now</h2>
 						{isTrendingLoading ? (
 							<div className={HORIZONTAL_MEDIA_GRID_CLASS}>

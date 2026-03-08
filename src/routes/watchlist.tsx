@@ -8,14 +8,18 @@ import type { ComponentType } from "react";
 import { useCallback, useId, useMemo, useState } from "react";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultLoader } from "@/components/default-loader";
+import { GoBack } from "@/components/go-back";
+import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+	BookMarkFilledIcon,
 	CheckCircle,
 	Clock,
 	Download,
 	Eye,
 	Heart,
+	SearchFilledIcon,
 	Star,
 	TrashBin,
 	Upload,
@@ -197,6 +201,10 @@ function WatchlistPage() {
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="w-full max-w-screen-xl p-5">
+				<div className="mb-4 flex items-center justify-between gap-3">
+					<GoBack title="Back" hideLabelOnMobile />
+					<ShareButton title="My Watchlist" hideLabelOnMobile />
+				</div>
 				<div className="mb-8 flex items-start justify-between gap-4">
 					<div>
 						<h1 className="text-3xl font-bold tracking-tight md:text-4xl">
@@ -401,16 +409,35 @@ function WatchlistPage() {
 				) : error && filteredWatchlist.length === 0 ? (
 					<DefaultEmptyState message={error.message} description={false} />
 				) : filteredWatchlist?.length === 0 ? (
-					<DefaultEmptyState
-						message={
-							activeFilter === "all" &&
-							mediaFilter === "all" &&
-							reactionFilter === "all"
-								? "No items in your watchlist"
-								: "No items match your filters"
-						}
-						description={false}
-					/>
+					activeFilter === "all" &&
+					mediaFilter === "all" &&
+					reactionFilter === "all" ? (
+						<div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center animate-fade-in-up">
+							<div className="flex size-16 items-center justify-center rounded-2xl bg-secondary">
+								<BookMarkFilledIcon className="size-7 text-muted-foreground" />
+							</div>
+							<div>
+								<h3 className="mb-2 text-lg font-semibold">
+									Your watchlist is empty
+								</h3>
+								<p className="max-w-sm text-sm text-muted-foreground">
+									Start adding movies and TV shows to keep track of what you
+									want to watch.
+								</p>
+							</div>
+							<Link to="/search">
+								<Button variant="secondary" size="lg" className="gap-2">
+									<SearchFilledIcon className="size-4" />
+									Browse titles
+								</Button>
+							</Link>
+						</div>
+					) : (
+						<DefaultEmptyState
+							message="No items match your filters"
+							description={false}
+						/>
+					)
 				) : (
 					<div className="stagger-grid grid w-full grid-cols-1 gap-4 py-4 sm:grid-cols-2 lg:grid-cols-3">
 						{filteredWatchlist.map(

@@ -25,13 +25,14 @@ import {
 } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getMovieDetails } from "@/lib/queries";
-import { formatMediaTitle, isValidId } from "@/lib/utils";
+import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Movie } from "@/types";
 
 export const Route = createFileRoute("/movie/$id/{-$slug}/")({
 	loader: async ({ params }) => {
 		const { id, slug } = params;
-		if (!isValidId(parseInt(id, 10))) {
+		const parsed = parseAndValidateId(id);
+		if (!parsed.success) {
 			throw notFound();
 		}
 		const title = slug ? formatMediaTitle.decode(slug) : "Movie Page";

@@ -145,7 +145,7 @@ export const MediaVideoImageContainer = (props: {
 													{image.file_path} Backdrop Image
 												</DialogTitle>
 											</DialogHeader>
-											<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+											<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
 												<Image
 													alt={image.file_path}
 													className="aspect-video size-full rounded-2xl object-cover"
@@ -181,7 +181,7 @@ export const MediaVideoImageContainer = (props: {
 													{image.file_path} Poster Image
 												</DialogTitle>
 											</DialogHeader>
-											<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-[18px] p-0">
+											<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
 												<Image
 													alt={image.file_path}
 													className="aspect-[11/16] h-auto w-full rounded-2xl object-center"

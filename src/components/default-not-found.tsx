@@ -5,12 +5,12 @@ export function DefaultNotFoundComponent() {
 	return (
 		<div className="grid h-full min-h-[calc(100vh-200px)] place-content-center items-center justify-center px-6">
 			<div className="flex flex-col items-center justify-center gap-6 text-center animate-fade-in-up">
-				<div className="text-8xl font-black tracking-tighter text-foreground/[0.06] dark:text-foreground/[0.08] select-none">
+				<div className="text-8xl font-black tracking-tighter text-foreground select-none">
 					404
 				</div>
 				<div>
 					<h3 className="mb-2 font-semibold text-2xl">Page not found</h3>
-					<p className="text-sm text-muted-foreground max-w-sm">
+					<p className="text-sm text-muted-foreground max-w-md">
 						The page you’re looking for doesn’t exist or has been moved.
 					</p>
 				</div>
@@ -50,8 +50,8 @@ export function DefaultErrorComponent() {
 				<div>
 					<h3 className="mb-2 font-semibold text-xl">Something went wrong</h3>
 					<p className="text-sm text-muted-foreground leading-relaxed">
-						An unexpected error occurred. Please try again or return to the
-						home page.
+						An unexpected error occurred. Please try again or return to the home
+						page.
 					</p>
 				</div>
 				<div className="flex items-center gap-3">

@@ -33,7 +33,7 @@ const DesktopNavMenuItem = ({
 			<DropdownMenuTrigger asChild className="cursor-pointer">
 				<Button
 					variant="secondary"
-					className="rounded-[calc(var(--radius-md)+3px)] px-3 text-base"
+					className="rounded-lg px-3 text-base"
 					aria-haspopup="true"
 					aria-expanded="false"
 				>
@@ -43,11 +43,11 @@ const DesktopNavMenuItem = ({
 			<DropdownMenuContent
 				aria-label="Desktop Menu"
 				align="end"
-				className="mt-2 w-40 rounded-[calc(var(--radius-md)+10px)] p-2 shadow-none"
+				className="mt-2 w-40 rounded-xl p-2 shadow-none"
 			>
 				{item.submenu.map((subitem) => (
 					<Link key={subitem.slug} to={subitem.url} className="cursor-pointer ">
-						<DropdownMenuItem className="h-9 cursor-pointer rounded-[calc(var(--radius-md)+3px)] px-3 text-base">
+						<DropdownMenuItem className="h-9 cursor-pointer rounded-lg px-3 text-base">
 							{subitem.name}
 						</DropdownMenuItem>
 					</Link>
@@ -72,7 +72,7 @@ const MobileNavMenuItem = ({
 		<div className="flex flex-col items-start justify-start gap-2">
 			<Button
 				variant="secondary"
-				className="w-full justify-start rounded-[calc(var(--radius-md)+3px)] font-bold"
+				className="w-full justify-start rounded-lg font-bold"
 			>
 				{item.name}
 			</Button>
@@ -85,7 +85,7 @@ const MobileNavMenuItem = ({
 					<SheetClose asChild>
 						<Button
 							variant="outline"
-							className="h-10 w-full justify-start rounded-[calc(var(--radius-md)+3px)]"
+							className="h-10 w-full justify-start rounded-lg"
 						>
 							{subitem.name}
 						</Button>
@@ -129,7 +129,7 @@ const Navbar = () => {
 							<Button
 								variant="outline"
 								size="icon"
-								className="rounded-[calc(var(--radius-md)+3px)] font-heading font-light text-base"
+								className="rounded-lg font-heading font-light text-base"
 								aria-label="Menu"
 							>
 								<MenuIcon />

@@ -34,12 +34,12 @@ const DesktopNavButton = ({
 		<Link
 			to={href}
 			aria-label={label}
-			className="cursor-pointer rounded-[calc(var(--radius-md)+3px)] pressable"
+			className="cursor-pointer rounded-lg pressable"
 		>
 			<Button
 				variant={isActive ? "secondary" : "outline"}
 				size="icon"
-				className={cn(className, "rounded-[calc(var(--radius-md)+3px)]")}
+				className={cn(className, "rounded-lg")}
 				aria-label={label}
 			>
 				{icon}
