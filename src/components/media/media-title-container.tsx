@@ -47,9 +47,9 @@ const REACTION_OPTIONS: Array<{
 	{ value: "not-for-me", label: "Not for me", icon: Frown },
 ];
 
-export const MediaTitleContailer = (props: {
+export const MediaTitleContainer = (props: {
 	title: string;
-	rateing: number;
+	rating: number;
 	image: string;
 	poster_path: string;
 	id: number;
@@ -68,7 +68,7 @@ export const MediaTitleContailer = (props: {
 	const {
 		id,
 		title,
-		rateing,
+		rating,
 		poster_path,
 		media_type,
 		release_date,
@@ -122,7 +122,7 @@ export const MediaTitleContailer = (props: {
 					image={poster_path}
 					is_on_homepage={true}
 					media_type={media_type}
-					rating={rateing}
+					rating={rating}
 					release_date={release_date ?? ""}
 					title={title}
 					overview={props.description}
@@ -137,7 +137,7 @@ export const MediaTitleContailer = (props: {
 							if (value === REMOVE_FROM_WATCHLIST_VALUE) {
 								toggleWatchlist({
 									title,
-									rating: rateing,
+									rating: rating,
 									image: poster_path,
 									id: String(id),
 									media_type,
@@ -154,7 +154,7 @@ export const MediaTitleContailer = (props: {
 								{
 									title,
 									image: poster_path,
-									rating: rateing,
+									rating: rating,
 									release_date: release_date ?? "",
 									overview: props.description,
 								},
@@ -196,7 +196,7 @@ export const MediaTitleContailer = (props: {
 						if (value === REMOVE_FROM_WATCHLIST_VALUE) {
 							toggleWatchlist({
 								title,
-								rating: rateing,
+								rating: rating,
 								image: poster_path,
 								id: String(id),
 								media_type,
@@ -213,7 +213,7 @@ export const MediaTitleContailer = (props: {
 							{
 								title,
 								image: poster_path,
-								rating: rateing,
+								rating: rating,
 								release_date: release_date ?? "",
 								overview: props.description,
 							},

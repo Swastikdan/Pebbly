@@ -100,7 +100,7 @@ export const GENRE_LIST = [
 	{ id: 10766, name: "Soap" },
 	{ id: 10767, name: "Talk" },
 	{ id: 10768, name: "War & Politics" },
-].map((genre) => ({ ...genre, id: genre.id }));
+];
 
 export const MAX_PAGINATION_LIMIT = 500;
 

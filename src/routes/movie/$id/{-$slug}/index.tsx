@@ -9,7 +9,7 @@ import { MediaDescription } from "@/components/media/media-description";
 import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
-import { MediaTitleContailer } from "@/components/media/media-title-container";
+import { MediaTitleContainer } from "@/components/media/media-title-container";
 import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import {
@@ -65,7 +65,7 @@ function MovieHomePage() {
 	const movie_id_param = parseInt(movie_id, 10);
 	const { data, error, isLoading } = useQuery<Movie>({
 		queryKey: ["movie_details", movie_id_param],
-		queryFn: async () => await getMovieDetails({ id: movie_id_param }),
+		queryFn: () => getMovieDetails({ id: movie_id_param }),
 	});
 	useCanonicalSlugRedirect({
 		entity: "movie",
@@ -115,7 +115,7 @@ function MovieHomePage() {
 	const uscertification = getMovieCertification(release_dates?.results);
 	const movieRuntime = formatRuntime(runtime);
 	const moviegenres = mapGenres(genres);
-	const { normalizedVideos, trailervideos, youtubeclips } = splitVideos(
+	const { allVideos, trailervideos, youtubeclips } = splitVideos(
 		videos?.results,
 	);
 	const moviecast = mapCast(credits?.cast);
@@ -127,7 +127,7 @@ function MovieHomePage() {
 		keywords?.keywords?.map((k) => ({ name: k.name, id: k.id })) ?? [];
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4">
-			<MediaTitleContailer
+			<MediaTitleContainer
 				runtime={movieRuntime ?? null}
 				description={`${overview?.slice(0, 100)}...`}
 				id={id}
@@ -135,7 +135,7 @@ function MovieHomePage() {
 				imdb_url={imdb_url}
 				media_type="movie"
 				poster_path={poster_path}
-				rateing={vote_average}
+				rating={vote_average}
 				releaseyear={String(moviereleaseyear) || "Not Released"}
 				release_date={release_date}
 				tagline={tagline ?? null}
@@ -167,7 +167,7 @@ function MovieHomePage() {
 				backdrops={moviebackdrops}
 				id={id}
 				is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
-				is_more_clips_available={normalizedVideos.length > 10}
+				is_more_clips_available={allVideos.length > 10}
 				is_more_posters_available={(images?.posters?.length ?? 0) > 10}
 				posters={movieposters}
 				title={movietitle}

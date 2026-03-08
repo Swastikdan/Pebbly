@@ -117,7 +117,6 @@ function WatchlistPage() {
 		exportWatchlist,
 		importWatchlist,
 		handleImportClick,
-		handleKeyDown,
 	} = useWatchlistImportExport();
 
 	/** Count of active secondary filters (media type, mood, sort) deviating from defaults. */
@@ -251,7 +250,6 @@ function WatchlistPage() {
 							variant="secondary"
 							size="sm"
 							onClick={handleImportClick}
-							onKeyDown={handleKeyDown}
 							aria-label="Import watchlist"
 						>
 							<input

@@ -10,7 +10,7 @@ import { MediaDescription } from "@/components/media/media-description";
 import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
-import { MediaTitleContailer } from "@/components/media/media-title-container";
+import { MediaTitleContainer } from "@/components/media/media-title-container";
 import { VITE_PUBLIC_APP_URL } from "@/constants";
 
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
@@ -65,7 +65,7 @@ function TvHomePage() {
 	const tv_id_param = parseInt(tv_id, 10);
 	const { data, error, isLoading } = useQuery<Tv>({
 		queryKey: ["tv_details", tv_id_param],
-		queryFn: async () => await getTvDetails({ id: tv_id_param }),
+		queryFn: () => getTvDetails({ id: tv_id_param }),
 	});
 
 	useCanonicalSlugRedirect({
@@ -113,7 +113,7 @@ function TvHomePage() {
 
 	const uscertification = getTvCertification(content_ratings?.results);
 	const tvgenres = mapGenres(genres);
-	const { normalizedVideos, trailervideos, youtubeclips } = splitVideos(
+	const { allVideos, trailervideos, youtubeclips } = splitVideos(
 		videos?.results,
 	);
 	const tvcast = mapCast(credits?.cast);
@@ -129,7 +129,7 @@ function TvHomePage() {
 
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4">
-			<MediaTitleContailer
+			<MediaTitleContainer
 				runtime={null}
 				description={`${overview?.slice(0, 100)}...`}
 				id={id}
@@ -137,7 +137,7 @@ function TvHomePage() {
 				imdb_url={imdb_url}
 				media_type="tv"
 				poster_path={poster_path}
-				rateing={vote_average}
+				rating={vote_average}
 				releaseyear={String(tvreleaseyear) || "Not Released"}
 				release_date={release_date}
 				tagline={tagline ?? null}
@@ -182,7 +182,7 @@ function TvHomePage() {
 				backdrops={tvbackdrops}
 				id={id}
 				is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
-				is_more_clips_available={normalizedVideos.length > 10}
+				is_more_clips_available={allVideos.length > 10}
 				is_more_posters_available={(images?.posters?.length ?? 0) > 10}
 				posters={tvposters}
 				title={tvtitle}

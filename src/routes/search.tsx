@@ -16,10 +16,10 @@ import { Button } from "@/components/ui/button";
 import { XCircleIcon } from "@/components/ui/icons";
 import { Pagination } from "@/components/ui/pagination";
 import {
-	SearchBar,
 	clearSearchHistory,
 	getSearchHistory,
 	removeFromSearchHistory,
+	SearchBar,
 } from "@/components/ui/search-bar";
 import {
 	Select,

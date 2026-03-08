@@ -105,7 +105,11 @@ const Navbar = () => {
 				className="flex w-full max-w-screen-xl items-center justify-between px-4 py-2.5 md:px-5"
 				aria-label="Main Navigation"
 			>
-				<Link to="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80" aria-label="Home">
+				<Link
+					to="/"
+					className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+					aria-label="Home"
+				>
 					<Image
 						src="/logo.svg"
 						alt="Film Fanatic logo"

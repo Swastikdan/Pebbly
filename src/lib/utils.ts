@@ -1,6 +1,8 @@
-/** Shared utility functions: class merging, ID validation, API response handling, and slug formatting. */
+/** Shared utility functions: class merging, ID validation, API response handling, slug formatting, and storage helpers. */
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+
+import type { ProgressStatus, ReactionStatus } from "@/types";
 
 interface ApiResponse<T> {
 	data?: T;
@@ -19,6 +21,48 @@ type ValidationResult<T> =
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
+}
+
+/** In-memory Storage fallback for SSR environments where window.localStorage is unavailable. */
+export function createMemoryStorage(): Storage {
+	let store: Record<string, string> = {};
+	return {
+		getItem: (name) => (name in store ? store[name] : null),
+		setItem: (name, value) => {
+			store[name] = String(value);
+		},
+		removeItem: (name) => {
+			delete store[name];
+		},
+		clear: () => {
+			store = {};
+		},
+		key: (index) => Object.keys(store)[index] ?? null,
+		get length() {
+			return Object.keys(store).length;
+		},
+	} as Storage;
+}
+
+/** Maps a legacy combined status string to the split progress/reaction model. */
+export function mapLegacyStatusToSplit(status?: string): {
+	progressStatus: ProgressStatus | null;
+	reaction: ReactionStatus | null;
+} {
+	switch (status) {
+		case "plan-to-watch":
+			return { progressStatus: "want-to-watch", reaction: null };
+		case "watching":
+			return { progressStatus: "watching", reaction: null };
+		case "completed":
+			return { progressStatus: "finished", reaction: null };
+		case "liked":
+			return { progressStatus: "finished", reaction: "liked" };
+		case "dropped":
+			return { progressStatus: "dropped", reaction: null };
+		default:
+			return { progressStatus: null, reaction: null };
+	}
 }
 
 const VALID_ID_RANGE = {

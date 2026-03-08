@@ -41,23 +41,14 @@ export const mapGenres = (genres?: MinimalGenre[] | null) => {
 		.filter((genre): genre is NonNullable<typeof genre> => Boolean(genre));
 };
 
-const normalizeVideos = (videos?: MinimalVideo[] | null) =>
-	videos?.map((video) => ({
-		key: video.key,
-		name: video.name,
-		type: video.type,
-		published_at: video.published_at,
-		official: video.official,
-	})) ?? [];
-
 export const splitVideos = (videos?: MinimalVideo[] | null) => {
-	const normalizedVideos = normalizeVideos(videos);
+	const allVideos = videos ?? [];
 
-	const trailervideos = normalizedVideos
+	const trailervideos = allVideos
 		.filter((video) => video.type === "Trailer" || video.type === "Teaser")
 		.sort((a, b) => (a.type === b.type ? 0 : a.type === "Trailer" ? -1 : 1));
 
-	const youtubeclips = normalizedVideos
+	const youtubeclips = allVideos
 		.filter((video) => video.type !== "Trailer" && video.type !== "Teaser")
 		.sort((a, b) => {
 			if (a.type !== b.type) {
@@ -70,7 +61,7 @@ export const splitVideos = (videos?: MinimalVideo[] | null) => {
 		})
 		.slice(0, FEATURED_ITEMS_LIMIT);
 
-	return { normalizedVideos, trailervideos, youtubeclips };
+	return { allVideos, trailervideos, youtubeclips };
 };
 
 export const mapCast = (cast?: MinimalPerson[] | null) =>

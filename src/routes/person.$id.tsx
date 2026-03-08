@@ -189,7 +189,9 @@ function PersonPage() {
 					</div>
 
 					<div className="flex w-full flex-col gap-2">
-						<h1 className="text-2xl font-bold tracking-tight md:text-3xl">{name}</h1>
+						<h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+							{name}
+						</h1>
 						{birthday && (
 							<div className="text-sm text-muted-foreground">
 								<span className="font-semibold text-foreground">Born: </span>

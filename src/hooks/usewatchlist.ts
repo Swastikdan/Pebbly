@@ -12,7 +12,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
-
+import { createMemoryStorage, mapLegacyStatusToSplit } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus, WatchlistStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
@@ -82,25 +82,7 @@ interface WatchlistStore {
 
 const QUERY_SKIP = "skip" as const;
 
-const memoryStorage: Storage = (() => {
-	let store: Record<string, string> = {};
-	return {
-		getItem: (name) => (name in store ? store[name] : null),
-		setItem: (name, value) => {
-			store[name] = String(value);
-		},
-		removeItem: (name) => {
-			delete store[name];
-		},
-		clear: () => {
-			store = {};
-		},
-		key: (index) => Object.keys(store)[index] ?? null,
-		get length() {
-			return Object.keys(store).length;
-		},
-	} as Storage;
-})();
+const memoryStorage = createMemoryStorage();
 
 function isSameItem(item: WatchlistItem, id: string, type: MediaType) {
 	return item.external_id === id && item.type === type;
@@ -126,34 +108,6 @@ function buildFallbackItem(
 		reaction: null,
 		progress: 0,
 	};
-}
-
-/** Maps a legacy combined status string to the new split progress/reaction model. */
-function mapLegacyStatusToSplit(status?: string): {
-	progressStatus: ProgressStatus | null;
-	reaction: ReactionStatus | null;
-} {
-	if (status === "plan-to-watch") {
-		return { progressStatus: "want-to-watch", reaction: null };
-	}
-
-	if (status === "watching") {
-		return { progressStatus: "watching", reaction: null };
-	}
-
-	if (status === "completed") {
-		return { progressStatus: "finished", reaction: null };
-	}
-
-	if (status === "liked") {
-		return { progressStatus: "finished", reaction: "liked" };
-	}
-
-	if (status === "dropped") {
-		return { progressStatus: "dropped", reaction: null };
-	}
-
-	return { progressStatus: null, reaction: null };
 }
 
 function toLegacyStatus(item: WatchlistItem): WatchlistStatus | null {
@@ -927,7 +881,7 @@ export function useWatchlistItem(id: string, mediaType?: MediaType) {
 /** Get watchlist count */
 export function useWatchlistCount() {
 	const { watchlist } = useWatchlist();
-	return useMemo(() => watchlist.length, [watchlist]);
+	return watchlist.length;
 }
 
 /** Legacy status accessor for compatibility during rollout. */

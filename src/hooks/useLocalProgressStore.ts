@@ -3,6 +3,8 @@ import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { createMemoryStorage } from "@/lib/utils";
+
 interface LocalProgressStore {
 	watchedEpisodes: Record<string, boolean>; // key format: `${tmdbId}:${season}:${episode}`
 
@@ -23,25 +25,7 @@ interface LocalProgressStore {
 	clearShowProgress: (tmdbId: number) => void;
 }
 
-const memoryStorage: Storage = (() => {
-	let store: Record<string, string> = {};
-	return {
-		getItem: (name) => (name in store ? store[name] : null),
-		setItem: (name, value) => {
-			store[name] = String(value);
-		},
-		removeItem: (name) => {
-			delete store[name];
-		},
-		clear: () => {
-			store = {};
-		},
-		key: (index) => Object.keys(store)[index] ?? null,
-		get length() {
-			return Object.keys(store).length;
-		},
-	} as Storage;
-})();
+const memoryStorage = createMemoryStorage();
 
 export const useLocalProgressStore = create<LocalProgressStore>()(
 	persist(

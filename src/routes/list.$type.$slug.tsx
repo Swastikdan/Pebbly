@@ -9,8 +9,8 @@ import { useCallback, useEffect, useState } from "react";
 import { number, object, optional } from "valibot";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { GoBack } from "@/components/go-back";
-import { ShareButton } from "@/components/share-button";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
+import { ShareButton } from "@/components/share-button";
 import { Pagination } from "@/components/ui/pagination";
 import {
 	HORIZONTAL_MEDIA_GRID_CLASS,

@@ -80,7 +80,7 @@ const useMediaQuery = (
 ) => {
 	const { data, isFetching, error } = useQuery({
 		queryKey: [type],
-		queryFn: async () => await getMedia({ type }),
+		queryFn: () => getMedia({ type }),
 	});
 
 	return {

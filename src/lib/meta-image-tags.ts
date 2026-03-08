@@ -35,7 +35,7 @@ export const MetaImageTagsGenerator = (props: {
 		{ name: "twitter:title", content: title },
 		{ name: "twitter:description", content: description },
 		{ name: "twitter:image", content: ogImage },
-		{ property: "twitter:domain", content: new URL(url).hostname },
+		{ property: "twitter:domain", content: url ? new URL(url).hostname : "" },
 		{ name: "twitter:url", content: url },
 	];
 };

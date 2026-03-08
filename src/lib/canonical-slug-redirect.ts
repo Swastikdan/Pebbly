@@ -37,7 +37,6 @@ export function useCanonicalSlugRedirect(args: {
 		}`;
 
 		if (incomingPathname !== requiredPathname) {
-			console.log("redirecting");
 			navigate({
 				to: requiredPathname,
 				replace: true,

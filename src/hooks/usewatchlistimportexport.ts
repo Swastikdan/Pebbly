@@ -6,9 +6,20 @@ import type React from "react";
 import { useCallback, useRef, useState } from "react";
 import { useLocalProgressStore } from "@/hooks/useLocalProgressStore";
 import { useWatchlist, type WatchlistItem } from "@/hooks/usewatchlist";
+import { mapLegacyStatusToSplit } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
+
+function isValidWatchlistItem(item: unknown): item is ImportItem {
+	if (typeof item !== "object" || item === null) return false;
+	const obj = item as Record<string, unknown>;
+	return (
+		typeof obj.title === "string" &&
+		typeof obj.external_id === "string" &&
+		(obj.type === "tv" || obj.type === "movie")
+	);
+}
 
 type ImportError = {
 	message: string;
@@ -20,26 +31,6 @@ type ImportItem = Pick<WatchlistItem, "title" | "external_id" | "type"> &
 		status?: string;
 		watchedEpisodes?: Record<string, boolean>;
 	};
-
-function mapLegacyImportedStatus(status?: string): {
-	progressStatus: ProgressStatus | null;
-	reaction: ReactionStatus | null;
-} {
-	if (status === "plan-to-watch") {
-		return { progressStatus: "want-to-watch", reaction: null };
-	}
-	if (status === "watching")
-		return { progressStatus: "watching", reaction: null };
-	if (status === "completed")
-		return { progressStatus: "finished", reaction: null };
-	if (status === "liked")
-		return { progressStatus: "finished", reaction: "liked" };
-	if (status === "dropped") {
-		return { progressStatus: "dropped", reaction: null };
-	}
-
-	return { progressStatus: null, reaction: null };
-}
 
 export const useWatchlistImportExport = () => {
 	const [importLoading, setImportLoading] = useState(false);
@@ -67,21 +58,6 @@ export const useWatchlistImportExport = () => {
 	);
 
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-	const isValidWatchlistItem = useCallback(
-		(item: unknown): item is ImportItem => {
-			if (typeof item !== "object" || item === null) return false;
-
-			const obj = item as Record<string, unknown>;
-
-			return (
-				typeof obj.title === "string" &&
-				typeof obj.external_id === "string" &&
-				(obj.type === "tv" || obj.type === "movie")
-			);
-		},
-		[],
-	);
 
 	const exportWatchlist = useCallback(async () => {
 		if (!watchlist || watchlist.length === 0) return;
@@ -199,7 +175,7 @@ export const useWatchlistImportExport = () => {
 					}
 
 					for (const item of validatedList) {
-						const legacy = mapLegacyImportedStatus(item.status);
+						const legacy = mapLegacyStatusToSplit(item.status);
 						const progressStatus =
 							(item.progressStatus as ProgressStatus | undefined) ??
 							legacy.progressStatus ??
@@ -304,7 +280,6 @@ export const useWatchlistImportExport = () => {
 			reader.readAsText(file);
 		},
 		[
-			isValidWatchlistItem,
 			setProgressStatus,
 			setReaction,
 			setWatchlistMembership,
@@ -319,16 +294,6 @@ export const useWatchlistImportExport = () => {
 		fileInputRef.current?.click();
 	}, []);
 
-	const handleKeyDown = useCallback(
-		(e: React.KeyboardEvent<HTMLButtonElement>) => {
-			if (e.key === "Enter" || e.key === " ") {
-				e.preventDefault();
-				handleImportClick();
-			}
-		},
-		[handleImportClick],
-	);
-
 	return {
 		importLoading,
 		exportLoading,
@@ -339,7 +304,6 @@ export const useWatchlistImportExport = () => {
 		exportWatchlist,
 		importWatchlist,
 		handleImportClick,
-		handleKeyDown,
 		setError,
 	};
 };
