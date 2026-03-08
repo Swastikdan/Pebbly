@@ -31,6 +31,7 @@ import {
 	useRecommendationAccess,
 	useRecommendations,
 } from "@/hooks/useRecommendations";
+import { useWatchlist } from "@/hooks/usewatchlist";
 import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import type { AIRecommendation, BasicMovie, BasicTv } from "@/types";
@@ -188,6 +189,8 @@ function RecommendationsContent() {
 	const { history, isGenerating, error, generate, deleteEntry } =
 		useRecommendations();
 
+	const { watchlist, loading: watchlistLoading } = useWatchlist();
+
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [genMode, setGenMode] = useState<"watchlist" | "genre">("watchlist");
 	const [mediaType, setMediaType] = useState<"movie" | "tv" | undefined>();
@@ -200,6 +203,8 @@ function RecommendationsContent() {
 	};
 
 	const handleGenerate = () => {
+		if (genMode === "watchlist" && watchlist.length === 0) return;
+
 		const options: GenerateOptions = { generationType: genMode };
 		if (mediaType) options.mediaTypePreference = mediaType;
 		if (genMode === "genre" && selectedGenres.length > 0)
@@ -317,7 +322,12 @@ function RecommendationsContent() {
 					{/* Generate button */}
 					<Button
 						onClick={handleGenerate}
-						disabled={isGenerating}
+						disabled={
+							isGenerating ||
+							(genMode === "watchlist" &&
+								!watchlistLoading &&
+								watchlist.length === 0)
+						}
 						variant="secondary"
 						className="gap-2"
 					>
@@ -331,6 +341,23 @@ function RecommendationsContent() {
 						{isGenerating ? "Generating..." : "Generate"}
 					</Button>
 				</div>
+
+				{/* Empty Watchlist Hint */}
+				{genMode === "watchlist" &&
+					!watchlistLoading &&
+					watchlist.length === 0 && (
+						<p className="text-[13px] text-muted-foreground animate-in fade-in slide-in-from-top-1">
+							Your watchlist is empty. Add some titles first or try generating{" "}
+							<button
+								type="button"
+								onClick={() => setGenMode("genre")}
+								className="text-foreground underline underline-offset-2"
+							>
+								By Genre
+							</button>
+							.
+						</p>
+					)}
 
 				{/* Genre chips — only visible in "By Genre" mode */}
 				{genMode === "genre" && (
