@@ -1,138 +1,123 @@
 # Film Fanatic
 
-A premium, full-stack media discovery and tracking platform built for the modern cinephile. Experience seamless movie and TV show exploration with real-time tracking, powered by a state-of-the-art tech stack.
-
----
+Film Fanatic is a full-stack movie and TV discovery app built with TanStack Start, Convex, Clerk, and TMDB data. It combines rich media browsing with a persistent watchlist, progress tracking, and a responsive UI for both guests and signed-in users.
 
 ## Features
 
-### Precision Discovery
+- Browse trending, popular, top-rated, upcoming, and curated movie/TV lists
+- Search across movies, TV shows, and people with filtering and pagination
+- View rich detail pages with cast, crew, trailers, images, seasons, and recommendations
+- Save titles to a watchlist with guest-local storage or authenticated Convex sync
+- Track progress with statuses like `want-to-watch`, `watching`, `caught-up`, `finished`, and `dropped`
+- Mark TV episodes as watched and keep per-show progress up to date
+- Add reaction tags such as `loved`, `liked`, `mixed`, and `not-for-me`
+- Import and export your watchlist as JSON
+- Toggle between light and dark themes
 
-* **Intelligent Search:** Real-time, multi-category search across movies, TV series, and people with advanced filtering (rating, type).
-* **Rich Media Context:** Immersive detail pages featuring trailers, cast/crew insights, high-definition galleries, and collections.
-* **Smart Recommendations:** Discover your next favorite film with context-aware suggestions based on what you're viewing.
-
-### Seamless Tracking and Watchlist
-
-* **Hybrid Storage:** Local-first performance with `localStorage` for guests, seamlessly synchronized to the cloud via **Convex** for authenticated users.
-* **Granular Episode Tracking:** Mark individual episodes as watched. Progress automatically calculates show completion.
-* **Advanced Statuses:** Manage your journey with statuses: *Plan to Watch*, *Watching*, *Completed*, or *Dropped*.
-* **Emotional Reactions:** Log your feelings with reactions like *Loved*, *Liked*, *Mixed*, or *Not for me*.
-
-### Premium User Experience
-
-* **Aesthetic Design:** A stunning, responsive UI built with Tailwind CSS 4.0, featuring glassmorphism, smooth transitions, and high-fidelity posters.
-* **Optimistic UI:** Actions feel instantaneous thanks to optimistic updates and TanStack Query caching.
-* **Universal Access:** Fully responsive layout optimized for everything from ultra-wide monitors to mobile devices.
-* **Identity Management:** Secure and simple authentication powered by **Clerk**.
-
----
-
-## Technology Stack
+## Tech Stack
 
 | Layer | Technology |
 | :--- | :--- |
-| **Framework** | [TanStack Start](https://tanstack.com/router/v1/docs/guide/start-overview) (Nitro + React 19) |
-| **Backend** | [Convex](https://www.convex.dev/) (Real-time Database & Functions) |
-| **Authentication** | [Clerk](https://clerk.com/) |
-| **Styling** | [Tailwind CSS 4.0](https://tailwindcss.com/), [Radix UI](https://www.radix-ui.com/), [shadcn/ui](https://ui.shadcn.com/) |
-| **Data Fetching** | [TanStack Query](https://tanstack.com/query/latest) (React Query) |
-| **State Management** | [Zustand](https://zustand-demo.pmnd.rs/) (Client-side) |
-| **Optimization** | [React Compiler](https://react.dev/learn/react-compiler), [@unpic/react](https://unpic.pics/img/react/) |
-| **Code Quality** | [Biome](https://biomejs.dev/) (Lister, Formatter) |
-
----
+| Framework | [TanStack Start](https://tanstack.com/start) + [TanStack Router](https://tanstack.com/router) + React 19 |
+| Backend / Data | [Convex](https://www.convex.dev/) |
+| Authentication | [Clerk](https://clerk.com/) |
+| Styling | Tailwind CSS 4, Radix UI, shadcn/ui |
+| Data Fetching | TanStack Query |
+| Client State | Zustand |
+| Validation | Valibot |
+| Tooling | Vite 7, Biome, TypeScript |
 
 ## Getting Started
 
 ### Prerequisites
 
-* **Node.js** 20+
-* **pnpm** (preferred)
-* **TMDB API Key** ([Get one here](https://www.themoviedb.org/settings/api))
-* **Convex Account**
-* **Clerk Account**
+- Node.js 20+
+- `pnpm`
+- A TMDB API read access token
+- A Clerk application
+- A Convex project
 
 ### Installation
 
-1. **Clone the Repository**
+1. Clone the repository:
 
    ```bash
    git clone https://github.com/Swastikdan/Film-Fanatic.git
-   cd film-fanatic
+   cd Film-Fanatic
    ```
 
-2. **Install Dependencies**
+2. Install dependencies:
 
    ```bash
    pnpm install
    ```
 
-3. **Configure Environment Variables**
-
-   Create a `.env.local` file in the root:
+3. Create a `.env.local` file in the project root:
 
    ```env
-   # TMDB
-   VITE_TMDB_ACCESS_TOKEN=your_token_here
-   VITE_TMDB_API_URL=https://api.themoviedb.org/3
-   
-   # Clerk (Authentication)
-   VITE_CLERK_PUBLISHABLE_KEY=your_key_here
-   CLERK_SECRET_KEY=your_secret_here
-   
-   # Convex (Backend)
-   CONVEX_DEPLOY_KEY=your_key_here # For deployment
-   VITE_CONVEX_URL=your_convex_url_here
+   VITE_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
+   VITE_PUBLIC_TMDB_API_URL=https://api.themoviedb.org/3
+
+   VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+   CLERK_SECRET_KEY=your_clerk_secret_key
+   CONVEX_CLERK_ISSUER_URL=https://your-clerk-domain
+
+   VITE_CONVEX_URL=your_convex_url
+   VITE_PUBLIC_APP_URL=http://localhost:3000
+   VITE_PUBLIC_VIDEO_URL=your_video_provider_base_url
    ```
 
-4. **Start Development**
+   Depending on your Convex setup, the Convex CLI may also add deployment-specific variables such as `CONVEX_DEPLOYMENT` to `.env.local`.
+
+4. Start the app:
 
    ```bash
-   # Runs both Vite and Convex Dev in parallel
    pnpm dev
    ```
 
-5. **Build for Production**
+   This runs the Vite app on port `3000` and `convex dev` in parallel.
+
+5. Build for production:
 
    ```bash
    pnpm build
    ```
 
----
+## Available Scripts
+
+- `pnpm dev` — run Vite and Convex in parallel
+- `pnpm dev:vite` — run only the frontend dev server
+- `pnpm dev:convex` — run only Convex locally
+- `pnpm build` — type-check and build the app
+- `pnpm serve` — build and run the production server locally
+- `pnpm check` — Biome check + TypeScript validation
+- `pnpm lint` — lint with Biome
+- `pnpm format` — format the codebase with Biome
 
 ## Project Structure
 
-* **/convex**: Backend schema, mutations, and queries (Convex functions).
-* **/src/components**: Modular UI components (shadcn/ui, media cards, layout).
-* **/src/hooks**: Custom React hooks for data fetching and state sync.
-* **/src/lib**: Utility functions and client instances (Convex, Clerk, API).
-* **/src/routes**: File-based routing system (TanStack Router).
-* **/public**: Static assets and icons.
+- `src/routes` — file-based application routes
+- `src/components` — shared UI and domain-specific media components
+- `src/hooks` — watchlist, progress, and client-side state hooks
+- `src/lib` — TMDB client, query helpers, transforms, and utilities
+- `convex` — schema, auth config, and backend queries/mutations
+- `public` — static assets and web app metadata
 
----
+## Notes
+
+- `src/routeTree.gen.ts` is generated; do not edit it manually.
+- Guest watchlist data is stored locally and synced to Convex after sign-in.
+- There is currently no dedicated automated test suite configured; use `pnpm check` for linting and type-checking.
 
 ## Contributing
 
-We welcome contributions! Please follow these steps:
-
-1. Fork the project.
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Run `pnpm check` to ensure code quality/types.
-5. Push to the branch (`git push origin feature/AmazingFeature`).
-6. Open a Pull Request.
-
----
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
+1. Fork the repository.
+2. Create a feature branch.
+3. Make your changes.
+4. Run `pnpm check`.
+5. Open a pull request.
 
 ## Acknowledgments
 
-* [The Movie Database (TMDB)](https://www.themoviedb.org/) for the incredible data.
-* [TanStack Team](https://tanstack.com/) for the world-class routing and data tools.
-* [Vercel](https://vercel.com/) for hosting and deployment support.
+- Movie and TV metadata is provided by [TMDB](https://www.themoviedb.org/).
+- Built with TanStack, Convex, Clerk, Vite, and Tailwind CSS.

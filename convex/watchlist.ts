@@ -577,6 +577,7 @@ export const markShowEpisodesAndStatus = mutation({
       }),
     ),
     isWatched: v.boolean(),
+    clearAllEpisodes: v.optional(v.boolean()),
     progressStatus: v.optional(v.string()),
     progress: v.optional(v.number()),
     title: v.optional(v.string()),
@@ -644,34 +645,47 @@ export const markShowEpisodesAndStatus = mutation({
       existingMap.set(`${ep.season}:${ep.episode}`, ep);
     }
 
-    // 3. Process all seasons and episodes, only writing deltas
-    for (const seasonData of args.seasons) {
-      for (const epNum of seasonData.episodes) {
-        const key = `${seasonData.season}:${epNum}`;
-        const existing = existingMap.get(key);
-
-        if (existing) {
-          // Only patch if the watched state actually changed
-          if (existing.isWatched !== args.isWatched) {
-            await ctx.db.patch(existing._id, {
-              isWatched: args.isWatched,
-              updatedAt: now,
-            });
-          }
-          continue;
+    // 3. Process episodes
+    if (args.clearAllEpisodes || (!args.isWatched && args.seasons.length > 0)) {
+      // Clear ALL watched episodes for this show.
+      // This handles orphaned records from changed TMDB data and
+      // ensures consistency when leaving completion states.
+      for (const ep of allExisting) {
+        if (ep.isWatched) {
+          await ctx.db.patch(ep._id, {
+            isWatched: false,
+            updatedAt: now,
+          });
         }
+      }
+    } else {
+      // Mark specific episodes as watched (or no-op for empty seasons)
+      for (const seasonData of args.seasons) {
+        for (const epNum of seasonData.episodes) {
+          const key = `${seasonData.season}:${epNum}`;
+          const existing = existingMap.get(key);
 
-        // No existing record — only insert if marking as watched
-        if (!args.isWatched) continue;
+          if (existing) {
+            if (existing.isWatched !== args.isWatched) {
+              await ctx.db.patch(existing._id, {
+                isWatched: args.isWatched,
+                updatedAt: now,
+              });
+            }
+            continue;
+          }
 
-        await ctx.db.insert("episode_progress", {
-          userId: user._id,
-          tmdbId: args.tmdbId,
-          season: seasonData.season,
-          episode: epNum,
-          isWatched: args.isWatched,
-          updatedAt: now,
-        });
+          if (!args.isWatched) continue;
+
+          await ctx.db.insert("episode_progress", {
+            userId: user._id,
+            tmdbId: args.tmdbId,
+            season: seasonData.season,
+            episode: epNum,
+            isWatched: args.isWatched,
+            updatedAt: now,
+          });
+        }
       }
     }
   },

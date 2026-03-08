@@ -429,12 +429,12 @@ export function useEpisodeWatched(
 							: "caught-up"
 						: "watching";
 
-			// Respect manual "watching" override when all episodes are watched
+			// Respect manual "watching" override — never auto-change from "watching".
+			// This handles both: all episodes watched (don't upgrade to finished/caught-up)
+			// and zero episodes watched after clearing (don't downgrade to want-to-watch).
 			if (
 				currentProgressStatus === "watching" &&
-				(derivedProgressStatus === "finished" ||
-					derivedProgressStatus === "caught-up") &&
-				allEpisodesWatched
+				derivedProgressStatus !== "watching"
 			) {
 				// Still update progress percentage without changing the status
 				const shouldWriteProgress =

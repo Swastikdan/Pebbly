@@ -1,10 +1,9 @@
-import { Frown, Meh, Smile, X } from "lucide-react";
+import { Frown, ListChecks, Meh, Smile, X } from "lucide-react";
 import type { ComponentType } from "react";
 import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
 import { ShareButton } from "@/components/share-button";
 import { CheckCircle, Clock, Eye, Heart } from "@/components/ui/icons";
-import { ListChecks } from "lucide-react";
 import {
 	Select,
 	SelectContent,
@@ -104,7 +103,10 @@ export const MediaTitleContailer = (props: {
 			return false;
 		}
 		// Hide "Caught Up" for ended series and movies (only relevant for returning shows)
-		if (option.value === "caught-up" && (media_type !== "tv" || isSeriesEnded)) {
+		if (
+			option.value === "caught-up" &&
+			(media_type !== "tv" || isSeriesEnded)
+		) {
 			return false;
 		}
 		return true;
@@ -156,6 +158,7 @@ export const MediaTitleContailer = (props: {
 									release_date: release_date ?? "",
 									overview: props.description,
 								},
+								progressStatus,
 							);
 						}}
 					>

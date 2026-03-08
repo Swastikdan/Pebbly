@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/docs",
+      "destination": "https://swastikdan-film-fanatic.mintlify.app/"
+    },
+    {
+      "source": "/docs/:match*",
+      "destination": "https://swastikdan-film-fanatic.mintlify.app/:match*"
+    }
+  ]
+}

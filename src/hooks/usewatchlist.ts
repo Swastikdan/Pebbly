@@ -640,16 +640,13 @@ export function useSetProgressStatus() {
 				{ tmdbId: args.tmdbId },
 				[...filtered, ...newEpisodes],
 			);
-		} else {
+		} else if (args.clearAllEpisodes || args.seasons.length > 0) {
+			// Clear ALL episodes when leaving completion states or
+			// when specific seasons are provided for unmarking
 			localStore.setQuery(
 				api.watchlist.getAllWatchedEpisodes,
 				{ tmdbId: args.tmdbId },
-				current.filter(
-					(e) =>
-						!args.seasons.some(
-							(s) => e.season === s.season && s.episodes.includes(e.episode),
-						),
-				),
+				[],
 			);
 		}
 	});
@@ -661,35 +658,62 @@ export function useSetProgressStatus() {
 		(state) => state.markSeasonWatched,
 	);
 
+	const clearLocalShowProgress = useLocalProgressStore(
+		(state) => state.clearShowProgress,
+	);
+
 	return useCallback(
 		(
 			id: string,
 			mediaType: MediaType,
 			progressStatus: ProgressStatus,
 			metadata?: MediaMetadata,
+			currentStatus?: ProgressStatus | null,
 		) => {
 			// For TV shows, use the batched mutation that handles both status update
 			// and episode marking in one transaction. This ensures episode states stay
 			// consistent across all status transitions (e.g. "finished" -> "watching").
 			if (mediaType === "tv") {
-				// "finished", "caught-up", and "want-to-watch" need episode state changes.
-				// "watching" and "dropped" preserve existing episode states.
-				const needsEpisodeUpdate =
-					progressStatus === "finished" ||
-					progressStatus === "caught-up" ||
-					progressStatus === "want-to-watch";
 				const shouldMarkWatched =
 					progressStatus === "finished" || progressStatus === "caught-up";
+
+				// Leaving a completion state: always clear episodes
+				const isLeavingCompletion =
+					(currentStatus === "finished" || currentStatus === "caught-up") &&
+					!shouldMarkWatched;
+
+				// "finished", "caught-up", and "want-to-watch" need episode state changes.
+				// Also clear when leaving a completion state (e.g. "finished" → "watching").
+				const needsEpisodeUpdate =
+					shouldMarkWatched ||
+					progressStatus === "want-to-watch" ||
+					isLeavingCompletion;
 
 				const progress =
 					progressStatus === "finished" || progressStatus === "caught-up"
 						? 100
-						: progressStatus === "want-to-watch"
+						: progressStatus === "want-to-watch" || isLeavingCompletion
 							? 0
 							: undefined;
 
 				if (isSignedIn) {
-					if (needsEpisodeUpdate) {
+					if (isLeavingCompletion && !shouldMarkWatched) {
+						// Leaving completion → clear ALL episodes immediately (no TMDB fetch needed)
+						markShowEpisodesAndStatus({
+							tmdbId: Number(id),
+							mediaType,
+							seasons: [],
+							isWatched: false,
+							clearAllEpisodes: true,
+							progressStatus,
+							progress,
+							title: metadata?.title,
+							image: metadata?.image,
+							rating: metadata?.rating,
+							release_date: metadata?.release_date,
+							overview: metadata?.overview,
+						});
+					} else if (needsEpisodeUpdate) {
 						// Fetch TV details to get season structure, then make ONE mutation
 						getTvDetails({ id: Number(id) })
 							.then((details) => {
@@ -723,7 +747,7 @@ export function useSetProgressStatus() {
 							})
 							.catch(console.error);
 					} else {
-						// "watching"/"dropped": update status only, preserve episode states
+						// "watching"/"dropped" from non-completion: status only, preserve episodes
 						markShowEpisodesAndStatus({
 							tmdbId: Number(id),
 							mediaType,
@@ -747,7 +771,10 @@ export function useSetProgressStatus() {
 						metadata,
 					);
 
-					if (needsEpisodeUpdate) {
+					if (isLeavingCompletion && !shouldMarkWatched) {
+						// Clear all local episodes immediately
+						clearLocalShowProgress(Number(id));
+					} else if (needsEpisodeUpdate) {
 						getTvDetails({ id: Number(id) })
 							.then((details) => {
 								const seasonsToMark =
@@ -803,6 +830,7 @@ export function useSetProgressStatus() {
 			markShowEpisodesAndStatus,
 			setProgressStatusLocal,
 			markLocalSeason,
+			clearLocalShowProgress,
 		],
 	);
 }

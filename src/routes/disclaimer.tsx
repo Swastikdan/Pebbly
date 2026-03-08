@@ -20,29 +20,45 @@ function DisclaimerPage() {
 		<div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8 animate-fade-in">
 			<div className="mx-auto max-w-4xl rounded-xl p-8">
 				<div className="space-y-12 stagger-grid">
+					<div className="text-center">
+						<h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Disclaimer</h1>
+						<p className="mt-4 text-lg text-muted-foreground">
+							Last updated: March 08, 2026
+						</p>
+					</div>
+
 					<section>
 						<h2 className="mb-4 border-b pb-2 font-semibold text-2xl">
-							Disclaimer
+							General Information
 						</h2>
-						<div className="space-y-4">
+						<div className="space-y-4 text-muted-foreground">
 							<p>
-								This application is a personal project created for demonstration
-								purposes only. All movie data and content is provided by
-								third-party services (TMDb) and we do not claim ownership of any
-								media or intellectual property displayed.
+								Film Fanatic is a personal, non-commercial project created for portfolio and demonstration purposes. The information provided on this website is for general informational purposes only.
 							</p>
 							<p>
-								We do not store or process any sensitive user data. However, we
-								cannot guarantee the security of any information entered into
-								this application and users proceed at their own risk.
+								All data, including but not limited to, movie titles, synopses, ratings, and images, is provided by{" "}
+								<a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" className="text-primary underline">The Movie Database (TMDb)</a>.
+								Film Fanatic does not claim ownership of any of the film-related data or media displayed.
 							</p>
-							<div className="rounded-xl bg-foreground/5 p-4 transition-colors hover:bg-foreground/10 duration-300">
-								<h3 className="mb-2 font-medium">Important Notice</h3>
-								<p className="">
-									This service is provided &quot;as-is&quot; without any
-									warranties, express or implied. We accept no liability for any
-									data loss, inaccuracies, or damages resulting from the use of
-									this application.
+						</div>
+					</section>
+
+					<section>
+						<h2 className="mb-4 border-b pb-2 font-semibold text-2xl">
+							Terms of Use
+						</h2>
+						<div className="space-y-6 text-muted-foreground">
+							<div>
+								<h3 className="mb-2 font-medium text-foreground">1. No Commercial Use</h3>
+								<p>
+									The content and services provided on Film Fanatic are for personal and non-commercial use only. You may not use the service for any commercial purposes.
+								</p>
+							</div>
+
+							<div>
+								<h3 className="mb-2 font-medium text-foreground">2. User Accounts</h3>
+								<p>
+									While we offer watchlist functionality, we do not store any personally identifiable information on our servers. User data is managed through third-party authentication providers. We are not responsible for any issues related to these third-party services.
 								</p>
 							</div>
 						</div>
@@ -50,66 +66,26 @@ function DisclaimerPage() {
 
 					<section>
 						<h2 className="mb-4 border-b pb-2 font-semibold text-2xl">
-							Terms & Conditions
+							Limitation of Liability
 						</h2>
-						<div className="space-y-6">
-							<div>
-								<h3 className="mb-2 font-medium">1. Intellectual Property</h3>
-								<ul className="list-disc space-y-2 pl-6">
-									<li>
-										All movie data, images, and related content are property of
-										their respective owners
-									</li>
-									<li>
-										TMDb data is used in accordance with their API terms of
-										service
-									</li>
-									<li>
-										No commercial use of content displayed on this platform is
-										permitted
-									</li>
-								</ul>
-							</div>
+						<div className="space-y-4 text-muted-foreground">
+							<p>
+								This website is provided "as is," without any warranties, express or implied. Your use of the service is at your sole risk.
+							</p>
+							<p>
+								In no event shall the creators or maintainers of Film Fanatic be liable for any direct, indirect, incidental, special, or consequential damages arising out of or in connection with your use of the website. This includes, but is not limited to, data loss, service interruptions, or inaccuracies in the information provided.
+							</p>
+						</div>
+					</section>
 
-							<div>
-								<h3 className="mb-2 font-medium">2. Limitation of Liability</h3>
-								<p>
-									Under no circumstances shall the developers or maintainers of
-									this application be liable for:
-								</p>
-								<ul className="mt-2 list-disc space-y-2 pl-6">
-									<li>Any direct or indirect damages</li>
-									<li>Data loss or corruption</li>
-									<li>Service interruptions or downtime</li>
-									<li>Accuracy of provided information</li>
-								</ul>
-							</div>
-
-							<div>
-								<h3 className="mb-2 font-medium">3. Third-Party Services</h3>
-								<p>
-									This application relies on third-party services including but
-									not limited to:
-								</p>
-								<ul className="mt-2 list-disc space-y-2 pl-6">
-									<li>The Movie Database (TMDb)</li>
-									<li>Next.js/Vercel hosting platform</li>
-									<li>Other API providers</li>
-								</ul>
-								<p className="mt-3">
-									We are not responsible for the content or reliability of these
-									third-party services.
-								</p>
-							</div>
-
-							<div className="rounded-xl bg-foreground/5 p-4 transition-colors hover:bg-foreground/10 duration-300">
-								<h3 className="mb-2 font-medium">Changes to Terms</h3>
-								<p>
-									We reserve the right to modify these terms at any time. Users
-									are responsible for regularly reviewing these terms and
-									conditions.
-								</p>
-							</div>
+					<section>
+						<h2 className="mb-4 border-b pb-2 font-semibold text-2xl">
+							Changes to This Disclaimer
+						</h2>
+						<div className="space-y-4 text-muted-foreground">
+							<p>
+								We reserve the right to modify this disclaimer at any time. We encourage you to review this page periodically for any changes.
+							</p>
 						</div>
 					</section>
 				</div>
@@ -119,8 +95,7 @@ function DisclaimerPage() {
 					style={{ animationDelay: "100ms" }}
 				>
 					<p className="mb-4 text-muted-foreground">
-						By using this service, you acknowledge that you have read and
-						understood these terms.
+						By using Film Fanatic, you acknowledge that you have read, understood, and agree to this disclaimer.
 					</p>
 					<Link to="/">
 						<Button
