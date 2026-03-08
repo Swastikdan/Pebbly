@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { DefaultLoader } from "@/components/default-loader";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaCard } from "@/components/media-card";
 import { ShareButton } from "@/components/share-button";
@@ -154,7 +155,7 @@ function PersonPage() {
 	}
 
 	if (!data || error) {
-		throw notFound();
+		return <DefaultNotFoundComponent />;
 	}
 
 	const { name, profile_path, place_of_birth, birthday, deathday } = data;

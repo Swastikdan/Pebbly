@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { MediaCreditSection } from "@/components/media/media-credit-section";
 import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
@@ -57,7 +58,7 @@ function TvCastAndCrewPage() {
 	}
 
 	if (!data) {
-		throw notFound();
+		return <DefaultNotFoundComponent />;
 	}
 	return (
 		<MediaCreditSection

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PersonIdRouteImport } from './routes/person.$id'
@@ -35,6 +36,11 @@ const WatchlistRoute = WatchlistRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecommendationsRoute = RecommendationsRouteImport.update({
+  id: '/recommendations',
+  path: '/recommendations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DisclaimerRoute = DisclaimerRouteImport.update({
@@ -125,6 +131,7 @@ const TvIdChar123SlugChar125SeasonSeasonNumberRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/disclaimer': typeof DisclaimerRoute
+  '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/disclaimer': typeof DisclaimerRoute
+  '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/disclaimer': typeof DisclaimerRoute
+  '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/disclaimer'
+    | '/recommendations'
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/disclaimer'
+    | '/recommendations'
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/disclaimer'
+    | '/recommendations'
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
@@ -243,6 +255,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DisclaimerRoute: typeof DisclaimerRoute
+  RecommendationsRoute: typeof RecommendationsRoute
   SearchRoute: typeof SearchRoute
   WatchlistRoute: typeof WatchlistRoute
   ApiMetaimageRoute: typeof ApiMetaimageRoute
@@ -274,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recommendations': {
+      id: '/recommendations'
+      path: '/recommendations'
+      fullPath: '/recommendations'
+      preLoaderRoute: typeof RecommendationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/disclaimer': {
@@ -387,6 +407,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DisclaimerRoute: DisclaimerRoute,
+  RecommendationsRoute: RecommendationsRoute,
   SearchRoute: SearchRoute,
   WatchlistRoute: WatchlistRoute,
   ApiMetaimageRoute: ApiMetaimageRoute,

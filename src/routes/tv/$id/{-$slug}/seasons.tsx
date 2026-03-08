@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +63,7 @@ function TvSeasonsPage() {
 	}
 
 	if (!data) {
-		throw notFound();
+		return <DefaultNotFoundComponent />;
 	}
 	const seasons = data?.seasons?.slice() ?? [];
 	const zeroSeason = seasons.find((season) => season.season_number === 0);

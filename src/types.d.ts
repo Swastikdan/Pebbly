@@ -734,3 +734,11 @@ export interface PersonCreditCrew {
 	media_type: "movie" | "tv";
 	episode_count?: number;
 }
+
+export interface AIRecommendation {
+	title: string;
+	tmdbId: number | null;
+	mediaType: "movie" | "tv";
+	relevanceScore: number;
+	reasoning: string;
+}

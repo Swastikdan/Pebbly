@@ -4,6 +4,10 @@ import {
 	HeadContent,
 	Scripts,
 } from "@tanstack/react-router";
+import {
+	DefaultErrorComponent,
+	DefaultNotFoundComponent,
+} from "@/components/default-not-found";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { useEffect, useState } from "react";
 import { Footer } from "@/components/footer";
@@ -121,6 +125,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 		],
 	}),
 
+	notFoundComponent: DefaultNotFoundComponent,
+	errorComponent: DefaultErrorComponent,
 	shellComponent: RootDocument,
 });
 

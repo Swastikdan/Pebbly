@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-
 import { DefaultLoader } from "@/components/default-loader";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { CastSection } from "@/components/media/cast-section";
 import { GenreContainer } from "@/components/media/genre-container";
 import { InlineEpisodeBrowser } from "@/components/media/inline-episode-browser";
@@ -80,7 +80,7 @@ function TvHomePage() {
 		return <DefaultLoader />;
 	}
 	if (!data || error) {
-		throw notFound();
+		return <DefaultNotFoundComponent />;
 	}
 	const {
 		genres,

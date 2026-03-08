@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaVideoImageContainer } from "@/components/media/media-video-image-container";
 import { ShareButton } from "@/components/share-button";
@@ -59,7 +60,7 @@ function TvMediaPage() {
 	}
 
 	if (!data) {
-		throw notFound();
+		return <DefaultNotFoundComponent />;
 	}
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4">

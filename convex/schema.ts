@@ -11,6 +11,9 @@ export default defineSchema({
     image: v.optional(v.string()),
 
     email: v.optional(v.string()),
+
+    role: v.optional(v.string()), // "public" | "meta"
+    aiGenerationEnabled: v.optional(v.boolean()),
   }).index("by_token", ["tokenIdentifier"]),
 
   watch_items: defineTable({
@@ -88,4 +91,18 @@ export default defineSchema({
     .index("by_user_season", ["userId", "tmdbId", "season"])
     .index("by_user_media", ["userId", "tmdbId"])
     .index("by_user", ["userId"]),
+
+  ai_recommendations: defineTable({
+    userId: v.id("users"),
+    recommendations: v.string(), // JSON-stringified AIRecommendation[]
+    watchlistHash: v.string(),
+    inputStats: v.object({
+      movieCount: v.number(),
+      tvCount: v.number(),
+      episodesWatched: v.number(),
+      totalItems: v.number(),
+    }),
+    model: v.string(),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
 });

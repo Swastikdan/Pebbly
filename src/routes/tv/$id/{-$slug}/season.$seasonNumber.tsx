@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +75,7 @@ function TvSeasonDetailPage() {
 	}
 
 	if (!tvData || !seasonData) {
-		throw notFound();
+		return <DefaultNotFoundComponent />;
 	}
 
 	const episodes = seasonData.episodes ?? [];

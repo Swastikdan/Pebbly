@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaCard } from "@/components/media-card";
 import { ShareButton } from "@/components/share-button";
@@ -62,7 +63,7 @@ function MovieCollnetionPage() {
 	}
 
 	if (!data || error) {
-		throw notFound();
+		return <DefaultNotFoundComponent />;
 	}
 	const { name, overview, poster_path, parts } = data;
 

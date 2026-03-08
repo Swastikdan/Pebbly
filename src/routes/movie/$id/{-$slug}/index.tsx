@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { CastSection } from "@/components/media/cast-section";
 import { Collections } from "@/components/media/collections";
 import { GenreContainer } from "@/components/media/genre-container";
@@ -80,7 +81,7 @@ function MovieHomePage() {
 	}
 
 	if (!data || error) {
-		throw notFound();
+		return <DefaultNotFoundComponent />;
 	}
 
 	const {

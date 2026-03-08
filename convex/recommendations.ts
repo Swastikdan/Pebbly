@@ -1,0 +1,514 @@
+import {
+  action,
+  internalMutation,
+  internalQuery,
+  query,
+} from "./_generated/server";
+import { internal } from "./_generated/api";
+import { v } from "convex/values";
+
+// ─── Internal helpers ────────────────────────────────────────────────
+
+/** Validate auth + role + feature flag. Returns user doc or throws. */
+export const getAuthorizedUser = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.subject),
+      )
+      .first();
+
+    if (!user) throw new Error("Unauthorized");
+    if ((identity as any).publicMetadata?.aiGenerationEnabled === false)
+      throw new Error("Unauthorized: insufficient role");
+
+    return user;
+  },
+});
+
+/** Collect all watchlist data for the authenticated user. */
+export const gatherWatchlistData = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.subject),
+      )
+      .first();
+    if (!user) throw new Error("Unauthorized");
+
+    // All watch items
+    const watchItems = await ctx.db
+      .query("watch_items")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Custom lists
+    const lists = await ctx.db
+      .query("lists")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // List items (for all lists)
+    const listItems = await ctx.db
+      .query("list_items")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Episode progress (count watched episodes)
+    const episodeProgress = await ctx.db
+      .query("episode_progress")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const watchedEpisodes = episodeProgress.filter((e) => e.isWatched).length;
+
+    const movieCount = watchItems.filter(
+      (i) => i.mediaType === "movie",
+    ).length;
+    const tvCount = watchItems.filter((i) => i.mediaType === "tv").length;
+
+    return {
+      watchItems,
+      lists,
+      listItems,
+      inputStats: {
+        movieCount,
+        tvCount,
+        episodesWatched: watchedEpisodes,
+        totalItems: watchItems.length,
+      },
+    };
+  },
+});
+
+/** Save (upsert) recommendations for a user. */
+export const saveRecommendations = internalMutation({
+  args: {
+    userId: v.id("users"),
+    recommendations: v.string(),
+    watchlistHash: v.string(),
+    inputStats: v.object({
+      movieCount: v.number(),
+      tvCount: v.number(),
+      episodesWatched: v.number(),
+      totalItems: v.number(),
+    }),
+    model: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Delete existing cached result for this user
+    const existing = await ctx.db
+      .query("ai_recommendations")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (existing) {
+      await ctx.db.delete(existing._id);
+    }
+
+    await ctx.db.insert("ai_recommendations", {
+      userId: args.userId,
+      recommendations: args.recommendations,
+      watchlistHash: args.watchlistHash,
+      inputStats: args.inputStats,
+      model: args.model,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+/** Admin utility: set role and aiGenerationEnabled on a user. */
+export const setUserRole = internalMutation({
+  args: {
+    tokenIdentifier: v.string(),
+    role: v.string(),
+    aiGenerationEnabled: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(user._id, {
+      role: args.role,
+      aiGenerationEnabled: args.aiGenerationEnabled,
+    });
+  },
+});
+
+// ─── Public queries ──────────────────────────────────────────────────
+
+/** Client-facing access check. */
+export const getUserRecommendationAccess = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity)
+      return { hasAccess: false, reason: "not_authenticated" as const };
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.subject),
+      )
+      .first();
+
+    if (!user) return { hasAccess: false, reason: "user_not_found" as const };
+    if ((identity as any).publicMetadata?.aiGenerationEnabled === false)
+      return { hasAccess: false, reason: "feature_disabled" as const };
+
+    return { hasAccess: true };
+  },
+});
+
+/** Return cached recommendations for the user, or null. */
+export const getCachedRecommendations = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.subject),
+      )
+      .first();
+    if (!user) return null;
+
+    // Also check role/flag so unauthorized users can't read cached data
+    if ((user as any).aiGenerationEnabled === false) return null;
+
+    const cached = await ctx.db
+      .query("ai_recommendations")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    return cached ?? null;
+  },
+});
+
+// ─── Action: generate recommendations ────────────────────────────────
+
+const MODEL = "openai/gpt-oss-120b:free";
+const RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+
+function computeHash(items: Array<{ tmdbId: number; progressStatus?: string; reaction?: string }>): string {
+  const sorted = items
+    .map((i) => `${i.tmdbId}:${i.progressStatus ?? ""}:${i.reaction ?? ""}`)
+    .sort();
+  // Simple string hash
+  let hash = 0;
+  const str = sorted.join("|");
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash + char) | 0;
+  }
+  return hash.toString(36);
+}
+
+function buildPrompt(data: {
+  watchItems: Array<{
+    tmdbId: number;
+    mediaType: string;
+    title?: string;
+    rating?: number;
+    progressStatus?: string;
+    reaction?: string;
+    progress?: number;
+  }>;
+  lists: Array<{ name: string; _id: any }>;
+  listItems: Array<{ listId: any; tmdbId: number; mediaType: string }>;
+  inputStats: {
+    movieCount: number;
+    tvCount: number;
+    episodesWatched: number;
+    totalItems: number;
+  };
+}): string {
+  const { watchItems, lists, listItems, inputStats } = data;
+
+  // Categorize items
+  const loved = watchItems.filter(
+    (i) => i.reaction === "loved" || i.reaction === "liked",
+  );
+  const watching = watchItems.filter(
+    (i) => i.progressStatus === "watching",
+  );
+  const watchLater = watchItems.filter(
+    (i) => i.progressStatus === "watch-later",
+  );
+  const disliked = watchItems.filter(
+    (i) =>
+      i.reaction === "not-for-me" ||
+      i.reaction === "mixed" ||
+      i.progressStatus === "dropped",
+  );
+  const done = watchItems.filter(
+    (i) => i.progressStatus === "done" && i.reaction !== "loved" && i.reaction !== "liked",
+  );
+
+  const formatItem = (i: (typeof watchItems)[0]) => {
+    const parts = [`- ${i.title ?? "Unknown"} (TMDB ID: ${i.tmdbId}, ${i.mediaType})`];
+    if (i.rating) parts.push(`Rating: ${i.rating}/10`);
+    if (i.reaction) parts.push(`Reaction: ${i.reaction}`);
+    return parts.join(" | ");
+  };
+
+  // Truncate to top 50 items by priority: loved > watching > done > watch-later > disliked
+  const prioritized = new Set(
+    [...loved, ...watching, ...done, ...watchLater, ...disliked]
+      .slice(0, 50)
+      .map((i) => i.tmdbId),
+  );
+  const existingIds = watchItems.map((i) => i.tmdbId);
+
+  const inScope = (i: (typeof watchItems)[0]) => prioritized.has(i.tmdbId);
+
+  let prompt = `Here is my watchlist data:\n\n`;
+
+  const scopedLoved = loved.filter(inScope);
+  const scopedWatching = watching.filter(inScope);
+  const scopedDone = done.filter(inScope);
+  const scopedWatchLater = watchLater.filter(inScope);
+  const scopedDisliked = disliked.filter(inScope);
+
+  if (scopedLoved.length > 0) {
+    prompt += `## Content I loved/liked:\n${scopedLoved.map(formatItem).join("\n")}\n\n`;
+  }
+
+  if (scopedWatching.length > 0) {
+    prompt += `## Currently watching:\n${scopedWatching.map(formatItem).join("\n")}\n\n`;
+  }
+
+  if (scopedDone.length > 0) {
+    prompt += `## Completed (no strong reaction):\n${scopedDone.map(formatItem).join("\n")}\n\n`;
+  }
+
+  if (scopedWatchLater.length > 0) {
+    prompt += `## On my watch-later list:\n${scopedWatchLater.map(formatItem).join("\n")}\n\n`;
+  }
+
+  if (scopedDisliked.length > 0) {
+    prompt += `## Content I didn't enjoy (dropped/mixed/not-for-me):\n${scopedDisliked.map(formatItem).join("\n")}\n\n`;
+  }
+
+  // Custom lists
+  if (lists.length > 0) {
+    prompt += `## My custom lists:\n`;
+    for (const list of lists) {
+      const items = listItems.filter((li) => li.listId === list._id);
+      const titles = items
+        .map((li) => {
+          const wi = watchItems.find(
+            (w) => w.tmdbId === li.tmdbId && w.mediaType === li.mediaType,
+          );
+          return wi?.title ?? `TMDB:${li.tmdbId}`;
+        })
+        .join(", ");
+      prompt += `- "${list.name}": ${titles}\n`;
+    }
+    prompt += "\n";
+  }
+
+  prompt += `## Stats:\n- ${inputStats.movieCount} movies, ${inputStats.tvCount} TV shows tracked\n- ${inputStats.episodesWatched} episodes watched\n\n`;
+
+  prompt += `Based on this data, recommend 10-15 movies and TV shows I would likely enjoy.\n`;
+  prompt += `Do NOT recommend any title with these TMDB IDs (already in my watchlist): ${existingIds.join(", ")}\n\n`;
+  prompt += `Respond with this exact JSON schema:\n`;
+  prompt += `{
+  "recommendations": [
+    {
+      "title": "string - exact official title",
+      "tmdbId": "number or null if unknown",
+      "mediaType": "movie" or "tv",
+      "relevanceScore": "number 0-100",
+      "reasoning": "string - 1-2 sentence explanation"
+    }
+  ]
+}`;
+
+  return prompt;
+}
+
+/** Internal query to get cached recommendations by userId (for use within actions). */
+export const getCachedInternal = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("ai_recommendations")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+  },
+});
+
+interface Recommendation {
+  title: string;
+  tmdbId: number | null;
+  mediaType: "movie" | "tv";
+  relevanceScore: number;
+  reasoning: string;
+}
+
+interface InputStats {
+  movieCount: number;
+  tvCount: number;
+  episodesWatched: number;
+  totalItems: number;
+}
+
+type GenerateResult =
+  | { recommendations: Recommendation[]; inputStats: InputStats; generatedAt: number; cached: boolean }
+  | { error: string };
+
+export const generateRecommendations = action({
+  args: {},
+  handler: async (ctx): Promise<GenerateResult> => {
+    // 1. Auth + role + flag check
+    const user = await ctx.runQuery(
+      internal.recommendations.getAuthorizedUser,
+    );
+
+    // 2. Gather watchlist data
+    const data = await ctx.runQuery(
+      internal.recommendations.gatherWatchlistData,
+    );
+
+    // 3. Check for empty watchlist
+    if (data.watchItems.length === 0) {
+      return { error: "empty_watchlist" };
+    }
+
+    // 4. Compute hash and check cache
+    const watchlistHash = computeHash(data.watchItems);
+
+    const cachedRaw = await ctx.runQuery(
+      internal.recommendations.getCachedInternal,
+      { userId: user._id },
+    );
+
+    if (cachedRaw) {
+      // Rate limiting
+      if (Date.now() - cachedRaw.createdAt < RATE_LIMIT_MS) {
+        if (cachedRaw.watchlistHash === watchlistHash) {
+          return {
+            recommendations: JSON.parse(cachedRaw.recommendations) as Recommendation[],
+            inputStats: cachedRaw.inputStats,
+            generatedAt: cachedRaw.createdAt,
+            cached: true,
+          };
+        }
+        // Watchlist changed but rate limited
+        return { error: "rate_limited" };
+      }
+
+      // Cache exists and watchlist unchanged — return cached
+      if (cachedRaw.watchlistHash === watchlistHash) {
+        return {
+          recommendations: JSON.parse(cachedRaw.recommendations) as Recommendation[],
+          inputStats: cachedRaw.inputStats,
+          generatedAt: cachedRaw.createdAt,
+          cached: true,
+        };
+      }
+    }
+
+    // 5. Build prompt and call OpenRouter
+    const userPrompt = buildPrompt(data);
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      console.error("OPENROUTER_API_KEY is not set in Convex environment variables");
+      return { error: "api_unavailable" };
+    }
+
+    let responseText: string;
+    try {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            response_format: { type: "json_object" },
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.",
+              },
+              {
+                role: "user",
+                content: userPrompt,
+              },
+            ],
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => "");
+        console.error(`OpenRouter API error: ${response.status} ${response.statusText}`, errorBody);
+        return { error: "api_unavailable" };
+      }
+
+      const result = await response.json();
+      responseText =
+        result.choices?.[0]?.message?.content ?? "";
+    } catch (err) {
+      console.error("OpenRouter fetch error:", err);
+      return { error: "api_unavailable" };
+    }
+
+    // 6. Parse and validate response
+    let parsed: { recommendations: Recommendation[] };
+
+    try {
+      parsed = JSON.parse(responseText);
+      if (!Array.isArray(parsed.recommendations)) {
+        return { error: "invalid_response" };
+      }
+    } catch {
+      return { error: "invalid_response" };
+    }
+
+    // 7. Filter out titles already in watchlist
+    const existingIds = new Set(data.watchItems.map((i: { tmdbId: number }) => i.tmdbId));
+    parsed.recommendations = parsed.recommendations.filter(
+      (r) => r.tmdbId == null || !existingIds.has(r.tmdbId),
+    );
+
+    // 8. Save to cache
+    await ctx.runMutation(internal.recommendations.saveRecommendations, {
+      userId: user._id,
+      recommendations: JSON.stringify(parsed.recommendations),
+      watchlistHash,
+      inputStats: data.inputStats,
+      model: MODEL,
+    });
+
+    // 9. Return result
+    return {
+      recommendations: parsed.recommendations,
+      inputStats: data.inputStats,
+      generatedAt: Date.now(),
+      cached: false,
+    };
+  },
+});
