@@ -101,12 +101,12 @@ export function CustomListDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[380px] overflow-hidden rounded-2xl p-0">
 				{/* Colored accent strip at top */}
-				<div
+				{/* <div
 					className="h-1.5 w-full transition-colors duration-300"
 					style={{
 						backgroundColor: color || "transparent",
 					}}
-				/>
+				/> */}
 
 				<div className="px-6 pt-4 pb-6 space-y-5">
 					<DialogHeader className="space-y-1">

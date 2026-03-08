@@ -53,14 +53,14 @@ function DialogContent({
 			<DialogOverlay />
 			<DialogPrimitive.Content
 				className={cn(
-					"bg-black data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4  border  duration-200 rounded-xl",
+					"bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 border duration-200 rounded-xl",
 					className,
 				)}
 				data-slot="dialog-content"
 				{...props}
 			>
 				{children}
-				<DialogPrimitive.Close className="absolute top-4 right-4 z-20 cursor-pointer active:scale-90 duration-300 transition-all p-2.5 bg-background dark:bg-foreground rounded-full pressable text-black ">
+				<DialogPrimitive.Close className="absolute top-4 right-4 z-20 cursor-pointer active:scale-90 duration-300 transition-all p-2.5 bg-muted hover:bg-muted/80 dark:bg-foreground dark:hover:bg-foreground/90 rounded-full pressable text-foreground dark:text-background">
 					<XIcon className="size-5.5" />
 
 					<span className="sr-only">Close</span>

@@ -9,6 +9,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sparkles } from "lucide-react";
 import { BookMarkFilledIcon, MenuIcon } from "@/components/ui/icons";
 import {
 	Sheet,
@@ -156,6 +157,17 @@ const Navbar = () => {
 										>
 											<BookMarkFilledIcon className="fill-current" />
 											Watchlist
+										</Button>
+									</SheetClose>
+								</Link>
+								<Link to="/recommendations" className="w-full">
+									<SheetClose asChild>
+										<Button
+											variant="outline"
+											className="h-10 w-full justify-start"
+										>
+											<Sparkles className="size-4" />
+											AI Recommendations
 										</Button>
 									</SheetClose>
 								</Link>

@@ -8,6 +8,7 @@ import {
 } from "@clerk/clerk-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 import {
 	BookMarkFilledIcon,
 	SearchFilledIcon,
@@ -53,6 +54,11 @@ DesktopNavButton.displayName = "DesktopNavButton";
 const DesktopNavButtons = () => {
 	return (
 		<>
+			<DesktopNavButton
+				href="/recommendations"
+				label="AI Recommendations"
+				icon={<Sparkles className="size-5" />}
+			/>
 			<DesktopNavButton
 				href="/watchlist"
 				label="Watchlist"

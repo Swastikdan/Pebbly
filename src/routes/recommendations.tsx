@@ -1,16 +1,27 @@
-import { SignInButton } from "@clerk/clerk-react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Clock, RefreshCw, Search, Sparkles, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
+import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+	GENRE_LIST,
+	HORIZONTAL_MEDIA_GRID_CLASS,
+} from "@/constants";
 import {
 	useRecommendationAccess,
 	useRecommendations,
 } from "@/hooks/useRecommendations";
+import type {
+	GenerateOptions,
+	RecommendationHistoryEntry,
+} from "@/hooks/useRecommendations";
+import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
 import { cn } from "@/lib/utils";
-import type { AIRecommendation } from "@/types";
+import type { AIRecommendation, BasicMovie, BasicTv } from "@/types";
 
 export const Route = createFileRoute("/recommendations")({
 	head: () => ({
@@ -18,58 +29,122 @@ export const Route = createFileRoute("/recommendations")({
 			{ title: "AI Recommendations | Film Fanatic" },
 			{
 				name: "description",
-				content: "AI-powered movie and TV show recommendations based on your watchlist.",
+				content:
+					"AI-powered movie and TV show recommendations based on your watchlist.",
 			},
 		],
 	}),
 	component: RecommendationsPage,
 });
 
+// ─── TMDB Helpers ───────────────────────────────────────────────────
+
+interface NormalizedTmdbData {
+	id: number;
+	title: string;
+	posterPath: string | null;
+	rating: number;
+	releaseDate: string | null;
+	overview: string;
+}
+
+function normalizeTmdbData(
+	data: BasicMovie | BasicTv | null | undefined,
+	mediaType: "movie" | "tv",
+): NormalizedTmdbData | null {
+	if (!data) return null;
+	if (mediaType === "movie") {
+		const m = data as BasicMovie;
+		return {
+			id: m.id,
+			title: m.title,
+			posterPath: m.poster_path || null,
+			rating: m.vote_average,
+			releaseDate: m.release_date || null,
+			overview: m.overview,
+		};
+	}
+	const t = data as BasicTv;
+	return {
+		id: t.id,
+		title: t.name,
+		posterPath: t.poster_path || null,
+		rating: t.vote_average,
+		releaseDate: t.first_air_date || null,
+		overview: t.overview,
+	};
+}
+
+function titlesMatch(aiTitle: string, tmdbTitle: string): boolean {
+	const normalize = (s: string) =>
+		s
+			.toLowerCase()
+			.replace(/[^a-z0-9]/g, "");
+	const a = normalize(aiTitle);
+	const b = normalize(tmdbTitle);
+	return a === b || a.includes(b) || b.includes(a);
+}
+
+function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
+	const movieResult = useQuery({
+		queryKey: ["basic_movie_details", tmdbId],
+		queryFn: () => getBasicMovieDetails({ id: tmdbId! }),
+		enabled: !!tmdbId && mediaType === "movie",
+		staleTime: 1000 * 60 * 60 * 48,
+		retry: false,
+		refetchOnWindowFocus: false,
+	});
+
+	const tvResult = useQuery({
+		queryKey: ["basic_tv_details", tmdbId],
+		queryFn: () => getBasicTvDetails({ id: tmdbId! }),
+		enabled: !!tmdbId && mediaType === "tv",
+		staleTime: 1000 * 60 * 60 * 48,
+		retry: false,
+		refetchOnWindowFocus: false,
+	});
+
+	if (!tmdbId) return { data: null, isLoading: false, exists: false };
+
+	const result = mediaType === "movie" ? movieResult : tvResult;
+	return {
+		data: normalizeTmdbData(result.data, mediaType),
+		isLoading: result.isLoading,
+		exists: !!result.data && !result.isError,
+	};
+}
+
+function getScoreColor(score: number) {
+	if (score >= 80)
+		return "bg-green-500/15 text-green-700 dark:text-green-400";
+	if (score >= 60)
+		return "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400";
+	return "bg-secondary text-muted-foreground";
+}
+
+function formatTimestamp(ts: number) {
+	return new Date(ts).toLocaleDateString(undefined, {
+		month: "short",
+		day: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+}
+
+// ─── Page ───────────────────────────────────────────────────────────
+
 function RecommendationsPage() {
-	const { hasAccess, loading: accessLoading, reason, isSignedIn } =
+	const { hasAccess, loading: accessLoading, isSignedIn } =
 		useRecommendationAccess();
 
-	if (!isSignedIn) {
-		return (
-			<PageShell>
-				<div className="flex flex-col items-center justify-center gap-4 py-20">
-					<Sparkles className="size-12 text-muted-foreground" />
-					<h2 className="text-lg font-semibold">Sign in to get AI recommendations</h2>
-					<p className="text-sm text-muted-foreground max-w-md text-center">
-						Get personalized movie and TV show suggestions based on your watchlist, viewing progress, and reactions.
-					</p>
-					<SignInButton mode="modal">
-						<Button variant="secondary" size="lg">
-							Sign In
-						</Button>
-					</SignInButton>
-				</div>
-			</PageShell>
-		);
+	if (!isSignedIn || (!accessLoading && !hasAccess)) {
+		return <DefaultNotFoundComponent />;
 	}
 
 	if (accessLoading) {
 		return (
 			<PageShell>
 				<LoadingSkeletons />
-			</PageShell>
-		);
-	}
-
-	if (!hasAccess) {
-		return (
-			<PageShell>
-				<div className="flex flex-col items-center justify-center gap-4 py-20">
-					<Sparkles className="size-12 text-muted-foreground" />
-					<h2 className="text-lg font-semibold">Feature Not Available</h2>
-					<p className="text-sm text-muted-foreground max-w-md text-center">
-						{reason === "insufficient_role"
-							? "Your account does not have access to AI recommendations."
-							: reason === "feature_disabled"
-								? "AI recommendations are not enabled for your account."
-								: "Unable to access AI recommendations."}
-					</p>
-				</div>
 			</PageShell>
 		);
 	}
@@ -95,72 +170,149 @@ function PageShell({ children }: { children: React.ReactNode }) {
 	);
 }
 
+// ─── Content ────────────────────────────────────────────────────────
+
+const POPULAR_GENRES = GENRE_LIST.slice(0, 14);
+
 function RecommendationsContent() {
-	const {
-		recommendations,
-		inputStats,
-		generatedAt,
-		model,
-		isGenerating,
-		error,
-		generate,
-	} = useRecommendations();
+	const { history, isGenerating, error, generate, deleteEntry } =
+		useRecommendations();
+
+	const [activeId, setActiveId] = useState<string | null>(null);
+	const [genMode, setGenMode] = useState<"watchlist" | "genre">("watchlist");
+	const [mediaType, setMediaType] = useState<"movie" | "tv" | undefined>();
+	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+
+	const toggleGenre = (name: string) => {
+		setSelectedGenres((prev) =>
+			prev.includes(name) ? prev.filter((g) => g !== name) : [...prev, name],
+		);
+	};
+
+	const handleGenerate = () => {
+		const options: GenerateOptions = { generationType: genMode };
+		if (mediaType) options.mediaTypePreference = mediaType;
+		if (genMode === "genre" && selectedGenres.length > 0)
+			options.genrePreference = selectedGenres.join(", ");
+		generate(options);
+		setActiveId(null); // will show newest when it arrives
+	};
+
+	const handleDelete = async (id: string) => {
+		await deleteEntry(id);
+		if (activeId === id) setActiveId(null);
+	};
+
+	// Active entry: if activeId is set, find it; otherwise show the newest
+	const activeEntry =
+		(activeId ? history.find((h) => h._id === activeId) : null) ??
+		history[0] ??
+		null;
 
 	const errorMessages: Record<string, string> = {
-		empty_watchlist: "Add some movies or TV shows to your watchlist first to get recommendations.",
-		api_unavailable: "The AI service is temporarily unavailable. Please try again later.",
-		invalid_response: "The AI returned an unexpected response. Please try again.",
-		rate_limited: "Please wait a few minutes before generating new recommendations.",
+		empty_watchlist:
+			"Add some movies or TV shows to your watchlist first to get recommendations.",
+		api_unavailable:
+			"The AI service is temporarily unavailable. Please try again later.",
+		invalid_response:
+			"The AI returned an unexpected response. Please try again.",
+		rate_limited:
+			"Please wait a couple minutes before generating new recommendations.",
 	};
 
 	return (
-		<div className="space-y-6">
-			{/* Transparency stats */}
-			{inputStats && (
-				<div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-					<span>
-						Based on: {inputStats.movieCount} movie{inputStats.movieCount !== 1 ? "s" : ""},{" "}
-						{inputStats.tvCount} TV show{inputStats.tvCount !== 1 ? "s" : ""},{" "}
-						{inputStats.episodesWatched} episode{inputStats.episodesWatched !== 1 ? "s" : ""} watched
-					</span>
-					{model && (
-						<span className="text-xs text-muted-foreground/70">
-							Model: {model}
-						</span>
-					)}
-					{generatedAt && (
-						<span className="text-xs text-muted-foreground/70">
-							Generated: {new Date(generatedAt).toLocaleDateString(undefined, {
-								month: "short",
-								day: "numeric",
-								hour: "2-digit",
-								minute: "2-digit",
-							})}
-						</span>
-					)}
-				</div>
-			)}
+		<div className="space-y-8">
+			{/* ── Generation Controls ─────────────────────────── */}
+			<div className="space-y-4">
+				{/* Mode toggle */}
+				<div className="flex flex-wrap items-center gap-3">
+					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
+						<Button
+							className="h-8 px-4 text-xs font-semibold rounded-md"
+							variant={genMode === "watchlist" ? "default" : "ghost"}
+							onClick={() => setGenMode("watchlist")}
+						>
+							From Watchlist
+						</Button>
+						<Button
+							className="h-8 px-4 text-xs font-semibold rounded-md"
+							variant={genMode === "genre" ? "default" : "ghost"}
+							onClick={() => setGenMode("genre")}
+						>
+							By Genre
+						</Button>
+					</div>
 
-			{/* Generate / Refresh button */}
-			<Button
-				onClick={generate}
-				disabled={isGenerating}
-				variant="secondary"
-				className="gap-2"
-			>
-				{isGenerating ? (
-					<RefreshCw className="size-4 animate-spin" />
-				) : recommendations ? (
-					<RefreshCw className="size-4" />
-				) : (
-					<Sparkles className="size-4" />
+					{/* Media type toggle */}
+					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
+						<Button
+							className="h-8 px-3 text-xs font-semibold rounded-md"
+							variant={!mediaType ? "default" : "ghost"}
+							onClick={() => setMediaType(undefined)}
+						>
+							All
+						</Button>
+						<Button
+							className="h-8 px-3 text-xs font-semibold rounded-md"
+							variant={mediaType === "movie" ? "default" : "ghost"}
+							onClick={() =>
+								setMediaType(mediaType === "movie" ? undefined : "movie")
+							}
+						>
+							Movies
+						</Button>
+						<Button
+							className="h-8 px-3 text-xs font-semibold rounded-md"
+							variant={mediaType === "tv" ? "default" : "ghost"}
+							onClick={() =>
+								setMediaType(mediaType === "tv" ? undefined : "tv")
+							}
+						>
+							TV Shows
+						</Button>
+					</div>
+
+					{/* Generate button */}
+					<Button
+						onClick={handleGenerate}
+						disabled={isGenerating}
+						variant="secondary"
+						className="gap-2"
+					>
+						{isGenerating ? (
+							<RefreshCw className="size-4 animate-spin" />
+						) : history.length > 0 ? (
+							<RefreshCw className="size-4" />
+						) : (
+							<Sparkles className="size-4" />
+						)}
+						{isGenerating
+							? "Generating..."
+							: "Generate"}
+					</Button>
+				</div>
+
+				{/* Genre chips — only visible in "By Genre" mode */}
+				{genMode === "genre" && (
+					<div className="flex flex-wrap gap-1.5">
+						{POPULAR_GENRES.map((genre) => (
+							<button
+								key={genre.id}
+								type="button"
+								className={cn(
+									"rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+									selectedGenres.includes(genre.name)
+										? "bg-foreground text-background"
+										: "bg-secondary/60 text-muted-foreground hover:bg-secondary",
+								)}
+								onClick={() => toggleGenre(genre.name)}
+							>
+								{genre.name}
+							</button>
+						))}
+					</div>
 				)}
-				{isGenerating
-					? "Generating..."
-					: recommendations
-						? "Refresh Recommendations"
-						: "Generate Recommendations"}
-			</Button>
+			</div>
 
 			{/* Error */}
 			{error && (
@@ -170,97 +322,276 @@ function RecommendationsContent() {
 			)}
 
 			{/* Loading */}
-			{isGenerating && !recommendations && <LoadingSkeletons />}
+			{isGenerating && <LoadingSkeletons />}
 
-			{/* Results */}
-			{recommendations && recommendations.length > 0 && (
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{recommendations.map((rec, i) => (
-						<RecommendationCard key={`${rec.title}-${i}`} recommendation={rec} />
-					))}
+			{/* ── Active Recommendations ─────────────────────── */}
+			{!isGenerating && activeEntry && (
+				<div className="space-y-3">
+					{/* Active entry metadata */}
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+						<Badge
+							variant="outline"
+							className="text-[10px] font-medium capitalize"
+						>
+							{activeEntry.generationType === "genre"
+								? "By Genre"
+								: "Watchlist"}
+						</Badge>
+						{activeEntry.genrePreference && (
+							<span>{activeEntry.genrePreference}</span>
+						)}
+						{activeEntry.mediaTypePreference && (
+							<span className="capitalize">
+								{activeEntry.mediaTypePreference === "movie"
+									? "Movies only"
+									: "TV only"}
+							</span>
+						)}
+						<span>
+							{activeEntry.inputStats.movieCount} movies,{" "}
+							{activeEntry.inputStats.tvCount} TV shows
+						</span>
+						<span>{formatTimestamp(activeEntry.createdAt)}</span>
+					</div>
+
+					{/* Cards grid */}
+					<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
+						{activeEntry.recommendations.map((rec, i) => (
+							<RecommendationCard
+								key={`${rec.tmdbId ?? rec.title}-${i}`}
+								recommendation={rec}
+							/>
+						))}
+					</div>
 				</div>
 			)}
 
-			{/* Empty state (has generated but 0 results) */}
-			{recommendations && recommendations.length === 0 && !isGenerating && (
+			{/* Empty state */}
+			{!isGenerating && history.length === 0 && (
 				<div className="flex flex-col items-center justify-center gap-4 py-20">
-					<p className="text-muted-foreground">
-						No recommendations could be generated. Try adding more items to your watchlist.
+					<Sparkles className="size-10 text-muted-foreground/40" />
+					<p className="text-sm text-muted-foreground text-center max-w-sm">
+						Generate your first recommendations using your watchlist or by
+						selecting genres above.
 					</p>
+				</div>
+			)}
+
+			{/* ── History ────────────────────────────────────── */}
+			{history.length > 1 && (
+				<div className="space-y-3">
+					<h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+						<Clock className="size-4" />
+						History
+					</h2>
+					<div className="space-y-1.5">
+						{history.map((entry) => (
+							<HistoryRow
+								key={entry._id}
+								entry={entry}
+								isActive={entry._id === activeEntry?._id}
+								onSelect={() => setActiveId(entry._id)}
+								onDelete={() => handleDelete(entry._id)}
+							/>
+						))}
+					</div>
 				</div>
 			)}
 		</div>
 	);
 }
+
+// ─── History Row ────────────────────────────────────────────────────
+
+function HistoryRow({
+	entry,
+	isActive,
+	onSelect,
+	onDelete,
+}: {
+	entry: RecommendationHistoryEntry;
+	isActive: boolean;
+	onSelect: () => void;
+	onDelete: () => void;
+}) {
+	return (
+		<div
+			className={cn(
+				"flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors cursor-pointer group",
+				isActive
+					? "bg-secondary ring-1 ring-border/60"
+					: "hover:bg-secondary/50",
+			)}
+			onClick={onSelect}
+			onKeyDown={(e) => e.key === "Enter" && onSelect()}
+			role="button"
+			tabIndex={0}
+		>
+			<Badge
+				variant="outline"
+				className="text-[10px] font-medium capitalize shrink-0"
+			>
+				{entry.generationType === "genre" ? "Genre" : "Watchlist"}
+			</Badge>
+
+			<span className="text-xs text-muted-foreground truncate">
+				{entry.genrePreference
+					? entry.genrePreference
+					: `${entry.inputStats.movieCount} movies, ${entry.inputStats.tvCount} TV`}
+				{entry.mediaTypePreference &&
+					` · ${entry.mediaTypePreference === "movie" ? "Movies" : "TV"}`}
+			</span>
+
+			<span className="text-[11px] text-muted-foreground/60 shrink-0 ml-auto">
+				{formatTimestamp(entry.createdAt)}
+			</span>
+
+			<span className="text-[11px] text-muted-foreground/50 shrink-0">
+				{entry.recommendations.length} results
+			</span>
+
+			<button
+				type="button"
+				className="shrink-0 p-1 rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+				onClick={(e) => {
+					e.stopPropagation();
+					onDelete();
+				}}
+				title="Delete"
+			>
+				<Trash2 className="size-3.5" />
+			</button>
+		</div>
+	);
+}
+
+// ─── Recommendation Card ────────────────────────────────────────────
 
 function RecommendationCard({
 	recommendation,
 }: { recommendation: AIRecommendation }) {
 	const { title, tmdbId, mediaType, relevanceScore, reasoning } =
 		recommendation;
+	const navigate = useNavigate();
 
-	const scoreColor =
-		relevanceScore >= 80
-			? "bg-green-500/15 text-green-700 dark:text-green-400"
-			: relevanceScore >= 60
-				? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400"
-				: "bg-secondary text-muted-foreground";
+	const { data: tmdbData, isLoading, exists } = useTmdbData(tmdbId, mediaType);
 
-	const titleContent = (
-		<span className="font-semibold leading-tight">{title}</span>
-	);
+	if (tmdbId && isLoading) {
+		return <MediaCardSkeleton card_type="horizontal" />;
+	}
 
-	return (
-		<div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 transition-colors hover:border-foreground/20">
-			<div className="flex items-start justify-between gap-2">
-				<div className="flex-1 min-w-0">
-					{tmdbId ? (
-						<Link
-							// @ts-expect-error - dynamic route
-							to={`/${mediaType}/${tmdbId}`}
-							className="hover:underline"
-						>
-							{titleContent}
-						</Link>
-					) : (
-						titleContent
-					)}
+	// Verified: TMDB data exists AND title matches
+	const isVerified =
+		tmdbData && exists && titlesMatch(title, tmdbData.title);
+
+	if (isVerified && tmdbData) {
+		return (
+			<div className="relative">
+				{/* Relevance badge */}
+				<div className="absolute top-2 left-2 z-20">
+					<Badge
+						className={cn(
+							"tabular-nums font-semibold text-[10px]",
+							getScoreColor(relevanceScore),
+						)}
+					>
+						{relevanceScore}%
+					</Badge>
 				</div>
+
+				<MediaCard
+					card_type="horizontal"
+					id={tmdbData.id}
+					title={tmdbData.title}
+					rating={tmdbData.rating}
+					image={tmdbData.posterPath ?? ""}
+					poster_path={tmdbData.posterPath ?? ""}
+					media_type={mediaType}
+					release_date={tmdbData.releaseDate}
+					overview={tmdbData.overview}
+				/>
+
+				{/* Search link */}
+				<button
+					type="button"
+					className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors"
+					onClick={() =>
+						navigate({
+							to: "/search",
+							search: { query: tmdbData.title },
+						})
+					}
+				>
+					<Search size={11} />
+					Search
+				</button>
+			</div>
+		);
+	}
+
+	// Fallback card — no poster available
+	return (
+		<div className="w-40 md:w-44 lg:w-48">
+			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-gradient-to-br from-zinc-100 via-zinc-200 to-zinc-300 ring-1 ring-border/40 dark:from-zinc-800 dark:via-zinc-900 dark:to-black dark:ring-white/10">
+				{/* Subtle pattern overlay */}
+				<div
+					className="absolute inset-0 opacity-[0.04] dark:opacity-[0.03]"
+					style={{
+						backgroundImage:
+							"radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
+						backgroundSize: "20px 20px",
+					}}
+				/>
+
+				{/* Relevance badge */}
 				<Badge
-					className={cn("shrink-0 tabular-nums", scoreColor)}
+					className={cn(
+						"absolute top-2 left-2 z-10 tabular-nums font-semibold text-[10px]",
+						getScoreColor(relevanceScore),
+					)}
 				>
 					{relevanceScore}%
 				</Badge>
-			</div>
 
-			<div className="flex items-center gap-2">
-				<Badge variant="secondary" className="text-xs uppercase">
-					{mediaType}
+				{/* Content */}
+				<div className="absolute inset-0 flex flex-col justify-end p-3">
+					<span className="text-[13px] font-bold leading-tight text-foreground line-clamp-2 mb-1.5">
+						{title}
+					</span>
+					<p className="text-[10px] text-muted-foreground line-clamp-3 leading-relaxed">
+						{reasoning}
+					</p>
+				</div>
+
+				{/* Media type badge */}
+				<Badge className="absolute bottom-2 right-2 rounded-md bg-black/10 dark:bg-white/10 px-2 py-1 text-[11px] font-medium text-foreground/70 capitalize border-0">
+					{mediaType === "movie" ? "Movie" : "TV"}
 				</Badge>
 			</div>
 
-			<p className="text-sm text-muted-foreground leading-relaxed">
-				{reasoning}
-			</p>
+			<div className="mt-2">
+				<button
+					type="button"
+					className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors"
+					onClick={() =>
+						navigate({ to: "/search", search: { query: title } })
+					}
+				>
+					<Search size={11} />
+					Search for this title
+				</button>
+			</div>
 		</div>
 	);
 }
 
+// ─── Skeletons ──────────────────────────────────────────────────────
+
 function LoadingSkeletons() {
 	return (
-		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-6">
-			{Array.from({ length: 6 }).map((_, i) => (
-				<div
-					key={i}
-					className="flex flex-col gap-3 rounded-2xl border bg-card p-4"
-				>
-					<div className="flex items-start justify-between gap-2">
-						<Skeleton className="h-5 w-3/4" />
-						<Skeleton className="h-5 w-12 rounded-full" />
-					</div>
-					<Skeleton className="h-5 w-16 rounded-full" />
-					<Skeleton className="h-12 w-full" />
-				</div>
+		<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
+			{Array.from({ length: 12 }).map((_, i) => (
+				<MediaCardSkeleton key={i} card_type="horizontal" />
 			))}
 		</div>
 	);

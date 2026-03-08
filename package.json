@@ -20,6 +20,7 @@
     "@clerk/clerk-react": "^5.60.2",
     "@clerk/themes": "^2.4.54",
     "@convex-dev/react-query": "^0.1.0",
+    "@google/genai": "^1.44.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
     "@radix-ui/react-dialog": "^1.1.15",

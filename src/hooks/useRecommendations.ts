@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/clerk-react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useCallback, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { AIRecommendation } from "@/types";
@@ -21,6 +21,27 @@ export function useRecommendationAccess() {
 	};
 }
 
+export interface GenerateOptions {
+	generationType?: "watchlist" | "genre";
+	mediaTypePreference?: "movie" | "tv";
+	genrePreference?: string;
+}
+
+export interface RecommendationHistoryEntry {
+	_id: string;
+	recommendations: AIRecommendation[];
+	inputStats: {
+		movieCount: number;
+		tvCount: number;
+		episodesWatched: number;
+		totalItems: number;
+	};
+	createdAt: number;
+	generationType?: string;
+	mediaTypePreference?: string;
+	genrePreference?: string;
+}
+
 type GenerateResult =
 	| {
 			recommendations: AIRecommendation[];
@@ -37,40 +58,78 @@ type GenerateResult =
 
 export function useRecommendations() {
 	const { isSignedIn } = useUser();
-	const cached = useQuery(
-		api.recommendations.getCachedRecommendations,
+	const rawHistory = useQuery(
+		api.recommendations.getRecommendationHistory,
 		isSignedIn ? {} : QUERY_SKIP,
 	);
 
-	const generateAction = useAction(api.recommendations.generateRecommendations);
+	const generateAction = useAction(
+		api.recommendations.generateRecommendations,
+	);
+	const deleteMutation = useMutation(
+		api.recommendations.deleteRecommendation,
+	);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<
+		Set<string>
+	>(new Set());
 
-	const parsedRecommendations: AIRecommendation[] | null =
-		cached?.recommendations ? JSON.parse(cached.recommendations) : null;
+	const history: RecommendationHistoryEntry[] = (rawHistory ?? [])
+		.filter((entry) => !optimisticDeletedIds.has(entry._id))
+		.map((entry) => ({
+			_id: entry._id,
+			recommendations: JSON.parse(entry.recommendations),
+			inputStats: entry.inputStats,
+			createdAt: entry.createdAt,
+			generationType: entry.generationType ?? "watchlist",
+			mediaTypePreference: entry.mediaTypePreference,
+			genrePreference: entry.genrePreference,
+		}));
 
-	const generate = useCallback(async () => {
-		setIsGenerating(true);
-		setError(null);
-		try {
-			const result = (await generateAction()) as GenerateResult;
-			if ("error" in result) {
-				setError(result.error);
+	const generate = useCallback(
+		async (options?: GenerateOptions) => {
+			setIsGenerating(true);
+			setError(null);
+			try {
+				const result = (await generateAction(
+					options ?? {},
+				)) as GenerateResult;
+				if ("error" in result) {
+					setError(result.error);
+				}
+			} catch (e) {
+				setError(e instanceof Error ? e.message : "Unknown error");
+			} finally {
+				setIsGenerating(false);
 			}
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Unknown error");
-		} finally {
-			setIsGenerating(false);
-		}
-	}, [generateAction]);
+		},
+		[generateAction],
+	);
+
+	const deleteEntry = useCallback(
+		async (id: string) => {
+			// Optimistic: hide immediately
+			setOptimisticDeletedIds((prev) => new Set(prev).add(id));
+			try {
+				await deleteMutation({ id: id as any });
+			} catch {
+				// Rollback on failure
+				setOptimisticDeletedIds((prev) => {
+					const next = new Set(prev);
+					next.delete(id);
+					return next;
+				});
+			}
+		},
+		[deleteMutation],
+	);
 
 	return {
-		recommendations: parsedRecommendations,
-		inputStats: cached?.inputStats ?? null,
-		generatedAt: cached?.createdAt ?? null,
-		model: cached?.model ?? null,
+		history,
 		isGenerating,
 		error,
 		generate,
+		deleteEntry,
 	};
 }

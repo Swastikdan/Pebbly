@@ -103,6 +103,9 @@ export default defineSchema({
       totalItems: v.number(),
     }),
     model: v.string(),
+    mediaTypePreference: v.optional(v.string()),
+    genrePreference: v.optional(v.string()),
+    generationType: v.optional(v.string()), // "watchlist" | "genre"
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
 });
