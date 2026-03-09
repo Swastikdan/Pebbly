@@ -512,7 +512,7 @@ function HistoryAccordionItem({
 			)}
 		>
 			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
-				<div className="flex flex-1 items-center gap-3 pr-2 min-w-0">
+				<div className="scrollbar-hidden flex flex-1 items-center gap-3 pr-2 min-w-max overflow-x-auto sm:min-w-0 sm:overflow-visible">
 					{/* Type badge */}
 					<Badge
 						variant="outline"
@@ -570,11 +570,11 @@ function HistoryAccordionItem({
 				{/* Expanded details */}
 				<div className="space-y-4">
 					{/* Actions */}
-					<div className="flex items-center gap-2 pb-1">
+					<div className="scrollbar-hidden flex items-center gap-2 pb-1 overflow-x-auto">
 						<Button
 							size="sm"
 							variant="secondary"
-							className="gap-1.5 text-xs h-8"
+							className="gap-1.5 text-xs h-8 shrink-0"
 							onClick={(e) => {
 								e.stopPropagation();
 								onSelect();
@@ -588,7 +588,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="secondary"
-							className="gap-1.5 text-xs h-8"
+							className="gap-1.5 text-xs h-8 shrink-0"
 							disabled={isGenerating}
 							onClick={(e) => {
 								e.stopPropagation();
@@ -603,7 +603,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="secondary"
-							className="gap-1.5 text-xs h-8"
+							className="gap-1.5 text-xs h-8 shrink-0"
 							disabled={isGenerating}
 							onClick={(e) => {
 								e.stopPropagation();
@@ -616,7 +616,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="ghost"
-							className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-auto"
+							className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-auto shrink-0"
 							onClick={(e) => {
 								e.stopPropagation();
 								onDelete();
