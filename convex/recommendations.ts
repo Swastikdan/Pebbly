@@ -219,7 +219,6 @@ export const deleteRecommendation = mutation({
 // We'll use a list of fallback models and try them sequentially.
 const MODELS_TO_TRY = [
   "gemini-2.5-flash",
-  "gemini-3-flash-preview", 
   "gemini-3.1-flash-lite-preview",
   "gemini-2.0-flash",
   "gemini-1.5-flash"
