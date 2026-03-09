@@ -71,13 +71,7 @@ export const MediaTitleContainer = (props: {
 	};
 
 	const handleStatusChange = (status: ProgressStatus) => {
-		setProgressStatus(
-			String(id),
-			media_type,
-			status,
-			metadata,
-			progressStatus,
-		);
+		setProgressStatus(String(id), media_type, status, metadata, progressStatus);
 	};
 
 	const handleReactionChange = (r: ReactionStatus | null) => {
@@ -118,7 +112,7 @@ export const MediaTitleContainer = (props: {
 						<ShareButton title={title} />
 					</div>
 				</div>
-				{renderWatchListSection("sm:hidden")}
+				{renderWatchListSection("flex justify-end sm:hidden")}
 				<h1 className="text-[19px] font-bold tracking-tight sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
 					{imdb_url ? (
 						<a
