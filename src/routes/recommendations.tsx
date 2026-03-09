@@ -512,7 +512,7 @@ function HistoryAccordionItem({
 			)}
 		>
 			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
-				<div className="flex flex-1 items-center gap-3 pr-2 min-w-max overflow-x-auto sm:min-w-0 sm:overflow-visible">
+				<div className="flex flex-1 items-center gap-3 pr-2 min-w-max overflow-x-auto scrollbar-hidden sm:min-w-0 sm:overflow-visible">
 					{/* Type badge */}
 					<Badge
 						variant="outline"
