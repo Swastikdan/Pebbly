@@ -186,7 +186,7 @@ const Navbar = () => {
 													variant="outline"
 													className="h-9 w-full justify-start gap-2 text-sm"
 												>
-													<Sparkles className="size-4" />
+													<Sparkles className="size-4 text-blue-500 fill-blue-500/20" />
 													AI Recommendations
 												</Button>
 											</SheetClose>

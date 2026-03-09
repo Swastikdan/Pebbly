@@ -56,7 +56,11 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { IMAGE_PREFIX } from "@/constants";
+import {
+	IMAGE_PREFIX,
+	SECTION_TAB_LIST_CLASS,
+	SECTION_TAB_TRIGGER_CLASS,
+} from "@/constants";
 import {
 	getProgressOption,
 	getReactionOption,
@@ -132,10 +136,10 @@ function WatchlistPage() {
 							className="w-full"
 						>
 							<div className="flex items-center justify-between gap-3">
-								<TabsList className="h-10 rounded-xl bg-secondary/50 p-1">
+								<TabsList className={SECTION_TAB_LIST_CLASS}>
 									<TabsTrigger
 										value="watchlist"
-										className="gap-2 rounded-lg px-4 text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-input/50"
+										className={SECTION_TAB_TRIGGER_CLASS}
 									>
 										<Bookmark size={15} />
 										Watchlist
@@ -143,7 +147,7 @@ function WatchlistPage() {
 									{isSignedIn && (
 										<TabsTrigger
 											value="my-lists"
-											className="gap-2 rounded-lg px-4 text-sm font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-input/50"
+											className={SECTION_TAB_TRIGGER_CLASS}
 										>
 											<ListPlus size={15} />
 											My Lists
@@ -559,12 +563,37 @@ function MyListsTabContent() {
 		name: string;
 		color?: string;
 	} | null>(null);
-	const [expandedListId, setExpandedListId] = useState<string | null>(null);
+	const [selectedListId, setSelectedListId] = useState<string | null>(null);
 
 	const sortedLists = useMemo(
 		() => [...customLists].sort((a, b) => a.sortOrder - b.sortOrder),
 		[customLists],
 	);
+
+	const selectedList = useMemo(
+		() => sortedLists.find((l) => l._id === selectedListId) ?? null,
+		[sortedLists, selectedListId],
+	);
+
+	if (selectedList) {
+		return (
+			<CustomListView
+				list={selectedList}
+				onBack={() => setSelectedListId(null)}
+				onEdit={() =>
+					setEditingList({
+						id: selectedList._id,
+						name: selectedList.name,
+						color: selectedList.color,
+					})
+				}
+				onDelete={() => {
+					deleteCustomList({ listId: selectedList._id as Id<"lists"> });
+					setSelectedListId(null);
+				}}
+			/>
+		);
+	}
 
 	return (
 		<div className="pt-5">
@@ -614,17 +643,12 @@ function MyListsTabContent() {
 					</Button>
 				</div>
 			) : (
-				<div className="space-y-3">
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 					{sortedLists.map((list) => (
 						<CustomListCard
 							key={list._id}
 							list={list}
-							isExpanded={expandedListId === list._id}
-							onToggleExpand={() =>
-								setExpandedListId((prev) =>
-									prev === list._id ? null : list._id,
-								)
-							}
+							onClick={() => setSelectedListId(list._id as string)}
 							onEdit={() =>
 								setEditingList({
 									id: list._id,
@@ -632,7 +656,9 @@ function MyListsTabContent() {
 									color: list.color,
 								})
 							}
-							onDelete={() => deleteCustomList({ listId: list._id })}
+							onDelete={() =>
+								deleteCustomList({ listId: list._id as Id<"lists"> })
+							}
 						/>
 					))}
 				</div>
@@ -658,10 +684,9 @@ function MyListsTabContent() {
 	);
 }
 
-function CustomListCard({
+function CustomListView({
 	list,
-	isExpanded,
-	onToggleExpand,
+	onBack,
 	onEdit,
 	onDelete,
 }: {
@@ -672,67 +697,55 @@ function CustomListCard({
 		createdAt: number;
 		updatedAt: number;
 	};
-	isExpanded: boolean;
-	onToggleExpand: () => void;
+	onBack: () => void;
 	onEdit: () => void;
 	onDelete: () => void;
 }) {
+	const items =
+		useQuery(api.watchlist.getListItems, { listId: list._id as Id<"lists"> }) ??
+		null;
+
 	return (
-		<div className="rounded-2xl border border-border/40 bg-card transition-colors hover:border-border/70">
-			{/* Card header */}
-			<div className="flex items-center gap-3 p-4">
-				{/* Color dot and name */}
-				<button
-					type="button"
-					onClick={onToggleExpand}
-					className="flex flex-1 items-center gap-3 text-left"
-				>
-					<div
-						className="flex size-10 shrink-0 items-center justify-center rounded-xl"
-						style={{
-							backgroundColor: list.color
-								? `${list.color}20`
-								: "hsl(var(--secondary))",
-						}}
+		<div className="pt-5 animate-fade-in">
+			{/* Active List Header */}
+			<div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+				<div className="flex items-center gap-3">
+					<Button
+						variant="secondary"
+						size="icon"
+						onClick={onBack}
+						className="rounded-xl"
+						aria-label="Back to lists"
 					>
-						{list.color ? (
-							<span
-								className="size-3.5 rounded-full"
-								style={{ backgroundColor: list.color }}
-							/>
-						) : (
-							<ListPlus size={18} className="text-muted-foreground" />
-						)}
-					</div>
-					<div className="min-w-0 flex-1">
-						<h3 className="truncate text-sm font-semibold">{list.name}</h3>
-						<p className="text-[11px] text-muted-foreground">
-							Updated{" "}
-							{new Date(list.updatedAt).toLocaleDateString(undefined, {
-								month: "short",
-								day: "numeric",
-							})}
+						<ChevronDown className="size-5 rotate-90" />
+					</Button>
+					<div>
+						<div className="flex items-center gap-2">
+							{list.color && (
+								<span
+									className="size-3 rounded-full"
+									style={{ backgroundColor: list.color }}
+								/>
+							)}
+							<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+								{list.name}
+							</h2>
+						</div>
+						<p className="mt-0.5 text-sm text-muted-foreground">
+							{items ? `${items.length} titles` : "Loading items..."}
 						</p>
 					</div>
-					<ChevronDown
-						size={16}
-						className={cn(
-							"shrink-0 text-muted-foreground/40 transition-transform duration-200",
-							isExpanded && "rotate-180",
-						)}
-					/>
-				</button>
-
-				{/* Actions */}
+				</div>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<button
-							type="button"
-							className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-secondary hover:text-foreground"
+						<Button
+							variant="outline"
+							size="icon"
+							className="rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
 							aria-label={`Options for ${list.name}`}
 						>
 							<EllipsisVertical size={16} />
-						</button>
+						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-36 rounded-xl">
 						<DropdownMenuItem
@@ -754,42 +767,120 @@ function CustomListCard({
 				</DropdownMenu>
 			</div>
 
-			{/* Expanded: show list items */}
-			{isExpanded && (
-				<div className="border-t border-border/40 px-4 py-3">
-					<SilentErrorBoundary>
-						<CustomListItems listId={list._id as Id<"lists">} />
-					</SilentErrorBoundary>
-				</div>
-			)}
+			{/* List Items */}
+			<SilentErrorBoundary>
+				{!items ? (
+					<DefaultLoader className="min-h-[50vh] grid place-content-center items-center justify-center" />
+				) : items.length === 0 ? (
+					<div className="flex flex-col items-center justify-center gap-4 py-16 text-center text-muted-foreground animate-fade-in-up">
+						<ListPlus className="size-12 opacity-50" />
+						<p className="text-sm">
+							No items in this list yet.
+							<br />
+							Add titles from any movie or TV show page.
+						</p>
+					</div>
+				) : (
+					<div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+						{items.map((item) => (
+							<CustomListMediaCard
+								key={`${item.tmdbId}-${item.mediaType}`}
+								item={item}
+							/>
+						))}
+					</div>
+				)}
+			</SilentErrorBoundary>
 		</div>
 	);
 }
 
-function CustomListItems({ listId }: { listId: Id<"lists"> }) {
-	const items = useQuery(api.watchlist.getListItems, { listId }) ?? [];
-
-	if (items.length === 0) {
-		return (
-			<p className="py-4 text-center text-sm text-muted-foreground">
-				No items in this list yet. Add titles from any movie or TV show page.
-			</p>
-		);
-	}
-
+function CustomListCard({
+	list,
+	onClick,
+	onEdit,
+	onDelete,
+}: {
+	list: {
+		_id: string;
+		name: string;
+		color?: string;
+		createdAt: number;
+		updatedAt: number;
+	};
+	onClick: () => void;
+	onEdit: () => void;
+	onDelete: () => void;
+}) {
 	return (
-		<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-			{items.map((item) => (
-				<CustomListItemCard
-					key={`${item.tmdbId}-${item.mediaType}`}
-					item={item}
-				/>
-			))}
+		<div className="relative group rounded-2xl border border-border/40 bg-card transition-colors hover:border-border/70 hover:shadow-sm">
+			<button
+				type="button"
+				onClick={onClick}
+				className="flex w-full items-center gap-4 p-4 text-left"
+			>
+				<div
+					className="flex size-12 shrink-0 items-center justify-center rounded-xl"
+					style={{
+						backgroundColor: list.color
+							? `${list.color}20`
+							: "hsl(var(--secondary))",
+					}}
+				>
+					{list.color ? (
+						<span
+							className="size-4 rounded-full"
+							style={{ backgroundColor: list.color }}
+						/>
+					) : (
+						<ListPlus size={20} className="text-muted-foreground" />
+					)}
+				</div>
+				<div className="min-w-0 flex-1">
+					<h3 className="truncate text-base font-semibold">{list.name}</h3>
+					<p className="mt-0.5 text-xs text-muted-foreground">
+						Updated{" "}
+						{new Date(list.updatedAt).toLocaleDateString(undefined, {
+							month: "short",
+							day: "numeric",
+						})}
+					</p>
+				</div>
+			</button>
+
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<button
+						type="button"
+						className="absolute right-3 top-1/2 -translate-y-1/2 shrink-0 rounded-lg p-2 text-muted-foreground/40 transition-colors hover:bg-secondary hover:text-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+						aria-label={`Options for ${list.name}`}
+					>
+						<EllipsisVertical size={16} />
+					</button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="end" className="w-36 rounded-xl">
+					<DropdownMenuItem
+						className="rounded-lg gap-2 text-xs"
+						onSelect={onEdit}
+					>
+						<Pencil size={14} />
+						Edit
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						variant="destructive"
+						className="rounded-lg gap-2 text-xs"
+						onSelect={onDelete}
+					>
+						<Trash2 size={14} />
+						Delete
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</div>
 	);
 }
 
-function CustomListItemCard({
+function CustomListMediaCard({
 	item,
 }: {
 	item: {
@@ -813,53 +904,72 @@ function CustomListItemCard({
 		: null;
 
 	return (
-		<Link
-			// @ts-expect-error - correct link
-			to={
-				formattedTitle
-					? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
-					: `/${item.mediaType}/${item.tmdbId}`
-			}
-			className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-secondary/50"
-		>
-			{hasMetadata && imageUrl ? (
-				<Image
-					alt={item.title ?? ""}
-					className="h-[72px] w-[48px] shrink-0 rounded-lg bg-muted object-cover"
-					height={108}
-					src={imageUrl}
-					width={72}
-				/>
-			) : (
-				<div className="flex h-[72px] w-[48px] shrink-0 items-center justify-center rounded-lg bg-secondary text-[10px] font-semibold uppercase text-muted-foreground">
-					{item.mediaType === "movie" ? "MOV" : "TV"}
+		<div className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70 hover:bg-secondary/20">
+			<Link
+				// @ts-expect-error - correct link
+				to={
+					formattedTitle
+						? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
+						: `/${item.mediaType}/${item.tmdbId}`
+				}
+				className="relative shrink-0"
+			>
+				{hasMetadata && imageUrl ? (
+					<Image
+						alt={item.title ?? ""}
+						className="h-[140px] w-[93px] rounded-xl bg-muted object-cover"
+						height={210}
+						src={imageUrl}
+						width={140}
+					/>
+				) : (
+					<div className="flex h-[140px] w-[93px] shrink-0 items-center justify-center rounded-xl bg-secondary text-xs font-semibold uppercase text-muted-foreground">
+						{item.mediaType === "movie" ? "MOV" : "TV"}
+					</div>
+				)}
+			</Link>
+
+			<div className="flex min-w-0 flex-1 flex-col justify-between">
+				<div>
+					<div className="flex items-start justify-between gap-2">
+						<Link
+							// @ts-expect-error - correct link
+							to={
+								formattedTitle
+									? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
+									: `/${item.mediaType}/${item.tmdbId}`
+							}
+						>
+							<h3 className="line-clamp-2 text-sm font-semibold leading-snug">
+								{item.title ??
+									`${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`}
+							</h3>
+						</Link>
+					</div>
+
+					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+						<span className="uppercase">{item.mediaType}</span>
+						{year && (
+							<>
+								<span className="text-border">·</span>
+								<span>{year}</span>
+							</>
+						)}
+						{(item.rating ?? 0) > 0 && (
+							<>
+								<span className="text-border">·</span>
+								<span className="flex items-center gap-0.5">
+									<Star className="size-2.5 fill-yellow-400 text-yellow-400" />
+									{item.rating?.toFixed(1)}
+								</span>
+							</>
+						)}
+					</div>
 				</div>
-			)}
-			<div className="min-w-0 flex-1">
-				<p className="truncate text-sm font-medium">
-					{item.title ??
-						`${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`}
-				</p>
-				<div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-					<span className="uppercase">{item.mediaType}</span>
-					{year && (
-						<>
-							<span className="text-border">·</span>
-							<span>{year}</span>
-						</>
-					)}
-					{(item.rating ?? 0) > 0 && (
-						<>
-							<span className="text-border">·</span>
-							<span className="flex items-center gap-0.5">
-								<Star className="size-2.5 fill-yellow-400 text-yellow-400" />
-								{item.rating?.toFixed(1)}
-							</span>
-						</>
-					)}
-				</div>
+
+				{/* Note: List items don't have progress or reaction natively linked, so no badges shown here */}
 			</div>
-		</Link>
+		</div>
 	);
 }
 

@@ -12,6 +12,7 @@ import {
 import { ArrowRightLine, Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
 
 interface VideoItem {
 	key: string;
@@ -77,19 +78,16 @@ export const MediaContainer = (props: MediaContainerProps) => {
 					>
 						Media
 					</Link>
-					<TabsList className="h-8 rounded-lg bg-transparent ring-1 ring-border">
+					<TabsList className={SECTION_TAB_LIST_CLASS}>
 						{hasVideos && (
-							<TabsTrigger
-								value="videos"
-								className="h-7 px-4 text-xs font-semibold data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
-							>
+							<TabsTrigger value="videos" className={SECTION_TAB_TRIGGER_CLASS}>
 								Videos
 							</TabsTrigger>
 						)}
 						{hasBackdrops && (
 							<TabsTrigger
 								value="backdrops"
-								className="h-7 px-4 text-xs font-semibold data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
+								className={SECTION_TAB_TRIGGER_CLASS}
 							>
 								Backdrops
 							</TabsTrigger>
@@ -97,7 +95,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{hasPosters && (
 							<TabsTrigger
 								value="posters"
-								className="h-7 px-4 text-xs font-semibold data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none"
+								className={SECTION_TAB_TRIGGER_CLASS}
 							>
 								Posters
 							</TabsTrigger>

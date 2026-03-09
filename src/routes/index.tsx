@@ -11,15 +11,11 @@ import {
 } from "@/components/homepage-media";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
 });
-
-const SECTION_TAB_LIST_CLASS =
-	"h-8 rounded-lg bg-transparent ring-1 ring-border p-0.5";
-const SECTION_TAB_TRIGGER_CLASS =
-	"h-7 px-3.5 text-xs font-semibold data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none";
 
 function HomePage() {
 	return (

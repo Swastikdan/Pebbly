@@ -22,6 +22,13 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { GENRE_LIST, HORIZONTAL_MEDIA_GRID_CLASS } from "@/constants";
 import type {
 	GenerateOptions,
@@ -362,9 +369,9 @@ function RecommendationsContent() {
 	return (
 		<div className="space-y-8">
 			{/* ── Generation Controls ─────────────────────────── */}
-			<div className="space-y-4">
-				{/* Mode toggle */}
-				<div className="flex flex-wrap items-center gap-3">
+			<div className="space-y-3">
+				{/* Row 1: Mode + Media type + Count + Generate */}
+				<div className="flex flex-wrap items-center gap-2">
 					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
 						<Button
 							className="h-8 px-4 text-xs font-semibold rounded-md"
@@ -382,7 +389,6 @@ function RecommendationsContent() {
 						</Button>
 					</div>
 
-					{/* Media type toggle */}
 					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
 						<Button
 							className="h-8 px-3 text-xs font-semibold rounded-md"
@@ -411,7 +417,6 @@ function RecommendationsContent() {
 						</Button>
 					</div>
 
-					{/* Generate button */}
 					<Button
 						onClick={handleGenerate}
 						disabled={
@@ -421,24 +426,21 @@ function RecommendationsContent() {
 								watchlist.length === 0)
 						}
 						variant="secondary"
-						className="gap-2"
+						className="gap-2 h-9"
 					>
 						{isGenerating ? (
 							<RefreshCw className="size-4 animate-spin" />
-						) : history.length > 0 ? (
-							<RefreshCw className="size-4" />
 						) : (
-							<Sparkles className="size-4" />
+							<Sparkles className="size-4 text-blue-500 fill-blue-500/20" />
 						)}
 						{isGenerating ? "Generating..." : "Generate"}
 					</Button>
 				</div>
 
-				{/* Era chips + Count controls */}
+				{/* Row 2: Era chips and Count dropdown */}
 				<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-					{/* Era chips — scrollable */}
-					<div className="flex items-center gap-1.5 max-w-full overflow-x-auto scrollbar-hidden">
-						<span className="text-xs text-muted-foreground font-medium mr-0.5 shrink-0">
+					<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hidden pb-0.5">
+						<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
 							Era
 						</span>
 						{ERA_PRESETS.map((era) => (
@@ -458,26 +460,30 @@ function RecommendationsContent() {
 						))}
 					</div>
 
-					{/* Count dropdown */}
+					{/* Count — shadcn Select */}
 					<div className="flex items-center gap-1.5 shrink-0">
-						<span className="text-xs text-muted-foreground font-medium">
+						<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
 							Count
 						</span>
-						<select
-							value={count}
-							onChange={(e) => setCount(Number(e.target.value))}
-							className="h-8 rounded-lg bg-secondary/60 px-2.5 text-xs font-semibold text-foreground ring-1 ring-border/40 outline-none appearance-none cursor-pointer"
+						<Select
+							value={String(count)}
+							onValueChange={(v) => setCount(Number(v))}
 						>
-							{COUNT_OPTIONS.map((c) => (
-								<option key={c} value={c}>
-									{c}
-								</option>
-							))}
-						</select>
+							<SelectTrigger className="h-8 w-[60px] text-xs font-semibold px-2 bg-secondary/60 border-0 ring-1 ring-border/40 shrink-0">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent position="popper" className="min-w-[4rem]">
+								{COUNT_OPTIONS.map((c) => (
+									<SelectItem key={c} value={String(c)} className="text-xs">
+										{c}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
 				</div>
 
-				{/* Empty Watchlist Hint */}
+				{/* Row 3: Genres (conditionally visible) */}
 				{genMode === "watchlist" &&
 					!watchlistLoading &&
 					watchlist.length === 0 && (
