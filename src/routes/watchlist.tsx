@@ -127,49 +127,52 @@ function WatchlistPage() {
 					<ShareButton title="My Watchlist" hideLabelOnMobile />
 				</div>
 
-				{/* Header with page-level tabs */}
-				<div className="mb-6">
-					<div className="flex items-center gap-4">
-						<Tabs
-							value={activeTab}
-							onValueChange={(v) => setActiveTab(v as PageTab)}
-							className="w-full"
-						>
-							<div className="flex items-center justify-between gap-3">
-								<TabsList className={SECTION_TAB_LIST_CLASS}>
-									<TabsTrigger
-										value="watchlist"
-										className={SECTION_TAB_TRIGGER_CLASS}
-									>
-										<Bookmark size={15} />
-										Watchlist
-									</TabsTrigger>
-									{isSignedIn && (
+				{isSignedIn ? (
+					<div className="mb-6">
+						<div className="flex items-center gap-4">
+							<Tabs
+								value={activeTab}
+								onValueChange={(v) => setActiveTab(v as PageTab)}
+								className="w-full"
+							>
+								<div className="flex items-center justify-between gap-3">
+									<TabsList className={SECTION_TAB_LIST_CLASS}>
 										<TabsTrigger
-											value="my-lists"
+											value="watchlist"
 											className={SECTION_TAB_TRIGGER_CLASS}
 										>
-											<ListPlus size={15} />
-											My Lists
+											<Bookmark size={15} />
+											Watchlist
 										</TabsTrigger>
-									)}
-								</TabsList>
-							</div>
+										{isSignedIn && (
+											<TabsTrigger
+												value="my-lists"
+												className={SECTION_TAB_TRIGGER_CLASS}
+											>
+												<ListPlus size={15} />
+												My Lists
+											</TabsTrigger>
+										)}
+									</TabsList>
+								</div>
 
-							<TabsContent value="watchlist" className="mt-0">
-								<WatchlistTabContent />
-							</TabsContent>
-
-							{isSignedIn && (
-								<TabsContent value="my-lists" className="mt-0">
-									<SilentErrorBoundary>
-										<MyListsTabContent />
-									</SilentErrorBoundary>
+								<TabsContent value="watchlist" className="mt-0">
+									<WatchlistTabContent />
 								</TabsContent>
-							)}
-						</Tabs>
+
+								{isSignedIn && (
+									<TabsContent value="my-lists" className="mt-0">
+										<SilentErrorBoundary>
+											<MyListsTabContent />
+										</SilentErrorBoundary>
+									</TabsContent>
+								)}
+							</Tabs>
+						</div>
 					</div>
-				</div>
+				) : (
+					<WatchlistTabContent />
+				)}
 			</div>
 		</section>
 	);
@@ -897,7 +900,7 @@ function CustomListMediaCard({
 		? formatMediaTitle.encode(item.title)
 		: undefined;
 	const imageUrl = item.image
-		? `${IMAGE_PREFIX.SD_POSTER}${item.image}`
+		? `${IMAGE_PREFIX.LQ_POSTER}${item.image}`
 		: undefined;
 	const year = item.release_date
 		? new Date(item.release_date).getFullYear()
@@ -988,7 +991,7 @@ function WatchlistCard({
 	const reactionOption = reaction ? getReactionOption(reaction) : null;
 	const ProgressIcon = progressOption.icon;
 	const formattedTitle = formatMediaTitle.encode(item.title);
-	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${item.image}`;
+	const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${item.image}`;
 	const year = item.release_date
 		? new Date(item.release_date).getFullYear()
 		: null;

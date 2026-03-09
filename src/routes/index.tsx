@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import {
 	PopularMovies,
 	PopularTv,
@@ -16,6 +16,15 @@ import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
 export const Route = createFileRoute("/")({
 	component: HomePage,
 });
+
+function Deferred({ children }: { children: React.ReactNode }) {
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => {
+		const t = setTimeout(() => setMounted(true), 50);
+		return () => clearTimeout(t);
+	}, []);
+	return mounted ? children : <div className="min-h-[300px]" />;
+}
 
 function HomePage() {
 	return (
@@ -75,7 +84,9 @@ function HomePage() {
 							</h2>
 						</div>
 						<div>
-							<UpcomingMovies />
+							<Deferred>
+								<UpcomingMovies />
+							</Deferred>
 						</div>
 					</section>
 
@@ -98,10 +109,14 @@ function HomePage() {
 							</TabsList>
 						</div>
 						<TabsContent value="popular_movie">
-							<PopularMovies />
+							<Deferred>
+								<PopularMovies />
+							</Deferred>
 						</TabsContent>
 						<TabsContent value="popular_tv">
-							<PopularTv />
+							<Deferred>
+								<PopularTv />
+							</Deferred>
 						</TabsContent>
 					</Tabs>
 
@@ -124,10 +139,14 @@ function HomePage() {
 							</TabsList>
 						</div>
 						<TabsContent value="top_rated_movies">
-							<TopRatedMovies />
+							<Deferred>
+								<TopRatedMovies />
+							</Deferred>
 						</TabsContent>
 						<TabsContent value="top_rated_tv">
-							<TopRatedTv />
+							<Deferred>
+								<TopRatedTv />
+							</Deferred>
 						</TabsContent>
 					</Tabs>
 				</div>

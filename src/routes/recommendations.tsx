@@ -11,6 +11,7 @@ import {
 	Tv,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
@@ -212,11 +213,7 @@ function RecommendationsPage() {
 	} = useRecommendationAccess();
 
 	if (accessLoading) {
-		return (
-			<PageShell>
-				<LoadingSkeletons />
-			</PageShell>
-		);
+		return <DefaultLoader />;
 	}
 
 	if (!isSignedIn || !hasAccess) {

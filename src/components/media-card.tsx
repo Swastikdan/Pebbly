@@ -26,6 +26,7 @@ interface MediaCardSpecificProps extends BaseCardProps {
 	is_on_watchlist_page?: boolean;
 	is_on_homepage?: boolean;
 	overview?: string;
+	priority?: boolean;
 }
 
 interface PersonCardSpecificProps extends BaseCardProps {
@@ -33,6 +34,7 @@ interface PersonCardSpecificProps extends BaseCardProps {
 	name: string;
 	profile_path: string;
 	known_for_department: string;
+	priority?: boolean;
 }
 
 export type CardProps = MediaCardSpecificProps | PersonCardSpecificProps;
@@ -66,10 +68,11 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 		is_on_homepage,
 		is_on_watchlist_page,
 		overview,
+		priority,
 	} = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
-	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
+	const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${image}`;
 	const year = release_date ? new Date(release_date).getFullYear() : "";
 
 	return (
@@ -86,6 +89,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform group-hover:scale-[1.03]"
 						width={300}
 						height={450}
+						priority={priority}
 					/>
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
@@ -144,6 +148,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 		is_on_homepage,
 		is_on_watchlist_page,
 		overview,
+		priority,
 	} = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
@@ -164,6 +169,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform group-hover:scale-[1.03]"
 						width={450}
 						height={300}
+						priority={priority}
 					/>
 
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
@@ -213,7 +219,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 };
 
 const PersonCard = (props: PersonCardSpecificProps) => {
-	const { id, name, profile_path, known_for_department } = props;
+	const { id, name, profile_path, known_for_department, priority } = props;
 	const imageUrl = `${IMAGE_PREFIX.SD_PROFILE}${profile_path}`;
 
 	return (
@@ -229,6 +235,7 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 					className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform group-hover:scale-[1.03]"
 					width={200}
 					height={300}
+					priority={priority}
 				/>
 			</div>
 

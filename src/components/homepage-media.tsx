@@ -14,11 +14,12 @@ const MediaList = (props: {
 	data: MediaListProps[];
 	cardType?: "horizontal" | "vertical";
 	defaultMediatype?: "movie" | "tv";
+	priorityCount?: number;
 }) => {
 	return (
 		<ScrollContainer isButtonsVisible={true}>
 			<div className="flex gap-2 p-4 first:pl-0 last:pr-0">
-				{props.data.map((item) => (
+				{props.data.map((item, index) => (
 					<MediaCard
 						key={item.id}
 						id={item.id}
@@ -39,6 +40,7 @@ const MediaList = (props: {
 						is_on_homepage={item.is_on_homepage}
 						card_type={props.cardType as unknown as "horizontal" | "vertical"}
 						overview={item.overview}
+						priority={props.priorityCount ? index < props.priorityCount : false}
 					/>
 				))}
 			</div>
@@ -96,7 +98,7 @@ function TrendingDayMovies() {
 	const { data, isFetching, error, cardType } = useMediaQuery("trending_day");
 
 	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
-	return <MediaList data={data ?? []} cardType={cardType} />;
+	return <MediaList data={data ?? []} cardType={cardType} priorityCount={4} />;
 }
 
 function TrendingWeekMovies() {

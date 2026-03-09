@@ -4,12 +4,12 @@ import {
 	HeadContent,
 	Scripts,
 } from "@tanstack/react-router";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import { useEffect, useState } from "react";
 import {
 	DefaultErrorComponent,
 	DefaultNotFoundComponent,
 } from "@/components/default-not-found";
-import { SpeedInsights } from "@vercel/speed-insights/react";
-import { useEffect, useState } from "react";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -117,6 +117,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 				rel: "preconnect",
 				href: "https://fonts.gstatic.com",
 				crossOrigin: "anonymous",
+			},
+			{
+				href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap",
+				rel: "preload",
+				as: "style",
 			},
 			{
 				href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap",
