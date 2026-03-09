@@ -27,6 +27,9 @@ export interface GenerateOptions {
 	mediaTypePreference?: "movie" | "tv";
 	genrePreference?: string;
 	excludeTmdbIds?: number[];
+	yearFrom?: number;
+	yearTo?: number;
+	count?: number;
 }
 
 export interface RecommendationHistoryEntry {
@@ -42,6 +45,7 @@ export interface RecommendationHistoryEntry {
 	generationType?: string;
 	mediaTypePreference?: string;
 	genrePreference?: string;
+	verified?: boolean;
 }
 
 type GenerateResult =
@@ -67,6 +71,9 @@ export function useRecommendations() {
 
 	const generateAction = useAction(api.recommendations.generateRecommendations);
 	const deleteMutation = useMutation(api.recommendations.deleteRecommendation);
+	const updateVerifiedMutation = useMutation(
+		api.recommendations.updateVerifiedRecommendations,
+	);
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<Set<string>>(
@@ -83,6 +90,7 @@ export function useRecommendations() {
 			generationType: entry.generationType ?? "watchlist",
 			mediaTypePreference: entry.mediaTypePreference,
 			genrePreference: entry.genrePreference,
+			verified: entry.verified ?? false,
 		}));
 
 	const generate = useCallback(
@@ -121,11 +129,26 @@ export function useRecommendations() {
 		[deleteMutation],
 	);
 
+	const updateVerified = useCallback(
+		async (id: string, recommendations: AIRecommendation[]) => {
+			try {
+				await updateVerifiedMutation({
+					id: id as Id<"ai_recommendations">,
+					recommendations: JSON.stringify(recommendations),
+				});
+			} catch {
+				// silent fail — verification is best-effort
+			}
+		},
+		[updateVerifiedMutation],
+	);
+
 	return {
 		history,
 		isGenerating,
 		error,
 		generate,
 		deleteEntry,
+		updateVerified,
 	};
 }

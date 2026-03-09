@@ -10,7 +10,7 @@ import {
 	Trash2,
 	Tv,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
@@ -32,7 +32,11 @@ import {
 	useRecommendations,
 } from "@/hooks/useRecommendations";
 import { useWatchlist } from "@/hooks/usewatchlist";
-import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
+import {
+	getBasicMovieDetails,
+	getBasicTvDetails,
+	getSearchResult,
+} from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import type { AIRecommendation, BasicMovie, BasicTv } from "@/types";
 
@@ -124,6 +128,58 @@ function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 	};
 }
 
+/** Search TMDB by title when ID-based lookup fails. */
+function useTmdbSearchFallback(
+	title: string,
+	mediaType: "movie" | "tv",
+	shouldSearch: boolean,
+) {
+	const searchResult = useQuery({
+		queryKey: ["tmdb_search_fallback", title, mediaType],
+		queryFn: async () => {
+			const results = await getSearchResult(title, 1);
+			const filtered = (results.results ?? []).filter(
+				(r) => r.media_type === mediaType,
+			);
+			if (filtered.length === 0) return null;
+			const first = filtered[0];
+			const resultTitle =
+				mediaType === "movie"
+					? (first.title ?? first.name ?? "")
+					: (first.name ?? first.title ?? "");
+
+			// Reject if title doesn't match
+			if (!titlesMatch(title, resultTitle)) return null;
+
+			// Reject low-quality results: no rating, no poster, or empty title
+			const rating = first.vote_average ?? 0;
+			if (rating === 0 || !first.poster_path || !resultTitle) return null;
+
+			return {
+				id: first.id,
+				title: resultTitle,
+				posterPath: first.poster_path ?? null,
+				rating,
+				releaseDate:
+					mediaType === "movie"
+						? (first.release_date ?? null)
+						: (first.first_air_date ?? null),
+				overview: first.overview ?? "",
+			} as NormalizedTmdbData;
+		},
+		enabled: shouldSearch,
+		staleTime: 1000 * 60 * 60 * 48,
+		retry: false,
+		refetchOnWindowFocus: false,
+	});
+
+	return {
+		data: searchResult.data ?? null,
+		isLoading: searchResult.isLoading && shouldSearch,
+		exists: !!searchResult.data,
+	};
+}
+
 function getScoreColor(score: number) {
 	if (score >= 80) return "bg-green-100/90 text-green-600";
 	if (score >= 60) return "bg-yellow-100/90 text-yellow-600";
@@ -185,9 +241,26 @@ function PageShell({ children }: { children: React.ReactNode }) {
 
 const POPULAR_GENRES = GENRE_LIST.slice(0, 14);
 
+const ERA_PRESETS = [
+	{ label: "Classics", from: 1900, to: 1979 },
+	{ label: "80s", from: 1980, to: 1989 },
+	{ label: "90s", from: 1990, to: 1999 },
+	{ label: "2000s", from: 2000, to: 2009 },
+	{ label: "2010s", from: 2010, to: 2019 },
+	{ label: "2020s", from: 2020, to: 2029 },
+] as const;
+
+const COUNT_OPTIONS = [5, 10, 15, 20, 25, 30] as const;
+
 function RecommendationsContent() {
-	const { history, isGenerating, error, generate, deleteEntry } =
-		useRecommendations();
+	const {
+		history,
+		isGenerating,
+		error,
+		generate,
+		deleteEntry,
+		updateVerified,
+	} = useRecommendations();
 
 	const { watchlist, loading: watchlistLoading } = useWatchlist();
 
@@ -195,10 +268,18 @@ function RecommendationsContent() {
 	const [genMode, setGenMode] = useState<"watchlist" | "genre">("watchlist");
 	const [mediaType, setMediaType] = useState<"movie" | "tv" | undefined>();
 	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+	const [selectedEras, setSelectedEras] = useState<string[]>([]);
+	const [count, setCount] = useState(10);
 
 	const toggleGenre = (name: string) => {
 		setSelectedGenres((prev) =>
 			prev.includes(name) ? prev.filter((g) => g !== name) : [...prev, name],
+		);
+	};
+
+	const toggleEra = (label: string) => {
+		setSelectedEras((prev) =>
+			prev.includes(label) ? prev.filter((e) => e !== label) : [...prev, label],
 		);
 	};
 
@@ -209,8 +290,19 @@ function RecommendationsContent() {
 		if (mediaType) options.mediaTypePreference = mediaType;
 		if (genMode === "genre" && selectedGenres.length > 0)
 			options.genrePreference = selectedGenres.join(", ");
+
+		// Compute year range from selected eras
+		if (selectedEras.length > 0) {
+			const matchedEras = ERA_PRESETS.filter((e) =>
+				selectedEras.includes(e.label),
+			);
+			options.yearFrom = Math.min(...matchedEras.map((e) => e.from));
+			options.yearTo = Math.max(...matchedEras.map((e) => e.to));
+		}
+
+		options.count = count;
 		generate(options);
-		setActiveId(null); // will show newest when it arrives
+		setActiveId(null);
 	};
 
 	const handleGenerateAgain = (entry: RecommendationHistoryEntry) => {
@@ -342,6 +434,49 @@ function RecommendationsContent() {
 					</Button>
 				</div>
 
+				{/* Era chips + Count controls */}
+				<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+					{/* Era chips — scrollable */}
+					<div className="flex items-center gap-1.5 max-w-full overflow-x-auto scrollbar-hidden">
+						<span className="text-xs text-muted-foreground font-medium mr-0.5 shrink-0">
+							Era
+						</span>
+						{ERA_PRESETS.map((era) => (
+							<button
+								key={era.label}
+								type="button"
+								className={cn(
+									"rounded-lg px-2.5 py-1 text-xs font-medium transition-colors shrink-0",
+									selectedEras.includes(era.label)
+										? "bg-foreground text-background"
+										: "bg-secondary/60 text-muted-foreground hover:bg-secondary",
+								)}
+								onClick={() => toggleEra(era.label)}
+							>
+								{era.label}
+							</button>
+						))}
+					</div>
+
+					{/* Count dropdown */}
+					<div className="flex items-center gap-1.5 shrink-0">
+						<span className="text-xs text-muted-foreground font-medium">
+							Count
+						</span>
+						<select
+							value={count}
+							onChange={(e) => setCount(Number(e.target.value))}
+							className="h-8 rounded-lg bg-secondary/60 px-2.5 text-xs font-semibold text-foreground ring-1 ring-border/40 outline-none appearance-none cursor-pointer"
+						>
+							{COUNT_OPTIONS.map((c) => (
+								<option key={c} value={c}>
+									{c}
+								</option>
+							))}
+						</select>
+					</div>
+				</div>
+
 				{/* Empty Watchlist Hint */}
 				{genMode === "watchlist" &&
 					!watchlistLoading &&
@@ -422,14 +557,10 @@ function RecommendationsContent() {
 					</div>
 
 					{/* Cards grid */}
-					<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
-						{activeEntry.recommendations.map((rec, i) => (
-							<RecommendationCard
-								key={`${rec.tmdbId ?? rec.title}-${i}`}
-								recommendation={rec}
-							/>
-						))}
-					</div>
+					<RecommendationCardGrid
+						entry={activeEntry}
+						updateVerified={updateVerified}
+					/>
 				</div>
 			)}
 
@@ -512,7 +643,7 @@ function HistoryAccordionItem({
 			)}
 		>
 			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
-				<div className="flex flex-1 items-center gap-3 pr-2 min-w-max overflow-x-auto scrollbar-hidden sm:min-w-0 sm:overflow-visible">
+				<div className="flex flex-1 items-center gap-3 pr-2 min-w-max overflow-x-auto  sm:min-w-0 sm:overflow-visible">
 					{/* Type badge */}
 					<Badge
 						variant="outline"
@@ -568,9 +699,9 @@ function HistoryAccordionItem({
 
 			<AccordionContent className="px-4 pb-4">
 				{/* Expanded details */}
-				<div className="space-y-4">
+				<div className="space-y-4 scrollbar-hidden">
 					{/* Actions */}
-					<div className="flex items-center gap-2 pb-1 overflow-x-auto">
+					<div className="flex items-center gap-2 pb-1 overflow-x-auto scrollbar-hidden">
 						<Button
 							size="sm"
 							variant="secondary"
@@ -695,30 +826,169 @@ function HistoryAccordionItem({
 	);
 }
 
+// ─── Recommendation Card Grid (with verification) ───────────────────
+
+function RecommendationCardGrid({
+	entry,
+	updateVerified,
+}: {
+	entry: RecommendationHistoryEntry;
+	updateVerified: (id: string, recs: AIRecommendation[]) => Promise<void>;
+}) {
+	const verifiedMapRef = useRef<Map<number, AIRecommendation>>(new Map());
+	const totalCount = entry.recommendations.length;
+	const resolvedCountRef = useRef(0);
+	const hasPushedRef = useRef(false);
+
+	const entryId = entry._id;
+
+	// Reset refs when entry changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: entryId is intentionally used to reset refs when the entry changes
+	useEffect(() => {
+		verifiedMapRef.current = new Map();
+		resolvedCountRef.current = 0;
+		hasPushedRef.current = false;
+	}, [entryId]);
+
+	const onCardResolved = useCallback(
+		(index: number, verifiedRec: AIRecommendation) => {
+			verifiedMapRef.current.set(index, verifiedRec);
+			resolvedCountRef.current += 1;
+
+			// Once all cards have resolved, push verified data to backend
+			if (
+				!hasPushedRef.current &&
+				!entry.verified &&
+				resolvedCountRef.current >= totalCount
+			) {
+				hasPushedRef.current = true;
+
+				// Only push if at least one card was truly verified
+				const hasAnyVerified = Array.from(verifiedMapRef.current.values()).some(
+					(r) => !!r.verifiedTmdbId,
+				);
+
+				if (hasAnyVerified) {
+					const updatedRecs = entry.recommendations.map((rec, i) => {
+						const verified = verifiedMapRef.current.get(i);
+						// Only replace if this specific card was verified
+						if (verified?.verifiedTmdbId) return verified;
+						// Otherwise keep original data untouched
+						return rec;
+					});
+					updateVerified(entryId, updatedRecs);
+				}
+			}
+		},
+		[
+			entryId,
+			entry.verified,
+			entry.recommendations,
+			totalCount,
+			updateVerified,
+		],
+	);
+
+	return (
+		<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
+			{entry.recommendations.map((rec, i) => (
+				<RecommendationCard
+					key={`${rec.tmdbId ?? rec.title}-${i}`}
+					recommendation={rec}
+					isEntryVerified={!!entry.verified}
+					onResolved={(verifiedRec) => onCardResolved(i, verifiedRec)}
+				/>
+			))}
+		</div>
+	);
+}
+
 // ─── Recommendation Card ────────────────────────────────────────────
 
 function RecommendationCard({
 	recommendation,
+	isEntryVerified,
+	onResolved,
 }: {
 	recommendation: AIRecommendation;
+	isEntryVerified: boolean;
+	onResolved?: (verifiedRec: AIRecommendation) => void;
 }) {
 	const { title, tmdbId, mediaType, relevanceScore, reasoning } =
 		recommendation;
 	const navigate = useNavigate();
+	const hasReportedRef = useRef(false);
 
-	const { data: tmdbData, isLoading, exists } = useTmdbData(tmdbId, mediaType);
+	// Whether we can skip all TMDB lookups (already verified + have cached data)
+	const usesCachedData = isEntryVerified && !!recommendation.verifiedTmdbId;
 
-	if (tmdbId && isLoading) {
-		return <MediaCardSkeleton card_type="horizontal" />;
-	}
+	// ── Always call hooks (disabled via flags when not needed) ──
+	const {
+		data: tmdbData,
+		isLoading: idLoading,
+		exists: idExists,
+	} = useTmdbData(usesCachedData ? null : tmdbId, mediaType);
 
-	// Verified: TMDB data exists AND title matches
-	const isVerified = tmdbData && exists && titlesMatch(title, tmdbData.title);
+	const idVerified =
+		!usesCachedData &&
+		tmdbData &&
+		idExists &&
+		titlesMatch(title, tmdbData.title) &&
+		tmdbData.rating > 0 &&
+		!!tmdbData.posterPath;
+	const idResolved = usesCachedData || !tmdbId || !idLoading;
 
-	if (isVerified && tmdbData) {
+	const shouldSearch = !usesCachedData && idResolved && !idVerified;
+	const {
+		data: searchData,
+		isLoading: searchLoading,
+		exists: searchExists,
+	} = useTmdbSearchFallback(title, mediaType, shouldSearch);
+
+	// ── Determine final resolved data ──
+	const resolvedData = usesCachedData
+		? null // won't be used — short-circuit below
+		: idVerified
+			? tmdbData
+			: searchExists
+				? searchData
+				: null;
+
+	const isStillLoading =
+		!usesCachedData &&
+		((!!tmdbId && idLoading) || (shouldSearch && searchLoading));
+
+	// Report resolution to parent (for verification tracking)
+	useEffect(() => {
+		if (usesCachedData || hasReportedRef.current || isStillLoading) return;
+		hasReportedRef.current = true;
+
+		if (resolvedData && onResolved) {
+			onResolved({
+				...recommendation,
+				verifiedTmdbId: resolvedData.id,
+				verifiedTitle: resolvedData.title,
+				posterPath: resolvedData.posterPath,
+				rating: resolvedData.rating,
+				releaseDate: resolvedData.releaseDate,
+				overview: resolvedData.overview,
+			});
+		} else if (onResolved) {
+			// Unverified — report original so batch doesn't stall
+			onResolved(recommendation);
+		}
+	}, [
+		usesCachedData,
+		isStillLoading,
+		resolvedData,
+		recommendation,
+		onResolved,
+	]);
+
+	// ── Cached verified data: render immediately ──
+	if (usesCachedData) {
 		return (
 			<div className="relative">
-				{/* Relevance badge */}
 				<div className="absolute top-2 left-2 z-20">
 					<Badge
 						className={cn(
@@ -729,23 +999,55 @@ function RecommendationCard({
 						{relevanceScore}%
 					</Badge>
 				</div>
-
 				<MediaCard
 					card_type="horizontal"
-					id={tmdbData.id}
-					title={tmdbData.title}
-					rating={tmdbData.rating}
-					image={tmdbData.posterPath ?? ""}
-					poster_path={tmdbData.posterPath ?? ""}
+					id={recommendation.verifiedTmdbId as number}
+					title={recommendation.verifiedTitle ?? title}
+					rating={recommendation.rating ?? 0}
+					image={recommendation.posterPath ?? ""}
+					poster_path={recommendation.posterPath ?? ""}
 					media_type={mediaType}
-					release_date={tmdbData.releaseDate}
-					overview={tmdbData.overview}
+					release_date={recommendation.releaseDate ?? null}
+					overview={recommendation.overview ?? ""}
 				/>
 			</div>
 		);
 	}
 
-	// Fallback card — no poster available
+	if (isStillLoading) {
+		return <MediaCardSkeleton card_type="horizontal" />;
+	}
+
+	// ── Verified card ──
+	if (resolvedData) {
+		return (
+			<div className="relative">
+				<div className="absolute top-2 left-2 z-20">
+					<Badge
+						className={cn(
+							"tabular-nums font-semibold text-[10px]",
+							getScoreColor(relevanceScore),
+						)}
+					>
+						{relevanceScore}%
+					</Badge>
+				</div>
+				<MediaCard
+					card_type="horizontal"
+					id={resolvedData.id}
+					title={resolvedData.title}
+					rating={resolvedData.rating}
+					image={resolvedData.posterPath ?? ""}
+					poster_path={resolvedData.posterPath ?? ""}
+					media_type={mediaType}
+					release_date={resolvedData.releaseDate}
+					overview={resolvedData.overview}
+				/>
+			</div>
+		);
+	}
+
+	// ── Fallback card — could not be verified ──
 	return (
 		<div className="group/card w-40 md:w-44 lg:w-48">
 			<button

@@ -963,10 +963,36 @@ export const getListItems = query({
     const user = await getCurrentUser(ctx);
     if (!user) return [];
 
-    return ctx.db
+    const items = await ctx.db
       .query("list_items")
       .withIndex("by_list", (q) => q.eq("listId", args.listId))
       .collect();
+
+    // Enrich items with metadata from watch_items if not stored on the list_item itself
+    const enriched = await Promise.all(
+      items.map(async (item) => {
+        if (item.title && item.image) {
+          return item;
+        }
+        // Fallback: look up watch_items for metadata
+        const watchItem = await ctx.db
+          .query("watch_items")
+          .withIndex("by_user_media", (q) =>
+            q.eq("userId", user._id).eq("tmdbId", item.tmdbId).eq("mediaType", item.mediaType),
+          )
+          .first();
+
+        return {
+          ...item,
+          title: item.title ?? watchItem?.title,
+          image: item.image ?? watchItem?.image,
+          rating: item.rating ?? watchItem?.rating,
+          release_date: item.release_date ?? watchItem?.release_date,
+        };
+      }),
+    );
+
+    return enriched;
   },
 });
 
@@ -992,6 +1018,10 @@ export const toggleListItem = mutation({
     listId: v.id("lists"),
     tmdbId: v.number(),
     mediaType: v.string(),
+    title: v.optional(v.string()),
+    image: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    release_date: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -1016,7 +1046,66 @@ export const toggleListItem = mutation({
       tmdbId: args.tmdbId,
       mediaType: args.mediaType,
       addedAt: Date.now(),
+      title: args.title,
+      image: args.image,
+      rating: args.rating,
+      release_date: args.release_date,
     });
     return true;
+  },
+});
+
+// Create a list and immediately add a media item to it
+export const createCustomListAndAddItem = mutation({
+  args: {
+    name: v.string(),
+    color: v.optional(v.string()),
+    tmdbId: v.number(),
+    mediaType: v.string(),
+    title: v.optional(v.string()),
+    image: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    release_date: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const existing = await ctx.db
+      .query("lists")
+      .withIndex("by_user_name", (q) => q.eq("userId", user._id).eq("name", args.name))
+      .first();
+    if (existing) throw new Error("A list with this name already exists");
+
+    const lists = await ctx.db
+      .query("lists")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const maxSort = lists.reduce((max, l) => Math.max(max, l.sortOrder), 0);
+
+    const now = Date.now();
+    const listId = await ctx.db.insert("lists", {
+      userId: user._id,
+      name: args.name,
+      color: args.color,
+      sortOrder: maxSort + 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Also add the item to the new list
+    await ctx.db.insert("list_items", {
+      userId: user._id,
+      listId,
+      tmdbId: args.tmdbId,
+      mediaType: args.mediaType,
+      addedAt: now,
+      title: args.title,
+      image: args.image,
+      rating: args.rating,
+      release_date: args.release_date,
+    });
+
+    return listId;
   },
 });

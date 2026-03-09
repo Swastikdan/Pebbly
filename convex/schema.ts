@@ -69,6 +69,11 @@ export default defineSchema({
     tmdbId: v.number(),
     mediaType: v.string(),
     addedAt: v.number(),
+    // Optional metadata for display
+    title: v.optional(v.string()),
+    image: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    release_date: v.optional(v.string()),
   })
     .index("by_list", ["listId"])
     .index("by_user_media", ["userId", "tmdbId", "mediaType"])
@@ -95,6 +100,7 @@ export default defineSchema({
   ai_recommendations: defineTable({
     userId: v.id("users"),
     recommendations: v.string(), // JSON-stringified AIRecommendation[]
+    originalRecommendations: v.optional(v.string()), // Backup of raw AI output before verification
     watchlistHash: v.string(),
     inputStats: v.object({
       movieCount: v.number(),
@@ -106,6 +112,7 @@ export default defineSchema({
     mediaTypePreference: v.optional(v.string()),
     genrePreference: v.optional(v.string()),
     generationType: v.optional(v.string()), // "watchlist" | "genre"
+    verified: v.optional(v.boolean()), // true after client verifies TMDB data
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
 });

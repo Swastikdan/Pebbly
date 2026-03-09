@@ -635,11 +635,7 @@ export interface TvEpisodeDetail {
 	guest_stars?: CastMember[] | null;
 }
 
-export type ProgressStatus =
-	| "watch-later"
-	| "watching"
-	| "done"
-	| "dropped";
+export type ProgressStatus = "watch-later" | "watching" | "done" | "dropped";
 
 export type ReactionStatus = "loved" | "liked" | "mixed" | "not-for-me";
 
@@ -741,4 +737,11 @@ export interface AIRecommendation {
 	mediaType: "movie" | "tv";
 	relevanceScore: number;
 	reasoning: string;
+	// Populated after client-side TMDB verification
+	verifiedTmdbId?: number | null;
+	verifiedTitle?: string;
+	posterPath?: string | null;
+	rating?: number;
+	releaseDate?: string | null;
+	overview?: string;
 }

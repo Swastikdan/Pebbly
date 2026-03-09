@@ -50,6 +50,13 @@ class SilentErrorBoundary extends Component<
 	}
 }
 
+export type MediaMetadataForList = {
+	title?: string;
+	image?: string;
+	rating?: number;
+	release_date?: string;
+};
+
 export function WatchlistStatusMenu({
 	isOnWatchlist,
 	progressStatus,
@@ -60,6 +67,7 @@ export function WatchlistStatusMenu({
 	onStatusChange,
 	onReactionChange,
 	onRemove,
+	metadata,
 }: {
 	isOnWatchlist: boolean;
 	progressStatus: ProgressStatus | null;
@@ -70,6 +78,7 @@ export function WatchlistStatusMenu({
 	onStatusChange: (status: ProgressStatus) => void;
 	onReactionChange: (reaction: ReactionStatus | null) => void;
 	onRemove: () => void;
+	metadata?: MediaMetadataForList;
 }) {
 	const { isSignedIn } = useUser();
 	const [open, setOpen] = useState(false);
@@ -77,14 +86,45 @@ export function WatchlistStatusMenu({
 
 	if (!isOnWatchlist) {
 		return (
-			<Button
-				variant="secondary"
-				className="gap-2 rounded-lg px-3 text-xs font-semibold h-10"
-				onClick={onAdd}
-			>
-				<Bookmark size={16} />
-				Add to Watchlist
-			</Button>
+			<>
+				<div className="flex items-center gap-1.5">
+					<Button
+						variant="secondary"
+						className="gap-2 rounded-lg px-3 text-xs font-semibold h-10"
+						onClick={onAdd}
+					>
+						<Bookmark size={16} />
+						Add to Watchlist
+					</Button>
+					{isSignedIn && (
+						<Button
+							variant="outline"
+							size="icon"
+							className="rounded-lg h-10 w-10 shrink-0"
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								setListDialogOpen(true);
+							}}
+							aria-label="Add to list"
+						>
+							<ListPlus size={16} />
+						</Button>
+					)}
+				</div>
+				{/* Add to List Dialog (opens outside dropdown) */}
+				{isSignedIn && (
+					<SilentErrorBoundary>
+						<AddToListDialog
+							open={listDialogOpen}
+							onOpenChange={setListDialogOpen}
+							tmdbId={tmdbId}
+							mediaType={mediaType}
+							metadata={metadata}
+						/>
+					</SilentErrorBoundary>
+				)}
+			</>
 		);
 	}
 
@@ -238,6 +278,7 @@ export function WatchlistStatusMenu({
 						onOpenChange={setListDialogOpen}
 						tmdbId={tmdbId}
 						mediaType={mediaType}
+						metadata={metadata}
 					/>
 				</SilentErrorBoundary>
 			)}
@@ -281,11 +322,13 @@ function AddToListDialog({
 	onOpenChange,
 	tmdbId,
 	mediaType,
+	metadata,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	tmdbId: number;
 	mediaType: string;
+	metadata?: MediaMetadataForList;
 }) {
 	const { isSignedIn } = useUser();
 	const lists = useQuery(
@@ -340,6 +383,10 @@ function AddToListDialog({
 												listId: list._id,
 												tmdbId,
 												mediaType,
+												title: metadata?.title,
+												image: metadata?.image,
+												rating: metadata?.rating,
+												release_date: metadata?.release_date,
 											})
 										}
 									>
@@ -382,6 +429,14 @@ function AddToListDialog({
 			<CustomListDialog
 				open={showCreateDialog}
 				onOpenChange={setShowCreateDialog}
+				autoAddMedia={{
+					tmdbId,
+					mediaType,
+					title: metadata?.title,
+					image: metadata?.image,
+					rating: metadata?.rating,
+					release_date: metadata?.release_date,
+				}}
 			/>
 		</>
 	);

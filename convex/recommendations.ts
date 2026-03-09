@@ -213,6 +213,40 @@ export const deleteRecommendation = mutation({
   },
 });
 
+/** Update a recommendation entry with TMDB-verified data from the client. */
+export const updateVerifiedRecommendations = mutation({
+  args: {
+    id: v.id("ai_recommendations"),
+    recommendations: v.string(), // JSON-stringified AIRecommendation[] with verified fields
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const entry = await ctx.db.get(args.id);
+    if (!entry) throw new Error("Not found");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.subject),
+      )
+      .first();
+    if (!user || entry.userId !== user._id) throw new Error("Unauthorized");
+
+    // Save original AI output as backup (only on first verification)
+    const patch: Record<string, unknown> = {
+      recommendations: args.recommendations,
+      verified: true,
+    };
+    if (!entry.originalRecommendations) {
+      patch.originalRecommendations = entry.recommendations;
+    }
+
+    await ctx.db.patch(args.id, patch);
+  },
+});
+
 // ─── Action: generate recommendations ────────────────────────────────
 
 // The user experienced 503 errors with gemini-3-flash-preview.
@@ -266,6 +300,9 @@ function buildWatchlistPrompt(
   data: WatchlistData,
   mediaTypePreference?: string,
   excludeTmdbIds: number[] = [],
+  yearFrom?: number,
+  yearTo?: number,
+  count?: number,
 ): string {
   const { watchItems, lists, listItems, inputStats } = data;
 
@@ -353,8 +390,16 @@ function buildWatchlistPrompt(
   }
 
   const mediaLabel = mediaTypePreference === "movie" ? "movies" : mediaTypePreference === "tv" ? "TV shows" : "movies and TV shows";
-  prompt += `Based on this data, recommend 10-15 ${mediaLabel} I would likely enjoy.\n`;
+  const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
+  prompt += `Based on this data, recommend exactly ${titleCount} ${mediaLabel} I would likely enjoy.\n`;
   prompt += `Do NOT recommend any title with these TMDB IDs (already in my watchlist): ${existingIds.join(", ")}\n\n`;
+
+  if (yearFrom || yearTo) {
+    const from = yearFrom ?? 1900;
+    const to = yearTo ?? new Date().getFullYear();
+    prompt += `IMPORTANT: Only recommend titles released between ${from} and ${to} (inclusive).\n\n`;
+  }
+
   prompt += RESPONSE_SCHEMA;
 
   return prompt;
@@ -365,12 +410,16 @@ function buildGenrePrompt(
   mediaTypePreference?: string,
   genrePreference?: string,
   excludeTmdbIds: number[] = [],
+  yearFrom?: number,
+  yearTo?: number,
+  count?: number,
 ): string {
   const existingIds = [...data.watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
 
   const mediaLabel = mediaTypePreference === "movie" ? "movies" : mediaTypePreference === "tv" ? "TV shows" : "movies and TV shows";
+  const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
 
-  let prompt = `Recommend me 10-15 popular and highly-rated ${mediaLabel}`;
+  let prompt = `Recommend me exactly ${titleCount} popular and highly-rated ${mediaLabel}`;
 
   if (genrePreference) {
     prompt += ` in these genres: ${genrePreference}`;
@@ -387,6 +436,12 @@ function buildGenrePrompt(
 
   if (existingIds.length > 0) {
     prompt += `Do NOT recommend any title with these TMDB IDs (already in my watchlist): ${existingIds.join(", ")}\n\n`;
+  }
+
+  if (yearFrom || yearTo) {
+    const from = yearFrom ?? 1900;
+    const to = yearTo ?? new Date().getFullYear();
+    prompt += `IMPORTANT: Only recommend titles released between ${from} and ${to} (inclusive).\n\n`;
   }
 
   prompt += RESPONSE_SCHEMA;
@@ -445,6 +500,9 @@ export const generateRecommendations = action({
     mediaTypePreference: v.optional(v.union(v.literal("movie"), v.literal("tv"))),
     genrePreference: v.optional(v.string()),
     excludeTmdbIds: v.optional(v.array(v.number())),
+    yearFrom: v.optional(v.number()),
+    yearTo: v.optional(v.number()),
+    count: v.optional(v.number()),
   },
   handler: async (ctx, args): Promise<GenerateResult> => {
     const genType = args.generationType ?? "watchlist";
@@ -478,8 +536,8 @@ export const generateRecommendations = action({
 
     // 5. Build prompt based on generation type
     const userPrompt = genType === "watchlist"
-      ? buildWatchlistPrompt(data, args.mediaTypePreference, excludeTmdbIds)
-      : buildGenrePrompt(data, args.mediaTypePreference, args.genrePreference, excludeTmdbIds);
+      ? buildWatchlistPrompt(data, args.mediaTypePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count)
+      : buildGenrePrompt(data, args.mediaTypePreference, args.genrePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count);
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {

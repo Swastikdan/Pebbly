@@ -1,7 +1,8 @@
 /** Sticky navigation bar with desktop dropdown menus and a mobile slide-out sheet. */
+import { SignedIn } from "@clerk/clerk-react";
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
-import { Sparkles } from "lucide-react";
+import { ListPlus, Sparkles } from "lucide-react";
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -165,6 +166,19 @@ const Navbar = () => {
 											</Button>
 										</SheetClose>
 									</Link>
+									<SignedIn>
+										<Link to="/watchlist" className="w-full">
+											<SheetClose asChild>
+												<Button
+													variant="outline"
+													className="h-9 w-full justify-start gap-2 text-sm"
+												>
+													<ListPlus className="size-4" />
+													My Lists
+												</Button>
+											</SheetClose>
+										</Link>
+									</SignedIn>
 									{hasAccess && (
 										<Link to="/recommendations" className="w-full">
 											<SheetClose asChild>

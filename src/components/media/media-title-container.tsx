@@ -98,6 +98,7 @@ export const MediaTitleContainer = (props: {
 				onStatusChange={handleStatusChange}
 				onReactionChange={handleReactionChange}
 				onRemove={handleRemove}
+				metadata={metadata}
 			/>
 		</div>
 	);

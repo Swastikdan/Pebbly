@@ -32,12 +32,22 @@ export function CustomListDialog({
 	initialName,
 	initialColor,
 	listId,
+	autoAddMedia,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	initialName?: string;
 	initialColor?: string;
 	listId?: string;
+	/** If provided, the media item will be auto-added to the newly created list. */
+	autoAddMedia?: {
+		tmdbId: number;
+		mediaType: string;
+		title?: string;
+		image?: string;
+		rating?: number;
+		release_date?: string;
+	};
 }) {
 	const [name, setName] = useState(initialName ?? "");
 	const [color, setColor] = useState(initialColor ?? "");
@@ -45,6 +55,9 @@ export function CustomListDialog({
 	const [saving, setSaving] = useState(false);
 
 	const createList = useMutation(api.watchlist.createCustomList);
+	const createListAndAdd = useMutation(
+		api.watchlist.createCustomListAndAddItem,
+	);
 	const updateList = useMutation(api.watchlist.updateCustomList);
 
 	const isEditing = !!listId;
@@ -79,6 +92,18 @@ export function CustomListDialog({
 					name: trimmed,
 					color: color || undefined,
 				});
+			} else if (autoAddMedia) {
+				// Create list AND auto-add the media item in one transaction
+				await createListAndAdd({
+					name: trimmed,
+					color: color || undefined,
+					tmdbId: autoAddMedia.tmdbId,
+					mediaType: autoAddMedia.mediaType,
+					title: autoAddMedia.title,
+					image: autoAddMedia.image,
+					rating: autoAddMedia.rating,
+					release_date: autoAddMedia.release_date,
+				});
 			} else {
 				await createList({
 					name: trimmed,
@@ -102,14 +127,6 @@ export function CustomListDialog({
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[380px] overflow-hidden rounded-2xl p-0">
-				{/* Colored accent strip at top */}
-				{/* <div
-					className="h-1.5 w-full transition-colors duration-300"
-					style={{
-						backgroundColor: color || "transparent",
-					}}
-				/> */}
-
 				<div className="px-6 pt-4 pb-6 space-y-5">
 					<DialogHeader className="space-y-1">
 						<DialogTitle className="text-base font-semibold tracking-tight">
@@ -118,7 +135,9 @@ export function CustomListDialog({
 						<DialogDescription className="text-xs text-muted-foreground">
 							{isEditing
 								? "Update your list details."
-								: "Organize your watchlist into collections."}
+								: autoAddMedia
+									? `Create a list and add "${autoAddMedia.title ?? "this title"}" to it.`
+									: "Organize your watchlist into collections."}
 						</DialogDescription>
 					</DialogHeader>
 
@@ -241,7 +260,9 @@ export function CustomListDialog({
 								? "Saving..."
 								: isEditing
 									? "Save Changes"
-									: "Create List"}
+									: autoAddMedia
+										? "Create & Add"
+										: "Create List"}
 						</Button>
 					</div>
 				</div>
