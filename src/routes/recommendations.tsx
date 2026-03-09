@@ -687,7 +687,7 @@ function HistoryAccordionItem({
 								getScoreColor(avgScore),
 							)}
 						>
-							avg {avgScore}%
+							{avgScore}%
 						</Badge>
 					</div>
 
