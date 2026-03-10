@@ -971,10 +971,7 @@ export const getListItems = query({
     // Enrich items with metadata from watch_items if not stored on the list_item itself
     const enriched = await Promise.all(
       items.map(async (item) => {
-        if (item.title && item.image) {
-          return item;
-        }
-        // Fallback: look up watch_items for metadata
+		// Always fetch watchItem to get progressStatus and reaction, even if title/image are cached.
         const watchItem = await ctx.db
           .query("watch_items")
           .withIndex("by_user_media", (q) =>
@@ -988,6 +985,9 @@ export const getListItems = query({
           image: item.image ?? watchItem?.image,
           rating: item.rating ?? watchItem?.rating,
           release_date: item.release_date ?? watchItem?.release_date,
+          overview: item.overview ?? watchItem?.overview,
+          progressStatus: watchItem?.progressStatus,
+          reaction: watchItem?.reaction,
         };
       }),
     );
@@ -1022,6 +1022,7 @@ export const toggleListItem = mutation({
     image: v.optional(v.string()),
     rating: v.optional(v.number()),
     release_date: v.optional(v.string()),
+    overview: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -1050,6 +1051,7 @@ export const toggleListItem = mutation({
       image: args.image,
       rating: args.rating,
       release_date: args.release_date,
+      overview: args.overview,
     });
     return true;
   },
@@ -1066,6 +1068,7 @@ export const createCustomListAndAddItem = mutation({
     image: v.optional(v.string()),
     rating: v.optional(v.number()),
     release_date: v.optional(v.string()),
+    overview: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -1104,6 +1107,7 @@ export const createCustomListAndAddItem = mutation({
       image: args.image,
       rating: args.rating,
       release_date: args.release_date,
+      overview: args.overview,
     });
 
     return listId;

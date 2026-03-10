@@ -74,6 +74,7 @@ export default defineSchema({
     image: v.optional(v.string()),
     rating: v.optional(v.number()),
     release_date: v.optional(v.string()),
+    overview: v.optional(v.string()),
   })
     .index("by_list", ["listId"])
     .index("by_user_media", ["userId", "tmdbId", "mediaType"])

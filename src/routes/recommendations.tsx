@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery as useConvexQuery } from "convex/react";
 import {
 	ArrowUpRight,
 	Clock,
@@ -48,6 +49,7 @@ import {
 } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import type { AIRecommendation, BasicMovie, BasicTv } from "@/types";
+import { api } from "../../convex/_generated/api";
 
 export const Route = createFileRoute("/recommendations")({
 	head: () => ({
@@ -223,7 +225,7 @@ function RecommendationsPage() {
 
 	return (
 		<PageShell>
-			<RecommendationsContent />
+			<RecommendationsContent isSignedIn={isSignedIn} />
 		</PageShell>
 	);
 }
@@ -257,7 +259,7 @@ const ERA_PRESETS = [
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 25, 30] as const;
 
-function RecommendationsContent() {
+function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 	const {
 		history,
 		isGenerating,
@@ -270,7 +272,10 @@ function RecommendationsContent() {
 	const { watchlist, loading: watchlistLoading } = useWatchlist();
 
 	const [activeId, setActiveId] = useState<string | null>(null);
-	const [genMode, setGenMode] = useState<"watchlist" | "genre">("watchlist");
+	const [genMode, setGenMode] = useState<"watchlist" | "genre" | "list">(
+		"watchlist",
+	);
+	const [listId, setListId] = useState<string>("");
 	const [mediaType, setMediaType] = useState<"movie" | "tv" | undefined>();
 	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 	const [selectedEras, setSelectedEras] = useState<string[]>([]);
@@ -289,10 +294,19 @@ function RecommendationsContent() {
 		);
 	};
 
+	const customListsResult = useConvexQuery(
+		api.watchlist.getCustomLists,
+		isSignedIn ? {} : "skip",
+	);
+	const customLists = customListsResult ?? [];
+
 	const handleGenerate = () => {
 		if (genMode === "watchlist" && watchlist.length === 0) return;
+		if (genMode === "list" && !listId) return;
 
 		const options: GenerateOptions = { generationType: genMode };
+		if (genMode === "list") options.listId = listId;
+
 		if (mediaType) options.mediaTypePreference = mediaType;
 		if (genMode === "genre" && selectedGenres.length > 0)
 			options.genrePreference = selectedGenres.join(", ");
@@ -313,9 +327,9 @@ function RecommendationsContent() {
 
 	const handleGenerateAgain = (entry: RecommendationHistoryEntry) => {
 		const options: GenerateOptions = {
-			generationType:
-				(entry.generationType as "watchlist" | "genre") || "watchlist",
+			generationType: entry.generationType || "watchlist",
 		};
+		// Assume list recommendations don't have a specific `listId` saved yet, but we'll try to keep generationType.
 		if (entry.mediaTypePreference)
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
 		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
@@ -325,8 +339,7 @@ function RecommendationsContent() {
 
 	const handleGenerateMore = (entry: RecommendationHistoryEntry) => {
 		const options: GenerateOptions = {
-			generationType:
-				(entry.generationType as "watchlist" | "genre") || "watchlist",
+			generationType: entry.generationType || "watchlist",
 		};
 		if (entry.mediaTypePreference)
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
@@ -369,23 +382,44 @@ function RecommendationsContent() {
 		<div className="space-y-8">
 			{/* ── Generation Controls ─────────────────────────── */}
 			<div className="space-y-3">
-				{/* Row 1: Mode + Media type + Count + Generate */}
 				<div className="flex flex-wrap items-center gap-2">
 					<div className="order-1 flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
-						<Button
-							className="h-8 px-4 text-xs font-semibold rounded-md"
-							variant={genMode === "watchlist" ? "default" : "ghost"}
-							onClick={() => setGenMode("watchlist")}
+						<Select
+							value={genMode === "list" ? `list:${listId}` : genMode}
+							onValueChange={(val: string) => {
+								if (val.startsWith("list:")) {
+									setGenMode("list");
+									setListId(val.replace("list:", ""));
+								} else {
+									setGenMode(val as "watchlist" | "genre");
+									setListId("");
+								}
+							}}
 						>
-							From Watchlist
-						</Button>
-						<Button
-							className="h-8 px-4 text-xs font-semibold rounded-md"
-							variant={genMode === "genre" ? "default" : "ghost"}
-							onClick={() => setGenMode("genre")}
-						>
-							By Genre
-						</Button>
+							<SelectTrigger className="h-8 w-auto px-4 text-xs font-semibold bg-transparent border-0 ring-0 focus:ring-0 shadow-none">
+								<SelectValue placeholder="From Watchlist" />
+							</SelectTrigger>
+							<SelectContent position="popper" align="start">
+								<SelectItem value="watchlist" className="text-xs">
+									From Watchlist
+								</SelectItem>
+								{customLists.map((list) => (
+									<SelectItem
+										key={list._id}
+										value={`list:${list._id}`}
+										className="text-xs"
+									>
+										From List: {list.name}
+									</SelectItem>
+								))}
+								<SelectItem
+									value="genre"
+									className="text-xs border-t mt-1 pt-1"
+								>
+									By Genre
+								</SelectItem>
+							</SelectContent>
+						</Select>
 					</div>
 
 					<div className="order-3 w-full sm:w-auto flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
@@ -450,7 +484,8 @@ function RecommendationsContent() {
 							isGenerating ||
 							(genMode === "watchlist" &&
 								!watchlistLoading &&
-								watchlist.length === 0)
+								watchlist.length === 0) ||
+							(genMode === "list" && !listId)
 						}
 						variant="secondary"
 						className="order-2 sm:order-none ml-auto gap-2 h-9"
@@ -554,7 +589,7 @@ function RecommendationsContent() {
 			{/* Error */}
 			{error && (
 				<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-					{errorMessages[error] ?? error}
+					{errorMessages[error as string] ?? error}
 				</div>
 			)}
 
@@ -572,7 +607,9 @@ function RecommendationsContent() {
 						>
 							{activeEntry.generationType === "genre"
 								? "By Genre"
-								: "Watchlist"}
+								: activeEntry.generationType === "list"
+									? "Custom List"
+									: "Watchlist"}
 						</Badge>
 						{activeEntry.genrePreference && (
 							<span>{activeEntry.genrePreference}</span>
@@ -684,7 +721,11 @@ function HistoryAccordionItem({
 						variant="outline"
 						className="text-[10px] font-medium capitalize shrink-0"
 					>
-						{entry.generationType === "genre" ? "Genre" : "Watchlist"}
+						{entry.generationType === "genre"
+							? "Genre"
+							: entry.generationType === "list"
+								? "Custom List"
+								: "Watchlist"}
 					</Badge>
 
 					{/* Description */}

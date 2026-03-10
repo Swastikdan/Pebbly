@@ -185,7 +185,7 @@ function WatchlistTabContent() {
 	const { watchlist: watchlistData, loading: watchlistLoading } =
 		useWatchlist();
 	const toggleWatchlist = useToggleWatchlistItem();
-	const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+	const [activeFilter, setActiveFilter] = useState<FilterType>("watch-later");
 	const [reactionFilter, setReactionFilter] = useState<ReactionFilter>("all");
 	const [mediaFilter, setMediaFilter] = useState<MediaFilter>("all");
 	const [sortBy, setSortBy] = useState<SortType>("recent");
@@ -288,9 +288,9 @@ function WatchlistTabContent() {
 	);
 
 	const primaryTabs: Array<{ value: FilterType; label: string }> = [
-		{ value: "all", label: "All" },
 		{ value: "watch-later", label: "Watch Later" },
 		{ value: "watching", label: "Watching" },
+		{ value: "all", label: "All" },
 		{ value: "done", label: "Done" },
 	];
 
@@ -414,7 +414,7 @@ function WatchlistTabContent() {
 						onClick={() => setFiltersOpen((prev) => !prev)}
 						aria-expanded={filtersOpen}
 						variant={
-							filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"
+							filtersOpen || activeSecondaryCount > 0 ? "outline" : "secondary"
 						}
 						size="sm"
 						className="gap-1.5 rounded-lg text-xs w-[132px] justify-center"
@@ -808,6 +808,7 @@ function CustomListView({
 							<CustomListMediaCard
 								key={`${item.tmdbId}-${item.mediaType}`}
 								item={item}
+								listId={list._id}
 							/>
 						))}
 					</div>
@@ -904,16 +905,23 @@ function CustomListCard({
 
 function CustomListMediaCard({
 	item,
+	listId,
 }: {
 	item: {
+		_id: string;
 		tmdbId: number;
 		mediaType: string;
 		title?: string;
 		image?: string;
 		rating?: number;
 		release_date?: string;
+		overview?: string;
+		progressStatus?: string;
+		reaction?: string;
 	};
+	listId: string;
 }) {
+	const toggleListItem = useMutation(api.watchlist.toggleListItem);
 	const hasMetadata = !!(item.title && item.image);
 	const formattedTitle = item.title
 		? formatMediaTitle.encode(item.title)
@@ -925,8 +933,25 @@ function CustomListMediaCard({
 		? new Date(item.release_date).getFullYear()
 		: null;
 
+	const progressStatus =
+		(item.progressStatus as ProgressStatus) ?? "watch-later";
+	const reaction = (item.reaction as ReactionStatus) ?? null;
+	const progressOption = getProgressOption(progressStatus);
+	const reactionOption = reaction ? getReactionOption(reaction) : null;
+	const ProgressIcon = progressOption.icon;
+
+	const handleRemove = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		toggleListItem({
+			listId: listId as Id<"lists">,
+			tmdbId: item.tmdbId,
+			mediaType: item.mediaType,
+		}).catch(console.error);
+	};
+
 	return (
-		<div className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70 hover:bg-secondary/20">
+		<div className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70 group">
 			<Link
 				// @ts-expect-error - correct link
 				to={
@@ -967,6 +992,15 @@ function CustomListMediaCard({
 									`${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`}
 							</h3>
 						</Link>
+
+						<button
+							type="button"
+							className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+							aria-label={`Remove from list`}
+							onClick={handleRemove}
+						>
+							<TrashBin size={14} />
+						</button>
 					</div>
 
 					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -987,9 +1021,34 @@ function CustomListMediaCard({
 							</>
 						)}
 					</div>
+
+					{item.overview && (
+						<p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/60">
+							{item.overview}
+						</p>
+					)}
 				</div>
 
-				{/* Note: List items don't have progress or reaction natively linked, so no badges shown here */}
+				{/* Badges for status and reaction */}
+				{(item.progressStatus || item.reaction) && (
+					<div className="flex items-center gap-1.5 pt-2">
+						{item.progressStatus && (
+							<span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground">
+								<ProgressIcon size={12} />
+								{progressOption.label}
+							</span>
+						)}
+						{reactionOption && (
+							<span
+								className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground"
+								title={reactionOption.label}
+							>
+								<reactionOption.icon size={12} />
+								{reactionOption.label}
+							</span>
+						)}
+					</div>
+				)}
 			</div>
 		</div>
 	);

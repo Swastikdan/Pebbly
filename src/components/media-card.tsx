@@ -118,7 +118,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 				</div>
 			</Link>
 
-			<div className="absolute right-2 top-2 z-10 opacity-0 transition-all duration-300 ease-out group-hover:opacity-100">
+			<div className="absolute right-2 top-2 z-10 transition-all duration-300 ease-out">
 				<WatchlistButton
 					id={id}
 					image={poster_path}
@@ -200,7 +200,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 				</div>
 			</Link>
 
-			<div className="absolute right-2 top-2 z-10 opacity-0 transition-all duration-300 ease-out group-hover:opacity-100">
+			<div className="absolute right-2 top-2 z-10 transition-all duration-300 ease-out">
 				<WatchlistButton
 					id={id}
 					image={poster_path}

@@ -23,7 +23,8 @@ export function useRecommendationAccess() {
 }
 
 export interface GenerateOptions {
-	generationType?: "watchlist" | "genre";
+	generationType?: string;
+	listId?: string;
 	mediaTypePreference?: "movie" | "tv";
 	genrePreference?: string;
 	excludeTmdbIds?: number[];
@@ -59,6 +60,7 @@ type GenerateResult =
 			};
 			generatedAt: number;
 			cached: boolean;
+			listId?: string;
 	  }
 	| { error: string };
 

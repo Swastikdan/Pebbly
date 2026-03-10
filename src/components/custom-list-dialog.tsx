@@ -47,6 +47,7 @@ export function CustomListDialog({
 		image?: string;
 		rating?: number;
 		release_date?: string;
+		overview?: string;
 	};
 }) {
 	const [name, setName] = useState(initialName ?? "");
@@ -103,6 +104,7 @@ export function CustomListDialog({
 					image: autoAddMedia.image,
 					rating: autoAddMedia.rating,
 					release_date: autoAddMedia.release_date,
+					overview: autoAddMedia.overview,
 				});
 			} else {
 				await createList({

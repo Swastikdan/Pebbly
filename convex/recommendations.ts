@@ -448,6 +448,57 @@ function buildGenrePrompt(
   return prompt;
 }
 
+function buildCustomListPrompt(
+  data: WatchlistData,
+  listId: string,
+  mediaTypePreference?: string,
+  excludeTmdbIds: number[] = [],
+  yearFrom?: number,
+  yearTo?: number,
+  count?: number,
+): string {
+  const existingIds = [...data.watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
+
+  const mediaLabel = mediaTypePreference === "movie" ? "movies" : mediaTypePreference === "tv" ? "TV shows" : "movies and TV shows";
+  const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
+
+  const list = data.lists.find((l) => l._id === listId);
+  const listName = list?.name ?? "this custom list";
+  
+  const items = data.listItems.filter((li) => li.listId === listId);
+  const titles = items
+    .map((li) => {
+      const wi = data.watchItems.find(
+        (w) => w.tmdbId === li.tmdbId && w.mediaType === li.mediaType,
+      );
+      return wi?.title ? `- ${wi.title} (${li.mediaType})` : `- TMDB ID: ${li.tmdbId} (${li.mediaType})`;
+    })
+    .join("\n");
+
+  let prompt = `Here are the movies and TV shows in my custom list "${listName}":\n\n${titles}\n\n`;
+  prompt += `Based on these titles, recommend exactly ${titleCount} ${mediaLabel} I would likely enjoy.\n`;
+  prompt += `Find movies/shows that share similar themes, genres, directors, actors, or vibe as the ones in the list.\n\n`;
+
+  if (mediaTypePreference === "movie") {
+    prompt += `IMPORTANT: Only recommend MOVIES. Do not suggest any TV shows.\n\n`;
+  } else if (mediaTypePreference === "tv") {
+    prompt += `IMPORTANT: Only recommend TV SHOWS. Do not suggest any movies.\n\n`;
+  }
+
+  if (existingIds.length > 0) {
+    prompt += `Do NOT recommend any title with these TMDB IDs (already in my overall watchlist): ${existingIds.join(", ")}\n\n`;
+  }
+
+  if (yearFrom || yearTo) {
+    const from = yearFrom ?? 1900;
+    const to = yearTo ?? new Date().getFullYear();
+    prompt += `IMPORTANT: Only recommend titles released between ${from} and ${to} (inclusive).\n\n`;
+  }
+
+  prompt += RESPONSE_SCHEMA;
+  return prompt;
+}
+
 const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
 {
   "recommendations": [
@@ -496,7 +547,8 @@ type GenerateResult =
 
 export const generateRecommendations = action({
   args: {
-    generationType: v.optional(v.union(v.literal("watchlist"), v.literal("genre"))),
+    generationType: v.optional(v.string()),
+    listId: v.optional(v.string()),
     mediaTypePreference: v.optional(v.union(v.literal("movie"), v.literal("tv"))),
     genrePreference: v.optional(v.string()),
     excludeTmdbIds: v.optional(v.array(v.number())),
@@ -522,6 +574,11 @@ export const generateRecommendations = action({
     if (genType === "watchlist" && data.watchItems.length === 0) {
       return { error: "empty_watchlist" };
     }
+    if (genType === "list" && args.listId) {
+      if (data.listItems.filter((li) => li.listId === args.listId).length === 0) {
+        return { error: "empty_watchlist" }; // Reusing the same error for empty list since UI handles it
+      }
+    }
 
     // 4. Rate limit: check most recent entry (skip if we are generating more)
     const isGenerateMore = excludeTmdbIds.length > 0;
@@ -535,9 +592,14 @@ export const generateRecommendations = action({
     }
 
     // 5. Build prompt based on generation type
-    const userPrompt = genType === "watchlist"
-      ? buildWatchlistPrompt(data, args.mediaTypePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count)
-      : buildGenrePrompt(data, args.mediaTypePreference, args.genrePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count);
+    let userPrompt = "";
+    if (genType === "watchlist") {
+      userPrompt = buildWatchlistPrompt(data, args.mediaTypePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count);
+    } else if (genType === "list" && args.listId) {
+      userPrompt = buildCustomListPrompt(data, args.listId, args.mediaTypePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count);
+    } else {
+      userPrompt = buildGenrePrompt(data, args.mediaTypePreference, args.genrePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count);
+    }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {

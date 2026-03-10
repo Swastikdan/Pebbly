@@ -55,6 +55,7 @@ export type MediaMetadataForList = {
 	image?: string;
 	rating?: number;
 	release_date?: string;
+	overview?: string;
 };
 
 export function WatchlistStatusMenu({
@@ -84,55 +85,11 @@ export function WatchlistStatusMenu({
 	const [open, setOpen] = useState(false);
 	const [listDialogOpen, setListDialogOpen] = useState(false);
 
-	if (!isOnWatchlist) {
-		return (
-			<>
-				<div className="flex items-center gap-1.5">
-					<Button
-						variant="secondary"
-						className="gap-2 rounded-lg px-3 text-xs font-semibold h-10"
-						onClick={onAdd}
-					>
-						<Bookmark size={16} />
-						Add to Watchlist
-					</Button>
-					{isSignedIn && (
-						<Button
-							variant="outline"
-							size="icon"
-							className="rounded-lg h-10 w-10 shrink-0"
-							onClick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								setListDialogOpen(true);
-							}}
-							aria-label="Add to list"
-						>
-							<ListPlus size={16} />
-						</Button>
-					)}
-				</div>
-				{/* Add to List Dialog (opens outside dropdown) */}
-				{isSignedIn && (
-					<SilentErrorBoundary>
-						<AddToListDialog
-							open={listDialogOpen}
-							onOpenChange={setListDialogOpen}
-							tmdbId={tmdbId}
-							mediaType={mediaType}
-							metadata={metadata}
-						/>
-					</SilentErrorBoundary>
-				)}
-			</>
-		);
-	}
-
+	// Single button approach: Always show the status-menu style button.
+	// We'll just define default icons/labels if not on watchlist.
 	const currentStatus = progressStatus ?? "watch-later";
 	const currentOption = getProgressOption(currentStatus);
-	const StatusIcon = currentOption.icon;
-
-	const showDropped = mediaType === "tv";
+	const StatusIcon = isOnWatchlist ? currentOption.icon : Bookmark;
 
 	return (
 		<>
@@ -140,16 +97,30 @@ export function WatchlistStatusMenu({
 				<DropdownMenuTrigger asChild>
 					<Button
 						variant="secondary"
-						className="gap-2 rounded-lg px-3 text-xs font-semibold h-10"
+						// className="gap-2 rounded-lg px-3 text-xs font-semibold h-10 min-w-[40px]"
+						className={cn(
+							"rounded-lg  text-xs font-semibold h-10",
+							isOnWatchlist ? "min-w-[40px]" : "min-w-fit gap-2 px-3",
+						)}
 					>
 						<StatusIcon size={16} />
-						<span className="flex flex-col items-start leading-none">
+						{/* <span className="hidden sm:flex flex-col items-start leading-none">
 							<span className="text-[10px] text-muted-foreground font-normal">
-								Status
+								{isOnWatchlist && "Status"}
 							</span>
-							<span>Current: {currentOption.label}</span>
-						</span>
-						<ChevronDown size={12} className="opacity-50" />
+							<span>{isOnWatchlist && `Current: ${currentOption.label}`}</span>
+						</span> */}
+						{isOnWatchlist && (
+							<>
+								<span className="hidden sm:flex flex-col items-start leading-none">
+									<span className="text-[10px] text-muted-foreground font-normal">
+										Status
+									</span>
+									<span>Current: {currentOption.label}</span>
+								</span>
+								<ChevronDown size={12} className="hidden sm:block opacity-50" />
+							</>
+						)}
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent
@@ -157,116 +128,147 @@ export function WatchlistStatusMenu({
 					className="w-72 rounded-2xl p-0"
 					onCloseAutoFocus={(e) => e.preventDefault()}
 				>
-					{/* ── Status ── */}
+					{/* ── Watchlist Toggle/Status ── */}
 					<div className="p-3 space-y-2">
-						<p className="text-sm font-semibold">Status</p>
-						<div className="grid grid-cols-2 gap-1.5">
-							<StatusButton
-								active={currentStatus === "watch-later"}
-								onClick={() => onStatusChange("watch-later")}
-							>
-								<Clock size={16} />
-								Watch Later
-							</StatusButton>
-							<StatusButton
-								active={currentStatus === "watching"}
-								onClick={() => onStatusChange("watching")}
-							>
-								<Eye size={16} />
-								Watching
-							</StatusButton>
-							<StatusButton
-								active={currentStatus === "done"}
-								onClick={() => onStatusChange("done")}
-							>
-								<Check size={16} />
-								Done
-							</StatusButton>
-							{showDropped && (
-								<StatusButton
-									active={currentStatus === "dropped"}
-									onClick={() => onStatusChange("dropped")}
-								>
-									<X size={16} />
-									Dropped
-								</StatusButton>
-							)}
-						</div>
-					</div>
-
-					<DropdownMenuSeparator className="my-0" />
-
-					{/* ── How was it? ── */}
-					<div className="p-3 space-y-2">
-						<p className="text-sm font-semibold">How was it?</p>
-						<div className="grid grid-cols-4 gap-1.5">
-							{REACTION_OPTIONS.map((option) => {
-								const isSelected = reaction === option.value;
-								return (
-									<button
-										key={option.value}
-										type="button"
-										className={cn(
-											"flex flex-col items-center gap-1 rounded-xl py-2.5 transition-all",
-											isSelected
-												? "bg-primary/10 ring-2 ring-primary"
-												: "bg-secondary/60 hover:bg-secondary",
-										)}
-										onClick={(e) => {
-											e.preventDefault();
-											e.stopPropagation();
-											onReactionChange(isSelected ? null : option.value);
-										}}
-									>
-										<option.icon size={20} />
-										<span className="text-[10px] font-medium text-muted-foreground">
-											{option.label}
-										</span>
-									</button>
-								);
-							})}
-						</div>
-					</div>
-
-					{/* ── My Lists (just button) ── */}
-					{isSignedIn && (
-						<>
-							<DropdownMenuSeparator className="my-0" />
-							<div className="p-3">
+						<div className="flex items-center justify-between">
+							<p className="text-sm font-semibold">Watchlist</p>
+							{isOnWatchlist && (
 								<button
 									type="button"
-									className="flex w-full items-center justify-center gap-2 rounded-xl bg-secondary/60 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-									onClick={(e) => {
-										e.preventDefault();
-										e.stopPropagation();
+									onClick={() => {
+										onRemove();
 										setOpen(false);
-										// Small delay so dropdown closes before dialog opens
-										setTimeout(() => setListDialogOpen(true), 150);
 									}}
+									className="text-[10px] text-destructive hover:underline"
 								>
-									<ListPlus size={16} />
-									Add to List
+									Remove
 								</button>
+							)}
+						</div>
+						{!isOnWatchlist ? (
+							<Button
+								variant="secondary"
+								className="w-full"
+								onClick={() => {
+									onAdd();
+									setOpen(false);
+								}}
+							>
+								<Bookmark size={16} />
+								Add to Watchlist
+							</Button>
+						) : (
+							<div className="grid grid-cols-2 gap-1.5">
+								<StatusButton
+									active={currentStatus === "watch-later"}
+									onClick={() => onStatusChange("watch-later")}
+								>
+									<Clock size={16} />
+									Watch Later
+								</StatusButton>
+								<StatusButton
+									active={currentStatus === "watching"}
+									onClick={() => onStatusChange("watching")}
+								>
+									<Eye size={16} />
+									Watching
+								</StatusButton>
+								<StatusButton
+									active={currentStatus === "done"}
+									onClick={() => onStatusChange("done")}
+								>
+									<Check size={16} />
+									Done
+								</StatusButton>
+								{mediaType === "tv" && (
+									<StatusButton
+										active={currentStatus === "dropped"}
+										onClick={() => onStatusChange("dropped")}
+									>
+										<X size={16} />
+										Dropped
+									</StatusButton>
+								)}
+							</div>
+						)}
+					</div>
+
+					{isOnWatchlist && (
+						<>
+							<DropdownMenuSeparator className="my-0" />
+							{/* ── How was it? ── */}
+							<div className="p-3 space-y-2">
+								<p className="text-sm font-semibold">How was it?</p>
+								<div className="grid grid-cols-4 gap-1.5">
+									{REACTION_OPTIONS.map((option) => {
+										const isSelected = reaction === option.value;
+										return (
+											<button
+												key={option.value}
+												type="button"
+												className={cn(
+													"flex flex-col items-center gap-1 rounded-xl py-2.5 transition-all",
+													isSelected
+														? "bg-primary/10 ring-2 ring-primary"
+														: "bg-secondary/60 hover:bg-secondary",
+												)}
+												onClick={(e) => {
+													e.preventDefault();
+													e.stopPropagation();
+													onReactionChange(isSelected ? null : option.value);
+												}}
+											>
+												<option.icon size={20} />
+												<span className="text-[10px] font-medium text-muted-foreground">
+													{option.label}
+												</span>
+											</button>
+										);
+									})}
+								</div>
 							</div>
 						</>
 					)}
 
-					<DropdownMenuSeparator className="my-0" />
+					{/* ── My Lists (just button) ── */}
+					{isSignedIn && (
+						<div className="px-3 pb-3">
+							<Button
+								variant="secondary"
+								className="w-full"
+								onClick={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									setOpen(false);
+									// Small delay so dropdown closes before dialog opens
+									setTimeout(() => setListDialogOpen(true), 150);
+								}}
+							>
+								<ListPlus size={16} />
+								Add to List
+							</Button>
+						</div>
+					)}
 
-					{/* ── Remove ── */}
-					<div className="p-3">
-						<button
-							type="button"
-							className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-							onClick={() => {
-								onRemove();
-								setOpen(false);
-							}}
-						>
-							<Trash2 size={16} />
-							Delete from Watchlist
-						</button>
-					</div>
+					{isOnWatchlist && (
+						<>
+							<DropdownMenuSeparator className="my-0" />
+							{/* ── Remove ── */}
+							<div className="p-3">
+								<button
+									type="button"
+									className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+									onClick={() => {
+										onRemove();
+										setOpen(false);
+									}}
+								>
+									<Trash2 size={16} />
+									Delete from Watchlist
+								</button>
+							</div>
+						</>
+					)}
 				</DropdownMenuContent>
 			</DropdownMenu>
 
@@ -387,6 +389,7 @@ function AddToListDialog({
 												image: metadata?.image,
 												rating: metadata?.rating,
 												release_date: metadata?.release_date,
+												overview: metadata?.overview,
 											})
 										}
 									>
@@ -436,6 +439,7 @@ function AddToListDialog({
 					image: metadata?.image,
 					rating: metadata?.rating,
 					release_date: metadata?.release_date,
+					overview: metadata?.overview,
 				}}
 			/>
 		</>
