@@ -221,7 +221,7 @@ const SearchBar = memo(
 						disabled={disabled || isLoading}
 						autoFocus={autoFocus}
 						className={cn(
-							"peer h-11 w-full rounded-xl bg-secondary/40 ps-11 pr-10 text-[16px] md:text-[15px] border border-border/60 shadow-none transition-all duration-200 placeholder:text-muted-foreground/50 focus:bg-background focus:border-ring/30 focus:ring-2 focus:ring-ring/10 dark:bg-input/20 dark:focus:bg-background",
+							"peer h-11 w-full rounded-xl bg-background/95 ps-11 pr-10 text-[16px] md:text-[15px] border border-border transition-all duration-200 placeholder:text-muted-foreground/70 focus:bg-background focus:border-ring/40 focus:ring-2 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background",
 							disabled && "cursor-not-allowed opacity-50",
 						)}
 						aria-label="Search Input"
