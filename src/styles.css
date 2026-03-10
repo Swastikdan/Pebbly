@@ -357,26 +357,26 @@
 	/* --- Skeleton Shimmer --- */
 	.shimmer {
 		background: linear-gradient(
-			100deg,
+			90deg,
 			oklch(0.93 0 0) 0%,
-			oklch(0.93 0 0) 35%,
+			oklch(0.93 0 0) 20%,
 			oklch(0.96 0 0) 50%,
-			oklch(0.93 0 0) 65%,
+			oklch(0.93 0 0) 80%,
 			oklch(0.93 0 0) 100%
 		);
-		background-size: 250% 100%;
-		animation: shimmer 2s ease-in-out infinite;
+		background-size: 200% 100%;
+		animation: shimmer 1.5s linear infinite;
 	}
 	.dark .shimmer {
 		background: linear-gradient(
-			100deg,
+			90deg,
 			oklch(0.24 0 0) 0%,
-			oklch(0.24 0 0) 35%,
+			oklch(0.24 0 0) 20%,
 			oklch(0.29 0 0) 50%,
-			oklch(0.24 0 0) 65%,
+			oklch(0.24 0 0) 80%,
 			oklch(0.24 0 0) 100%
 		);
-		background-size: 250% 100%;
+		background-size: 200% 100%;
 	}
 }
 
