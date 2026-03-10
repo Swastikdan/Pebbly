@@ -6,6 +6,7 @@ import {
 	Film,
 	Plus,
 	RefreshCw,
+	SlidersHorizontal,
 	Sparkles,
 	Trash2,
 	Tv,
@@ -274,6 +275,7 @@ function RecommendationsContent() {
 	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 	const [selectedEras, setSelectedEras] = useState<string[]>([]);
 	const [count, setCount] = useState(10);
+	const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
 	const toggleGenre = (name: string) => {
 		setSelectedGenres((prev) =>
@@ -369,7 +371,7 @@ function RecommendationsContent() {
 			<div className="space-y-3">
 				{/* Row 1: Mode + Media type + Count + Generate */}
 				<div className="flex flex-wrap items-center gap-2">
-					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
+					<div className="order-1 flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
 						<Button
 							className="h-8 px-4 text-xs font-semibold rounded-md"
 							variant={genMode === "watchlist" ? "default" : "ghost"}
@@ -386,7 +388,7 @@ function RecommendationsContent() {
 						</Button>
 					</div>
 
-					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
+					<div className="order-3 w-full sm:w-auto flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
 						<Button
 							className="h-8 px-3 text-xs font-semibold rounded-md"
 							variant={!mediaType ? "default" : "ghost"}
@@ -415,6 +417,34 @@ function RecommendationsContent() {
 					</div>
 
 					<Button
+						type="button"
+						variant={showAdvancedOptions ? "default" : "ghost"}
+						className="order-4 gap-1.5 h-9 w-[132px] text-xs justify-center"
+						onClick={() => setShowAdvancedOptions((prev) => !prev)}
+					>
+						<SlidersHorizontal className="size-3.5" />
+						<span className="relative inline-flex w-[72px] justify-center">
+							<span
+								className={cn(
+									"absolute inset-0 transition-opacity",
+									showAdvancedOptions ? "opacity-100" : "opacity-0",
+								)}
+							>
+								Simple
+							</span>
+							<span
+								className={cn(
+									"absolute inset-0 transition-opacity",
+									showAdvancedOptions ? "opacity-0" : "opacity-100",
+								)}
+							>
+								Full options
+							</span>
+							<span className="invisible">Full options</span>
+						</span>
+					</Button>
+
+					<Button
 						onClick={handleGenerate}
 						disabled={
 							isGenerating ||
@@ -423,7 +453,7 @@ function RecommendationsContent() {
 								watchlist.length === 0)
 						}
 						variant="secondary"
-						className="gap-2 h-9"
+						className="order-2 sm:order-none ml-auto gap-2 h-9"
 					>
 						{isGenerating ? (
 							<RefreshCw className="size-4 animate-spin" />
@@ -435,50 +465,52 @@ function RecommendationsContent() {
 				</div>
 
 				{/* Row 2: Era chips and Count dropdown */}
-				<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-					<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hidden pb-0.5">
-						<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
-							Era
-						</span>
-						{ERA_PRESETS.map((era) => (
-							<button
-								key={era.label}
-								type="button"
-								className={cn(
-									"rounded-lg px-2.5 py-1 text-xs font-medium transition-colors shrink-0",
-									selectedEras.includes(era.label)
-										? "bg-foreground text-background"
-										: "bg-secondary/60 text-muted-foreground hover:bg-secondary",
-								)}
-								onClick={() => toggleEra(era.label)}
-							>
-								{era.label}
-							</button>
-						))}
-					</div>
+				{showAdvancedOptions && (
+					<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+						<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hidden pb-0.5">
+							<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
+								Era
+							</span>
+							{ERA_PRESETS.map((era) => (
+								<button
+									key={era.label}
+									type="button"
+									className={cn(
+										"rounded-lg px-2.5 py-1 text-xs font-medium transition-colors shrink-0",
+										selectedEras.includes(era.label)
+											? "bg-foreground text-background"
+											: "bg-secondary/60 text-muted-foreground hover:bg-secondary",
+									)}
+									onClick={() => toggleEra(era.label)}
+								>
+									{era.label}
+								</button>
+							))}
+						</div>
 
-					{/* Count — shadcn Select */}
-					<div className="flex items-center gap-1.5 shrink-0">
-						<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
-							Count
-						</span>
-						<Select
-							value={String(count)}
-							onValueChange={(v) => setCount(Number(v))}
-						>
-							<SelectTrigger className="h-8 w-[60px] text-xs font-semibold px-2 bg-secondary/60 border-0 ring-1 ring-border/40 shrink-0">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent position="popper" className="min-w-[4rem]">
-								{COUNT_OPTIONS.map((c) => (
-									<SelectItem key={c} value={String(c)} className="text-xs">
-										{c}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						{/* Count — shadcn Select */}
+						<div className="flex items-center gap-1.5 shrink-0">
+							<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
+								Count
+							</span>
+							<Select
+								value={String(count)}
+								onValueChange={(v) => setCount(Number(v))}
+							>
+								<SelectTrigger className="h-8 w-[60px] text-xs font-semibold px-2 bg-secondary/60 border-0 ring-1 ring-border/40 shrink-0">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent position="popper" className="min-w-[4rem]">
+									{COUNT_OPTIONS.map((c) => (
+										<SelectItem key={c} value={String(c)} className="text-xs">
+											{c}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 					</div>
-				</div>
+				)}
 
 				{/* Row 3: Genres (conditionally visible) */}
 				{genMode === "watchlist" &&
@@ -646,7 +678,7 @@ function HistoryAccordionItem({
 			)}
 		>
 			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
-				<div className="flex flex-1 items-center gap-3 pr-2 min-w-max overflow-x-auto  sm:min-w-0 sm:overflow-visible">
+				<div className="flex flex-1 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pr-2">
 					{/* Type badge */}
 					<Badge
 						variant="outline"
@@ -656,7 +688,7 @@ function HistoryAccordionItem({
 					</Badge>
 
 					{/* Description */}
-					<span className="text-xs text-muted-foreground truncate min-w-0">
+					<span className="text-xs text-muted-foreground truncate min-w-0 flex-1">
 						{entry.genrePreference
 							? entry.genrePreference
 							: `${entry.inputStats.movieCount} movies, ${entry.inputStats.tvCount} TV`}
@@ -688,13 +720,19 @@ function HistoryAccordionItem({
 						</Badge>
 					</div>
 
+					<div className="flex w-full items-center gap-2 text-[11px] text-muted-foreground/60 sm:hidden">
+						<span>{formatTimestamp(entry.createdAt)}</span>
+						<span className="text-muted-foreground/40">·</span>
+						<span>{entry.recommendations.length} results</span>
+					</div>
+
 					{/* Timestamp */}
-					<span className="text-[11px] text-muted-foreground/60 shrink-0 ml-auto sm:ml-0">
+					<span className="hidden text-[11px] text-muted-foreground/60 shrink-0 sm:inline">
 						{formatTimestamp(entry.createdAt)}
 					</span>
 
 					{/* Result count */}
-					<span className="text-[11px] text-muted-foreground/50 shrink-0">
+					<span className="hidden text-[11px] text-muted-foreground/50 shrink-0 sm:inline">
 						{entry.recommendations.length} results
 					</span>
 				</div>
