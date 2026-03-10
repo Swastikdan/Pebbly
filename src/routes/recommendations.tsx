@@ -62,6 +62,11 @@ export const Route = createFileRoute("/recommendations")({
 			},
 		],
 	}),
+	validateSearch: (search: Record<string, unknown>) => {
+		return {
+			activeId: search.activeId as string | undefined,
+		};
+	},
 	component: RecommendationsPage,
 });
 
@@ -271,7 +276,26 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 
 	const { watchlist, loading: watchlistLoading } = useWatchlist();
 
-	const [activeId, setActiveId] = useState<string | null>(null);
+	const searchParams = Route.useSearch();
+	const activeId = searchParams.activeId || null;
+	const navigate = Route.useNavigate();
+
+	const setActiveId = useCallback(
+		(id: string | null) => {
+			navigate({
+				search: (prev) => ({ ...prev, activeId: id || undefined }),
+				replace: true,
+			});
+		},
+		[navigate],
+	);
+
+	useEffect(() => {
+		if (!activeId && history.length > 0) {
+			setActiveId(history[0]._id);
+		}
+	}, [activeId, history]);
+
 	const [genMode, setGenMode] = useState<"watchlist" | "genre" | "list">(
 		"watchlist",
 	);
@@ -382,8 +406,8 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 		<div className="space-y-8">
 			{/* ── Generation Controls ─────────────────────────── */}
 			<div className="space-y-3">
-				<div className="flex flex-wrap items-center gap-2">
-					<div className="order-1 flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
+				<div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2">
+					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
 						<Select
 							value={genMode === "list" ? `list:${listId}` : genMode}
 							onValueChange={(val: string) => {
@@ -399,7 +423,11 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 							<SelectTrigger className="h-8 w-auto px-4 text-xs font-semibold bg-transparent border-0 ring-0 focus:ring-0 shadow-none">
 								<SelectValue placeholder="From Watchlist" />
 							</SelectTrigger>
-							<SelectContent position="popper" align="start">
+							<SelectContent
+								position="popper"
+								align="start"
+								className="max-h-[300px] overflow-y-auto"
+							>
 								<SelectItem value="watchlist" className="text-xs">
 									From Watchlist
 								</SelectItem>
@@ -422,81 +450,85 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 						</Select>
 					</div>
 
-					<div className="order-3 w-full sm:w-auto flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
+					<div className="w-full sm:w-auto flex items-center gap-2">
+						<div className="flex flex-1 sm:flex-none gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
+							<Button
+								className="h-8 px-3 text-xs font-semibold rounded-md flex-1 sm:flex-none"
+								variant={!mediaType ? "default" : "ghost"}
+								onClick={() => setMediaType(undefined)}
+							>
+								All
+							</Button>
+							<Button
+								className="h-8 px-3 text-xs font-semibold rounded-md flex-1 sm:flex-none"
+								variant={mediaType === "movie" ? "default" : "ghost"}
+								onClick={() =>
+									setMediaType(mediaType === "movie" ? undefined : "movie")
+								}
+							>
+								Movies
+							</Button>
+							<Button
+								className="h-8 px-3 text-xs font-semibold rounded-md flex-1 sm:flex-none"
+								variant={mediaType === "tv" ? "default" : "ghost"}
+								onClick={() =>
+									setMediaType(mediaType === "tv" ? undefined : "tv")
+								}
+							>
+								TV Shows
+							</Button>
+						</div>
+
 						<Button
-							className="h-8 px-3 text-xs font-semibold rounded-md"
-							variant={!mediaType ? "default" : "ghost"}
-							onClick={() => setMediaType(undefined)}
+							type="button"
+							variant={showAdvancedOptions ? "outline" : "ghost"}
+							className="gap-1.5 h-9 w-[132px] text-xs justify-center shrink-0"
+							onClick={() => setShowAdvancedOptions((prev) => !prev)}
 						>
-							All
-						</Button>
-						<Button
-							className="h-8 px-3 text-xs font-semibold rounded-md"
-							variant={mediaType === "movie" ? "default" : "ghost"}
-							onClick={() =>
-								setMediaType(mediaType === "movie" ? undefined : "movie")
-							}
-						>
-							Movies
-						</Button>
-						<Button
-							className="h-8 px-3 text-xs font-semibold rounded-md"
-							variant={mediaType === "tv" ? "default" : "ghost"}
-							onClick={() =>
-								setMediaType(mediaType === "tv" ? undefined : "tv")
-							}
-						>
-							TV Shows
+							<SlidersHorizontal className="size-3.5" />
+							<span className="relative inline-flex w-[72px] justify-center">
+								<span
+									className={cn(
+										"absolute inset-0 transition-opacity",
+										showAdvancedOptions ? "opacity-100" : "opacity-0",
+									)}
+								>
+									Simple
+								</span>
+								<span
+									className={cn(
+										"absolute inset-0 transition-opacity",
+										showAdvancedOptions ? "opacity-0" : "opacity-100",
+									)}
+								>
+									Full options
+								</span>
+								<span className="invisible">Full options</span>
+							</span>
 						</Button>
 					</div>
 
-					<Button
-						type="button"
-						variant={showAdvancedOptions ? "default" : "ghost"}
-						className="order-4 gap-1.5 h-9 w-[132px] text-xs justify-center"
-						onClick={() => setShowAdvancedOptions((prev) => !prev)}
-					>
-						<SlidersHorizontal className="size-3.5" />
-						<span className="relative inline-flex w-[72px] justify-center">
-							<span
-								className={cn(
-									"absolute inset-0 transition-opacity",
-									showAdvancedOptions ? "opacity-100" : "opacity-0",
-								)}
-							>
-								Simple
-							</span>
-							<span
-								className={cn(
-									"absolute inset-0 transition-opacity",
-									showAdvancedOptions ? "opacity-0" : "opacity-100",
-								)}
-							>
-								Full options
-							</span>
-							<span className="invisible">Full options</span>
-						</span>
-					</Button>
-
-					<Button
-						onClick={handleGenerate}
-						disabled={
-							isGenerating ||
-							(genMode === "watchlist" &&
-								!watchlistLoading &&
-								watchlist.length === 0) ||
-							(genMode === "list" && !listId)
-						}
-						variant="secondary"
-						className="order-2 sm:order-none ml-auto gap-2 h-9"
-					>
-						{isGenerating ? (
-							<RefreshCw className="size-4 animate-spin" />
-						) : (
-							<Sparkles className="size-4 text-blue-500 fill-blue-500/20" />
-						)}
-						{isGenerating ? "Generating..." : "Generate"}
-					</Button>
+					<div className="w-full sm:w-auto sm:ml-auto mt-1 sm:mt-0 flex">
+						<Button
+							onClick={handleGenerate}
+							disabled={
+								isGenerating ||
+								(genMode === "watchlist" &&
+									!watchlistLoading &&
+									watchlist.length === 0) ||
+								(genMode === "list" && !listId)
+							}
+							variant="secondary"
+							className="gap-2 h-9 w-full sm:w-auto"
+						>
+							{isGenerating ? (
+								<RefreshCw className="size-4 animate-spin" />
+							) : (
+								<Sparkles className="size-4 text-blue-500 fill-blue-500/20" />
+							)}
+							{isGenerating ? "Generating..." : "Generate"}
+						</Button>
+					</div>
 				</div>
 
 				{/* Row 2: Era chips and Count dropdown */}
@@ -588,13 +620,34 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 
 			{/* Error */}
 			{error && (
-				<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+				<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
 					{errorMessages[error as string] ?? error}
 				</div>
 			)}
 
 			{/* Loading */}
-			{isGenerating && <LoadingSkeletons />}
+			{isGenerating && (
+				<div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+					<div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5 p-8 text-center ring-1 ring-inset ring-blue-500/10">
+						<div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/10 to-transparent -translate-x-[100%] animate-[shimmer_2s_infinite]" />
+						<div className="flex flex-col items-center justify-center gap-4 relative z-10">
+							<div className="rounded-full bg-blue-500/20 p-3 animate-pulse">
+								<Sparkles className="size-6 text-blue-500 animate-bounce" />
+							</div>
+							<div className="space-y-1">
+								<p className="font-semibold tracking-tight text-foreground">
+									Analyzing your preferences...
+								</p>
+								<p className="text-xs text-muted-foreground max-w-[250px] mx-auto">
+									Curating the perfect selection of titles based on your taste
+									profile.
+								</p>
+							</div>
+						</div>
+					</div>
+					<LoadingSkeletons />
+				</div>
+			)}
 
 			{/* ── Active Recommendations ─────────────────────── */}
 			{!isGenerating && activeEntry && (

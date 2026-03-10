@@ -57,6 +57,11 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/")({
 			}),
 		],
 	}),
+	validateSearch: (search: Record<string, unknown>) => {
+		return {
+			trailer: search.trailer as string | undefined,
+		};
+	},
 	component: TvHomePage,
 });
 

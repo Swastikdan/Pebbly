@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +53,9 @@ export const MediaContainer = (props: MediaContainerProps) => {
 		is_more_clips_available,
 		type,
 	} = props;
+
+	const search = useSearch({ strict: false }) as Record<string, unknown>;
+	const navigate = useNavigate();
 
 	const hasVideos = youtubeclips.length > 0;
 	const hasBackdrops = backdrops.length > 0;
@@ -107,8 +111,20 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
-								{youtubeclips.map((video) => (
-									<Dialog key={video.key}>
+								{youtubeclips.map((video, index) => (
+									<Dialog
+										key={video.key}
+										open={search.video === video.key}
+										onOpenChange={(isOpen) =>
+											navigate({
+												search: (prev: any) => ({
+													...prev,
+													video: isOpen ? video.key : undefined,
+												}),
+												replace: true,
+											} as any)
+										}
+									>
 										<DialogTrigger asChild>
 											<div className="group relative cursor-pointer">
 												<Image
@@ -143,9 +159,45 @@ export const MediaContainer = (props: MediaContainerProps) => {
 														allowFullScreen
 														allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
 														className="size-full rounded-2xl"
-														src={`https://www.youtube.com/embed/${video.key}`}
+														src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
 														title={video.name}
 													/>
+													{index > 0 && (
+														<button
+															type="button"
+															className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															onClick={(e) => {
+																e.stopPropagation();
+																navigate({
+																	search: (prev: any) => ({
+																		...prev,
+																		video: youtubeclips[index - 1].key,
+																	}),
+																	replace: true,
+																} as any);
+															}}
+														>
+															<ChevronLeft className="size-6" />
+														</button>
+													)}
+													{index < youtubeclips.length - 1 && (
+														<button
+															type="button"
+															className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															onClick={(e) => {
+																e.stopPropagation();
+																navigate({
+																	search: (prev: any) => ({
+																		...prev,
+																		video: youtubeclips[index + 1].key,
+																	}),
+																	replace: true,
+																} as any);
+															}}
+														>
+															<ChevronRight className="size-6" />
+														</button>
+													)}
 												</div>
 											</DialogContent>
 										</DialogOverlay>
@@ -172,35 +224,101 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
-								{backdrops.map((image, index) => (
-									<Dialog key={index}>
-										<DialogTrigger asChild>
-											<Image
-												alt={title}
-												className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-												height={450}
-												src={image.backdrop_image ?? ""}
-												width={300}
-											/>
-										</DialogTrigger>
-										<DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-											<DialogContent className="aspect-video w-full max-w-[90vw]  rounded-2xl border-0 bg-secondary p-0 ring-0">
-												<DialogHeader className="sr-only">
-													<DialogTitle>{title} Backdrop Image</DialogTitle>
-												</DialogHeader>
-												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
-													<Image
-														alt={title}
-														className="aspect-video size-full rounded-2xl object-cover"
-														height={300}
-														src={image.backdrop_image_raw ?? ""}
-														width={450}
-													/>
-												</div>
-											</DialogContent>
-										</DialogOverlay>
-									</Dialog>
-								))}
+								{backdrops.map((image, index) => {
+									const imagePathClean = image.backdrop_image
+										?.split("/")
+										.pop()
+										?.replace(/\.[^/.]+$/, "");
+									return (
+										<Dialog
+											key={`backdrop-${index}`}
+											open={search.backdrop === imagePathClean}
+											onOpenChange={(isOpen) =>
+												navigate({
+													search: (prev: any) => ({
+														...prev,
+														backdrop: isOpen ? imagePathClean : undefined,
+													}),
+													replace: true,
+												} as any)
+											}
+										>
+											<DialogTrigger asChild>
+												<Image
+													alt={title}
+													className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+													height={450}
+													src={image.backdrop_image ?? ""}
+													width={300}
+												/>
+											</DialogTrigger>
+											<DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
+												<DialogContent className="aspect-video w-full max-w-[90vw]  rounded-2xl border-0 bg-secondary p-0 ring-0">
+													<DialogHeader className="sr-only">
+														<DialogTitle>{title} Backdrop Image</DialogTitle>
+													</DialogHeader>
+													<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
+														<Image
+															alt={title}
+															className="aspect-video size-full rounded-2xl object-cover"
+															height={300}
+															src={image.backdrop_image_raw ?? ""}
+															width={450}
+														/>
+														{index > 0 && (
+															<button
+																type="button"
+																className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	const prevClean = backdrops[
+																		index - 1
+																	].backdrop_image
+																		?.split("/")
+																		.pop()
+																		?.replace(/\.[^/.]+$/, "");
+																	navigate({
+																		search: (prev: any) => ({
+																			...prev,
+																			backdrop: prevClean,
+																		}),
+																		replace: true,
+																	} as any);
+																}}
+															>
+																<ChevronLeft className="size-6" />
+															</button>
+														)}
+														{index < backdrops.length - 1 && (
+															<button
+																type="button"
+																className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	const nextClean = backdrops[
+																		index + 1
+																	].backdrop_image
+																		?.split("/")
+																		.pop()
+																		?.replace(/\.[^/.]+$/, "");
+																	navigate({
+																		search: (prev: any) => ({
+																			...prev,
+																			backdrop: nextClean,
+																		}),
+																		replace: true,
+																	} as any);
+																}}
+															>
+																<ChevronRight className="size-6" />
+															</button>
+														)}
+													</div>
+												</DialogContent>
+											</DialogOverlay>
+										</Dialog>
+									);
+								})}
 								{is_more_backdrops_available && (
 									<Link to={mediaHref}>
 										<Button
@@ -222,35 +340,101 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
-								{posters.map((image, index) => (
-									<Dialog key={index}>
-										<DialogTrigger asChild>
-											<Image
-												alt={title}
-												className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70 "
-												height={300}
-												src={image.poster_image ?? ""}
-												width={450}
-											/>
-										</DialogTrigger>
-										<DialogOverlay className="bg-white/40 backdrop-blur-lg dark:bg-black/0">
-											<DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0  p-0 ring-0 sm:h-full sm:w-auto bg-secondary">
-												<DialogHeader className="sr-only">
-													<DialogTitle>{title} Poster Image</DialogTitle>
-												</DialogHeader>
-												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
-													<Image
-														alt={title}
-														className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
-														height={300}
-														src={image.poster_image_raw ?? ""}
-														width={450}
-													/>
-												</div>
-											</DialogContent>
-										</DialogOverlay>
-									</Dialog>
-								))}
+								{posters.map((image, index) => {
+									const imagePathClean = image.poster_image
+										?.split("/")
+										.pop()
+										?.replace(/\.[^/.]+$/, "");
+									return (
+										<Dialog
+											key={`poster-${index}`}
+											open={search.poster === imagePathClean}
+											onOpenChange={(isOpen) =>
+												navigate({
+													search: (prev: any) => ({
+														...prev,
+														poster: isOpen ? imagePathClean : undefined,
+													}),
+													replace: true,
+												} as any)
+											}
+										>
+											<DialogTrigger asChild>
+												<Image
+													alt={title}
+													className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70 "
+													height={300}
+													src={image.poster_image ?? ""}
+													width={450}
+												/>
+											</DialogTrigger>
+											<DialogOverlay className="bg-white/40 backdrop-blur-lg dark:bg-black/0">
+												<DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0  p-0 ring-0 sm:h-full sm:w-auto bg-secondary">
+													<DialogHeader className="sr-only">
+														<DialogTitle>{title} Poster Image</DialogTitle>
+													</DialogHeader>
+													<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
+														<Image
+															alt={title}
+															className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
+															height={300}
+															src={image.poster_image_raw ?? ""}
+															width={450}
+														/>
+														{index > 0 && (
+															<button
+																type="button"
+																className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	const prevClean = posters[
+																		index - 1
+																	].poster_image
+																		?.split("/")
+																		.pop()
+																		?.replace(/\.[^/.]+$/, "");
+																	navigate({
+																		search: (prev: any) => ({
+																			...prev,
+																			poster: prevClean,
+																		}),
+																		replace: true,
+																	} as any);
+																}}
+															>
+																<ChevronLeft className="size-6" />
+															</button>
+														)}
+														{index < posters.length - 1 && (
+															<button
+																type="button"
+																className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	const nextClean = posters[
+																		index + 1
+																	].poster_image
+																		?.split("/")
+																		.pop()
+																		?.replace(/\.[^/.]+$/, "");
+																	navigate({
+																		search: (prev: any) => ({
+																			...prev,
+																			poster: nextClean,
+																		}),
+																		replace: true,
+																	} as any);
+																}}
+															>
+																<ChevronRight className="size-6" />
+															</button>
+														)}
+													</div>
+												</DialogContent>
+											</DialogOverlay>
+										</Dialog>
+									);
+								})}
 								{is_more_posters_available && (
 									<Link to={mediaHref}>
 										<Button

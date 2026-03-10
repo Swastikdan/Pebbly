@@ -58,6 +58,11 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/")({
 			}),
 		],
 	}),
+	validateSearch: (search: Record<string, unknown>) => {
+		return {
+			trailer: search.trailer as string | undefined,
+		};
+	},
 	component: MovieHomePage,
 });
 

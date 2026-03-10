@@ -36,6 +36,13 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/media")({
 			}),
 		],
 	}),
+	validateSearch: (search: Record<string, unknown>) => {
+		return {
+			video: search.video as string | undefined,
+			backdrop: search.backdrop as string | undefined,
+			poster: search.poster as string | undefined,
+		};
+	},
 	component: TvMediaPage,
 });
 

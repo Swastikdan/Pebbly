@@ -1,4 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import { ScrollContainer } from "@/components/scroll-container";
 import {
@@ -40,6 +42,8 @@ export const MediaVideoImageContainer = (props: {
 	media_type: "movie" | "tv";
 }) => {
 	const { id, media_type } = props;
+	const navigate = useNavigate();
+	const search = useSearch({ strict: false }) as Record<string, unknown>;
 
 	const queryConfigs = useMemo(
 		() => [
@@ -71,8 +75,20 @@ export const MediaVideoImageContainer = (props: {
 				<span className="w-fit text-xl font-semibold md:text-2xl">Videos</span>
 				<ScrollContainer isButtonsVisible>
 					<div className="flex items-center justify-center gap-3">
-						{mediaVideos?.map((video) => (
-							<Dialog key={video.key}>
+						{mediaVideos?.map((video, index) => (
+							<Dialog
+								key={video.key}
+								open={search.video === video.key}
+								onOpenChange={(isOpen) =>
+									navigate({
+										search: ((prev: any) => ({
+											...prev,
+											video: isOpen ? video.key : undefined,
+										})) as any,
+										replace: true,
+									})
+								}
+							>
 								<DialogTrigger asChild>
 									<button
 										type="button"
@@ -110,9 +126,45 @@ export const MediaVideoImageContainer = (props: {
 												allowFullScreen
 												allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
 												className="size-full rounded-xl"
-												src={`https://www.youtube.com/embed/${video.key}`}
+												src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
 												title={video.name}
 											/>
+											{index > 0 && (
+												<button
+													type="button"
+													className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+													onClick={(e) => {
+														e.stopPropagation();
+														navigate({
+															search: ((prev: any) => ({
+																...prev,
+																video: mediaVideos[index - 1].key,
+															})) as any,
+															replace: true,
+														});
+													}}
+												>
+													<ChevronLeft className="size-6" />
+												</button>
+											)}
+											{index < mediaVideos.length - 1 && (
+												<button
+													type="button"
+													className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+													onClick={(e) => {
+														e.stopPropagation();
+														navigate({
+															search: ((prev: any) => ({
+																...prev,
+																video: mediaVideos[index + 1].key,
+															})) as any,
+															replace: true,
+														});
+													}}
+												>
+													<ChevronRight className="size-6" />
+												</button>
+											)}
 										</div>
 									</DialogContent>
 								</DialogOverlay>
@@ -127,73 +179,216 @@ export const MediaVideoImageContainer = (props: {
 					<span className="w-fit text-lg md:text-xl">Backdrops</span>
 					<ScrollContainer isButtonsVisible>
 						<div className="flex items-center justify-center gap-3">
-							{mediaImages?.backdrops?.map((image) => (
-								<Dialog key={`backdrop-${image.file_path}`}>
-									<DialogTrigger asChild>
-										<Image
-											alt={image.file_path}
-											className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-											height={450}
-											src={IMAGE_PREFIX.SD_BACKDROP + image.file_path}
-											width={300}
-										/>
-									</DialogTrigger>
-									<DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
-										<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0">
-											<DialogHeader className="sr-only">
-												<DialogTitle>
-													{image.file_path} Backdrop Image
-												</DialogTitle>
-											</DialogHeader>
-											<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
-												<Image
-													alt={image.file_path}
-													className="aspect-video size-full rounded-2xl object-cover"
-													height={300}
-													src={IMAGE_PREFIX.ORIGINAL + image.file_path}
-													width={450}
-												/>
-											</div>
-										</DialogContent>
-									</DialogOverlay>
-								</Dialog>
-							))}
+							{mediaImages?.backdrops?.map((image, index) => {
+								const imagePathClean = image.file_path.replace(/\.[^/.]+$/, "");
+								return (
+									<Dialog
+										key={`backdrop-${image.file_path}`}
+										open={search.backdrop === imagePathClean}
+										onOpenChange={(isOpen) =>
+											navigate({
+												search: (prev: any) => ({
+													...prev,
+													backdrop: isOpen ? imagePathClean : undefined,
+												}),
+												replace: true,
+											} as any)
+										}
+									>
+										<DialogTrigger asChild>
+											<Image
+												alt={image.file_path}
+												className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+												height={450}
+												src={IMAGE_PREFIX.SD_BACKDROP + image.file_path}
+												width={300}
+											/>
+										</DialogTrigger>
+										<DialogOverlay className="bg-white/10 backdrop-blur-lg dark:bg-black/0">
+											<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0">
+												<DialogHeader className="sr-only">
+													<DialogTitle>
+														{image.file_path} Backdrop Image
+													</DialogTitle>
+												</DialogHeader>
+												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
+													<Image
+														alt={image.file_path}
+														className="aspect-video size-full rounded-2xl object-cover"
+														height={300}
+														src={IMAGE_PREFIX.ORIGINAL + image.file_path}
+														width={450}
+													/>
+													{index > 0 && (
+														<button
+															type="button"
+															className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															onClick={(e) => {
+																e.stopPropagation();
+																const prevImg =
+																	mediaImages?.backdrops?.[index - 1];
+																if (prevImg) {
+																	const prevClean = prevImg.file_path.replace(
+																		/\.[^/.]+$/,
+																		"",
+																	);
+																	navigate({
+																		search: (
+																			prev: Record<string, unknown>,
+																		) => ({
+																			...prev,
+																			backdrop: prevClean,
+																		}),
+																		replace: true,
+																	} as any);
+																}
+															}}
+														>
+															<ChevronLeft className="size-6" />
+														</button>
+													)}
+													{index <
+														(mediaImages?.backdrops?.length || 0) - 1 && (
+														<button
+															type="button"
+															className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															onClick={(e) => {
+																e.stopPropagation();
+																const nextImg =
+																	mediaImages?.backdrops?.[index + 1];
+																if (nextImg) {
+																	const nextClean = nextImg.file_path.replace(
+																		/\.[^/.]+$/,
+																		"",
+																	);
+																	navigate({
+																		search: (
+																			prev: Record<string, unknown>,
+																		) => ({
+																			...prev,
+																			backdrop: nextClean,
+																		}),
+																		replace: true,
+																	} as any);
+																}
+															}}
+														>
+															<ChevronRight className="size-6" />
+														</button>
+													)}
+												</div>
+											</DialogContent>
+										</DialogOverlay>
+									</Dialog>
+								);
+							})}
 						</div>
 					</ScrollContainer>
 					<span className="w-fit text-lg md:text-xl">Posters</span>
 					<ScrollContainer isButtonsVisible>
 						<div className="flex items-center justify-center gap-3">
-							{mediaImages?.posters?.map((image) => (
-								<Dialog key={`poster-${image.file_path}`}>
-									<DialogTrigger asChild>
-										<Image
-											alt={image.file_path}
-											className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-											height={300}
-											src={IMAGE_PREFIX.SD_POSTER + image.file_path}
-											width={450}
-										/>
-									</DialogTrigger>
-									<DialogOverlay className="bg-white/40 backdrop-blur-lg dark:bg-black/0">
-										<DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 sm:h-full sm:w-auto">
-											<DialogHeader className="sr-only">
-												<DialogTitle>
-													{image.file_path} Poster Image
-												</DialogTitle>
-											</DialogHeader>
-											<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
-												<Image
-													alt={image.file_path}
-													className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
-													height={300}
-													src={IMAGE_PREFIX.ORIGINAL + image.file_path}
-													width={450}
-												/>
-											</div>
-										</DialogContent>
-									</DialogOverlay>
-								</Dialog>
-							))}
+							{mediaImages?.posters?.map((image, index) => {
+								const imagePathClean = image.file_path.replace(/\.[^/.]+$/, "");
+								return (
+									<Dialog
+										key={`poster-${image.file_path}`}
+										open={search.poster === imagePathClean}
+										onOpenChange={(isOpen) =>
+											navigate({
+												search: (prev: any) => ({
+													...prev,
+													poster: isOpen ? imagePathClean : undefined,
+												}),
+												replace: true,
+											} as any)
+										}
+									>
+										<DialogTrigger asChild>
+											<Image
+												alt={image.file_path}
+												className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+												height={300}
+												src={IMAGE_PREFIX.SD_POSTER + image.file_path}
+												width={450}
+											/>
+										</DialogTrigger>
+										<DialogOverlay className="bg-white/40 backdrop-blur-lg dark:bg-black/0">
+											<DialogContent className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 sm:h-full sm:w-auto">
+												<DialogHeader className="sr-only">
+													<DialogTitle>
+														{image.file_path} Poster Image
+													</DialogTitle>
+												</DialogHeader>
+												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
+													<Image
+														alt={image.file_path}
+														className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
+														height={300}
+														src={IMAGE_PREFIX.ORIGINAL + image.file_path}
+														width={450}
+													/>
+													{index > 0 && (
+														<button
+															type="button"
+															className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															onClick={(e) => {
+																e.stopPropagation();
+																const prevImg =
+																	mediaImages?.posters?.[index - 1];
+																if (prevImg) {
+																	const prevClean = prevImg.file_path.replace(
+																		/\.[^/.]+$/,
+																		"",
+																	);
+																	navigate({
+																		search: (
+																			prev: Record<string, unknown>,
+																		) => ({
+																			...prev,
+																			poster: prevClean,
+																		}),
+																		replace: true,
+																	} as any);
+																}
+															}}
+														>
+															<ChevronLeft className="size-6" />
+														</button>
+													)}
+													{index < (mediaImages?.posters?.length || 0) - 1 && (
+														<button
+															type="button"
+															className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															onClick={(e) => {
+																e.stopPropagation();
+																const nextImg =
+																	mediaImages?.posters?.[index + 1];
+																if (nextImg) {
+																	const nextClean = nextImg.file_path.replace(
+																		/\.[^/.]+$/,
+																		"",
+																	);
+																	navigate({
+																		search: (
+																			prev: Record<string, unknown>,
+																		) => ({
+																			...prev,
+																			poster: nextClean,
+																		}),
+																		replace: true,
+																	} as any);
+																}
+															}}
+														>
+															<ChevronRight className="size-6" />
+														</button>
+													)}
+												</div>
+											</DialogContent>
+										</DialogOverlay>
+									</Dialog>
+								);
+							})}
 						</div>
 					</ScrollContainer>
 				</div>

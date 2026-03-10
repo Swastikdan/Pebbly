@@ -1,3 +1,5 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ScrollContainer } from "@/components/scroll-container";
 import {
 	Dialog,
@@ -10,8 +12,8 @@ import {
 import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { VideoPlayerModal } from "@/components/video-player-modal";
-
 import { useWatchProgress } from "@/hooks/useWatchProgress";
+import { Button } from "../ui/button";
 
 export function MediaPosterTrailerContainer(props: {
 	tmdbId: number;
@@ -22,6 +24,8 @@ export function MediaPosterTrailerContainer(props: {
 }) {
 	const { tmdbId, type, image, title, trailervideos } = props;
 	const { progress } = useWatchProgress(tmdbId, type);
+	const navigate = useNavigate();
+	const search = useSearch({ strict: false }) as Record<string, unknown>;
 
 	let defaultSeason: number | undefined;
 	let defaultEpisode: number | undefined;
@@ -67,7 +71,19 @@ export function MediaPosterTrailerContainer(props: {
 				<ScrollContainer className="h-full flex-1">
 					<div className="flex h-full gap-3">
 						{trailervideos.map((video, index) => (
-							<Dialog key={index}>
+							<Dialog
+								key={video.key}
+								open={search.trailer === video.key}
+								onOpenChange={(isOpen) =>
+									navigate({
+										search: (prev: any) => ({
+											...prev,
+											trailer: isOpen ? video.key : undefined,
+										}),
+										replace: true,
+									})
+								}
+							>
 								<DialogTrigger asChild>
 									<button
 										type="button"
@@ -103,6 +119,42 @@ export function MediaPosterTrailerContainer(props: {
 												src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
 												title={video.name}
 											/>
+											{index > 0 && (
+												<button
+													type="button"
+													className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+													onClick={(e) => {
+														e.stopPropagation();
+														navigate({
+															search: (prev: any) => ({
+																...prev,
+																trailer: trailervideos[index - 1].key,
+															}),
+															replace: true,
+														} as any);
+													}}
+												>
+													<ChevronLeft className="size-6" />
+												</button>
+											)}
+											{index < trailervideos.length - 1 && (
+												<button
+													type="button"
+													className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+													onClick={(e) => {
+														e.stopPropagation();
+														navigate({
+															search: (prev: any) => ({
+																...prev,
+																trailer: trailervideos[index + 1].key,
+															}),
+															replace: true,
+														} as any);
+													}}
+												>
+													<ChevronRight className="size-6" />
+												</button>
+											)}
 										</div>
 									</DialogContent>
 								</DialogOverlay>
