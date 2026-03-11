@@ -16,6 +16,12 @@ import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IMAGE_PREFIX } from "@/constants";
+import {
+	getImageDialogKey,
+	type MediaDialogKey,
+	type MediaDialogSearch,
+	updateDialogSearch,
+} from "@/lib/media-dialog-helpers";
 import { getImages, getVideos } from "@/lib/queries";
 import type { MediaImages, MediaVideosResultsEntity } from "@/types";
 
@@ -42,7 +48,11 @@ export const MediaVideoImageContainer = (props: {
 }) => {
 	const { id, media_type } = props;
 	const navigate = useNavigate();
-	const search = useSearch({ strict: false }) as Record<string, unknown>;
+	const navigateDialogSearch = (options: unknown) => navigate(options as never);
+	const search = useSearch({ strict: false }) as MediaDialogSearch;
+
+	const onUpdateDialogSearch = (key: MediaDialogKey, value?: string) =>
+		updateDialogSearch(navigateDialogSearch, key, value);
 
 	const queryConfigs = useMemo(
 		() => [
@@ -79,14 +89,7 @@ export const MediaVideoImageContainer = (props: {
 								key={video.key}
 								open={search.video === video.key}
 								onOpenChange={(isOpen) =>
-									navigate({
-										search: ((prev: any) => ({
-											...prev,
-											video: isOpen ? video.key : undefined,
-										})) as any,
-										resetScroll: false,
-										replace: true,
-									})
+									onUpdateDialogSearch("video", isOpen ? video.key : undefined)
 								}
 							>
 								<DialogTrigger asChild>
@@ -138,14 +141,10 @@ export const MediaVideoImageContainer = (props: {
 													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
-														navigate({
-															search: ((prev: any) => ({
-																...prev,
-																video: mediaVideos[index - 1].key,
-															})) as any,
-															resetScroll: false,
-															replace: true,
-														});
+														onUpdateDialogSearch(
+															"video",
+															mediaVideos[index - 1].key,
+														);
 													}}
 												>
 													<ChevronLeft className="size-6" />
@@ -159,14 +158,10 @@ export const MediaVideoImageContainer = (props: {
 													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
-														navigate({
-															search: ((prev: any) => ({
-																...prev,
-																video: mediaVideos[index + 1].key,
-															})) as any,
-															resetScroll: false,
-															replace: true,
-														});
+														onUpdateDialogSearch(
+															"video",
+															mediaVideos[index + 1].key,
+														);
 													}}
 												>
 													<ChevronRight className="size-6" />
@@ -187,20 +182,16 @@ export const MediaVideoImageContainer = (props: {
 					<ScrollContainer isButtonsVisible>
 						<div className="flex items-center justify-center gap-3">
 							{mediaImages?.backdrops?.map((image, index) => {
-								const imagePathClean = image.file_path.replace(/\.[^/.]+$/, "");
+								const imagePathClean = getImageDialogKey(image.file_path);
 								return (
 									<Dialog
 										key={`backdrop-${image.file_path}`}
 										open={search.backdrop === imagePathClean}
 										onOpenChange={(isOpen) =>
-											navigate({
-												search: (prev: any) => ({
-													...prev,
-													backdrop: isOpen ? imagePathClean : undefined,
-												}),
-												resetScroll: false,
-												replace: true,
-											} as any)
+											onUpdateDialogSearch(
+												"backdrop",
+												isOpen ? imagePathClean : undefined,
+											)
 										}
 									>
 										<DialogTrigger asChild>
@@ -238,20 +229,10 @@ export const MediaVideoImageContainer = (props: {
 																const prevImg =
 																	mediaImages?.backdrops?.[index - 1];
 																if (prevImg) {
-																	const prevClean = prevImg.file_path.replace(
-																		/\.[^/.]+$/,
-																		"",
+																	onUpdateDialogSearch(
+																		"backdrop",
+																		getImageDialogKey(prevImg.file_path),
 																	);
-																	navigate({
-																		search: (
-																			prev: Record<string, unknown>,
-																		) => ({
-																			...prev,
-																			backdrop: prevClean,
-																		}),
-																		resetScroll: false,
-																		replace: true,
-																	} as any);
 																}
 															}}
 														>
@@ -270,20 +251,10 @@ export const MediaVideoImageContainer = (props: {
 																const nextImg =
 																	mediaImages?.backdrops?.[index + 1];
 																if (nextImg) {
-																	const nextClean = nextImg.file_path.replace(
-																		/\.[^/.]+$/,
-																		"",
+																	onUpdateDialogSearch(
+																		"backdrop",
+																		getImageDialogKey(nextImg.file_path),
 																	);
-																	navigate({
-																		search: (
-																			prev: Record<string, unknown>,
-																		) => ({
-																			...prev,
-																			backdrop: nextClean,
-																		}),
-																		resetScroll: false,
-																		replace: true,
-																	} as any);
 																}
 															}}
 														>
@@ -302,20 +273,16 @@ export const MediaVideoImageContainer = (props: {
 					<ScrollContainer isButtonsVisible>
 						<div className="flex items-center justify-center gap-3">
 							{mediaImages?.posters?.map((image, index) => {
-								const imagePathClean = image.file_path.replace(/\.[^/.]+$/, "");
+								const imagePathClean = getImageDialogKey(image.file_path);
 								return (
 									<Dialog
 										key={`poster-${image.file_path}`}
 										open={search.poster === imagePathClean}
 										onOpenChange={(isOpen) =>
-											navigate({
-												search: (prev: any) => ({
-													...prev,
-													poster: isOpen ? imagePathClean : undefined,
-												}),
-												resetScroll: false,
-												replace: true,
-											} as any)
+											onUpdateDialogSearch(
+												"poster",
+												isOpen ? imagePathClean : undefined,
+											)
 										}
 									>
 										<DialogTrigger asChild>
@@ -353,20 +320,10 @@ export const MediaVideoImageContainer = (props: {
 																const prevImg =
 																	mediaImages?.posters?.[index - 1];
 																if (prevImg) {
-																	const prevClean = prevImg.file_path.replace(
-																		/\.[^/.]+$/,
-																		"",
+																	onUpdateDialogSearch(
+																		"poster",
+																		getImageDialogKey(prevImg.file_path),
 																	);
-																	navigate({
-																		search: (
-																			prev: Record<string, unknown>,
-																		) => ({
-																			...prev,
-																			poster: prevClean,
-																		}),
-																		resetScroll: false,
-																		replace: true,
-																	} as any);
 																}
 															}}
 														>
@@ -384,20 +341,10 @@ export const MediaVideoImageContainer = (props: {
 																const nextImg =
 																	mediaImages?.posters?.[index + 1];
 																if (nextImg) {
-																	const nextClean = nextImg.file_path.replace(
-																		/\.[^/.]+$/,
-																		"",
+																	onUpdateDialogSearch(
+																		"poster",
+																		getImageDialogKey(nextImg.file_path),
 																	);
-																	navigate({
-																		search: (
-																			prev: Record<string, unknown>,
-																		) => ({
-																			...prev,
-																			poster: nextClean,
-																		}),
-																		resetScroll: false,
-																		replace: true,
-																	} as any);
 																}
 															}}
 														>

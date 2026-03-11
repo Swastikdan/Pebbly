@@ -13,17 +13,8 @@ import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContainer } from "@/components/media/media-title-container";
 import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
-import {
-	formatRuntime,
-	getMovieCertification,
-	getPosterImage,
-	mapBackdrops,
-	mapCast,
-	mapCrew,
-	mapGenres,
-	mapPosters,
-	splitVideos,
-} from "@/lib/media-transform";
+import { buildSharedMediaPageData } from "@/lib/media-page";
+import { formatRuntime, getMovieCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getMovieDetails } from "@/lib/queries";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
@@ -110,25 +101,19 @@ function MovieHomePage() {
 		keywords,
 	} = data;
 
-	const urltitle = formatMediaTitle.encode(title);
+	const mediaPage = buildSharedMediaPageData({
+		title,
+		originalTitle: original_title,
+		posterPath: poster_path,
+		releaseDate: release_date,
+		genres,
+		images,
+		credits,
+		videos,
+	});
 	const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
-	const movietitle = title ?? original_title;
-	const movieimage = getPosterImage(poster_path);
-	const moviereleaseyear = release_date
-		? new Date(release_date).getFullYear()
-		: null;
-
 	const uscertification = getMovieCertification(release_dates?.results);
 	const movieRuntime = formatRuntime(runtime);
-	const moviegenres = mapGenres(genres);
-	const { allVideos, trailervideos, youtubeclips } = splitVideos(
-		videos?.results,
-	);
-	const moviecast = mapCast(credits?.cast);
-	const moviecrew = mapCrew(credits?.crew);
-	const moviebackdrops = mapBackdrops(images?.backdrops);
-	const movieposters = mapPosters(images?.posters);
-
 	const moviekeywords =
 		keywords?.keywords?.map((k) => ({ name: k.name, id: k.id })) ?? [];
 	return (
@@ -137,15 +122,19 @@ function MovieHomePage() {
 				runtime={movieRuntime ?? null}
 				description={`${overview?.slice(0, 100)}...`}
 				id={id}
-				image={movieimage}
+				image={mediaPage.image}
 				imdb_url={imdb_url}
 				media_type="movie"
 				poster_path={poster_path}
 				rating={vote_average}
-				releaseyear={String(moviereleaseyear) || "Not Released"}
+				releaseyear={
+				mediaPage.releaseYear != null && Number.isFinite(mediaPage.releaseYear)
+					? String(mediaPage.releaseYear)
+					: "Not Released"
+			}
 				release_date={release_date}
 				tagline={tagline ?? null}
-				title={movietitle}
+				title={mediaPage.displayTitle}
 				uscertification={uscertification}
 				vote_average={vote_average}
 				vote_count={vote_count}
@@ -153,37 +142,41 @@ function MovieHomePage() {
 			<MediaPosterTrailerContainer
 				tmdbId={id}
 				type="movie"
-				image={movieimage}
-				title={movietitle}
-				trailervideos={trailervideos}
+				image={mediaPage.image}
+				title={mediaPage.displayTitle}
+				trailervideos={mediaPage.trailervideos}
 			/>
-			<GenreContainer genres={moviegenres} />
+			<GenreContainer genres={mediaPage.genres} />
 			<MediaDescription description={overview} />
 			<CastSection
-				cast={moviecast}
-				crew={moviecrew}
+				cast={mediaPage.cast}
+				crew={mediaPage.crew}
 				id={id}
 				is_more_cast_crew={
 					(credits?.cast?.length ?? 0) > 10 || (credits?.crew?.length ?? 0) > 10
 				}
 				type="movie"
-				urltitle={urltitle}
+				urltitle={mediaPage.urltitle}
 			/>
 			<MediaContainer
-				backdrops={moviebackdrops}
+				backdrops={mediaPage.backdrops}
 				id={id}
 				is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
-				is_more_clips_available={allVideos.length > 10}
+				is_more_clips_available={mediaPage.allVideos.length > 10}
 				is_more_posters_available={(images?.posters?.length ?? 0) > 10}
-				posters={movieposters}
-				title={movietitle}
+				posters={mediaPage.posters}
+				title={mediaPage.displayTitle}
 				type="movie"
-				urltitle={urltitle}
-				youtubeclips={youtubeclips}
+				urltitle={mediaPage.urltitle}
+				youtubeclips={mediaPage.youtubeclips}
 			/>
 			{belongs_to_collection && <Collections id={belongs_to_collection.id} />}
 			{keywords && <MediaKeywords keywords={moviekeywords} />}
-			<MediaRecommendations id={id} type="movie" urltitle={urltitle} />
+			<MediaRecommendations
+				id={id}
+				type="movie"
+				urltitle={mediaPage.urltitle}
+			/>
 		</section>
 	);
 }

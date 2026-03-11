@@ -7,7 +7,11 @@ import { useCallback, useMemo, useRef } from "react";
 import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
-import { createMemoryStorage, mapLegacyStatusToSplit, normalizeProgressStatus } from "@/lib/utils";
+import {
+	createMemoryStorage,
+	mapLegacyStatusToSplit,
+	normalizeProgressStatus,
+} from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus, WatchlistStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
@@ -146,11 +150,74 @@ function mapConvexItemToWatchlistItem(item: {
 		created_at: item.updatedAt,
 		inWatchlist: item.inWatchlist ?? true,
 		progressStatus:
-			normalizeProgressStatus(item.progressStatus) ??
-			legacy.progressStatus,
+			normalizeProgressStatus(item.progressStatus) ?? legacy.progressStatus,
 		reaction: (item.reaction as ReactionStatus | undefined) ?? legacy.reaction,
 		progress: item.progress ?? 0,
 	};
+}
+
+function mergeMediaMetadata(
+	item: WatchlistItem,
+	metadata?: MediaMetadata,
+): WatchlistItem {
+	return {
+		...item,
+		title: metadata?.title ?? item.title,
+		image: metadata?.image ?? item.image,
+		rating: metadata?.rating ?? item.rating,
+		release_date: metadata?.release_date ?? item.release_date,
+		overview: metadata?.overview ?? item.overview,
+		updated_at: Date.now(),
+	};
+}
+
+function upsertLocalMediaState(
+	items: WatchlistItem[],
+	id: string,
+	type: MediaType,
+	metadata: MediaMetadata | undefined,
+	onCreate: (fallback: WatchlistItem) => WatchlistItem | null,
+	onUpdate: (current: WatchlistItem) => WatchlistItem,
+) {
+	const existingIndex = items.findIndex((item) => isSameItem(item, id, type));
+
+	if (existingIndex === -1) {
+		const created = onCreate(buildFallbackItem(id, type, metadata));
+		return created ? [created, ...items] : items;
+	}
+
+	const nextItems = [...items];
+	nextItems[existingIndex] = mergeMediaMetadata(
+		onUpdate(nextItems[existingIndex]),
+		metadata,
+	);
+	return nextItems;
+}
+
+function logWatchlistError(action: string, error: unknown) {
+	console.error(`Failed to ${action}`, error);
+}
+
+function getTrackableTvSeasons(details?: {
+	seasons?: Array<{ season_number: number; episode_count: number }> | null;
+}) {
+	return (
+		details?.seasons?.filter(
+			(season) => season.season_number >= 0 && season.episode_count > 0,
+		) ?? []
+	);
+}
+
+function buildSeasonEpisodeSelections(details?: {
+	seasons?: Array<{ season_number: number; episode_count: number }> | null;
+}) {
+	return getTrackableTvSeasons(details).map((season) => ({
+		season: season.season_number,
+		episodes: Array.from(
+			{ length: season.episode_count },
+			(_, index) => index + 1,
+		),
+	}));
 }
 
 export const useWatchlistStore = create<WatchlistStore>()(
@@ -159,41 +226,32 @@ export const useWatchlistStore = create<WatchlistStore>()(
 			mediaState: [],
 			setWatchlistMembershipLocal: (id, type, inWatchlist, metadata) =>
 				set((state) => {
-					const existingIndex = state.mediaState.findIndex((item) =>
-						isSameItem(item, id, type),
-					);
-
-					if (existingIndex === -1) {
-						if (!inWatchlist) return state;
-
-						const next = buildFallbackItem(id, type, metadata);
-						next.inWatchlist = true;
-						next.progressStatus = "watch-later";
-						return { mediaState: [next, ...state.mediaState] };
-					}
-
-					const items = [...state.mediaState];
-					const current = items[existingIndex];
-					items[existingIndex] = {
-						...current,
-						inWatchlist,
-						progressStatus:
-							current.progressStatus ?? (inWatchlist ? "watch-later" : null),
-						title: metadata?.title ?? current.title,
-						image: metadata?.image ?? current.image,
-						rating: metadata?.rating ?? current.rating,
-						release_date: metadata?.release_date ?? current.release_date,
-						overview: metadata?.overview ?? current.overview,
-						updated_at: Date.now(),
+					return {
+						mediaState: upsertLocalMediaState(
+							state.mediaState,
+							id,
+							type,
+							metadata,
+							(fallback) => {
+								if (!inWatchlist) return null;
+								return {
+									...fallback,
+									inWatchlist: true,
+									progressStatus: "watch-later",
+								};
+							},
+							(current) => ({
+								...current,
+								inWatchlist,
+								progressStatus:
+									current.progressStatus ??
+									(inWatchlist ? "watch-later" : null),
+							}),
+						),
 					};
-					return { mediaState: items };
 				}),
 			setProgressStatusLocal: (id, type, progressStatus, progress, metadata) =>
 				set((state) => {
-					const existingIndex = state.mediaState.findIndex((item) =>
-						isSameItem(item, id, type),
-					);
-
 					const nextProgress =
 						progress !== undefined
 							? progress
@@ -203,85 +261,62 @@ export const useWatchlistStore = create<WatchlistStore>()(
 									? 0
 									: undefined;
 
-					if (existingIndex === -1) {
-						const next = buildFallbackItem(id, type, metadata);
-						next.progressStatus = progressStatus;
-						next.progress = nextProgress ?? 0;
-						return { mediaState: [next, ...state.mediaState] };
-					}
-
-					const items = [...state.mediaState];
-					const current = items[existingIndex];
-					items[existingIndex] = {
-						...current,
-						progressStatus,
-						progress: nextProgress ?? current.progress,
-						title: metadata?.title ?? current.title,
-						image: metadata?.image ?? current.image,
-						rating: metadata?.rating ?? current.rating,
-						release_date: metadata?.release_date ?? current.release_date,
-						overview: metadata?.overview ?? current.overview,
-						updated_at: Date.now(),
+					return {
+						mediaState: upsertLocalMediaState(
+							state.mediaState,
+							id,
+							type,
+							metadata,
+							(fallback) => ({
+								...fallback,
+								progressStatus,
+								progress: nextProgress ?? 0,
+							}),
+							(current) => ({
+								...current,
+								progressStatus,
+								progress: nextProgress ?? current.progress,
+							}),
+						),
 					};
-					return { mediaState: items };
 				}),
 			setReactionLocal: (id, type, reaction, metadata) =>
 				set((state) => {
-					const existingIndex = state.mediaState.findIndex((item) =>
-						isSameItem(item, id, type),
-					);
-
-					if (existingIndex === -1) {
-						const next = buildFallbackItem(id, type, metadata);
-						next.reaction = reaction;
-						return { mediaState: [next, ...state.mediaState] };
-					}
-
-					const items = [...state.mediaState];
-					const current = items[existingIndex];
-					items[existingIndex] = {
-						...current,
-						reaction,
-						title: metadata?.title ?? current.title,
-						image: metadata?.image ?? current.image,
-						rating: metadata?.rating ?? current.rating,
-						release_date: metadata?.release_date ?? current.release_date,
-						overview: metadata?.overview ?? current.overview,
-						updated_at: Date.now(),
+					return {
+						mediaState: upsertLocalMediaState(
+							state.mediaState,
+							id,
+							type,
+							metadata,
+							(fallback) => ({ ...fallback, reaction }),
+							(current) => ({ ...current, reaction }),
+						),
 					};
-					return { mediaState: items };
 				}),
 			setProgressLocal: (id, type, progress, metadata) =>
 				set((state) => {
-					const existingIndex = state.mediaState.findIndex((item) =>
-						isSameItem(item, id, type),
-					);
-
-					if (existingIndex === -1) {
-						const next = buildFallbackItem(id, type, metadata);
-						next.progress = progress;
-						if (!next.progressStatus && progress > 0) {
-							next.progressStatus = progress >= 95 ? "done" : "watching";
-						}
-						return { mediaState: [next, ...state.mediaState] };
-					}
-
-					const items = [...state.mediaState];
-					const current = items[existingIndex];
-					items[existingIndex] = {
-						...current,
-						progress,
-						progressStatus:
-							current.progressStatus ??
-							(progress >= 95 ? "done" : progress > 0 ? "watching" : null),
-						title: metadata?.title ?? current.title,
-						image: metadata?.image ?? current.image,
-						rating: metadata?.rating ?? current.rating,
-						release_date: metadata?.release_date ?? current.release_date,
-						overview: metadata?.overview ?? current.overview,
-						updated_at: Date.now(),
+					return {
+						mediaState: upsertLocalMediaState(
+							state.mediaState,
+							id,
+							type,
+							metadata,
+							(fallback) => ({
+								...fallback,
+								progress,
+								progressStatus:
+									fallback.progressStatus ??
+									(progress >= 95 ? "done" : progress > 0 ? "watching" : null),
+							}),
+							(current) => ({
+								...current,
+								progress,
+								progressStatus:
+									current.progressStatus ??
+									(progress >= 95 ? "done" : progress > 0 ? "watching" : null),
+							}),
+						),
 					};
-					return { mediaState: items };
 				}),
 		}),
 		{
@@ -579,7 +614,7 @@ export function useSetProgressStatus() {
 				{ tmdbId: args.tmdbId },
 				[...filtered, ...newEpisodes],
 			);
-			} else if (args.clearAllEpisodes || args.seasons.length > 0) {
+		} else if (args.clearAllEpisodes || args.seasons.length > 0) {
 			localStore.setQuery(
 				api.watchlist.getAllWatchedEpisodes,
 				{ tmdbId: args.tmdbId },
@@ -609,12 +644,10 @@ export function useSetProgressStatus() {
 		) => {
 			if (mediaType === "tv") {
 				// TV status changes can rewrite episode state, so keep both updates batched.
-				const shouldMarkWatched =
-					progressStatus === "done";
+				const shouldMarkWatched = progressStatus === "done";
 
 				const isLeavingCompletion =
-					(currentStatus === "done") &&
-					!shouldMarkWatched;
+					currentStatus === "done" && !shouldMarkWatched;
 
 				const needsEpisodeUpdate =
 					shouldMarkWatched ||
@@ -630,7 +663,7 @@ export function useSetProgressStatus() {
 
 				if (isSignedIn) {
 					if (isLeavingCompletion && !shouldMarkWatched) {
-						markShowEpisodesAndStatus({
+						void markShowEpisodesAndStatus({
 							tmdbId: Number(id),
 							mediaType,
 							seasons: [],
@@ -643,27 +676,16 @@ export function useSetProgressStatus() {
 							rating: metadata?.rating,
 							release_date: metadata?.release_date,
 							overview: metadata?.overview,
-						});
+						}).catch((error) =>
+							logWatchlistError("clear remote show episode status", error),
+						);
 					} else if (needsEpisodeUpdate) {
 						getTvDetails({ id: Number(id) })
 							.then((details) => {
-								const seasonsToMark =
-									details?.seasons?.filter(
-										(s) => s.season_number >= 0 && s.episode_count > 0,
-									) || [];
-
-								const seasons = seasonsToMark.map((s) => ({
-									season: s.season_number,
-									episodes: Array.from(
-										{ length: s.episode_count },
-										(_, i) => i + 1,
-									),
-								}));
-
-								markShowEpisodesAndStatus({
+								void markShowEpisodesAndStatus({
 									tmdbId: Number(id),
 									mediaType,
-									seasons,
+									seasons: buildSeasonEpisodeSelections(details),
 									isWatched: shouldMarkWatched,
 									progressStatus,
 									progress,
@@ -672,11 +694,15 @@ export function useSetProgressStatus() {
 									rating: metadata?.rating,
 									release_date: metadata?.release_date,
 									overview: metadata?.overview,
-								});
+								}).catch((error) =>
+									logWatchlistError("sync remote show episode status", error),
+								);
 							})
-							.catch(console.error);
+							.catch((error) =>
+								logWatchlistError("sync remote show episode status", error),
+							);
 					} else {
-						markShowEpisodesAndStatus({
+						void markShowEpisodesAndStatus({
 							tmdbId: Number(id),
 							mediaType,
 							seasons: [],
@@ -688,7 +714,9 @@ export function useSetProgressStatus() {
 							rating: metadata?.rating,
 							release_date: metadata?.release_date,
 							overview: metadata?.overview,
-						});
+						}).catch((error) =>
+							logWatchlistError("update remote show progress status", error),
+						);
 					}
 				} else {
 					setProgressStatusLocal(
@@ -704,25 +732,18 @@ export function useSetProgressStatus() {
 					} else if (needsEpisodeUpdate) {
 						getTvDetails({ id: Number(id) })
 							.then((details) => {
-								const seasonsToMark =
-									details?.seasons?.filter(
-										(s) => s.season_number >= 0 && s.episode_count > 0,
-									) || [];
-
-								for (const s of seasonsToMark) {
-									const epNums = Array.from(
-										{ length: s.episode_count },
-										(_, i) => i + 1,
-									);
+								for (const season of buildSeasonEpisodeSelections(details)) {
 									markLocalSeason(
 										Number(id),
-										s.season_number,
-										epNums,
+										season.season,
+										season.episodes,
 										shouldMarkWatched,
 									);
 								}
 							})
-							.catch(console.error);
+							.catch((error) =>
+								logWatchlistError("sync local show episode status", error),
+							);
 					}
 				}
 
@@ -739,7 +760,9 @@ export function useSetProgressStatus() {
 					rating: metadata?.rating,
 					release_date: metadata?.release_date,
 					overview: metadata?.overview,
-				}).catch(console.error);
+				}).catch((error) =>
+					logWatchlistError("set remote progress status", error),
+				);
 			} else {
 				setProgressStatusLocal(
 					id,
@@ -824,9 +847,15 @@ export function useSetReaction() {
 					overview: metadata?.overview,
 				};
 
-				if (reaction) payload.reaction = reaction;
-				else payload.clearReaction = true;
-				setReaction(payload).catch(console.error);
+				if (reaction) {
+					payload.reaction = reaction;
+				} else {
+					payload.clearReaction = true;
+				}
+
+				setReaction(payload).catch((error) =>
+					logWatchlistError("set remote reaction", error),
+				);
 				return;
 			}
 

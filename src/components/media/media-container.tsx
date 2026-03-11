@@ -14,6 +14,12 @@ import { ArrowRightLine, Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
+import {
+	getImageDialogKey,
+	type MediaDialogKey,
+	type MediaDialogSearch,
+	updateDialogSearch,
+} from "@/lib/media-dialog-helpers";
 
 interface VideoItem {
 	key: string;
@@ -40,6 +46,7 @@ interface MediaContainerProps {
 	type: "movie" | "tv";
 }
 
+
 export const MediaContainer = (props: MediaContainerProps) => {
 	const {
 		id,
@@ -54,8 +61,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 		type,
 	} = props;
 
-	const search = useSearch({ strict: false }) as Record<string, unknown>;
+	const search = useSearch({ strict: false }) as MediaDialogSearch;
 	const navigate = useNavigate();
+	const navigateDialogSearch = (options: unknown) => navigate(options as never);
+
+	const onUpdateDialogSearch = (key: MediaDialogKey, value?: string) =>
+		updateDialogSearch(navigateDialogSearch, key, value);
 
 	const hasVideos = youtubeclips.length > 0;
 	const hasBackdrops = backdrops.length > 0;
@@ -116,14 +127,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 										key={video.key}
 										open={search.video === video.key}
 										onOpenChange={(isOpen) =>
-											navigate({
-												search: (prev: any) => ({
-													...prev,
-													video: isOpen ? video.key : undefined,
-												}),
-												resetScroll: false,
-												replace: true,
-											} as any)
+											onUpdateDialogSearch(
+												"video",
+												isOpen ? video.key : undefined,
+											)
 										}
 									>
 										<DialogTrigger asChild>
@@ -172,14 +179,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 															className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
-																navigate({
-																	search: (prev: any) => ({
-																		...prev,
-																		video: youtubeclips[index - 1].key,
-																	}),
-																	resetScroll: false,
-																	replace: true,
-																} as any);
+																		onUpdateDialogSearch(
+																	"video",
+																	youtubeclips[index - 1].key,
+																);
 															}}
 														>
 															<ChevronLeft className="size-6" />
@@ -193,14 +196,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 															className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
-																navigate({
-																	search: (prev: any) => ({
-																		...prev,
-																		video: youtubeclips[index + 1].key,
-																	}),
-																	resetScroll: false,
-																	replace: true,
-																} as any);
+																		onUpdateDialogSearch(
+																	"video",
+																	youtubeclips[index + 1].key,
+																);
 															}}
 														>
 															<ChevronRight className="size-6" />
@@ -233,23 +232,18 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
 								{backdrops.map((image, index) => {
-									const imagePathClean = image.backdrop_image
-										?.split("/")
-										.pop()
-										?.replace(/\.[^/.]+$/, "");
+									const imagePathClean = getImageDialogKey(
+										image.backdrop_image,
+									);
 									return (
 										<Dialog
 											key={`backdrop-${index}`}
 											open={search.backdrop === imagePathClean}
 											onOpenChange={(isOpen) =>
-												navigate({
-													search: (prev: any) => ({
-														...prev,
-														backdrop: isOpen ? imagePathClean : undefined,
-													}),
-													resetScroll: false,
-													replace: true,
-												} as any)
+															onUpdateDialogSearch(
+													"backdrop",
+													isOpen ? imagePathClean : undefined,
+												)
 											}
 										>
 											<DialogTrigger asChild>
@@ -282,20 +276,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-																	const prevClean = backdrops[
-																		index - 1
-																	].backdrop_image
-																		?.split("/")
-																		.pop()
-																		?.replace(/\.[^/.]+$/, "");
-																	navigate({
-																		search: (prev: any) => ({
-																			...prev,
-																			backdrop: prevClean,
-																		}),
-																		resetScroll: false,
-																		replace: true,
-																	} as any);
+																			onUpdateDialogSearch(
+																		"backdrop",
+																		getImageDialogKey(
+																			backdrops[index - 1].backdrop_image,
+																		),
+																	);
 																}}
 															>
 																<ChevronLeft className="size-6" />
@@ -309,20 +295,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-																	const nextClean = backdrops[
-																		index + 1
-																	].backdrop_image
-																		?.split("/")
-																		.pop()
-																		?.replace(/\.[^/.]+$/, "");
-																	navigate({
-																		search: (prev: any) => ({
-																			...prev,
-																			backdrop: nextClean,
-																		}),
-																		resetScroll: false,
-																		replace: true,
-																	} as any);
+																			onUpdateDialogSearch(
+																		"backdrop",
+																		getImageDialogKey(
+																			backdrops[index + 1].backdrop_image,
+																		),
+																	);
 																}}
 															>
 																<ChevronRight className="size-6" />
@@ -356,23 +334,16 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
 								{posters.map((image, index) => {
-									const imagePathClean = image.poster_image
-										?.split("/")
-										.pop()
-										?.replace(/\.[^/.]+$/, "");
+									const imagePathClean = getImageDialogKey(image.poster_image);
 									return (
 										<Dialog
 											key={`poster-${index}`}
 											open={search.poster === imagePathClean}
 											onOpenChange={(isOpen) =>
-												navigate({
-													search: (prev: any) => ({
-														...prev,
-														poster: isOpen ? imagePathClean : undefined,
-													}),
-													resetScroll: false,
-													replace: true,
-												} as any)
+															onUpdateDialogSearch(
+													"poster",
+													isOpen ? imagePathClean : undefined,
+												)
 											}
 										>
 											<DialogTrigger asChild>
@@ -405,20 +376,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-																	const prevClean = posters[
-																		index - 1
-																	].poster_image
-																		?.split("/")
-																		.pop()
-																		?.replace(/\.[^/.]+$/, "");
-																	navigate({
-																		search: (prev: any) => ({
-																			...prev,
-																			poster: prevClean,
-																		}),
-																		resetScroll: false,
-																		replace: true,
-																	} as any);
+																			onUpdateDialogSearch(
+																		"poster",
+																		getImageDialogKey(
+																			posters[index - 1].poster_image,
+																		),
+																	);
 																}}
 															>
 																<ChevronLeft className="size-6" />
@@ -432,20 +395,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-																	const nextClean = posters[
-																		index + 1
-																	].poster_image
-																		?.split("/")
-																		.pop()
-																		?.replace(/\.[^/.]+$/, "");
-																	navigate({
-																		search: (prev: any) => ({
-																			...prev,
-																			poster: nextClean,
-																		}),
-																		resetScroll: false,
-																		replace: true,
-																	} as any);
+																			onUpdateDialogSearch(
+																		"poster",
+																		getImageDialogKey(
+																			posters[index + 1].poster_image,
+																		),
+																	);
 																}}
 															>
 																<ChevronRight className="size-6" />
