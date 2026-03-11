@@ -115,12 +115,10 @@ export function useRecommendations() {
 
 	const deleteEntry = useCallback(
 		async (id: string) => {
-			// Optimistic: hide immediately
 			setOptimisticDeletedIds((prev) => new Set(prev).add(id));
 			try {
 				await deleteMutation({ id: id as Id<"ai_recommendations"> });
 			} catch {
-				// Rollback on failure
 				setOptimisticDeletedIds((prev) => {
 					const next = new Set(prev);
 					next.delete(id);
@@ -138,9 +136,7 @@ export function useRecommendations() {
 					id: id as Id<"ai_recommendations">,
 					recommendations: JSON.stringify(recommendations),
 				});
-			} catch {
-				// silent fail — verification is best-effort
-			}
+				} catch {}
 		},
 		[updateVerifiedMutation],
 	);

@@ -221,7 +221,6 @@
 		scrollbar-width: none;
 	}
 
-	/* Grain Overlay - apply to a container with position:relative */
 	.grain-overlay::after {
 		content: "";
 		position: absolute;
@@ -258,7 +257,6 @@
         will-change-transform;
 	}
 
-	/* --- Card Shadow Presets --- */
 	.card-elevated {
 		box-shadow:
 			0 1px 3px rgba(0, 0, 0, 0.06),
@@ -283,7 +281,6 @@
 		border: 1px solid oklch(1 0 0 / 6%);
 	}
 
-	/* --- Scroll fade edges --- */
 	.scroll-fade-edges {
 		mask-image: linear-gradient(
 			to right,
@@ -294,12 +291,10 @@
 		);
 	}
 
-	/* --- Tab Transition Animation --- */
 	.animate-tab-fade-in {
 		animation: tabFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 
-	/* --- Fade-In Animations --- */
 	.animate-fade-in {
 		animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
 	}
@@ -310,7 +305,6 @@
 		animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 
-	/* --- Staggered Grid Animations --- */
 	.stagger-grid > * {
 		animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
@@ -354,7 +348,6 @@
 		animation-delay: 360ms;
 	}
 
-	/* --- Skeleton Shimmer --- */
 	.shimmer {
 		background: linear-gradient(
 			90deg,

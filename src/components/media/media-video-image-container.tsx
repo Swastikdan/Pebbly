@@ -22,7 +22,6 @@ import type { MediaImages, MediaVideosResultsEntity } from "@/types";
 const sortVideos = (videos: MediaVideosResultsEntity[] | undefined | null) => {
 	if (!videos) return [];
 	return [...videos].sort((a, b) => {
-		// Trailers first, then Teasers, then Featurettes, then others
 		const typeOrder: Record<string, number> = {
 			Trailer: 0,
 			Teaser: 1,
@@ -31,7 +30,6 @@ const sortVideos = (videos: MediaVideosResultsEntity[] | undefined | null) => {
 		const aOrder = typeOrder[a.type] ?? 3;
 		const bOrder = typeOrder[b.type] ?? 3;
 		if (aOrder !== bOrder) return aOrder - bOrder;
-		// Within the same type, sort by newest first
 		return (
 			new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
 		);

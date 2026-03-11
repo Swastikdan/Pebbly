@@ -1,4 +1,3 @@
-/** Reusable media card components for movies, TV shows, and person entries. */
 import { Link } from "@tanstack/react-router";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
@@ -292,7 +291,6 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
 		);
 	}
 
-	// Person skeleton
 	return (
 		<div className="w-24 md:w-28 lg:w-32">
 			<Skeleton className="aspect-[2/3] w-full rounded-xl" />

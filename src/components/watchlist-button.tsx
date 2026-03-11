@@ -1,4 +1,3 @@
-/** Toggle button for adding/removing media items from the watchlist. */
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {

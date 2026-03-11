@@ -44,7 +44,6 @@ export function AutoScrollTitle({
 				} as React.CSSProperties
 			}
 		>
-			{/* Hidden measurer */}
 			<span
 				ref={measureRef}
 				className="pointer-events-none absolute -z-10 invisible whitespace-nowrap"
@@ -52,7 +51,6 @@ export function AutoScrollTitle({
 				{text}
 			</span>
 
-			{/* Default truncated text */}
 			<span
 				className={`block truncate will-change-transform transition-opacity duration-300 ease-in-out ${
 					isOverflow ? "group-hover:opacity-0" : ""
@@ -61,7 +59,6 @@ export function AutoScrollTitle({
 				{text}
 			</span>
 
-			{/* Smooth scrolling marquee on hover */}
 			{isOverflow && (
 				<div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100">
 					<div

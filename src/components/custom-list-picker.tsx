@@ -32,7 +32,6 @@ export function CustomListPicker({
 	const toggleListItem = useMutation(api.watchlist.toggleListItem);
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-	// If queries haven't loaded yet or errored, still show the create option
 	const safeList = lists ?? [];
 	const safeItemLists = itemLists ?? [];
 

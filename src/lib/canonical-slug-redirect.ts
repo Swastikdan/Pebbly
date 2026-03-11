@@ -1,4 +1,3 @@
-/** Redirects to canonical URL slug when the current path doesn't match the expected format. */
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { formatMediaTitle } from "./utils";

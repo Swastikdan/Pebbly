@@ -1,4 +1,3 @@
-/** Modal dialog that embeds the video player in an iframe for movies and TV episodes. */
 import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

@@ -1,4 +1,3 @@
-/** Shared utility functions: class merging, ID validation, API response handling, slug formatting, and storage helpers. */
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -23,7 +22,6 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-/** In-memory Storage fallback for SSR environments where window.localStorage is unavailable. */
 export function createMemoryStorage(): Storage {
 	let store: Record<string, string> = {};
 	return {
@@ -44,29 +42,23 @@ export function createMemoryStorage(): Storage {
 	} as Storage;
 }
 
-/** Maps a legacy combined status string to the split progress/reaction model.
- *  Also normalises old progressStatus values (want-to-watch, finished, caught-up)
- *  to the new names (watch-later, done, watching). */
 export function mapLegacyStatusToSplit(status?: string): {
 	progressStatus: ProgressStatus | null;
 	reaction: ReactionStatus | null;
 } {
 	switch (status) {
-		// Legacy combined statuses
 		case "plan-to-watch":
 			return { progressStatus: "watch-later", reaction: null };
 		case "completed":
 			return { progressStatus: "done", reaction: null };
 		case "liked":
 			return { progressStatus: "done", reaction: "liked" };
-		// Old progressStatus values → new names
 		case "want-to-watch":
 			return { progressStatus: "watch-later", reaction: null };
 		case "finished":
 			return { progressStatus: "done", reaction: null };
 		case "caught-up":
 			return { progressStatus: "watching", reaction: null };
-		// Already-valid values
 		case "watching":
 			return { progressStatus: "watching", reaction: null };
 		case "dropped":
@@ -80,7 +72,6 @@ export function mapLegacyStatusToSplit(status?: string): {
 	}
 }
 
-/** Normalise a stored progressStatus string to the current ProgressStatus type. */
 export function normalizeProgressStatus(status?: string | null): ProgressStatus | null {
 	if (!status) return null;
 	const mapped = mapLegacyStatusToSplit(status);
@@ -216,14 +207,14 @@ export const formatMediaTitle = {
 		let result = title
 			.toLowerCase()
 			.normalize("NFD")
-			.replace(/[\u0300-\u036f]/g, "") // strip accents
+			.replace(/[\u0300-\u036f]/g, "")
 			.trim();
 
 		result = result
-			.replace(/\s+/g, "-") // spaces to hyphens
-			.replace(/[^\w-]/g, "") // remove non-word chars except hyphens
-			.replace(/-{2,}/g, "-") // collapse multiple hyphens
-			.replace(/^-+|-+$/g, ""); // trim leading/trailing hyphens
+			.replace(/\s+/g, "-")
+			.replace(/[^\w-]/g, "")
+			.replace(/-{2,}/g, "-")
+			.replace(/^-+|-+$/g, "");
 
 		return result;
 	},

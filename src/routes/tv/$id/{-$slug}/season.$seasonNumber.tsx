@@ -100,7 +100,6 @@ function TvSeasonDetailPage() {
 				)}
 			</div>
 
-			{/* Season Navigation */}
 			<div className="scrollbar-hidden mb-6 flex gap-2 overflow-x-auto pb-2">
 				{seasons.map((s) => (
 					<Link
@@ -118,7 +117,6 @@ function TvSeasonDetailPage() {
 				))}
 			</div>
 
-			{/* Episodes List */}
 			<div className="flex flex-col gap-4 pb-32">
 				{episodes.map((episode) => (
 					<div
@@ -126,7 +124,6 @@ function TvSeasonDetailPage() {
 						className="group relative overflow-hidden rounded-2xl border-2 border-default bg-secondary/10 transition-all duration-300 hover:border-foreground/20 hover:bg-secondary/20 hover:"
 					>
 						<div className="flex flex-col gap-4 p-3 sm:flex-row sm:items-start md:p-4">
-							{/* Episode Still Image */}
 							<div className="relative shrink-0">
 								<Image
 									alt={episode.name}
@@ -139,7 +136,6 @@ function TvSeasonDetailPage() {
 									}
 									width={320}
 								/>
-								{/* Play overlay on episode still */}
 								<VideoPlayerModal
 									tmdbId={tvId}
 									type="tv"
@@ -150,7 +146,6 @@ function TvSeasonDetailPage() {
 								/>
 							</div>
 
-							{/* Episode Info */}
 							<div className="flex flex-1 flex-col gap-2">
 								<div className="flex items-start justify-between gap-2">
 									<div className="flex flex-col gap-1">

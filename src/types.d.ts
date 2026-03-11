@@ -111,7 +111,6 @@ export interface PartsEntity {
 	vote_average: number;
 	vote_count: number;
 }
-// Shared interfaces used by both Movies and TV Shows
 export interface Genre {
 	id: number;
 	name: string;
@@ -217,7 +216,6 @@ export interface KeywordResult {
 	name: string;
 }
 
-// Movie-specific interfaces
 export interface BasicMovie {
 	adult: boolean;
 	backdrop_path: string;
@@ -319,7 +317,6 @@ export interface Movie {
 	keywords: MovieKeywords;
 }
 
-// TV-specific interfaces
 export interface BasicTv {
 	adult: boolean;
 	backdrop_path: string;
@@ -604,7 +601,6 @@ export interface MediaRecommendationsResultsEntity {
 	vote_count: number;
 }
 
-// TV Season Detail (from /tv/{id}/season/{season_number})
 export interface TvSeasonDetail {
 	_id: string;
 	air_date: string;
@@ -639,7 +635,6 @@ export type ProgressStatus = "watch-later" | "watching" | "done" | "dropped";
 
 export type ReactionStatus = "loved" | "liked" | "mixed" | "not-for-me";
 
-// Legacy combined status kept for compatibility during rollout.
 export type WatchlistStatus =
 	| "plan-to-watch"
 	| "watching"
@@ -647,7 +642,6 @@ export type WatchlistStatus =
 	| "liked"
 	| "dropped";
 
-// Person Specific Interfaces
 export interface PersonDetails {
 	adult: boolean;
 	also_known_as: string[];
@@ -737,7 +731,6 @@ export interface AIRecommendation {
 	mediaType: "movie" | "tv";
 	relevanceScore: number;
 	reasoning: string;
-	// Populated after client-side TMDB verification
 	verifiedTmdbId?: number | null;
 	verifiedTitle?: string;
 	posterPath?: string | null;

@@ -1,4 +1,3 @@
-/** Import/export watchlist data as JSON, supporting both Convex and local storage. */
 import { useUser } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 import type React from "react";
@@ -74,7 +73,6 @@ export const useWatchlistImportExport = () => {
 
 				if (item.type === "tv") {
 					if (isSignedIn && allEpisodeProgress) {
-						// Filter Convex progress
 						allEpisodeProgress
 							.filter(
 								(ep: {
@@ -90,7 +88,6 @@ export const useWatchlistImportExport = () => {
 								itemWatched[`${ep.season}:${ep.episode}`] = true;
 							});
 					} else {
-						// Filter local progress
 						const prefix = `${item.external_id}:`;
 						Object.entries(localWatchedEpisodes).forEach(([key, val]) => {
 							if (key.startsWith(prefix) && val) {

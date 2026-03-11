@@ -70,8 +70,6 @@ export const Route = createFileRoute("/recommendations")({
 	component: RecommendationsPage,
 });
 
-// ─── TMDB Helpers ───────────────────────────────────────────────────
-
 interface NormalizedTmdbData {
 	id: number;
 	title: string;
@@ -144,7 +142,6 @@ function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 	};
 }
 
-/** Search TMDB by title when ID-based lookup fails. */
 function useTmdbSearchFallback(
 	title: string,
 	mediaType: "movie" | "tv",
@@ -164,10 +161,8 @@ function useTmdbSearchFallback(
 					? (first.title ?? first.name ?? "")
 					: (first.name ?? first.title ?? "");
 
-			// Reject if title doesn't match
 			if (!titlesMatch(title, resultTitle)) return null;
 
-			// Reject low-quality results: no rating, no poster, or empty title
 			const rating = first.vote_average ?? 0;
 			if (rating === 0 || !first.poster_path || !resultTitle) return null;
 
@@ -211,8 +206,6 @@ function formatTimestamp(ts: number) {
 	});
 }
 
-// ─── Page ───────────────────────────────────────────────────────────
-
 function RecommendationsPage() {
 	const {
 		hasAccess,
@@ -248,8 +241,6 @@ function PageShell({ children }: { children: React.ReactNode }) {
 		</section>
 	);
 }
-
-// ─── Content ────────────────────────────────────────────────────────
 
 const POPULAR_GENRES = GENRE_LIST.slice(0, 14);
 
@@ -335,7 +326,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 		if (genMode === "genre" && selectedGenres.length > 0)
 			options.genrePreference = selectedGenres.join(", ");
 
-		// Compute year range from selected eras
 		if (selectedEras.length > 0) {
 			const matchedEras = ERA_PRESETS.filter((e) =>
 				selectedEras.includes(e.label),
@@ -353,7 +343,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 		const options: GenerateOptions = {
 			generationType: entry.generationType || "watchlist",
 		};
-		// Assume list recommendations don't have a specific `listId` saved yet, but we'll try to keep generationType.
 		if (entry.mediaTypePreference)
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
 		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
@@ -369,7 +358,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
 		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
 
-		// Exclude previously recommended items from this specific entry to avoid duplicates
 		options.excludeTmdbIds = entry.recommendations
 			.map((r) => r.tmdbId)
 			.filter((id): id is number => id !== null);
@@ -383,7 +371,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 		if (activeId === id) setActiveId(null);
 	};
 
-	// Active entry: if activeId is set, find it; otherwise show the newest
 	const activeEntry =
 		(activeId ? history.find((h) => h._id === activeId) : null) ??
 		history[0] ??
@@ -404,7 +391,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 
 	return (
 		<div className="space-y-8">
-			{/* ── Generation Controls ─────────────────────────── */}
 			<div className="space-y-3">
 				<div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2">
 					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
@@ -512,7 +498,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 					</div>
 				</div>
 
-				{/* Row 2: Era chips and Count dropdown */}
 				{showAdvancedOptions && (
 					<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
 						<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hidden pb-0.5">
@@ -539,7 +524,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 							))}
 						</div>
 
-						{/* Count — shadcn Select */}
 						<div className="flex items-center gap-1.5 shrink-0">
 							<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
 								Count
@@ -563,7 +547,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 					</div>
 				)}
 
-				{/* Row 3: Genres (conditionally visible) */}
 				{genMode === "watchlist" &&
 					!watchlistLoading &&
 					watchlist.length === 0 && (
@@ -581,7 +564,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 						</p>
 					)}
 
-				{/* Genre chips — only visible in "By Genre" mode */}
 				{genMode === "genre" && (
 					<div className="flex flex-wrap gap-1.5">
 						{POPULAR_GENRES.map((genre) => (
@@ -606,14 +588,12 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 				)}
 			</div>
 
-			{/* Error */}
 			{error && (
 				<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
 					{errorMessages[error as string] ?? error}
 				</div>
 			)}
 
-			{/* Loading */}
 			{isGenerating && (
 				<div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
 					<div className="relative overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5 p-8 text-center ring-1 ring-inset ring-blue-500/10">
@@ -637,10 +617,8 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 				</div>
 			)}
 
-			{/* ── Active Recommendations ─────────────────────── */}
 			{!isGenerating && activeEntry && (
 				<div className="space-y-3">
-					{/* Active entry metadata */}
 					<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
 						<Badge
 							variant="outline"
@@ -669,7 +647,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 						<span>{formatTimestamp(activeEntry.createdAt)}</span>
 					</div>
 
-					{/* Cards grid */}
 					<RecommendationCardGrid
 						entry={activeEntry}
 						updateVerified={updateVerified}
@@ -677,7 +654,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 				</div>
 			)}
 
-			{/* Empty state */}
 			{!isGenerating && history.length === 0 && (
 				<div className="flex flex-col items-center justify-center gap-4 py-20">
 					<Sparkles className="size-10 text-muted-foreground/40" />
@@ -688,7 +664,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 				</div>
 			)}
 
-			{/* ── History (Accordion) ────────────────────────── */}
 			{history.length > 0 && (
 				<div className="space-y-3">
 					<h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
@@ -714,8 +689,6 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 		</div>
 	);
 }
-
-// ─── History Accordion Item ─────────────────────────────────────────
 
 function HistoryAccordionItem({
 	entry,
@@ -757,7 +730,6 @@ function HistoryAccordionItem({
 		>
 			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
 				<div className="flex flex-1 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pr-2">
-					{/* Type badge */}
 					<Badge
 						variant="outline"
 						className="text-[10px] font-medium capitalize shrink-0"
@@ -769,7 +741,6 @@ function HistoryAccordionItem({
 								: "Watchlist"}
 					</Badge>
 
-					{/* Description */}
 					<span className="text-xs text-muted-foreground truncate min-w-0 flex-1">
 						{entry.genrePreference
 							? entry.genrePreference
@@ -778,7 +749,6 @@ function HistoryAccordionItem({
 							` · ${entry.mediaTypePreference === "movie" ? "Movies" : "TV"}`}
 					</span>
 
-					{/* Stats */}
 					<div className="hidden sm:flex items-center gap-2 shrink-0 ml-auto">
 						{movieCount > 0 && (
 							<span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60">
@@ -808,12 +778,10 @@ function HistoryAccordionItem({
 						<span>{entry.recommendations.length} results</span>
 					</div>
 
-					{/* Timestamp */}
 					<span className="hidden text-[11px] text-muted-foreground/60 shrink-0 sm:inline">
 						{formatTimestamp(entry.createdAt)}
 					</span>
 
-					{/* Result count */}
 					<span className="hidden text-[11px] text-muted-foreground/50 shrink-0 sm:inline">
 						{entry.recommendations.length} results
 					</span>
@@ -821,9 +789,7 @@ function HistoryAccordionItem({
 			</AccordionTrigger>
 
 			<AccordionContent className="px-4 pb-4">
-				{/* Expanded details */}
 				<div className="space-y-4 scrollbar-hidden">
-					{/* Actions */}
 					<div className="flex items-center gap-2 pb-1 overflow-x-auto scrollbar-hidden">
 						<Button
 							size="sm"
@@ -832,7 +798,6 @@ function HistoryAccordionItem({
 							onClick={(e) => {
 								e.stopPropagation();
 								onSelect();
-								// scroll to top
 								window.scrollTo({ top: 0, behavior: "smooth" });
 							}}
 						>
@@ -881,7 +846,6 @@ function HistoryAccordionItem({
 						</Button>
 					</div>
 
-					{/* Stats row */}
 					<div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
 						<span className="flex items-center gap-1">
 							<Film className="size-3.5" />
@@ -929,7 +893,6 @@ function HistoryAccordionItem({
 						)}
 					</div>
 
-					{/* Generation params */}
 					{entry.genrePreference && (
 						<div className="flex flex-wrap gap-1.5">
 							{entry.genrePreference.split(", ").map((g) => (
@@ -949,8 +912,6 @@ function HistoryAccordionItem({
 	);
 }
 
-// ─── Recommendation Card Grid (with verification) ───────────────────
-
 function RecommendationCardGrid({
 	entry,
 	updateVerified,
@@ -965,7 +926,6 @@ function RecommendationCardGrid({
 
 	const entryId = entry._id;
 
-	// Reset refs when entry changes
 	// biome-ignore lint/correctness/useExhaustiveDependencies: entryId is intentionally used to reset refs when the entry changes
 	useEffect(() => {
 		verifiedMapRef.current = new Map();
@@ -978,7 +938,6 @@ function RecommendationCardGrid({
 			verifiedMapRef.current.set(index, verifiedRec);
 			resolvedCountRef.current += 1;
 
-			// Once all cards have resolved, push verified data to backend
 			if (
 				!hasPushedRef.current &&
 				!entry.verified &&
@@ -986,7 +945,6 @@ function RecommendationCardGrid({
 			) {
 				hasPushedRef.current = true;
 
-				// Only push if at least one card was truly verified
 				const hasAnyVerified = Array.from(verifiedMapRef.current.values()).some(
 					(r) => !!r.verifiedTmdbId,
 				);
@@ -994,9 +952,7 @@ function RecommendationCardGrid({
 				if (hasAnyVerified) {
 					const updatedRecs = entry.recommendations.map((rec, i) => {
 						const verified = verifiedMapRef.current.get(i);
-						// Only replace if this specific card was verified
 						if (verified?.verifiedTmdbId) return verified;
-						// Otherwise keep original data untouched
 						return rec;
 					});
 					updateVerified(entryId, updatedRecs);
@@ -1026,8 +982,6 @@ function RecommendationCardGrid({
 	);
 }
 
-// ─── Recommendation Card ────────────────────────────────────────────
-
 function RecommendationCard({
 	recommendation,
 	isEntryVerified,
@@ -1042,10 +996,8 @@ function RecommendationCard({
 	const navigate = useNavigate();
 	const hasReportedRef = useRef(false);
 
-	// Whether we can skip all TMDB lookups (already verified + have cached data)
 	const usesCachedData = isEntryVerified && !!recommendation.verifiedTmdbId;
 
-	// ── Always call hooks (disabled via flags when not needed) ──
 	const {
 		data: tmdbData,
 		isLoading: idLoading,
@@ -1068,9 +1020,8 @@ function RecommendationCard({
 		exists: searchExists,
 	} = useTmdbSearchFallback(title, mediaType, shouldSearch);
 
-	// ── Determine final resolved data ──
 	const resolvedData = usesCachedData
-		? null // won't be used — short-circuit below
+			? null
 		: idVerified
 			? tmdbData
 			: searchExists
@@ -1081,34 +1032,32 @@ function RecommendationCard({
 		!usesCachedData &&
 		((!!tmdbId && idLoading) || (shouldSearch && searchLoading));
 
-	// Report resolution to parent (for verification tracking)
-	useEffect(() => {
-		if (usesCachedData || hasReportedRef.current || isStillLoading) return;
-		hasReportedRef.current = true;
+		useEffect(() => {
+			if (usesCachedData || hasReportedRef.current || isStillLoading) return;
+			hasReportedRef.current = true;
 
-		if (resolvedData && onResolved) {
-			onResolved({
-				...recommendation,
-				verifiedTmdbId: resolvedData.id,
-				verifiedTitle: resolvedData.title,
-				posterPath: resolvedData.posterPath,
-				rating: resolvedData.rating,
-				releaseDate: resolvedData.releaseDate,
-				overview: resolvedData.overview,
-			});
-		} else if (onResolved) {
-			// Unverified — report original so batch doesn't stall
-			onResolved(recommendation);
-		}
-	}, [
-		usesCachedData,
-		isStillLoading,
-		resolvedData,
-		recommendation,
-		onResolved,
-	]);
+			if (resolvedData && onResolved) {
+				onResolved({
+					...recommendation,
+					verifiedTmdbId: resolvedData.id,
+					verifiedTitle: resolvedData.title,
+					posterPath: resolvedData.posterPath,
+					rating: resolvedData.rating,
+					releaseDate: resolvedData.releaseDate,
+					overview: resolvedData.overview,
+				});
+			} else if (onResolved) {
+				// Keep unresolved cards in the batch so backend verification can finish.
+				onResolved(recommendation);
+			}
+		}, [
+			usesCachedData,
+			isStillLoading,
+			resolvedData,
+			recommendation,
+			onResolved,
+		]);
 
-	// ── Cached verified data: render immediately ──
 	if (usesCachedData) {
 		return (
 			<div className="relative">
@@ -1141,7 +1090,6 @@ function RecommendationCard({
 		return <MediaCardSkeleton card_type="horizontal" />;
 	}
 
-	// ── Verified card ──
 	if (resolvedData) {
 		return (
 			<div className="relative">
@@ -1170,7 +1118,6 @@ function RecommendationCard({
 		);
 	}
 
-	// ── Fallback card — could not be verified ──
 	return (
 		<div className="group/card w-40 md:w-44 lg:w-48">
 			<Button
@@ -1179,7 +1126,6 @@ function RecommendationCard({
 				className="relative aspect-[2/3] h-auto w-full overflow-hidden rounded-xl bg-muted p-0 text-left ring-1 ring-border/40 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-muted"
 				onClick={() => navigate({ to: "/search", search: { query: title } })}
 			>
-				{/* Top badges */}
 				<div className="absolute top-0 left-0 right-0 z-10 flex items-start justify-between p-2.5">
 					<Badge
 						className={cn(
@@ -1194,7 +1140,6 @@ function RecommendationCard({
 					</span>
 				</div>
 
-				{/* Content — anchored to bottom */}
 				<div className="absolute bottom-0 left-0 right-0 z-10 flex flex-col gap-1.5 p-3">
 					<h3 className="text-[15px] font-bold leading-snug text-foreground line-clamp-2">
 						{title}
@@ -1211,8 +1156,6 @@ function RecommendationCard({
 		</div>
 	);
 }
-
-// ─── Skeletons ──────────────────────────────────────────────────────
 
 function LoadingSkeletons() {
 	return (

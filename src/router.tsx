@@ -11,12 +11,10 @@ import {
 } from "@/components/default-not-found";
 import * as TanstackQuery from "@/lib/query/root-provider";
 
-// Import the generated route tree
 import { routeTree } from "@/routeTree.gen";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
-// Create a new router instance
 export const getRouter = () => {
 	const rqContext = TanstackQuery.getContext();
 

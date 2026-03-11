@@ -14,14 +14,12 @@ export const store = mutation({
     }
     const userId = identity.subject;
 
-    // Check if user exists
     const existing = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", userId))
       .first();
 
     if (existing) {
-      // Update
       await ctx.db.patch(existing._id, {
         name: args.name,
         image: args.image,
@@ -29,7 +27,6 @@ export const store = mutation({
       });
       return existing._id;
     } else {
-      // Create
       const newUserId = await ctx.db.insert("users", {
         tokenIdentifier: userId,
         name: args.name,

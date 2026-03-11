@@ -1,4 +1,3 @@
-/** Authenticated TMDB API client with React cache integration. */
 import { cache } from "react";
 
 const ACCESS_TOKEN = import.meta.env.VITE_PUBLIC_TMDB_ACCESS_TOKEN;

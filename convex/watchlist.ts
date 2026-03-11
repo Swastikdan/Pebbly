@@ -2,14 +2,12 @@ import { mutation, query } from "./_generated/server";
 
 import { v } from "convex/values";
 
-/** Normalise any legacy or old-format progressStatus string to current values. */
 function normalizeProgressStatus(status?: string): string | undefined {
   if (!status) return undefined;
   if (status === "want-to-watch" || status === "plan-to-watch") return "watch-later";
   if (status === "finished" || status === "completed") return "done";
   if (status === "caught-up") return "watching";
   if (status === "liked") return "done";
-  // Already valid
   if (status === "watch-later" || status === "watching" || status === "done" || status === "dropped") return status;
   return undefined;
 }
@@ -56,13 +54,12 @@ async function getCurrentUser(ctx: any) {
     .first();
 }
 
-// Update watch progress (e.g. from player)
 export const updateProgress = mutation({
   args: {
     tmdbId: v.number(),
     mediaType: v.string(),
     progress: v.optional(v.number()),
-    status: v.optional(v.string()), // legacy compatibility
+	    status: v.optional(v.string()),
     isWatched: v.optional(v.boolean()),
   },
 
@@ -121,7 +118,6 @@ export const updateProgress = mutation({
   },
 });
 
-// Mark episode as watched
 export const markEpisodeWatched = mutation({
   args: {
     tmdbId: v.number(),
@@ -186,7 +182,6 @@ export const getAllWatchedEpisodes = query({
   },
 });
 
-// Membership-scoped watchlist query
 export const getWatchlist = query({
   args: {},
 
@@ -203,7 +198,6 @@ export const getWatchlist = query({
   },
 });
 
-// Full tracking state for one media item (independent of watchlist membership)
 export const getMediaState = query({
   args: {
     tmdbId: v.number(),
@@ -438,7 +432,6 @@ export const setReaction = mutation({
   },
 });
 
-// Legacy compatibility mutation during rollout.
 export const upsertWatchlistItem = mutation({
   args: {
     tmdbId: v.number(),
@@ -510,7 +503,6 @@ export const upsertWatchlistItem = mutation({
   },
 });
 
-// Legacy compatibility mutation. Membership is now decoupled and preserved status/progress remain.
 export const removeWatchlistItem = mutation({
   args: {
     tmdbId: v.number(),
@@ -537,7 +529,6 @@ export const removeWatchlistItem = mutation({
   },
 });
 
-// One-time migration helper to backfill split status fields for current user.
 export const backfillWatchItems = mutation({
   args: {},
   handler: async (ctx) => {
@@ -581,8 +572,6 @@ export const backfillWatchItems = mutation({
   },
 });
 
-// Batch mark all episodes across all seasons and update progress status in one transaction.
-// Replaces the N+1 pattern of calling setProgressStatus + markSeasonEpisodesWatched per season.
 export const markShowEpisodesAndStatus = mutation({
   args: {
     tmdbId: v.number(),
@@ -610,7 +599,6 @@ export const markShowEpisodesAndStatus = mutation({
 
     const now = Date.now();
 
-    // 1. Update watch_items (progressStatus + progress) if requested
     if (args.progressStatus !== undefined) {
       const existing = await ctx.db
         .query("watch_items")
@@ -648,7 +636,6 @@ export const markShowEpisodesAndStatus = mutation({
       }
     }
 
-    // 2. Bulk-fetch ALL existing episode_progress records for this show in one query
     const allExisting = await ctx.db
       .query("episode_progress")
       .withIndex("by_user_media", (q) =>
@@ -656,17 +643,12 @@ export const markShowEpisodesAndStatus = mutation({
       )
       .collect();
 
-    // Build a lookup map: "season:episode" -> existing record
     const existingMap = new Map<string, (typeof allExisting)[0]>();
     for (const ep of allExisting) {
       existingMap.set(`${ep.season}:${ep.episode}`, ep);
     }
 
-    // 3. Process episodes
     if (args.clearAllEpisodes || (!args.isWatched && args.seasons.length > 0)) {
-      // Clear ALL watched episodes for this show.
-      // This handles orphaned records from changed TMDB data and
-      // ensures consistency when leaving completion states.
       for (const ep of allExisting) {
         if (ep.isWatched) {
           await ctx.db.patch(ep._id, {
@@ -675,8 +657,7 @@ export const markShowEpisodesAndStatus = mutation({
           });
         }
       }
-    } else {
-      // Mark specific episodes as watched (or no-op for empty seasons)
+	    } else {
       for (const seasonData of args.seasons) {
         for (const epNum of seasonData.episodes) {
           const key = `${seasonData.season}:${epNum}`;
@@ -708,8 +689,6 @@ export const markShowEpisodesAndStatus = mutation({
   },
 });
 
-// Batch mark episodes watched (e.g. for a whole season)
-// Bulk-fetches existing records then writes only deltas (avoids N+1 queries).
 export const markSeasonEpisodesWatched = mutation({
   args: {
     tmdbId: v.number(),
@@ -724,7 +703,6 @@ export const markSeasonEpisodesWatched = mutation({
 
     const now = Date.now();
 
-    // Bulk-fetch all existing episode records for this show in one query
     const allExisting = await ctx.db
       .query("episode_progress")
       .withIndex("by_user_media", (q) =>
@@ -732,7 +710,6 @@ export const markSeasonEpisodesWatched = mutation({
       )
       .collect();
 
-    // Build lookup map for O(1) access: "season:episode" -> record
     const existingMap = new Map<string, (typeof allExisting)[0]>();
     for (const ep of allExisting) {
       if (ep.season === args.season) {
@@ -828,8 +805,6 @@ export const syncEpisodeProgressItem = mutation({
   },
 });
 
-// ── Status migration ────────────────────────────────────────────────────
-// Migrates old progressStatus values to new names. Idempotent.
 export const migrateStatusCategories = mutation({
   args: {},
   handler: async (ctx) => {
@@ -859,7 +834,6 @@ export const migrateStatusCategories = mutation({
   },
 });
 
-// ── Custom Lists CRUD ───────────────────────────────────────────────────
 export const getCustomLists = query({
   args: {},
   handler: async (ctx) => {
@@ -968,10 +942,8 @@ export const getListItems = query({
       .withIndex("by_list", (q) => q.eq("listId", args.listId))
       .collect();
 
-    // Enrich items with metadata from watch_items if not stored on the list_item itself
     const enriched = await Promise.all(
       items.map(async (item) => {
-		// Always fetch watchItem to get progressStatus and reaction, even if title/image are cached.
         const watchItem = await ctx.db
           .query("watch_items")
           .withIndex("by_user_media", (q) =>
@@ -1057,7 +1029,6 @@ export const toggleListItem = mutation({
   },
 });
 
-// Create a list and immediately add a media item to it
 export const createCustomListAndAddItem = mutation({
   args: {
     name: v.string(),
@@ -1096,7 +1067,6 @@ export const createCustomListAndAddItem = mutation({
       updatedAt: now,
     });
 
-    // Also add the item to the new list
     await ctx.db.insert("list_items", {
       userId: user._id,
       listId,

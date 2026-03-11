@@ -1,4 +1,3 @@
-/** Debounced search input with URL-based query state management and search history. */
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { SearchIcon, XCircleIcon } from "@/components/ui/icons";
@@ -77,7 +76,6 @@ const SearchBar = memo(
 		const [debounceTimeout, setDebounceTimeout] =
 			useState<NodeJS.Timeout | null>(null);
 
-		/** Keep local value in sync when query prop changes (e.g. search history click) */
 		useEffect(() => {
 			setValue(query ?? "");
 		}, [query]);
@@ -122,7 +120,6 @@ const SearchBar = memo(
 		const handleClear = useCallback(() => {
 			setValue("");
 
-			// Clear debounce timeout
 			if (debounceTimeout) {
 				clearTimeout(debounceTimeout);
 			}
@@ -147,7 +144,6 @@ const SearchBar = memo(
 			(e: React.FormEvent<HTMLFormElement>) => {
 				e.preventDefault();
 
-				// Clear any pending debounced updates
 				if (debounceTimeout) {
 					clearTimeout(debounceTimeout);
 				}
@@ -161,7 +157,6 @@ const SearchBar = memo(
 					return;
 				}
 
-				// Save to search history
 				addToSearchHistory(value.trim());
 
 				if (onSubmit) {

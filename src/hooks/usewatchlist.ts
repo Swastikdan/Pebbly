@@ -1,8 +1,3 @@
-/**
- * Watchlist state management and hooks.
- * Provides Zustand store for local persistence, Convex mutations for
- * authenticated users, and unified hooks for membership, progress, and reactions.
- */
 import { useUser } from "@clerk/clerk-react";
 
 import { useMutation, useQuery } from "convex/react";
@@ -32,8 +27,6 @@ type MediaMetadata = {
 	release_date?: string;
 	overview?: string;
 };
-
-/** Watchlist item shape shared between local and remote state. */
 
 export type WatchlistItem = {
 	title: string;
@@ -300,7 +293,6 @@ export const useWatchlistStore = create<WatchlistStore>()(
 	),
 );
 
-/** Returns membership watchlist only. */
 export function useWatchlist() {
 	const { isSignedIn, isLoaded } = useUser();
 	const convexWatchlistData = useQuery(
@@ -329,7 +321,6 @@ export function useWatchlist() {
 	return { watchlist, loading };
 }
 
-/** Get full tracking state for one media item independent of membership. */
 export function useMediaState(id: string, mediaType: MediaType) {
 	const { isSignedIn } = useUser();
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
@@ -355,7 +346,6 @@ export function useMediaState(id: string, mediaType: MediaType) {
 	}, [isSignedIn, localMediaState, id, mediaType, remoteState]);
 }
 
-/** Toggle watchlist membership. */
 export function useToggleWatchlistItem() {
 	const { isSignedIn } = useUser();
 	const setWatchlistMembership = useMutation(
@@ -438,7 +428,6 @@ export function useToggleWatchlistItem() {
 	const setLocalWatchlistMembership = useWatchlistStore(
 		(state) => state.setWatchlistMembershipLocal,
 	);
-	// Ref-based membership check avoids re-subscribing on every watchlist change
 	const watchlistRef = useRef<WatchlistItem[]>([]);
 	const { watchlist } = useWatchlist();
 	watchlistRef.current = watchlist;
@@ -520,11 +509,9 @@ export function useSetProgressStatus() {
 		}
 	});
 
-	// Batched mutation: updates progressStatus + all episode records in one transaction
 	const markShowEpisodesAndStatus = useMutation(
 		api.watchlist.markShowEpisodesAndStatus,
 	).withOptimisticUpdate((localStore, args) => {
-		// Optimistically update watch_items state
 		if (args.progressStatus !== undefined) {
 			const current = localStore.getQuery(api.watchlist.getWatchlist, {}) ?? [];
 			localStore.setQuery(
@@ -560,7 +547,6 @@ export function useSetProgressStatus() {
 			}
 		}
 
-		// Optimistically update episode progress
 		const current =
 			localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
 				tmdbId: args.tmdbId,
@@ -593,9 +579,7 @@ export function useSetProgressStatus() {
 				{ tmdbId: args.tmdbId },
 				[...filtered, ...newEpisodes],
 			);
-		} else if (args.clearAllEpisodes || args.seasons.length > 0) {
-			// Clear ALL episodes when leaving completion states or
-			// when specific seasons are provided for unmarking
+			} else if (args.clearAllEpisodes || args.seasons.length > 0) {
 			localStore.setQuery(
 				api.watchlist.getAllWatchedEpisodes,
 				{ tmdbId: args.tmdbId },
@@ -623,20 +607,15 @@ export function useSetProgressStatus() {
 			metadata?: MediaMetadata,
 			currentStatus?: ProgressStatus | null,
 		) => {
-			// For TV shows, use the batched mutation that handles both status update
-			// and episode marking in one transaction. This ensures episode states stay
-			// consistent across all status transitions (e.g. "done" -> "watching").
 			if (mediaType === "tv") {
+				// TV status changes can rewrite episode state, so keep both updates batched.
 				const shouldMarkWatched =
 					progressStatus === "done";
 
-				// Leaving a completion state: always clear episodes
 				const isLeavingCompletion =
 					(currentStatus === "done") &&
 					!shouldMarkWatched;
 
-				// "done" and "watch-later" need episode state changes.
-				// Also clear when leaving a completion state (e.g. "done" → "watching").
 				const needsEpisodeUpdate =
 					shouldMarkWatched ||
 					progressStatus === "watch-later" ||
@@ -651,7 +630,6 @@ export function useSetProgressStatus() {
 
 				if (isSignedIn) {
 					if (isLeavingCompletion && !shouldMarkWatched) {
-						// Leaving completion → clear ALL episodes immediately (no TMDB fetch needed)
 						markShowEpisodesAndStatus({
 							tmdbId: Number(id),
 							mediaType,
@@ -667,7 +645,6 @@ export function useSetProgressStatus() {
 							overview: metadata?.overview,
 						});
 					} else if (needsEpisodeUpdate) {
-						// Fetch TV details to get season structure, then make ONE mutation
 						getTvDetails({ id: Number(id) })
 							.then((details) => {
 								const seasonsToMark =
@@ -683,7 +660,6 @@ export function useSetProgressStatus() {
 									),
 								}));
 
-								// Single batched mutation: status + all episodes
 								markShowEpisodesAndStatus({
 									tmdbId: Number(id),
 									mediaType,
@@ -700,7 +676,6 @@ export function useSetProgressStatus() {
 							})
 							.catch(console.error);
 					} else {
-						// "watching"/"dropped" from non-completion: status only, preserve episodes
 						markShowEpisodesAndStatus({
 							tmdbId: Number(id),
 							mediaType,
@@ -725,7 +700,6 @@ export function useSetProgressStatus() {
 					);
 
 					if (isLeavingCompletion && !shouldMarkWatched) {
-						// Clear all local episodes immediately
 						clearLocalShowProgress(Number(id));
 					} else if (needsEpisodeUpdate) {
 						getTvDetails({ id: Number(id) })
@@ -755,7 +729,6 @@ export function useSetProgressStatus() {
 				return;
 			}
 
-			// For movies, use the simple mutation
 			if (isSignedIn) {
 				setProgressStatus({
 					tmdbId: Number(id),
@@ -863,7 +836,6 @@ export function useSetReaction() {
 	);
 }
 
-/** Returns { isOnWatchList } for a given external_id. */
 export function useWatchlistItem(id: string, mediaType?: MediaType) {
 	const { watchlist } = useWatchlist();
 
@@ -877,13 +849,11 @@ export function useWatchlistItem(id: string, mediaType?: MediaType) {
 	return { isOnWatchList };
 }
 
-/** Get watchlist count */
 export function useWatchlistCount() {
 	const { watchlist } = useWatchlist();
 	return watchlist.length;
 }
 
-/** Legacy status accessor for compatibility during rollout. */
 export function useWatchlistItemStatus(id: string, mediaType: MediaType) {
 	const state = useMediaState(id, mediaType);
 	if (!state) return null;

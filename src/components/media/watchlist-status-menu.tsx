@@ -34,7 +34,6 @@ import { api } from "../../../convex/_generated/api";
 
 const QUERY_SKIP = "skip" as const;
 
-/** Silently swallows errors from children (e.g. Convex table-not-found). */
 class SilentErrorBoundary extends Component<
 	{ children: ReactNode },
 	{ hasError: boolean }
@@ -85,8 +84,6 @@ export function WatchlistStatusMenu({
 	const [open, setOpen] = useState(false);
 	const [listDialogOpen, setListDialogOpen] = useState(false);
 
-	// Single button approach: Always show the status-menu style button.
-	// We'll just define default icons/labels if not on watchlist.
 	const currentStatus = progressStatus ?? "watch-later";
 	const currentOption = getProgressOption(currentStatus);
 	const StatusIcon = isOnWatchlist ? currentOption.icon : Bookmark;
@@ -97,19 +94,12 @@ export function WatchlistStatusMenu({
 				<DropdownMenuTrigger asChild>
 					<Button
 						variant="secondary"
-						// className="gap-2 rounded-lg px-3 text-xs font-semibold h-10 min-w-[40px]"
 						className={cn(
 							"rounded-lg  text-xs font-semibold h-10",
 							isOnWatchlist ? "min-w-[40px]" : "min-w-fit gap-2 px-3",
 						)}
 					>
 						<StatusIcon size={16} />
-						{/* <span className="hidden sm:flex flex-col items-start leading-none">
-							<span className="text-[10px] text-muted-foreground font-normal">
-								{isOnWatchlist && "Status"}
-							</span>
-							<span>{isOnWatchlist && `Current: ${currentOption.label}`}</span>
-						</span> */}
 						{isOnWatchlist && (
 							<>
 								<span className="hidden sm:flex flex-col items-start leading-none">
@@ -128,7 +118,6 @@ export function WatchlistStatusMenu({
 					className="w-72 rounded-2xl p-0"
 					onCloseAutoFocus={(e) => e.preventDefault()}
 				>
-					{/* ── Watchlist Toggle/Status ── */}
 					<div className="p-3 space-y-2">
 						<div className="flex items-center justify-between">
 							<p className="text-sm font-semibold">Watchlist</p>
@@ -197,7 +186,6 @@ export function WatchlistStatusMenu({
 					{isOnWatchlist && (
 						<>
 							<DropdownMenuSeparator className="my-0" />
-							{/* ── How was it? ── */}
 							<div className="p-3 space-y-2">
 								<p className="text-sm font-semibold">How was it?</p>
 								<div className="grid grid-cols-4 gap-1.5">
@@ -232,7 +220,6 @@ export function WatchlistStatusMenu({
 						</>
 					)}
 
-					{/* ── My Lists (just button) ── */}
 					{isSignedIn && (
 						<div className="px-3 pb-3">
 							<Button
@@ -242,7 +229,6 @@ export function WatchlistStatusMenu({
 									e.preventDefault();
 									e.stopPropagation();
 									setOpen(false);
-									// Small delay so dropdown closes before dialog opens
 									setTimeout(() => setListDialogOpen(true), 150);
 								}}
 							>
@@ -255,7 +241,6 @@ export function WatchlistStatusMenu({
 					{isOnWatchlist && (
 						<>
 							<DropdownMenuSeparator className="my-0" />
-							{/* ── Remove ── */}
 							<div className="p-3">
 								<Button
 									type="button"
@@ -275,7 +260,6 @@ export function WatchlistStatusMenu({
 				</DropdownMenuContent>
 			</DropdownMenu>
 
-			{/* ── Add to List Dialog (opens outside dropdown) ── */}
 			{isSignedIn && (
 				<SilentErrorBoundary>
 					<AddToListDialog
@@ -320,8 +304,6 @@ function StatusButton({
 		</Button>
 	);
 }
-
-// ─── Add to List Dialog ─────────────────────────────────────────────
 
 function AddToListDialog({
 	open,

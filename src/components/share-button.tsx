@@ -5,6 +5,8 @@ export const ShareButton = (props: {
 	title?: string;
 	hideLabelOnMobile?: boolean;
 }) => {
+	const { hideLabelOnMobile } = props;
+
 	async function handleShare() {
 		if (navigator.share) {
 			await navigator.share({
@@ -12,14 +14,12 @@ export const ShareButton = (props: {
 				url: window.location.href,
 			});
 		} else {
-			// Fallback solution for browsers that do not support Web Share API
 			const textToCopy = `${props.title} ${window.location.href}`;
 
 			try {
 				await navigator.clipboard.writeText(textToCopy);
 				alert("Link copied to clipboard");
 			} catch {
-				// Fallback for browsers that don't support Clipboard API
 				const textArea = document.createElement("textarea");
 
 				textArea.value = textToCopy;
@@ -36,9 +36,7 @@ export const ShareButton = (props: {
 		<Button variant="secondary" onClick={() => void handleShare()}>
 			<span className="flex w-full items-center gap-1">
 				<ShareBold size={24} />
-				<span
-					className={props.hideLabelOnMobile ? "hidden sm:inline" : "inline"}
-				>
+					<span className={hideLabelOnMobile ? "hidden sm:inline" : "inline"}>
 					Share
 				</span>
 			</span>

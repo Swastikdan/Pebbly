@@ -41,7 +41,6 @@ export function CustomListDialog({
 	initialName?: string;
 	initialColor?: string;
 	listId?: string;
-	/** If provided, the media item will be auto-added to the newly created list. */
 	autoAddMedia?: {
 		tmdbId: number;
 		mediaType: string;
@@ -66,7 +65,6 @@ export function CustomListDialog({
 	const isEditing = !!listId;
 	const listNameId = useId();
 
-	// Reset state when dialog opens
 	useEffect(() => {
 		if (open) {
 			setName(initialName ?? "");
@@ -96,7 +94,6 @@ export function CustomListDialog({
 					color: color || undefined,
 				});
 			} else if (autoAddMedia) {
-				// Create list AND auto-add the media item in one transaction
 				await createListAndAdd({
 					name: trimmed,
 					color: color || undefined,
@@ -145,7 +142,6 @@ export function CustomListDialog({
 						</DialogDescription>
 					</DialogHeader>
 
-					{/* Name input */}
 					<div className="space-y-2">
 						<Label
 							htmlFor={listNameId}
@@ -175,7 +171,6 @@ export function CustomListDialog({
 								error ? "border-destructive/50" : "border-border/50",
 							)}
 						/>
-						{/* Live preview of the list chip */}
 						{name.trim() && (
 							<div className="flex items-center gap-2 pt-1">
 								<span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">
@@ -194,7 +189,6 @@ export function CustomListDialog({
 						)}
 					</div>
 
-					{/* Color picker */}
 					<div className="space-y-2.5">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -240,14 +234,12 @@ export function CustomListDialog({
 						</div>
 					</div>
 
-					{/* Error */}
 					{error && (
 						<p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
 							{error}
 						</p>
 					)}
 
-					{/* Actions */}
 					<div className="flex items-center justify-end gap-2 pt-1">
 						<Button
 							variant="ghost"

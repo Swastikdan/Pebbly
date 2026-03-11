@@ -12,31 +12,26 @@ export default defineSchema({
 
     email: v.optional(v.string()),
 
-    role: v.optional(v.string()), // "public" | "meta"
+	    role: v.optional(v.string()),
     aiGenerationEnabled: v.optional(v.boolean()),
   }).index("by_token", ["tokenIdentifier"]),
 
   watch_items: defineTable({
     userId: v.id("users"),
 
-    tmdbId: v.number(), // TMDB ID
+	    tmdbId: v.number(),
 
-    mediaType: v.string(), // "movie" | "tv"
+	    mediaType: v.string(),
 
-    // Membership is now decoupled from tracking state.
-    // Optional during rollout to support legacy rows before backfill.
     inWatchlist: v.optional(v.boolean()),
 
-    // New split status model
-    progressStatus: v.optional(v.string()), // "watch-later" | "watching" | "done" | "dropped"
-    reaction: v.optional(v.string()), // "loved" | "liked" | "mixed" | "not-for-me"
+	    progressStatus: v.optional(v.string()),
+	    reaction: v.optional(v.string()),
 
-    // Legacy combined status kept temporarily for compatibility reads/migration.
     status: v.optional(v.string()),
 
-    progress: v.optional(v.number()), // progress percentage (0-100)
+	    progress: v.optional(v.number()),
 
-    // Metadata for display
     title: v.optional(v.string()),
 
     image: v.optional(v.string()),
@@ -69,7 +64,6 @@ export default defineSchema({
     tmdbId: v.number(),
     mediaType: v.string(),
     addedAt: v.number(),
-    // Optional metadata for display
     title: v.optional(v.string()),
     image: v.optional(v.string()),
     rating: v.optional(v.number()),
@@ -100,8 +94,8 @@ export default defineSchema({
 
   ai_recommendations: defineTable({
     userId: v.id("users"),
-    recommendations: v.string(), // JSON-stringified AIRecommendation[]
-    originalRecommendations: v.optional(v.string()), // Backup of raw AI output before verification
+	    recommendations: v.string(),
+	    originalRecommendations: v.optional(v.string()),
     watchlistHash: v.string(),
     inputStats: v.object({
       movieCount: v.number(),
@@ -112,8 +106,8 @@ export default defineSchema({
     model: v.string(),
     mediaTypePreference: v.optional(v.string()),
     genrePreference: v.optional(v.string()),
-    generationType: v.optional(v.string()), // "watchlist" | "genre"
-    verified: v.optional(v.boolean()), // true after client verifies TMDB data
+	    generationType: v.optional(v.string()),
+	    verified: v.optional(v.boolean()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
 });

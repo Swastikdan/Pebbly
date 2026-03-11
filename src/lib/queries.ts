@@ -1,10 +1,8 @@
-/** TMDB API query functions for movies, TV shows, people, and search. */
 import type * as Types from "@/types";
 
 import { tmdb } from "./tmdb";
 import { validateId, validateResponse } from "./utils";
 
-/** Get only array of results from media list endpoints */
 export async function getMedia({
 	type,
 	page,
@@ -43,7 +41,6 @@ export async function getMedia({
 	return result.results ?? [];
 }
 
-/** Get full media list result object */
 export async function getMediaList({
 	type,
 	page,
@@ -84,7 +81,6 @@ export async function getMediaList({
 	return validateResponse(response);
 }
 
-/** Search TMDB multi endpoint */
 export async function getSearchResult(
 	query: string,
 	page: number,
@@ -96,7 +92,6 @@ export async function getSearchResult(
 	return validateResponse(response);
 }
 
-/** Get collection details (requires valid id) */
 export async function getCollection({
 	id,
 }: {
@@ -109,7 +104,6 @@ export async function getCollection({
 	return validateResponse(response);
 }
 
-/** Lightweight movie info (with long cache) */
 export async function getBasicMovieDetails({
 	id,
 }: {
@@ -119,12 +113,11 @@ export async function getBasicMovieDetails({
 	const url = `/movie/${id}?include_adult=true`;
 	const response = await tmdb<Types.BasicMovie>(url, {
 		revalidate: 1000 * 60 * 60 * 48,
-	}); // 48h cache
+	});
 
 	return validateResponse(response);
 }
 
-/** Heavy movie details with all subfields */
 export async function getMovieDetails({
 	id,
 }: {
@@ -137,7 +130,6 @@ export async function getMovieDetails({
 	return validateResponse(response);
 }
 
-/** Movie recommendations as array */
 export async function getMovieRecommendations({
 	id,
 }: {
@@ -151,7 +143,6 @@ export async function getMovieRecommendations({
 	return result.results ?? [];
 }
 
-/** TV recommendations as array */
 export async function getTvSeriesRecommendations({
 	id,
 }: {
@@ -165,7 +156,6 @@ export async function getTvSeriesRecommendations({
 	return result.results ?? [];
 }
 
-/** Credits for either movie or tv */
 export async function getCredits({
 	id,
 	type,
@@ -180,7 +170,6 @@ export async function getCredits({
 	return validateResponse(response);
 }
 
-/** Lightweight TV info (long cache) */
 export async function getBasicTvDetails({
 	id,
 }: {
@@ -195,7 +184,6 @@ export async function getBasicTvDetails({
 	return validateResponse(response);
 }
 
-/** Full TV info (with append_to_response) */
 export async function getTvDetails({ id }: { id: number }): Promise<Types.Tv> {
 	validateId(id);
 	const url = `/tv/${id}?include_adult=true&append_to_response=external_ids,images,credits,image,videos,collections,release_dates,recommendations,keywords,content_ratings`;
@@ -204,7 +192,6 @@ export async function getTvDetails({ id }: { id: number }): Promise<Types.Tv> {
 	return validateResponse(response);
 }
 
-/** Images from movie or tv */
 export async function getImages({
 	id,
 	type,
@@ -219,7 +206,6 @@ export async function getImages({
 	return validateResponse(response);
 }
 
-/** Videos from movie or tv, returns array */
 export async function getVideos({
 	id,
 	type,
@@ -235,7 +221,6 @@ export async function getVideos({
 	return result.results ?? [];
 }
 
-/** General recommendations for any media type */
 export async function getMediaRecommendations({
 	type,
 	id,
@@ -252,7 +237,6 @@ export async function getMediaRecommendations({
 	return validateResponse(response);
 }
 
-/** TV Season details with episode list */
 export async function getTvSeasonDetails({
 	tvId,
 	seasonNumber,
@@ -266,7 +250,6 @@ export async function getTvSeasonDetails({
 
 	return validateResponse(response);
 }
-/** Get keyword details */
 export async function getKeywordDetails({
 	id,
 }: {
@@ -278,7 +261,6 @@ export async function getKeywordDetails({
 	return validateResponse(response);
 }
 
-/** Discover movies by keyword */
 export async function getDiscoverMovies({
 	with_keywords,
 	page,
@@ -292,7 +274,6 @@ export async function getDiscoverMovies({
 	return validateResponse(response);
 }
 
-/** Discover movies by genre */
 export async function getDiscoverMoviesByGenre({
 	with_genres,
 	page,
@@ -306,7 +287,6 @@ export async function getDiscoverMoviesByGenre({
 	return validateResponse(response);
 }
 
-/** Get person details with credits and images */
 export async function getPersonDetails({
 	id,
 }: {

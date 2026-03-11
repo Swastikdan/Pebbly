@@ -115,7 +115,6 @@ function MediaListPage() {
 		[mediaListData, page, query, navigate, mediatype],
 	);
 
-	// Sync page from URL and clear pending
 	useEffect(() => {
 		if (pageNumber !== page) {
 			setPage(pageNumber ?? 1);

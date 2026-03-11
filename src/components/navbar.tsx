@@ -1,4 +1,3 @@
-/** Sticky navigation bar with desktop dropdown menus and a mobile slide-out sheet. */
 import { SignedIn } from "@clerk/clerk-react";
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";

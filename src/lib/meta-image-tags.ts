@@ -1,4 +1,3 @@
-/** Generates Open Graph and Twitter meta tags for SEO. */
 import { SITE_CONFIG } from "@/constants";
 export const MetaImageTagsGenerator = (props: {
 	title: string;

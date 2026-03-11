@@ -1,7 +1,3 @@
-/**
- * Search page with query-based results, trending fallback,
- * media type filtering, minimum rating filter, and pagination.
- */
 import { useQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
@@ -86,7 +82,6 @@ function SearchPage() {
 		enabled: !query,
 	});
 
-	/** Keep local page state in sync when URL param changes */
 	useEffect(() => {
 		const urlPage = pageNumber ?? 1;
 		if (page !== urlPage) {
@@ -107,7 +102,6 @@ function SearchPage() {
 		});
 	}, [data?.results, type, minRating]);
 
-	/** Auto-clear filters when current combination yields zero results */
 	useEffect(() => {
 		if (type && filteredData.length === 0 && data?.results?.length) {
 			setType(null);

@@ -1,8 +1,3 @@
-/**
- * Inline episode browser for TV show detail pages.
- * Renders an accordion-based season list with episode cards,
- * watch-status toggling, and expandable episode summaries.
- */
 import { useQuery } from "@tanstack/react-query";
 
 import { useState } from "react";
@@ -49,7 +44,6 @@ export function InlineEpisodeBrowser({
 	rating,
 	status,
 }: InlineEpisodeBrowserProps) {
-	/** Separate main seasons from specials (season 0) */
 	const mainSeasons = seasons.filter((s) => s.season_number > 0);
 	const specialSeasons = seasons.filter((s) => s.season_number === 0);
 	const allSeasons = [...mainSeasons, ...specialSeasons];
@@ -291,7 +285,6 @@ function EpisodeCard({
 					}
 					width={250}
 				/>
-				{/* Subtle hover play icon overlay */}
 				<VideoPlayerModal
 					tmdbId={tvId}
 					type="tv"

@@ -1,8 +1,3 @@
-/**
- * Watch progress tracking hooks.
- * Handles player event persistence, per-item/episode progress,
- * and synchronisation between local state and Convex backend.
- */
 import { useUser } from "@clerk/clerk-react";
 
 import { useMutation, useQuery } from "convex/react";
@@ -17,10 +12,8 @@ import { useLocalProgressStore } from "./useLocalProgressStore";
 
 import { useMediaState, useWatchlist, useWatchlistStore } from "./usewatchlist";
 
-/** Shape of a persisted watch-progress entry. */
-
 export interface WatchProgressData {
-	id: string; // TMDB ID as string
+	id: string;
 
 	type: "movie" | "tv";
 
@@ -30,7 +23,7 @@ export interface WatchProgressData {
 
 	duration: number;
 
-	lastUpdated: number; // timestamp
+	lastUpdated: number;
 
 	context?: {
 		season?: number;
@@ -47,7 +40,7 @@ interface PlayerEventPayload {
 	data: {
 		event: "timeupdate" | "play" | "pause" | "ended" | "seeked";
 		currentTime: number;
-		duration: number; // total duration
+			duration: number;
 		progress: number;
 		id: string;
 		mediaType: "movie" | "tv";
@@ -65,8 +58,6 @@ function makeEpisodeKey(
 }
 
 const QUERY_SKIP = "skip" as const;
-
-/** Listens for postMessage player events and persists progress to Convex or localStorage. */
 
 export function usePlayerProgressListener() {
 	const { isSignedIn } = useUser();
@@ -107,7 +98,6 @@ export function usePlayerProgressListener() {
 				const safeProgress = Number.isFinite(progress) ? progress : 0;
 				const safeCurrentTime = Number.isFinite(currentTime) ? currentTime : 0;
 
-				// Skip insignificant updates (< 1% and < 10s) unless play/ended event
 				if (
 					safeProgress < 1 &&
 					safeCurrentTime < 10 &&
@@ -132,7 +122,6 @@ export function usePlayerProgressListener() {
 							progress: safeProgress,
 						}).catch(console.error);
 
-						// Auto-mark episode as watched on completion
 						if (
 							(playerEvent === "ended" || safeProgress >= 95) &&
 							mediaType === "tv" &&
@@ -149,7 +138,6 @@ export function usePlayerProgressListener() {
 					} else {
 						setLocalProgress(String(id), mediaType, safeProgress);
 
-						// Auto-mark episode as watched locally on completion
 						if (
 							(playerEvent === "ended" || safeProgress >= 95) &&
 							mediaType === "tv" &&
@@ -160,9 +148,9 @@ export function usePlayerProgressListener() {
 						}
 					}
 				}
-			} catch {
-				// Ignore malformed postMessage events
-			}
+				} catch {
+					// Ignore malformed player messages.
+				}
 		}
 
 		window.addEventListener("message", handleMessage);
@@ -175,8 +163,6 @@ export function usePlayerProgressListener() {
 		markLocalEpisode,
 	]);
 }
-
-/** Returns progress data for a specific media item. */
 
 export function useWatchProgress(
 	id: string | number,
@@ -201,8 +187,6 @@ export function useWatchProgress(
 	return { progress };
 }
 
-/** Returns all in-progress items for the "Continue Watching" section. */
-
 export function useContinueWatching() {
 	const { watchlist } = useWatchlist();
 
@@ -226,8 +210,6 @@ export function useContinueWatching() {
 
 	return { items, allItems: items };
 }
-
-/** Tracks and toggles episode watched status for a TV show, syncing progress and status. */
 
 export function useEpisodeWatched(
 	tvId: number | string,
@@ -268,7 +250,6 @@ export function useEpisodeWatched(
 		(state) => state.setProgressStatusLocal,
 	);
 
-	/** Merge remote and local episode data into a single lookup map. */
 	const watchedMap = useMemo(() => {
 		const map: EpisodeWatchedMap = {};
 
@@ -394,7 +375,7 @@ export function useEpisodeWatched(
 			const shouldSkip = !hasMediaState && newWatchedCount === 0;
 			if (shouldSkip) return;
 
-			// Never auto-override a manual "dropped" status
+				// Keep a manual drop decision sticky when episode counts change.
 			if (currentProgressStatus === "dropped") return;
 
 			const hasEpisodeTotal =
@@ -422,14 +403,11 @@ export function useEpisodeWatched(
 						? "done"
 						: "watching";
 
-			// Respect manual "watching" override — never auto-change from "watching".
-			// This handles both: all episodes watched (don't upgrade to finished/caught-up)
-			// and zero episodes watched after clearing (don't downgrade to want-to-watch).
+				// Preserve a manual "watching" selection even if episode math points elsewhere.
 			if (
 				currentProgressStatus === "watching" &&
 				derivedProgressStatus !== "watching"
 			) {
-				// Still update progress percentage without changing the status
 				const shouldWriteProgress =
 					!hasMediaState || currentProgress !== nextProgress;
 				if (shouldWriteProgress) {
@@ -458,7 +436,6 @@ export function useEpisodeWatched(
 
 			if (isSignedIn) {
 				if (shouldWriteStatus) {
-					// setProgressStatus also writes progress, so a single call suffices
 					setProgressStatus({
 						tmdbId,
 						mediaType: "tv",
@@ -698,8 +675,6 @@ export function useEpisodeWatched(
 	};
 }
 
-/** Returns the watch progress percentage for a specific episode. */
-
 export function useEpisodeProgress(
 	tvId: string | number,
 	season: number,
@@ -728,8 +703,6 @@ export function useEpisodeProgress(
 		return localEpisodes[makeEpisodeKey(tvId, season, episode)] ? 100 : 0;
 	}, [isSignedIn, data, localEpisodes, tvId, season, episode]);
 }
-
-/** Constructs the embedded player URL with autoplay and progress parameters. */
 
 export function buildPlayerUrl(opts: {
 	type: "movie" | "tv";

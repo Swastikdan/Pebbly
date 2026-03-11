@@ -1,4 +1,3 @@
-/** Zustand store for tracking episode watched status in localStorage (logged-out users). */
 import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -6,7 +5,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { createMemoryStorage } from "@/lib/utils";
 
 interface LocalProgressStore {
-	watchedEpisodes: Record<string, boolean>; // key format: `${tmdbId}:${season}:${episode}`
+	watchedEpisodes: Record<string, boolean>;
 
 	markEpisodeWatched: (
 		tmdbId: number,

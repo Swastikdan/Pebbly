@@ -143,7 +143,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			return;
 		}
 
-		// Lazy-load devtools only in development to keep production bundles clean
 		Promise.all([
 			import("@tanstack/react-devtools"),
 			import("@tanstack/react-router-devtools"),

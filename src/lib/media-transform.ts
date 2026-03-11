@@ -1,4 +1,3 @@
-/** Data transformation helpers for TMDB API responses (genres, cast, videos, images, certifications). */
 import { GENRE_LIST, IMAGE_PREFIX } from "@/constants";
 
 const FEATURED_ITEMS_LIMIT = 10;
@@ -30,7 +29,6 @@ interface MinimalImage {
 	vote_average?: number;
 }
 
-/** Maps genre IDs to full genre objects using a pre-built lookup table. */
 export const mapGenres = (genres?: MinimalGenre[] | null) => {
 	if (!genres) {
 		return [];

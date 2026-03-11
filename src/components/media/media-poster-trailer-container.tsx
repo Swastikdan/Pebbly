@@ -31,7 +31,6 @@ export function MediaPosterTrailerContainer(props: {
 	let defaultEpisode: number | undefined;
 
 	if (type === "tv") {
-		// Resume last watched episode, or start at S1E1
 		if (progress?.context?.season && progress?.context?.episode) {
 			defaultSeason = progress.context.season;
 			defaultEpisode = progress.context.episode;
@@ -55,7 +54,6 @@ export function MediaPosterTrailerContainer(props: {
 					width={300}
 				/>
 
-				{/* Main Play Button Overlay */}
 				<VideoPlayerModal
 					tmdbId={tmdbId}
 					type={type}

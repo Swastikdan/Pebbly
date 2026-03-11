@@ -1,7 +1,3 @@
-/**
- * Theme provider with system/light/dark mode support.
- * Based on shadcn/ui dark-mode pattern and next-themes.
- */
 import { ScriptOnce } from "@tanstack/react-router";
 import {
 	createContext,
@@ -121,7 +117,6 @@ export function ThemeProvider({
 	return (
 		<ThemeProviderContext {...props} value={value}>
 			<ScriptOnce>
-				{/* Prevents flash of wrong theme on initial load */}
 				{`document.documentElement.classList.toggle(
             'dark',
             localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)

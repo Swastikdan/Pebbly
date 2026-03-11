@@ -9,9 +9,6 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { GoogleGenAI } from "@google/genai";
 
-// ─── Internal helpers ────────────────────────────────────────────────
-
-/** Validate auth + role + feature flag. Returns user doc or throws. */
 export const getAuthorizedUser = internalQuery({
   args: {},
   handler: async (ctx) => {
@@ -31,7 +28,6 @@ export const getAuthorizedUser = internalQuery({
   },
 });
 
-/** Collect all watchlist data for the authenticated user. */
 export const gatherWatchlistData = internalQuery({
   args: {},
   handler: async (ctx) => {
@@ -87,7 +83,6 @@ export const gatherWatchlistData = internalQuery({
   },
 });
 
-/** Save recommendations for a user (appends to history). */
 export const saveRecommendations = internalMutation({
   args: {
     userId: v.id("users"),
@@ -119,7 +114,6 @@ export const saveRecommendations = internalMutation({
   },
 });
 
-/** Admin utility: set role and aiGenerationEnabled on a user. */
 export const setUserRole = internalMutation({
   args: {
     tokenIdentifier: v.string(),
@@ -141,9 +135,6 @@ export const setUserRole = internalMutation({
   },
 });
 
-// ─── Public queries ──────────────────────────────────────────────────
-
-/** Client-facing access check. */
 export const getUserRecommendationAccess = query({
   args: {},
   handler: async (ctx) => {
@@ -166,7 +157,6 @@ export const getUserRecommendationAccess = query({
   },
 });
 
-/** Return all recommendation history for the user, sorted newest first. */
 export const getRecommendationHistory = query({
   args: {},
   handler: async (ctx) => {
@@ -191,7 +181,6 @@ export const getRecommendationHistory = query({
   },
 });
 
-/** Delete a specific recommendation entry. */
 export const deleteRecommendation = mutation({
   args: { id: v.id("ai_recommendations") },
   handler: async (ctx, args) => {
@@ -213,11 +202,10 @@ export const deleteRecommendation = mutation({
   },
 });
 
-/** Update a recommendation entry with TMDB-verified data from the client. */
 export const updateVerifiedRecommendations = mutation({
   args: {
     id: v.id("ai_recommendations"),
-    recommendations: v.string(), // JSON-stringified AIRecommendation[] with verified fields
+	    recommendations: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -234,7 +222,6 @@ export const updateVerifiedRecommendations = mutation({
       .first();
     if (!user || entry.userId !== user._id) throw new Error("Unauthorized");
 
-    // Save original AI output as backup (only on first verification)
     const patch: Record<string, unknown> = {
       recommendations: args.recommendations,
       verified: true,
@@ -247,17 +234,13 @@ export const updateVerifiedRecommendations = mutation({
   },
 });
 
-// ─── Action: generate recommendations ────────────────────────────────
-
-// The user experienced 503 errors with gemini-3-flash-preview.
-// We'll use a list of fallback models and try them sequentially.
 const MODELS_TO_TRY = [
   "gemini-2.5-flash",
   "gemini-3.1-flash-lite-preview",
   "gemini-2.0-flash",
   "gemini-1.5-flash"
 ];
-const RATE_LIMIT_MS = 2 * 60 * 1000; // 2 minutes
+const RATE_LIMIT_MS = 2 * 60 * 1000;
 
 function computeHash(
   items: Array<{ tmdbId: number; progressStatus?: string; reaction?: string }>,
@@ -512,7 +495,6 @@ const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
   ]
 }`;
 
-/** Internal query to get most recent recommendation for rate limiting. */
 export const getMostRecentEntry = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
@@ -560,27 +542,23 @@ export const generateRecommendations = action({
     const genType = args.generationType ?? "watchlist";
     const excludeTmdbIds = args.excludeTmdbIds ?? [];
 
-    // 1. Auth check
     const user = await ctx.runQuery(
       internal.recommendations.getAuthorizedUser,
     );
 
-    // 2. Gather watchlist data
     const data = await ctx.runQuery(
       internal.recommendations.gatherWatchlistData,
     );
 
-    // 3. For watchlist-based, require non-empty watchlist
     if (genType === "watchlist" && data.watchItems.length === 0) {
       return { error: "empty_watchlist" };
     }
     if (genType === "list" && args.listId) {
-      if (data.listItems.filter((li) => li.listId === args.listId).length === 0) {
-        return { error: "empty_watchlist" }; // Reusing the same error for empty list since UI handles it
+	      if (data.listItems.filter((li) => li.listId === args.listId).length === 0) {
+	        return { error: "empty_watchlist" };
       }
     }
 
-    // 4. Rate limit: check most recent entry (skip if we are generating more)
     const isGenerateMore = excludeTmdbIds.length > 0;
     const mostRecent = await ctx.runQuery(
       internal.recommendations.getMostRecentEntry,
@@ -591,7 +569,6 @@ export const generateRecommendations = action({
       return { error: "rate_limited" };
     }
 
-    // 5. Build prompt based on generation type
     let userPrompt = "";
     if (genType === "watchlist") {
       userPrompt = buildWatchlistPrompt(data, args.mediaTypePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count);
@@ -611,13 +588,11 @@ export const generateRecommendations = action({
     const systemInstruction =
       "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
 
-    // 6. Call Gemini (try models sequentially)
     let responseText = "";
     let usedModel = MODELS_TO_TRY[0];
     let success = false;
     let highDemandError = false;
 
-    // A small helper to delay between retries
     const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
     for (let i = 0; i < MODELS_TO_TRY.length; i++) {
@@ -640,14 +615,12 @@ export const generateRecommendations = action({
         } catch (err: any) {
             console.error(`Gemini model (${usedModel}) error:`, err?.message ?? err);
             
-            // Check if it's a 503 high demand error
             if (err?.status === 503 || err?.message?.includes("high demand") || err?.message?.includes("503")) {
                 highDemandError = true;
             }
             
-            // Wait slightly before trying the next model
             if (i < MODELS_TO_TRY.length - 1) {
-                await delay(1000); // 1s second delay before next fallback
+	                await delay(1000);
             }
         }
     }
@@ -659,7 +632,6 @@ export const generateRecommendations = action({
         return { error: "api_unavailable" };
     }
 
-    // 7. Parse and validate
     let parsed: { recommendations: Recommendation[] };
     try {
       parsed = JSON.parse(responseText);
@@ -670,13 +642,11 @@ export const generateRecommendations = action({
       return { error: "invalid_response" };
     }
 
-    // 8. Filter out titles already in watchlist
     const existingIds = new Set(data.watchItems.map((i: { tmdbId: number }) => i.tmdbId));
     parsed.recommendations = parsed.recommendations.filter(
       (r) => r.tmdbId == null || !existingIds.has(r.tmdbId),
     );
 
-    // 9. Save to history
     const watchlistHash = computeHash(data.watchItems, args.mediaTypePreference, args.genrePreference);
     await ctx.runMutation(internal.recommendations.saveRecommendations, {
       userId: user._id,

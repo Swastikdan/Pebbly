@@ -1,4 +1,3 @@
-/** Site-wide footer with attribution and navigation links. */
 import { Link } from "@tanstack/react-router";
 
 import { SITE_CONFIG } from "@/constants";

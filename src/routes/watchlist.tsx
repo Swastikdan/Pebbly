@@ -1,8 +1,3 @@
-/**
- * Watchlist page: displays saved movies and TV shows with filtering,
- * sorting, import/export, custom list chips, and removal capabilities.
- * Separated into two main views: Watchlist (default) and My Lists.
- */
 import { useUser } from "@clerk/clerk-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
@@ -91,7 +86,6 @@ export const Route = createFileRoute("/watchlist")({
 	component: WatchlistPage,
 });
 
-/** Silently swallows errors from children (e.g. Convex table-not-found). */
 class SilentErrorBoundary extends Component<
 	{ children: ReactNode },
 	{ hasError: boolean }
@@ -100,9 +94,7 @@ class SilentErrorBoundary extends Component<
 	static getDerivedStateFromError() {
 		return { hasError: true };
 	}
-	componentDidCatch(_error: Error, _info: ErrorInfo) {
-		// intentionally silent
-	}
+	componentDidCatch(_error: Error, _info: ErrorInfo) {}
 	render() {
 		if (this.state.hasError) return null;
 		return this.props.children;
@@ -122,7 +114,6 @@ function WatchlistPage() {
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="w-full max-w-screen-xl p-5">
-				{/* Top nav */}
 				<div className="mb-6 flex items-center justify-between gap-3">
 					<GoBack title="Back" hideLabelOnMobile />
 					<ShareButton title="My Watchlist" hideLabelOnMobile />
@@ -178,8 +169,6 @@ function WatchlistPage() {
 		</section>
 	);
 }
-
-// ─── Watchlist Tab ────────────────────────────────────────────────────────────
 
 function WatchlistTabContent() {
 	const importInputId = useId();
@@ -299,7 +288,6 @@ function WatchlistTabContent() {
 
 	return (
 		<div className="pt-5">
-			{/* Subheader with counts and import/export */}
 			<div className="mb-5 flex items-center justify-between gap-3">
 				<div>
 					<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
@@ -362,7 +350,6 @@ function WatchlistTabContent() {
 				</div>
 			)}
 
-			{/* Status tabs + filters */}
 			<div className="mb-6 space-y-3">
 				<div className="flex items-center gap-2">
 					<div className="scrollbar-hidden flex flex-1 gap-1 overflow-x-auto">
@@ -521,7 +508,6 @@ function WatchlistTabContent() {
 				</div>
 			</div>
 
-			{/* Content */}
 			{watchlistLoading ? (
 				<DefaultLoader className="min-h-[calc(100vh-112px)] grid h-full place-content-center items-center justify-center" />
 			) : error && filteredWatchlist.length === 0 ? (
@@ -578,8 +564,6 @@ function WatchlistTabContent() {
 	);
 }
 
-// ─── My Lists Tab ─────────────────────────────────────────────────────────────
-
 function MyListsTabContent() {
 	const customLists = useQuery(api.watchlist.getCustomLists) ?? [];
 	const deleteCustomList = useMutation(api.watchlist.deleteCustomList);
@@ -623,7 +607,6 @@ function MyListsTabContent() {
 
 	return (
 		<div className="pt-5">
-			{/* Subheader */}
 			<div className="mb-5 flex items-center justify-between gap-3">
 				<div>
 					<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
@@ -645,7 +628,6 @@ function MyListsTabContent() {
 				</Button>
 			</div>
 
-			{/* Lists */}
 			{sortedLists.length === 0 ? (
 				<div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center animate-fade-in-up">
 					<div className="flex size-16 items-center justify-center rounded-2xl bg-secondary">
@@ -690,7 +672,6 @@ function MyListsTabContent() {
 				</div>
 			)}
 
-			{/* Dialogs */}
 			<CustomListDialog
 				open={showCreateList}
 				onOpenChange={setShowCreateList}
@@ -733,7 +714,6 @@ function CustomListView({
 
 	return (
 		<div className="pt-5 animate-fade-in">
-			{/* Active List Header */}
 			<div className="mb-6 flex flex-wrap items-center justify-between gap-3">
 				<div className="flex items-center gap-3">
 					<Button
@@ -793,7 +773,6 @@ function CustomListView({
 				</DropdownMenu>
 			</div>
 
-			{/* List Items */}
 			<SilentErrorBoundary>
 				{!items ? (
 					<DefaultLoader className="min-h-[50vh] grid place-content-center items-center justify-center" />
@@ -1038,7 +1017,6 @@ function CustomListMediaCard({
 					)}
 				</div>
 
-				{/* Badges for status and reaction */}
 				{(item.progressStatus || item.reaction) && (
 					<div className="flex items-center gap-1.5 pt-2">
 						{item.progressStatus && (
@@ -1062,8 +1040,6 @@ function CustomListMediaCard({
 		</div>
 	);
 }
-
-// ─── Watchlist Card ───────────────────────────────────────────────────────────
 
 function WatchlistCard({
 	item,

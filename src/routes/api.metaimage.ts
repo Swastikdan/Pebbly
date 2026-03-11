@@ -1,8 +1,3 @@
-/**
- * Server-side API route that resolves a TMDB media ID to its best
- * available poster/backdrop image and returns a 302 redirect.
- * Used for Open Graph meta image tags.
- */
 import { createFileRoute } from "@tanstack/react-router";
 import { IMAGE_PREFIX } from "@/constants";
 import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
@@ -21,9 +16,6 @@ function getPlaceholderWithText(text = FALLBACK_TITLE): string {
 	return `https://placehold.jp/20/f2f2f2/000000/200x300.jpg?text=${encoded}`;
 }
 
-/**
- * Pick the best available image URL for the media item and return a redirect response.
- */
 async function getImageRedirect(
 	data: BasicMovie | BasicTv | null,
 	isMovie: boolean,
