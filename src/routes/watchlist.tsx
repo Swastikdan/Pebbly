@@ -403,11 +403,14 @@ function WatchlistTabContent() {
 					<Button
 						onClick={() => setFiltersOpen((prev) => !prev)}
 						aria-expanded={filtersOpen}
-						variant={
-							filtersOpen || activeSecondaryCount > 0 ? "outline" : "secondary"
-						}
+						variant={filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"}
 						size="sm"
-						className="gap-1.5 rounded-lg text-xs w-[132px] justify-center"
+						className={cn(
+							"h-9 w-[132px] justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold ring-1 ring-border/40",
+							filtersOpen || activeSecondaryCount > 0
+								? "bg-foreground text-background hover:bg-foreground/90"
+								: "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+						)}
 					>
 						<SlidersHorizontal size={13} />
 						<span className="relative inline-flex w-[72px] justify-center">
