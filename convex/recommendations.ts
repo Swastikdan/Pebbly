@@ -4,25 +4,96 @@ import {
   internalQuery,
   mutation,
   query,
+  type MutationCtx,
+  type QueryCtx,
 } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { GoogleGenAI } from "@google/genai";
 
+type RecommendationsContext = QueryCtx | MutationCtx;
+type RecommendationUser = Doc<"users">;
+type RecommendationEntry = Doc<"ai_recommendations">;
+type WatchItemSummary = Pick<
+  Doc<"watch_items">,
+  "tmdbId" | "mediaType" | "title" | "rating" | "progressStatus" | "reaction" | "progress"
+>;
+type CustomListSummary = Pick<Doc<"lists">, "_id" | "name">;
+type CustomListItemSummary = Pick<
+  Doc<"list_items">,
+  "listId" | "tmdbId" | "mediaType"
+>;
+
+function hasAiGenerationAccess(user: RecommendationUser) {
+  return user.aiGenerationEnabled === true;
+}
+
+function isAiGenerationExplicitlyDisabled(user: RecommendationUser) {
+  return user.aiGenerationEnabled === false;
+}
+
+async function getUserByTokenIdentifier(
+  ctx: RecommendationsContext,
+  tokenIdentifier: string,
+) {
+  return ctx.db
+    .query("users")
+    .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+    .first();
+}
+
+async function requireAuthenticatedUser(
+  ctx: RecommendationsContext,
+): Promise<RecommendationUser> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await getUserByTokenIdentifier(ctx, identity.subject);
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  return user;
+}
+
+async function getAuthenticatedUserOrNull(ctx: RecommendationsContext) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    return null;
+  }
+
+  return getUserByTokenIdentifier(ctx, identity.subject);
+}
+
+async function requireOwnedRecommendationEntry(
+  ctx: MutationCtx,
+  id: Id<"ai_recommendations">,
+): Promise<RecommendationEntry> {
+  const user = await requireAuthenticatedUser(ctx);
+  const entry = await ctx.db.get(id);
+
+  if (!entry) {
+    throw new Error("Not found");
+  }
+
+  if (entry.userId !== user._id) {
+    throw new Error("Unauthorized");
+  }
+
+  return entry;
+}
+
 export const getAuthorizedUser = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.subject),
-      )
-      .first();
-    if (!user) throw new Error("Unauthorized");
-    if (!user.aiGenerationEnabled)
+    const user = await requireAuthenticatedUser(ctx);
+
+    if (!hasAiGenerationAccess(user)) {
       throw new Error("Unauthorized: feature not enabled");
+    }
 
     return user;
   },
@@ -31,16 +102,7 @@ export const getAuthorizedUser = internalQuery({
 export const gatherWatchlistData = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.subject),
-      )
-      .first();
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireAuthenticatedUser(ctx);
 
     const watchItems = await ctx.db
       .query("watch_items")
@@ -138,20 +200,14 @@ export const setUserRole = internalMutation({
 export const getUserRecommendationAccess = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity)
+    const user = await getAuthenticatedUserOrNull(ctx);
+    if (!user) {
       return { hasAccess: false, reason: "not_authenticated" as const };
+    }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.subject),
-      )
-      .first();
-
-    if (!user) return { hasAccess: false, reason: "user_not_found" as const };
-    if (!user.aiGenerationEnabled)
+    if (!hasAiGenerationAccess(user)) {
       return { hasAccess: false, reason: "feature_disabled" as const };
+    }
 
     return { hasAccess: true };
   },
@@ -160,17 +216,10 @@ export const getUserRecommendationAccess = query({
 export const getRecommendationHistory = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.subject),
-      )
-      .first();
-    if (!user) return [];
-    if ((user as any).aiGenerationEnabled === false) return [];
+    const user = await getAuthenticatedUserOrNull(ctx);
+    if (!user || isAiGenerationExplicitlyDisabled(user)) {
+      return [];
+    }
 
     const entries = await ctx.db
       .query("ai_recommendations")
@@ -184,19 +233,7 @@ export const getRecommendationHistory = query({
 export const deleteRecommendation = mutation({
   args: { id: v.id("ai_recommendations") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
-
-    const entry = await ctx.db.get(args.id);
-    if (!entry) throw new Error("Not found");
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.subject),
-      )
-      .first();
-    if (!user || entry.userId !== user._id) throw new Error("Unauthorized");
+    await requireOwnedRecommendationEntry(ctx, args.id);
 
     await ctx.db.delete(args.id);
   },
@@ -205,22 +242,10 @@ export const deleteRecommendation = mutation({
 export const updateVerifiedRecommendations = mutation({
   args: {
     id: v.id("ai_recommendations"),
-	    recommendations: v.string(),
+    recommendations: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
-
-    const entry = await ctx.db.get(args.id);
-    if (!entry) throw new Error("Not found");
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.subject),
-      )
-      .first();
-    if (!user || entry.userId !== user._id) throw new Error("Unauthorized");
+    const entry = await requireOwnedRecommendationEntry(ctx, args.id);
 
     const patch: Record<string, unknown> = {
       recommendations: args.recommendations,
@@ -238,7 +263,7 @@ const MODELS_TO_TRY = [
   "gemini-2.5-flash",
   "gemini-3.1-flash-lite-preview",
   "gemini-2.0-flash",
-  "gemini-1.5-flash"
+  "gemini-1.5-flash",
 ];
 const RATE_LIMIT_MS = 2 * 60 * 1000;
 
@@ -260,17 +285,9 @@ function computeHash(
 }
 
 type WatchlistData = {
-  watchItems: Array<{
-    tmdbId: number;
-    mediaType: string;
-    title?: string;
-    rating?: number;
-    progressStatus?: string;
-    reaction?: string;
-    progress?: number;
-  }>;
-  lists: Array<{ name: string; _id: any }>;
-  listItems: Array<{ listId: any; tmdbId: number; mediaType: string }>;
+  watchItems: WatchItemSummary[];
+  lists: CustomListSummary[];
+  listItems: CustomListItemSummary[];
   inputStats: {
     movieCount: number;
     tvCount: number;
@@ -305,10 +322,13 @@ function buildWatchlistPrompt(
       i.progressStatus === "dropped",
   );
   const done = watchItems.filter(
-    (i) => i.progressStatus === "done" && i.reaction !== "loved" && i.reaction !== "liked",
+    (i) =>
+      i.progressStatus === "done" &&
+      i.reaction !== "loved" &&
+      i.reaction !== "liked",
   );
 
-  const formatItem = (i: (typeof watchItems)[0]) => {
+  const formatItem = (i: WatchItemSummary) => {
     const parts = [`- ${i.title ?? "Unknown"} (TMDB ID: ${i.tmdbId}, ${i.mediaType})`];
     if (i.rating) parts.push(`Rating: ${i.rating}/10`);
     if (i.reaction) parts.push(`Reaction: ${i.reaction}`);
@@ -321,7 +341,7 @@ function buildWatchlistPrompt(
       .map((i) => i.tmdbId),
   );
   const existingIds = [...watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
-  const inScope = (i: (typeof watchItems)[0]) => prioritized.has(i.tmdbId);
+  const inScope = (item: WatchItemSummary) => prioritized.has(item.tmdbId);
 
   let prompt = `Here is my watchlist data:\n\n`;
 
@@ -372,7 +392,12 @@ function buildWatchlistPrompt(
     prompt += `IMPORTANT: Only recommend TV SHOWS. Do not suggest any movies.\n\n`;
   }
 
-  const mediaLabel = mediaTypePreference === "movie" ? "movies" : mediaTypePreference === "tv" ? "TV shows" : "movies and TV shows";
+  const mediaLabel =
+    mediaTypePreference === "movie"
+      ? "movies"
+      : mediaTypePreference === "tv"
+        ? "TV shows"
+        : "movies and TV shows";
   const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
   prompt += `Based on this data, recommend exactly ${titleCount} ${mediaLabel} I would likely enjoy.\n`;
   prompt += `Do NOT recommend any title with these TMDB IDs (already in my watchlist): ${existingIds.join(", ")}\n\n`;
@@ -399,7 +424,12 @@ function buildGenrePrompt(
 ): string {
   const existingIds = [...data.watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
 
-  const mediaLabel = mediaTypePreference === "movie" ? "movies" : mediaTypePreference === "tv" ? "TV shows" : "movies and TV shows";
+  const mediaLabel =
+    mediaTypePreference === "movie"
+      ? "movies"
+      : mediaTypePreference === "tv"
+        ? "TV shows"
+        : "movies and TV shows";
   const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
 
   let prompt = `Recommend me exactly ${titleCount} popular and highly-rated ${mediaLabel}`;
@@ -442,19 +472,26 @@ function buildCustomListPrompt(
 ): string {
   const existingIds = [...data.watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
 
-  const mediaLabel = mediaTypePreference === "movie" ? "movies" : mediaTypePreference === "tv" ? "TV shows" : "movies and TV shows";
+  const mediaLabel =
+    mediaTypePreference === "movie"
+      ? "movies"
+      : mediaTypePreference === "tv"
+        ? "TV shows"
+        : "movies and TV shows";
   const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
 
   const list = data.lists.find((l) => l._id === listId);
   const listName = list?.name ?? "this custom list";
-  
+
   const items = data.listItems.filter((li) => li.listId === listId);
   const titles = items
     .map((li) => {
       const wi = data.watchItems.find(
         (w) => w.tmdbId === li.tmdbId && w.mediaType === li.mediaType,
       );
-      return wi?.title ? `- ${wi.title} (${li.mediaType})` : `- TMDB ID: ${li.tmdbId} (${li.mediaType})`;
+      return wi?.title
+        ? `- ${wi.title} (${li.mediaType})`
+        : `- TMDB ID: ${li.tmdbId} (${li.mediaType})`;
     })
     .join("\n");
 
@@ -524,8 +561,72 @@ interface InputStats {
 }
 
 type GenerateResult =
-  | { recommendations: Recommendation[]; inputStats: InputStats; generatedAt: number; cached: boolean }
+  | {
+      recommendations: Recommendation[];
+      inputStats: InputStats;
+      generatedAt: number;
+      cached: boolean;
+    }
   | { error: string };
+
+type GeminiErrorLike = {
+  status?: number;
+  message?: string;
+};
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isHighDemandError(error: unknown) {
+  const candidate = error as GeminiErrorLike;
+  const message = candidate.message?.toLowerCase() ?? "";
+
+  return (
+    candidate.status === 503 ||
+    message.includes("high demand") ||
+    message.includes("503")
+  );
+}
+
+async function delay(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function generateRecommendationResponse(
+  ai: GoogleGenAI,
+  userPrompt: string,
+  systemInstruction: string,
+) {
+  let highDemandError = false;
+
+  for (const [index, model] of MODELS_TO_TRY.entries()) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: userPrompt,
+        config: {
+          responseMimeType: "application/json",
+          systemInstruction,
+        },
+      });
+
+      const responseText = response.text ?? "";
+      if (responseText) {
+        return { responseText, usedModel: model, highDemandError };
+      }
+    } catch (error) {
+      console.error(`Gemini model (${model}) error:`, getErrorMessage(error));
+      highDemandError = highDemandError || isHighDemandError(error);
+
+      if (index < MODELS_TO_TRY.length - 1) {
+        await delay(1000);
+      }
+    }
+  }
+
+  return { responseText: "", usedModel: MODELS_TO_TRY[0], highDemandError };
+}
 
 export const generateRecommendations = action({
   args: {
@@ -554,8 +655,8 @@ export const generateRecommendations = action({
       return { error: "empty_watchlist" };
     }
     if (genType === "list" && args.listId) {
-	      if (data.listItems.filter((li) => li.listId === args.listId).length === 0) {
-	        return { error: "empty_watchlist" };
+      if (data.listItems.filter((li) => li.listId === args.listId).length === 0) {
+        return { error: "empty_watchlist" };
       }
     }
 
@@ -569,14 +670,35 @@ export const generateRecommendations = action({
       return { error: "rate_limited" };
     }
 
-    let userPrompt = "";
-    if (genType === "watchlist") {
-      userPrompt = buildWatchlistPrompt(data, args.mediaTypePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count);
-    } else if (genType === "list" && args.listId) {
-      userPrompt = buildCustomListPrompt(data, args.listId, args.mediaTypePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count);
-    } else {
-      userPrompt = buildGenrePrompt(data, args.mediaTypePreference, args.genrePreference, excludeTmdbIds, args.yearFrom, args.yearTo, args.count);
-    }
+    const userPrompt =
+      genType === "watchlist"
+        ? buildWatchlistPrompt(
+            data,
+            args.mediaTypePreference,
+            excludeTmdbIds,
+            args.yearFrom,
+            args.yearTo,
+            args.count,
+          )
+        : genType === "list" && args.listId
+          ? buildCustomListPrompt(
+              data,
+              args.listId,
+              args.mediaTypePreference,
+              excludeTmdbIds,
+              args.yearFrom,
+              args.yearTo,
+              args.count,
+            )
+          : buildGenrePrompt(
+              data,
+              args.mediaTypePreference,
+              args.genrePreference,
+              excludeTmdbIds,
+              args.yearFrom,
+              args.yearTo,
+              args.count,
+            );
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -588,48 +710,15 @@ export const generateRecommendations = action({
     const systemInstruction =
       "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
 
-    let responseText = "";
-    let usedModel = MODELS_TO_TRY[0];
-    let success = false;
-    let highDemandError = false;
+    const { responseText, usedModel, highDemandError } =
+      await generateRecommendationResponse(ai, userPrompt, systemInstruction);
 
-    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    if (!responseText) {
+      if (highDemandError) {
+        return { error: "high_demand" };
+      }
 
-    for (let i = 0; i < MODELS_TO_TRY.length; i++) {
-        usedModel = MODELS_TO_TRY[i];
-        try {
-            const response = await ai.models.generateContent({
-              model: usedModel,
-              contents: userPrompt,
-              config: {
-                responseMimeType: "application/json",
-                systemInstruction,
-              },
-            });
-            responseText = response.text ?? "";
-            
-            if (responseText) {
-                success = true;
-                break;
-            }
-        } catch (err: any) {
-            console.error(`Gemini model (${usedModel}) error:`, err?.message ?? err);
-            
-            if (err?.status === 503 || err?.message?.includes("high demand") || err?.message?.includes("503")) {
-                highDemandError = true;
-            }
-            
-            if (i < MODELS_TO_TRY.length - 1) {
-	                await delay(1000);
-            }
-        }
-    }
-
-    if (!success) {
-        if (highDemandError) {
-             return { error: "high_demand" };
-        }
-        return { error: "api_unavailable" };
+      return { error: "api_unavailable" };
     }
 
     let parsed: { recommendations: Recommendation[] };
@@ -642,12 +731,16 @@ export const generateRecommendations = action({
       return { error: "invalid_response" };
     }
 
-    const existingIds = new Set(data.watchItems.map((i: { tmdbId: number }) => i.tmdbId));
+    const existingIds = new Set(data.watchItems.map((item) => item.tmdbId));
     parsed.recommendations = parsed.recommendations.filter(
       (r) => r.tmdbId == null || !existingIds.has(r.tmdbId),
     );
 
-    const watchlistHash = computeHash(data.watchItems, args.mediaTypePreference, args.genrePreference);
+    const watchlistHash = computeHash(
+      data.watchItems,
+      args.mediaTypePreference,
+      args.genrePreference,
+    );
     await ctx.runMutation(internal.recommendations.saveRecommendations, {
       userId: user._id,
       recommendations: JSON.stringify(parsed.recommendations),

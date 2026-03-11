@@ -7,6 +7,24 @@ import type { Id } from "../../convex/_generated/dataModel";
 
 const QUERY_SKIP = "skip" as const;
 
+function toRecommendationId(id: string) {
+	return id as Id<"ai_recommendations">;
+}
+
+function removeFromOptimisticSet(current: Set<string>, id: string) {
+	const next = new Set(current);
+	next.delete(id);
+	return next;
+}
+
+function logRecommendationError(action: string, error: unknown) {
+	console.error(`Failed to ${action}`, error);
+}
+
+function parseRecommendationPayload(payload: string) {
+	return JSON.parse(payload) as AIRecommendation[];
+}
+
 export function useRecommendationAccess() {
 	const { isSignedIn, isLoaded, user } = useUser();
 
@@ -86,7 +104,7 @@ export function useRecommendations() {
 		.filter((entry) => !optimisticDeletedIds.has(entry._id))
 		.map((entry) => ({
 			_id: entry._id,
-			recommendations: JSON.parse(entry.recommendations),
+			recommendations: parseRecommendationPayload(entry.recommendations),
 			inputStats: entry.inputStats,
 			createdAt: entry.createdAt,
 			generationType: entry.generationType ?? "watchlist",
@@ -100,7 +118,7 @@ export function useRecommendations() {
 			setIsGenerating(true);
 			setError(null);
 			try {
-				const result = (await generateAction(options ?? {})) as GenerateResult;
+				const result: GenerateResult = await generateAction(options ?? {});
 				if ("error" in result) {
 					setError(result.error);
 				}
@@ -117,13 +135,10 @@ export function useRecommendations() {
 		async (id: string) => {
 			setOptimisticDeletedIds((prev) => new Set(prev).add(id));
 			try {
-				await deleteMutation({ id: id as Id<"ai_recommendations"> });
-			} catch {
-				setOptimisticDeletedIds((prev) => {
-					const next = new Set(prev);
-					next.delete(id);
-					return next;
-				});
+				await deleteMutation({ id: toRecommendationId(id) });
+			} catch (error) {
+				logRecommendationError("delete recommendation", error);
+				setOptimisticDeletedIds((prev) => removeFromOptimisticSet(prev, id));
 			}
 		},
 		[deleteMutation],
@@ -133,10 +148,12 @@ export function useRecommendations() {
 		async (id: string, recommendations: AIRecommendation[]) => {
 			try {
 				await updateVerifiedMutation({
-					id: id as Id<"ai_recommendations">,
+					id: toRecommendationId(id),
 					recommendations: JSON.stringify(recommendations),
 				});
-				} catch {}
+			} catch (error) {
+				logRecommendationError("update verified recommendations", error);
+			}
 		},
 		[updateVerifiedMutation],
 	);

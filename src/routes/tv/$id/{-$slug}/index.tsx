@@ -14,15 +14,9 @@ import { MediaTitleContainer } from "@/components/media/media-title-container";
 import { VITE_PUBLIC_APP_URL } from "@/constants";
 
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
+import { buildSharedMediaPageData } from "@/lib/media-page";
 import {
-	getPosterImage,
 	getTvCertification,
-	mapBackdrops,
-	mapCast,
-	mapCrew,
-	mapGenres,
-	mapPosters,
-	splitVideos,
 } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
@@ -107,25 +101,19 @@ function TvHomePage() {
 		keywords,
 	} = data;
 
-	const urltitle = formatMediaTitle.encode(name);
-
+	const mediaPage = buildSharedMediaPageData({
+		title: name,
+		originalTitle: original_name,
+		posterPath: poster_path,
+		releaseDate: release_date,
+		genres,
+		images,
+		credits,
+		videos,
+	});
 	const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
-	const tvtitle = name ?? original_name;
-	const tvimage = getPosterImage(poster_path);
-	const tvreleaseyear = release_date
-		? new Date(release_date).getFullYear()
-		: null;
 
 	const uscertification = getTvCertification(content_ratings?.results);
-	const tvgenres = mapGenres(genres);
-	const { allVideos, trailervideos, youtubeclips } = splitVideos(
-		videos?.results,
-	);
-	const tvcast = mapCast(credits?.cast);
-	const tvcrew = mapCrew(credits?.crew);
-	const tvbackdrops = mapBackdrops(images?.backdrops);
-	const tvposters = mapPosters(images?.posters);
-
 	const tvkeywords =
 		keywords?.results?.map((keyword) => ({
 			name: keyword.name,
@@ -138,15 +126,15 @@ function TvHomePage() {
 				runtime={null}
 				description={`${overview?.slice(0, 100)}...`}
 				id={id}
-				image={tvimage}
+				image={mediaPage.image}
 				imdb_url={imdb_url}
 				media_type="tv"
 				poster_path={poster_path}
 				rating={vote_average}
-				releaseyear={String(tvreleaseyear) || "Not Released"}
+				releaseyear={String(mediaPage.releaseYear) || "Not Released"}
 				release_date={release_date}
 				tagline={tagline ?? null}
-				title={tvtitle}
+				title={mediaPage.displayTitle}
 				tv_status={status}
 				uscertification={uscertification}
 				vote_average={vote_average}
@@ -155,28 +143,28 @@ function TvHomePage() {
 			<MediaPosterTrailerContainer
 				tmdbId={id}
 				type="tv"
-				image={tvimage}
-				title={tvtitle}
-				trailervideos={trailervideos}
+				image={mediaPage.image}
+				title={mediaPage.displayTitle}
+				trailervideos={mediaPage.trailervideos}
 			/>
-			<GenreContainer genres={tvgenres} />
+			<GenreContainer genres={mediaPage.genres} />
 			<MediaDescription description={overview} />
 			<CastSection
-				cast={tvcast}
-				crew={tvcrew}
+				cast={mediaPage.cast}
+				crew={mediaPage.crew}
 				id={id}
 				is_more_cast_crew={
 					(credits?.cast?.length ?? 0) > 10 || (credits?.crew?.length ?? 0) > 10
 				}
 				type="tv"
-				urltitle={urltitle}
+				urltitle={mediaPage.urltitle}
 			/>
 			{data.seasons && data.seasons.length > 0 && (
 				<InlineEpisodeBrowser
 					tvId={id}
-					showName={tvtitle}
+					showName={mediaPage.displayTitle}
 					seasons={data.seasons}
-					image={tvimage}
+					image={mediaPage.image}
 					release_date={release_date}
 					overview={overview}
 					rating={vote_average}
@@ -184,19 +172,19 @@ function TvHomePage() {
 				/>
 			)}
 			<MediaContainer
-				backdrops={tvbackdrops}
+				backdrops={mediaPage.backdrops}
 				id={id}
 				is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
-				is_more_clips_available={allVideos.length > 10}
+				is_more_clips_available={mediaPage.allVideos.length > 10}
 				is_more_posters_available={(images?.posters?.length ?? 0) > 10}
-				posters={tvposters}
-				title={tvtitle}
+				posters={mediaPage.posters}
+				title={mediaPage.displayTitle}
 				type="tv"
-				urltitle={urltitle}
-				youtubeclips={youtubeclips}
+				urltitle={mediaPage.urltitle}
+				youtubeclips={mediaPage.youtubeclips}
 			/>
 			{keywords && <MediaKeywords keywords={tvkeywords} />}
-			<MediaRecommendations id={id} type="tv" urltitle={urltitle} />
+			<MediaRecommendations id={id} type="tv" urltitle={mediaPage.urltitle} />
 		</section>
 	);
 }

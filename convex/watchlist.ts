@@ -1,6 +1,28 @@
-import { mutation, query } from "./_generated/server";
+import {
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 
 import { v } from "convex/values";
+
+type WatchlistContext = QueryCtx | MutationCtx;
+type WatchlistUser = Doc<"users">;
+type WatchItem = Doc<"watch_items">;
+type EpisodeProgress = Doc<"episode_progress">;
+type MediaIdentity = {
+  tmdbId: number;
+  mediaType: string;
+};
+type WatchItemMetadata = {
+  title?: string;
+  image?: string;
+  rating?: number;
+  release_date?: string;
+  overview?: string;
+};
 
 function normalizeProgressStatus(status?: string): string | undefined {
   if (!status) return undefined;
@@ -44,14 +66,125 @@ function mapLegacyStatusFields(
   return {};
 }
 
-async function getCurrentUser(ctx: any) {
+async function getCurrentUser(ctx: WatchlistContext) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
 
   return ctx.db
     .query("users")
-    .withIndex("by_token", (q: any) => q.eq("tokenIdentifier", identity.subject))
+    .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
     .first();
+}
+
+async function requireCurrentUser(ctx: WatchlistContext): Promise<WatchlistUser> {
+  const user = await getCurrentUser(ctx);
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  return user;
+}
+
+async function getWatchItem(
+  ctx: WatchlistContext,
+  userId: WatchlistUser["_id"],
+  media: MediaIdentity,
+) {
+  return ctx.db
+    .query("watch_items")
+    .withIndex("by_user_media", (q) =>
+      q
+        .eq("userId", userId)
+        .eq("tmdbId", media.tmdbId)
+        .eq("mediaType", media.mediaType),
+    )
+    .first();
+}
+
+async function getEpisodeProgressEntry(
+  ctx: WatchlistContext,
+  userId: WatchlistUser["_id"],
+  tmdbId: number,
+  season: number,
+  episode: number,
+) {
+  return ctx.db
+    .query("episode_progress")
+    .withIndex("by_user_episode", (q) =>
+      q
+        .eq("userId", userId)
+        .eq("tmdbId", tmdbId)
+        .eq("season", season)
+        .eq("episode", episode),
+    )
+    .first();
+}
+
+async function getEpisodeProgressForShow(
+  ctx: WatchlistContext,
+  userId: WatchlistUser["_id"],
+  tmdbId: number,
+) {
+  return ctx.db
+    .query("episode_progress")
+    .withIndex("by_user_media", (q) => q.eq("userId", userId).eq("tmdbId", tmdbId))
+    .collect();
+}
+
+function buildMetadataPatch(
+  metadata: WatchItemMetadata,
+  existing?: WatchItem,
+): WatchItemMetadata {
+  return {
+    title: metadata.title ?? existing?.title,
+    image: metadata.image ?? existing?.image,
+    rating: metadata.rating ?? existing?.rating,
+    release_date: metadata.release_date ?? existing?.release_date,
+    overview: metadata.overview ?? existing?.overview,
+  };
+}
+
+async function syncEpisodeProgressRecord(
+  ctx: MutationCtx,
+  userId: WatchlistUser["_id"],
+  args: {
+    tmdbId: number;
+    season: number;
+    episode: number;
+    isWatched: boolean;
+  },
+  now: number,
+) {
+  const existing = await getEpisodeProgressEntry(
+    ctx,
+    userId,
+    args.tmdbId,
+    args.season,
+    args.episode,
+  );
+
+  if (existing) {
+    if (existing.isWatched !== args.isWatched) {
+      await ctx.db.patch(existing._id, {
+        isWatched: args.isWatched,
+        updatedAt: now,
+      });
+    }
+    return;
+  }
+
+  if (!args.isWatched) {
+    return;
+  }
+
+  await ctx.db.insert("episode_progress", {
+    userId,
+    tmdbId: args.tmdbId,
+    season: args.season,
+    episode: args.episode,
+    isWatched: args.isWatched,
+    updatedAt: now,
+  });
 }
 
 export const updateProgress = mutation({
@@ -64,15 +197,8 @@ export const updateProgress = mutation({
   },
 
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
-
-    const existing = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-      )
-      .first();
+    const user = await requireCurrentUser(ctx);
+    const existing = await getWatchItem(ctx, user._id, args);
 
     const now = Date.now();
     const nextProgress =
@@ -127,42 +253,8 @@ export const markEpisodeWatched = mutation({
   },
 
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
-
-    const existing = await ctx.db
-      .query("episode_progress")
-      .withIndex("by_user_episode", (q) =>
-        q
-          .eq("userId", user._id)
-          .eq("tmdbId", args.tmdbId)
-          .eq("season", args.season)
-          .eq("episode", args.episode),
-      )
-      .first();
-
-    const now = Date.now();
-
-    if (existing) {
-      if (existing.isWatched !== args.isWatched) {
-        await ctx.db.patch(existing._id, {
-          isWatched: args.isWatched,
-          updatedAt: now,
-        });
-      }
-      return;
-    }
-
-    if (!args.isWatched) return;
-
-    await ctx.db.insert("episode_progress", {
-      userId: user._id,
-      tmdbId: args.tmdbId,
-      season: args.season,
-      episode: args.episode,
-      isWatched: args.isWatched,
-      updatedAt: now,
-    });
+    const user = await requireCurrentUser(ctx);
+    await syncEpisodeProgressRecord(ctx, user._id, args, Date.now());
   },
 });
 
@@ -208,12 +300,7 @@ export const getMediaState = query({
     const user = await getCurrentUser(ctx);
     if (!user) return null;
 
-    return ctx.db
-      .query("watch_items")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-      )
-      .first();
+    return getWatchItem(ctx, user._id, args);
   },
 });
 
@@ -230,17 +317,11 @@ export const setWatchlistMembership = mutation({
   },
 
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
-
-    const existing = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-      )
-      .first();
+    const user = await requireCurrentUser(ctx);
+    const existing = await getWatchItem(ctx, user._id, args);
 
     const now = Date.now();
+    const metadataPatch = buildMetadataPatch(args, existing ?? undefined);
 
     if (existing) {
       const existingDerived = mapLegacyStatusFields(existing.status, existing.progress);
@@ -254,11 +335,7 @@ export const setWatchlistMembership = mutation({
           existingDerived.progressStatus ??
           (args.inWatchlist ? "watch-later" : undefined),
         reaction: existing.reaction ?? existingDerived.reaction,
-        title: args.title ?? existing.title,
-        image: args.image ?? existing.image,
-        rating: args.rating ?? existing.rating,
-        release_date: args.release_date ?? existing.release_date,
-        overview: args.overview ?? existing.overview,
+        ...metadataPatch,
       });
 
       return;
@@ -274,11 +351,7 @@ export const setWatchlistMembership = mutation({
       progressStatus: "watch-later",
       progress: 0,
       updatedAt: now,
-      title: args.title,
-      image: args.image,
-      rating: args.rating,
-      release_date: args.release_date,
-      overview: args.overview,
+      ...buildMetadataPatch(args),
     });
   },
 });
@@ -297,15 +370,8 @@ export const setProgressStatus = mutation({
   },
 
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
-
-    const existing = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-      )
-      .first();
+    const user = await requireCurrentUser(ctx);
+    const existing = await getWatchItem(ctx, user._id, args);
 
     const now = Date.now();
 
@@ -323,11 +389,7 @@ export const setProgressStatus = mutation({
         progressStatus: normalized,
         progress: nextProgress,
         updatedAt: now,
-        title: args.title ?? existing.title,
-        image: args.image ?? existing.image,
-        rating: args.rating ?? existing.rating,
-        release_date: args.release_date ?? existing.release_date,
-        overview: args.overview ?? existing.overview,
+        ...buildMetadataPatch(args, existing),
       });
       return;
     }
@@ -340,11 +402,7 @@ export const setProgressStatus = mutation({
       progressStatus: normalized,
       progress: nextProgress,
       updatedAt: now,
-      title: args.title,
-      image: args.image,
-      rating: args.rating,
-      release_date: args.release_date,
-      overview: args.overview,
+      ...buildMetadataPatch(args),
     });
   },
 });
@@ -363,17 +421,11 @@ export const setReaction = mutation({
   },
 
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
-
-    const existing = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-      )
-      .first();
+    const user = await requireCurrentUser(ctx);
+    const existing = await getWatchItem(ctx, user._id, args);
 
     const now = Date.now();
+    const metadataPatch = buildMetadataPatch(args, existing ?? undefined);
 
     if (existing) {
       const patch: {
@@ -386,11 +438,7 @@ export const setReaction = mutation({
         overview?: string;
       } = {
         updatedAt: now,
-        title: args.title ?? existing.title,
-        image: args.image ?? existing.image,
-        rating: args.rating ?? existing.rating,
-        release_date: args.release_date ?? existing.release_date,
-        overview: args.overview ?? existing.overview,
+        ...metadataPatch,
       };
 
       if (args.clearReaction) patch.reaction = undefined;
@@ -418,11 +466,7 @@ export const setReaction = mutation({
       mediaType: args.mediaType,
       inWatchlist: false,
       updatedAt: now,
-      title: args.title,
-      image: args.image,
-      rating: args.rating,
-      release_date: args.release_date,
-      overview: args.overview,
+      ...buildMetadataPatch(args),
     };
     if (!args.clearReaction && args.reaction !== undefined) {
       doc.reaction = args.reaction;
@@ -446,15 +490,8 @@ export const upsertWatchlistItem = mutation({
   },
 
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
-
-    const existing = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-      )
-      .first();
+    const user = await requireCurrentUser(ctx);
+    const existing = await getWatchItem(ctx, user._id, args);
 
     const now = Date.now();
     const mapped = mapLegacyStatusFields(args.status, args.progress ?? existing?.progress);
@@ -475,11 +512,7 @@ export const upsertWatchlistItem = mutation({
         reaction: mapped.reaction ?? existing.reaction,
         progress,
         updatedAt: now,
-        title: args.title ?? existing.title,
-        image: args.image ?? existing.image,
-        rating: args.rating ?? existing.rating,
-        release_date: args.release_date ?? existing.release_date,
-        overview: args.overview ?? existing.overview,
+        ...buildMetadataPatch(args, existing),
       });
       return;
     }
@@ -494,11 +527,7 @@ export const upsertWatchlistItem = mutation({
       reaction: mapped.reaction,
       progress,
       updatedAt: now,
-      title: args.title,
-      image: args.image,
-      rating: args.rating,
-      release_date: args.release_date,
-      overview: args.overview,
+      ...buildMetadataPatch(args),
     });
   },
 });
@@ -510,15 +539,8 @@ export const removeWatchlistItem = mutation({
   },
 
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
-
-    const existing = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-      )
-      .first();
+    const user = await requireCurrentUser(ctx);
+    const existing = await getWatchItem(ctx, user._id, args);
 
     if (!existing) return;
 
@@ -532,8 +554,7 @@ export const removeWatchlistItem = mutation({
 export const backfillWatchItems = mutation({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireCurrentUser(ctx);
 
     const items = await ctx.db
       .query("watch_items")
@@ -594,29 +615,19 @@ export const markShowEpisodesAndStatus = mutation({
   },
 
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireCurrentUser(ctx);
 
     const now = Date.now();
 
     if (args.progressStatus !== undefined) {
-      const existing = await ctx.db
-        .query("watch_items")
-        .withIndex("by_user_media", (q) =>
-          q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-        )
-        .first();
+      const existing = await getWatchItem(ctx, user._id, args);
 
       if (existing) {
         await ctx.db.patch(existing._id, {
           progressStatus: args.progressStatus,
           progress: args.progress ?? existing.progress,
           updatedAt: now,
-          title: args.title ?? existing.title,
-          image: args.image ?? existing.image,
-          rating: args.rating ?? existing.rating,
-          release_date: args.release_date ?? existing.release_date,
-          overview: args.overview ?? existing.overview,
+          ...buildMetadataPatch(args, existing),
         });
       } else {
         await ctx.db.insert("watch_items", {
@@ -627,23 +638,14 @@ export const markShowEpisodesAndStatus = mutation({
           progressStatus: args.progressStatus,
           progress: args.progress ?? 0,
           updatedAt: now,
-          title: args.title,
-          image: args.image,
-          rating: args.rating,
-          release_date: args.release_date,
-          overview: args.overview,
+          ...buildMetadataPatch(args),
         });
       }
     }
 
-    const allExisting = await ctx.db
-      .query("episode_progress")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId),
-      )
-      .collect();
+    const allExisting = await getEpisodeProgressForShow(ctx, user._id, args.tmdbId);
 
-    const existingMap = new Map<string, (typeof allExisting)[0]>();
+    const existingMap = new Map<string, EpisodeProgress>();
     for (const ep of allExisting) {
       existingMap.set(`${ep.season}:${ep.episode}`, ep);
     }
@@ -657,7 +659,7 @@ export const markShowEpisodesAndStatus = mutation({
           });
         }
       }
-	    } else {
+    } else {
       for (const seasonData of args.seasons) {
         for (const epNum of seasonData.episodes) {
           const key = `${seasonData.season}:${epNum}`;
@@ -698,19 +700,13 @@ export const markSeasonEpisodesWatched = mutation({
   },
 
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireCurrentUser(ctx);
 
     const now = Date.now();
 
-    const allExisting = await ctx.db
-      .query("episode_progress")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId),
-      )
-      .collect();
+    const allExisting = await getEpisodeProgressForShow(ctx, user._id, args.tmdbId);
 
-    const existingMap = new Map<string, (typeof allExisting)[0]>();
+    const existingMap = new Map<string, EpisodeProgress>();
     for (const ep of allExisting) {
       if (ep.season === args.season) {
         existingMap.set(`${ep.season}:${ep.episode}`, ep);
@@ -766,50 +762,15 @@ export const syncEpisodeProgressItem = mutation({
     isWatched: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
-
-    const existing = await ctx.db
-      .query("episode_progress")
-      .withIndex("by_user_episode", (q) =>
-        q
-          .eq("userId", user._id)
-          .eq("tmdbId", args.tmdbId)
-          .eq("season", args.season)
-          .eq("episode", args.episode),
-      )
-      .first();
-
-    const now = Date.now();
-
-    if (existing) {
-      if (existing.isWatched !== args.isWatched) {
-        await ctx.db.patch(existing._id, {
-          isWatched: args.isWatched,
-          updatedAt: now,
-        });
-      }
-      return;
-    }
-
-    if (!args.isWatched) return;
-
-    await ctx.db.insert("episode_progress", {
-      userId: user._id,
-      tmdbId: args.tmdbId,
-      season: args.season,
-      episode: args.episode,
-      isWatched: args.isWatched,
-      updatedAt: now,
-    });
+    const user = await requireCurrentUser(ctx);
+    await syncEpisodeProgressRecord(ctx, user._id, args, Date.now());
   },
 });
 
 export const migrateStatusCategories = mutation({
   args: {},
   handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireCurrentUser(ctx);
 
     const items = await ctx.db
       .query("watch_items")
@@ -853,8 +814,7 @@ export const createCustomList = mutation({
     color: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireCurrentUser(ctx);
 
     const existing = await ctx.db
       .query("lists")
@@ -887,8 +847,7 @@ export const updateCustomList = mutation({
     color: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireCurrentUser(ctx);
 
     const list = await ctx.db.get(args.listId);
     if (!list || list.userId !== user._id) throw new Error("List not found");
@@ -913,8 +872,7 @@ export const updateCustomList = mutation({
 export const deleteCustomList = mutation({
   args: { listId: v.id("lists") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireCurrentUser(ctx);
 
     const list = await ctx.db.get(args.listId);
     if (!list || list.userId !== user._id) throw new Error("List not found");
@@ -997,8 +955,7 @@ export const toggleListItem = mutation({
     overview: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireCurrentUser(ctx);
 
     const items = await ctx.db
       .query("list_items")
@@ -1042,8 +999,7 @@ export const createCustomListAndAddItem = mutation({
     overview: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    const user = await requireCurrentUser(ctx);
 
     const existing = await ctx.db
       .query("lists")

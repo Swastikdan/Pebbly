@@ -2,8 +2,13 @@ import { useUser } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback } from "react";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 const QUERY_SKIP = "skip" as const;
+
+function toListId(listId: string) {
+	return listId as Id<"lists">;
+}
 
 export function useCustomLists() {
 	const { isSignedIn } = useUser();
@@ -23,7 +28,7 @@ export function useCustomListItems(listId: string | null) {
 	const { isSignedIn } = useUser();
 	const items = useQuery(
 		api.watchlist.getListItems,
-		isSignedIn && listId ? { listId: listId as any } : QUERY_SKIP,
+		isSignedIn && listId ? { listId: toListId(listId) } : QUERY_SKIP,
 	);
 
 	return items ?? [];
@@ -44,7 +49,7 @@ export function useDeleteCustomList() {
 
 	return useCallback(
 		async (listId: string) => {
-			await deleteList({ listId: listId as any });
+			await deleteList({ listId: toListId(listId) });
 		},
 		[deleteList],
 	);
