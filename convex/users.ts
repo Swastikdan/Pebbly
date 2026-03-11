@@ -6,6 +6,8 @@ export const store = mutation({
     email: v.optional(v.string()),
     name: v.optional(v.string()),
     image: v.optional(v.string()),
+    role: v.optional(v.string()),
+    aiGenerationEnabled: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -24,6 +26,8 @@ export const store = mutation({
         name: args.name,
         image: args.image,
         email: args.email,
+        role: args.role,
+        aiGenerationEnabled: args.aiGenerationEnabled,
       });
       return existing._id;
     } else {
@@ -32,6 +36,8 @@ export const store = mutation({
         name: args.name,
         image: args.image,
         email: args.email,
+        role: args.role,
+        aiGenerationEnabled: args.aiGenerationEnabled,
       });
       return newUserId;
     }

@@ -25,12 +25,44 @@ type CustomListItemSummary = Pick<
   "listId" | "tmdbId" | "mediaType"
 >;
 
-function hasAiGenerationAccess(user: RecommendationUser) {
-  return user.aiGenerationEnabled === true;
+function parseIdentityPublicMeta(identity: Record<string, unknown> | null) {
+  if (!identity) return null;
+
+  const candidates = [identity["public_meta"], identity["publicMetadata"]];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    if (typeof candidate === "string") {
+      try {
+        const parsed = JSON.parse(candidate) as unknown;
+        if (parsed && typeof parsed === "object") {
+          return parsed as Record<string, unknown>;
+        }
+      } catch {
+        // Ignore malformed metadata claim payloads.
+      }
+      continue;
+    }
+
+    if (typeof candidate === "object") {
+      return candidate as Record<string, unknown>;
+    }
+  }
+
+  return null;
 }
 
-function isAiGenerationExplicitlyDisabled(user: RecommendationUser) {
-  return user.aiGenerationEnabled === false;
+function hasAiGenerationAccess(identity: Record<string, unknown> | null) {
+  const meta = parseIdentityPublicMeta(identity);
+  return meta?.aiGenerationEnabled === true;
+}
+
+function isAiGenerationExplicitlyDisabled(
+  identity: Record<string, unknown> | null,
+) {
+  const meta = parseIdentityPublicMeta(identity);
+  return meta?.aiGenerationEnabled === false;
 }
 
 async function getUserByTokenIdentifier(
@@ -59,14 +91,6 @@ async function requireAuthenticatedUser(
   return user;
 }
 
-async function getAuthenticatedUserOrNull(ctx: RecommendationsContext) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    return null;
-  }
-
-  return getUserByTokenIdentifier(ctx, identity.subject);
-}
 
 async function requireOwnedRecommendationEntry(
   ctx: MutationCtx,
@@ -89,9 +113,17 @@ async function requireOwnedRecommendationEntry(
 export const getAuthorizedUser = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const user = await requireAuthenticatedUser(ctx);
+    const identity = (await ctx.auth.getUserIdentity()) as Record<string, unknown> | null;
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
 
-    if (!hasAiGenerationAccess(user)) {
+    const user = await getUserByTokenIdentifier(ctx, identity.subject as string);
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!hasAiGenerationAccess(identity)) {
       throw new Error("Unauthorized: feature not enabled");
     }
 
@@ -200,12 +232,12 @@ export const setUserRole = internalMutation({
 export const getUserRecommendationAccess = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getAuthenticatedUserOrNull(ctx);
-    if (!user) {
+    const identity = (await ctx.auth.getUserIdentity()) as Record<string, unknown> | null;
+    if (!identity) {
       return { hasAccess: false, reason: "not_authenticated" as const };
     }
 
-    if (!hasAiGenerationAccess(user)) {
+    if (!hasAiGenerationAccess(identity)) {
       return { hasAccess: false, reason: "feature_disabled" as const };
     }
 
@@ -216,8 +248,13 @@ export const getUserRecommendationAccess = query({
 export const getRecommendationHistory = query({
   args: {},
   handler: async (ctx) => {
-    const user = await getAuthenticatedUserOrNull(ctx);
-    if (!user || isAiGenerationExplicitlyDisabled(user)) {
+    const identity = (await ctx.auth.getUserIdentity()) as Record<string, unknown> | null;
+    if (!identity || isAiGenerationExplicitlyDisabled(identity)) {
+      return [];
+    }
+
+    const user = await getUserByTokenIdentifier(ctx, identity.subject as string);
+    if (!user) {
       return [];
     }
 

@@ -14,10 +14,7 @@ import { MediaTitleContainer } from "@/components/media/media-title-container";
 import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { buildSharedMediaPageData } from "@/lib/media-page";
-import {
-	formatRuntime,
-	getMovieCertification,
-} from "@/lib/media-transform";
+import { formatRuntime, getMovieCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getMovieDetails } from "@/lib/queries";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
@@ -130,7 +127,11 @@ function MovieHomePage() {
 				media_type="movie"
 				poster_path={poster_path}
 				rating={vote_average}
-				releaseyear={String(mediaPage.releaseYear) || "Not Released"}
+				releaseyear={
+				mediaPage.releaseYear != null && Number.isFinite(mediaPage.releaseYear)
+					? String(mediaPage.releaseYear)
+					: "Not Released"
+			}
 				release_date={release_date}
 				tagline={tagline ?? null}
 				title={mediaPage.displayTitle}
@@ -171,7 +172,11 @@ function MovieHomePage() {
 			/>
 			{belongs_to_collection && <Collections id={belongs_to_collection.id} />}
 			{keywords && <MediaKeywords keywords={moviekeywords} />}
-			<MediaRecommendations id={id} type="movie" urltitle={mediaPage.urltitle} />
+			<MediaRecommendations
+				id={id}
+				type="movie"
+				urltitle={mediaPage.urltitle}
+			/>
 		</section>
 	);
 }
