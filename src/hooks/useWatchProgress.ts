@@ -49,7 +49,7 @@ interface PlayerEventPayload {
 	data: {
 		event: "timeupdate" | "play" | "pause" | "ended" | "seeked";
 		currentTime: number;
-			duration: number;
+		duration: number;
 		progress: number;
 		id: string;
 		mediaType: "movie" | "tv";
@@ -68,21 +68,49 @@ function makeEpisodeKey(
 
 const QUERY_SKIP = "skip" as const;
 
+
+function isNonNegativeIntegerLike(value: unknown): boolean {
+	if (typeof value === "number") return Number.isInteger(value) && value >= 0;
+	if (typeof value !== "string") return false;
+	if (!/^\d+$/.test(value)) return false;
+	const parsed = Number(value);
+	return Number.isFinite(parsed) && Number.isInteger(parsed) && parsed >= 0;
+}
+
+function isFiniteIntegerString(value: unknown): value is string {
+	if (typeof value !== "string") return false;
+	if (!/^\d+$/.test(value)) return false;
+	const parsed = Number(value);
+	return Number.isFinite(parsed) && Number.isInteger(parsed);
+}
+
 function isPlayerEventPayload(value: unknown): value is PlayerEventPayload {
 	if (!value || typeof value !== "object") return false;
 
 	const payload = value as Partial<PlayerEventPayload>;
 	const data = payload.data;
 
-	return (
-		payload.type === "PLAYER_EVENT" &&
-		!!data &&
-		typeof data === "object" &&
-		typeof data.id === "string" &&
-		(data.mediaType === "movie" || data.mediaType === "tv") &&
-		typeof data.currentTime === "number" &&
-		typeof data.progress === "number"
-	);
+	if (
+		payload.type !== "PLAYER_EVENT" ||
+		!data ||
+		typeof data !== "object" ||
+		!isFiniteIntegerString(data.id) ||
+		(data.mediaType !== "movie" && data.mediaType !== "tv") ||
+		typeof data.currentTime !== "number" ||
+		typeof data.progress !== "number"
+	) {
+		return false;
+	}
+
+	if (data.season !== undefined && !isNonNegativeIntegerLike(data.season)) {
+		return false;
+	}
+
+	if (data.episode !== undefined && !isNonNegativeIntegerLike(data.episode)) {
+		return false;
+	}
+
+	return true;
 }
 
 function parsePlayerEventPayload(message: unknown) {
@@ -100,7 +128,10 @@ function logWatchProgressError(action: string, error: unknown) {
 	console.error(`Failed to ${action}`, error);
 }
 
-function buildLocalShowMetadata(tvId: number | string, showMeta?: ShowMetadata) {
+function buildLocalShowMetadata(
+	tvId: number | string,
+	showMeta?: ShowMetadata,
+) {
 	return {
 		title: showMeta?.title ?? `TV Show ${tvId}`,
 		image: showMeta?.image ?? "",
@@ -144,8 +175,31 @@ export function usePlayerProgressListener() {
 		let lastSavedPercent = 0;
 
 		function handleMessage(event: MessageEvent) {
+			const trustedPlayerIframes = Array.from(
+				document.querySelectorAll<HTMLIFrameElement>('iframe[src*="/embed/"]'),
+			);
+			const expectedOrigins = trustedPlayerIframes
+				.map((frame) => {
+					try {
+						return new URL(frame.src, window.location.href).origin;
+					} catch {
+						return null;
+					}
+				})
+				.filter((origin): origin is string => Boolean(origin));
+			const hasTrustedSource = trustedPlayerIframes.some(
+				(frame) => frame.contentWindow != null && frame.contentWindow === event.source,
+			);
+
+			if (
+				!hasTrustedSource &&
+				(expectedOrigins.length === 0 || !expectedOrigins.includes(event.origin))
+			) {
+				return;
+			}
+
 			const payload = parsePlayerEventPayload(event.data);
-			if (!payload) return;
+			if (!payload || payload.type !== "PLAYER_EVENT") return;
 
 			const {
 				id,
@@ -303,14 +357,7 @@ export function useEpisodeWatched(
 	);
 	const localShowMetadata = useMemo(
 		() => buildLocalShowMetadata(tvId, showMeta),
-		[
-			showMeta?.image,
-			showMeta?.overview,
-			showMeta?.rating,
-			showMeta?.release_date,
-			showMeta?.title,
-			tvId,
-		],
+		[tvId, showMeta],
 	);
 	const remoteShowMetadata = useMemo(
 		() => ({
@@ -320,14 +367,7 @@ export function useEpisodeWatched(
 			release_date: showMeta?.release_date ?? "",
 			overview: showMeta?.overview,
 		}),
-		[
-			showMeta?.image,
-			showMeta?.overview,
-			showMeta?.rating,
-			showMeta?.release_date,
-			showMeta?.title,
-			tvId,
-		],
+		[tvId, showMeta],
 	);
 
 	const watchedMap = useMemo(() => {
@@ -358,7 +398,8 @@ export function useEpisodeWatched(
 		api.watchlist.markEpisodeWatched,
 	).withOptimisticUpdate((localStore, args) => {
 		const current =
-			localStore.getQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }) ?? [];
+			localStore.getQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }) ??
+			[];
 
 		if (!args.isWatched) {
 			localStore.setQuery(
@@ -367,8 +408,7 @@ export function useEpisodeWatched(
 				current.filter(
 					(episode) =>
 						!(
-							episode.season === args.season &&
-							episode.episode === args.episode
+							episode.season === args.season && episode.episode === args.episode
 						),
 				),
 			);
@@ -400,14 +440,22 @@ export function useEpisodeWatched(
 		api.watchlist.markSeasonEpisodesWatched,
 	).withOptimisticUpdate((localStore, args) => {
 		const current =
-			localStore.getQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }) ?? [];
+			localStore.getQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }) ??
+			[];
 		const filtered = current.filter(
 			(episode) =>
-				!(episode.season === args.season && args.episodes.includes(episode.episode)),
+				!(
+					episode.season === args.season &&
+					args.episodes.includes(episode.episode)
+				),
 		);
 
 		if (!args.isWatched) {
-			localStore.setQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }, filtered);
+			localStore.setQuery(
+				api.watchlist.getAllWatchedEpisodes,
+				{ tmdbId },
+				filtered,
+			);
 			return;
 		}
 
@@ -493,7 +541,12 @@ export function useEpisodeWatched(
 							logWatchProgressError("sync TV progress", error),
 						);
 					} else {
-						setProgressLocal(String(tvId), "tv", nextProgress, localShowMetadata);
+						setProgressLocal(
+							String(tvId),
+							"tv",
+							nextProgress,
+							localShowMetadata,
+						);
 					}
 				}
 				return;
@@ -517,9 +570,7 @@ export function useEpisodeWatched(
 						tmdbId,
 						mediaType: "tv",
 						progress: nextProgress,
-					}).catch((error) =>
-						logWatchProgressError("sync TV progress", error),
-					);
+					}).catch((error) => logWatchProgressError("sync TV progress", error));
 				}
 
 				return;
@@ -703,7 +754,13 @@ export function useEpisodeWatched(
 				return;
 			}
 
-			setProgressStatusLocal(String(tvId), "tv", "done", 100, localShowMetadata);
+			setProgressStatusLocal(
+				String(tvId),
+				"tv",
+				"done",
+				100,
+				localShowMetadata,
+			);
 		},
 		[
 			isSignedIn,

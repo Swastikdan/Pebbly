@@ -14,6 +14,12 @@ import { ArrowRightLine, Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
+import {
+	getImageDialogKey,
+	type MediaDialogKey,
+	type MediaDialogSearch,
+	updateDialogSearch,
+} from "@/lib/media-dialog-helpers";
 
 interface VideoItem {
 	key: string;
@@ -40,12 +46,6 @@ interface MediaContainerProps {
 	type: "movie" | "tv";
 }
 
-type MediaDialogSearch = Record<string, unknown>;
-type MediaDialogKey = "video" | "backdrop" | "poster";
-
-function getImageDialogKey(imagePath?: string) {
-	return imagePath?.split("/").pop()?.replace(/\.[^/.]+$/, "");
-}
 
 export const MediaContainer = (props: MediaContainerProps) => {
 	const {
@@ -63,17 +63,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 
 	const search = useSearch({ strict: false }) as MediaDialogSearch;
 	const navigate = useNavigate();
+	const navigateDialogSearch = (options: unknown) => navigate(options as never);
 
-	const updateDialogSearch = (key: MediaDialogKey, value?: string) => {
-		navigate({
-			search: (prev: MediaDialogSearch) => ({
-				...prev,
-				[key]: value,
-			}),
-			resetScroll: false,
-			replace: true,
-		});
-	};
+	const onUpdateDialogSearch = (key: MediaDialogKey, value?: string) =>
+		updateDialogSearch(navigateDialogSearch, key, value);
 
 	const hasVideos = youtubeclips.length > 0;
 	const hasBackdrops = backdrops.length > 0;
@@ -134,7 +127,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 										key={video.key}
 										open={search.video === video.key}
 										onOpenChange={(isOpen) =>
-											updateDialogSearch("video", isOpen ? video.key : undefined)
+											onUpdateDialogSearch(
+												"video",
+												isOpen ? video.key : undefined,
+											)
 										}
 									>
 										<DialogTrigger asChild>
@@ -183,10 +179,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 															className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
-															updateDialogSearch(
-																"video",
-																youtubeclips[index - 1].key,
-															);
+																		onUpdateDialogSearch(
+																	"video",
+																	youtubeclips[index - 1].key,
+																);
 															}}
 														>
 															<ChevronLeft className="size-6" />
@@ -200,10 +196,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 															className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
-															updateDialogSearch(
-																"video",
-																youtubeclips[index + 1].key,
-															);
+																		onUpdateDialogSearch(
+																	"video",
+																	youtubeclips[index + 1].key,
+																);
 															}}
 														>
 															<ChevronRight className="size-6" />
@@ -235,16 +231,16 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
-									{backdrops.map((image, index) => {
-										const imagePathClean = getImageDialogKey(
-											image.backdrop_image,
-										);
+								{backdrops.map((image, index) => {
+									const imagePathClean = getImageDialogKey(
+										image.backdrop_image,
+									);
 									return (
 										<Dialog
 											key={`backdrop-${index}`}
 											open={search.backdrop === imagePathClean}
 											onOpenChange={(isOpen) =>
-												updateDialogSearch(
+															onUpdateDialogSearch(
 													"backdrop",
 													isOpen ? imagePathClean : undefined,
 												)
@@ -280,10 +276,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-															updateDialogSearch(
-																"backdrop",
-																getImageDialogKey(backdrops[index - 1].backdrop_image),
-															);
+																			onUpdateDialogSearch(
+																		"backdrop",
+																		getImageDialogKey(
+																			backdrops[index - 1].backdrop_image,
+																		),
+																	);
 																}}
 															>
 																<ChevronLeft className="size-6" />
@@ -297,10 +295,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-															updateDialogSearch(
-																"backdrop",
-																getImageDialogKey(backdrops[index + 1].backdrop_image),
-															);
+																			onUpdateDialogSearch(
+																		"backdrop",
+																		getImageDialogKey(
+																			backdrops[index + 1].backdrop_image,
+																		),
+																	);
 																}}
 															>
 																<ChevronRight className="size-6" />
@@ -333,14 +333,14 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
-									{posters.map((image, index) => {
-										const imagePathClean = getImageDialogKey(image.poster_image);
+								{posters.map((image, index) => {
+									const imagePathClean = getImageDialogKey(image.poster_image);
 									return (
 										<Dialog
 											key={`poster-${index}`}
 											open={search.poster === imagePathClean}
 											onOpenChange={(isOpen) =>
-												updateDialogSearch(
+															onUpdateDialogSearch(
 													"poster",
 													isOpen ? imagePathClean : undefined,
 												)
@@ -376,10 +376,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-															updateDialogSearch(
-																"poster",
-																getImageDialogKey(posters[index - 1].poster_image),
-															);
+																			onUpdateDialogSearch(
+																		"poster",
+																		getImageDialogKey(
+																			posters[index - 1].poster_image,
+																		),
+																	);
 																}}
 															>
 																<ChevronLeft className="size-6" />
@@ -393,10 +395,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-															updateDialogSearch(
-																"poster",
-																getImageDialogKey(posters[index + 1].poster_image),
-															);
+																			onUpdateDialogSearch(
+																		"poster",
+																		getImageDialogKey(
+																			posters[index + 1].poster_image,
+																		),
+																	);
 																}}
 															>
 																<ChevronRight className="size-6" />

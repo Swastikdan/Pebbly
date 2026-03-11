@@ -15,9 +15,7 @@ import { VITE_PUBLIC_APP_URL } from "@/constants";
 
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { buildSharedMediaPageData } from "@/lib/media-page";
-import {
-	getTvCertification,
-} from "@/lib/media-transform";
+import { getTvCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
@@ -131,7 +129,11 @@ function TvHomePage() {
 				media_type="tv"
 				poster_path={poster_path}
 				rating={vote_average}
-				releaseyear={String(mediaPage.releaseYear) || "Not Released"}
+				releaseyear={
+				mediaPage.releaseYear != null && Number.isFinite(mediaPage.releaseYear)
+					? String(mediaPage.releaseYear)
+					: "Not Released"
+			}
 				release_date={release_date}
 				tagline={tagline ?? null}
 				title={mediaPage.displayTitle}

@@ -28,6 +28,13 @@ type SharedMediaPageInput = {
 	};
 };
 
+
+function parseReleaseYear(date?: string | null): number | null {
+	if (!date) return null;
+	const year = new Date(date).getFullYear();
+	return Number.isNaN(year) ? null : year;
+}
+
 export function buildSharedMediaPageData(input: SharedMediaPageInput) {
 	const displayTitle = input.title ?? input.originalTitle ?? "Unknown Title";
 
@@ -35,9 +42,7 @@ export function buildSharedMediaPageData(input: SharedMediaPageInput) {
 		urltitle: formatMediaTitle.encode(displayTitle),
 		displayTitle,
 		image: getPosterImage(input.posterPath ?? undefined),
-		releaseYear: input.releaseDate
-			? new Date(input.releaseDate).getFullYear()
-			: null,
+		releaseYear: parseReleaseYear(input.releaseDate),
 		genres: mapGenres(input.genres),
 		cast: mapCast(input.credits?.cast),
 		crew: mapCrew(input.credits?.crew),

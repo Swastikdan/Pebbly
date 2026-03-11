@@ -21,8 +21,13 @@ function logRecommendationError(action: string, error: unknown) {
 	console.error(`Failed to ${action}`, error);
 }
 
-function parseRecommendationPayload(payload: string) {
-	return JSON.parse(payload) as AIRecommendation[];
+function parseRecommendationPayload(payload: string): AIRecommendation[] {
+	try {
+		return JSON.parse(payload) as AIRecommendation[];
+	} catch (error) {
+		console.error("Failed to parse recommendations payload", error);
+		return [];
+	}
 }
 
 export function useRecommendationAccess() {
