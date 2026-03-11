@@ -82,7 +82,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
-				<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60 group-hover:shadow-lg group-hover:shadow-black/8 dark:ring-white/[0.06] dark:group-hover:ring-white/10">
+				<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60  dark:ring-white/[0.06] dark:group-hover:ring-white/10">
 					<Image
 						alt={title}
 						src={imageUrl}
@@ -162,7 +162,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
-				<div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60 group-hover:shadow-lg group-hover:shadow-black/8 dark:ring-white/[0.06] dark:group-hover:ring-white/10">
+				<div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60 dark:ring-white/[0.06] dark:group-hover:ring-white/10">
 					<Image
 						alt={title}
 						src={imageUrl}
@@ -228,7 +228,7 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 			params={{ id: String(id) }}
 			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 		>
-			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60 group-hover:shadow-md dark:ring-white/[0.06] dark:group-hover:ring-white/10">
+			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60  dark:ring-white/[0.06] dark:group-hover:ring-white/10">
 				<Image
 					alt={name}
 					src={imageUrl}

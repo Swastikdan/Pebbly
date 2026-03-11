@@ -1,6 +1,7 @@
 /** Modal dialog that embeds the video player in an iframe for movies and TV episodes. */
 import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -67,10 +68,11 @@ export function VideoPlayerModal({
 		>
 			<DialogTrigger asChild>
 				{variant === "card" ? (
-					<button
+					<Button
 						type="button"
+						variant="ghost"
 						className={cn(
-							"group/play absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 hover:opacity-100 focus-visible:opacity-100",
+							"group/play absolute inset-0 z-10 size-full opacity-0 p-0 transition-opacity duration-300 hover:bg-transparent hover:opacity-100 focus-visible:opacity-100",
 							className,
 						)}
 						aria-label={`Play ${title}`}
@@ -83,9 +85,9 @@ export function VideoPlayerModal({
 						<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover/play:scale-110 group-hover/play:bg-black/80">
 							<Play className="size-6 fill-white text-white drop-" />
 						</div>
-					</button>
+					</Button>
 				) : variant === "episode" ? (
-					<button
+					<Button
 						type="button"
 						className={cn(
 							"pressable inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background  transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
@@ -95,9 +97,9 @@ export function VideoPlayerModal({
 					>
 						<Play className="size-4 fill-current" />
 						{label}
-					</button>
+					</Button>
 				) : (
-					<button
+					<Button
 						type="button"
 						className={cn(
 							"pressable inline-flex items-center gap-2.5 rounded-2xl bg-foreground px-7 py-3.5 text-base font-semibold text-background  transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
@@ -107,7 +109,7 @@ export function VideoPlayerModal({
 					>
 						<Play className="size-5 fill-current" />
 						{label}
-					</button>
+					</Button>
 				)}
 			</DialogTrigger>
 			<DialogContent className="aspect-video w-full max-w-[95vw] overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]">

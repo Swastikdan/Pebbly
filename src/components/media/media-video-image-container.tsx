@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
 import { ScrollContainer } from "@/components/scroll-container";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -85,14 +86,16 @@ export const MediaVideoImageContainer = (props: {
 											...prev,
 											video: isOpen ? video.key : undefined,
 										})) as any,
+										resetScroll: false,
 										replace: true,
 									})
 								}
 							>
 								<DialogTrigger asChild>
-									<button
+									<Button
 										type="button"
-										className="group relative cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+										variant="ghost"
+										className="group relative h-auto cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start ring-offset-background hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 									>
 										<Image
 											alt={video.name}
@@ -114,7 +117,7 @@ export const MediaVideoImageContainer = (props: {
 												<Play className="size-6 fill-white text-white" />
 											</div>
 										</div>
-									</button>
+									</Button>
 								</DialogTrigger>
 								<DialogOverlay className="bg-white/40 backdrop-blur-lg dark:bg-black/0">
 									<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0">
@@ -130,9 +133,11 @@ export const MediaVideoImageContainer = (props: {
 												title={video.name}
 											/>
 											{index > 0 && (
-												<button
+												<Button
 													type="button"
-													className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+													variant="ghost"
+													size="icon"
+													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
 														navigate({
@@ -140,17 +145,20 @@ export const MediaVideoImageContainer = (props: {
 																...prev,
 																video: mediaVideos[index - 1].key,
 															})) as any,
+															resetScroll: false,
 															replace: true,
 														});
 													}}
 												>
 													<ChevronLeft className="size-6" />
-												</button>
+												</Button>
 											)}
 											{index < mediaVideos.length - 1 && (
-												<button
+												<Button
 													type="button"
-													className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+													variant="ghost"
+													size="icon"
+													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
 														navigate({
@@ -158,12 +166,13 @@ export const MediaVideoImageContainer = (props: {
 																...prev,
 																video: mediaVideos[index + 1].key,
 															})) as any,
+															resetScroll: false,
 															replace: true,
 														});
 													}}
 												>
 													<ChevronRight className="size-6" />
-												</button>
+												</Button>
 											)}
 										</div>
 									</DialogContent>
@@ -191,6 +200,7 @@ export const MediaVideoImageContainer = (props: {
 													...prev,
 													backdrop: isOpen ? imagePathClean : undefined,
 												}),
+												resetScroll: false,
 												replace: true,
 											} as any)
 										}
@@ -220,9 +230,11 @@ export const MediaVideoImageContainer = (props: {
 														width={450}
 													/>
 													{index > 0 && (
-														<button
+														<Button
 															type="button"
-															className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															variant="ghost"
+															size="icon"
+															className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
 																const prevImg =
@@ -239,19 +251,22 @@ export const MediaVideoImageContainer = (props: {
 																			...prev,
 																			backdrop: prevClean,
 																		}),
+																		resetScroll: false,
 																		replace: true,
 																	} as any);
 																}
 															}}
 														>
 															<ChevronLeft className="size-6" />
-														</button>
+														</Button>
 													)}
 													{index <
 														(mediaImages?.backdrops?.length || 0) - 1 && (
-														<button
+														<Button
 															type="button"
-															className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															variant="ghost"
+															size="icon"
+															className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
 																const nextImg =
@@ -268,13 +283,14 @@ export const MediaVideoImageContainer = (props: {
 																			...prev,
 																			backdrop: nextClean,
 																		}),
+																		resetScroll: false,
 																		replace: true,
 																	} as any);
 																}
 															}}
 														>
 															<ChevronRight className="size-6" />
-														</button>
+														</Button>
 													)}
 												</div>
 											</DialogContent>
@@ -299,6 +315,7 @@ export const MediaVideoImageContainer = (props: {
 													...prev,
 													poster: isOpen ? imagePathClean : undefined,
 												}),
+												resetScroll: false,
 												replace: true,
 											} as any)
 										}
@@ -328,9 +345,11 @@ export const MediaVideoImageContainer = (props: {
 														width={450}
 													/>
 													{index > 0 && (
-														<button
+														<Button
 															type="button"
-															className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															variant="ghost"
+															size="icon"
+															className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
 																const prevImg =
@@ -347,18 +366,21 @@ export const MediaVideoImageContainer = (props: {
 																			...prev,
 																			poster: prevClean,
 																		}),
+																		resetScroll: false,
 																		replace: true,
 																	} as any);
 																}
 															}}
 														>
 															<ChevronLeft className="size-6" />
-														</button>
+														</Button>
 													)}
 													{index < (mediaImages?.posters?.length || 0) - 1 && (
-														<button
+														<Button
 															type="button"
-															className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+															variant="ghost"
+															size="icon"
+															className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
 																const nextImg =
@@ -375,13 +397,14 @@ export const MediaVideoImageContainer = (props: {
 																			...prev,
 																			poster: nextClean,
 																		}),
+																		resetScroll: false,
 																		replace: true,
 																	} as any);
 																}
 															}}
 														>
 															<ChevronRight className="size-6" />
-														</button>
+														</Button>
 													)}
 												</div>
 											</DialogContent>

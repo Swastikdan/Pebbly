@@ -1,6 +1,7 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ScrollContainer } from "@/components/scroll-container";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -79,14 +80,16 @@ export function MediaPosterTrailerContainer(props: {
 											...prev,
 											trailer: isOpen ? video.key : undefined,
 										}),
+										resetScroll: false,
 										replace: true,
 									} as any)
 								}
 							>
 								<DialogTrigger asChild>
-									<button
+									<Button
 										type="button"
-										className="group relative cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+										variant="ghost"
+										className="group relative h-auto cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start ring-offset-background hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 									>
 										<Image
 											alt={video.name}
@@ -103,7 +106,7 @@ export function MediaPosterTrailerContainer(props: {
 												<Play className="size-6 fill-white text-white" />
 											</div>
 										</div>
-									</button>
+									</Button>
 								</DialogTrigger>
 								<DialogOverlay className="bg-black/80 backdrop-blur-md">
 									<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0">
@@ -119,9 +122,11 @@ export function MediaPosterTrailerContainer(props: {
 												title={video.name}
 											/>
 											{index > 0 && (
-												<button
+												<Button
 													type="button"
-													className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+													variant="ghost"
+													size="icon"
+													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
 														navigate({
@@ -129,17 +134,20 @@ export function MediaPosterTrailerContainer(props: {
 																...prev,
 																trailer: trailervideos[index - 1].key,
 															}),
+															resetScroll: false,
 															replace: true,
 														} as any);
 													}}
 												>
 													<ChevronLeft className="size-6" />
-												</button>
+												</Button>
 											)}
 											{index < trailervideos.length - 1 && (
-												<button
+												<Button
 													type="button"
-													className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors z-50 ring-0 focus:outline-none"
+													variant="ghost"
+													size="icon"
+													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
 														navigate({
@@ -147,12 +155,13 @@ export function MediaPosterTrailerContainer(props: {
 																...prev,
 																trailer: trailervideos[index + 1].key,
 															}),
+															resetScroll: false,
 															replace: true,
 														} as any);
 													}}
 												>
 													<ChevronRight className="size-6" />
-												</button>
+												</Button>
 											)}
 										</div>
 									</DialogContent>

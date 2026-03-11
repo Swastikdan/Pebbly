@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { REACTION_OPTIONS } from "@/constants/watchlist";
 import { cn } from "@/lib/utils";
 import type { ReactionStatus } from "@/types";
@@ -14,13 +15,15 @@ export function ReactionSelector({
 			{REACTION_OPTIONS.map((option) => {
 				const isSelected = value === option.value;
 				return (
-					<button
+					<Button
 						key={option.value}
 						type="button"
+						variant="ghost"
+						size="icon"
 						aria-label={option.label}
 						aria-pressed={isSelected}
 						className={cn(
-							"flex size-8 items-center justify-center rounded-lg text-base transition-all hover:bg-accent",
+							"size-8 rounded-lg p-0 text-base transition-all hover:bg-accent",
 							isSelected && "bg-accent ring-1 ring-foreground/20",
 						)}
 						onClick={(e) => {
@@ -30,7 +33,7 @@ export function ReactionSelector({
 						}}
 					>
 						<option.icon size={16} />
-					</button>
+					</Button>
 				);
 			})}
 		</div>

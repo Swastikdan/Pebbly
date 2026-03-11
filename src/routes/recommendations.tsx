@@ -482,29 +482,10 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 						<Button
 							type="button"
 							variant={showAdvancedOptions ? "outline" : "ghost"}
-							className="gap-1.5 h-9 w-[132px] text-xs justify-center shrink-0"
+							className="gap-1.5 h-9 w-9 text-xs justify-center shrink-0"
 							onClick={() => setShowAdvancedOptions((prev) => !prev)}
 						>
 							<SlidersHorizontal className="size-3.5" />
-							<span className="relative inline-flex w-[72px] justify-center">
-								<span
-									className={cn(
-										"absolute inset-0 transition-opacity",
-										showAdvancedOptions ? "opacity-100" : "opacity-0",
-									)}
-								>
-									Simple
-								</span>
-								<span
-									className={cn(
-										"absolute inset-0 transition-opacity",
-										showAdvancedOptions ? "opacity-0" : "opacity-100",
-									)}
-								>
-									Full options
-								</span>
-								<span className="invisible">Full options</span>
-							</span>
 						</Button>
 					</div>
 
@@ -539,11 +520,14 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 								Era
 							</span>
 							{ERA_PRESETS.map((era) => (
-								<button
+								<Button
 									key={era.label}
 									type="button"
+									variant={
+										selectedEras.includes(era.label) ? "default" : "ghost"
+									}
 									className={cn(
-										"rounded-lg px-2.5 py-1 text-xs font-medium transition-colors shrink-0",
+										"h-auto rounded-lg px-2.5 py-1 text-xs font-medium transition-colors shrink-0",
 										selectedEras.includes(era.label)
 											? "bg-foreground text-background"
 											: "bg-secondary/60 text-muted-foreground hover:bg-secondary",
@@ -551,7 +535,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 									onClick={() => toggleEra(era.label)}
 								>
 									{era.label}
-								</button>
+								</Button>
 							))}
 						</div>
 
@@ -585,13 +569,14 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 					watchlist.length === 0 && (
 						<p className="text-[13px] text-muted-foreground animate-in fade-in slide-in-from-top-1">
 							Your watchlist is empty. Add some titles first or try generating{" "}
-							<button
+							<Button
 								type="button"
+								variant="link"
 								onClick={() => setGenMode("genre")}
-								className="text-foreground underline underline-offset-2"
+								className="h-auto p-0 text-foreground underline underline-offset-2"
 							>
 								By Genre
-							</button>
+							</Button>
 							.
 						</p>
 					)}
@@ -600,11 +585,14 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 				{genMode === "genre" && (
 					<div className="flex flex-wrap gap-1.5">
 						{POPULAR_GENRES.map((genre) => (
-							<button
+							<Button
 								key={genre.id}
 								type="button"
+								variant={
+									selectedGenres.includes(genre.name) ? "default" : "ghost"
+								}
 								className={cn(
-									"rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
+									"h-auto rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
 									selectedGenres.includes(genre.name)
 										? "bg-foreground text-background"
 										: "bg-secondary/60 text-muted-foreground hover:bg-secondary",
@@ -612,7 +600,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 								onClick={() => toggleGenre(genre.name)}
 							>
 								{genre.name}
-							</button>
+							</Button>
 						))}
 					</div>
 				)}
@@ -1185,9 +1173,10 @@ function RecommendationCard({
 	// ── Fallback card — could not be verified ──
 	return (
 		<div className="group/card w-40 md:w-44 lg:w-48">
-			<button
+			<Button
 				type="button"
-				className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 text-left cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] "
+				variant="ghost"
+				className="relative aspect-[2/3] h-auto w-full overflow-hidden rounded-xl bg-muted p-0 text-left ring-1 ring-border/40 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-muted"
 				onClick={() => navigate({ to: "/search", search: { query: title } })}
 			>
 				{/* Top badges */}
@@ -1218,7 +1207,7 @@ function RecommendationCard({
 						Search
 					</span>
 				</div>
-			</button>
+			</Button>
 		</div>
 	);
 }

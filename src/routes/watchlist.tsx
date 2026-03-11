@@ -47,6 +47,7 @@ import {
 	Upload,
 } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -333,7 +334,7 @@ function WatchlistTabContent() {
 						onClick={handleImportClick}
 						aria-label="Import watchlist"
 					>
-						<input
+						<Input
 							ref={fileInputRef}
 							accept=".json,application/json"
 							className="hidden"
@@ -368,12 +369,13 @@ function WatchlistTabContent() {
 						{primaryTabs.map((tab) => {
 							const isActive = activeFilter === tab.value;
 							return (
-								<button
+								<Button
 									key={tab.value}
 									type="button"
+									variant={isActive ? "default" : "ghost"}
 									onClick={() => setActiveFilter(tab.value)}
 									className={cn(
-										"inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
+										"h-auto items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
 										isActive
 											? "bg-foreground text-background"
 											: "text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -388,15 +390,16 @@ function WatchlistTabContent() {
 									>
 										{counts[tab.value as keyof typeof counts] ?? 0}
 									</span>
-								</button>
+								</Button>
 							);
 						})}
 						{showDroppedTab && (
-							<button
+							<Button
 								type="button"
+								variant={activeFilter === "dropped" ? "default" : "ghost"}
 								onClick={() => setActiveFilter("dropped")}
 								className={cn(
-									"inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
+									"h-auto items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
 									activeFilter === "dropped"
 										? "bg-foreground text-background"
 										: "text-muted-foreground/60 hover:bg-secondary hover:text-foreground",
@@ -406,7 +409,7 @@ function WatchlistTabContent() {
 								<span className="text-[10px] tabular-nums opacity-50">
 									{counts.dropped}
 								</span>
-							</button>
+							</Button>
 						)}
 					</div>
 
@@ -505,14 +508,15 @@ function WatchlistTabContent() {
 					</Select>
 
 					{activeSecondaryCount > 0 && (
-						<button
+						<Button
 							type="button"
+							variant="ghost"
 							onClick={resetSecondaryFilters}
-							className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+							className="h-auto items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-transparent hover:text-foreground"
 						>
 							<X size={12} />
 							Reset
-						</button>
+						</Button>
 					)}
 				</div>
 			</div>
@@ -837,10 +841,11 @@ function CustomListCard({
 }) {
 	return (
 		<div className="relative group rounded-2xl border border-border/40 bg-card transition-colors hover:border-border/70 hover:shadow-sm">
-			<button
+			<Button
 				type="button"
+				variant="ghost"
 				onClick={onClick}
-				className="flex w-full items-center gap-4 p-4 text-left"
+				className="h-auto w-full justify-start gap-4 p-4 text-left hover:bg-transparent"
 			>
 				<div
 					className="flex size-12 shrink-0 items-center justify-center rounded-xl"
@@ -869,17 +874,19 @@ function CustomListCard({
 						})}
 					</p>
 				</div>
-			</button>
+			</Button>
 
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<button
+					<Button
 						type="button"
-						className="absolute right-3 top-1/2 -translate-y-1/2 shrink-0 rounded-lg p-2 text-muted-foreground/40 transition-colors hover:bg-secondary hover:text-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+						variant="ghost"
+						size="icon"
+						className="absolute right-3 top-1/2 shrink-0 -translate-y-1/2 rounded-lg p-2 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-secondary hover:text-foreground focus-visible:opacity-100"
 						aria-label={`Options for ${list.name}`}
 					>
 						<EllipsisVertical size={16} />
-					</button>
+					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-36 rounded-xl">
 					<DropdownMenuItem
@@ -993,14 +1000,16 @@ function CustomListMediaCard({
 							</h3>
 						</Link>
 
-						<button
+						<Button
 							type="button"
-							className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+							variant="ghost"
+							size="icon"
+							className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
 							aria-label={`Remove from list`}
 							onClick={handleRemove}
 						>
 							<TrashBin size={14} />
-						</button>
+						</Button>
 					</div>
 
 					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -1102,14 +1111,16 @@ function WatchlistCard({
 							</h3>
 						</Link>
 
-						<button
+						<Button
 							type="button"
+							variant="ghost"
+							size="icon"
 							className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive"
 							aria-label={`Remove ${item.title} from watchlist`}
 							onClick={() => onRemoveFromWatchlist(item)}
 						>
 							<TrashBin size={14} />
-						</button>
+						</Button>
 					</div>
 
 					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">

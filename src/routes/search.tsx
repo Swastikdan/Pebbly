@@ -404,16 +404,17 @@ function SearchHistory({
 				<h3 className="text-sm font-medium text-muted-foreground">
 					Recent searches
 				</h3>
-				<button
+				<Button
 					type="button"
+					variant="ghost"
 					onClick={() => {
 						clearSearchHistory();
 						setHistory([]);
 					}}
-					className="text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
+					className="h-auto p-0 text-xs text-muted-foreground/60 transition-colors hover:bg-transparent hover:text-foreground"
 				>
 					Clear all
-				</button>
+				</Button>
 			</div>
 			<div className="flex flex-wrap gap-1.5">
 				{history.map((item) => (
@@ -421,9 +422,10 @@ function SearchHistory({
 						key={item}
 						className="group flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-sm transition-colors hover:bg-secondary"
 					>
-						<button
+						<Button
 							type="button"
-							className="cursor-pointer"
+							variant="ghost"
+							className="h-auto cursor-pointer p-0 hover:bg-transparent"
 							onClick={() =>
 								navigate({
 									to: "/search",
@@ -432,10 +434,12 @@ function SearchHistory({
 							}
 						>
 							{item}
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
-							className="cursor-pointer opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100"
+							variant="ghost"
+							size="icon"
+							className="size-4 cursor-pointer p-0 opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100 hover:bg-transparent"
 							onClick={() => {
 								removeFromSearchHistory(item);
 								setHistory((prev) => prev.filter((h) => h !== item));
@@ -443,7 +447,7 @@ function SearchHistory({
 							aria-label={`Remove "${item}" from history`}
 						>
 							<XCircleIcon size={14} />
-						</button>
+						</Button>
 					</div>
 				))}
 			</div>

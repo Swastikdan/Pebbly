@@ -9,6 +9,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -145,13 +147,13 @@ export function CustomListDialog({
 
 					{/* Name input */}
 					<div className="space-y-2">
-						<label
+						<Label
 							htmlFor={listNameId}
 							className="text-xs font-medium text-muted-foreground"
 						>
 							Name
-						</label>
-						<input
+						</Label>
+						<Input
 							id={listNameId}
 							type="text"
 							placeholder="e.g. Weekend Binge, Sci-Fi Picks..."
@@ -166,10 +168,10 @@ export function CustomListDialog({
 							maxLength={50}
 							autoFocus
 							className={cn(
-								"w-full rounded-xl border bg-secondary/30 px-4 py-3 text-sm",
+								"h-auto w-full rounded-xl border bg-secondary/30 px-4 py-3 text-sm",
 								"placeholder:text-muted-foreground/40",
-								"outline-none transition-all duration-200",
-								"focus:border-foreground/20 focus:bg-secondary/50 focus:ring-1 focus:ring-foreground/10",
+								"transition-all duration-200",
+								"focus-visible:border-foreground/20 focus-visible:bg-secondary/50 focus-visible:ring-1 focus-visible:ring-foreground/10",
 								error ? "border-destructive/50" : "border-border/50",
 							)}
 						/>
@@ -209,11 +211,14 @@ export function CustomListDialog({
 							{PRESET_COLORS.map((c) => {
 								const isSelected = color === c.hex;
 								return (
-									<button
+									<Button
 										key={c.hex}
 										type="button"
+										variant="ghost"
+										size="icon"
+										aria-pressed={isSelected}
 										className={cn(
-											"relative size-8 rounded-full transition-all duration-200",
+											"relative size-8 rounded-full p-0 transition-all duration-200 hover:bg-transparent",
 											isSelected
 												? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110"
 												: "hover:scale-110 hover:ring-1 hover:ring-foreground/20 hover:ring-offset-1 hover:ring-offset-background",
@@ -229,7 +234,7 @@ export function CustomListDialog({
 												strokeWidth={3}
 											/>
 										)}
-									</button>
+									</Button>
 								);
 							})}
 						</div>

@@ -171,13 +171,14 @@ export function InlineEpisodeBrowser({
 			</Accordion>
 
 			{!showAllSeasons && hasMoreSeasons && (
-				<button
+				<Button
 					type="button"
+					variant="outline"
 					onClick={() => setShowAllSeasons(true)}
-					className="mt-3 w-full rounded-xl border border-dashed border-border py-3 text-xs font-medium text-muted-foreground hover:bg-secondary/5 hover:text-foreground transition-all"
+					className="mt-3 h-auto w-full rounded-xl border-dashed py-3 text-xs font-medium text-muted-foreground transition-all hover:bg-secondary/5 hover:text-foreground"
 				>
 					{`View all ${allSeasons.length} seasons`}
-				</button>
+				</Button>
 			)}
 		</div>
 	);
@@ -312,10 +313,11 @@ function EpisodeCard({
 						</h3>
 					</div>
 
-					<button
+					<Button
 						type="button"
+						variant="ghost"
 						onClick={onToggleWatched}
-						className={`pressable-small shrink-0 rounded-lg border p-1.5 text-[10px] font-medium transition-all ${
+						className={`pressable-small h-auto shrink-0 rounded-lg border p-1.5 text-[10px] font-medium transition-all ${
 							isWatched
 								? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
 								: "border-border/50 bg-transparent text-muted-foreground hover:border-foreground/20 hover:text-foreground"
@@ -358,7 +360,7 @@ function EpisodeCard({
 								/>
 							</svg>
 						)}
-					</button>
+					</Button>
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">
@@ -411,13 +413,14 @@ function EpisodeCard({
 								: `${episode.overview.slice(0, 120)}…`}
 						</p>
 						{hasLongOverview && (
-							<button
+							<Button
 								type="button"
+								variant="link"
 								onClick={() => setExpanded(!expanded)}
-								className="mt-0.5 text-[11px] font-medium text-foreground/60 hover:text-foreground transition-colors"
+								className="mt-0.5 h-auto p-0 text-[11px] font-medium text-foreground/60 transition-colors hover:text-foreground"
 							>
 								{expanded ? "Show less" : "Read more"}
-							</button>
+							</Button>
 						)}
 					</div>
 				) : (

@@ -133,16 +133,17 @@ export function WatchlistStatusMenu({
 						<div className="flex items-center justify-between">
 							<p className="text-sm font-semibold">Watchlist</p>
 							{isOnWatchlist && (
-								<button
+								<Button
 									type="button"
+									variant="link"
 									onClick={() => {
 										onRemove();
 										setOpen(false);
 									}}
-									className="text-[10px] text-destructive hover:underline"
+									className="h-auto p-0 text-[10px] text-destructive"
 								>
 									Remove
-								</button>
+								</Button>
 							)}
 						</div>
 						{!isOnWatchlist ? (
@@ -203,11 +204,12 @@ export function WatchlistStatusMenu({
 									{REACTION_OPTIONS.map((option) => {
 										const isSelected = reaction === option.value;
 										return (
-											<button
+											<Button
 												key={option.value}
 												type="button"
+												variant="ghost"
 												className={cn(
-													"flex flex-col items-center gap-1 rounded-xl py-2.5 transition-all",
+													"h-auto flex-col items-center gap-1 rounded-xl py-2.5 transition-all",
 													isSelected
 														? "bg-primary/10 ring-2 ring-primary"
 														: "bg-secondary/60 hover:bg-secondary",
@@ -222,7 +224,7 @@ export function WatchlistStatusMenu({
 												<span className="text-[10px] font-medium text-muted-foreground">
 													{option.label}
 												</span>
-											</button>
+											</Button>
 										);
 									})}
 								</div>
@@ -255,9 +257,10 @@ export function WatchlistStatusMenu({
 							<DropdownMenuSeparator className="my-0" />
 							{/* ── Remove ── */}
 							<div className="p-3">
-								<button
+								<Button
 									type="button"
-									className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+									variant="ghost"
+									className="h-auto w-full justify-center gap-2 rounded-xl border border-destructive/30 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
 									onClick={() => {
 										onRemove();
 										setOpen(false);
@@ -265,7 +268,7 @@ export function WatchlistStatusMenu({
 								>
 									<Trash2 size={16} />
 									Delete from Watchlist
-								</button>
+								</Button>
 							</div>
 						</>
 					)}
@@ -298,10 +301,11 @@ function StatusButton({
 	children: React.ReactNode;
 }) {
 	return (
-		<button
+		<Button
 			type="button"
+			variant="ghost"
 			className={cn(
-				"flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+				"h-auto w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
 				active
 					? "bg-primary/10 ring-2 ring-primary text-primary"
 					: "bg-secondary/60 hover:bg-secondary text-foreground",
@@ -313,7 +317,7 @@ function StatusButton({
 			}}
 		>
 			{children}
-		</button>
+		</Button>
 	);
 }
 
@@ -373,11 +377,12 @@ function AddToListDialog({
 							{safeList.map((list) => {
 								const isInList = safeItemLists.includes(list._id);
 								return (
-									<button
+									<Button
 										key={list._id}
 										type="button"
+										variant="ghost"
 										className={cn(
-											"flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
+											"h-auto w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
 											isInList ? "bg-primary/10" : "hover:bg-secondary/60",
 										)}
 										onClick={() =>
@@ -410,21 +415,22 @@ function AddToListDialog({
 											/>
 										)}
 										<span className="truncate font-medium">{list.name}</span>
-									</button>
+									</Button>
 								);
 							})}
 						</div>
 					</div>
 
 					<div className="px-6 pb-6 pt-3">
-						<button
+						<Button
 							type="button"
-							className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+							variant="outline"
+							className="h-auto w-full justify-center gap-2 rounded-xl border-dashed py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
 							onClick={() => setShowCreateDialog(true)}
 						>
 							<Plus size={16} />
 							Create New List
-						</button>
+						</Button>
 					</div>
 				</DialogContent>
 			</Dialog>
