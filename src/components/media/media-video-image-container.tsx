@@ -16,15 +16,14 @@ import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IMAGE_PREFIX } from "@/constants";
+import {
+	getImageDialogKey,
+	type MediaDialogKey,
+	type MediaDialogSearch,
+	updateDialogSearch,
+} from "@/lib/media-dialog-helpers";
 import { getImages, getVideos } from "@/lib/queries";
 import type { MediaImages, MediaVideosResultsEntity } from "@/types";
-
-type MediaDialogSearch = Record<string, unknown>;
-type MediaDialogKey = "video" | "backdrop" | "poster";
-
-function getImageDialogKey(imagePath: string) {
-	return imagePath.replace(/\.[^/.]+$/, "");
-}
 
 const sortVideos = (videos: MediaVideosResultsEntity[] | undefined | null) => {
 	if (!videos) return [];
@@ -49,18 +48,11 @@ export const MediaVideoImageContainer = (props: {
 }) => {
 	const { id, media_type } = props;
 	const navigate = useNavigate();
+	const navigateDialogSearch = (options: unknown) => navigate(options as never);
 	const search = useSearch({ strict: false }) as MediaDialogSearch;
 
-	const updateDialogSearch = (key: MediaDialogKey, value?: string) => {
-		navigate({
-			search: (prev: MediaDialogSearch) => ({
-				...prev,
-				[key]: value,
-			}),
-			resetScroll: false,
-			replace: true,
-		});
-	};
+	const onUpdateDialogSearch = (key: MediaDialogKey, value?: string) =>
+		updateDialogSearch(navigateDialogSearch, key, value);
 
 	const queryConfigs = useMemo(
 		() => [
@@ -97,7 +89,7 @@ export const MediaVideoImageContainer = (props: {
 								key={video.key}
 								open={search.video === video.key}
 								onOpenChange={(isOpen) =>
-									updateDialogSearch("video", isOpen ? video.key : undefined)
+									onUpdateDialogSearch("video", isOpen ? video.key : undefined)
 								}
 							>
 								<DialogTrigger asChild>
@@ -149,7 +141,7 @@ export const MediaVideoImageContainer = (props: {
 													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
-														updateDialogSearch(
+														onUpdateDialogSearch(
 															"video",
 															mediaVideos[index - 1].key,
 														);
@@ -166,7 +158,7 @@ export const MediaVideoImageContainer = (props: {
 													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
-														updateDialogSearch(
+														onUpdateDialogSearch(
 															"video",
 															mediaVideos[index + 1].key,
 														);
@@ -196,7 +188,7 @@ export const MediaVideoImageContainer = (props: {
 										key={`backdrop-${image.file_path}`}
 										open={search.backdrop === imagePathClean}
 										onOpenChange={(isOpen) =>
-											updateDialogSearch(
+											onUpdateDialogSearch(
 												"backdrop",
 												isOpen ? imagePathClean : undefined,
 											)
@@ -237,10 +229,10 @@ export const MediaVideoImageContainer = (props: {
 																const prevImg =
 																	mediaImages?.backdrops?.[index - 1];
 																if (prevImg) {
-																updateDialogSearch(
-																	"backdrop",
-																	getImageDialogKey(prevImg.file_path),
-																);
+																	onUpdateDialogSearch(
+																		"backdrop",
+																		getImageDialogKey(prevImg.file_path),
+																	);
 																}
 															}}
 														>
@@ -259,10 +251,10 @@ export const MediaVideoImageContainer = (props: {
 																const nextImg =
 																	mediaImages?.backdrops?.[index + 1];
 																if (nextImg) {
-																updateDialogSearch(
-																	"backdrop",
-																	getImageDialogKey(nextImg.file_path),
-																);
+																	onUpdateDialogSearch(
+																		"backdrop",
+																		getImageDialogKey(nextImg.file_path),
+																	);
 																}
 															}}
 														>
@@ -287,7 +279,7 @@ export const MediaVideoImageContainer = (props: {
 										key={`poster-${image.file_path}`}
 										open={search.poster === imagePathClean}
 										onOpenChange={(isOpen) =>
-											updateDialogSearch(
+											onUpdateDialogSearch(
 												"poster",
 												isOpen ? imagePathClean : undefined,
 											)
@@ -328,10 +320,10 @@ export const MediaVideoImageContainer = (props: {
 																const prevImg =
 																	mediaImages?.posters?.[index - 1];
 																if (prevImg) {
-																updateDialogSearch(
-																	"poster",
-																	getImageDialogKey(prevImg.file_path),
-																);
+																	onUpdateDialogSearch(
+																		"poster",
+																		getImageDialogKey(prevImg.file_path),
+																	);
 																}
 															}}
 														>
@@ -349,10 +341,10 @@ export const MediaVideoImageContainer = (props: {
 																const nextImg =
 																	mediaImages?.posters?.[index + 1];
 																if (nextImg) {
-																updateDialogSearch(
-																	"poster",
-																	getImageDialogKey(nextImg.file_path),
-																);
+																	onUpdateDialogSearch(
+																		"poster",
+																		getImageDialogKey(nextImg.file_path),
+																	);
 																}
 															}}
 														>

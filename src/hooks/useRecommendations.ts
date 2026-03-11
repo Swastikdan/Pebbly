@@ -21,17 +21,29 @@ function logRecommendationError(action: string, error: unknown) {
 	console.error(`Failed to ${action}`, error);
 }
 
-function parseRecommendationPayload(payload: string) {
-	return JSON.parse(payload) as AIRecommendation[];
+function parseRecommendationPayload(payload: string): AIRecommendation[] {
+	try {
+		return JSON.parse(payload) as AIRecommendation[];
+	} catch (error) {
+		console.error("Failed to parse recommendations payload", error);
+		return [];
+	}
 }
 
 export function useRecommendationAccess() {
 	const { isSignedIn, isLoaded, user } = useUser();
+	const publicMeta = user?.publicMetadata as
+		| {
+				aiGenerationEnabled?: boolean;
+				public_meta?: { aiGenerationEnabled?: boolean };
+		  }
+		| undefined;
 
 	const hasAccess =
 		isLoaded &&
 		isSignedIn === true &&
-		user?.publicMetadata?.aiGenerationEnabled === true;
+		(publicMeta?.aiGenerationEnabled ??
+			publicMeta?.public_meta?.aiGenerationEnabled) === true;
 
 	return {
 		hasAccess,

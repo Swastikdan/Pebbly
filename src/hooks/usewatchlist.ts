@@ -7,7 +7,11 @@ import { useCallback, useMemo, useRef } from "react";
 import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
-import { createMemoryStorage, mapLegacyStatusToSplit, normalizeProgressStatus } from "@/lib/utils";
+import {
+	createMemoryStorage,
+	mapLegacyStatusToSplit,
+	normalizeProgressStatus,
+} from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus, WatchlistStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
@@ -146,14 +150,16 @@ function mapConvexItemToWatchlistItem(item: {
 		created_at: item.updatedAt,
 		inWatchlist: item.inWatchlist ?? true,
 		progressStatus:
-			normalizeProgressStatus(item.progressStatus) ??
-			legacy.progressStatus,
+			normalizeProgressStatus(item.progressStatus) ?? legacy.progressStatus,
 		reaction: (item.reaction as ReactionStatus | undefined) ?? legacy.reaction,
 		progress: item.progress ?? 0,
 	};
 }
 
-function mergeMediaMetadata(item: WatchlistItem, metadata?: MediaMetadata): WatchlistItem {
+function mergeMediaMetadata(
+	item: WatchlistItem,
+	metadata?: MediaMetadata,
+): WatchlistItem {
 	return {
 		...item,
 		title: metadata?.title ?? item.title,
@@ -193,7 +199,7 @@ function logWatchlistError(action: string, error: unknown) {
 }
 
 function getTrackableTvSeasons(details?: {
-	seasons?: Array<{ season_number: number; episode_count: number }>;
+	seasons?: Array<{ season_number: number; episode_count: number }> | null;
 }) {
 	return (
 		details?.seasons?.filter(
@@ -203,11 +209,14 @@ function getTrackableTvSeasons(details?: {
 }
 
 function buildSeasonEpisodeSelections(details?: {
-	seasons?: Array<{ season_number: number; episode_count: number }>;
+	seasons?: Array<{ season_number: number; episode_count: number }> | null;
 }) {
 	return getTrackableTvSeasons(details).map((season) => ({
 		season: season.season_number,
-		episodes: Array.from({ length: season.episode_count }, (_, index) => index + 1),
+		episodes: Array.from(
+			{ length: season.episode_count },
+			(_, index) => index + 1,
+		),
 	}));
 }
 
@@ -605,7 +614,7 @@ export function useSetProgressStatus() {
 				{ tmdbId: args.tmdbId },
 				[...filtered, ...newEpisodes],
 			);
-			} else if (args.clearAllEpisodes || args.seasons.length > 0) {
+		} else if (args.clearAllEpisodes || args.seasons.length > 0) {
 			localStore.setQuery(
 				api.watchlist.getAllWatchedEpisodes,
 				{ tmdbId: args.tmdbId },
@@ -635,12 +644,10 @@ export function useSetProgressStatus() {
 		) => {
 			if (mediaType === "tv") {
 				// TV status changes can rewrite episode state, so keep both updates batched.
-				const shouldMarkWatched =
-					progressStatus === "done";
+				const shouldMarkWatched = progressStatus === "done";
 
 				const isLeavingCompletion =
-					(currentStatus === "done") &&
-					!shouldMarkWatched;
+					currentStatus === "done" && !shouldMarkWatched;
 
 				const needsEpisodeUpdate =
 					shouldMarkWatched ||
@@ -656,7 +663,7 @@ export function useSetProgressStatus() {
 
 				if (isSignedIn) {
 					if (isLeavingCompletion && !shouldMarkWatched) {
-						markShowEpisodesAndStatus({
+						void markShowEpisodesAndStatus({
 							tmdbId: Number(id),
 							mediaType,
 							seasons: [],
@@ -669,11 +676,13 @@ export function useSetProgressStatus() {
 							rating: metadata?.rating,
 							release_date: metadata?.release_date,
 							overview: metadata?.overview,
-						});
+						}).catch((error) =>
+							logWatchlistError("clear remote show episode status", error),
+						);
 					} else if (needsEpisodeUpdate) {
 						getTvDetails({ id: Number(id) })
 							.then((details) => {
-								markShowEpisodesAndStatus({
+								void markShowEpisodesAndStatus({
 									tmdbId: Number(id),
 									mediaType,
 									seasons: buildSeasonEpisodeSelections(details),
@@ -685,13 +694,15 @@ export function useSetProgressStatus() {
 									rating: metadata?.rating,
 									release_date: metadata?.release_date,
 									overview: metadata?.overview,
-								});
+								}).catch((error) =>
+									logWatchlistError("sync remote show episode status", error),
+								);
 							})
 							.catch((error) =>
 								logWatchlistError("sync remote show episode status", error),
 							);
 					} else {
-						markShowEpisodesAndStatus({
+						void markShowEpisodesAndStatus({
 							tmdbId: Number(id),
 							mediaType,
 							seasons: [],
@@ -703,7 +714,9 @@ export function useSetProgressStatus() {
 							rating: metadata?.rating,
 							release_date: metadata?.release_date,
 							overview: metadata?.overview,
-						});
+						}).catch((error) =>
+							logWatchlistError("update remote show progress status", error),
+						);
 					}
 				} else {
 					setProgressStatusLocal(
@@ -719,15 +732,11 @@ export function useSetProgressStatus() {
 					} else if (needsEpisodeUpdate) {
 						getTvDetails({ id: Number(id) })
 							.then((details) => {
-								for (const season of getTrackableTvSeasons(details)) {
-									const epNums = Array.from(
-										{ length: season.episode_count },
-										(_, i) => i + 1,
-									);
+								for (const season of buildSeasonEpisodeSelections(details)) {
 									markLocalSeason(
 										Number(id),
-										season.season_number,
-										epNums,
+										season.season,
+										season.episodes,
 										shouldMarkWatched,
 									);
 								}
@@ -838,15 +847,15 @@ export function useSetReaction() {
 					overview: metadata?.overview,
 				};
 
-					if (reaction) {
-						payload.reaction = reaction;
-					} else {
-						payload.clearReaction = true;
-					}
+				if (reaction) {
+					payload.reaction = reaction;
+				} else {
+					payload.clearReaction = true;
+				}
 
-					setReaction(payload).catch((error) =>
-						logWatchlistError("set remote reaction", error),
-					);
+				setReaction(payload).catch((error) =>
+					logWatchlistError("set remote reaction", error),
+				);
 				return;
 			}
 

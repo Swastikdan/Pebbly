@@ -88,6 +88,19 @@ export function WatchlistStatusMenu({
 	const currentOption = getProgressOption(currentStatus);
 	const StatusIcon = isOnWatchlist ? currentOption.icon : Bookmark;
 
+	if (!isSignedIn) {
+		return (
+			<Button
+				variant="secondary"
+				className="h-10 min-w-fit gap-2 rounded-lg px-3 text-xs font-semibold"
+				onClick={() => (isOnWatchlist ? onRemove() : onAdd())}
+			>
+				<StatusIcon size={16} />
+				<span>{isOnWatchlist ? `Current: ${currentOption.label}` : "Add to Watchlist"}</span>
+			</Button>
+		);
+	}
+
 	return (
 		<>
 			<DropdownMenu open={open} onOpenChange={setOpen}>
@@ -102,13 +115,13 @@ export function WatchlistStatusMenu({
 						<StatusIcon size={16} />
 						{isOnWatchlist && (
 							<>
-								<span className="hidden sm:flex flex-col items-start leading-none">
+								<span className="flex flex-col items-start leading-none">
 									<span className="text-[10px] text-muted-foreground font-normal">
 										Status
 									</span>
 									<span>Current: {currentOption.label}</span>
 								</span>
-								<ChevronDown size={12} className="hidden sm:block opacity-50" />
+								<ChevronDown size={12} className="opacity-50" />
 							</>
 						)}
 					</Button>
