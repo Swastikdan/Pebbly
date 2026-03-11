@@ -18,7 +18,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { NAV_ITEMS } from "@/constants";
+import { NAV_ITEMS, SITE_CONFIG } from "@/constants";
 import { useRecommendationAccess } from "@/hooks/useRecommendations";
 
 const DesktopNavMenuItem = ({
@@ -116,14 +116,14 @@ const Navbar = () => {
 				>
 					<Image
 						src="/logo.svg"
-						alt="Film Fanatic logo"
+						alt={`${SITE_CONFIG.name} logo`}
 						width={100}
 						height={100}
 						className="size-9"
 					/>
 
 					<h1 className="font-bold font-heading text-lg md:text-xl">
-						Film Fanatic
+						{SITE_CONFIG.name}
 					</h1>
 				</Link>
 				<section className="flex items-center gap-1.5 md:gap-2">

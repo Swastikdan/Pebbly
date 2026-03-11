@@ -54,7 +54,7 @@ import { api } from "../../convex/_generated/api";
 export const Route = createFileRoute("/recommendations")({
 	head: () => ({
 		meta: [
-			{ title: "AI Recommendations | Film Fanatic" },
+			{ title: "AI Recommendations | Pebbly" },
 			{
 				name: "description",
 				content:

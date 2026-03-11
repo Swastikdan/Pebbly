@@ -34,11 +34,11 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/")({
 		meta: [
 			...MetaImageTagsGenerator({
 				title: loaderData?.title
-					? `${loaderData.title} | Film Fanatic`
-					: "Page Not Found | Film Fanatic",
+						? `${loaderData.title} | Pebbly`
+						: "Page Not Found | Pebbly",
 				description: loaderData?.title
 					? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
-					: "Explore detailed information about movies on Film Fanatic.",
+						: "Explore detailed information about movies on Pebbly.",
 				ogImage:
 					loaderData?.id &&
 					`${VITE_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(loaderData?.id ?? "")}&type=movie`,

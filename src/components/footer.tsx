@@ -31,7 +31,7 @@ const Footer = () => {
 					</Link>
 					<span className="text-border">|</span>
 					<Link
-						aria-label="Github repository for Film Fanatic"
+						aria-label={`Github repository for ${SITE_CONFIG.name}`}
 						to={SITE_CONFIG.Footerlinks.github}
 						rel="noopener noreferrer"
 						target="_blank"

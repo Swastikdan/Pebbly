@@ -11,7 +11,11 @@ import {
 } from "@/components/homepage-media";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
+import {
+	SECTION_TAB_LIST_CLASS,
+	SECTION_TAB_TRIGGER_CLASS,
+	SITE_CONFIG,
+} from "@/constants";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
@@ -34,7 +38,7 @@ function HomePage() {
 					<div className="py-4 animate-fade-in-up">
 						<h1 className="items-center justify-center font-black text-2xl tracking-tight sm:text-5xl md:text-[4rem] lg:text-[4.5rem] lg:leading-[1.1]">
 							Welcome to
-							<span className="px-2 text-blue-500">Film Fanatic</span>
+							<span className="px-2 text-blue-500">{SITE_CONFIG.name}</span>
 						</h1>
 						<p className="mt-2 mb-4 text-xs text-muted-foreground tracking-wide sm:text-sm">
 							Millions of movies, TV shows, and people to discover.

@@ -1,10 +1,10 @@
 export const VITE_PUBLIC_APP_URL = import.meta.env
 	.VITE_PUBLIC_APP_URL as string;
 export const SITE_CONFIG = {
-	name: "Film Fanatic",
+	name: "Pebbly",
 	description:
-		"Explore a vast collection of movies and TV shows with Film Fanatic.",
-	url: VITE_PUBLIC_APP_URL,
+		"Explore a vast collection of movies and TV shows with Pebbly.",
+	url: "https://pebbly.vercel.app/",
 	defaultMetaImage:
 		"https://ik.imagekit.io/swastikdan/Film-Fanatic/public/ogimage.webp",
 	navItems: [

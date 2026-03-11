@@ -76,7 +76,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 export const Route = createFileRoute("/watchlist")({
 	head: () => ({
 		meta: [
-			{ title: "Watchlist | Film Fanatic" },
+			{ title: "Watchlist | Pebbly" },
 			{
 				name: "description",
 				content: "Your saved movies and TV shows.",

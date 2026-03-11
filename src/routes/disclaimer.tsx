@@ -5,11 +5,11 @@ export const Route = createFileRoute("/disclaimer")({
 	component: DisclaimerPage,
 	head: () => ({
 		meta: [
-			{ title: "Disclaimer | Film Fanatic" },
+			{ title: "Disclaimer | Pebbly" },
 			{
 				name: "description",
 				content:
-					"Disclaimer and terms of use for Film Fanatic, a personal project showcasing movie and TV information.",
+					"Disclaimer and terms of use for Pebbly, a personal project showcasing movie and TV information.",
 			},
 		],
 	}),
@@ -35,7 +35,7 @@ function DisclaimerPage() {
 						</h2>
 						<div className="space-y-4 text-muted-foreground">
 							<p>
-								Film Fanatic is a personal, non-commercial project created for
+									Pebbly is a personal, non-commercial project created for
 								portfolio and demonstration purposes. The information provided
 								on this website is for general informational purposes only.
 							</p>
@@ -50,7 +50,7 @@ function DisclaimerPage() {
 								>
 									The Movie Database (TMDb)
 								</a>
-								. Film Fanatic does not claim ownership of any of the
+									. Pebbly does not claim ownership of any of the
 								film-related data or media displayed.
 							</p>
 						</div>
@@ -66,7 +66,7 @@ function DisclaimerPage() {
 									1. No Commercial Use
 								</h3>
 								<p>
-									The content and services provided on Film Fanatic are for
+										The content and services provided on Pebbly are for
 									personal and non-commercial use only. You may not use the
 									service for any commercial purposes.
 								</p>
@@ -98,7 +98,7 @@ function DisclaimerPage() {
 								risk.
 							</p>
 							<p>
-								In no event shall the creators or maintainers of Film Fanatic be
+									In no event shall the creators or maintainers of Pebbly be
 								liable for any direct, indirect, incidental, special, or
 								consequential damages arising out of or in connection with your
 								use of the website. This includes, but is not limited to, data
@@ -126,7 +126,7 @@ function DisclaimerPage() {
 					style={{ animationDelay: "100ms" }}
 				>
 					<p className="mb-4 text-muted-foreground">
-						By using Film Fanatic, you acknowledge that you have read,
+							By using Pebbly, you acknowledge that you have read,
 						understood, and agree to this disclaimer.
 					</p>
 					<Link to="/">

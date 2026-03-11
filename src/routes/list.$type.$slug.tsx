@@ -57,15 +57,15 @@ export const Route = createFileRoute("/list/$type/$slug")({
 			{
 				title:
 					loaderData?.navItem && loaderData?.subNavItem
-						? `${loaderData.navItem.name} ${loaderData.subNavItem.name} | Film Fanatic`
-						: "Page Not Found | Film Fanatic",
+							? `${loaderData.navItem.name} ${loaderData.subNavItem.name} | Pebbly`
+							: "Page Not Found | Pebbly",
 			},
 			{
 				name: "description",
 				content:
 					loaderData?.navItem && loaderData?.subNavItem
-						? `Browse ${loaderData.subNavItem.name} ${loaderData.navItem.name} | Film Fanatic`
-						: "Explore movies and shows on Film Fanatic.",
+							? `Browse ${loaderData.subNavItem.name} ${loaderData.navItem.name} | Pebbly`
+							: "Explore movies and shows on Pebbly.",
 			},
 		],
 	}),

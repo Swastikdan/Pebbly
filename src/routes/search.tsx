@@ -40,7 +40,7 @@ export const Route = createFileRoute("/search")({
 	validateSearch: searchPageSearchSchema,
 	head: () => ({
 		meta: [
-			{ title: "Search Results | Film Fanatic" },
+			{ title: "Search Results | Pebbly" },
 			{
 				name: "description",
 				content: "Search for movies and TV shows",

@@ -22,11 +22,11 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/cast-crew")({
 		meta: [
 			...MetaImageTagsGenerator({
 				title: loaderData?.title
-					? `${loaderData.title} - Cast & Crew | Film Fanatic`
-					: "Page Not Found | Film Fanatic",
+						? `${loaderData.title} - Cast & Crew | Pebbly`
+						: "Page Not Found | Pebbly",
 				description: loaderData?.title
 					? `Explore the cast and crew of ${loaderData.title}.`
-					: "Discover the cast and crew of your favorite movies on Film Fanatic.",
+						: "Discover the cast and crew of your favorite movies on Pebbly.",
 				url:
 					loaderData?.id &&
 					loaderData?.title &&

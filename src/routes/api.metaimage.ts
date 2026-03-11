@@ -9,7 +9,7 @@ const DEFAULT_HEADERS = {
 	"Cache-Control": "public, max-age=31536000, immutable",
 } as const;
 
-const FALLBACK_TITLE = "Film Fanatic";
+const FALLBACK_TITLE = "Pebbly";
 
 function getPlaceholderWithText(text = FALLBACK_TITLE): string {
 	const encoded = encodeURIComponent(text || FALLBACK_TITLE);
