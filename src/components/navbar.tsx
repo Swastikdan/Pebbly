@@ -180,6 +180,7 @@ const Navbar = () => {
 										</Link>
 									</SignedIn>
 									{hasAccess && (
+										// @ts-expect-error correct link
 										<Link to="/recommendations" className="w-full">
 											<SheetClose asChild>
 												<Button
