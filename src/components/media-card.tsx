@@ -1,4 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
@@ -6,6 +8,7 @@ import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
+import { getVideos } from "@/lib/queries";
 import { formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
@@ -55,6 +58,74 @@ const MediaCard = (props: CardProps) => {
 	}
 };
 
+interface TrailerPreviewProps {
+	id: number;
+	title: string;
+	mediaType: "movie" | "tv";
+	isPreviewActive: boolean;
+	imageUrl: string;
+	className: string;
+	width: number;
+	height: number;
+	priority?: boolean;
+	children?: ReactNode;
+}
+
+const TrailerPreview = ({
+	id,
+	title,
+	mediaType,
+	isPreviewActive,
+	imageUrl,
+	className,
+	width,
+	height,
+	priority,
+	children,
+}: TrailerPreviewProps) => {
+	const { data: trailerKey } = useQuery({
+		queryKey: ["media_card_trailer_preview", mediaType, id],
+		queryFn: async () => {
+			const videos = await getVideos({ id, type: mediaType });
+			const trailer = videos.find(
+				(video) =>
+					video.site === "YouTube" &&
+					(video.type === "Trailer" || video.type === "Teaser"),
+			);
+			return trailer?.key ?? null;
+		},
+		enabled: isPreviewActive,
+		staleTime: 1000 * 60 * 60 * 12,
+		gcTime: 1000 * 60 * 60 * 24,
+	});
+
+	const showTrailer = isPreviewActive && Boolean(trailerKey);
+
+	return (
+		<div className={className}>
+			<Image
+				alt={title}
+				src={imageUrl}
+				className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform group-hover:scale-[1.03]"
+				width={width}
+				height={height}
+				priority={priority}
+			/>
+			{showTrailer && (
+				<div className="pointer-events-none absolute inset-0 z-[2] bg-black">
+					<iframe
+						title={`${title} trailer preview`}
+						src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${trailerKey}&rel=0&modestbranding=1`}
+						allow="autoplay; encrypted-media; picture-in-picture"
+						className="size-full"
+					/>
+				</div>
+			)}
+			{children}
+		</div>
+	);
+};
+
 const HorizontalCard = (props: MediaCardSpecificProps) => {
 	const {
 		title,
@@ -73,6 +144,16 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 	const formattedTitle = formatMediaTitle.encode(title);
 	const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${image}`;
 	const year = release_date ? new Date(release_date).getFullYear() : "";
+	const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [isPreviewActive, setIsPreviewActive] = useState(false);
+
+	useEffect(() => {
+		return () => {
+			if (hoverTimeoutRef.current) {
+				clearTimeout(hoverTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	return (
 		<div className="group relative w-40 md:w-44 lg:w-48">
@@ -80,16 +161,33 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 				// @ts-expect-error - correct link
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				onMouseEnter={() => {
+					if (hoverTimeoutRef.current) {
+						clearTimeout(hoverTimeoutRef.current);
+					}
+					hoverTimeoutRef.current = setTimeout(() => {
+						setIsPreviewActive(true);
+					}, 2000);
+				}}
+				onMouseLeave={() => {
+					if (hoverTimeoutRef.current) {
+						clearTimeout(hoverTimeoutRef.current);
+						hoverTimeoutRef.current = null;
+					}
+					setIsPreviewActive(false);
+				}}
 			>
-				<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60  dark:ring-white/[0.06] dark:group-hover:ring-white/10">
-					<Image
-						alt={title}
-						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform group-hover:scale-[1.03]"
-						width={300}
-						height={450}
-						priority={priority}
-					/>
+				<TrailerPreview
+					id={id}
+					title={title}
+					mediaType={media_type}
+					isPreviewActive={isPreviewActive}
+					imageUrl={imageUrl}
+					className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60  dark:ring-white/[0.06] dark:group-hover:ring-white/10"
+					width={300}
+					height={450}
+					priority={priority}
+				>
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
@@ -104,7 +202,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize border-0">
 						{media_type === "movie" ? "Movie" : "TV"}
 					</Badge>
-				</div>
+				</TrailerPreview>
 
 				<div className="mt-2.5 flex flex-col gap-0.5 overflow-hidden">
 					<AutoScrollTitle
@@ -153,6 +251,16 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 	const formattedTitle = formatMediaTitle.encode(title);
 	const imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${image}`;
 	const year = release_date ? new Date(release_date).getFullYear() : "";
+	const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [isPreviewActive, setIsPreviewActive] = useState(false);
+
+	useEffect(() => {
+		return () => {
+			if (hoverTimeoutRef.current) {
+				clearTimeout(hoverTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	return (
 		<div className="group relative w-64 md:w-72 lg:w-80">
@@ -160,17 +268,33 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 				// @ts-expect-error - correct link
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				onMouseEnter={() => {
+					if (hoverTimeoutRef.current) {
+						clearTimeout(hoverTimeoutRef.current);
+					}
+					hoverTimeoutRef.current = setTimeout(() => {
+						setIsPreviewActive(true);
+					}, 2000);
+				}}
+				onMouseLeave={() => {
+					if (hoverTimeoutRef.current) {
+						clearTimeout(hoverTimeoutRef.current);
+						hoverTimeoutRef.current = null;
+					}
+					setIsPreviewActive(false);
+				}}
 			>
-				<div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60 dark:ring-white/[0.06] dark:group-hover:ring-white/10">
-					<Image
-						alt={title}
-						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform group-hover:scale-[1.03]"
-						width={450}
-						height={300}
-						priority={priority}
-					/>
-
+				<TrailerPreview
+					id={id}
+					title={title}
+					mediaType={media_type}
+					isPreviewActive={isPreviewActive}
+					imageUrl={imageUrl}
+					className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60 dark:ring-white/[0.06] dark:group-hover:ring-white/10"
+					width={450}
+					height={300}
+					priority={priority}
+				>
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
@@ -185,7 +309,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize border-0">
 						{media_type === "movie" ? "Movie" : "TV Series"}
 					</Badge>
-				</div>
+				</TrailerPreview>
 
 				<div className="mt-2.5 flex flex-col gap-0.5 overflow-hidden">
 					<AutoScrollTitle
