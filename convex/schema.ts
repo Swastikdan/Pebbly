@@ -28,8 +28,6 @@ export default defineSchema({
 	    progressStatus: v.optional(v.string()),
 	    reaction: v.optional(v.string()),
 
-    status: v.optional(v.string()),
-
 	    progress: v.optional(v.number()),
 
     title: v.optional(v.string()),

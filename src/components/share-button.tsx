@@ -39,7 +39,9 @@ export const ShareButton = (props: {
 		<Button variant="secondary" onClick={() => void handleShare()}>
 			<span className="flex w-full items-center gap-1">
 				<ShareBold size={24} />
-					<span className={shouldHideLabelOnMobile ? "hidden sm:inline" : "inline"}>
+				<span
+					className={shouldHideLabelOnMobile ? "hidden sm:inline" : "inline"}
+				>
 					Share
 				</span>
 			</span>

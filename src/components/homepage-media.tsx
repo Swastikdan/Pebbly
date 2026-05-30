@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { memo } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
-import { getMedia } from "@/lib/queries";
+import { useContinueWatching } from "@/hooks/useWatchProgress";
+import { getBasicMovieDetails, getBasicTvDetails, getMedia } from "@/lib/queries";
 import type { MediaListResultsEntity } from "@/types";
 
 interface MediaListProps extends MediaListResultsEntity {
@@ -167,6 +168,61 @@ function TopRatedTv() {
 	);
 }
 
+function ContinueWatching() {
+	const { items } = useContinueWatching();
+
+	if (items.length === 0) return null;
+
+	return <ContinueWatchingContent items={items} />;
+}
+
+function ContinueWatchingContent({
+	items,
+}: {
+	items: { id: string; type: "movie" | "tv"; percent: number }[];
+}) {
+	const queries = items.map((item) => ({
+		queryKey: ["continue-watching", item.id, item.type],
+		queryFn: () =>
+			item.type === "movie"
+				? getBasicMovieDetails({ id: Number(item.id) })
+				: getBasicTvDetails({ id: Number(item.id) }),
+		staleTime: 1000 * 60 * 30,
+	}));
+
+	const results = useQueries({ queries });
+
+	const isLoading = results.some((r) => r.isLoading);
+	const hasError = results.some((r) => r.isError);
+
+	if (isLoading) return <MediaSkeletonList cardType="horizontal" />;
+	if (hasError) return null;
+
+	const mediaItems = results
+		.map((r, i) => {
+			const data = r.data;
+			const item = items[i];
+			if (!data) return null;
+
+			const isMovie = item.type === "movie";
+			return {
+				id: data.id,
+				title: isMovie ? (data as any).title : (data as any).name,
+				vote_average: (data as any).vote_average ?? 0,
+				poster_path: (data as any).poster_path ?? "",
+				first_air_date: isMovie ? undefined : (data as any).first_air_date,
+				release_date: isMovie ? (data as any).release_date : undefined,
+				overview: (data as any).overview,
+				media_type: item.type,
+			};
+		})
+		.filter(Boolean) as MediaListProps[];
+
+	if (mediaItems.length === 0) return null;
+
+	return <MediaList data={mediaItems} cardType="horizontal" />;
+}
+
 export {
 	TrendingDayMovies,
 	TrendingWeekMovies,
@@ -175,4 +231,5 @@ export {
 	PopularTv,
 	TopRatedMovies,
 	TopRatedTv,
+	ContinueWatching,
 };

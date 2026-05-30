@@ -36,11 +36,10 @@ export const Route = createFileRoute("/person/$id")({
 	},
 	head: () => ({
 		meta: [
-				{ title: "Person Details | Pebbly" },
+			{ title: "Person Details | Pebbly" },
 			{
 				name: "description",
-				content:
-						"Explore detailed information about cast and crew on Pebbly.",
+				content: "Explore detailed information about cast and crew on Pebbly.",
 			},
 		],
 	}),

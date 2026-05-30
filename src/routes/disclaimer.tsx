@@ -35,7 +35,7 @@ function DisclaimerPage() {
 						</h2>
 						<div className="space-y-4 text-muted-foreground">
 							<p>
-									Pebbly is a personal, non-commercial project created for
+								Pebbly is a personal, non-commercial project created for
 								portfolio and demonstration purposes. The information provided
 								on this website is for general informational purposes only.
 							</p>
@@ -50,8 +50,8 @@ function DisclaimerPage() {
 								>
 									The Movie Database (TMDb)
 								</a>
-									. Pebbly does not claim ownership of any of the
-								film-related data or media displayed.
+								. Pebbly does not claim ownership of any of the film-related
+								data or media displayed.
 							</p>
 						</div>
 					</section>
@@ -66,9 +66,9 @@ function DisclaimerPage() {
 									1. No Commercial Use
 								</h3>
 								<p>
-										The content and services provided on Pebbly are for
-									personal and non-commercial use only. You may not use the
-									service for any commercial purposes.
+									The content and services provided on Pebbly are for personal
+									and non-commercial use only. You may not use the service for
+									any commercial purposes.
 								</p>
 							</div>
 
@@ -98,7 +98,7 @@ function DisclaimerPage() {
 								risk.
 							</p>
 							<p>
-									In no event shall the creators or maintainers of Pebbly be
+								In no event shall the creators or maintainers of Pebbly be
 								liable for any direct, indirect, incidental, special, or
 								consequential damages arising out of or in connection with your
 								use of the website. This includes, but is not limited to, data
@@ -126,8 +126,8 @@ function DisclaimerPage() {
 					style={{ animationDelay: "100ms" }}
 				>
 					<p className="mb-4 text-muted-foreground">
-							By using Pebbly, you acknowledge that you have read,
-						understood, and agree to this disclaimer.
+						By using Pebbly, you acknowledge that you have read, understood, and
+						agree to this disclaimer.
 					</p>
 					<Link to="/">
 						<Button

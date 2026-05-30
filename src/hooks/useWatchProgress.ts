@@ -68,7 +68,6 @@ function makeEpisodeKey(
 
 const QUERY_SKIP = "skip" as const;
 
-
 function isNonNegativeIntegerLike(value: unknown): boolean {
 	if (typeof value === "number") return Number.isInteger(value) && value >= 0;
 	if (typeof value !== "string") return false;
@@ -188,12 +187,14 @@ export function usePlayerProgressListener() {
 				})
 				.filter((origin): origin is string => Boolean(origin));
 			const hasTrustedSource = trustedPlayerIframes.some(
-				(frame) => frame.contentWindow != null && frame.contentWindow === event.source,
+				(frame) =>
+					frame.contentWindow != null && frame.contentWindow === event.source,
 			);
 
 			if (
 				!hasTrustedSource &&
-				(expectedOrigins.length === 0 || !expectedOrigins.includes(event.origin))
+				(expectedOrigins.length === 0 ||
+					!expectedOrigins.includes(event.origin))
 			) {
 				return;
 			}
@@ -313,10 +314,7 @@ export function useContinueWatching() {
 	const items = useMemo(() => {
 		return watchlist
 			.filter(
-				(item) =>
-					item.progress !== undefined &&
-					item.progress > 0 &&
-					item.progress < 100,
+				(item) => item.progressStatus === "watching",
 			)
 			.map((item) => ({
 				id: String(item.external_id),

@@ -30,11 +30,11 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
 		meta: [
 			...MetaImageTagsGenerator({
 				title: loaderData?.title
-						? `${loaderData.title} - Season ${loaderData.seasonNumber} | Pebbly`
-						: "Page Not Found | Pebbly",
+					? `${loaderData.title} - Season ${loaderData.seasonNumber} | Pebbly`
+					: "Page Not Found | Pebbly",
 				description: loaderData?.title
 					? `All episodes of ${loaderData.title} Season ${loaderData.seasonNumber}.`
-						: "Explore all episodes of your favorite shows on Pebbly.",
+					: "Explore all episodes of your favorite shows on Pebbly.",
 				url:
 					loaderData?.id &&
 					loaderData.title &&
