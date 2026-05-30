@@ -10,7 +10,11 @@ export const UserSync = () => {
 	useEffect(() => {
 		if (isLoaded && user) {
 			const publicMeta = user.publicMetadata as
-				| { aiGenerationEnabled?: boolean; role?: string; public_meta?: { aiGenerationEnabled?: boolean; role?: string } }
+				| {
+						aiGenerationEnabled?: boolean;
+						role?: string;
+						public_meta?: { aiGenerationEnabled?: boolean; role?: string };
+				  }
 				| undefined;
 
 			storeUser({

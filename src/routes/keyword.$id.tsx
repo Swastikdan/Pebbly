@@ -35,11 +35,11 @@ export const Route = createFileRoute("/keyword/$id")({
 	head: ({ loaderData }) => ({
 		meta: [
 			{
-					title: `${loaderData?.keyword.name || "Keyword"} - Movies | Pebbly`,
+				title: `${loaderData?.keyword.name || "Keyword"} - Movies | Pebbly`,
 			},
 			{
 				name: "description",
-					content: `Explore movies tagged with ${loaderData?.keyword.name} on Pebbly.`,
+				content: `Explore movies tagged with ${loaderData?.keyword.name} on Pebbly.`,
 			},
 		],
 	}),

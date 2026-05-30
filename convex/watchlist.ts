@@ -24,46 +24,16 @@ type WatchItemMetadata = {
   overview?: string;
 };
 
+const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set([
+  "watch-later",
+  "watching",
+  "done",
+  "dropped",
+]);
+
 function normalizeProgressStatus(status?: string): string | undefined {
   if (!status) return undefined;
-  if (status === "want-to-watch" || status === "plan-to-watch") return "watch-later";
-  if (status === "finished" || status === "completed") return "done";
-  if (status === "caught-up") return "watching";
-  if (status === "liked") return "done";
-  if (status === "watch-later" || status === "watching" || status === "done" || status === "dropped") return status;
-  return undefined;
-}
-
-function mapLegacyStatusFields(
-  status?: string,
-  progress?: number,
-): { progressStatus?: string; reaction?: string } {
-  if (!status) return {};
-
-  if (status === "plan-to-watch") return { progressStatus: "watch-later" };
-  if (status === "want-to-watch") return { progressStatus: "watch-later" };
-  if (status === "watching") return { progressStatus: "watching" };
-  if (status === "completed" || status === "finished") return { progressStatus: "done" };
-  if (status === "caught-up") return { progressStatus: "watching" };
-  if (status === "liked") {
-    return { progressStatus: "done", reaction: "liked" };
-  }
-
-  if (status === "dropped") {
-    const derivedProgressStatus =
-      progress === undefined || progress <= 0
-        ? "watch-later"
-        : progress >= 100
-          ? "done"
-          : "watching";
-
-    return {
-      progressStatus: derivedProgressStatus,
-      reaction: "not-for-me",
-    };
-  }
-
-  return {};
+  return VALID_PROGRESS_STATUSES.has(status) ? status : undefined;
 }
 
 async function getCurrentUser(ctx: WatchlistContext) {
@@ -192,7 +162,6 @@ export const updateProgress = mutation({
     tmdbId: v.number(),
     mediaType: v.string(),
     progress: v.optional(v.number()),
-	    status: v.optional(v.string()),
     isWatched: v.optional(v.boolean()),
   },
 
@@ -204,18 +173,13 @@ export const updateProgress = mutation({
     const nextProgress =
       args.isWatched === true ? 100 : (args.progress ?? existing?.progress ?? 0);
 
-    const existingDerived = mapLegacyStatusFields(existing?.status, existing?.progress)
-      .progressStatus;
-
-    const currentProgressStatus = normalizeProgressStatus(existing?.progressStatus) ?? existingDerived;
-
-    const argDerived = mapLegacyStatusFields(args.status, nextProgress).progressStatus;
+    const currentProgressStatus =
+      normalizeProgressStatus(existing?.progressStatus);
 
     const inferredProgressStatus =
       args.isWatched === true
         ? "done"
-        : argDerived ??
-          (nextProgress >= 95
+        : (nextProgress >= 95
             ? "done"
             : nextProgress > 0
               ? "watching"
@@ -290,6 +254,22 @@ export const getWatchlist = query({
   },
 });
 
+export const getTrackedTmdbIds = query({
+  args: {},
+
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    const items = await ctx.db
+      .query("watch_items")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    return items.map((item) => item.tmdbId);
+  },
+});
+
 export const getMediaState = query({
   args: {
     tmdbId: v.number(),
@@ -324,17 +304,14 @@ export const setWatchlistMembership = mutation({
     const metadataPatch = buildMetadataPatch(args, existing ?? undefined);
 
     if (existing) {
-      const existingDerived = mapLegacyStatusFields(existing.status, existing.progress);
-
       const normalizedExisting = normalizeProgressStatus(existing.progressStatus);
       await ctx.db.patch(existing._id, {
         inWatchlist: args.inWatchlist,
         updatedAt: now,
         progressStatus:
           normalizedExisting ??
-          existingDerived.progressStatus ??
           (args.inWatchlist ? "watch-later" : undefined),
-        reaction: existing.reaction ?? existingDerived.reaction,
+        reaction: existing.reaction,
         ...metadataPatch,
       });
 
@@ -473,123 +450,6 @@ export const setReaction = mutation({
     }
 
     await ctx.db.insert("watch_items", doc);
-  },
-});
-
-export const upsertWatchlistItem = mutation({
-  args: {
-    tmdbId: v.number(),
-    mediaType: v.string(),
-    status: v.string(),
-    progress: v.optional(v.number()),
-    title: v.optional(v.string()),
-    image: v.optional(v.string()),
-    rating: v.optional(v.number()),
-    release_date: v.optional(v.string()),
-    overview: v.optional(v.string()),
-  },
-
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-    const existing = await getWatchItem(ctx, user._id, args);
-
-    const now = Date.now();
-    const mapped = mapLegacyStatusFields(args.status, args.progress ?? existing?.progress);
-
-    let progress = args.progress;
-    if (progress === undefined) {
-      if (mapped.progressStatus === "watch-later") progress = 0;
-      else if (mapped.progressStatus === "done") progress = 100;
-      else progress = existing?.progress ?? 0;
-    }
-
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        inWatchlist: true,
-        status: args.status,
-        progressStatus:
-          mapped.progressStatus ?? normalizeProgressStatus(existing.progressStatus) ?? "watch-later",
-        reaction: mapped.reaction ?? existing.reaction,
-        progress,
-        updatedAt: now,
-        ...buildMetadataPatch(args, existing),
-      });
-      return;
-    }
-
-    await ctx.db.insert("watch_items", {
-      userId: user._id,
-      tmdbId: args.tmdbId,
-      mediaType: args.mediaType,
-      inWatchlist: true,
-      status: args.status,
-      progressStatus: mapped.progressStatus ?? "watch-later",
-      reaction: mapped.reaction,
-      progress,
-      updatedAt: now,
-      ...buildMetadataPatch(args),
-    });
-  },
-});
-
-export const removeWatchlistItem = mutation({
-  args: {
-    tmdbId: v.number(),
-    mediaType: v.string(),
-  },
-
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-    const existing = await getWatchItem(ctx, user._id, args);
-
-    if (!existing) return;
-
-    await ctx.db.patch(existing._id, {
-      inWatchlist: false,
-      updatedAt: Date.now(),
-    });
-  },
-});
-
-export const backfillWatchItems = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const user = await requireCurrentUser(ctx);
-
-    const items = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-
-    const now = Date.now();
-
-    for (const item of items) {
-      const mapped = mapLegacyStatusFields(item.status, item.progress);
-      const patch: {
-        inWatchlist?: boolean;
-        progressStatus?: string;
-        reaction?: string;
-        updatedAt: number;
-      } = {
-        updatedAt: now,
-      };
-
-      if (item.inWatchlist === undefined) patch.inWatchlist = true;
-      if (item.progressStatus === undefined && mapped.progressStatus) {
-        patch.progressStatus = mapped.progressStatus;
-      }
-      if (item.reaction === undefined && mapped.reaction) {
-        patch.reaction = mapped.reaction;
-      }
-
-      if (
-        patch.inWatchlist !== undefined ||
-        patch.progressStatus !== undefined ||
-        patch.reaction !== undefined
-      ) {
-        await ctx.db.patch(item._id, patch);
-      }
-    }
   },
 });
 
@@ -764,34 +624,6 @@ export const syncEpisodeProgressItem = mutation({
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
     await syncEpisodeProgressRecord(ctx, user._id, args, Date.now());
-  },
-});
-
-export const migrateStatusCategories = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const user = await requireCurrentUser(ctx);
-
-    const items = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-
-    const now = Date.now();
-    let migrated = 0;
-
-    for (const item of items) {
-      const normalized = normalizeProgressStatus(item.progressStatus);
-      if (normalized && normalized !== item.progressStatus) {
-        await ctx.db.patch(item._id, {
-          progressStatus: normalized,
-          updatedAt: now,
-        });
-        migrated++;
-      }
-    }
-
-    return { migrated, total: items.length };
   },
 });
 

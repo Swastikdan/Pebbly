@@ -305,9 +305,9 @@ const MODELS_TO_TRY = [
 const RATE_LIMIT_MS = 2 * 60 * 1000;
 
 function computeHash(
-  items: Array<{ tmdbId: number; progressStatus?: string; reaction?: string }>,
-  mediaTypePreference?: string,
-  genrePreference?: string,
+	items: Array<{ tmdbId: number; progressStatus?: string; reaction?: string }>,
+	mediaTypePreference?: string,
+	genrePreference?: string,
 ): string {
   const sorted = items
     .map((i) => `${i.tmdbId}:${i.progressStatus ?? ""}:${i.reaction ?? ""}`)
@@ -317,8 +317,12 @@ function computeHash(
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash + char) | 0;
-  }
-  return hash.toString(36);
+	}
+	return hash.toString(36);
+}
+
+function normalizeTitleKey(title?: string | null): string {
+	return (title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 type WatchlistData = {
@@ -378,6 +382,9 @@ function buildWatchlistPrompt(
       .map((i) => i.tmdbId),
   );
   const existingIds = [...watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
+  const existingTitles = watchItems
+    .map((i) => i.title)
+    .filter((title): title is string => !!title);
   const inScope = (item: WatchItemSummary) => prioritized.has(item.tmdbId);
 
   let prompt = `Here is my watchlist data:\n\n`;
@@ -437,7 +444,11 @@ function buildWatchlistPrompt(
         : "movies and TV shows";
   const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
   prompt += `Based on this data, recommend exactly ${titleCount} ${mediaLabel} I would likely enjoy.\n`;
-  prompt += `Do NOT recommend any title with these TMDB IDs (already in my watchlist): ${existingIds.join(", ")}\n\n`;
+  prompt += `Do NOT recommend any title with these TMDB IDs (already in my watchlist): ${existingIds.join(", ")}\n`;
+  if (existingTitles.length > 0) {
+    prompt += `Do NOT recommend any of these already tracked titles by name: ${existingTitles.join(", ")}\n`;
+  }
+  prompt += "\n";
 
   if (yearFrom || yearTo) {
     const from = yearFrom ?? 1900;
@@ -460,6 +471,9 @@ function buildGenrePrompt(
   count?: number,
 ): string {
   const existingIds = [...data.watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
+  const existingTitles = data.watchItems
+    .map((i) => i.title)
+    .filter((title): title is string => !!title);
 
   const mediaLabel =
     mediaTypePreference === "movie"
@@ -485,7 +499,13 @@ function buildGenrePrompt(
   }
 
   if (existingIds.length > 0) {
-    prompt += `Do NOT recommend any title with these TMDB IDs (already in my watchlist): ${existingIds.join(", ")}\n\n`;
+    prompt += `Do NOT recommend any title with these TMDB IDs (already in my watchlist): ${existingIds.join(", ")}\n`;
+  }
+  if (existingTitles.length > 0) {
+    prompt += `Do NOT recommend any of these already tracked titles by name: ${existingTitles.join(", ")}\n`;
+  }
+  if (existingIds.length > 0 || existingTitles.length > 0) {
+    prompt += "\n";
   }
 
   if (yearFrom || yearTo) {
@@ -508,6 +528,9 @@ function buildCustomListPrompt(
   count?: number,
 ): string {
   const existingIds = [...data.watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
+  const existingTitles = data.watchItems
+    .map((i) => i.title)
+    .filter((title): title is string => !!title);
 
   const mediaLabel =
     mediaTypePreference === "movie"
@@ -543,7 +566,13 @@ function buildCustomListPrompt(
   }
 
   if (existingIds.length > 0) {
-    prompt += `Do NOT recommend any title with these TMDB IDs (already in my overall watchlist): ${existingIds.join(", ")}\n\n`;
+    prompt += `Do NOT recommend any title with these TMDB IDs (already in my overall watchlist): ${existingIds.join(", ")}\n`;
+  }
+  if (existingTitles.length > 0) {
+    prompt += `Do NOT recommend any of these already tracked titles by name: ${existingTitles.join(", ")}\n`;
+  }
+  if (existingIds.length > 0 || existingTitles.length > 0) {
+    prompt += "\n";
   }
 
   if (yearFrom || yearTo) {
@@ -768,9 +797,17 @@ export const generateRecommendations = action({
       return { error: "invalid_response" };
     }
 
-    const existingIds = new Set(data.watchItems.map((item) => item.tmdbId));
+    const existingIds = new Set([
+      ...data.watchItems.map((item) => item.tmdbId),
+      ...excludeTmdbIds,
+    ]);
+    const existingTitles = new Set(
+      data.watchItems.map((item) => normalizeTitleKey(item.title)),
+    );
     parsed.recommendations = parsed.recommendations.filter(
-      (r) => r.tmdbId == null || !existingIds.has(r.tmdbId),
+      (r) =>
+        (r.tmdbId == null || !existingIds.has(r.tmdbId)) &&
+        !existingTitles.has(normalizeTitleKey(r.title)),
     );
 
     const watchlistHash = computeHash(

@@ -27,14 +27,14 @@ export const Route = createFileRoute("/collection/$id/{-$slug}")({
 		meta: [
 			{
 				title: loaderData?.title
-						? `${loaderData.title} | Pebbly`
-						: "Page Not Found | Pebbly",
+					? `${loaderData.title} | Pebbly`
+					: "Page Not Found | Pebbly",
 			},
 			{
 				name: "description",
 				content: loaderData?.title
-						? `Browse ${loaderData.title} on Pebbly.`
-						: "Explore movies and shows on Pebbly.",
+					? `Browse ${loaderData.title} on Pebbly.`
+					: "Explore movies and shows on Pebbly.",
 			},
 		],
 	}),

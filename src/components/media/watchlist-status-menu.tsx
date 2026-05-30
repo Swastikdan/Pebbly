@@ -96,7 +96,11 @@ export function WatchlistStatusMenu({
 				onClick={() => (isOnWatchlist ? onRemove() : onAdd())}
 			>
 				<StatusIcon size={16} />
-				<span>{isOnWatchlist ? `Current: ${currentOption.label}` : "Add to Watchlist"}</span>
+				<span>
+					{isOnWatchlist
+						? `Current: ${currentOption.label}`
+						: "Add to Watchlist"}
+				</span>
 			</Button>
 		);
 	}

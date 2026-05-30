@@ -403,7 +403,9 @@ function WatchlistTabContent() {
 					<Button
 						onClick={() => setFiltersOpen((prev) => !prev)}
 						aria-expanded={filtersOpen}
-						variant={filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"}
+						variant={
+							filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"
+						}
 						size="sm"
 						className={cn(
 							"h-9 w-[132px] justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold ring-1 ring-border/40",
