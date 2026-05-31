@@ -19,6 +19,7 @@ import {
 	SITE_CONFIG,
 } from "@/constants";
 import { useContinueWatching } from "@/hooks/useWatchProgress";
+import { HomepageRecommendations } from "@/components/homepage-recommendations";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
@@ -85,6 +86,8 @@ function HomePage() {
 					</Tabs>
 
 					<ContinueWatchingSection />
+
+					<HomepageRecommendations />
 
 					<section>
 						<div className="flex items-center gap-4">

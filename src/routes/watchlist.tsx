@@ -656,9 +656,12 @@ function MyListsTabContent() {
 						</div>
 					</div>
 					<div>
-						<h3 className="mb-2 text-lg font-bold tracking-tight">Create your first collection</h3>
+						<h3 className="mb-2 text-lg font-bold tracking-tight">
+							Create your first collection
+						</h3>
 						<p className="max-w-sm text-xs leading-relaxed text-muted-foreground/80">
-							Organize movies and TV shows into custom lists — like "Sci-Fi Favorites" or "Shows to Binge with Friends".
+							Organize movies and TV shows into custom lists — like "Sci-Fi
+							Favorites" or "Shows to Binge with Friends".
 						</p>
 					</div>
 					<Button
@@ -744,9 +747,7 @@ function CustomListView({
 	return (
 		<div className="pt-5 animate-fade-in space-y-6">
 			{/* Premium Hero Header Banner */}
-			<div
-				className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-border/40 p-6 md:p-8 overflow-hidden shadow-sm bg-card/10 backdrop-blur-sm"
-			>
+			<div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-border/40 p-6 md:p-8 overflow-hidden shadow-sm bg-card/10 backdrop-blur-sm">
 				{list.color && (
 					<div
 						className="absolute right-[-10%] top-[-20%] size-64 rounded-full blur-[100px] opacity-15 pointer-events-none"
@@ -802,7 +803,10 @@ function CustomListView({
 								<EllipsisVertical size={16} />
 							</Button>
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="w-36 rounded-2xl shadow-xl">
+						<DropdownMenuContent
+							align="end"
+							className="w-36 rounded-2xl shadow-xl"
+						>
 							<DropdownMenuItem
 								className="rounded-xl gap-2 text-xs py-2"
 								onSelect={onEdit}
@@ -828,8 +832,15 @@ function CustomListView({
 				<div className="flex gap-1.5 border-b border-border/20 pb-2 overflow-x-auto scrollbar-hidden">
 					{(["all", "movie", "tv"] as const).map((filter) => {
 						const isActive = mediaFilter === filter;
-						const count = items.filter((item) => filter === "all" || item.mediaType === filter).length;
-						const label = filter === "all" ? "All" : filter === "movie" ? "Movies" : "TV Shows";
+						const count = items.filter(
+							(item) => filter === "all" || item.mediaType === filter,
+						).length;
+						const label =
+							filter === "all"
+								? "All"
+								: filter === "movie"
+									? "Movies"
+									: "TV Shows";
 
 						return (
 							<Button
@@ -845,7 +856,9 @@ function CustomListView({
 								)}
 							>
 								{label}
-								<span className="text-[10px] tabular-nums opacity-60">{count}</span>
+								<span className="text-[10px] tabular-nums opacity-60">
+									{count}
+								</span>
 							</Button>
 						);
 					})}
@@ -861,15 +874,20 @@ function CustomListView({
 							<ListPlus className="size-6 text-muted-foreground/80" />
 						</div>
 						<div>
-							<p className="text-sm font-semibold text-foreground">This list is empty</p>
+							<p className="text-sm font-semibold text-foreground">
+								This list is empty
+							</p>
 							<p className="max-w-xs text-xs text-muted-foreground/60 mt-1">
-								Add movies and TV shows from their detail pages to build your collection.
+								Add movies and TV shows from their detail pages to build your
+								collection.
 							</p>
 						</div>
 					</div>
 				) : filteredItems.length === 0 ? (
 					<div className="flex flex-col items-center justify-center gap-3 py-16 text-center text-muted-foreground">
-						<p className="text-xs">No {mediaFilter === "movie" ? "movies" : "TV shows"} in this list.</p>
+						<p className="text-xs">
+							No {mediaFilter === "movie" ? "movies" : "TV shows"} in this list.
+						</p>
 					</div>
 				) : (
 					<div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-fade-in">
@@ -887,7 +905,13 @@ function CustomListView({
 	);
 }
 
-function ListCollage({ previews, color }: { previews: string[]; color?: string }) {
+function ListCollage({
+	previews,
+	color,
+}: {
+	previews: string[];
+	color?: string;
+}) {
 	const fallbackBg = color
 		? `linear-gradient(135deg, ${color}10 0%, ${color}25 100%)`
 		: "linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--muted)) 100%)";
@@ -898,7 +922,10 @@ function ListCollage({ previews, color }: { previews: string[]; color?: string }
 				className="flex size-full items-center justify-center rounded-2xl border border-border/20 shadow-inner bg-card transition-colors duration-300"
 				style={{ background: fallbackBg }}
 			>
-				<ListPlus size={28} className="text-muted-foreground/40 transition-transform duration-300" />
+				<ListPlus
+					size={28}
+					className="text-muted-foreground/40 transition-transform duration-300"
+				/>
 			</div>
 		);
 	}
@@ -1014,9 +1041,7 @@ function CustomListCard({
 	const itemCount = list.itemCount ?? 0;
 
 	return (
-		<div
-			className="group relative flex flex-col rounded-2xl border border-border/30 bg-card/60 p-3 transition-all duration-350 hover:-translate-y-1 hover:shadow-lg hover:shadow-foreground/[0.02]"
-		>
+		<div className="group relative flex flex-col rounded-2xl border border-border/30 bg-card/60 p-3 transition-all duration-350 hover:-translate-y-1 hover:shadow-lg hover:shadow-foreground/[0.02]">
 			<button
 				type="button"
 				onClick={onClick}
@@ -1035,9 +1060,7 @@ function CustomListCard({
 					onClick={onClick}
 					className="min-w-0 flex-1 text-left"
 				>
-					<h3
-						className="truncate text-sm font-bold tracking-tight text-foreground transition-colors duration-250 group-hover:text-primary"
-					>
+					<h3 className="truncate text-sm font-bold tracking-tight text-foreground transition-colors duration-250 group-hover:text-primary">
 						{list.name}
 					</h3>
 					<p className="mt-0.5 text-[10px] font-medium text-muted-foreground/80">
@@ -1061,7 +1084,10 @@ function CustomListCard({
 							<EllipsisVertical size={14} />
 						</Button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-36 rounded-2xl shadow-xl border-border/40 backdrop-blur-lg">
+					<DropdownMenuContent
+						align="end"
+						className="w-36 rounded-2xl shadow-xl border-border/40 backdrop-blur-lg"
+					>
 						<DropdownMenuItem
 							className="rounded-xl gap-2 text-xs py-2"
 							onSelect={onEdit}
@@ -1238,8 +1264,6 @@ function CustomListMediaCard({
 		</div>
 	);
 }
-
-
 
 function WatchlistCard({
 	item,
