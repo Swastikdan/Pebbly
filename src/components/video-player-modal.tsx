@@ -85,17 +85,17 @@ export function VideoPlayerModal({
 
 		const handleFsChange = () => {
 			if (!document.fullscreenElement && isOpen) {
-			if (search?.play) {
-								(navigate as any)({
-									search: (prev: Record<string, unknown>) => {
-										const next = { ...prev };
-										delete next.play;
-										return next;
-									},
-									resetScroll: false,
-									replace: true,
-								});
-							}
+				if (search?.play) {
+					(navigate as any)({
+						search: (prev: Record<string, unknown>) => {
+							const next = { ...prev };
+							delete next.play;
+							return next;
+						},
+						resetScroll: false,
+						replace: true,
+					});
+				}
 				setIsOpen(false);
 			}
 		};

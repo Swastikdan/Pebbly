@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +7,8 @@ import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
+import { useWatchProgress } from "@/hooks/useWatchProgress";
+import { getTvSeasonDetails } from "@/lib/queries";
 import { formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
@@ -156,8 +159,35 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 	} = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
-	const imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${image}`;
 	const year = release_date ? new Date(release_date).getFullYear() : "";
+
+	const isTVContinueWatching = isContinueWatching && media_type === "tv";
+
+	const { progress } = useWatchProgress(
+		id,
+		isTVContinueWatching ? "tv" : "movie",
+	);
+	const season = progress?.context?.season;
+	const episode = progress?.context?.episode;
+
+	const { data: seasonDetails } = useQuery({
+		queryKey: ["tv-season", id, season],
+		queryFn: () => getTvSeasonDetails({ tvId: id, seasonNumber: season ?? 1 }),
+		enabled: !!isTVContinueWatching && !!season,
+	});
+
+	const episodeDetail = seasonDetails?.episodes?.find(
+		(ep) => ep.episode_number === episode,
+	);
+
+	let imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${image}`;
+	if (isTVContinueWatching) {
+		if (episodeDetail?.still_path) {
+			imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${episodeDetail.still_path}`;
+		} else if (seasonDetails?.poster_path) {
+			imageUrl = `${IMAGE_PREFIX.SD_POSTER}${seasonDetails.poster_path}`;
+		}
+	}
 
 	return (
 		<div className="group relative w-64 md:w-72 lg:w-80">
@@ -194,15 +224,34 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					</Badge>
 				</div>
 
-				<div className="mt-2.5 flex flex-col gap-0.5 overflow-hidden">
+				<div className="mt-2.5 flex flex-col gap-1 overflow-hidden">
+					{isTVContinueWatching && season && episode && (
+						<div className="flex items-center gap-1.5 flex-wrap">
+							<span className="text-xs font-bold text-blue-500 dark:text-blue-400">
+								S{season} E{episode}
+							</span>
+							{episodeDetail?.name && (
+								<>
+									<span className="text-muted-foreground/50 text-[10px]">
+										•
+									</span>
+									<span className="truncate text-xs font-medium text-muted-foreground/80 max-w-[150px]">
+										{episodeDetail.name}
+									</span>
+								</>
+							)}
+						</div>
+					)}
 					<AutoScrollTitle
 						text={title}
 						className="min-h-5 text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary"
 					/>
 
-					<span className="text-xs font-medium text-muted-foreground/70 capitalize">
-						{year}
-					</span>
+					{!isTVContinueWatching && (
+						<span className="text-xs font-medium text-muted-foreground/70 capitalize">
+							{year}
+						</span>
+					)}
 				</div>
 			</Link>
 
