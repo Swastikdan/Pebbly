@@ -250,7 +250,7 @@ export const getWatchlist = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
-    return items.filter((item) => item.inWatchlist ?? true);
+    return items;
   },
 });
 

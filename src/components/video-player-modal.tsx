@@ -1,4 +1,5 @@
 import { useUser } from "@clerk/clerk-react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,33 +44,69 @@ export function VideoPlayerModal({
 	const { isSignedIn, user } = useUser();
 	const contentRef = useRef<HTMLDivElement>(null);
 	const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// Prevents the auto-open effect from re-opening the modal immediately
+	// after the user explicitly closes it (play param has a 150ms removal delay)
+	const closedByUserRef = useRef(false);
+
+	const navigate = useNavigate();
+	const search = useSearch({ strict: false }) as Record<string, unknown>;
 
 	usePlayerProgressListener();
 
 	const isAdmin = user?.publicMetadata?.isAdmin === true;
 
 	useEffect(() => {
-		if (!isOpen) return;
+		const shouldPlay = search.play === true || search.play === "true";
+		if (!shouldPlay) {
+			// play param has been removed — safe to reset the guard
+			closedByUserRef.current = false;
+		}
+		if (shouldPlay && !isOpen && !closedByUserRef.current) {
+			setIsOpen(true);
+		}
+	}, [search.play, isOpen]);
 
-		const el = contentRef.current;
-		if (!el) return;
-
-		const requestFs = () => {
-			if (document.fullscreenElement) return;
-			el.requestFullscreen().catch(() => {});
-		};
-
-		requestFs();
+	useEffect(() => {
+		if (isOpen) {
+			const el = contentRef.current;
+			if (el) {
+				const requestFs = () => {
+					if (!document.fullscreenElement) {
+						el.requestFullscreen().catch(() => {});
+					}
+				};
+				requestFs();
+			}
+		} else {
+			if (document.fullscreenElement) {
+				document.exitFullscreen().catch(() => {});
+			}
+		}
 
 		const handleFsChange = () => {
 			if (!document.fullscreenElement && isOpen) {
+			if (search?.play) {
+								(navigate as any)({
+									search: (prev: Record<string, unknown>) => {
+										const next = { ...prev };
+										delete next.play;
+										return next;
+									},
+									resetScroll: false,
+									replace: true,
+								});
+							}
 				setIsOpen(false);
 			}
 		};
 
 		document.addEventListener("fullscreenchange", handleFsChange);
-		return () =>
+		return () => {
 			document.removeEventListener("fullscreenchange", handleFsChange);
+			if (document.fullscreenElement) {
+				document.exitFullscreen().catch(() => {});
+			}
+		};
 	}, [isOpen]);
 
 	const resetInactivityTimer = useCallback(() => {
@@ -129,13 +166,37 @@ export function VideoPlayerModal({
 			: "Play Now";
 
 	const handleOpenChange = (open: boolean) => {
+		if (!open) {
+			// Set guard BEFORE setIsOpen(false) so the auto-open effect
+			// doesn't re-open the modal while play param is still in the URL
+			closedByUserRef.current = true;
+		}
 		setIsOpen(open);
-		if (!open) setIsLoading(true);
+		if (!open) {
+			setIsLoading(true);
+			if (document.fullscreenElement) {
+				document.exitFullscreen().catch(() => {});
+			}
+			if (search?.play) {
+				setTimeout(() => {
+					// biome-ignore lint/suspicious/noExplicitAny: TanStack Router search param workaround
+					(navigate as any)({
+						search: (prev: Record<string, unknown>) => {
+							const next = { ...prev };
+							delete next.play;
+							return next;
+						},
+						resetScroll: false,
+						replace: true,
+					});
+				}, 150);
+			}
+		}
 		if (open) {
 			const screenOrientation = window.screen?.orientation as {
 				lock?: (orientation: string) => Promise<void>;
 			} | null;
-			screenOrientation?.lock?.("portrait").catch(() => {});
+			screenOrientation?.lock?.("landscape").catch(() => {});
 		} else {
 			const screenOrientation = window.screen?.orientation as {
 				unlock?: () => void;
@@ -159,6 +220,7 @@ export function VideoPlayerModal({
 						onClick={(e) => {
 							e.preventDefault();
 							e.stopPropagation();
+
 							setIsOpen(true);
 						}}
 					>
@@ -194,7 +256,7 @@ export function VideoPlayerModal({
 			</DialogTrigger>
 			<DialogContent
 				ref={contentRef}
-				className="h-[100dvh] w-[min(100vw,calc(100dvh*9/16))] max-h-[100dvh] max-w-[100vw] overflow-hidden rounded-none border-0 bg-black p-0 ring-0 sm:max-w-[100vw]"
+				className="h-[100dvh] w-screen max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0"
 				closeClassName={
 					closeVisible
 						? "top-3 right-3 z-[70] bg-black/65 text-white opacity-100 shadow-xl backdrop-blur-md transition-opacity duration-300 hover:bg-black/80 dark:bg-black/65 dark:text-white dark:hover:bg-black/80"

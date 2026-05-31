@@ -1,6 +1,6 @@
+import { Frown, Meh, Smile, X } from "lucide-react";
 import type { ComponentType } from "react";
 import { CheckCircle, Clock, Eye, Heart } from "@/components/ui/icons";
-import { Frown, Meh, Smile, X } from "lucide-react";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export const PROGRESS_OPTIONS: Array<{

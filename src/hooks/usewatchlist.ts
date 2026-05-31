@@ -7,10 +7,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
-import {
-	createMemoryStorage,
-	normalizeProgressStatus,
-} from "@/lib/utils";
+import { createMemoryStorage, normalizeProgressStatus } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
