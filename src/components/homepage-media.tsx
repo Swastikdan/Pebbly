@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/clerk-react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { memo } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
@@ -115,14 +116,24 @@ function TrendingWeekMovies() {
 }
 
 function UpcomingMovies() {
-	const { data, isFetching, error, cardType } = useMediaQuery(
-		"movies_upcoming",
-		{ cardType: "vertical", mediaType: "movie" },
-	);
+	const { items } = useContinueWatching();
+	const { isSignedIn } = useUser();
+	const showContinueWatching = isSignedIn && items.length > 0;
+	const resolvedCardType = showContinueWatching ? "horizontal" : "vertical";
 
-	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
+	const { data, isFetching, error } = useMediaQuery("movies_upcoming", {
+		cardType: resolvedCardType,
+		mediaType: "movie",
+	});
+
+	if (isFetching || error)
+		return <MediaSkeletonList cardType={resolvedCardType} />;
 	return (
-		<MediaList data={data ?? []} cardType={cardType} defaultMediatype="movie" />
+		<MediaList
+			data={data ?? []}
+			cardType={resolvedCardType}
+			defaultMediatype="movie"
+		/>
 	);
 }
 
@@ -201,7 +212,7 @@ function ContinueWatchingContent({
 	const isLoading = results.some((r) => r.isLoading);
 	const hasError = results.some((r) => r.isError);
 
-	if (isLoading) return <MediaSkeletonList cardType="horizontal" />;
+	if (isLoading) return <MediaSkeletonList cardType="vertical" />;
 	if (hasError) return null;
 
 	const mediaItems = results
@@ -216,6 +227,7 @@ function ContinueWatchingContent({
 				title: isMovie ? (data as any).title : (data as any).name,
 				vote_average: (data as any).vote_average ?? 0,
 				poster_path: (data as any).poster_path ?? "",
+				backdrop_path: (data as any).backdrop_path ?? "",
 				first_air_date: isMovie ? undefined : (data as any).first_air_date,
 				release_date: isMovie ? (data as any).release_date : undefined,
 				overview: (data as any).overview,
@@ -227,7 +239,7 @@ function ContinueWatchingContent({
 
 	if (mediaItems.length === 0) return null;
 
-	return <MediaList data={mediaItems} cardType="horizontal" />;
+	return <MediaList data={mediaItems} cardType="vertical" />;
 }
 
 export {
