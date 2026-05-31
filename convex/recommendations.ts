@@ -8,7 +8,7 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import { GoogleGenAI } from "@google/genai";
 
@@ -297,8 +297,8 @@ export const updateVerifiedRecommendations = mutation({
 });
 
 const MODELS_TO_TRY = [
-  "gemini-2.5-flash",
   "gemini-3.1-flash-lite-preview",
+  "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-1.5-flash",
 ];
@@ -832,5 +832,359 @@ export const generateRecommendations = action({
       generatedAt: Date.now(),
       cached: false,
     };
+  },
+});
+
+export const getHomepageRecommendations = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) return null;
+
+    const dbUser = await getUserByTokenIdentifier(ctx, user.subject);
+    if (!dbUser) return null;
+
+    const entry = await ctx.db
+      .query("homepage_recommendations")
+      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
+      .first();
+
+    const feedbackList = await ctx.db
+      .query("recommendation_feedback")
+      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
+      .collect();
+
+    const notInterestedIds = new Set(
+      feedbackList
+        .filter((f) => f.feedback === "not_interested")
+        .map((f) => f.tmdbId)
+    );
+
+    let recs: Recommendation[] = [];
+    if (entry && entry.recommendations) {
+      try {
+        const parsed = JSON.parse(entry.recommendations) as Recommendation[];
+        recs = parsed.filter((r) => r.tmdbId === null || !notInterestedIds.has(r.tmdbId));
+      } catch (e) {
+        console.error("Failed to parse homepage recommendations", e);
+      }
+    }
+
+    const lastAttemptedAt = entry?.lastAttemptedAt ?? 0;
+    const lastUpdatedAt = entry?.lastUpdatedAt ?? 0;
+    const status = entry?.status ?? "none";
+
+    const isOlderThan12Hours = Date.now() - lastAttemptedAt > 12 * 60 * 60 * 1000;
+    const hasFailedRecently = status === "failed" && Date.now() - lastAttemptedAt < 1 * 60 * 60 * 1000;
+    const needsRefresh = !entry || (isOlderThan12Hours && !hasFailedRecently);
+
+    return {
+      recommendations: recs,
+      lastUpdatedAt,
+      lastAttemptedAt,
+      status,
+      needsRefresh,
+    };
+  },
+});
+
+export const setRecommendationFeedback = mutation({
+  args: {
+    tmdbId: v.number(),
+    mediaType: v.string(),
+    title: v.string(),
+    feedback: v.union(v.literal("not_interested"), v.literal("like")),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireAuthenticatedUser(ctx);
+
+    const existing = await ctx.db
+      .query("recommendation_feedback")
+      .withIndex("by_user_media", (q) =>
+        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        feedback: args.feedback,
+        updatedAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("recommendation_feedback", {
+        userId: user._id,
+        tmdbId: args.tmdbId,
+        mediaType: args.mediaType,
+        title: args.title,
+        feedback: args.feedback,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const getRecommendationFeedback = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) return [];
+
+    const dbUser = await getUserByTokenIdentifier(ctx, user.subject);
+    if (!dbUser) return [];
+
+    return ctx.db
+      .query("recommendation_feedback")
+      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
+      .collect();
+  },
+});
+
+export const saveHomepageRecommendations = internalMutation({
+  args: {
+    userId: v.id("users"),
+    recommendations: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("homepage_recommendations")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        previousRecommendations: existing.recommendations,
+        recommendations: args.recommendations,
+        lastAttemptedAt: Date.now(),
+        lastUpdatedAt: Date.now(),
+        status: "success",
+      });
+    } else {
+      await ctx.db.insert("homepage_recommendations", {
+        userId: args.userId,
+        recommendations: args.recommendations,
+        lastAttemptedAt: Date.now(),
+        lastUpdatedAt: Date.now(),
+        status: "success",
+      });
+    }
+  },
+});
+
+export const saveHomepageFailure = internalMutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("homepage_recommendations")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        lastAttemptedAt: Date.now(),
+        status: "failed",
+      });
+    } else {
+      await ctx.db.insert("homepage_recommendations", {
+        userId: args.userId,
+        recommendations: "[]",
+        lastAttemptedAt: Date.now(),
+        lastUpdatedAt: 0,
+        status: "failed",
+      });
+    }
+  },
+});
+
+function buildHomepageRecommendationsPrompt(
+  data: WatchlistData,
+  likedFeedbackTitles: string[],
+  excludeTmdbIds: number[],
+): string {
+  const { watchItems, inputStats } = data;
+
+  const loved = watchItems.filter(
+    (i) => i.reaction === "loved" || i.reaction === "liked",
+  );
+  const watching = watchItems.filter(
+    (i) => i.progressStatus === "watching",
+  );
+  const watchLater = watchItems.filter(
+    (i) => i.progressStatus === "watch-later",
+  );
+  const disliked = watchItems.filter(
+    (i) =>
+      i.reaction === "not-for-me" ||
+      i.reaction === "mixed" ||
+      i.progressStatus === "dropped",
+  );
+  const done = watchItems.filter(
+    (i) =>
+      i.progressStatus === "done" &&
+      i.reaction !== "loved" &&
+      i.reaction !== "liked",
+  );
+
+  const formatItem = (i: WatchItemSummary) => {
+    const parts = [`- ${i.title ?? "Unknown"} (TMDB ID: ${i.tmdbId}, ${i.mediaType})`];
+    if (i.rating) parts.push(`Rating: ${i.rating}/10`);
+    if (i.reaction) parts.push(`Reaction: ${i.reaction}`);
+    return parts.join(" | ");
+  };
+
+  const prioritized = new Set(
+    [...loved, ...watching, ...done, ...watchLater, ...disliked]
+      .slice(0, 50)
+      .map((i) => i.tmdbId),
+  );
+  const existingIds = [...watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
+  const existingTitles = watchItems
+    .map((i) => i.title)
+    .filter((title): title is string => !!title);
+  const inScope = (item: WatchItemSummary) => prioritized.has(item.tmdbId);
+
+  let prompt = `You are generating personalized recommendations for the user's homepage.\n\nHere is the user's watchlist/viewing data:\n\n`;
+
+  const scopedLoved = loved.filter(inScope);
+  const scopedWatching = watching.filter(inScope);
+  const scopedDone = done.filter(inScope);
+  const scopedWatchLater = watchLater.filter(inScope);
+  const scopedDisliked = disliked.filter(inScope);
+
+  if (scopedLoved.length > 0) {
+    prompt += `## Content I loved/liked:\n${scopedLoved.map(formatItem).join("\n")}\n\n`;
+  }
+  if (scopedWatching.length > 0) {
+    prompt += `## Currently watching:\n${scopedWatching.map(formatItem).join("\n")}\n\n`;
+  }
+  if (scopedDone.length > 0) {
+    prompt += `## Completed (no strong reaction):\n${scopedDone.map(formatItem).join("\n")}\n\n`;
+  }
+  if (scopedWatchLater.length > 0) {
+    prompt += `## On my watch-later list:\n${scopedWatchLater.map(formatItem).join("\n")}\n\n`;
+  }
+  if (scopedDisliked.length > 0) {
+    prompt += `## Content I didn't enjoy (dropped/mixed/not-for-me):\n${scopedDisliked.map(formatItem).join("\n")}\n\n`;
+  }
+
+  if (likedFeedbackTitles.length > 0) {
+    prompt += `## Recommendations I explicitly liked and want more like:\n${likedFeedbackTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
+  }
+
+  prompt += `## Stats:\n- ${inputStats.movieCount} movies, ${inputStats.tvCount} TV shows tracked\n- ${inputStats.episodesWatched} episodes watched\n\n`;
+
+  prompt += `Based on this data, recommend exactly 15 movies and 15 TV shows I would likely enjoy.\n`;
+  prompt += `Do NOT recommend any title with these TMDB IDs: ${existingIds.join(", ")}\n`;
+  if (existingTitles.length > 0) {
+    prompt += `Do NOT recommend any of these already tracked titles by name: ${existingTitles.join(", ")}\n`;
+  }
+  prompt += "\n";
+  prompt += RESPONSE_SCHEMA;
+
+  return prompt;
+}
+
+export const generateHomepageRecommendations = action({
+  args: {},
+  handler: async (ctx): Promise<{ success: boolean; error?: string }> => {
+    const user = await ctx.runQuery(internal.recommendations.getAuthorizedUser);
+    const data = await ctx.runQuery(internal.recommendations.gatherWatchlistData);
+
+    const feedbackList = await ctx.runQuery(
+      api.recommendations.getRecommendationFeedback
+    );
+
+    const likedFeedback = feedbackList
+      .filter((f: any) => f.feedback === "like")
+      .map((f: any) => f.title);
+
+    const dislikedFeedbackIds = feedbackList
+      .filter((f: any) => f.feedback === "not_interested")
+      .map((f: any) => f.tmdbId);
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY is not set in Convex environment variables");
+      return { success: false, error: "api_unavailable" };
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const systemInstruction =
+      "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
+
+    const prompt = buildHomepageRecommendationsPrompt(
+      data,
+      likedFeedback,
+      dislikedFeedbackIds
+    );
+
+    let responseText = "";
+    let highDemandError = false;
+    let success = false;
+    let lastError = "";
+
+    // 2 attempts (first attempt + 1 automatic retry)
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const result = await generateRecommendationResponse(ai, prompt, systemInstruction);
+        if (result.responseText) {
+          responseText = result.responseText;
+          highDemandError = result.highDemandError;
+          success = true;
+          break;
+        }
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : String(error);
+        if (attempt < 2) {
+          await delay(1000); // 1s backoff before retry
+        }
+      }
+    }
+
+    if (!success) {
+      await ctx.runMutation(internal.recommendations.saveHomepageFailure, {
+        userId: user._id,
+      });
+      return {
+        success: false,
+        error: highDemandError ? "high_demand" : (lastError || "api_unavailable"),
+      };
+    }
+
+    let parsed: { recommendations: Recommendation[] };
+    try {
+      parsed = JSON.parse(responseText);
+      if (!Array.isArray(parsed.recommendations)) {
+        throw new Error("Response recommendations is not an array");
+      }
+    } catch (e) {
+      await ctx.runMutation(internal.recommendations.saveHomepageFailure, {
+        userId: user._id,
+      });
+      return { success: false, error: "invalid_response" };
+    }
+
+    // Filter out existing watchlist items (double check)
+    const existingIds = new Set([
+      ...data.watchItems.map((item) => item.tmdbId),
+      ...dislikedFeedbackIds,
+    ]);
+    const existingTitles = new Set(
+      data.watchItems.map((item) => normalizeTitleKey(item.title)),
+    );
+
+    parsed.recommendations = parsed.recommendations.filter(
+      (r) =>
+        (r.tmdbId == null || !existingIds.has(r.tmdbId)) &&
+        !existingTitles.has(normalizeTitleKey(r.title)),
+    );
+
+    await ctx.runMutation(internal.recommendations.saveHomepageRecommendations, {
+      userId: user._id,
+      recommendations: JSON.stringify(parsed.recommendations),
+    });
+
+    return { success: true };
   },
 });

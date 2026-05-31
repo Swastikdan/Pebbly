@@ -109,4 +109,24 @@ export default defineSchema({
 	    verified: v.optional(v.boolean()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  homepage_recommendations: defineTable({
+    userId: v.id("users"),
+    recommendations: v.string(), // JSON string of AIRecommendation[]
+    lastAttemptedAt: v.number(), // timestamp of last attempt to generate (success or fail)
+    lastUpdatedAt: v.number(), // timestamp of last successful update/generation
+    status: v.string(), // "success" | "failed"
+    previousRecommendations: v.optional(v.string()), // JSON string of previous successful AIRecommendation[]
+  }).index("by_user", ["userId"]),
+
+  recommendation_feedback: defineTable({
+    userId: v.id("users"),
+    tmdbId: v.number(),
+    mediaType: v.string(), // "movie" | "tv"
+    title: v.string(),
+    feedback: v.string(), // "not_interested" | "like"
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_media", ["userId", "tmdbId", "mediaType"]),
 });
