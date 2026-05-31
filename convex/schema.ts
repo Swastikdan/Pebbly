@@ -12,7 +12,7 @@ export default defineSchema({
 
     email: v.optional(v.string()),
 
-	    role: v.optional(v.string()),
+	    roles: v.optional(v.array(v.string())),
     aiGenerationEnabled: v.optional(v.boolean()),
   }).index("by_token", ["tokenIdentifier"]),
 
@@ -129,4 +129,12 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_media", ["userId", "tmdbId", "mediaType"]),
+
+  role_permissions: defineTable({
+    role: v.string(), // "admin" | "ai-integrations"
+    feature: v.string(), // "video-player" | "ai-recommendations"
+    enabled: v.boolean(),
+  })
+    .index("by_role", ["role"])
+    .index("by_role_feature", ["role", "feature"]),
 });

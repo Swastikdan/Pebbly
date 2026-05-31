@@ -23,7 +23,7 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { NAV_ITEMS, SITE_CONFIG } from "@/constants";
-import { useRecommendationAccess } from "@/hooks/useRecommendations";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const DesktopNavMenuItem = ({
 	item,
@@ -105,7 +105,7 @@ const MobileNavMenuItem = ({
 MobileNavMenuItem.displayName = "MobileNavMenuItem";
 
 const Navbar = () => {
-	const { hasAccess } = useRecommendationAccess();
+	const { hasFeature } = usePermissions();
 
 	return (
 		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border/60 border-b bg-background/80 backdrop-blur-xl backdrop-saturate-150 transition-all duration-300">
@@ -182,7 +182,7 @@ const Navbar = () => {
 											</SheetClose>
 										</Link>
 									</SignedIn>
-									{hasAccess && (
+									{hasFeature("ai-recommendations") && (
 										// @ts-expect-error correct link
 										<Link to="/recommendations" className="w-full">
 											<SheetClose asChild>

@@ -39,11 +39,9 @@ import type {
 	GenerateOptions,
 	RecommendationHistoryEntry,
 } from "@/hooks/useRecommendations";
-import {
-	useRecommendationAccess,
-	useRecommendations,
-} from "@/hooks/useRecommendations";
+import { useRecommendations } from "@/hooks/useRecommendations";
 import { useWatchlist } from "@/hooks/usewatchlist";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
 	getBasicMovieDetails,
 	getBasicTvDetails,
@@ -233,16 +231,16 @@ function formatTimestamp(ts: number) {
 
 function RecommendationsPage() {
 	const {
-		hasAccess,
+		hasFeature,
 		loading: accessLoading,
 		isSignedIn,
-	} = useRecommendationAccess();
+	} = usePermissions();
 
 	if (accessLoading) {
 		return <DefaultLoader />;
 	}
 
-	if (!isSignedIn || !hasAccess) {
+	if (!isSignedIn || !hasFeature("ai-recommendations")) {
 		return <DefaultNotFoundComponent />;
 	}
 

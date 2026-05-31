@@ -9,22 +9,12 @@ export const UserSync = () => {
 
 	useEffect(() => {
 		if (isLoaded && user) {
-			const publicMeta = user.publicMetadata as
-				| {
-						aiGenerationEnabled?: boolean;
-						role?: string;
-						public_meta?: { aiGenerationEnabled?: boolean; role?: string };
-				  }
-				| undefined;
-
 			storeUser({
 				name: user.fullName ?? user.username ?? "Anonymous",
 				email: user.primaryEmailAddress?.emailAddress,
 				image: user.imageUrl,
-				role: publicMeta?.role ?? publicMeta?.public_meta?.role,
-				aiGenerationEnabled:
-					publicMeta?.aiGenerationEnabled ??
-					publicMeta?.public_meta?.aiGenerationEnabled,
+				role: undefined,
+				aiGenerationEnabled: undefined,
 			}).catch((error) => {
 				console.error("Failed to sync user to Convex:", error);
 			});
