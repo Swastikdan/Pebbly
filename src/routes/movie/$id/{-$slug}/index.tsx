@@ -95,6 +95,7 @@ function MovieHomePage() {
 		original_title,
 		overview,
 		poster_path,
+		backdrop_path,
 		release_date,
 		runtime,
 		tagline,
@@ -133,6 +134,7 @@ function MovieHomePage() {
 				imdb_url={imdb_url}
 				media_type="movie"
 				poster_path={poster_path}
+				backdrop_path={backdrop_path ?? undefined}
 				rating={vote_average}
 				releaseyear={
 					mediaPage.releaseYear != null &&

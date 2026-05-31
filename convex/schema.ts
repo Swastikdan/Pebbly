@@ -64,6 +64,7 @@ export default defineSchema({
     addedAt: v.number(),
     title: v.optional(v.string()),
     image: v.optional(v.string()),
+    backdrop: v.optional(v.string()),
     rating: v.optional(v.number()),
     release_date: v.optional(v.string()),
     overview: v.optional(v.string()),
