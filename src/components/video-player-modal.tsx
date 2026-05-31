@@ -48,6 +48,32 @@ export function VideoPlayerModal({
 	// after the user explicitly closes it (play param has a 150ms removal delay)
 	const closedByUserRef = useRef(false);
 
+	const [isPortrait, setIsPortrait] = useState(false);
+	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+
+		setIsMobile(
+			/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
+				(("ontouchstart" in window || navigator.maxTouchPoints > 0) &&
+					window.matchMedia("(max-width: 1024px)").matches),
+		);
+
+		const handleResize = () => {
+			setIsPortrait(window.innerHeight > window.innerWidth);
+		};
+
+		handleResize();
+		window.addEventListener("resize", handleResize);
+		window.addEventListener("orientationchange", handleResize);
+
+		return () => {
+			window.removeEventListener("resize", handleResize);
+			window.removeEventListener("orientationchange", handleResize);
+		};
+	}, []);
+
 	const navigate = useNavigate();
 	const search = useSearch({ strict: false }) as Record<string, unknown>;
 
@@ -70,9 +96,19 @@ export function VideoPlayerModal({
 		if (isOpen) {
 			const el = contentRef.current;
 			if (el) {
-				const requestFs = () => {
+				const requestFs = async () => {
 					if (!document.fullscreenElement) {
-						el.requestFullscreen().catch(() => {});
+						try {
+							await el.requestFullscreen();
+							const screenOrientation = window.screen?.orientation as {
+								lock?: (orientation: string) => Promise<void>;
+							} | null;
+							if (screenOrientation?.lock) {
+								await screenOrientation.lock("landscape");
+							}
+						} catch (err) {
+							console.warn("Fullscreen or orientation lock failed:", err);
+						}
 					}
 				};
 				requestFs();
@@ -81,11 +117,16 @@ export function VideoPlayerModal({
 			if (document.fullscreenElement) {
 				document.exitFullscreen().catch(() => {});
 			}
+			const screenOrientation = window.screen?.orientation as {
+				unlock?: () => void;
+			} | null;
+			screenOrientation?.unlock?.();
 		}
 
 		const handleFsChange = () => {
 			if (!document.fullscreenElement && isOpen) {
 				if (search?.play) {
+					// biome-ignore lint/suspicious/noExplicitAny: TanStack Router search param workaround
 					(navigate as any)({
 						search: (prev: Record<string, unknown>) => {
 							const next = { ...prev };
@@ -98,6 +139,12 @@ export function VideoPlayerModal({
 				}
 				setIsOpen(false);
 			}
+			if (!document.fullscreenElement) {
+				const screenOrientation = window.screen?.orientation as {
+					unlock?: () => void;
+				} | null;
+				screenOrientation?.unlock?.();
+			}
 		};
 
 		document.addEventListener("fullscreenchange", handleFsChange);
@@ -106,8 +153,12 @@ export function VideoPlayerModal({
 			if (document.fullscreenElement) {
 				document.exitFullscreen().catch(() => {});
 			}
+			const screenOrientation = window.screen?.orientation as {
+				unlock?: () => void;
+			} | null;
+			screenOrientation?.unlock?.();
 		};
-	}, [isOpen]);
+	}, [isOpen, navigate, search.play]);
 
 	const resetInactivityTimer = useCallback(() => {
 		setCloseVisible(true);
@@ -192,18 +243,9 @@ export function VideoPlayerModal({
 				}, 150);
 			}
 		}
-		if (open) {
-			const screenOrientation = window.screen?.orientation as {
-				lock?: (orientation: string) => Promise<void>;
-			} | null;
-			screenOrientation?.lock?.("landscape").catch(() => {});
-		} else {
-			const screenOrientation = window.screen?.orientation as {
-				unlock?: () => void;
-			} | null;
-			screenOrientation?.unlock?.();
-		}
 	};
+
+	const shouldRotateCSS = isOpen && isMobile && isPortrait;
 
 	return (
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -256,11 +298,15 @@ export function VideoPlayerModal({
 			</DialogTrigger>
 			<DialogContent
 				ref={contentRef}
-				className="h-[100dvh] w-screen max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0"
+				className={cn(
+					"h-[100dvh] w-screen max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0",
+					shouldRotateCSS &&
+						"!w-[100dvh] !h-[100vw] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90 origin-center",
+				)}
 				closeClassName={
 					closeVisible
-						? "top-3 right-3 z-[70] bg-black/65 text-white opacity-100 shadow-xl backdrop-blur-md transition-opacity duration-300 hover:bg-black/80 dark:bg-black/65 dark:text-white dark:hover:bg-black/80"
-						: "top-3 right-3 z-[70] pointer-events-none bg-black/65 text-white opacity-0 shadow-xl backdrop-blur-md transition-opacity duration-500 dark:bg-black/65 dark:text-white"
+						? "top-3 right-3 z-[70] bg-black/65 text-white opacity-100 shadow-xl backdrop-blur-md transition-all duration-300 hover:bg-white hover:text-black hover:scale-105 active:scale-95 dark:bg-black/65 dark:text-white dark:hover:bg-white dark:hover:text-black before:absolute before:-inset-5 before:content-['']"
+						: "top-3 right-3 z-[70] bg-black/65 text-white opacity-0 hover:opacity-100 shadow-xl backdrop-blur-md transition-all duration-300 hover:bg-white hover:text-black hover:scale-105 active:scale-95 dark:bg-black/65 dark:text-white dark:hover:bg-white dark:hover:text-black before:absolute before:-inset-5 before:content-['']"
 				}
 			>
 				<DialogHeader className="sr-only">
