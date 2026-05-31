@@ -15,7 +15,7 @@ import {
 	UserIcon,
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRecommendationAccess } from "@/hooks/useRecommendations";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 import { ThemeSwitch } from "./theme-switch";
 
@@ -53,11 +53,11 @@ const DesktopNavButton = ({
 DesktopNavButton.displayName = "DesktopNavButton";
 
 const DesktopNavButtons = () => {
-	const { hasAccess } = useRecommendationAccess();
+	const { hasFeature } = usePermissions();
 
 	return (
 		<>
-			{hasAccess && (
+			{hasFeature("ai-recommendations") && (
 				<DesktopNavButton
 					href="/recommendations"
 					label="AI Recommendations"

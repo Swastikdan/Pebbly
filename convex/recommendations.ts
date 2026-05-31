@@ -11,6 +11,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import { GoogleGenAI } from "@google/genai";
+import { hasFeature } from "./admin";
 
 type RecommendationsContext = QueryCtx | MutationCtx;
 type RecommendationUser = Doc<"users">;
@@ -24,46 +25,6 @@ type CustomListItemSummary = Pick<
   Doc<"list_items">,
   "listId" | "tmdbId" | "mediaType"
 >;
-
-function parseIdentityPublicMeta(identity: Record<string, unknown> | null) {
-  if (!identity) return null;
-
-  const candidates = [identity["public_meta"], identity["publicMetadata"]];
-
-  for (const candidate of candidates) {
-    if (!candidate) continue;
-
-    if (typeof candidate === "string") {
-      try {
-        const parsed = JSON.parse(candidate) as unknown;
-        if (parsed && typeof parsed === "object") {
-          return parsed as Record<string, unknown>;
-        }
-      } catch {
-        // Ignore malformed metadata claim payloads.
-      }
-      continue;
-    }
-
-    if (typeof candidate === "object") {
-      return candidate as Record<string, unknown>;
-    }
-  }
-
-  return null;
-}
-
-function hasAiGenerationAccess(identity: Record<string, unknown> | null) {
-  const meta = parseIdentityPublicMeta(identity);
-  return meta?.aiGenerationEnabled === true;
-}
-
-function isAiGenerationExplicitlyDisabled(
-  identity: Record<string, unknown> | null,
-) {
-  const meta = parseIdentityPublicMeta(identity);
-  return meta?.aiGenerationEnabled === false;
-}
 
 async function getUserByTokenIdentifier(
   ctx: RecommendationsContext,
@@ -113,17 +74,9 @@ async function requireOwnedRecommendationEntry(
 export const getAuthorizedUser = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const identity = (await ctx.auth.getUserIdentity()) as Record<string, unknown> | null;
-    if (!identity) {
-      throw new Error("Unauthorized");
-    }
+    const user = await requireAuthenticatedUser(ctx);
 
-    const user = await getUserByTokenIdentifier(ctx, identity.subject as string);
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    if (!hasAiGenerationAccess(identity)) {
+    if (!(await hasFeature(ctx, "ai-recommendations"))) {
       throw new Error("Unauthorized: feature not enabled");
     }
 
@@ -208,36 +161,15 @@ export const saveRecommendations = internalMutation({
   },
 });
 
-export const setUserRole = internalMutation({
-  args: {
-    tokenIdentifier: v.string(),
-    role: v.string(),
-    aiGenerationEnabled: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
-      .first();
-
-    if (!user) throw new Error("User not found");
-
-    await ctx.db.patch(user._id, {
-      role: args.role,
-      aiGenerationEnabled: args.aiGenerationEnabled,
-    });
-  },
-});
-
 export const getUserRecommendationAccess = query({
   args: {},
   handler: async (ctx) => {
-    const identity = (await ctx.auth.getUserIdentity()) as Record<string, unknown> | null;
+    const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       return { hasAccess: false, reason: "not_authenticated" as const };
     }
 
-    if (!hasAiGenerationAccess(identity)) {
+    if (!(await hasFeature(ctx, "ai-recommendations"))) {
       return { hasAccess: false, reason: "feature_disabled" as const };
     }
 
@@ -248,15 +180,13 @@ export const getUserRecommendationAccess = query({
 export const getRecommendationHistory = query({
   args: {},
   handler: async (ctx) => {
-    const identity = (await ctx.auth.getUserIdentity()) as Record<string, unknown> | null;
-    if (!identity || isAiGenerationExplicitlyDisabled(identity)) {
-      return [];
-    }
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
 
-    const user = await getUserByTokenIdentifier(ctx, identity.subject as string);
-    if (!user) {
-      return [];
-    }
+    if (!(await hasFeature(ctx, "ai-recommendations"))) return [];
+
+    const user = await getUserByTokenIdentifier(ctx, identity.subject);
+    if (!user) return [];
 
     const entries = await ctx.db
       .query("ai_recommendations")

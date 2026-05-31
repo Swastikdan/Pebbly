@@ -26,7 +26,6 @@ export const store = mutation({
         name: args.name,
         image: args.image,
         email: args.email,
-        role: args.role,
         aiGenerationEnabled: args.aiGenerationEnabled,
       });
       return existing._id;
@@ -36,7 +35,7 @@ export const store = mutation({
         name: args.name,
         image: args.image,
         email: args.email,
-        role: args.role,
+        roles: args.role ? [args.role] : undefined,
         aiGenerationEnabled: args.aiGenerationEnabled,
       });
       return newUserId;

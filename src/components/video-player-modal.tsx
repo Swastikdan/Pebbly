@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export function VideoPlayerModal({
 	const [isLoading, setIsLoading] = useState(true);
 	const [isOpen, setIsOpen] = useState(false);
 	const [closeVisible, setCloseVisible] = useState(true);
-	const { isSignedIn, user } = useUser();
+	const { isSignedIn, hasFeature, loading } = usePermissions();
 	const contentRef = useRef<HTMLDivElement>(null);
 	const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	// Prevents the auto-open effect from re-opening the modal immediately
@@ -78,8 +78,6 @@ export function VideoPlayerModal({
 	const search = useSearch({ strict: false }) as Record<string, unknown>;
 
 	usePlayerProgressListener();
-
-	const isAdmin = user?.publicMetadata?.isAdmin === true;
 
 	useEffect(() => {
 		const shouldPlay = search.play === true || search.play === "true";
@@ -202,7 +200,7 @@ export function VideoPlayerModal({
 		};
 	}, [isOpen, resetInactivityTimer]);
 
-	if (!isSignedIn || !isAdmin) return null;
+	if (!isSignedIn || loading || !hasFeature("video-player")) return null;
 
 	const videoUrl = buildPlayerUrl({
 		type,
