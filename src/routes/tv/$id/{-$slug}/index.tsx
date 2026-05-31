@@ -93,6 +93,7 @@ function TvHomePage() {
 		original_name,
 		overview,
 		poster_path,
+		backdrop_path,
 		first_air_date: release_date,
 		content_ratings,
 		tagline,
@@ -135,6 +136,7 @@ function TvHomePage() {
 				imdb_url={imdb_url}
 				media_type="tv"
 				poster_path={poster_path}
+				backdrop_path={backdrop_path ?? undefined}
 				rating={vote_average}
 				releaseyear={
 					mediaPage.releaseYear != null &&

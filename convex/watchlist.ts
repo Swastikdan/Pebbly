@@ -633,10 +633,32 @@ export const getCustomLists = query({
     const user = await getCurrentUser(ctx);
     if (!user) return [];
 
-    return ctx.db
+    const lists = await ctx.db
       .query("lists")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
+
+    const listsWithPreviews = await Promise.all(
+      lists.map(async (list) => {
+        const items = await ctx.db
+          .query("list_items")
+          .withIndex("by_list", (q) => q.eq("listId", list._id))
+          .collect();
+
+        const previews = items
+          .map((item) => item.backdrop ?? item.image)
+          .filter((img): img is string => !!img)
+          .slice(0, 4);
+
+        return {
+          ...list,
+          previews,
+          itemCount: items.length,
+        };
+      })
+    );
+
+    return listsWithPreviews;
   },
 });
 
@@ -782,6 +804,7 @@ export const toggleListItem = mutation({
     mediaType: v.string(),
     title: v.optional(v.string()),
     image: v.optional(v.string()),
+    backdrop: v.optional(v.string()),
     rating: v.optional(v.number()),
     release_date: v.optional(v.string()),
     overview: v.optional(v.string()),
@@ -810,6 +833,7 @@ export const toggleListItem = mutation({
       addedAt: Date.now(),
       title: args.title,
       image: args.image,
+      backdrop: args.backdrop,
       rating: args.rating,
       release_date: args.release_date,
       overview: args.overview,
@@ -826,6 +850,7 @@ export const createCustomListAndAddItem = mutation({
     mediaType: v.string(),
     title: v.optional(v.string()),
     image: v.optional(v.string()),
+    backdrop: v.optional(v.string()),
     rating: v.optional(v.number()),
     release_date: v.optional(v.string()),
     overview: v.optional(v.string()),
@@ -863,6 +888,7 @@ export const createCustomListAndAddItem = mutation({
       addedAt: now,
       title: args.title,
       image: args.image,
+      backdrop: args.backdrop,
       rating: args.rating,
       release_date: args.release_date,
       overview: args.overview,

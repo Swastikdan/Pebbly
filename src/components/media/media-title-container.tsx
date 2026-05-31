@@ -16,6 +16,7 @@ export const MediaTitleContainer = (props: {
 	rating: number;
 	image: string;
 	poster_path: string;
+	backdrop_path?: string;
 	id: number;
 	media_type: "movie" | "tv";
 	release_date: string | null;
@@ -57,6 +58,7 @@ export const MediaTitleContainer = (props: {
 	const metadata = {
 		title,
 		image: poster_path,
+		backdrop: props.backdrop_path,
 		rating,
 		release_date: release_date ?? "",
 		overview: props.description,

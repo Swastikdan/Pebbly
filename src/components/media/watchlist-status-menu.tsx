@@ -52,6 +52,7 @@ class SilentErrorBoundary extends Component<
 export type MediaMetadataForList = {
 	title?: string;
 	image?: string;
+	backdrop?: string;
 	rating?: number;
 	release_date?: string;
 	overview?: string;
@@ -366,7 +367,7 @@ function AddToListDialog({
 					</div>
 
 					<div className="px-6">
-						<div className="max-h-64 space-y-1 overflow-y-auto">
+						<div className="max-h-64 space-y-1.5 overflow-y-auto">
 							{safeList.length === 0 && (
 								<p className="py-6 text-center text-sm text-muted-foreground">
 									No lists yet. Create one to get started.
@@ -376,13 +377,14 @@ function AddToListDialog({
 							{safeList.map((list) => {
 								const isInList = safeItemLists.includes(list._id);
 								return (
-									<Button
+									<button
 										key={list._id}
 										type="button"
-										variant="ghost"
 										className={cn(
-											"h-auto w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
-											isInList ? "bg-primary/10" : "hover:bg-secondary/60",
+											"flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-all duration-200 border border-transparent",
+											isInList
+												? "bg-primary/[0.03] border-primary/10 text-foreground font-semibold"
+												: "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
 										)}
 										onClick={() =>
 											toggleListItem({
@@ -391,30 +393,33 @@ function AddToListDialog({
 												mediaType,
 												title: metadata?.title,
 												image: metadata?.image,
+												backdrop: metadata?.backdrop,
 												rating: metadata?.rating,
 												release_date: metadata?.release_date,
 												overview: metadata?.overview,
 											})
 										}
 									>
-										<div
-											className={cn(
-												"flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
-												isInList
-													? "border-primary bg-primary text-primary-foreground"
-													: "border-border",
-											)}
-										>
-											{isInList && <Check size={12} strokeWidth={3} />}
+										<div className="flex items-center gap-3 min-w-0">
+											<div
+												className={cn(
+													"flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
+													isInList
+														? "border-primary bg-primary text-primary-foreground scale-105"
+														: "border-muted-foreground/30 bg-transparent",
+												)}
+											>
+												{isInList && <Check size={11} strokeWidth={3} />}
+											</div>
+											<span className="truncate">{list.name}</span>
 										</div>
 										{list.color && (
 											<span
-												className="size-2.5 shrink-0 rounded-full"
+												className="size-2.5 shrink-0 rounded-full shadow-sm"
 												style={{ backgroundColor: list.color }}
 											/>
 										)}
-										<span className="truncate font-medium">{list.name}</span>
-									</Button>
+									</button>
 								);
 							})}
 						</div>
@@ -442,6 +447,7 @@ function AddToListDialog({
 					mediaType,
 					title: metadata?.title,
 					image: metadata?.image,
+					backdrop: metadata?.backdrop,
 					rating: metadata?.rating,
 					release_date: metadata?.release_date,
 					overview: metadata?.overview,
