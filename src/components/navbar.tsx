@@ -1,7 +1,7 @@
 import { SignedIn } from "@clerk/clerk-react";
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
-import { ListPlus, Sparkles } from "lucide-react";
+import { ListPlus } from "lucide-react";
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BookMarkFilledIcon, MenuIcon } from "@/components/ui/icons";
+import {
+	BookMarkFilledIcon,
+	MenuIcon,
+	SparklesFilledIcon,
+} from "@/components/ui/icons";
 import {
 	Sheet,
 	SheetClose,
@@ -186,7 +190,7 @@ const Navbar = () => {
 													variant="outline"
 													className="h-9 w-full justify-start gap-2 text-sm"
 												>
-													<Sparkles className="size-4 text-blue-500" />
+													<SparklesFilledIcon className="size-4" />
 													AI Recommendations
 												</Button>
 											</SheetClose>

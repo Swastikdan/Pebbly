@@ -72,6 +72,23 @@ export const MoonFilledIcon = ({ ...props }: IconSvgProps) => (
 	</svg>
 );
 
+export const SparklesFilledIcon = ({ ...props }: IconSvgProps) => (
+	<svg
+		height={props.size ?? 24}
+		width={props.size ?? 24}
+		className={props.className}
+		viewBox="0 0 24 24"
+		xmlns="http://www.w3.org/2000/svg"
+		{...props}
+	>
+		<title> Icon </title>
+		<path
+			d="M9,6 Q9,13 16,13 Q9,13 9,20 Q9,13 2,13 Q9,13 9,6 Z M17,3 Q17,7 21,7 Q17,7 17,11 Q17,7 13,7 Q17,7 17,3 Z M16,15.5 Q16,18 18.5,18 Q16,18 16,20.5 Q16,18 13.5,18 Q16,18 16,15.5 Z"
+			fill="currentColor"
+		/>
+	</svg>
+);
+
 export const SunFilledIcon = ({ ...props }: IconSvgProps) => (
 	<svg
 		height={props.size ?? 24}

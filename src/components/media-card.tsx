@@ -24,6 +24,7 @@ interface MediaCardSpecificProps extends BaseCardProps {
 	known_for_department?: string;
 	is_on_watchlist_page?: boolean;
 	is_on_homepage?: boolean;
+	isContinueWatching?: boolean;
 	overview?: string;
 	priority?: boolean;
 }
@@ -66,6 +67,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 		release_date,
 		is_on_homepage,
 		is_on_watchlist_page,
+		isContinueWatching,
 		overview,
 		priority,
 	} = props;
@@ -79,6 +81,8 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 			<Link
 				// @ts-expect-error - correct link
 				to={`/${media_type}/${id}/${formattedTitle}`}
+				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
+				search={(isContinueWatching ? { play: true } : undefined) as any}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
 				<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60  dark:ring-white/[0.06] dark:group-hover:ring-white/10">
@@ -146,6 +150,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 		release_date,
 		is_on_homepage,
 		is_on_watchlist_page,
+		isContinueWatching,
 		overview,
 		priority,
 	} = props;
@@ -159,6 +164,8 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 			<Link
 				// @ts-expect-error - correct link
 				to={`/${media_type}/${id}/${formattedTitle}`}
+				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
+				search={(isContinueWatching ? { play: true } : undefined) as any}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
 				<div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60 dark:ring-white/[0.06] dark:group-hover:ring-white/10">

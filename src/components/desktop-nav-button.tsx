@@ -7,11 +7,11 @@ import {
 	UserButton,
 } from "@clerk/clerk-react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	BookMarkFilledIcon,
 	SearchFilledIcon,
+	SparklesFilledIcon,
 	UserIcon,
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,7 +62,7 @@ const DesktopNavButtons = () => {
 					href="/recommendations"
 					label="AI Recommendations"
 					className="hidden sm:flex"
-					icon={<Sparkles className="size-5 text-blue-500" />}
+					icon={<SparklesFilledIcon className="size-5" />}
 				/>
 			)}
 			<DesktopNavButton

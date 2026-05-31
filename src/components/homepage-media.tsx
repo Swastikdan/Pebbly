@@ -1,14 +1,19 @@
-import { useQuery, useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { memo } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
 import { useContinueWatching } from "@/hooks/useWatchProgress";
-import { getBasicMovieDetails, getBasicTvDetails, getMedia } from "@/lib/queries";
+import {
+	getBasicMovieDetails,
+	getBasicTvDetails,
+	getMedia,
+} from "@/lib/queries";
 import type { MediaListResultsEntity } from "@/types";
 
 interface MediaListProps extends MediaListResultsEntity {
 	is_on_watchlist_page?: boolean;
 	is_on_homepage?: boolean;
+	isContinueWatching?: boolean;
 }
 const MediaList = (props: {
 	data: MediaListProps[];
@@ -38,6 +43,7 @@ const MediaList = (props: {
 						release_date={item.first_air_date ?? item.release_date ?? null}
 						is_on_watchlist_page={item.is_on_watchlist_page}
 						is_on_homepage={item.is_on_homepage}
+						isContinueWatching={item.isContinueWatching}
 						card_type={props.cardType as unknown as "horizontal" | "vertical"}
 						overview={item.overview}
 						priority={props.priorityCount ? index < props.priorityCount : false}
@@ -214,6 +220,7 @@ function ContinueWatchingContent({
 				release_date: isMovie ? (data as any).release_date : undefined,
 				overview: (data as any).overview,
 				media_type: item.type,
+				isContinueWatching: true,
 			};
 		})
 		.filter(Boolean) as MediaListProps[];

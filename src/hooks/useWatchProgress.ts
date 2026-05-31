@@ -10,7 +10,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 
 import { useLocalProgressStore } from "./useLocalProgressStore";
 
-import { useMediaState, useWatchlist, useWatchlistStore } from "./usewatchlist";
+import { useMediaState, useWatchlistStore } from "./usewatchlist";
 
 export interface WatchProgressData {
 	id: string;
@@ -224,6 +224,15 @@ export function usePlayerProgressListener() {
 				return;
 			}
 
+			if (mediaType === "tv" && season !== undefined && episode !== undefined) {
+				try {
+					localStorage.setItem(
+						`last_played:${id}`,
+						JSON.stringify({ season, episode }),
+					);
+				} catch {}
+			}
+
 			if (
 				playerEvent === "play" ||
 				playerEvent === "pause" ||
@@ -290,9 +299,80 @@ export function useWatchProgress(
 	mediaType: "movie" | "tv",
 ) {
 	const mediaState = useMediaState(String(id), mediaType);
+	const { isSignedIn } = useUser();
+	const tmdbId = Number(id);
+
+	const watchedEpisodes =
+		useQuery(
+			api.watchlist.getAllWatchedEpisodes,
+			isSignedIn && mediaType === "tv" ? { tmdbId } : QUERY_SKIP,
+		) || [];
+
+	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
 	const progress: WatchProgressData | null = useMemo(() => {
 		if (!mediaState) return null;
+
+		let context: { season?: number; episode?: number } | undefined;
+
+		if (mediaType === "tv") {
+			// First, check if there's a last-played episode in localStorage
+			const lastPlayedStr =
+				typeof window !== "undefined"
+					? localStorage.getItem(`last_played:${id}`)
+					: null;
+			if (lastPlayedStr) {
+				try {
+					const { season, episode } = JSON.parse(lastPlayedStr);
+					if (typeof season === "number" && typeof episode === "number") {
+						// Check if this episode is already fully watched.
+						const isThisWatched = isSignedIn
+							? watchedEpisodes.some(
+									(e) =>
+										e.season === season && e.episode === episode && e.isWatched,
+								)
+							: !!localEpisodes[`${tmdbId}:${season}:${episode}`];
+
+						if (isThisWatched) {
+							context = { season, episode: episode + 1 };
+						} else {
+							context = { season, episode };
+						}
+					}
+				} catch {}
+			}
+
+			// If not in localStorage, fall back to the highest watched episode + 1, or S1E1
+			if (!context) {
+				const watchedList = isSignedIn
+					? watchedEpisodes
+							.filter((e) => e.isWatched)
+							.map((e) => ({ season: e.season, episode: e.episode }))
+					: Object.entries(localEpisodes)
+							.filter(([key, val]) => key.startsWith(`${tmdbId}:`) && val)
+							.map(([key]) => {
+								const [, s, e] = key.split(":");
+								return { season: Number(s), episode: Number(e) };
+							});
+
+				if (watchedList.length > 0) {
+					watchedList.sort((a, b) => {
+						if (a.season !== b.season) return a.season - b.season;
+						return a.episode - b.episode;
+					});
+					const lastWatched = watchedList[watchedList.length - 1];
+					context = {
+						season: lastWatched.season,
+						episode: lastWatched.episode + 1,
+					};
+				} else {
+					context = {
+						season: 1,
+						episode: 1,
+					};
+				}
+			}
+		}
 
 		return {
 			id: String(mediaState.external_id),
@@ -301,21 +381,47 @@ export function useWatchProgress(
 			percent: mediaState.progress ?? 0,
 			duration: 0,
 			lastUpdated: mediaState.updated_at,
-			context: undefined,
+			context,
 		};
-	}, [mediaState]);
+	}, [
+		mediaState,
+		mediaType,
+		isSignedIn,
+		watchedEpisodes,
+		localEpisodes,
+		tmdbId,
+		id,
+	]);
 
 	return { progress };
 }
 
 export function useContinueWatching() {
-	const { watchlist } = useWatchlist();
+	const { isSignedIn } = useUser();
+	const convexData = useQuery(
+		api.watchlist.getWatchlist,
+		isSignedIn ? {} : QUERY_SKIP,
+	);
+	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
 	const items = useMemo(() => {
-		return watchlist
-			.filter(
-				(item) => item.progressStatus === "watching",
-			)
+		if (isSignedIn) {
+			if (!convexData) return [];
+			return convexData
+				.filter((item) => item.progressStatus === "watching")
+				.map((item) => ({
+					id: String(item.tmdbId),
+					type: item.mediaType as "movie" | "tv",
+					timestamp: 0,
+					percent: item.progress ?? 0,
+					duration: 0,
+					lastUpdated: item.updatedAt,
+				}))
+				.sort((a, b) => b.lastUpdated - a.lastUpdated);
+		}
+
+		return localMediaState
+			.filter((item) => item.progressStatus === "watching")
 			.map((item) => ({
 				id: String(item.external_id),
 				type: item.type,
@@ -323,8 +429,9 @@ export function useContinueWatching() {
 				percent: item.progress ?? 0,
 				duration: 0,
 				lastUpdated: item.updated_at,
-			}));
-	}, [watchlist]);
+			}))
+			.sort((a, b) => b.lastUpdated - a.lastUpdated);
+	}, [isSignedIn, convexData, localMediaState]);
 
 	return { items, allItems: items };
 }

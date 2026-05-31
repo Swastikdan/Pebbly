@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
-import { DefaultErrorComponent, DefaultNotFoundComponent } from "@/components/default-not-found";
+import {
+	DefaultErrorComponent,
+	DefaultNotFoundComponent,
+} from "@/components/default-not-found";
 import { CastSection } from "@/components/media/cast-section";
 import { GenreContainer } from "@/components/media/genre-container";
 import { InlineEpisodeBrowser } from "@/components/media/inline-episode-browser";
@@ -52,6 +55,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/")({
 	validateSearch: (search: Record<string, unknown>) => {
 		return {
 			trailer: search.trailer as string | undefined,
+			play: search.play === true || search.play === "true" ? true : undefined,
 		};
 	},
 	component: TvHomePage,
