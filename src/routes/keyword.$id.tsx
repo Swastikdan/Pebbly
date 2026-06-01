@@ -39,7 +39,7 @@ export const Route = createFileRoute("/keyword/$id")({
 			},
 			{
 				name: "description",
-				content: `Explore movies tagged with ${loaderData?.keyword.name} on Pebbly.`,
+				content: `Explore movies tagged with ${loaderData?.keyword?.name ?? "this keyword"} on Pebbly.`,
 			},
 		],
 	}),

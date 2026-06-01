@@ -10,13 +10,24 @@ const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set([
 	"dropped",
 ]);
 
+const LEGACY_STATUS_MAP: ReadonlyMap<string, ProgressStatus> = new Map([
+	["planned", "watch-later"],
+	["plan-to-watch", "watch-later"],
+	["watch_later", "watch-later"],
+	["in-progress", "watching"],
+	["watching-now", "watching"],
+	["completed", "done"],
+	["watched", "done"],
+	["finished", "done"],
+	["abandoned", "dropped"],
+]);
+
 export function normalizeProgressStatus(
 	status?: string | null,
 ): ProgressStatus | null {
 	if (!status) return null;
-	return VALID_PROGRESS_STATUSES.has(status)
-		? (status as ProgressStatus)
-		: null;
+	if (VALID_PROGRESS_STATUSES.has(status)) return status as ProgressStatus;
+	return LEGACY_STATUS_MAP.get(status) ?? null;
 }
 
 interface ApiResponse<T> {

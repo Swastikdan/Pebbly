@@ -20,15 +20,18 @@ const FEATURE_ROLES: Record<RbacFeature, PermissionRole> = {
 function ToggleSwitch({
 	enabled,
 	onChange,
+	ariaLabel,
 }: {
 	enabled: boolean;
 	onChange: (value: boolean) => void;
+	ariaLabel: string;
 }) {
 	return (
 		<button
 			type="button"
 			role="switch"
 			aria-checked={enabled}
+			aria-label={ariaLabel}
 			onClick={() => {
 				onChange(!enabled);
 			}}
@@ -79,6 +82,7 @@ function FeatureRow({
 					</span>
 					<ToggleSwitch
 						enabled={enabled}
+						ariaLabel={`${featureLabel} for ${ROLE_LABELS[role]}`}
 						onChange={(nextEnabled) => onToggle(role, nextEnabled)}
 					/>
 				</div>
@@ -123,9 +127,12 @@ export function AdminPermissionToggles() {
 						feature={feature as RbacFeature}
 						featureLabel={config.label}
 						permissionsByRole={permissionsByRole}
-						onToggle={(role, enabled) =>
-							setRolePermission({ role, feature, enabled })
-						}
+						onToggle={(role, enabled) => {
+							setRolePermission({ role, feature, enabled }).catch((err) => {
+								console.error("Failed to update role permission:", err);
+								alert(err instanceof Error ? err.message : String(err));
+							});
+						}}
 					/>
 				))}
 			</div>

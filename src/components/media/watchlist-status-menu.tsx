@@ -380,6 +380,7 @@ function AddToListDialog({
 									<button
 										key={list._id}
 										type="button"
+										aria-pressed={isInList}
 										className={cn(
 											"flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-all duration-200 border border-transparent",
 											isInList

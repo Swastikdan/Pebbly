@@ -13,6 +13,9 @@ export default defineSchema({
     email: v.optional(v.string()),
 
 	  roles: v.optional(v.array(v.string())),
+
+	  // TODO: Remove this legacy field after migrateLegacyUserRoles has run in production.
+	  role: v.optional(v.string()),
   }).index("by_token", ["tokenIdentifier"]),
 
   watch_items: defineTable({
@@ -105,6 +108,7 @@ export default defineSchema({
     mediaTypePreference: v.optional(v.string()),
     genrePreference: v.optional(v.string()),
 	    generationType: v.optional(v.string()),
+	    listId: v.optional(v.string()),
 	    verified: v.optional(v.boolean()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]),

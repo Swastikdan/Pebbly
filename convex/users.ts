@@ -22,11 +22,25 @@ export const store = mutation({
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
+      const patch: {
+        name?: string;
+        image?: string;
+        email?: string;
+        roles?: string[];
+        role?: undefined;
+      } = {
         name: args.name,
         image: args.image,
         email: args.email,
-      });
+      };
+
+      // TODO: Remove this legacy-role fallback after migrateLegacyUserRoles has run in production.
+      if ((existing.roles?.length ?? 0) === 0 && existing.role) {
+        patch.roles = Array.from(new Set([existing.role]));
+        patch.role = undefined;
+      }
+
+      await ctx.db.patch(existing._id, patch);
       return existing._id;
     } else {
       const newUserId = await ctx.db.insert("users", {
