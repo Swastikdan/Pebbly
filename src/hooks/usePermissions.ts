@@ -24,17 +24,26 @@ export function usePermissions(): PermissionState & {
 	hasFeature: (feature: RbacFeature) => boolean;
 	hasRole: (role: RbacRole) => boolean;
 } {
-	const { isSignedIn, isLoaded } = useUser();
+	const { isSignedIn, isLoaded, user } = useUser();
 	const raw = useQuery(
 		api.admin.getUserFeatures,
 		isSignedIn ? {} : QUERY_SKIP,
 	) as UserFeaturesResult | undefined;
 
-	const loading = !isLoaded || (isSignedIn && raw === undefined);
+	const clerkIsAdmin = user?.publicMetadata?.isAdmin === true;
+	const loading =
+		!isLoaded || (isSignedIn && !clerkIsAdmin && raw === undefined);
 
-	const features = (raw?.features ?? {}) as Record<RbacFeature, boolean>;
-	const roles = (raw?.roles ?? []) as RbacRole[];
-	const isAdmin = raw?.isAdmin ?? false;
+	const features = clerkIsAdmin
+		? ({
+				"video-player": true,
+				"ai-recommendations": true,
+			} as Record<RbacFeature, boolean>)
+		: ((raw?.features ?? {}) as Record<RbacFeature, boolean>);
+	const roles = clerkIsAdmin
+		? (["admin"] as RbacRole[])
+		: ((raw?.roles ?? []) as RbacRole[]);
+	const isAdmin = clerkIsAdmin;
 
 	const hasFeature = useCallback(
 		(feature: RbacFeature): boolean => {

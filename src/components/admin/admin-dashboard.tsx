@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { Shield } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AdminUserTable } from "@/components/admin/admin-user-table";
+import { useState } from "react";
 import { AdminPermissionToggles } from "@/components/admin/admin-permission-toggles";
+import { AdminUserTable } from "@/components/admin/admin-user-table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function AdminDashboard() {
 	const [tab, setTab] = useState("users");

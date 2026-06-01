@@ -35,13 +35,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { GENRE_LIST, HORIZONTAL_MEDIA_GRID_CLASS } from "@/constants";
+import { usePermissions } from "@/hooks/usePermissions";
 import type {
 	GenerateOptions,
 	RecommendationHistoryEntry,
 } from "@/hooks/useRecommendations";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import { useWatchlist } from "@/hooks/usewatchlist";
-import { usePermissions } from "@/hooks/usePermissions";
 import {
 	getBasicMovieDetails,
 	getBasicTvDetails,
@@ -230,13 +230,14 @@ function formatTimestamp(ts: number) {
 }
 
 function RecommendationsPage() {
-	const {
-		hasFeature,
-		loading: accessLoading,
-		isSignedIn,
-	} = usePermissions();
+	const { hasFeature, loading: accessLoading, isSignedIn } = usePermissions();
+	const [isMounted, setIsMounted] = useState(false);
 
-	if (accessLoading) {
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
+	if (!isMounted || accessLoading) {
 		return <DefaultLoader />;
 	}
 

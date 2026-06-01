@@ -1,13 +1,15 @@
 import { useMutation, useQuery } from "convex/react";
 import { Check, UserCog } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { type RbacRole } from "@/constants";
+import type { RbacRole } from "@/constants";
 import { api } from "../../../convex/_generated/api";
 
-const ROLE_CONFIGS: { value: RbacRole; label: string }[] = [
-	{ value: "admin", label: "Admin" },
+type DynamicRbacRole = Exclude<RbacRole, "admin">;
+
+const ROLE_CONFIGS: { value: DynamicRbacRole; label: string }[] = [
+	{ value: "video-player", label: "Video Player" },
 	{ value: "ai-integrations", label: "AI Integrations" },
 ];
 
@@ -16,9 +18,9 @@ function RoleBadge({ roles }: { roles: RbacRole[] }) {
 		return <span className="text-sm text-muted-foreground">—</span>;
 	}
 
-	const colors: Record<RbacRole, string> = {
-		admin:
-			"bg-amber-100/90 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+	const colors: Partial<Record<RbacRole, string>> = {
+		"video-player":
+			"bg-emerald-100/90 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
 		"ai-integrations":
 			"bg-blue-100/90 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
 	};
@@ -27,7 +29,11 @@ function RoleBadge({ roles }: { roles: RbacRole[] }) {
 		<div className="flex flex-wrap gap-1">
 			{roles.map((role) => (
 				<Badge key={role} className={colors[role]}>
-					{role === "ai-integrations" ? "AI" : "Admin"}
+					{role === "video-player"
+						? "Video"
+						: role === "ai-integrations"
+							? "AI"
+							: role}
 				</Badge>
 			))}
 		</div>
@@ -62,7 +68,9 @@ export function AdminUserTable() {
 					</thead>
 					<tbody>
 						{users.map((user) => {
-							const currentRoles = (user.roles ?? []) as RbacRole[];
+							const currentRoles = (user.roles ?? []).filter(
+								(role) => role === "video-player" || role === "ai-integrations",
+							) as DynamicRbacRole[];
 
 							return (
 								<tr
@@ -104,7 +112,9 @@ export function AdminUserTable() {
 														tokenIdentifier: user.tokenIdentifier,
 														roles: next,
 													}).catch((err) => {
-														alert(err instanceof Error ? err.message : String(err));
+														alert(
+															err instanceof Error ? err.message : String(err),
+														);
 													});
 												};
 
