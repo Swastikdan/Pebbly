@@ -7,11 +7,6 @@ import {
 } from "@/constants";
 import { api } from "../../../convex/_generated/api";
 
-const ROLE_LABELS: Record<PermissionRole, string> = {
-	"video-player": "Video",
-	"ai-integrations": "AI",
-};
-
 const FEATURE_ROLES: Record<RbacFeature, PermissionRole> = {
 	"video-player": "video-player",
 	"ai-recommendations": "ai-integrations",
@@ -74,8 +69,10 @@ function FeatureRow({
 			</div>
 			<div className="flex items-center gap-6">
 				<div className="flex flex-col items-center gap-1 min-w-16">
-					<span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-						{ROLE_LABELS[role]}
+					<span
+						className={`text-[10px] uppercase tracking-wider ${enabled ? "text-emerald-500 font-medium" : "text-muted-foreground"}`}
+					>
+						{enabled ? "Enabled" : "Disabled"}
 					</span>
 					<ToggleSwitch
 						enabled={enabled}
@@ -108,10 +105,10 @@ export function AdminPermissionToggles() {
 	return (
 		<div className="rounded-xl border">
 			<div className="flex items-center justify-between border-b bg-muted/50 px-4 py-3">
-				<h2 className="font-semibold text-sm">Feature Permissions</h2>
+				<h2 className="font-semibold text-sm">Feature Flags</h2>
 				<div className="flex items-center gap-6">
 					<span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold min-w-16 text-center">
-						Permission
+						Status
 					</span>
 				</div>
 			</div>
@@ -131,9 +128,10 @@ export function AdminPermissionToggles() {
 			</div>
 
 			<div className="border-t px-4 py-3">
-				<p className="text-xs text-muted-foreground">
-					Admin access is managed in Clerk. These toggles only update Convex
-					permissions for dynamic roles.
+				<p className="text-xs text-muted-foreground text-pretty">
+					These toggles enable or disable features globally. If disabled, a
+					feature will not work for users even if they have permission, but it
+					will still work for administrators.
 				</p>
 			</div>
 		</div>
