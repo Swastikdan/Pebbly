@@ -1,7 +1,7 @@
 import { SignedIn } from "@clerk/clerk-react";
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
-import { ListPlus, Sparkles } from "lucide-react";
+import { ListPlus } from "lucide-react";
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BookMarkFilledIcon, MenuIcon } from "@/components/ui/icons";
+import {
+	BookMarkFilledIcon,
+	MenuIcon,
+	SparklesFilledIcon,
+} from "@/components/ui/icons";
 import {
 	Sheet,
 	SheetClose,
@@ -19,7 +23,7 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { NAV_ITEMS, SITE_CONFIG } from "@/constants";
-import { useRecommendationAccess } from "@/hooks/useRecommendations";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const DesktopNavMenuItem = ({
 	item,
@@ -101,7 +105,7 @@ const MobileNavMenuItem = ({
 MobileNavMenuItem.displayName = "MobileNavMenuItem";
 
 const Navbar = () => {
-	const { hasAccess } = useRecommendationAccess();
+	const { hasFeature } = usePermissions();
 
 	return (
 		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border/60 border-b bg-background/80 backdrop-blur-xl backdrop-saturate-150 transition-all duration-300">
@@ -178,7 +182,7 @@ const Navbar = () => {
 											</SheetClose>
 										</Link>
 									</SignedIn>
-									{hasAccess && (
+									{hasFeature("ai-recommendations") && (
 										// @ts-expect-error correct link
 										<Link to="/recommendations" className="w-full">
 											<SheetClose asChild>
@@ -186,7 +190,7 @@ const Navbar = () => {
 													variant="outline"
 													className="h-9 w-full justify-start gap-2 text-sm"
 												>
-													<Sparkles className="size-4 text-blue-500 fill-blue-500/20" />
+													<SparklesFilledIcon className="size-4" />
 													AI Recommendations
 												</Button>
 											</SheetClose>

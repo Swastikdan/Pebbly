@@ -163,13 +163,11 @@ const SearchBar = memo(
 					onSubmit(value.trim());
 				}
 
-				if (!updateUrlOnChange) {
-					navigate({
-						to: "/search",
-						search: { query: value.trim() },
-						replace: true,
-					});
-				}
+				navigate({
+					to: "/search",
+					search: { query: value.trim() },
+					replace: true,
+				});
 			},
 			[onSubmit, value, navigate, updateUrlOnChange, debounceTimeout],
 		);

@@ -1,0 +1,8 @@
+packages: []
+allowBuilds:
+  '@clerk/shared': true
+  '@parcel/watcher': true
+  '@tailwindcss/oxide': true
+  browser-tabs-lock: true
+  esbuild: true
+  protobufjs: true

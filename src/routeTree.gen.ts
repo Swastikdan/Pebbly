@@ -13,6 +13,7 @@ import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PersonIdRouteImport } from './routes/person.$id'
 import { Route as KeywordIdRouteImport } from './routes/keyword.$id'
@@ -46,6 +47,11 @@ const RecommendationsRoute = RecommendationsRouteImport.update({
 const DisclaimerRoute = DisclaimerRouteImport.update({
   id: '/disclaimer',
   path: '/disclaimer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -130,6 +136,7 @@ const TvIdChar123SlugChar125SeasonSeasonNumberRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/disclaimer': typeof DisclaimerRoute
   '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/disclaimer': typeof DisclaimerRoute
   '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
@@ -171,6 +179,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/disclaimer': typeof DisclaimerRoute
   '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/disclaimer'
     | '/recommendations'
     | '/search'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/disclaimer'
     | '/recommendations'
     | '/search'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/disclaimer'
     | '/recommendations'
     | '/search'
@@ -254,6 +266,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   DisclaimerRoute: typeof DisclaimerRoute
   RecommendationsRoute: typeof RecommendationsRoute
   SearchRoute: typeof SearchRoute
@@ -301,6 +314,13 @@ declare module '@tanstack/react-router' {
       path: '/disclaimer'
       fullPath: '/disclaimer'
       preLoaderRoute: typeof DisclaimerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -406,6 +426,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   DisclaimerRoute: DisclaimerRoute,
   RecommendationsRoute: RecommendationsRoute,
   SearchRoute: SearchRoute,

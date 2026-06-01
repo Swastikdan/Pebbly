@@ -8,6 +8,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { number, object, optional } from "valibot";
 import { DefaultEmptyState } from "@/components/default-empty-state";
+import { DefaultErrorComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ShareButton } from "@/components/share-button";
@@ -57,15 +58,15 @@ export const Route = createFileRoute("/list/$type/$slug")({
 			{
 				title:
 					loaderData?.navItem && loaderData?.subNavItem
-							? `${loaderData.navItem.name} ${loaderData.subNavItem.name} | Pebbly`
-							: "Page Not Found | Pebbly",
+						? `${loaderData.navItem.name} ${loaderData.subNavItem.name} | Pebbly`
+						: "Page Not Found | Pebbly",
 			},
 			{
 				name: "description",
 				content:
 					loaderData?.navItem && loaderData?.subNavItem
-							? `Browse ${loaderData.subNavItem.name} ${loaderData.navItem.name} | Pebbly`
-							: "Explore movies and shows on Pebbly.",
+						? `Browse ${loaderData.subNavItem.name} ${loaderData.navItem.name} | Pebbly`
+						: "Explore movies and shows on Pebbly.",
 			},
 		],
 	}),
@@ -154,7 +155,9 @@ function MediaListPage() {
 									))}
 								</div>
 							</section>
-						) : !hasResults || mediaListError ? (
+						) : mediaListError ? (
+							<DefaultErrorComponent />
+						) : !hasResults ? (
 							<DefaultEmptyState
 								message="No movies or TV shows found"
 								description={false}

@@ -46,6 +46,7 @@ export function CustomListDialog({
 		mediaType: string;
 		title?: string;
 		image?: string;
+		backdrop?: string;
 		rating?: number;
 		release_date?: string;
 		overview?: string;
@@ -101,6 +102,7 @@ export function CustomListDialog({
 					mediaType: autoAddMedia.mediaType,
 					title: autoAddMedia.title,
 					image: autoAddMedia.image,
+					backdrop: autoAddMedia.backdrop,
 					rating: autoAddMedia.rating,
 					release_date: autoAddMedia.release_date,
 					overview: autoAddMedia.overview,

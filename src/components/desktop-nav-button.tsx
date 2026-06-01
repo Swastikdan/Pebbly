@@ -7,15 +7,15 @@ import {
 	UserButton,
 } from "@clerk/clerk-react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	BookMarkFilledIcon,
 	SearchFilledIcon,
+	SparklesFilledIcon,
 	UserIcon,
 } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRecommendationAccess } from "@/hooks/useRecommendations";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 import { ThemeSwitch } from "./theme-switch";
 
@@ -53,16 +53,16 @@ const DesktopNavButton = ({
 DesktopNavButton.displayName = "DesktopNavButton";
 
 const DesktopNavButtons = () => {
-	const { hasAccess } = useRecommendationAccess();
+	const { hasFeature } = usePermissions();
 
 	return (
 		<>
-			{hasAccess && (
+			{hasFeature("ai-recommendations") && (
 				<DesktopNavButton
 					href="/recommendations"
 					label="AI Recommendations"
 					className="hidden sm:flex"
-					icon={<Sparkles className="size-5 text-blue-500 fill-blue-500/20" />}
+					icon={<SparklesFilledIcon className="size-5" />}
 				/>
 			)}
 			<DesktopNavButton

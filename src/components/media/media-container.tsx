@@ -46,7 +46,6 @@ interface MediaContainerProps {
 	type: "movie" | "tv";
 }
 
-
 export const MediaContainer = (props: MediaContainerProps) => {
 	const {
 		id,
@@ -179,7 +178,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 															className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
-																		onUpdateDialogSearch(
+																onUpdateDialogSearch(
 																	"video",
 																	youtubeclips[index - 1].key,
 																);
@@ -196,7 +195,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 															className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 															onClick={(e) => {
 																e.stopPropagation();
-																		onUpdateDialogSearch(
+																onUpdateDialogSearch(
 																	"video",
 																	youtubeclips[index + 1].key,
 																);
@@ -240,7 +239,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 											key={`backdrop-${index}`}
 											open={search.backdrop === imagePathClean}
 											onOpenChange={(isOpen) =>
-															onUpdateDialogSearch(
+												onUpdateDialogSearch(
 													"backdrop",
 													isOpen ? imagePathClean : undefined,
 												)
@@ -276,7 +275,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-																			onUpdateDialogSearch(
+																	onUpdateDialogSearch(
 																		"backdrop",
 																		getImageDialogKey(
 																			backdrops[index - 1].backdrop_image,
@@ -295,7 +294,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-																			onUpdateDialogSearch(
+																	onUpdateDialogSearch(
 																		"backdrop",
 																		getImageDialogKey(
 																			backdrops[index + 1].backdrop_image,
@@ -340,7 +339,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 											key={`poster-${index}`}
 											open={search.poster === imagePathClean}
 											onOpenChange={(isOpen) =>
-															onUpdateDialogSearch(
+												onUpdateDialogSearch(
 													"poster",
 													isOpen ? imagePathClean : undefined,
 												)
@@ -376,7 +375,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-																			onUpdateDialogSearch(
+																	onUpdateDialogSearch(
 																		"poster",
 																		getImageDialogKey(
 																			posters[index - 1].poster_image,
@@ -395,7 +394,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
-																			onUpdateDialogSearch(
+																	onUpdateDialogSearch(
 																		"poster",
 																		getImageDialogKey(
 																			posters[index + 1].poster_image,

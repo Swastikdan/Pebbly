@@ -5,6 +5,8 @@ import type { AIRecommendation } from "@/types";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
+import { usePermissions } from "@/hooks/usePermissions";
+
 const QUERY_SKIP = "skip" as const;
 
 function toRecommendationId(id: string) {
@@ -30,25 +32,13 @@ function parseRecommendationPayload(payload: string): AIRecommendation[] {
 	}
 }
 
+/** @deprecated Use `usePermissions()` from `@/hooks/usePermissions` instead. */
 export function useRecommendationAccess() {
-	const { isSignedIn, isLoaded, user } = useUser();
-	const publicMeta = user?.publicMetadata as
-		| {
-				aiGenerationEnabled?: boolean;
-				public_meta?: { aiGenerationEnabled?: boolean };
-		  }
-		| undefined;
-
-	const hasAccess =
-		isLoaded &&
-		isSignedIn === true &&
-		(publicMeta?.aiGenerationEnabled ??
-			publicMeta?.public_meta?.aiGenerationEnabled) === true;
-
+	const { hasFeature, loading, isSignedIn } = usePermissions();
 	return {
-		hasAccess,
-		loading: !isLoaded,
-		isSignedIn: !!isSignedIn,
+		hasAccess: hasFeature("ai-recommendations"),
+		loading,
+		isSignedIn,
 	};
 }
 
