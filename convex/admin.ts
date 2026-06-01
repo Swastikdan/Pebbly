@@ -104,23 +104,34 @@ async function computeRoleFeatures(
   const features: Record<string, boolean> = {};
 
   for (const feature of VALID_FEATURES) {
+    const globalSetting = await ctx.db
+      .query("role_permissions")
+      .withIndex("by_role_feature", (q) =>
+        q.eq("role", "global").eq("feature", feature),
+      )
+      .first();
+
+    const isGloballyEnabled = globalSetting ? globalSetting.enabled : true;
+
     let enabled = false;
-    for (const role of roles) {
-      if (!DYNAMIC_ROLES.includes(role as DynamicRbacRole)) continue;
+    if (isGloballyEnabled) {
+      for (const role of roles) {
+        if (!DYNAMIC_ROLES.includes(role as DynamicRbacRole)) continue;
 
-      const existing = await ctx.db
-        .query("role_permissions")
-        .withIndex("by_role_feature", (q) =>
-          q.eq("role", role).eq("feature", feature),
-        )
-        .first();
+        const existing = await ctx.db
+          .query("role_permissions")
+          .withIndex("by_role_feature", (q) =>
+            q.eq("role", role).eq("feature", feature),
+          )
+          .first();
 
-      if (existing) {
-        if (existing.enabled) enabled = true;
-      } else if (
-        DEFAULT_PERMISSIONS[role as DynamicRbacRole]?.[feature] === true
-      ) {
-        enabled = true;
+        if (existing) {
+          if (existing.enabled) enabled = true;
+        } else if (
+          DEFAULT_PERMISSIONS[role as DynamicRbacRole]?.[feature] === true
+        ) {
+          enabled = true;
+        }
       }
     }
     features[feature] = enabled;
@@ -140,6 +151,16 @@ export async function hasFeature(
   if (!user) return false;
 
   if (isClerkAdmin(identity)) return true;
+
+  const globalSetting = await ctx.db
+    .query("role_permissions")
+    .withIndex("by_role_feature", (q) =>
+      q.eq("role", "global").eq("feature", feature),
+    )
+    .first();
+
+  const isGloballyEnabled = globalSetting ? globalSetting.enabled : true;
+  if (!isGloballyEnabled) return false;
 
   for (const role of user.roles ?? []) {
     if (!DYNAMIC_ROLES.includes(role as DynamicRbacRole)) continue;
@@ -164,17 +185,18 @@ export async function syncRolePermissions(ctx: MutationCtx) {
 	const existingPermissions = await ctx.db.query("role_permissions").collect();
 
 	for (const permission of existingPermissions) {
-		const isValidRole = DYNAMIC_ROLES.includes(
-      permission.role as DynamicRbacRole,
-    );
+		const isValidRole =
+			DYNAMIC_ROLES.includes(permission.role as DynamicRbacRole) ||
+			permission.role === "global";
 		const isValidFeature = VALID_FEATURES.includes(
-      permission.feature as RbacFeature,
+			permission.feature as RbacFeature,
 		);
 
 		if (
 			!isValidRole ||
 			!isValidFeature ||
-			!isValidRoleFeaturePair(permission.role, permission.feature)
+			(permission.role !== "global" &&
+				!isValidRoleFeaturePair(permission.role, permission.feature))
 		) {
 			await ctx.db.delete(permission._id);
 		}
@@ -236,9 +258,8 @@ export const getRolePermissions = query({
 		for (const role of DYNAMIC_ROLES) {
 			result[role] = {};
 			const feature = ROLE_FEATURES[role];
-			const perm = perms.find((p) => p.role === role && p.feature === feature);
-			result[role][feature] =
-				perm ? perm.enabled : DEFAULT_PERMISSIONS[role][feature];
+			const perm = perms.find((p) => p.role === "global" && p.feature === feature);
+			result[role][feature] = perm ? perm.enabled : true;
 		}
 
     return result;
@@ -254,22 +275,16 @@ export const setRolePermission = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    if (!DYNAMIC_ROLES.includes(args.role as DynamicRbacRole)) {
-      throw new Error("Invalid role");
-    }
     if (!VALID_FEATURES.includes(args.feature as RbacFeature)) {
       throw new Error("Invalid feature");
     }
-		if (!isValidRoleFeaturePair(args.role, args.feature)) {
-			throw new Error("Invalid role/feature pair");
-		}
 
     await syncRolePermissions(ctx);
 
     const existing = await ctx.db
       .query("role_permissions")
       .withIndex("by_role_feature", (q) =>
-        q.eq("role", args.role).eq("feature", args.feature),
+        q.eq("role", "global").eq("feature", args.feature),
       )
       .first();
 
@@ -277,7 +292,7 @@ export const setRolePermission = mutation({
       await ctx.db.patch(existing._id, { enabled: args.enabled });
     } else {
       await ctx.db.insert("role_permissions", {
-        role: args.role,
+        role: "global",
         feature: args.feature,
         enabled: args.enabled,
       });

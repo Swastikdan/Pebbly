@@ -27,7 +27,7 @@ export function AdminDashboard() {
 							value="permissions"
 							className="h-7 px-3.5 text-xs font-semibold data-[state=active]:bg-secondary data-[state=active]:shadow-none"
 						>
-							Feature Permissions
+							Feature Flags
 						</TabsTrigger>
 					</TabsList>
 
