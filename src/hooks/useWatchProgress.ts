@@ -1,12 +1,13 @@
 import { useUser } from "@clerk/clerk-react";
+import { useQuery as useReactQuery } from "@tanstack/react-query";
 
 import { useMutation, useQuery } from "convex/react";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { api } from "../../convex/_generated/api";
-
 import type { Id } from "../../convex/_generated/dataModel";
+import { getTvDetails } from "../lib/queries";
 
 import { useLocalProgressStore } from "./useLocalProgressStore";
 
@@ -64,6 +65,20 @@ function makeEpisodeKey(
 	episode: number,
 ): string {
 	return `${tvId}:${season}:${episode}`;
+}
+
+function makeLastPlayedKey(
+	viewerId: string | null | undefined,
+	id: string | number,
+) {
+	return `last_played:${viewerId ?? "anon"}:${id}`;
+}
+
+function safeNextEpisode(episode: number, maxEpisodes?: number) {
+	if (typeof maxEpisodes === "number" && maxEpisodes > 0) {
+		return episode < maxEpisodes ? episode + 1 : episode;
+	}
+	return episode + 1;
 }
 
 const QUERY_SKIP = "skip" as const;
@@ -160,7 +175,7 @@ function createOptimisticEpisodeProgress(
 }
 
 export function usePlayerProgressListener() {
-	const { isSignedIn } = useUser();
+	const { isSignedIn, user } = useUser();
 	const updateProgress = useMutation(api.watchlist.updateProgress);
 	const markEpisodeWatchedMut = useMutation(api.watchlist.markEpisodeWatched);
 	const setLocalProgress = useWatchlistStore((state) => state.setProgressLocal);
@@ -227,7 +242,7 @@ export function usePlayerProgressListener() {
 			if (mediaType === "tv" && season !== undefined && episode !== undefined) {
 				try {
 					localStorage.setItem(
-						`last_played:${id}`,
+						makeLastPlayedKey(user?.id, id),
 						JSON.stringify({ season, episode }),
 					);
 				} catch {}
@@ -291,6 +306,7 @@ export function usePlayerProgressListener() {
 		isSignedIn,
 		setLocalProgress,
 		markLocalEpisode,
+		user?.id,
 	]);
 }
 
@@ -299,8 +315,24 @@ export function useWatchProgress(
 	mediaType: "movie" | "tv",
 ) {
 	const mediaState = useMediaState(String(id), mediaType);
-	const { isSignedIn } = useUser();
+	const { isSignedIn, user } = useUser();
 	const tmdbId = Number(id);
+
+	const { data: tvDetails } = useReactQuery({
+		queryKey: ["tv-details", tmdbId],
+		queryFn: () => getTvDetails({ id: tmdbId }),
+		enabled: mediaType === "tv" && Number.isFinite(tmdbId),
+		staleTime: 1000 * 60 * 60,
+	});
+
+	const seasonEpisodeCounts = useMemo(() => {
+		const counts = new Map<number, number>();
+		for (const season of tvDetails?.seasons ?? []) {
+			if (season.season_number === undefined) continue;
+			counts.set(season.season_number, season.episode_count ?? 0);
+		}
+		return counts;
+	}, [tvDetails?.seasons]);
 
 	const watchedEpisodes =
 		useQuery(
@@ -319,7 +351,7 @@ export function useWatchProgress(
 			// First, check if there's a last-played episode in localStorage
 			const lastPlayedStr =
 				typeof window !== "undefined"
-					? localStorage.getItem(`last_played:${id}`)
+					? localStorage.getItem(makeLastPlayedKey(user?.id, id))
 					: null;
 			if (lastPlayedStr) {
 				try {
@@ -334,7 +366,13 @@ export function useWatchProgress(
 							: !!localEpisodes[`${tmdbId}:${season}:${episode}`];
 
 						if (isThisWatched) {
-							context = { season, episode: episode + 1 };
+							context = {
+								season,
+								episode: safeNextEpisode(
+									episode,
+									seasonEpisodeCounts.get(season),
+								),
+							};
 						} else {
 							context = { season, episode };
 						}
@@ -363,7 +401,10 @@ export function useWatchProgress(
 					const lastWatched = watchedList[watchedList.length - 1];
 					context = {
 						season: lastWatched.season,
-						episode: lastWatched.episode + 1,
+						episode: safeNextEpisode(
+							lastWatched.episode,
+							seasonEpisodeCounts.get(lastWatched.season),
+						),
 					};
 				} else {
 					context = {
@@ -391,6 +432,8 @@ export function useWatchProgress(
 		localEpisodes,
 		tmdbId,
 		id,
+		user?.id,
+		seasonEpisodeCounts,
 	]);
 
 	return { progress };

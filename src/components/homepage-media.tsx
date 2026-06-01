@@ -9,7 +9,7 @@ import {
 	getBasicTvDetails,
 	getMedia,
 } from "@/lib/queries";
-import type { MediaListResultsEntity } from "@/types";
+import type { BasicMovie, BasicTv, MediaListResultsEntity } from "@/types";
 
 interface MediaListProps extends MediaListResultsEntity {
 	is_on_watchlist_page?: boolean;
@@ -210,27 +210,44 @@ function ContinueWatchingContent({
 	const results = useQueries({ queries });
 
 	const isLoading = results.some((r) => r.isLoading);
-	const hasError = results.some((r) => r.isError);
 
 	if (isLoading) return <MediaSkeletonList cardType="vertical" />;
-	if (hasError) return null;
 
-	const mediaItems = results
-		.map((r, i) => {
+	const successfulItems = results
+		.map((result, index) => ({ result, item: items[index] }))
+		.filter(({ result }) => !result.isError && !!result.data);
+
+	if (successfulItems.length === 0) return null;
+
+	const mediaItems = successfulItems
+		.map(({ result: r, item }) => {
 			const data = r.data;
-			const item = items[i];
 			if (!data) return null;
 
-			const isMovie = item.type === "movie";
+			if (item.type === "movie") {
+				const movie = data as BasicMovie;
+				return {
+					id: movie.id,
+					title: movie.title,
+					vote_average: movie.vote_average ?? 0,
+					poster_path: movie.poster_path ?? "",
+					backdrop_path: movie.backdrop_path ?? "",
+					release_date: movie.release_date,
+					overview: movie.overview,
+					media_type: item.type,
+					isContinueWatching: true,
+				};
+			}
+
+			const tv = data as BasicTv;
 			return {
-				id: data.id,
-				title: isMovie ? (data as any).title : (data as any).name,
-				vote_average: (data as any).vote_average ?? 0,
-				poster_path: (data as any).poster_path ?? "",
-				backdrop_path: (data as any).backdrop_path ?? "",
-				first_air_date: isMovie ? undefined : (data as any).first_air_date,
-				release_date: isMovie ? (data as any).release_date : undefined,
-				overview: (data as any).overview,
+				id: tv.id,
+				title: tv.name,
+				vote_average: tv.vote_average ?? 0,
+				poster_path: tv.poster_path ?? "",
+				backdrop_path: tv.backdrop_path ?? "",
+				first_air_date: tv.first_air_date,
+				overview: tv.overview,
 				media_type: item.type,
 				isContinueWatching: true,
 			};

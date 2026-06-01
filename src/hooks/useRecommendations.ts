@@ -1,11 +1,10 @@
 import { useUser } from "@clerk/clerk-react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { useCallback, useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 import type { AIRecommendation } from "@/types";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-
-import { usePermissions } from "@/hooks/usePermissions";
 
 const QUERY_SKIP = "skip" as const;
 
@@ -66,6 +65,7 @@ export interface RecommendationHistoryEntry {
 	generationType?: string;
 	mediaTypePreference?: string;
 	genrePreference?: string;
+	listId?: string;
 	verified?: boolean;
 }
 
@@ -112,6 +112,7 @@ export function useRecommendations() {
 			generationType: entry.generationType ?? "watchlist",
 			mediaTypePreference: entry.mediaTypePreference,
 			genrePreference: entry.genrePreference,
+			listId: entry.listId,
 			verified: entry.verified ?? false,
 		}));
 

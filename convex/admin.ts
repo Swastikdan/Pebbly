@@ -5,39 +5,23 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import { v } from "convex/values";
+import {
+	ADMIN_PERMISSIONS,
+	DEFAULT_ROLE_PERMISSIONS,
+	PERMISSION_ROLES,
+	RBAC_FEATURES,
+	RBAC_ROLE_FEATURES,
+	type PermissionRole,
+	type RbacFeature,
+} from "../shared/rbac";
 
-const DYNAMIC_ROLES = ["video-player", "ai-integrations"] as const;
-const VALID_FEATURES = ["video-player", "ai-recommendations"] as const;
+const VALID_FEATURES = Object.keys(RBAC_FEATURES) as RbacFeature[];
+const DYNAMIC_ROLES = PERMISSION_ROLES;
 
-export type DynamicRbacRole = (typeof DYNAMIC_ROLES)[number];
-export type RbacFeature = (typeof VALID_FEATURES)[number];
-
-const ADMIN_PERMISSIONS: Record<RbacFeature, true> = {
-	"video-player": true,
-	"ai-recommendations": true,
-};
-
-const DEFAULT_PERMISSIONS: Record<
-  DynamicRbacRole,
-  Record<RbacFeature, boolean>
-> = {
-	"video-player": {
-		"video-player": true,
-		"ai-recommendations": false,
-	},
-	"ai-integrations": {
-		"video-player": false,
-		"ai-recommendations": true,
-	},
-};
-
-const ROLE_FEATURES: Record<DynamicRbacRole, RbacFeature> = {
-	"video-player": "video-player",
-	"ai-integrations": "ai-recommendations",
-};
+export type DynamicRbacRole = PermissionRole;
 
 function isValidRoleFeaturePair(role: string, feature: string): boolean {
-	return ROLE_FEATURES[role as DynamicRbacRole] === feature;
+	return RBAC_ROLE_FEATURES[role as DynamicRbacRole] === feature;
 }
 
 async function getUserByToken(
@@ -84,7 +68,7 @@ function isClerkAdmin(identity: Record<string, unknown> | null): boolean {
   return parseClerkPublicMeta(identity)?.isAdmin === true;
 }
 
-async function requireAdmin(ctx: MutationCtx) {
+async function requireAdmin(ctx: QueryCtx | MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthorized");
 
@@ -118,7 +102,7 @@ async function computeRoleFeatures(
       if (existing) {
         if (existing.enabled) enabled = true;
       } else if (
-        DEFAULT_PERMISSIONS[role as DynamicRbacRole]?.[feature] === true
+        DEFAULT_ROLE_PERMISSIONS[role as DynamicRbacRole]?.[feature] === true
       ) {
         enabled = true;
       }
@@ -152,7 +136,7 @@ export async function hasFeature(
       .first();
 
     if (existing?.enabled === true) return true;
-    if (!existing && DEFAULT_PERMISSIONS[role as DynamicRbacRole]?.[feature]) {
+    if (!existing && DEFAULT_ROLE_PERMISSIONS[role as DynamicRbacRole]?.[feature]) {
       return true;
     }
   }
@@ -181,7 +165,7 @@ export async function syncRolePermissions(ctx: MutationCtx) {
 	}
 
 	for (const role of DYNAMIC_ROLES) {
-		const feature = ROLE_FEATURES[role];
+		const feature = RBAC_ROLE_FEATURES[role];
 		const existing = existingPermissions.find(
 			(permission) =>
 				permission.role === role && permission.feature === feature,
@@ -191,7 +175,7 @@ export async function syncRolePermissions(ctx: MutationCtx) {
 			await ctx.db.insert("role_permissions", {
 				role,
 				feature,
-				enabled: DEFAULT_PERMISSIONS[role][feature],
+				enabled: DEFAULT_ROLE_PERMISSIONS[role][feature],
 			});
 		}
 	}
@@ -230,15 +214,17 @@ export const getUserFeatures = query({
 export const getRolePermissions = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
+
     const perms = await ctx.db.query("role_permissions").collect();
 
 		const result: Record<string, Record<string, boolean>> = {};
 		for (const role of DYNAMIC_ROLES) {
 			result[role] = {};
-			const feature = ROLE_FEATURES[role];
+			const feature = RBAC_ROLE_FEATURES[role];
 			const perm = perms.find((p) => p.role === role && p.feature === feature);
 			result[role][feature] =
-				perm ? perm.enabled : DEFAULT_PERMISSIONS[role][feature];
+				perm ? perm.enabled : DEFAULT_ROLE_PERMISSIONS[role][feature];
 		}
 
     return result;
@@ -306,6 +292,30 @@ export const setUserRoles = mutation({
       roles: args.roles.length > 0 ? args.roles : undefined,
     });
   },
+});
+
+export const migrateLegacyUserRoles = mutation({
+	args: { batchSize: v.optional(v.number()) },
+	handler: async (ctx, args) => {
+		await requireAdmin(ctx);
+
+		const users = await ctx.db.query("users").collect();
+		let migrated = 0;
+		for (const user of users) {
+			if (migrated >= (args.batchSize ?? 100)) break;
+
+			const legacyRole = user.role;
+			if (!legacyRole || (user.roles?.length ?? 0) > 0) continue;
+
+			await ctx.db.patch(user._id, {
+				roles: Array.from(new Set([...(user.roles ?? []), legacyRole])),
+				role: undefined,
+			});
+			migrated += 1;
+		}
+
+		return { migrated };
+	},
 });
 
 export const listUsers = query({

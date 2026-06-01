@@ -185,7 +185,7 @@ export const updateProgress = mutation({
               ? "watching"
               : undefined);
 
-    const nextProgressStatus = currentProgressStatus ?? inferredProgressStatus;
+    const nextProgressStatus = inferredProgressStatus ?? currentProgressStatus;
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -266,7 +266,7 @@ export const getTrackedTmdbIds = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
-    return items.map((item) => item.tmdbId);
+    return items.map((item) => ({ tmdbId: item.tmdbId, mediaType: item.mediaType }));
   },
 });
 

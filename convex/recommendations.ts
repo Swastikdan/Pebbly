@@ -145,6 +145,7 @@ export const saveRecommendations = internalMutation({
     mediaTypePreference: v.optional(v.string()),
     genrePreference: v.optional(v.string()),
     generationType: v.optional(v.string()),
+    listId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert("ai_recommendations", {
@@ -156,6 +157,7 @@ export const saveRecommendations = internalMutation({
       mediaTypePreference: args.mediaTypePreference,
       genrePreference: args.genrePreference,
       generationType: args.generationType,
+      listId: args.listId,
       createdAt: Date.now(),
     });
   },
@@ -754,6 +756,7 @@ export const generateRecommendations = action({
       mediaTypePreference: args.mediaTypePreference,
       genrePreference: args.genrePreference,
       generationType: genType,
+      listId: args.listId,
     });
 
     return {
@@ -771,6 +774,8 @@ export const getHomepageRecommendations = query({
     const user = await ctx.auth.getUserIdentity();
     if (!user) return null;
 
+    if (!(await hasFeature(ctx, "ai-recommendations"))) return null;
+
     const dbUser = await getUserByTokenIdentifier(ctx, user.subject);
     if (!dbUser) return null;
 
@@ -784,17 +789,19 @@ export const getHomepageRecommendations = query({
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
       .collect();
 
-    const notInterestedIds = new Set(
+    const notInterestedKeys = new Set(
       feedbackList
         .filter((f) => f.feedback === "not_interested")
-        .map((f) => f.tmdbId)
+        .map((f) => `${f.tmdbId}:${f.mediaType}`)
     );
 
     let recs: Recommendation[] = [];
     if (entry && entry.recommendations) {
       try {
         const parsed = JSON.parse(entry.recommendations) as Recommendation[];
-        recs = parsed.filter((r) => r.tmdbId === null || !notInterestedIds.has(r.tmdbId));
+        recs = parsed.filter(
+          (r) => r.tmdbId === null || !notInterestedKeys.has(`${r.tmdbId}:${r.mediaType}`),
+        );
       } catch (e) {
         console.error("Failed to parse homepage recommendations", e);
       }
@@ -827,6 +834,9 @@ export const setRecommendationFeedback = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireAuthenticatedUser(ctx);
+    if (!(await hasFeature(ctx, "ai-recommendations"))) {
+      throw new Error("Unauthorized: feature not enabled");
+    }
 
     const existing = await ctx.db
       .query("recommendation_feedback")
@@ -858,6 +868,8 @@ export const getRecommendationFeedback = query({
   handler: async (ctx) => {
     const user = await ctx.auth.getUserIdentity();
     if (!user) return [];
+
+    if (!(await hasFeature(ctx, "ai-recommendations"))) return [];
 
     const dbUser = await getUserByTokenIdentifier(ctx, user.subject);
     if (!dbUser) return [];

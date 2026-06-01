@@ -603,9 +603,16 @@ function MyListsTabContent() {
 							color: selectedList.color,
 						})
 					}
-					onDelete={() => {
-						deleteCustomList({ listId: selectedList._id as Id<"lists"> });
-						setSelectedListId(null);
+					onDelete={async () => {
+						try {
+							await deleteCustomList({
+								listId: selectedList._id as Id<"lists">,
+							});
+							setSelectedListId(null);
+						} catch (error) {
+							console.error("Failed to delete custom list:", error);
+							alert(error instanceof Error ? error.message : String(error));
+						}
 					}}
 				/>
 				{editingList && (
@@ -688,9 +695,15 @@ function MyListsTabContent() {
 									color: list.color,
 								})
 							}
-							onDelete={() =>
-								deleteCustomList({ listId: list._id as Id<"lists"> })
-							}
+							onDelete={async () => {
+								try {
+									await deleteCustomList({ listId: list._id as Id<"lists"> });
+									if (selectedListId === list._id) setSelectedListId(null);
+								} catch (error) {
+									console.error("Failed to delete custom list:", error);
+									alert(error instanceof Error ? error.message : String(error));
+								}
+							}}
 						/>
 					))}
 				</div>

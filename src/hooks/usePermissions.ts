@@ -32,7 +32,7 @@ export function usePermissions(): PermissionState & {
 
 	const clerkIsAdmin = user?.publicMetadata?.isAdmin === true;
 	const loading =
-		!isLoaded || (isSignedIn && !clerkIsAdmin && raw === undefined);
+		!isLoaded || (!!isSignedIn && !clerkIsAdmin && raw === undefined);
 
 	const features = clerkIsAdmin
 		? ({

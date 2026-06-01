@@ -39,6 +39,9 @@ interface NormalizedTmdbData {
 const getDismissKey = (rec: AIRecommendation) =>
 	`${rec.mediaType}:${rec.tmdbId ?? ""}:${rec.title}`;
 
+const getFeedbackKey = (mediaType: string | null | undefined, tmdbId: number) =>
+	`${mediaType ?? "unknown"}:${tmdbId}`;
+
 function normalizeTmdbData(
 	data: BasicMovie | BasicTv | null | undefined,
 	mediaType: "movie" | "tv",
@@ -176,7 +179,7 @@ const HomepageRecommendationCard = memo(
 		onFeedback,
 	}: {
 		recommendation: AIRecommendation;
-		likedIds: Set<number>;
+		likedIds: Set<string>;
 		onFeedback: (
 			rec: AIRecommendation,
 			resolvedId: number,
@@ -221,7 +224,7 @@ const HomepageRecommendationCard = memo(
 			return null;
 		}
 
-		const isLiked = likedIds.has(resolvedData.id);
+		const isLiked = likedIds.has(getFeedbackKey(mediaType, resolvedData.id));
 
 		return (
 			<div className="relative group/rec-card">
@@ -306,13 +309,25 @@ export function HomepageRecommendations() {
 	);
 
 	const [isGenerating, setIsGenerating] = useState(false);
+	const [hasRefreshFailed, setHasRefreshFailed] = useState(false);
 
 	useEffect(() => {
-		if (isSignedIn && recommendationsData?.needsRefresh && !isGenerating) {
+		if (
+			isSignedIn &&
+			recommendationsData?.needsRefresh &&
+			!isGenerating &&
+			!hasRefreshFailed
+		) {
 			setIsGenerating(true);
 			generateRecs()
+				.then((result) => {
+					if (result?.success === false) {
+						setHasRefreshFailed(true);
+					}
+				})
 				.catch((err) => {
 					console.error("Failed to generate homepage recommendations:", err);
+					setHasRefreshFailed(true);
 				})
 				.finally(() => {
 					setIsGenerating(false);
@@ -323,13 +338,14 @@ export function HomepageRecommendations() {
 		recommendationsData?.needsRefresh,
 		generateRecs,
 		isGenerating,
+		hasRefreshFailed,
 	]);
 
 	const likedIds = useMemo(() => {
-		const set = new Set<number>();
+		const set = new Set<string>();
 		for (const f of feedbackList ?? []) {
 			if (f.feedback === "like") {
-				set.add(f.tmdbId);
+				set.add(getFeedbackKey(f.mediaType, f.tmdbId));
 			}
 		}
 		return set;

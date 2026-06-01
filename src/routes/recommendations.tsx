@@ -117,16 +117,26 @@ function normalizeTitleKey(title?: string | null): string {
 	return (title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function getTrackedKey(mediaType: string, tmdbId: number) {
+	return `${mediaType}:${tmdbId}`;
+}
+
 function isTrackedRecommendation(
 	recommendation: AIRecommendation,
-	trackedIds: Set<number>,
+	trackedIds: Set<string>,
 	trackedTitles: Set<string>,
 ) {
 	const candidateIds = [
 		recommendation.tmdbId,
 		recommendation.verifiedTmdbId,
 	].filter((id): id is number => typeof id === "number");
-	if (candidateIds.some((id) => trackedIds.has(id))) return true;
+	if (
+		candidateIds.some((id) =>
+			trackedIds.has(getTrackedKey(recommendation.mediaType, id)),
+		)
+	) {
+		return true;
+	}
 
 	const candidateTitles = [
 		recommendation.title,
@@ -310,8 +320,17 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 		api.watchlist.getTrackedTmdbIds,
 		isSignedIn ? {} : "skip",
 	);
-	const trackedIdSet = useMemo<Set<number>>(
-		() => new Set((trackedTmdbIds ?? []) as number[]),
+	const trackedIdSet = useMemo<Set<string>>(
+		() =>
+			new Set(
+				(trackedTmdbIds ?? []).map((item) =>
+					getTrackedKey(item.mediaType, item.tmdbId),
+				),
+			),
+		[trackedTmdbIds],
+	);
+	const trackedTmdbIdSet = useMemo<Set<number>>(
+		() => new Set((trackedTmdbIds ?? []).map((item) => item.tmdbId)),
 		[trackedTmdbIds],
 	);
 	const trackedTitleSet = useMemo(
@@ -406,8 +425,8 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 			options.yearTo = Math.max(...matchedEras.map((e) => e.to));
 		}
 
-		if (trackedIdSet.size > 0) {
-			options.excludeTmdbIds = Array.from(trackedIdSet);
+		if (trackedTmdbIdSet.size > 0) {
+			options.excludeTmdbIds = Array.from(trackedTmdbIdSet);
 		}
 
 		options.count = count;
@@ -422,8 +441,11 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 		if (entry.mediaTypePreference)
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
 		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
-		if (trackedIdSet.size > 0) {
-			options.excludeTmdbIds = Array.from(trackedIdSet);
+		if (entry.generationType === "list" && entry.listId) {
+			options.listId = entry.listId;
+		}
+		if (trackedTmdbIdSet.size > 0) {
+			options.excludeTmdbIds = Array.from(trackedTmdbIdSet);
 		}
 		options.count = count;
 		generate(options);
@@ -437,13 +459,16 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 		if (entry.mediaTypePreference)
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
 		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
+		if (entry.generationType === "list" && entry.listId) {
+			options.listId = entry.listId;
+		}
 
 		options.excludeTmdbIds = [
 			...new Set([
 				...entry.recommendations
 					.flatMap((r) => [r.tmdbId, r.verifiedTmdbId])
 					.filter((id): id is number => typeof id === "number"),
-				...Array.from(trackedIdSet),
+				...Array.from(trackedTmdbIdSet),
 			]),
 		];
 
