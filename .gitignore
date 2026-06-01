@@ -13,3 +13,4 @@ todos.json
 .vercel
 .gemini/*
 .pnpm-store
+.commandcode/taste/taste.md
