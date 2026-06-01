@@ -32,7 +32,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 			{
 				name: "viewport",
-				content: "width=device-width, initial-scale=1",
+				content: "width=device-width, initial-scale=1, viewport-fit=cover",
 			},
 			...MetaImageTagsGenerator({
 				title: SITE_CONFIG.name,
@@ -71,13 +71,19 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 			{
 				name: "theme-color",
-				content: "white",
-				media: "(prefers-color-scheme: light)",
+				content: "#0b0a08",
 			},
 			{
-				name: "theme-color",
-				content: "black",
-				media: "(prefers-color-scheme: dark)",
+				name: "apple-mobile-web-app-capable",
+				content: "yes",
+			},
+			{
+				name: "apple-mobile-web-app-status-bar-style",
+				content: "black-translucent",
+			},
+			{
+				name: "apple-mobile-web-app-title",
+				content: SITE_CONFIG.name,
 			},
 		],
 		links: [
@@ -108,6 +114,96 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/favicon-16x16.png",
 				sizes: "16x16",
 				type: "image/png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
+			},
+			{
+				rel: "apple-touch-startup-image",
+				media:
+					"(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
+				href: "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/apple-touch-icon.png",
 			},
 			{
 				rel: "preconnect",

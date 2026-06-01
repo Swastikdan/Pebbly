@@ -4,7 +4,10 @@ export type MediaDialogKey = "video" | "backdrop" | "poster";
 type DialogNavigate = (options: unknown) => void;
 
 export function getImageDialogKey(imagePath?: string) {
-	return imagePath?.split("/").pop()?.replace(/\.[^/.]+$/, "");
+	return imagePath
+		?.split("/")
+		.pop()
+		?.replace(/\.[^/.]+$/, "");
 }
 
 export function updateDialogSearch(

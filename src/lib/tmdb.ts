@@ -29,6 +29,7 @@ const tmdbApi = async <T>(
 			accept: "application/json",
 			Authorization: `Bearer ${ACCESS_TOKEN}`,
 		},
+		signal: AbortSignal.timeout(15_000),
 		...(options?.revalidate
 			? { cache: "default" as RequestCache }
 			: { cache: "no-store" as RequestCache }),

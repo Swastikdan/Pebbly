@@ -1,11 +1,6 @@
-import type { ComponentType } from "react";
-import {
-	CheckCircle,
-	Clock,
-	Eye,
-	Heart,
-} from "@/components/ui/icons";
 import { Frown, Meh, Smile, X } from "lucide-react";
+import type { ComponentType } from "react";
+import { CheckCircle, Clock, Eye, Heart } from "@/components/ui/icons";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export const PROGRESS_OPTIONS: Array<{
@@ -29,7 +24,12 @@ export const REACTION_OPTIONS: Array<{
 	{ value: "loved", label: "Loved", icon: Heart, emoji: "\u2764\uFE0F" },
 	{ value: "liked", label: "Liked", icon: Smile, emoji: "\uD83D\uDE0A" },
 	{ value: "mixed", label: "Mixed", icon: Meh, emoji: "\uD83D\uDE10" },
-	{ value: "not-for-me", label: "Not for me", icon: Frown, emoji: "\uD83D\uDE15" },
+	{
+		value: "not-for-me",
+		label: "Not for me",
+		icon: Frown,
+		emoji: "\uD83D\uDE15",
+	},
 ];
 
 export const PROGRESS_LABELS: Record<ProgressStatus, string> = {
@@ -40,7 +40,9 @@ export const PROGRESS_LABELS: Record<ProgressStatus, string> = {
 };
 
 export function getProgressOption(status: ProgressStatus) {
-	return PROGRESS_OPTIONS.find((o) => o.value === status) ?? PROGRESS_OPTIONS[0];
+	return (
+		PROGRESS_OPTIONS.find((o) => o.value === status) ?? PROGRESS_OPTIONS[0]
+	);
 }
 
 export function getReactionOption(reaction: ReactionStatus) {

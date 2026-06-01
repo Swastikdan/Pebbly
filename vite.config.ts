@@ -49,7 +49,6 @@ const config = defineConfig(({ mode }) => ({
     nitro({
       compressPublicAssets: true,
     }),
-
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],
     }),

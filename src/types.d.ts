@@ -635,13 +635,6 @@ export type ProgressStatus = "watch-later" | "watching" | "done" | "dropped";
 
 export type ReactionStatus = "loved" | "liked" | "mixed" | "not-for-me";
 
-export type WatchlistStatus =
-	| "plan-to-watch"
-	| "watching"
-	| "completed"
-	| "liked"
-	| "dropped";
-
 export interface PersonDetails {
 	adult: boolean;
 	also_known_as: string[];

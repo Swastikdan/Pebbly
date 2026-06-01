@@ -1,7 +1,23 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-import type { ProgressStatus, ReactionStatus } from "@/types";
+import type { ProgressStatus } from "@/types";
+
+const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set([
+	"watch-later",
+	"watching",
+	"done",
+	"dropped",
+]);
+
+export function normalizeProgressStatus(
+	status?: string | null,
+): ProgressStatus | null {
+	if (!status) return null;
+	return VALID_PROGRESS_STATUSES.has(status)
+		? (status as ProgressStatus)
+		: null;
+}
 
 interface ApiResponse<T> {
 	data?: T;
@@ -40,42 +56,6 @@ export function createMemoryStorage(): Storage {
 			return Object.keys(store).length;
 		},
 	} as Storage;
-}
-
-export function mapLegacyStatusToSplit(status?: string): {
-	progressStatus: ProgressStatus | null;
-	reaction: ReactionStatus | null;
-} {
-	switch (status) {
-		case "plan-to-watch":
-			return { progressStatus: "watch-later", reaction: null };
-		case "completed":
-			return { progressStatus: "done", reaction: null };
-		case "liked":
-			return { progressStatus: "done", reaction: "liked" };
-		case "want-to-watch":
-			return { progressStatus: "watch-later", reaction: null };
-		case "finished":
-			return { progressStatus: "done", reaction: null };
-		case "caught-up":
-			return { progressStatus: "watching", reaction: null };
-		case "watching":
-			return { progressStatus: "watching", reaction: null };
-		case "dropped":
-			return { progressStatus: "dropped", reaction: null };
-		case "watch-later":
-			return { progressStatus: "watch-later", reaction: null };
-		case "done":
-			return { progressStatus: "done", reaction: null };
-		default:
-			return { progressStatus: null, reaction: null };
-	}
-}
-
-export function normalizeProgressStatus(status?: string | null): ProgressStatus | null {
-	if (!status) return null;
-	const mapped = mapLegacyStatusToSplit(status);
-	return mapped.progressStatus;
 }
 
 const VALID_ID_RANGE = {

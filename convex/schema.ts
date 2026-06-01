@@ -12,8 +12,7 @@ export default defineSchema({
 
     email: v.optional(v.string()),
 
-	    role: v.optional(v.string()),
-    aiGenerationEnabled: v.optional(v.boolean()),
+	  roles: v.optional(v.array(v.string())),
   }).index("by_token", ["tokenIdentifier"]),
 
   watch_items: defineTable({
@@ -27,8 +26,6 @@ export default defineSchema({
 
 	    progressStatus: v.optional(v.string()),
 	    reaction: v.optional(v.string()),
-
-    status: v.optional(v.string()),
 
 	    progress: v.optional(v.number()),
 
@@ -66,6 +63,7 @@ export default defineSchema({
     addedAt: v.number(),
     title: v.optional(v.string()),
     image: v.optional(v.string()),
+    backdrop: v.optional(v.string()),
     rating: v.optional(v.number()),
     release_date: v.optional(v.string()),
     overview: v.optional(v.string()),
@@ -110,4 +108,32 @@ export default defineSchema({
 	    verified: v.optional(v.boolean()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  homepage_recommendations: defineTable({
+    userId: v.id("users"),
+    recommendations: v.string(), // JSON string of AIRecommendation[]
+    lastAttemptedAt: v.number(), // timestamp of last attempt to generate (success or fail)
+    lastUpdatedAt: v.number(), // timestamp of last successful update/generation
+    status: v.string(), // "success" | "failed"
+    previousRecommendations: v.optional(v.string()), // JSON string of previous successful AIRecommendation[]
+  }).index("by_user", ["userId"]),
+
+  recommendation_feedback: defineTable({
+    userId: v.id("users"),
+    tmdbId: v.number(),
+    mediaType: v.string(), // "movie" | "tv"
+    title: v.string(),
+    feedback: v.string(), // "not_interested" | "like"
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_media", ["userId", "tmdbId", "mediaType"]),
+
+  role_permissions: defineTable({
+    role: v.string(), // "admin" | "ai-integrations"
+    feature: v.string(), // "video-player" | "ai-recommendations"
+    enabled: v.boolean(),
+  })
+    .index("by_role", ["role"])
+    .index("by_role_feature", ["role", "feature"]),
 });

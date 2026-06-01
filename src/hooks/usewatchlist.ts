@@ -7,12 +7,8 @@ import { useCallback, useMemo, useRef } from "react";
 import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
-import {
-	createMemoryStorage,
-	mapLegacyStatusToSplit,
-	normalizeProgressStatus,
-} from "@/lib/utils";
-import type { ProgressStatus, ReactionStatus, WatchlistStatus } from "@/types";
+import { createMemoryStorage, normalizeProgressStatus } from "@/lib/utils";
+import type { ProgressStatus, ReactionStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
 
@@ -107,20 +103,6 @@ function buildFallbackItem(
 	};
 }
 
-function toLegacyStatus(item: WatchlistItem): WatchlistStatus | null {
-	if (item.progressStatus === "dropped" || item.reaction === "not-for-me")
-		return "dropped";
-	if (item.reaction === "liked" && item.progressStatus === "done") {
-		return "liked";
-	}
-
-	if (item.progressStatus === "watch-later") return "plan-to-watch";
-	if (item.progressStatus === "watching") return "watching";
-	if (item.progressStatus === "done") return "completed";
-
-	return null;
-}
-
 function mapConvexItemToWatchlistItem(item: {
 	tmdbId: number;
 	mediaType: string;
@@ -134,10 +116,7 @@ function mapConvexItemToWatchlistItem(item: {
 	inWatchlist?: boolean;
 	progressStatus?: string;
 	reaction?: string;
-	status?: string;
 }): WatchlistItem {
-	const legacy = mapLegacyStatusToSplit(item.status);
-
 	return {
 		title: item.title ?? "Unknown Title",
 		type: item.mediaType as MediaType,
@@ -149,9 +128,8 @@ function mapConvexItemToWatchlistItem(item: {
 		updated_at: item.updatedAt,
 		created_at: item.updatedAt,
 		inWatchlist: item.inWatchlist ?? true,
-		progressStatus:
-			normalizeProgressStatus(item.progressStatus) ?? legacy.progressStatus,
-		reaction: (item.reaction as ReactionStatus | undefined) ?? legacy.reaction,
+		progressStatus: normalizeProgressStatus(item.progressStatus),
+		reaction: (item.reaction as ReactionStatus | undefined) ?? null,
 		progress: item.progress ?? 0,
 	};
 }
@@ -881,10 +859,4 @@ export function useWatchlistItem(id: string, mediaType?: MediaType) {
 export function useWatchlistCount() {
 	const { watchlist } = useWatchlist();
 	return watchlist.length;
-}
-
-export function useWatchlistItemStatus(id: string, mediaType: MediaType) {
-	const state = useMediaState(id, mediaType);
-	if (!state) return null;
-	return toLegacyStatus(state);
 }

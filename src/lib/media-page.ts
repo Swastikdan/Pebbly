@@ -28,7 +28,6 @@ type SharedMediaPageInput = {
 	};
 };
 
-
 function parseReleaseYear(date?: string | null): number | null {
 	if (!date) return null;
 	const year = new Date(date).getFullYear();

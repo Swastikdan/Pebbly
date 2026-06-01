@@ -46,8 +46,11 @@ function DialogOverlay({
 function DialogContent({
 	className,
 	children,
+	closeClassName,
 	...props
-}: React.ComponentProps<typeof DialogPrimitive.Content>) {
+}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+	closeClassName?: string;
+}) {
 	return (
 		<DialogPortal data-slot="dialog-portal">
 			<DialogOverlay />
@@ -60,7 +63,12 @@ function DialogContent({
 				{...props}
 			>
 				{children}
-				<DialogPrimitive.Close className="absolute top-4 right-4 z-20 cursor-pointer active:scale-90 duration-300 transition-all p-2.5 bg-muted hover:bg-muted/80 dark:bg-foreground dark:hover:bg-foreground/90 rounded-full pressable text-foreground dark:text-background">
+				<DialogPrimitive.Close
+					className={cn(
+						"absolute top-4 right-4 z-20 cursor-pointer active:scale-90 duration-300 transition-all p-2.5 bg-muted hover:bg-muted/80 dark:bg-foreground dark:hover:bg-foreground/90 rounded-full pressable text-foreground dark:text-background",
+						closeClassName,
+					)}
+				>
 					<XIcon className="size-5.5" />
 
 					<span className="sr-only">Close</span>

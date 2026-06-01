@@ -5,7 +5,7 @@ import type React from "react";
 import { useCallback, useRef, useState } from "react";
 import { useLocalProgressStore } from "@/hooks/useLocalProgressStore";
 import { useWatchlist, type WatchlistItem } from "@/hooks/usewatchlist";
-import { mapLegacyStatusToSplit, normalizeProgressStatus } from "@/lib/utils";
+import { normalizeProgressStatus } from "@/lib/utils";
 import type { ReactionStatus } from "@/types";
 
 import { api } from "../../convex/_generated/api";
@@ -177,13 +177,10 @@ export const useWatchlistImportExport = () => {
 					}
 
 					for (const item of validatedList) {
-						const legacy = mapLegacyStatusToSplit(item.status);
 						const progressStatus =
 							normalizeProgressStatus(item.progressStatus as string) ??
-							legacy.progressStatus ??
 							"watch-later";
-						const reaction =
-							(item.reaction as ReactionStatus | undefined) ?? legacy.reaction;
+						const reaction = item.reaction as ReactionStatus | undefined;
 
 						await setWatchlistMembership({
 							tmdbId: Number(item.external_id),

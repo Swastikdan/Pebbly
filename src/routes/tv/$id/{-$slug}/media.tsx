@@ -24,11 +24,11 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/media")({
 		meta: [
 			...MetaImageTagsGenerator({
 				title: loaderData?.title
-						? `${loaderData.title} - Media | Pebbly`
-						: "Page Not Found | Pebbly",
+					? `${loaderData.title} - Media | Pebbly`
+					: "Page Not Found | Pebbly",
 				description: loaderData?.title
 					? `Watch the latest videos and images of ${loaderData.title}.`
-						: "Explore the latest videos and images on Pebbly.",
+					: "Explore the latest videos and images on Pebbly.",
 				url:
 					loaderData?.id &&
 					loaderData?.title &&

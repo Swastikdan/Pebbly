@@ -1,6 +1,8 @@
+import { useUser } from "@clerk/clerk-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import {
+	ContinueWatching,
 	PopularMovies,
 	PopularTv,
 	TopRatedMovies,
@@ -16,6 +18,8 @@ import {
 	SECTION_TAB_TRIGGER_CLASS,
 	SITE_CONFIG,
 } from "@/constants";
+import { useContinueWatching } from "@/hooks/useWatchProgress";
+import { HomepageRecommendations } from "@/components/homepage-recommendations";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
@@ -80,6 +84,10 @@ function HomePage() {
 							<TrendingWeekMovies />
 						</TabsContent>
 					</Tabs>
+
+					<ContinueWatchingSection />
+
+					<HomepageRecommendations />
 
 					<section>
 						<div className="flex items-center gap-4">
@@ -154,6 +162,26 @@ function HomePage() {
 						</TabsContent>
 					</Tabs>
 				</div>
+			</div>
+		</section>
+	);
+}
+
+function ContinueWatchingSection() {
+	const { isSignedIn } = useUser();
+	const { items } = useContinueWatching();
+
+	if (!isSignedIn || items.length === 0) return null;
+
+	return (
+		<section>
+			<div className="flex items-center gap-4">
+				<h2 className="font-semibold text-lg md:text-xl">Continue Watching</h2>
+			</div>
+			<div>
+				<Deferred>
+					<ContinueWatching />
+				</Deferred>
 			</div>
 		</section>
 	);

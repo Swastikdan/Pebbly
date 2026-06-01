@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
-import { DefaultNotFoundComponent } from "@/components/default-not-found";
+import {
+	DefaultErrorComponent,
+	DefaultNotFoundComponent,
+} from "@/components/default-not-found";
 import { CastSection } from "@/components/media/cast-section";
 import { Collections } from "@/components/media/collections";
 import { GenreContainer } from "@/components/media/genre-container";
@@ -34,11 +37,11 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/")({
 		meta: [
 			...MetaImageTagsGenerator({
 				title: loaderData?.title
-						? `${loaderData.title} | Pebbly`
-						: "Page Not Found | Pebbly",
+					? `${loaderData.title} | Pebbly`
+					: "Page Not Found | Pebbly",
 				description: loaderData?.title
 					? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
-						: "Explore detailed information about movies on Pebbly.",
+					: "Explore detailed information about movies on Pebbly.",
 				ogImage:
 					loaderData?.id &&
 					`${VITE_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(loaderData?.id ?? "")}&type=movie`,
@@ -52,6 +55,7 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/")({
 	validateSearch: (search: Record<string, unknown>) => {
 		return {
 			trailer: search.trailer as string | undefined,
+			play: search.play === true || search.play === "true" ? true : undefined,
 		};
 	},
 	component: MovieHomePage,
@@ -76,7 +80,10 @@ function MovieHomePage() {
 		return <DefaultLoader />;
 	}
 
-	if (!data || error) {
+	if (error) {
+		return <DefaultErrorComponent />;
+	}
+	if (!data) {
 		return <DefaultNotFoundComponent />;
 	}
 
@@ -88,6 +95,7 @@ function MovieHomePage() {
 		original_title,
 		overview,
 		poster_path,
+		backdrop_path,
 		release_date,
 		runtime,
 		tagline,
@@ -126,12 +134,14 @@ function MovieHomePage() {
 				imdb_url={imdb_url}
 				media_type="movie"
 				poster_path={poster_path}
+				backdrop_path={backdrop_path ?? undefined}
 				rating={vote_average}
 				releaseyear={
-				mediaPage.releaseYear != null && Number.isFinite(mediaPage.releaseYear)
-					? String(mediaPage.releaseYear)
-					: "Not Released"
-			}
+					mediaPage.releaseYear != null &&
+					Number.isFinite(mediaPage.releaseYear)
+						? String(mediaPage.releaseYear)
+						: "Not Released"
+				}
 				release_date={release_date}
 				tagline={tagline ?? null}
 				title={mediaPage.displayTitle}
