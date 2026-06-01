@@ -89,7 +89,7 @@ function HomePage() {
 
 					<HomepageRecommendations />
 
-					<section>
+					<section className="content-visibility-auto" style={{ containIntrinsicHeight: "auto 280px" }}>
 						<div className="flex items-center gap-4">
 							<h2 className="font-semibold text-lg md:text-xl">
 								Upcoming Movies
@@ -102,7 +102,7 @@ function HomePage() {
 						</div>
 					</section>
 
-					<Tabs defaultValue="popular_movie">
+					<Tabs defaultValue="popular_movie" className="content-visibility-auto" style={{ containIntrinsicHeight: "auto 360px" }}>
 						<div className="flex items-center gap-4">
 							<h2 className="font-semibold text-lg md:text-xl">{`What's Popular`}</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>
@@ -132,7 +132,7 @@ function HomePage() {
 						</TabsContent>
 					</Tabs>
 
-					<Tabs defaultValue="top_rated_movies">
+					<Tabs defaultValue="top_rated_movies" className="content-visibility-auto" style={{ containIntrinsicHeight: "auto 360px" }}>
 						<div className="flex items-center gap-4">
 							<h2 className="font-semibold text-lg md:text-xl">Top Rated</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>
