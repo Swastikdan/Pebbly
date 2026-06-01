@@ -106,19 +106,21 @@ export const MAX_PAGINATION_LIMIT = 500;
 export const HORIZONTAL_MEDIA_GRID_CLASS =
 	"grid w-full grid-cols-2 justify-items-center gap-5 px-1 py-10 sm:grid-cols-3 sm:px-0 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
 
-export const RBAC_ROLES = ["admin", "ai-integrations"] as const;
+export const RBAC_ROLES = ["admin", "video-player", "ai-integrations"] as const;
 export type RbacRole = (typeof RBAC_ROLES)[number];
+export const PERMISSION_ROLES = ["video-player", "ai-integrations"] as const;
+export type PermissionRole = (typeof PERMISSION_ROLES)[number];
 
 export const RBAC_FEATURES = {
-  "video-player": {
-    label: "Video Player",
-    description: "Built-in video player modal for streaming content",
-  },
-  "ai-recommendations": {
-    label: "AI Recommendations",
-    description:
-      "AI-powered personalized movie and TV recommendations via Gemini",
-  },
+	"video-player": {
+		label: "Video Playback",
+		description: "Built-in video player modal for streaming content",
+	},
+	"ai-recommendations": {
+		label: "AI Recommendations",
+		description:
+			"AI-powered personalized movie and TV recommendations via Gemini",
+	},
 } as const;
 export type RbacFeature = keyof typeof RBAC_FEATURES;
 

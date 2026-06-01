@@ -1,13 +1,12 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { syncRolePermissions } from "./admin";
 
 export const store = mutation({
   args: {
     email: v.optional(v.string()),
     name: v.optional(v.string()),
     image: v.optional(v.string()),
-    role: v.optional(v.string()),
-    aiGenerationEnabled: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -15,6 +14,7 @@ export const store = mutation({
       throw new Error("Called storeUser without authentication present");
     }
     const userId = identity.subject;
+    await syncRolePermissions(ctx);
 
     const existing = await ctx.db
       .query("users")
@@ -26,7 +26,6 @@ export const store = mutation({
         name: args.name,
         image: args.image,
         email: args.email,
-        aiGenerationEnabled: args.aiGenerationEnabled,
       });
       return existing._id;
     } else {
@@ -35,8 +34,6 @@ export const store = mutation({
         name: args.name,
         image: args.image,
         email: args.email,
-        roles: args.role ? [args.role] : undefined,
-        aiGenerationEnabled: args.aiGenerationEnabled,
       });
       return newUserId;
     }

@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
-import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { usePermissions } from "@/hooks/usePermissions";
 
 export const Route = createFileRoute("/admin")({
@@ -19,8 +20,13 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
 	const { isAdmin, loading, isSignedIn } = usePermissions();
+	const [isMounted, setIsMounted] = useState(false);
 
-	if (loading) return <DefaultLoader />;
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
+	if (!isMounted || loading) return <DefaultLoader />;
 	if (!isSignedIn || !isAdmin) return <DefaultNotFoundComponent />;
 
 	return <AdminDashboard />;
