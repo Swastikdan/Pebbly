@@ -191,7 +191,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 			<section
 				ref={scrollRef}
 				aria-label="Scrollable content"
-				className="scrollbar-hidden relative w-full overflow-x-auto scroll-smooth rounded-md"
+				className="scrollbar-hidden relative w-full overflow-x-auto scroll-smooth rounded-md scroll-snap-x"
 			>
 				<div className="flex w-max items-center">{children}</div>
 			</section>

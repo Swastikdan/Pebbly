@@ -73,6 +73,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 				name: "theme-color",
 				content: "#0b0a08",
 			},
+			// Intentionally kept for older Chrome for Android compatibility.
+			// Modern PWA behavior is controlled via manifest.json display: "standalone".
+			{
+				name: "mobile-web-app-capable",
+				content: "yes",
+			},
 			{
 				name: "apple-mobile-web-app-capable",
 				content: "yes",
@@ -87,6 +93,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 		],
 		links: [
+			{
+				rel: "manifest",
+				href: "/manifest.json",
+			},
 			{
 				rel: "stylesheet",
 				href: appCss,

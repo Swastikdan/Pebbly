@@ -80,19 +80,19 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 	const year = release_date ? new Date(release_date).getFullYear() : "";
 
 	return (
-		<div className="group relative w-40 md:w-44 lg:w-48">
+		<div className="group relative w-40 md:w-44 lg:w-48 ">
 			<Link
 				// @ts-expect-error - correct link
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
 				search={(isContinueWatching ? { play: true } : undefined) as any}
-				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
 			>
 				<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60  dark:ring-white/[0.06] dark:group-hover:ring-white/10">
 					<Image
 						alt={title}
 						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform group-hover:scale-[1.03]"
+						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform sm:group-hover:scale-[1.03]"
 						width={300}
 						height={450}
 						priority={priority}
@@ -190,19 +190,19 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 	}
 
 	return (
-		<div className="group relative w-64 md:w-72 lg:w-80">
+		<div className="group relative w-64 md:w-72 lg:w-80 ">
 			<Link
 				// @ts-expect-error - correct link
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
 				search={(isContinueWatching ? { play: true } : undefined) as any}
-				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
 			>
 				<div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60 dark:ring-white/[0.06] dark:group-hover:ring-white/10">
 					<Image
 						alt={title}
 						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform group-hover:scale-[1.03]"
+						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform sm:group-hover:scale-[1.03]"
 						width={450}
 						height={300}
 						priority={priority}
@@ -281,13 +281,13 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 		<Link
 			to="/person/$id"
 			params={{ id: String(id) }}
-			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable "
 		>
 			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60  dark:ring-white/[0.06] dark:group-hover:ring-white/10">
 				<Image
 					alt={name}
 					src={imageUrl}
-					className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform group-hover:scale-[1.03]"
+					className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform sm:group-hover:scale-[1.03]"
 					width={200}
 					height={300}
 					priority={priority}
