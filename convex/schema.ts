@@ -12,7 +12,8 @@ export default defineSchema({
 
     email: v.optional(v.string()),
 
-	    roles: v.optional(v.array(v.string())),
+    role: v.optional(v.string()),
+	  roles: v.optional(v.array(v.string())),
     aiGenerationEnabled: v.optional(v.boolean()),
   }).index("by_token", ["tokenIdentifier"]),
 

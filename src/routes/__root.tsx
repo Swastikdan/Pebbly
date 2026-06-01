@@ -12,8 +12,6 @@ import {
 } from "@/components/default-not-found";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
-import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
-import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { ThemeProvider } from "@/components/theme-provider";
 import { UserSync } from "@/components/user-sync";
 import { SITE_CONFIG } from "@/constants";
@@ -89,7 +87,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 		],
 		links: [
-			{ rel: "manifest", href: "/manifest.webmanifest" },
 			{
 				rel: "stylesheet",
 				href: appCss,
@@ -278,12 +275,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="min-h-screen antialiased">
 				<ThemeProvider>
-					<ServiceWorkerRegister />
 					<UserSync />
 					<Navbar />
 					{children}
 					<Footer />
-					<PwaInstallPrompt />
 					{devtoolsPlugin}
 					<SpeedInsights />
 					<Scripts />
