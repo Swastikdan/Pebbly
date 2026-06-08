@@ -577,6 +577,8 @@ function MyListsTabContent() {
 		id: string;
 		name: string;
 		color?: string;
+		visibility?: string;
+		listType?: string;
 	} | null>(null);
 	const [selectedListId, setSelectedListId] = useState<string | null>(null);
 
@@ -601,6 +603,8 @@ function MyListsTabContent() {
 							id: selectedList._id,
 							name: selectedList.name,
 							color: selectedList.color,
+							visibility: selectedList.visibility,
+							listType: selectedList.listType,
 						})
 					}
 					onDelete={() => {
@@ -617,6 +621,8 @@ function MyListsTabContent() {
 						listId={editingList.id}
 						initialName={editingList.name}
 						initialColor={editingList.color}
+						initialVisibility={editingList.visibility}
+						initialListType={editingList.listType}
 					/>
 				)}
 			</>
@@ -686,6 +692,8 @@ function MyListsTabContent() {
 									id: list._id,
 									name: list.name,
 									color: list.color,
+									visibility: list.visibility,
+									listType: list.listType,
 								})
 							}
 							onDelete={() =>
@@ -709,6 +717,8 @@ function MyListsTabContent() {
 					listId={editingList.id}
 					initialName={editingList.name}
 					initialColor={editingList.color}
+					initialVisibility={editingList.visibility}
+					initialListType={editingList.listType}
 				/>
 			)}
 		</div>
@@ -725,6 +735,8 @@ function CustomListView({
 		_id: string;
 		name: string;
 		color?: string;
+		visibility?: string;
+		listType?: string;
 		createdAt: number;
 		updatedAt: number;
 	};
@@ -747,7 +759,7 @@ function CustomListView({
 	return (
 		<div className="pt-5 animate-fade-in space-y-6">
 			{/* Premium Hero Header Banner */}
-			<div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl border border-border/40 p-6 md:p-8 overflow-hidden shadow-sm bg-card/10 backdrop-blur-sm">
+			<div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-border/50 dark:border-border/20 px-5 py-4 overflow-hidden bg-gradient-to-r from-secondary/40 to-secondary/10 dark:from-zinc-900/60 dark:to-zinc-950/30 backdrop-blur-sm">
 				{list.color && (
 					<div
 						className="absolute right-[-10%] top-[-20%] size-64 rounded-full blur-[100px] opacity-15 pointer-events-none"
@@ -820,7 +832,7 @@ function CustomListView({
 								onSelect={onDelete}
 							>
 								<Trash2 size={14} />
-								Delete Collection
+								Delete 
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
@@ -1041,7 +1053,7 @@ function CustomListCard({
 	const itemCount = list.itemCount ?? 0;
 
 	return (
-		<div className="group relative flex flex-col rounded-2xl border border-border/30 bg-card/60 p-3 transition-all duration-350 hover:-translate-y-1 hover:shadow-lg hover:shadow-foreground/[0.02]">
+		<div className="group relative flex flex-col rounded-2xl border border-border/45 dark:border-border/20 bg-card/85 dark:bg-card/40 p-3 transition-all duration-350 hover:-translate-y-1 hover:border-border/80">
 			<button
 				type="button"
 				onClick={onClick}
@@ -1134,10 +1146,10 @@ function CustomListMediaCard({
 	const formattedTitle = item.title
 		? formatMediaTitle.encode(item.title)
 		: undefined;
-	const imageUrl = item.backdrop
-		? `${IMAGE_PREFIX.LQ_BACKDROP}${item.backdrop}`
-		: item.image
-			? `${IMAGE_PREFIX.LQ_POSTER}${item.image}`
+	const imageUrl = item.image
+		? `${IMAGE_PREFIX.LQ_POSTER}${item.image}`
+		: item.backdrop
+			? `${IMAGE_PREFIX.LQ_BACKDROP}${item.backdrop}`
 			: undefined;
 	const year = item.release_date
 		? new Date(item.release_date).getFullYear()
@@ -1161,7 +1173,7 @@ function CustomListMediaCard({
 	};
 
 	return (
-		<div className="relative flex gap-3.5 rounded-2xl border border-border/30 bg-card/60 p-3.5 transition-all duration-300 hover:border-border/60 hover:-translate-y-0.5 hover:shadow-sm group">
+		<div className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70 group">
 			<Link
 				// @ts-expect-error - correct link
 				to={
@@ -1174,13 +1186,13 @@ function CustomListMediaCard({
 				{hasMetadata && imageUrl ? (
 					<Image
 						alt={item.title ?? ""}
-						className="aspect-video w-[140px] rounded-xl bg-muted object-cover shadow-sm"
-						height={300}
+						className="h-[140px] w-[93px] rounded-xl bg-muted object-cover"
+						height={210}
 						src={imageUrl}
-						width={450}
+						width={140}
 					/>
 				) : (
-					<div className="flex aspect-video w-[140px] shrink-0 items-center justify-center rounded-xl bg-secondary text-xs font-semibold uppercase text-muted-foreground animate-pulse">
+					<div className="flex h-[140px] w-[93px] shrink-0 items-center justify-center rounded-xl bg-secondary text-xs font-semibold uppercase text-muted-foreground animate-pulse">
 						{item.mediaType === "movie" ? "MOV" : "TV"}
 					</div>
 				)}
@@ -1215,8 +1227,10 @@ function CustomListMediaCard({
 						</Button>
 					</div>
 
-					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-						<span className="uppercase">{item.mediaType}</span>
+					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/90 dark:text-muted-foreground/75">
+						<span className="uppercase font-semibold tracking-wide">
+							{item.mediaType}
+						</span>
 						{year && (
 							<>
 								<span className="text-border">·</span>
@@ -1235,7 +1249,7 @@ function CustomListMediaCard({
 					</div>
 
 					{item.overview && (
-						<p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/60">
+						<p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80 dark:text-muted-foreground/60">
 							{item.overview}
 						</p>
 					)}

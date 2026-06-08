@@ -241,11 +241,7 @@
 			U+2212, U+2215, U+FEFF, U+FFFD;
 		-webkit-tap-highlight-color: transparent;
 	}
-	h1, h2, h3, h4, h5, h6, .font-heading {
-		font-family: "Inter", sans-serif;
-  		font-optical-sizing: auto;
-		letter-spacing: 0.04em;
-	}
+
 	body {
 		@apply bg-background text-foreground;
 		padding-top: env(safe-area-inset-top);

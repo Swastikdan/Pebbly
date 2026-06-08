@@ -118,7 +118,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 						text={title}
 						className="text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary"
 					/>
-					<span className="text-xs font-medium text-muted-foreground/70">
+					<span className="text-xs font-medium text-muted-foreground/70 min-h-4">
 						{year}
 					</span>
 				</div>
