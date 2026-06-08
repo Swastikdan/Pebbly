@@ -142,7 +142,7 @@ function WatchlistPage() {
 												className={SECTION_TAB_TRIGGER_CLASS}
 											>
 												<ListPlus size={15} />
-												My Lists
+												My Collections
 											</TabsTrigger>
 										)}
 									</TabsList>
@@ -628,10 +628,10 @@ function MyListsTabContent() {
 			<div className="flex items-center justify-between gap-3">
 				<div>
 					<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-						My Lists
+						My Collections
 					</h2>
 					<p className="mt-0.5 text-sm text-muted-foreground animate-fade-in">
-						{customLists.length} list
+						{customLists.length} collection
 						{customLists.length !== 1 ? "s" : ""} created
 					</p>
 				</div>
@@ -642,7 +642,7 @@ function MyListsTabContent() {
 					className="gap-1.5 rounded-xl text-xs"
 				>
 					<Plus size={14} />
-					New List
+					New Collection
 				</Button>
 			</div>
 
@@ -671,7 +671,7 @@ function MyListsTabContent() {
 						onClick={() => setShowCreateList(true)}
 					>
 						<Plus size={14} />
-						Create Your First List
+						Create Your First Collection
 					</Button>
 				</div>
 			) : (
@@ -761,7 +761,7 @@ function CustomListView({
 						size="icon"
 						onClick={onBack}
 						className="rounded-xl shrink-0 border border-border/20 bg-background/50 backdrop-blur-sm hover:bg-background/80"
-						aria-label="Back to lists"
+						aria-label="Back to collections"
 					>
 						<ChevronDown className="size-5 rotate-90" />
 					</Button>
@@ -820,7 +820,7 @@ function CustomListView({
 								onSelect={onDelete}
 							>
 								<Trash2 size={14} />
-								Delete List
+								Delete Collection
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
@@ -875,7 +875,7 @@ function CustomListView({
 						</div>
 						<div>
 							<p className="text-sm font-semibold text-foreground">
-								This list is empty
+								This collection is empty
 							</p>
 							<p className="max-w-xs text-xs text-muted-foreground/60 mt-1">
 								Add movies and TV shows from their detail pages to build your
@@ -1208,7 +1208,7 @@ function CustomListMediaCard({
 							variant="ghost"
 							size="icon"
 							className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
-							aria-label={`Remove from list`}
+							aria-label={`Remove from collection`}
 							onClick={handleRemove}
 						>
 							<TrashBin size={14} />
