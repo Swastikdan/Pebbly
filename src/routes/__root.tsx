@@ -339,6 +339,28 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
 
 	useEffect(() => {
+		if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+			const register = () => {
+				navigator.serviceWorker
+					.register("/sw.js", { scope: "/" })
+					.then((reg) => {
+						console.log("Service Worker registered with scope:", reg.scope);
+					})
+					.catch((err) => {
+						console.error("Service Worker registration failed:", err);
+					});
+			};
+
+			if (document.readyState === "complete") {
+				register();
+			} else {
+				window.addEventListener("load", register);
+				return () => window.removeEventListener("load", register);
+			}
+		}
+	}, []);
+
+	useEffect(() => {
 		if (!import.meta.env.DEV) {
 			return;
 		}
