@@ -176,7 +176,7 @@ const Navbar = () => {
 											>
 												<Link to="/watchlist" className="w-full">
 													<ListPlus className="size-4" />
-													My Lists
+													My Collections
 												</Link>
 											</Button>
 										</SheetClose>

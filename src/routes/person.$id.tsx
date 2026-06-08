@@ -147,7 +147,6 @@ function PersonPage() {
 		() => biography.split("\n\n").filter(Boolean),
 		[biography],
 	);
-	const biographyPreview = biography.substring(0, 100);
 
 	if (isLoading) {
 		return <DefaultLoader />;
@@ -226,23 +225,30 @@ function PersonPage() {
 						<div className="space-y-2">
 							<h2 className="text-xl font-semibold">Biography</h2>
 							<div className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap sm:text-[15px]">
-								<div className="hidden md:block">
-									{biographyParagraphs.map((paragraph, index) => (
-										<p key={index} className="mb-4">
-											{paragraph}
+								<div className="flex flex-col">
+									{isBiographyExpanded ? (
+										biographyParagraphs.map((paragraph, index) => (
+											<p key={index} className="mb-4">
+												{paragraph}
+											</p>
+										))
+									) : (
+										<p className="mb-2">
+											{biography.length > 300
+												? `${biography.substring(0, 300)}...`
+												: biography}
 										</p>
-									))}
-								</div>
-								<div className="flex flex-col md:hidden">
-									{isBiographyExpanded ? biography : biographyPreview}
-									<Button
-										className="w-fit px-0 text-foreground"
-										size="sm"
-										variant="link"
-										onClick={() => setIsBiographyExpanded((prev) => !prev)}
-									>
-										{isBiographyExpanded ? "Read Less" : "Read More"}
-									</Button>
+									)}
+									{biography.length > 300 && (
+										<Button
+											className="w-fit px-0 text-foreground font-semibold hover:no-underline"
+											size="sm"
+											variant="link"
+											onClick={() => setIsBiographyExpanded((prev) => !prev)}
+										>
+											{isBiographyExpanded ? "Read Less" : "Read More"}
+										</Button>
+									)}
 								</div>
 							</div>
 						</div>

@@ -1,11 +1,10 @@
 import { useMutation } from "convex/react";
-import { Check, Palette } from "lucide-react";
+import { Check, Globe, List, ListOrdered, Lock, Palette } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
-	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -53,7 +52,11 @@ export function CustomListDialog({
 	};
 }) {
 	const [name, setName] = useState(initialName ?? "");
+	const [description, setDescription] = useState("");
 	const [color, setColor] = useState(initialColor ?? "");
+	const [visibility, setVisibility] = useState<"private" | "public">("private");
+	const [listType, setListType] = useState<"unordered" | "ordered">("unordered");
+	const [showColorPicker, setShowColorPicker] = useState(false);
 	const [error, setError] = useState("");
 	const [saving, setSaving] = useState(false);
 
@@ -65,11 +68,16 @@ export function CustomListDialog({
 
 	const isEditing = !!listId;
 	const listNameId = useId();
+	const listDescId = useId();
 
 	useEffect(() => {
 		if (open) {
 			setName(initialName ?? "");
+			setDescription("");
 			setColor(initialColor ?? "");
+			setVisibility("private");
+			setListType("unordered");
+			setShowColorPicker(false);
 			setError("");
 			setSaving(false);
 		}
@@ -78,7 +86,7 @@ export function CustomListDialog({
 	const handleSubmit = async () => {
 		const trimmed = name.trim();
 		if (!trimmed) {
-			setError("Give your list a name");
+			setError("Give your collection a name");
 			return;
 		}
 		if (trimmed.length > 50) {
@@ -114,158 +122,239 @@ export function CustomListDialog({
 				});
 			}
 			setName("");
+			setDescription("");
 			setColor("");
 			setError("");
 			onOpenChange(false);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to save list");
+			setError(err instanceof Error ? err.message : "Failed to save collection");
 		} finally {
 			setSaving(false);
 		}
 	};
 
-	const selectedColorName =
-		PRESET_COLORS.find((c) => c.hex === color)?.name ?? null;
-
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[380px] overflow-hidden rounded-2xl p-0">
-				<div className="px-6 pt-4 pb-6 space-y-5">
-					<DialogHeader className="space-y-1">
-						<DialogTitle className="text-base font-semibold tracking-tight">
-							{isEditing ? "Edit List" : "New List"}
+			<DialogContent className="sm:max-w-[420px] overflow-hidden rounded-3xl p-0 border border-border/40 bg-background/95 backdrop-blur-xl shadow-2xl">
+				<div className="px-6 py-5 space-y-4">
+					<DialogHeader className="relative">
+						<DialogTitle className="text-xl font-bold tracking-wide font-heading text-left pr-6">
+							{isEditing ? "Edit Collection" : "Create New Collection"}
 						</DialogTitle>
-						<DialogDescription className="text-xs text-muted-foreground">
-							{isEditing
-								? "Update your list details."
-								: autoAddMedia
-									? `Create a list and add "${autoAddMedia.title ?? "this title"}" to it.`
-									: "Organize your watchlist into collections."}
-						</DialogDescription>
 					</DialogHeader>
 
-					<div className="space-y-2">
-						<Label
-							htmlFor={listNameId}
-							className="text-xs font-medium text-muted-foreground"
-						>
-							Name
-						</Label>
-						<Input
-							id={listNameId}
-							type="text"
-							placeholder="e.g. Weekend Binge, Sci-Fi Picks..."
-							value={name}
-							onChange={(e) => {
-								setName(e.target.value);
-								setError("");
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") handleSubmit();
-							}}
-							maxLength={50}
-							autoFocus
-							className={cn(
-								"h-auto w-full rounded-xl border bg-secondary/30 px-4 py-3 text-sm",
-								"placeholder:text-muted-foreground/40",
-								"transition-all duration-200",
-								"focus-visible:border-foreground/20 focus-visible:bg-secondary/50 focus-visible:ring-1 focus-visible:ring-foreground/10",
-								error ? "border-destructive/50" : "border-border/50",
-							)}
-						/>
-						{name.trim() && (
-							<div className="flex items-center gap-2 pt-1">
-								<span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">
-									Preview
-								</span>
-								<span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium">
-									{color && (
-										<span
-											className="size-2 rounded-full"
-											style={{ backgroundColor: color }}
-										/>
+					{/* Collection Name Field */}
+					<div className="space-y-1.5">
+						<div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
+							<Label htmlFor={listNameId}>Collection Name</Label>
+							<span>{name.length}/50</span>
+						</div>
+						<div className="relative flex items-center">
+							<Input
+								id={listNameId}
+								type="text"
+								placeholder="Enter a name for your collection"
+								value={name}
+								onChange={(e) => {
+									setName(e.target.value);
+									setError("");
+								}}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") handleSubmit();
+								}}
+								maxLength={50}
+								autoFocus
+								className={cn(
+									"h-11 w-full rounded-xl border bg-secondary/20 pl-4 pr-16 text-xs",
+									"placeholder:text-muted-foreground/40",
+									"transition-all duration-200",
+									"focus-visible:border-foreground/20 focus-visible:bg-secondary/40 focus-visible:ring-1 focus-visible:ring-foreground/10",
+									error ? "border-destructive/50" : "border-border/50",
+								)}
+							/>
+							{/* Inline Lock & Color Icons */}
+							<div className="absolute right-3 flex items-center gap-1.5">
+								<div className="text-muted-foreground/60 p-1 rounded-lg">
+									{visibility === "private" ? <Lock size={14} /> : <Globe size={14} />}
+								</div>
+								<button
+									type="button"
+									onClick={() => setShowColorPicker(!showColorPicker)}
+									className={cn(
+										"size-5 rounded-full flex items-center justify-center cursor-pointer transition-all border border-border/40",
+										color ? "scale-105" : "bg-gradient-to-tr from-violet-500 to-cyan-400 hover:scale-105"
 									)}
-									{name.trim()}
-								</span>
+									style={color ? { backgroundColor: color } : undefined}
+									title="Choose color"
+								>
+									{!color && <Palette size={10} className="text-white" />}
+								</button>
 							</div>
-						)}
+						</div>
 					</div>
 
-					<div className="space-y-2.5">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-								<Palette size={12} />
-								Color
+					{/* Color Picker Drawer */}
+					{showColorPicker && (
+						<div className="p-3 bg-secondary/30 rounded-2xl border border-border/20 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+							<div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+								Select Color
 							</div>
-							{selectedColorName && (
-								<span className="text-[10px] text-muted-foreground/60">
-									{selectedColorName}
-								</span>
-							)}
+							<div className="flex flex-wrap gap-2">
+								{PRESET_COLORS.map((c) => {
+									const isSelected = color === c.hex;
+									return (
+										<button
+											key={c.hex}
+											type="button"
+											className={cn(
+												"relative size-6 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer border border-border/20",
+												isSelected && "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+											)}
+											style={{ backgroundColor: c.hex }}
+											onClick={() => setColor(color === c.hex ? "" : c.hex)}
+											aria-label={c.name}
+										>
+											{isSelected && (
+												<Check
+													size={12}
+													className="absolute inset-0 m-auto text-white drop-shadow-sm"
+													strokeWidth={3}
+												/>
+											)}
+										</button>
+									);
+								})}
+							</div>
 						</div>
-						<div className="flex flex-wrap gap-2">
-							{PRESET_COLORS.map((c) => {
-								const isSelected = color === c.hex;
-								return (
-									<Button
-										key={c.hex}
-										type="button"
-										variant="ghost"
-										size="icon"
-										aria-pressed={isSelected}
-										className={cn(
-											"relative size-8 rounded-full p-0 transition-all duration-200 hover:bg-transparent",
-											isSelected
-												? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110"
-												: "hover:scale-110 hover:ring-1 hover:ring-foreground/20 hover:ring-offset-1 hover:ring-offset-background",
-										)}
-										style={{ backgroundColor: c.hex }}
-										onClick={() => setColor(color === c.hex ? "" : c.hex)}
-										aria-label={c.name}
-									>
-										{isSelected && (
-											<Check
-												size={14}
-												className="absolute inset-0 m-auto text-white drop-shadow-sm"
-												strokeWidth={3}
-											/>
-										)}
-									</Button>
-								);
-							})}
+					)}
+
+					{/* Description Field */}
+					<div className="space-y-1.5">
+						<div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
+							<Label htmlFor={listDescId}>Description</Label>
+							<span>{description.length}/150</span>
+						</div>
+						<textarea
+							id={listDescId}
+							placeholder="Add a description (optional)"
+							value={description}
+							onChange={(e) => setDescription(e.target.value.substring(0, 150))}
+							maxLength={150}
+							className={cn(
+								"min-h-[70px] w-full rounded-xl border bg-secondary/20 p-3 text-xs resize-none outline-none",
+								"placeholder:text-muted-foreground/40",
+								"transition-all duration-200",
+								"focus-visible:border-foreground/20 focus-visible:bg-secondary/40 focus-visible:ring-1 focus-visible:ring-foreground/10",
+								"border-border/50",
+							)}
+						/>
+					</div>
+
+					{/* Visibility & List Type Section */}
+					<div className="grid grid-cols-2 gap-4">
+						{/* Visibility Selection */}
+						<div className="space-y-2">
+							<div>
+								<div className="text-xs font-semibold text-foreground">Visibility</div>
+								<div className="text-[10px] text-muted-foreground leading-snug">
+									{visibility === "private"
+										? "Only you can see this watchlist"
+										: "Anyone with link can view"}
+								</div>
+							</div>
+							<div className="flex p-1 rounded-xl bg-secondary/20 border border-border/20">
+								<button
+									type="button"
+									onClick={() => setVisibility("private")}
+									className={cn(
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all",
+										visibility === "private"
+											? "bg-secondary text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground"
+									)}
+								>
+									<Lock size={12} />
+									Private
+								</button>
+								<button
+									type="button"
+									onClick={() => setVisibility("public")}
+									className={cn(
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all",
+										visibility === "public"
+											? "bg-secondary text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground"
+									)}
+								>
+									<Globe size={12} />
+									Public
+								</button>
+							</div>
+						</div>
+
+						{/* List Type Selection */}
+						<div className="space-y-2">
+							<div>
+								<div className="text-xs font-semibold text-foreground">List Type</div>
+								<div className="text-[10px] text-muted-foreground leading-snug">
+									{listType === "unordered"
+										? "Items are in a simple list"
+										: "Items are numbered/ranked"}
+								</div>
+							</div>
+							<div className="flex p-1 rounded-xl bg-secondary/20 border border-border/20">
+								<button
+									type="button"
+									onClick={() => setListType("unordered")}
+									className={cn(
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all",
+										listType === "unordered"
+											? "bg-secondary text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground"
+									)}
+								>
+									<List size={12} />
+									Unordered
+								</button>
+								<button
+									type="button"
+									onClick={() => setListType("ordered")}
+									className={cn(
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all",
+										listType === "ordered"
+											? "bg-secondary text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground"
+									)}
+								>
+									<ListOrdered size={12} />
+									Ordered
+								</button>
+							</div>
 						</div>
 					</div>
 
 					{error && (
-						<p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+						<p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
 							{error}
 						</p>
 					)}
 
-					<div className="flex items-center justify-end gap-2 pt-1">
-						<Button
-							variant="ghost"
-							size="sm"
-							className="rounded-xl px-4 text-xs"
-							onClick={() => onOpenChange(false)}
-						>
-							Cancel
-						</Button>
-						<Button
-							size="sm"
-							className="rounded-xl px-5 text-xs"
-							onClick={handleSubmit}
-							disabled={saving || !name.trim()}
-						>
-							{saving
-								? "Saving..."
-								: isEditing
-									? "Save Changes"
-									: autoAddMedia
-										? "Create & Add"
-										: "Create List"}
-						</Button>
-					</div>
+					<Button
+						onClick={handleSubmit}
+						disabled={saving || !name.trim()}
+						className={cn(
+							"w-full h-11 rounded-xl text-xs font-bold transition-all cursor-pointer mt-1",
+							saving || !name.trim()
+								? "bg-violet-600/50 text-white/50 cursor-not-allowed"
+								: "bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-600/10"
+						)}
+					>
+						{saving
+							? "Saving..."
+							: isEditing
+								? "Save Changes"
+								: "Create Collection"}
+					</Button>
 				</div>
 			</DialogContent>
 		</Dialog>

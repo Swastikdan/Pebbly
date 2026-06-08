@@ -38,7 +38,7 @@ export function CustomListPicker({
 	return (
 		<>
 			<DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-				Lists
+				Collections
 			</DropdownMenuLabel>
 			<DropdownMenuGroup>
 				{safeList.map((list) => {
@@ -75,7 +75,7 @@ export function CustomListPicker({
 					}}
 				>
 					<Plus size={16} />
-					Create new list
+					Create new collection
 				</DropdownMenuItem>
 			</DropdownMenuGroup>
 
