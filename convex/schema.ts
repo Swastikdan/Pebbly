@@ -48,6 +48,8 @@ export default defineSchema({
     userId: v.id("users"),
     name: v.string(),
     color: v.optional(v.string()),
+    visibility: v.optional(v.string()),
+    listType: v.optional(v.string()),
     sortOrder: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),

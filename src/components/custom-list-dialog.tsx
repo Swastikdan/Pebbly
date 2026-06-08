@@ -32,6 +32,8 @@ export function CustomListDialog({
 	onOpenChange,
 	initialName,
 	initialColor,
+	initialVisibility,
+	initialListType,
 	listId,
 	autoAddMedia,
 }: {
@@ -39,6 +41,8 @@ export function CustomListDialog({
 	onOpenChange: (open: boolean) => void;
 	initialName?: string;
 	initialColor?: string;
+	initialVisibility?: string;
+	initialListType?: string;
 	listId?: string;
 	autoAddMedia?: {
 		tmdbId: number;
@@ -55,7 +59,9 @@ export function CustomListDialog({
 	const [description, setDescription] = useState("");
 	const [color, setColor] = useState(initialColor ?? "");
 	const [visibility, setVisibility] = useState<"private" | "public">("private");
-	const [listType, setListType] = useState<"unordered" | "ordered">("unordered");
+	const [listType, setListType] = useState<"unordered" | "ordered">(
+		"unordered",
+	);
 	const [showColorPicker, setShowColorPicker] = useState(false);
 	const [error, setError] = useState("");
 	const [saving, setSaving] = useState(false);
@@ -75,13 +81,13 @@ export function CustomListDialog({
 			setName(initialName ?? "");
 			setDescription("");
 			setColor(initialColor ?? "");
-			setVisibility("private");
-			setListType("unordered");
+			setVisibility((initialVisibility as "private" | "public") ?? "private");
+			setListType((initialListType as "unordered" | "ordered") ?? "unordered");
 			setShowColorPicker(false);
 			setError("");
 			setSaving(false);
 		}
-	}, [open, initialName, initialColor]);
+	}, [open, initialName, initialColor, initialVisibility, initialListType]);
 
 	const handleSubmit = async () => {
 		const trimmed = name.trim();
@@ -101,11 +107,15 @@ export function CustomListDialog({
 					listId: listId as Id<"lists">,
 					name: trimmed,
 					color: color || undefined,
+					visibility,
+					listType,
 				});
 			} else if (autoAddMedia) {
 				await createListAndAdd({
 					name: trimmed,
 					color: color || undefined,
+					visibility,
+					listType,
 					tmdbId: autoAddMedia.tmdbId,
 					mediaType: autoAddMedia.mediaType,
 					title: autoAddMedia.title,
@@ -119,6 +129,8 @@ export function CustomListDialog({
 				await createList({
 					name: trimmed,
 					color: color || undefined,
+					visibility,
+					listType,
 				});
 			}
 			setName("");
@@ -127,7 +139,9 @@ export function CustomListDialog({
 			setError("");
 			onOpenChange(false);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to save collection");
+			setError(
+				err instanceof Error ? err.message : "Failed to save collection",
+			);
 		} finally {
 			setSaving(false);
 		}
@@ -135,7 +149,7 @@ export function CustomListDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[420px] overflow-hidden rounded-3xl p-0 border border-border/40 bg-background/95 backdrop-blur-xl shadow-2xl">
+			<DialogContent className="sm:max-w-[420px] overflow-hidden rounded-3xl p-0 border border-border/40 bg-background backdrop-blur-xl shadow-2xl">
 				<div className="px-6 py-5 space-y-4">
 					<DialogHeader className="relative">
 						<DialogTitle className="text-xl font-bold tracking-wide font-heading text-left pr-6">
@@ -175,14 +189,20 @@ export function CustomListDialog({
 							{/* Inline Lock & Color Icons */}
 							<div className="absolute right-3 flex items-center gap-1.5">
 								<div className="text-muted-foreground/60 p-1 rounded-lg">
-									{visibility === "private" ? <Lock size={14} /> : <Globe size={14} />}
+									{visibility === "private" ? (
+										<Lock size={14} />
+									) : (
+										<Globe size={14} />
+									)}
 								</div>
 								<button
 									type="button"
 									onClick={() => setShowColorPicker(!showColorPicker)}
 									className={cn(
 										"size-5 rounded-full flex items-center justify-center cursor-pointer transition-all border border-border/40",
-										color ? "scale-105" : "bg-gradient-to-tr from-violet-500 to-cyan-400 hover:scale-105"
+										color
+											? "scale-105"
+											: "bg-gradient-to-tr from-violet-500 to-cyan-400 hover:scale-105",
 									)}
 									style={color ? { backgroundColor: color } : undefined}
 									title="Choose color"
@@ -208,7 +228,8 @@ export function CustomListDialog({
 											type="button"
 											className={cn(
 												"relative size-6 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer border border-border/20",
-												isSelected && "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+												isSelected &&
+													"ring-2 ring-foreground ring-offset-2 ring-offset-background",
 											)}
 											style={{ backgroundColor: c.hex }}
 											onClick={() => setColor(color === c.hex ? "" : c.hex)}
@@ -255,22 +276,24 @@ export function CustomListDialog({
 						{/* Visibility Selection */}
 						<div className="space-y-2">
 							<div>
-								<div className="text-xs font-semibold text-foreground">Visibility</div>
+								<div className="text-xs font-semibold text-foreground">
+									Visibility
+								</div>
 								<div className="text-[10px] text-muted-foreground leading-snug">
 									{visibility === "private"
 										? "Only you can see this watchlist"
 										: "Anyone with link can view"}
 								</div>
 							</div>
-							<div className="flex p-1 rounded-xl bg-secondary/20 border border-border/20">
+							<div className="flex p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
 								<button
 									type="button"
 									onClick={() => setVisibility("private")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all border",
 										visibility === "private"
-											? "bg-secondary text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground"
+											? "bg-white text-zinc-900 border-zinc-200 shadow-sm dark:bg-zinc-800 dark:text-foreground dark:border-zinc-700/55 dark:shadow-none"
+											: "bg-transparent border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50 dark:text-muted-foreground/85 dark:hover:text-foreground dark:hover:bg-zinc-800/25",
 									)}
 								>
 									<Lock size={12} />
@@ -280,10 +303,10 @@ export function CustomListDialog({
 									type="button"
 									onClick={() => setVisibility("public")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all border",
 										visibility === "public"
-											? "bg-secondary text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground"
+											? "bg-white text-zinc-900 border-zinc-200 shadow-sm dark:bg-zinc-800 dark:text-foreground dark:border-zinc-700/55 dark:shadow-none"
+											: "bg-transparent border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50 dark:text-muted-foreground/85 dark:hover:text-foreground dark:hover:bg-zinc-800/25",
 									)}
 								>
 									<Globe size={12} />
@@ -295,22 +318,24 @@ export function CustomListDialog({
 						{/* List Type Selection */}
 						<div className="space-y-2">
 							<div>
-								<div className="text-xs font-semibold text-foreground">List Type</div>
+								<div className="text-xs font-semibold text-foreground">
+									List Type
+								</div>
 								<div className="text-[10px] text-muted-foreground leading-snug">
 									{listType === "unordered"
 										? "Items are in a simple list"
 										: "Items are numbered/ranked"}
 								</div>
 							</div>
-							<div className="flex p-1 rounded-xl bg-secondary/20 border border-border/20">
+							<div className="flex p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
 								<button
 									type="button"
 									onClick={() => setListType("unordered")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all border",
 										listType === "unordered"
-											? "bg-secondary text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground"
+											? "bg-white text-zinc-900 border-zinc-200 shadow-sm dark:bg-zinc-800 dark:text-foreground dark:border-zinc-700/55 dark:shadow-none"
+											: "bg-transparent border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50 dark:text-muted-foreground/85 dark:hover:text-foreground dark:hover:bg-zinc-800/25",
 									)}
 								>
 									<List size={12} />
@@ -320,10 +345,10 @@ export function CustomListDialog({
 									type="button"
 									onClick={() => setListType("ordered")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all border",
 										listType === "ordered"
-											? "bg-secondary text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground"
+											? "bg-white text-zinc-900 border-zinc-200 shadow-sm dark:bg-zinc-800 dark:text-foreground dark:border-zinc-700/55 dark:shadow-none"
+											: "bg-transparent border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50 dark:text-muted-foreground/85 dark:hover:text-foreground dark:hover:bg-zinc-800/25",
 									)}
 								>
 									<ListOrdered size={12} />
@@ -343,10 +368,10 @@ export function CustomListDialog({
 						onClick={handleSubmit}
 						disabled={saving || !name.trim()}
 						className={cn(
-							"w-full h-11 rounded-xl text-xs font-bold transition-all cursor-pointer mt-1",
+							"w-full h-11 rounded-xl text-xs font-bold transition-all cursor-pointer mt-1 border",
 							saving || !name.trim()
-								? "bg-violet-600/50 text-white/50 cursor-not-allowed"
-								: "bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-600/10"
+								? "bg-zinc-900/40 text-muted-foreground/40 border-zinc-900/30 cursor-not-allowed"
+								: "bg-zinc-950 hover:bg-zinc-900 text-white border-zinc-800",
 						)}
 					>
 						{saving

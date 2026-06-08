@@ -133,7 +133,10 @@ export function WatchlistStatusMenu({
 							variant="secondary"
 							className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all cursor-pointer flex items-center justify-center"
 						>
-							<StatusIcon size={16} className="text-primary animate-bookmark-pop" />
+							<StatusIcon
+								size={16}
+								className="text-primary animate-bookmark-pop"
+							/>
 							<span className="hidden sm:inline">{currentOption.label}</span>
 							<ChevronDown
 								size={14}
@@ -322,7 +325,7 @@ function StatusButton({
 			className={cn(
 				"flex items-center gap-2.5 w-full rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200 text-left border border-transparent cursor-pointer",
 				active
-					? "bg-primary/10 text-primary border-primary/20"
+					? "bg-primary/10 text-primary border-primary/20 font-bold"
 					: "hover:bg-secondary/60 text-muted-foreground hover:text-foreground",
 			)}
 			onClick={(e) => {
@@ -332,7 +335,6 @@ function StatusButton({
 			}}
 		>
 			{children}
-			{active && <span className="ml-auto size-1.5 rounded-full bg-primary" />}
 		</button>
 	);
 }

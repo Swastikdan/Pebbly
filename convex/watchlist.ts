@@ -666,6 +666,8 @@ export const createCustomList = mutation({
   args: {
     name: v.string(),
     color: v.optional(v.string()),
+    visibility: v.optional(v.string()),
+    listType: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
@@ -687,6 +689,8 @@ export const createCustomList = mutation({
       userId: user._id,
       name: args.name,
       color: args.color,
+      visibility: args.visibility,
+      listType: args.listType,
       sortOrder: maxSort + 1,
       createdAt: now,
       updatedAt: now,
@@ -699,6 +703,8 @@ export const updateCustomList = mutation({
     listId: v.id("lists"),
     name: v.optional(v.string()),
     color: v.optional(v.string()),
+    visibility: v.optional(v.string()),
+    listType: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
@@ -718,6 +724,8 @@ export const updateCustomList = mutation({
     await ctx.db.patch(args.listId, {
       ...(args.name !== undefined ? { name: args.name } : {}),
       ...(args.color !== undefined ? { color: args.color } : {}),
+      ...(args.visibility !== undefined ? { visibility: args.visibility } : {}),
+      ...(args.listType !== undefined ? { listType: args.listType } : {}),
       updatedAt: Date.now(),
     });
   },
@@ -846,6 +854,8 @@ export const createCustomListAndAddItem = mutation({
   args: {
     name: v.string(),
     color: v.optional(v.string()),
+    visibility: v.optional(v.string()),
+    listType: v.optional(v.string()),
     tmdbId: v.number(),
     mediaType: v.string(),
     title: v.optional(v.string()),
@@ -875,6 +885,8 @@ export const createCustomListAndAddItem = mutation({
       userId: user._id,
       name: args.name,
       color: args.color,
+      visibility: args.visibility,
+      listType: args.listType,
       sortOrder: maxSort + 1,
       createdAt: now,
       updatedAt: now,
