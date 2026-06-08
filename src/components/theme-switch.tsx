@@ -15,6 +15,7 @@ export const ThemeSwitch = () => {
 			size="icon"
 			onClick={() => setTheme(theme === "light" ? "dark" : "light")}
 			className="pressable rounded-lg"
+			aria-label="Toggle theme"
 		>
 			{theme === "light" ? (
 				<SunFilledIcon className="size-5" />

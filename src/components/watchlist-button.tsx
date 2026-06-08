@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	BookMarkFilledIcon,
@@ -36,7 +36,28 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 	const toggle = useToggleWatchlistItem();
 	const { isOnWatchList } = useWatchlistItem(itemId, media_type);
 
+	// Optimistic state — flips instantly, reverts on error
+	const [optimisticOn, setOptimisticOn] = useState<boolean | null>(null);
+	const [isAnimating, setIsAnimating] = useState(false);
+	const animKeyRef = useRef(0);
+
+	// Derived active state: prefer optimistic if set, else server truth
+	const isActive = optimisticOn !== null ? optimisticOn : isOnWatchList;
+
+	const showTrash = isActive && is_on_watchlist_page;
+
 	const handleWatchList = useCallback(async () => {
+		// Immediately flip the UI
+		const nextActive = !isActive;
+		setOptimisticOn(nextActive);
+
+		// Trigger animation only when adding (not removing on watchlist page)
+		if (!is_on_watchlist_page && nextActive) {
+			animKeyRef.current += 1;
+			setIsAnimating(true);
+			setTimeout(() => setIsAnimating(false), 420);
+		}
+
 		try {
 			await toggle({
 				title,
@@ -47,10 +68,15 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 				release_date: release_date ?? "",
 				overview,
 			});
+			// Sync back to server truth — clear optimistic override
+			setOptimisticOn(null);
 		} catch (error) {
 			console.error("Error toggling watchlist:", error);
+			// Revert on failure
+			setOptimisticOn(isActive);
 		}
 	}, [
+		isActive,
 		title,
 		rating,
 		image,
@@ -59,22 +85,38 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 		release_date,
 		toggle,
 		overview,
+		is_on_watchlist_page,
 	]);
 
-	const showTrash = isOnWatchList && is_on_watchlist_page;
-	const showFilled = isOnWatchList && !is_on_watchlist_page;
 	return (
 		<Button
 			variant={is_on_homepage ? "secondary" : "light"}
-			aria-label={isOnWatchList ? "Remove from watchlist" : "Add to watchlist"}
+			aria-label={isActive ? "Remove from watchlist" : "Add to watchlist"}
+			aria-pressed={isActive}
 			size="icon"
 			onClick={handleWatchList}
-			className={cn(props.className, "pressable ")}
+			data-active={isActive ? "true" : "false"}
+			className={cn(
+				"pressable relative transition-all duration-200",
+				isActive && !is_on_watchlist_page
+					? "bg-foreground text-background ring-2 ring-foreground/20 shadow-lg shadow-foreground/10 hover:bg-foreground/90"
+					: "bg-black/40 dark:bg-white/10 text-white backdrop-blur-sm hover:bg-black/60 dark:hover:bg-white/20",
+				props.className,
+			)}
 		>
 			{showTrash ? (
 				<TrashBin className="size-5" />
-			) : showFilled ? (
-				<BookMarkFilledIcon className="size-5" />
+			) : isActive ? (
+				<span
+					key={animKeyRef.current}
+					className={cn(
+						"flex items-center justify-center",
+						isAnimating && "animate-bookmark-pop",
+					)}
+					style={{ display: "inline-flex" }}
+				>
+					<BookMarkFilledIcon className="size-5" />
+				</span>
 			) : (
 				<BookMarkIcon className="size-5" />
 			)}

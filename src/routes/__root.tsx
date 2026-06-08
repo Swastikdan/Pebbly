@@ -378,10 +378,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body className="min-h-screen antialiased">
+				<a
+					href="#main-content"
+					className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:inline-flex focus:items-center focus:justify-center focus:rounded-lg focus:border focus:border-border focus:bg-background focus:px-4 focus:py-2.5 focus:text-foreground focus:font-bold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
+				>
+					Skip to main content
+				</a>
 				<ThemeProvider>
 					<UserSync />
 					<Navbar />
-					{children}
+					{/* biome-ignore lint/correctness/useUniqueElementIds: static ID needed for skip link anchor target */}
+					<main id="main-content" tabIndex={-1} className="outline-none">
+						{children}
+					</main>
 					<Footer />
 					{devtoolsPlugin}
 					<SpeedInsights />

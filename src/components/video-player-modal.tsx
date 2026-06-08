@@ -1,4 +1,3 @@
-import { usePermissions } from "@/hooks/usePermissions";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Play } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/spinner";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
 	buildPlayerUrl,
 	usePlayerProgressListener,
