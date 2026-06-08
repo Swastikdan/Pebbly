@@ -83,20 +83,17 @@ const MobileNavMenuItem = ({
 				{item.name}
 			</Button>
 			{item.submenu.map((subitem) => (
-				<Link
-					to={subitem.url}
-					key={subitem.slug}
-					className="w-full cursor-pointer justify-start pl-3"
-				>
-					<SheetClose asChild>
-						<Button
-							variant="outline"
-							className="h-9 w-full justify-start rounded-lg text-sm"
-						>
+				<SheetClose asChild key={subitem.slug}>
+					<Button
+						variant="outline"
+						className="h-9 w-full justify-start rounded-lg text-sm"
+						asChild
+					>
+						<Link to={subitem.url} className="w-full pl-3 cursor-pointer">
 							{subitem.name}
-						</Button>
-					</SheetClose>
-				</Link>
+						</Link>
+					</Button>
+				</SheetClose>
 			))}
 		</div>
 	);
@@ -158,43 +155,46 @@ const Navbar = () => {
 									<MobileNavMenuItem key={item.slug} item={item} />
 								))}
 								<div className="flex flex-col gap-1.5 mt-1">
-									<Link to="/watchlist" className="w-full">
-										<SheetClose asChild>
-											<Button
-												variant="secondary"
-												className="h-9 w-full justify-start gap-2 text-sm"
-											>
+									<SheetClose asChild>
+										<Button
+											variant="secondary"
+											className="h-9 w-full justify-start gap-2 text-sm"
+											asChild
+										>
+											<Link to="/watchlist" className="w-full">
 												<BookMarkFilledIcon className="size-4 fill-current" />
 												Watchlist
-											</Button>
-										</SheetClose>
-									</Link>
+											</Link>
+										</Button>
+									</SheetClose>
 									<SignedIn>
-										<Link to="/watchlist" className="w-full">
-											<SheetClose asChild>
-												<Button
-													variant="outline"
-													className="h-9 w-full justify-start gap-2 text-sm"
-												>
+										<SheetClose asChild>
+											<Button
+												variant="outline"
+												className="h-9 w-full justify-start gap-2 text-sm"
+												asChild
+											>
+												<Link to="/watchlist" className="w-full">
 													<ListPlus className="size-4" />
 													My Lists
-												</Button>
-											</SheetClose>
-										</Link>
+												</Link>
+											</Button>
+										</SheetClose>
 									</SignedIn>
 									{hasFeature("ai-recommendations") && (
-										// @ts-expect-error correct link
-										<Link to="/recommendations" className="w-full">
-											<SheetClose asChild>
-												<Button
-													variant="outline"
-													className="h-9 w-full justify-start gap-2 text-sm"
-												>
+										<SheetClose asChild>
+											<Button
+												variant="outline"
+												className="h-9 w-full justify-start gap-2 text-sm"
+												asChild
+											>
+												{/* @ts-expect-error correct link */}
+												<Link to="/recommendations" className="w-full">
 													<SparklesFilledIcon className="size-4" />
 													AI Recommendations
-												</Button>
-											</SheetClose>
-										</Link>
+												</Link>
+											</Button>
+										</SheetClose>
 									)}
 								</div>
 							</div>

@@ -33,20 +33,16 @@ const DesktopNavButton = ({
 	const location = useLocation();
 	const isActive = location.pathname === href;
 	return (
-		<Link
-			to={href}
-			aria-label={label}
-			className="cursor-pointer rounded-lg pressable"
+		<Button
+			variant={isActive ? "secondary" : "outline"}
+			size="icon"
+			className={cn(className, "rounded-lg pressable")}
+			asChild
 		>
-			<Button
-				variant={isActive ? "secondary" : "outline"}
-				size="icon"
-				className={cn(className, "rounded-lg")}
-				aria-label={label}
-			>
+			<Link to={href} aria-label={label} className="cursor-pointer">
 				{icon}
-			</Button>
-		</Link>
+			</Link>
+		</Button>
 	);
 };
 

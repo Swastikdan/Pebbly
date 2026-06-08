@@ -11,6 +11,7 @@ import {
 	TrendingWeekMovies,
 	UpcomingMovies,
 } from "@/components/homepage-media";
+import { HomepageRecommendations } from "@/components/homepage-recommendations";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -19,7 +20,6 @@ import {
 	SITE_CONFIG,
 } from "@/constants";
 import { useContinueWatching } from "@/hooks/useWatchProgress";
-import { HomepageRecommendations } from "@/components/homepage-recommendations";
 
 export const Route = createFileRoute("/")({
 	component: HomePage,
@@ -89,7 +89,10 @@ function HomePage() {
 
 					<HomepageRecommendations />
 
-					<section className="content-visibility-auto" style={{ containIntrinsicHeight: "auto 280px" }}>
+					<section
+						className="content-visibility-auto"
+						style={{ containIntrinsicHeight: "auto 280px" }}
+					>
 						<div className="flex items-center gap-4">
 							<h2 className="font-semibold text-lg md:text-xl">
 								Upcoming Movies
@@ -102,7 +105,11 @@ function HomePage() {
 						</div>
 					</section>
 
-					<Tabs defaultValue="popular_movie" className="content-visibility-auto" style={{ containIntrinsicHeight: "auto 360px" }}>
+					<Tabs
+						defaultValue="popular_movie"
+						className="content-visibility-auto"
+						style={{ containIntrinsicHeight: "auto 360px" }}
+					>
 						<div className="flex items-center gap-4">
 							<h2 className="font-semibold text-lg md:text-xl">{`What's Popular`}</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>
@@ -132,7 +139,11 @@ function HomePage() {
 						</TabsContent>
 					</Tabs>
 
-					<Tabs defaultValue="top_rated_movies" className="content-visibility-auto" style={{ containIntrinsicHeight: "auto 360px" }}>
+					<Tabs
+						defaultValue="top_rated_movies"
+						className="content-visibility-auto"
+						style={{ containIntrinsicHeight: "auto 360px" }}
+					>
 						<div className="flex items-center gap-4">
 							<h2 className="font-semibold text-lg md:text-xl">Top Rated</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>

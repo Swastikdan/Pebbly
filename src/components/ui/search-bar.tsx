@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { SearchIcon, XCircleIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,6 +70,7 @@ const SearchBar = memo(
 		disabled = false,
 		updateUrlOnChange = false,
 	}: SearchBarProps) => {
+		const searchId = useId();
 		const navigate = useNavigate();
 		const location = useLocation();
 		const [value, setValue] = useState(query ?? "");
@@ -169,7 +170,7 @@ const SearchBar = memo(
 					replace: true,
 				});
 			},
-			[onSubmit, value, navigate, updateUrlOnChange, debounceTimeout],
+			[onSubmit, value, navigate, debounceTimeout],
 		);
 
 		const handleKeyDown = useCallback(
@@ -200,11 +201,12 @@ const SearchBar = memo(
 				aria-label="Search Form"
 			>
 				<div className="relative w-full">
-					<Label htmlFor="search" className="sr-only">
+					<Label htmlFor={searchId} className="sr-only">
 						Search
 					</Label>
 					<Input
 						type="text"
+						id={searchId}
 						name="query"
 						autoComplete="off"
 						placeholder={placeholder ?? "Search movies, shows, and more..."}
@@ -214,7 +216,7 @@ const SearchBar = memo(
 						disabled={disabled || isLoading}
 						autoFocus={autoFocus}
 						className={cn(
-							"peer h-11 w-full rounded-xl bg-background/95 ps-11 pr-10 text-[16px] md:text-[15px] border border-border transition-all duration-200 placeholder:text-muted-foreground/70 focus:bg-background focus:border-ring/40 focus:ring-2 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background shadow-none",
+							"peer h-11 w-full rounded-xl bg-background/95 ps-11 pr-11 text-[16px] md:text-[15px] border border-border transition-all duration-200 placeholder:text-muted-foreground/70 focus:bg-background focus:border-ring/40 focus:ring-2 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background shadow-none",
 							disabled && "cursor-not-allowed opacity-50",
 						)}
 						aria-label="Search Input"
@@ -227,7 +229,7 @@ const SearchBar = memo(
 						<button
 							type="button"
 							onClick={handleClear}
-							className="absolute inset-y-0 end-0 z-20 flex cursor-pointer items-center pr-4 transition-all duration-150 hover:opacity-70 active:scale-90"
+							className="absolute inset-y-0 end-0 z-20 flex w-11 cursor-pointer items-center justify-center transition-all duration-150 hover:opacity-70 active:scale-90"
 							aria-label="Clear Search"
 						>
 							<XCircleIcon size={20} aria-hidden="true" />
