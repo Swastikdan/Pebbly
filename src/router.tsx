@@ -9,14 +9,15 @@ import {
 	DefaultErrorComponent,
 	DefaultNotFoundComponent,
 } from "@/components/default-not-found";
-import * as TanstackQuery from "@/lib/query/root-provider";
+import { getContext } from "@/lib/query/query-client";
+import { Provider as QueryProvider } from "@/lib/query/root-provider";
 
 import { routeTree } from "@/routeTree.gen";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 export const getRouter = () => {
-	const rqContext = TanstackQuery.getContext();
+	const rqContext = getContext();
 
 	const router = createRouter({
 		routeTree,
@@ -31,9 +32,7 @@ export const getRouter = () => {
 					}}
 				>
 					<ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-						<TanstackQuery.Provider {...rqContext}>
-							{props.children}
-						</TanstackQuery.Provider>
+						<QueryProvider {...rqContext}>{props.children}</QueryProvider>
 					</ConvexProviderWithClerk>
 				</ClerkProvider>
 			);
