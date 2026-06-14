@@ -13,6 +13,7 @@ export const UserSync = () => {
 				name: user.fullName ?? user.username ?? "Anonymous",
 				email: user.primaryEmailAddress?.emailAddress,
 				image: user.imageUrl,
+				isAdmin: user.publicMetadata?.isAdmin === true,
 			}).catch((error) => {
 				console.error("Failed to sync user to Convex:", error);
 			});

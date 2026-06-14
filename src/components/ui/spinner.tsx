@@ -21,47 +21,51 @@ export interface SpinnerProps
 		VariantProps<typeof spinnerVariants> {
 	loading?: boolean;
 	asChild?: boolean;
+	ref?: React.Ref<HTMLSpanElement>;
 }
 
-const Spinner = React.forwardRef<HTMLSpanElement, SpinnerProps>(
-	({ className, size, loading = true, asChild = false, ...props }, ref) => {
-		const Comp = asChild ? Slot : "span";
+function Spinner({
+	className,
+	size,
+	loading = true,
+	asChild = false,
+	ref,
+	...props
+}: SpinnerProps) {
+	const Comp = asChild ? Slot : "span";
 
-		const [bgColorClass, filteredClassName] = React.useMemo(() => {
-			const bgClass = className?.match(/(?:dark:bg-|bg-)[a-zA-Z0-9-]+/g) || [];
-			const filteredClasses = className
-				?.replace(/(?:dark:bg-|bg-)[a-zA-Z0-9-]+/g, "")
-				.trim();
-			return [bgClass, filteredClasses];
-		}, [className]);
+	const [bgColorClass, filteredClassName] = React.useMemo(() => {
+		const bgClass = className?.match(/(?:dark:bg-|bg-)[a-zA-Z0-9-]+/g) || [];
+		const filteredClasses = className
+			?.replace(/(?:dark:bg-|bg-)[a-zA-Z0-9-]+/g, "")
+			.trim();
+		return [bgClass, filteredClasses];
+	}, [className]);
 
-		if (!loading) return null;
+	if (!loading) return null;
 
-		return (
-			<Comp
-				className={cn(spinnerVariants({ size, className: filteredClassName }))}
-				ref={ref}
-				{...props}
-			>
-				{Array.from({ length: 8 }).map((_, i) => (
+	return (
+		<Comp
+			className={cn(spinnerVariants({ size, className: filteredClassName }))}
+			ref={ref}
+			{...props}
+		>
+			{Array.from({ length: 8 }).map((_, i) => (
+				<span
+					key={i}
+					className="absolute top-0 left-1/2 h-full w-[12.5%] animate-spinner-leaf-fade"
+					style={{
+						transform: `rotate(${i * 45}deg)`,
+						animationDelay: `${-(7 - i) * 100}ms`,
+					}}
+				>
 					<span
-						key={i}
-						className="absolute top-0 left-1/2 h-full w-[12.5%] animate-spinner-leaf-fade"
-						style={{
-							transform: `rotate(${i * 45}deg)`,
-							animationDelay: `${-(7 - i) * 100}ms`,
-						}}
-					>
-						<span
-							className={cn("block h-[30%] w-full rounded-full", bgColorClass)}
-						/>
-					</span>
-				))}
-			</Comp>
-		);
-	},
-);
+						className={cn("block h-[30%] w-full rounded-full", bgColorClass)}
+					/>
+				</span>
+			))}
+		</Comp>
+	);
+}
 
-Spinner.displayName = "Spinner";
-
-export { Spinner, spinnerVariants };
+export { Spinner };
