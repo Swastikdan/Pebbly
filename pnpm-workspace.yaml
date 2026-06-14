@@ -1,6 +1,13 @@
 packages: []
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - chokidar
+  - semver
+  - undici-types
 allowBuilds:
   '@clerk/shared': true
+  '@google/genai': true
   '@parcel/watcher': true
   '@tailwindcss/oxide': true
   browser-tabs-lock: true

@@ -167,6 +167,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 														allowFullScreen
 														allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
 														className="size-full rounded-2xl"
+														sandbox="allow-scripts allow-presentation allow-popups allow-forms"
 														src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
 														title={video.name}
 													/>

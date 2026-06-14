@@ -320,6 +320,7 @@ export function VideoPlayerModal({
 						allowFullScreen
 						allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
 						className="size-full"
+						sandbox="allow-scripts allow-presentation allow-popups allow-forms"
 						src={videoUrl}
 						title={title}
 						onLoad={() => setIsLoading(false)}
