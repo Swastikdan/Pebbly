@@ -5,40 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { addToSearchHistory } from "@/lib/search-history";
 import { cn } from "@/lib/utils";
-
-const SEARCH_HISTORY_KEY = "search-history";
-const MAX_HISTORY_ITEMS = 8;
-
-function getSearchHistory(): string[] {
-	if (typeof window === "undefined") return [];
-	try {
-		return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) ?? "[]");
-	} catch {
-		return [];
-	}
-}
-
-function addToSearchHistory(query: string) {
-	if (!query.trim()) return;
-	const history = getSearchHistory().filter(
-		(item) => item.toLowerCase() !== query.trim().toLowerCase(),
-	);
-	history.unshift(query.trim());
-	localStorage.setItem(
-		SEARCH_HISTORY_KEY,
-		JSON.stringify(history.slice(0, MAX_HISTORY_ITEMS)),
-	);
-}
-
-function removeFromSearchHistory(query: string) {
-	const history = getSearchHistory().filter((item) => item !== query);
-	localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
-}
-
-function clearSearchHistory() {
-	localStorage.removeItem(SEARCH_HISTORY_KEY);
-}
 
 interface SearchBarProps {
 	className?: string;
@@ -249,10 +217,4 @@ const SearchBarSkeleton = memo(function SearchBarSkeleton() {
 
 SearchBarSkeleton.displayName = "SearchBarSkeleton";
 
-export {
-	SearchBar,
-	SearchBarSkeleton,
-	getSearchHistory,
-	removeFromSearchHistory,
-	clearSearchHistory,
-};
+export { SearchBar, SearchBarSkeleton };
