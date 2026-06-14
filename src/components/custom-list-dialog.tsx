@@ -1,4 +1,8 @@
-import { useMutation } from "convex/react";
+import {
+	useCreateCustomList,
+	useCreateCustomListAndAddItem,
+	useUpdateCustomList,
+} from "@/hooks/useCustomLists";
 import { Check, Globe, List, ListOrdered, Lock, Palette } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,8 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
 
 const PRESET_COLORS = [
 	{ hex: "#ef4444", name: "Red" },
@@ -66,11 +68,9 @@ export function CustomListDialog({
 	const [error, setError] = useState("");
 	const [saving, setSaving] = useState(false);
 
-	const createList = useMutation(api.watchlist.createCustomList);
-	const createListAndAdd = useMutation(
-		api.watchlist.createCustomListAndAddItem,
-	);
-	const updateList = useMutation(api.watchlist.updateCustomList);
+	const createList = useCreateCustomList();
+	const createListAndAdd = useCreateCustomListAndAddItem();
+	const updateList = useUpdateCustomList();
 
 	const isEditing = !!listId;
 	const listNameId = useId();
@@ -104,7 +104,7 @@ export function CustomListDialog({
 		try {
 			if (isEditing) {
 				await updateList({
-					listId: listId as Id<"lists">,
+					listId: listId as string,
 					name: trimmed,
 					color: color || undefined,
 					visibility,

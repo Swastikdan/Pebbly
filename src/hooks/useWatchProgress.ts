@@ -436,6 +436,89 @@ export function useContinueWatching() {
 	return { items, allItems: items };
 }
 
+function markEpisodeWatchedOptimisticUpdate(localStore: any, args: any) {
+	const current =
+		localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
+			tmdbId: args.tmdbId,
+		}) ?? [];
+
+	if (!args.isWatched) {
+		localStore.setQuery(
+			api.watchlist.getAllWatchedEpisodes,
+			{ tmdbId: args.tmdbId },
+			current.filter(
+				(episode: any) =>
+					!(episode.season === args.season && episode.episode === args.episode),
+			),
+		);
+		return;
+	}
+
+	const already = current.some(
+		(episode: any) =>
+			episode.season === args.season && episode.episode === args.episode,
+	);
+	if (already) {
+		return;
+	}
+
+	const now = Date.now();
+	localStore.setQuery(
+		api.watchlist.getAllWatchedEpisodes,
+		{ tmdbId: args.tmdbId },
+		[
+			...current,
+			createOptimisticEpisodeProgress(
+				args.tmdbId,
+				args.season,
+				args.episode,
+				String(now),
+				now,
+			),
+		],
+	);
+}
+
+function markSeasonEpisodesWatchedOptimisticUpdate(localStore: any, args: any) {
+	const current =
+		localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
+			tmdbId: args.tmdbId,
+		}) ?? [];
+	const filtered = current.filter(
+		(episode: any) =>
+			!(
+				episode.season === args.season &&
+				args.episodes.includes(episode.episode)
+			),
+	);
+
+	if (!args.isWatched) {
+		localStore.setQuery(
+			api.watchlist.getAllWatchedEpisodes,
+			{ tmdbId: args.tmdbId },
+			filtered,
+		);
+		return;
+	}
+
+	const now = Date.now();
+	const newEpisodes = args.episodes.map((episode: any) =>
+		createOptimisticEpisodeProgress(
+			args.tmdbId,
+			args.season,
+			episode,
+			`${now}_${episode}`,
+			now,
+		),
+	);
+
+	localStore.setQuery(
+		api.watchlist.getAllWatchedEpisodes,
+		{ tmdbId: args.tmdbId },
+		[...filtered, ...newEpisodes],
+	);
+}
+
 export function useEpisodeWatched(
 	tvId: number | string,
 	totalEpisodes?: number,
@@ -501,85 +584,11 @@ export function useEpisodeWatched(
 
 	const markEpisodeWatchedMut = useMutation(
 		api.watchlist.markEpisodeWatched,
-	).withOptimisticUpdate((localStore, args) => {
-		const current =
-			localStore.getQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }) ??
-			[];
-
-		if (!args.isWatched) {
-			localStore.setQuery(
-				api.watchlist.getAllWatchedEpisodes,
-				{ tmdbId },
-				current.filter(
-					(episode) =>
-						!(
-							episode.season === args.season && episode.episode === args.episode
-						),
-				),
-			);
-			return;
-		}
-
-		const already = current.some(
-			(episode) =>
-				episode.season === args.season && episode.episode === args.episode,
-		);
-		if (already) {
-			return;
-		}
-
-		const now = Date.now();
-		localStore.setQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }, [
-			...current,
-			createOptimisticEpisodeProgress(
-				tmdbId,
-				args.season,
-				args.episode,
-				String(now),
-				now,
-			),
-		]);
-	});
+	).withOptimisticUpdate(markEpisodeWatchedOptimisticUpdate);
 
 	const markEpisodesWatchedBatch = useMutation(
 		api.watchlist.markSeasonEpisodesWatched,
-	).withOptimisticUpdate((localStore, args) => {
-		const current =
-			localStore.getQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }) ??
-			[];
-		const filtered = current.filter(
-			(episode) =>
-				!(
-					episode.season === args.season &&
-					args.episodes.includes(episode.episode)
-				),
-		);
-
-		if (!args.isWatched) {
-			localStore.setQuery(
-				api.watchlist.getAllWatchedEpisodes,
-				{ tmdbId },
-				filtered,
-			);
-			return;
-		}
-
-		const now = Date.now();
-		const newEpisodes = args.episodes.map((episode) =>
-			createOptimisticEpisodeProgress(
-				tmdbId,
-				args.season,
-				episode,
-				`${now}_${episode}`,
-				now,
-			),
-		);
-
-		localStore.setQuery(api.watchlist.getAllWatchedEpisodes, { tmdbId }, [
-			...filtered,
-			...newEpisodes,
-		]);
-	});
+	).withOptimisticUpdate(markSeasonEpisodesWatchedOptimisticUpdate);
 
 	const updateProgress = useMutation(api.watchlist.updateProgress);
 	const setProgressStatus = useMutation(api.watchlist.setProgressStatus);
