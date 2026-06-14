@@ -1,8 +1,3 @@
-import {
-	useCreateCustomList,
-	useCreateCustomListAndAddItem,
-	useUpdateCustomList,
-} from "@/hooks/useCustomLists";
 import { Check, Globe, List, ListOrdered, Lock, Palette } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +9,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	useCreateCustomList,
+	useCreateCustomListAndAddItem,
+	useUpdateCustomList,
+} from "@/hooks/useCustomLists";
 import { cn } from "@/lib/utils";
 
 const PRESET_COLORS = [

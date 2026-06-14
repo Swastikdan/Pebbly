@@ -1,9 +1,4 @@
 import {
-	useCustomLists,
-	useItemLists,
-	useToggleListItem,
-} from "@/hooks/useCustomLists";
-import {
 	Bookmark,
 	Check,
 	ChevronDown,
@@ -30,6 +25,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getProgressOption, REACTION_OPTIONS } from "@/constants/watchlist";
+import {
+	useCustomLists,
+	useItemLists,
+	useToggleListItem,
+} from "@/hooks/useCustomLists";
 import { cn } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
