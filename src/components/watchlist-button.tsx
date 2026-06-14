@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	BookMarkFilledIcon,
@@ -39,7 +39,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 	// Optimistic state — flips instantly, reverts on error
 	const [optimisticOn, setOptimisticOn] = useState<boolean | null>(null);
 	const [isAnimating, setIsAnimating] = useState(false);
-	const [animKey, setAnimKey] = useState(0);
+	const animKeyRef = useRef(0);
 
 	// Derived active state: prefer optimistic if set, else server truth
 	const isActive = optimisticOn !== null ? optimisticOn : isOnWatchList;
@@ -53,7 +53,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 
 		// Trigger animation only when adding (not removing on watchlist page)
 		if (!is_on_watchlist_page && nextActive) {
-			setAnimKey((k) => k + 1);
+			animKeyRef.current += 1;
 			setIsAnimating(true);
 			setTimeout(() => setIsAnimating(false), 420);
 		}
@@ -108,7 +108,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 				<TrashBin className="size-5" />
 			) : isActive ? (
 				<span
-					key={animKey}
+					key={animKeyRef.current}
 					className={cn(
 						"flex items-center justify-center",
 						isAnimating && "animate-bookmark-pop",

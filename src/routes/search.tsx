@@ -11,7 +11,12 @@ import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Button } from "@/components/ui/button";
 import { XCircleIcon } from "@/components/ui/icons";
 import { Pagination } from "@/components/ui/pagination";
-import { SearchBar } from "@/components/ui/search-bar";
+import {
+	clearSearchHistory,
+	getSearchHistory,
+	removeFromSearchHistory,
+	SearchBar,
+} from "@/components/ui/search-bar";
 import {
 	Select,
 	SelectContent,
@@ -22,11 +27,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { HORIZONTAL_MEDIA_GRID_CLASS, MAX_PAGINATION_LIMIT } from "@/constants";
 import { getMedia, getSearchResult } from "@/lib/queries";
-import {
-	clearSearchHistory,
-	getSearchHistory,
-	removeFromSearchHistory,
-} from "@/lib/search-history";
 import type { MediaType, SearchResultsEntity } from "@/types";
 
 type FilterType = MediaType | null;

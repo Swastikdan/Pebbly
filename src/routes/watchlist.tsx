@@ -1,11 +1,6 @@
+import { useUser } from "@clerk/clerk-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-
-import {
-	useCustomLists,
-	useCustomListItems,
-	useDeleteCustomList,
-	useToggleListItem,
-} from "@/hooks/useCustomLists";
+import { useMutation, useQuery } from "convex/react";
 import {
 	Bookmark,
 	ChevronDown,
@@ -75,6 +70,8 @@ import {
 import { useWatchlistImportExport } from "@/hooks/usewatchlistimportexport";
 import { cn, formatMediaTitle } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 
 export const Route = createFileRoute("/watchlist")({
 	head: () => ({
@@ -111,6 +108,7 @@ type ReactionFilter = "all" | "none" | ReactionStatus;
 type PageTab = "watchlist" | "my-lists";
 
 function WatchlistPage() {
+	const { isSignedIn } = useUser();
 	const [activeTab, setActiveTab] = useState<PageTab>("watchlist");
 
 	return (
@@ -121,44 +119,52 @@ function WatchlistPage() {
 					<ShareButton title="My Watchlist" hideLabelOnMobile />
 				</div>
 
-				<div className="mb-6">
-					<div className="flex items-center gap-4">
-						<Tabs
-							value={activeTab}
-							onValueChange={(v) => setActiveTab(v as PageTab)}
-							className="w-full"
-						>
-							<div className="flex items-center justify-between gap-3">
-								<TabsList className={SECTION_TAB_LIST_CLASS}>
-									<TabsTrigger
-										value="watchlist"
-										className={SECTION_TAB_TRIGGER_CLASS}
-									>
-										<Bookmark size={15} />
-										Watchlist
-									</TabsTrigger>
-									<TabsTrigger
-										value="my-lists"
-										className={SECTION_TAB_TRIGGER_CLASS}
-									>
-										<ListPlus size={15} />
-										My Collections
-									</TabsTrigger>
-								</TabsList>
-							</div>
+				{isSignedIn ? (
+					<div className="mb-6">
+						<div className="flex items-center gap-4">
+							<Tabs
+								value={activeTab}
+								onValueChange={(v) => setActiveTab(v as PageTab)}
+								className="w-full"
+							>
+								<div className="flex items-center justify-between gap-3">
+									<TabsList className={SECTION_TAB_LIST_CLASS}>
+										<TabsTrigger
+											value="watchlist"
+											className={SECTION_TAB_TRIGGER_CLASS}
+										>
+											<Bookmark size={15} />
+											Watchlist
+										</TabsTrigger>
+										{isSignedIn && (
+											<TabsTrigger
+												value="my-lists"
+												className={SECTION_TAB_TRIGGER_CLASS}
+											>
+												<ListPlus size={15} />
+												My Collections
+											</TabsTrigger>
+										)}
+									</TabsList>
+								</div>
 
-							<TabsContent value="watchlist" className="mt-0">
-								<WatchlistTabContent />
-							</TabsContent>
+								<TabsContent value="watchlist" className="mt-0">
+									<WatchlistTabContent />
+								</TabsContent>
 
-							<TabsContent value="my-lists" className="mt-0">
-								<SilentErrorBoundary>
-									<MyListsTabContent />
-								</SilentErrorBoundary>
-							</TabsContent>
-						</Tabs>
+								{isSignedIn && (
+									<TabsContent value="my-lists" className="mt-0">
+										<SilentErrorBoundary>
+											<MyListsTabContent />
+										</SilentErrorBoundary>
+									</TabsContent>
+								)}
+							</Tabs>
+						</div>
 					</div>
-				</div>
+				) : (
+					<WatchlistTabContent />
+				)}
 			</div>
 		</section>
 	);
@@ -564,8 +570,8 @@ function WatchlistTabContent() {
 }
 
 function MyListsTabContent() {
-	const { lists: customLists } = useCustomLists();
-	const deleteCustomList = useDeleteCustomList();
+	const customLists = useQuery(api.watchlist.getCustomLists) ?? [];
+	const deleteCustomList = useMutation(api.watchlist.deleteCustomList);
 	const [showCreateList, setShowCreateList] = useState(false);
 	const [editingList, setEditingList] = useState<{
 		id: string;
@@ -602,7 +608,7 @@ function MyListsTabContent() {
 						})
 					}
 					onDelete={() => {
-						deleteCustomList(selectedList._id);
+						deleteCustomList({ listId: selectedList._id as Id<"lists"> });
 						setSelectedListId(null);
 					}}
 				/>
@@ -690,7 +696,9 @@ function MyListsTabContent() {
 									listType: list.listType,
 								})
 							}
-							onDelete={() => deleteCustomList(list._id)}
+							onDelete={() =>
+								deleteCustomList({ listId: list._id as Id<"lists"> })
+							}
 						/>
 					))}
 				</div>
@@ -736,7 +744,9 @@ function CustomListView({
 	onEdit: () => void;
 	onDelete: () => void;
 }) {
-	const items = useCustomListItems(list._id);
+	const items =
+		useQuery(api.watchlist.getListItems, { listId: list._id as Id<"lists"> }) ??
+		null;
 
 	const [mediaFilter, setMediaFilter] = useState<"all" | "movie" | "tv">("all");
 
@@ -822,7 +832,7 @@ function CustomListView({
 								onSelect={onDelete}
 							>
 								<Trash2 size={14} />
-								Delete
+								Delete 
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
@@ -1131,7 +1141,7 @@ function CustomListMediaCard({
 	};
 	listId: string;
 }) {
-	const toggleListItem = useToggleListItem();
+	const toggleListItem = useMutation(api.watchlist.toggleListItem);
 	const hasMetadata = !!(item.title && (item.backdrop || item.image));
 	const formattedTitle = item.title
 		? formatMediaTitle.encode(item.title)
@@ -1156,7 +1166,7 @@ function CustomListMediaCard({
 		e.preventDefault();
 		e.stopPropagation();
 		toggleListItem({
-			listId: listId,
+			listId: listId as Id<"lists">,
 			tmdbId: item.tmdbId,
 			mediaType: item.mediaType,
 		}).catch(console.error);

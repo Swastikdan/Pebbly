@@ -1,9 +1,6 @@
 packages: []
-minimumReleaseAge: 10080
-trustPolicy: off
 allowBuilds:
   '@clerk/shared': true
-  '@google/genai': true
   '@parcel/watcher': true
   '@tailwindcss/oxide': true
   browser-tabs-lock: true

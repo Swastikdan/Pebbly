@@ -74,11 +74,7 @@ function titlesMatch(aiTitle: string, tmdbTitle: string): boolean {
 }
 
 function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
-	const {
-		data: movieData,
-		isLoading: movieLoading,
-		isError: movieError,
-	} = useQuery({
+	const movieResult = useQuery({
 		queryKey: ["basic_movie_details", tmdbId],
 		queryFn: () => getBasicMovieDetails({ id: tmdbId as number }),
 		enabled: !!tmdbId && mediaType === "movie",
@@ -87,11 +83,7 @@ function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 		refetchOnWindowFocus: false,
 	});
 
-	const {
-		data: tvData,
-		isLoading: tvLoading,
-		isError: tvError,
-	} = useQuery({
+	const tvResult = useQuery({
 		queryKey: ["basic_tv_details", tmdbId],
 		queryFn: () => getBasicTvDetails({ id: tmdbId as number }),
 		enabled: !!tmdbId && mediaType === "tv",
@@ -102,14 +94,11 @@ function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 
 	if (!tmdbId) return { data: null, isLoading: false, exists: false };
 
-	const data = mediaType === "movie" ? movieData : tvData;
-	const isLoading = mediaType === "movie" ? movieLoading : tvLoading;
-	const isError = mediaType === "movie" ? movieError : tvError;
-
+	const result = mediaType === "movie" ? movieResult : tvResult;
 	return {
-		data: normalizeTmdbData(data, mediaType),
-		isLoading,
-		exists: !!data && !isError,
+		data: normalizeTmdbData(result.data, mediaType),
+		isLoading: result.isLoading,
+		exists: !!result.data && !result.isError,
 	};
 }
 
@@ -118,7 +107,7 @@ function useTmdbSearchFallback(
 	mediaType: "movie" | "tv",
 	shouldSearch: boolean,
 ) {
-	const { data: searchData, isLoading: searchLoading } = useQuery({
+	const searchResult = useQuery({
 		queryKey: ["tmdb_search_fallback", title, mediaType],
 		queryFn: async () => {
 			const results = await getSearchResult(title, 1);
@@ -156,9 +145,9 @@ function useTmdbSearchFallback(
 	});
 
 	return {
-		data: searchData ?? null,
-		isLoading: searchLoading && shouldSearch,
-		exists: !!searchData,
+		data: searchResult.data ?? null,
+		isLoading: searchResult.isLoading && shouldSearch,
+		exists: !!searchResult.data,
 	};
 }
 

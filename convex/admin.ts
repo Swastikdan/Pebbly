@@ -55,7 +55,7 @@ function parseClerkPublicMeta(
 ): Record<string, unknown> | null {
   if (!identity) return null;
 
-  const candidates = [identity.public_meta, identity.publicMetadata, identity];
+  const candidates = [identity.public_meta, identity.publicMetadata];
 
   for (const candidate of candidates) {
     if (!candidate) continue;
@@ -80,13 +80,8 @@ function parseClerkPublicMeta(
   return null;
 }
 
-function isClerkAdmin(
-  identity: Record<string, unknown> | null,
-  dbUser?: { isAdmin?: boolean } | null,
-): boolean {
-  if (parseClerkPublicMeta(identity)?.isAdmin === true) return true;
-  if (dbUser?.isAdmin === true) return true;
-  return false;
+function isClerkAdmin(identity: Record<string, unknown> | null): boolean {
+  return parseClerkPublicMeta(identity)?.isAdmin === true;
 }
 
 async function requireAdmin(ctx: MutationCtx) {
@@ -95,7 +90,7 @@ async function requireAdmin(ctx: MutationCtx) {
 
   const user = await getUserByToken(ctx, identity.subject);
   if (!user) throw new Error("Unauthorized");
-  if (!isClerkAdmin(identity, user)) {
+  if (!isClerkAdmin(identity)) {
     throw new Error("Forbidden: admin access required");
   }
 
@@ -153,8 +148,9 @@ export async function hasFeature(
   if (!identity) return false;
 
   const user = await getUserByToken(ctx, identity.subject);
-  if (isClerkAdmin(identity, user)) return true;
   if (!user) return false;
+
+  if (isClerkAdmin(identity)) return true;
 
   const globalSetting = await ctx.db
     .query("role_permissions")
@@ -230,15 +226,15 @@ export const getUserFeatures = query({
     if (!identity) return { roles: [] as string[], features: {}, isAdmin: false };
 
     const user = await getUserByToken(ctx, identity.subject);
-    if (isClerkAdmin(identity, user)) {
-      return {
-        roles: [] as string[],
-        features: { ...ADMIN_PERMISSIONS },
-        isAdmin: true,
-      };
-    }
-
     if (!user) return { roles: [] as string[], features: {}, isAdmin: false };
+
+	if (isClerkAdmin(identity)) {
+		return {
+			roles: [] as string[],
+			features: { ...ADMIN_PERMISSIONS },
+			isAdmin: true,
+		};
+    }
 
     const roles = (user.roles ?? []).filter((role) =>
       DYNAMIC_ROLES.includes(role as DynamicRbacRole),
@@ -334,7 +330,7 @@ export const listUsers = query({
     if (!identity) throw new Error("Unauthorized");
 
     const caller = await getUserByToken(ctx, identity.subject);
-    if (!caller || !isClerkAdmin(identity, caller)) {
+    if (!caller || !isClerkAdmin(identity)) {
       throw new Error("Forbidden: admin access required");
     }
 

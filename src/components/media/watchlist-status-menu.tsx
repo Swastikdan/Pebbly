@@ -1,8 +1,5 @@
-import {
-	useCustomLists,
-	useItemLists,
-	useToggleListItem,
-} from "@/hooks/useCustomLists";
+import { useUser } from "@clerk/clerk-react";
+import { useMutation, useQuery } from "convex/react";
 import {
 	Bookmark,
 	Check,
@@ -32,6 +29,9 @@ import {
 import { getProgressOption, REACTION_OPTIONS } from "@/constants/watchlist";
 import { cn } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
+import { api } from "../../../convex/_generated/api";
+
+const QUERY_SKIP = "skip" as const;
 
 class SilentErrorBoundary extends Component<
 	{ children: ReactNode },
@@ -80,6 +80,7 @@ export function WatchlistStatusMenu({
 	onRemove: () => void;
 	metadata?: MediaMetadataForList;
 }) {
+	const { isSignedIn } = useUser();
 	const [open, setOpen] = useState(false);
 	const [listDialogOpen, setListDialogOpen] = useState(false);
 
@@ -87,12 +88,39 @@ export function WatchlistStatusMenu({
 	const currentOption = getProgressOption(currentStatus);
 	const StatusIcon = isOnWatchlist ? currentOption.icon : Bookmark;
 
+	if (!isSignedIn) {
+		return (
+			<div className="flex items-center gap-2">
+				<Button
+					variant="secondary"
+					className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-border/10 hover:bg-secondary/80 transition-all flex items-center justify-center"
+					onClick={() => (isOnWatchlist ? onRemove() : onAdd())}
+				>
+					<StatusIcon size={16} />
+					<span className="hidden sm:inline">
+						{isOnWatchlist
+							? `Current: ${currentOption.label}`
+							: "Add to Watchlist"}
+					</span>
+				</Button>
+				<Button
+					variant="secondary"
+					className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-border/10 hover:bg-secondary/80 transition-all flex items-center justify-center"
+					onClick={onAdd}
+				>
+					<ListPlus size={16} />
+					<span className="hidden sm:inline">Add to Collection</span>
+				</Button>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex items-center gap-2">
 			{!isOnWatchlist ? (
 				<Button
 					variant="secondary"
-					className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-all flex items-center justify-center"
+					className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-border/10 hover:bg-secondary/80 transition-all cursor-pointer flex items-center justify-center"
 					onClick={onAdd}
 				>
 					<Bookmark size={16} />
@@ -103,7 +131,7 @@ export function WatchlistStatusMenu({
 					<DropdownMenuTrigger asChild>
 						<Button
 							variant="secondary"
-							className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/15 text-primary transition-all cursor-pointer flex items-center justify-center"
+							className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all cursor-pointer flex items-center justify-center"
 						>
 							<StatusIcon
 								size={16}
@@ -121,11 +149,11 @@ export function WatchlistStatusMenu({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-80 rounded-2xl p-0 border border-border bg-popover shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
+						className="w-80 rounded-2xl p-0 border border-border/40 bg-background/95 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200"
 						onCloseAutoFocus={(e) => e.preventDefault()}
 					>
-						<div className="flex items-center justify-between border-b border-border px-4 py-3">
-							<span className="text-xs font-bold text-muted-foreground tracking-wider">
+						<div className="flex items-center justify-between border-b border-border/20 px-4 py-3">
+							<span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
 								Watchlist Status
 							</span>
 							<button
@@ -201,7 +229,7 @@ export function WatchlistStatusMenu({
 							)}
 						</div>
 
-						<div className="p-3 border-t border-border space-y-2">
+						<div className="p-3 border-t border-border/20 space-y-2">
 							<div className="flex items-center justify-between">
 								<span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
 									Reaction
@@ -217,8 +245,8 @@ export function WatchlistStatusMenu({
 											className={cn(
 												"flex flex-col items-center justify-center gap-1.5 rounded-xl py-2 px-1 transition-all duration-200 border cursor-pointer",
 												isSelected
-													? "bg-primary/10 border-primary/40 text-primary"
-													: "bg-secondary/20 border-border/30 hover:border-border/60 hover:bg-secondary/50 text-muted-foreground hover:text-foreground",
+													? "bg-primary/10 border-primary/30 text-primary"
+													: "bg-secondary/40 border-transparent hover:bg-secondary/85 text-muted-foreground hover:text-foreground",
 											)}
 											onClick={(e) => {
 												e.preventDefault();
@@ -241,7 +269,7 @@ export function WatchlistStatusMenu({
 							</div>
 						</div>
 
-						<div className="p-2.5 border-t border-border">
+						<div className="p-2.5 border-t border-border/20">
 							<button
 								type="button"
 								className="flex items-center justify-center gap-2 w-full rounded-xl py-2 px-3 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors border border-destructive/25 cursor-pointer"
@@ -260,22 +288,24 @@ export function WatchlistStatusMenu({
 
 			<Button
 				variant="secondary"
-				className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-all cursor-pointer flex items-center justify-center"
+				className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-border/10 hover:bg-secondary/80 transition-all cursor-pointer flex items-center justify-center"
 				onClick={() => setListDialogOpen(true)}
 			>
 				<ListPlus size={16} />
 				<span className="hidden sm:inline">Add to Collection</span>
 			</Button>
 
-			<SilentErrorBoundary>
-				<AddToListDialog
-					open={listDialogOpen}
-					onOpenChange={setListDialogOpen}
-					tmdbId={tmdbId}
-					mediaType={mediaType}
-					metadata={metadata}
-				/>
-			</SilentErrorBoundary>
+			{isSignedIn && (
+				<SilentErrorBoundary>
+					<AddToListDialog
+						open={listDialogOpen}
+						onOpenChange={setListDialogOpen}
+						tmdbId={tmdbId}
+						mediaType={mediaType}
+						metadata={metadata}
+					/>
+				</SilentErrorBoundary>
+			)}
 		</div>
 	);
 }
@@ -293,10 +323,10 @@ function StatusButton({
 		<button
 			type="button"
 			className={cn(
-				"flex items-center gap-2.5 w-full rounded-xl p-3 text-xs font-semibold transition-all duration-200 text-left border border-border cursor-pointer",
+				"flex items-center gap-2.5 w-full rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200 text-left border border-transparent cursor-pointer",
 				active
-					? "bg-primary/10 text-primary border-primary/30 font-bold"
-					: "hover:bg-secondary/40 text-muted-foreground hover:text-foreground",
+					? "bg-primary/10 text-primary border-primary/20 font-bold"
+					: "hover:bg-secondary/60 text-muted-foreground hover:text-foreground",
 			)}
 			onClick={(e) => {
 				e.preventDefault();
@@ -322,9 +352,16 @@ function AddToListDialog({
 	mediaType: string;
 	metadata?: MediaMetadataForList;
 }) {
-	const { lists } = useCustomLists();
-	const itemLists = useItemLists(tmdbId, mediaType);
-	const toggleListItem = useToggleListItem();
+	const { isSignedIn } = useUser();
+	const lists = useQuery(
+		api.watchlist.getCustomLists,
+		isSignedIn ? {} : QUERY_SKIP,
+	);
+	const itemLists = useQuery(
+		api.watchlist.getItemLists,
+		isSignedIn ? { tmdbId, mediaType } : QUERY_SKIP,
+	);
+	const toggleListItem = useMutation(api.watchlist.toggleListItem);
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 
 	const safeList = lists ?? [];

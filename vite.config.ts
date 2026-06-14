@@ -48,7 +48,7 @@ const config = defineConfig(({ mode }) => ({
   plugins: [
     nitro({
       compressPublicAssets: true,
-    } as any),
+    }),
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],
     }),
