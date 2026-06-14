@@ -1,11 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-
-import {
-	useCustomLists,
-	useCustomListItems,
-	useDeleteCustomList,
-	useToggleListItem,
-} from "@/hooks/useCustomLists";
 import {
 	Bookmark,
 	ChevronDown,
@@ -67,6 +60,12 @@ import {
 	getReactionOption,
 	REACTION_OPTIONS,
 } from "@/constants/watchlist";
+import {
+	useCustomListItems,
+	useCustomLists,
+	useDeleteCustomList,
+	useToggleListItem,
+} from "@/hooks/useCustomLists";
 import {
 	useToggleWatchlistItem,
 	useWatchlist,
