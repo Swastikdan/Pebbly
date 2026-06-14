@@ -832,7 +832,7 @@ function CustomListView({
 								onSelect={onDelete}
 							>
 								<Trash2 size={14} />
-								Delete 
+								Delete
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>

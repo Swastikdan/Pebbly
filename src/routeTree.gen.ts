@@ -151,8 +151,8 @@ export interface FileRoutesByFullPath {
   '/tv/$id/{-$slug}/cast-crew': typeof TvIdChar123SlugChar125CastCrewRoute
   '/tv/$id/{-$slug}/media': typeof TvIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/seasons': typeof TvIdChar123SlugChar125SeasonsRoute
-  '/movie/$id/{-$slug}/': typeof MovieIdChar123SlugChar125IndexRoute
-  '/tv/$id/{-$slug}/': typeof TvIdChar123SlugChar125IndexRoute
+  '/movie/$id/{-$slug}': typeof MovieIdChar123SlugChar125IndexRoute
+  '/tv/$id/{-$slug}': typeof TvIdChar123SlugChar125IndexRoute
   '/tv/$id/{-$slug}/season/$seasonNumber': typeof TvIdChar123SlugChar125SeasonSeasonNumberRoute
 }
 export interface FileRoutesByTo {
@@ -217,8 +217,8 @@ export interface FileRouteTypes {
     | '/tv/$id/{-$slug}/cast-crew'
     | '/tv/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/seasons'
-    | '/movie/$id/{-$slug}/'
-    | '/tv/$id/{-$slug}/'
+    | '/movie/$id/{-$slug}'
+    | '/tv/$id/{-$slug}'
     | '/tv/$id/{-$slug}/season/$seasonNumber'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -368,14 +368,14 @@ declare module '@tanstack/react-router' {
     '/tv/$id/{-$slug}/': {
       id: '/tv/$id/{-$slug}/'
       path: '/tv/$id/{-$slug}'
-      fullPath: '/tv/$id/{-$slug}/'
+      fullPath: '/tv/$id/{-$slug}'
       preLoaderRoute: typeof TvIdChar123SlugChar125IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/movie/$id/{-$slug}/': {
       id: '/movie/$id/{-$slug}/'
       path: '/movie/$id/{-$slug}'
-      fullPath: '/movie/$id/{-$slug}/'
+      fullPath: '/movie/$id/{-$slug}'
       preLoaderRoute: typeof MovieIdChar123SlugChar125IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
