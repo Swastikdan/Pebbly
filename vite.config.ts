@@ -46,22 +46,12 @@ const config = defineConfig(({ mode }) => ({
     },
   },
   plugins: [
-    nitro({
-      compressPublicAssets: true,
-    } as any),
+    nitro(),
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],
     }),
     tailwindcss(),
-    tanstackStart({
-      prerender: {
-        enabled: true,
-      },
-
-      spa: {
-        enabled: true,
-      },
-    }),
+    tanstackStart(),
     viteReact({
       babel: {
         plugins: [["babel-plugin-react-compiler", {}]],
