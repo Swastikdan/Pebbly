@@ -137,11 +137,7 @@ function isTrackedRecommendation(
 }
 
 function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
-	const {
-		data: movieData,
-		isLoading: movieLoading,
-		isError: movieError,
-	} = useQuery({
+	const movieResult = useQuery({
 		queryKey: ["basic_movie_details", tmdbId],
 		queryFn: () => getBasicMovieDetails({ id: tmdbId as number }),
 		enabled: !!tmdbId && mediaType === "movie",
@@ -150,11 +146,7 @@ function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 		refetchOnWindowFocus: false,
 	});
 
-	const {
-		data: tvData,
-		isLoading: tvLoading,
-		isError: tvError,
-	} = useQuery({
+	const tvResult = useQuery({
 		queryKey: ["basic_tv_details", tmdbId],
 		queryFn: () => getBasicTvDetails({ id: tmdbId as number }),
 		enabled: !!tmdbId && mediaType === "tv",
@@ -165,14 +157,11 @@ function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 
 	if (!tmdbId) return { data: null, isLoading: false, exists: false };
 
-	const data = mediaType === "movie" ? movieData : tvData;
-	const isLoading = mediaType === "movie" ? movieLoading : tvLoading;
-	const isError = mediaType === "movie" ? movieError : tvError;
-
+	const result = mediaType === "movie" ? movieResult : tvResult;
 	return {
-		data: normalizeTmdbData(data, mediaType),
-		isLoading,
-		exists: !!data && !isError,
+		data: normalizeTmdbData(result.data, mediaType),
+		isLoading: result.isLoading,
+		exists: !!result.data && !result.isError,
 	};
 }
 
@@ -181,7 +170,7 @@ function useTmdbSearchFallback(
 	mediaType: "movie" | "tv",
 	shouldSearch: boolean,
 ) {
-	const { data: searchData, isLoading: searchLoading } = useQuery({
+	const searchResult = useQuery({
 		queryKey: ["tmdb_search_fallback", title, mediaType],
 		queryFn: async () => {
 			const results = await getSearchResult(title, 1);
@@ -219,9 +208,9 @@ function useTmdbSearchFallback(
 	});
 
 	return {
-		data: searchData ?? null,
-		isLoading: searchLoading && shouldSearch,
-		exists: !!searchData,
+		data: searchResult.data ?? null,
+		isLoading: searchResult.isLoading && shouldSearch,
+		exists: !!searchResult.data,
 	};
 }
 
@@ -270,9 +259,22 @@ function PageShell({ children }: { children: ReactNode }) {
 				<div className="mb-6 flex items-center justify-between gap-3">
 					<GoBack title="Back" hideLabelOnMobile />
 				</div>
-				<h1 className="text-start font-bold text-2xl tracking-tight md:text-3xl animate-fade-in-up mb-6">
-					AI Recommendations
-				</h1>
+				<div className="mb-7 flex flex-col gap-4 rounded-xl border border-border/50 bg-card/60 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+					<div className="flex items-center gap-3">
+						<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
+							<BrainCircuit className="size-5" />
+						</div>
+						<div>
+							<h1 className="text-2xl font-bold tracking-normal">
+								AI Recommendations
+							</h1>
+							<p className="text-sm text-muted-foreground">
+								Generate cleaner picks from your watchlist, genres, or custom
+								lists.
+							</p>
+						</div>
+					</div>
+				</div>
 				{children}
 			</div>
 		</section>
@@ -475,61 +477,63 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 
 	return (
 		<div className="space-y-8">
-			<div className="rounded-[calc(var(--radius-2xl)+4px)] border border-border bg-card p-2">
+			<div className="rounded-xl border border-border/50 bg-card/50 p-4 shadow-sm">
 				<div className="space-y-3">
 					<div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2">
-						<Select
-							value={genMode === "list" ? `list:${listId}` : genMode}
-							onValueChange={(val: string) => {
-								if (val.startsWith("list:")) {
-									setGenMode("list");
-									setListId(val.replace("list:", ""));
-								} else {
-									setGenMode(val as "watchlist" | "genre");
-									setListId("");
-								}
-							}}
-						>
-							<SelectTrigger className="h-10 w-auto px-4 text-xs font-semibold text-foreground bg-secondary/20 border border-border rounded-xl hover:bg-secondary/40 transition-colors shadow-none">
-								<SelectValue placeholder="From Watchlist" />
-							</SelectTrigger>
-							<SelectContent
-								position="popper"
-								align="start"
-								className="max-h-[300px] overflow-y-auto"
+						<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
+							<Select
+								value={genMode === "list" ? `list:${listId}` : genMode}
+								onValueChange={(val: string) => {
+									if (val.startsWith("list:")) {
+										setGenMode("list");
+										setListId(val.replace("list:", ""));
+									} else {
+										setGenMode(val as "watchlist" | "genre");
+										setListId("");
+									}
+								}}
 							>
-								<SelectItem value="watchlist" className="text-xs">
-									From Watchlist
-								</SelectItem>
-								{customLists.map((list) => (
-									<SelectItem
-										key={list._id}
-										value={`list:${list._id}`}
-										className="text-xs"
-									>
-										From List: {list.name}
-									</SelectItem>
-								))}
-								<SelectItem
-									value="genre"
-									className="text-xs border-t mt-1 pt-1"
+								<SelectTrigger className="h-8 w-auto px-4 text-xs font-semibold bg-transparent border-0 ring-0 focus:ring-0 shadow-none">
+									<SelectValue placeholder="From Watchlist" />
+								</SelectTrigger>
+								<SelectContent
+									position="popper"
+									align="start"
+									className="max-h-[300px] overflow-y-auto"
 								>
-									By Genre
-								</SelectItem>
-							</SelectContent>
-						</Select>
+									<SelectItem value="watchlist" className="text-xs">
+										From Watchlist
+									</SelectItem>
+									{customLists.map((list) => (
+										<SelectItem
+											key={list._id}
+											value={`list:${list._id}`}
+											className="text-xs"
+										>
+											From List: {list.name}
+										</SelectItem>
+									))}
+									<SelectItem
+										value="genre"
+										className="text-xs border-t mt-1 pt-1"
+									>
+										By Genre
+									</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
 
 						<div className="w-full sm:w-auto flex items-center gap-2">
-							<div className="flex flex-1 sm:flex-none gap-1 rounded-xl bg-secondary/20 p-1 h-10 items-center border border-border">
+							<div className="flex flex-1 sm:flex-none gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-9 items-center ring-1 ring-border/40">
 								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-all duration-200"
+									className="h-8 px-3 text-xs font-semibold rounded-md flex-1 sm:flex-none"
 									variant={!mediaType ? "default" : "ghost"}
 									onClick={() => setMediaType(undefined)}
 								>
 									All
 								</Button>
 								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-all duration-200"
+									className="h-8 px-3 text-xs font-semibold rounded-md flex-1 sm:flex-none"
 									variant={mediaType === "movie" ? "default" : "ghost"}
 									onClick={() =>
 										setMediaType(mediaType === "movie" ? undefined : "movie")
@@ -538,7 +542,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 									Movies
 								</Button>
 								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-all duration-200"
+									className="h-8 px-3 text-xs font-semibold rounded-md flex-1 sm:flex-none"
 									variant={mediaType === "tv" ? "default" : "ghost"}
 									onClick={() =>
 										setMediaType(mediaType === "tv" ? undefined : "tv")
@@ -551,12 +555,13 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 							<Button
 								type="button"
 								variant={showAdvancedOptions ? "outline" : "ghost"}
-								className="gap-1.5 h-10 w-10 text-xs justify-center shrink-0 rounded-xl border border-border bg-card/40 hover:bg-secondary/40 transition-colors shadow-none"
+								className="gap-1.5 h-9 w-9 text-xs justify-center shrink-0"
 								onClick={() => setShowAdvancedOptions((prev) => !prev)}
 							>
 								<SlidersHorizontal className="size-3.5" />
 							</Button>
 						</div>
+
 						<div className="w-full sm:w-auto sm:ml-auto mt-1 sm:mt-0 flex">
 							<Button
 								onClick={handleGenerate}
@@ -568,7 +573,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 									(genMode === "list" && !listId)
 								}
 								variant="secondary"
-								className="gap-2 h-10 w-full sm:w-auto rounded-xl px-5 border border-border hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-none"
+								className="gap-2 h-9 w-full sm:w-auto"
 							>
 								{isGenerating ? (
 									<RefreshCw className="size-4 animate-spin" />
@@ -581,7 +586,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 					</div>
 
 					{showAdvancedOptions && (
-						<div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border/40 pt-4 mt-3">
+						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
 							<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hidden pb-0.5">
 								<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
 									Era
@@ -594,10 +599,10 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 											selectedEras.includes(era.label) ? "default" : "ghost"
 										}
 										className={cn(
-											"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 shrink-0",
+											"h-auto rounded-lg px-2.5 py-2 text-xs font-medium transition-colors shrink-0",
 											selectedEras.includes(era.label)
-												? "bg-primary text-primary-foreground border-transparent hover:scale-105"
-												: "bg-secondary/40 text-muted-foreground border border-border hover:bg-secondary/60 hover:text-foreground",
+												? "bg-foreground text-background"
+												: "bg-secondary/60 text-muted-foreground hover:bg-secondary",
 										)}
 										onClick={() => toggleEra(era.label)}
 									>
@@ -616,7 +621,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 								>
 									<SelectTrigger
 										size="sm"
-										className="h-8 w-[70px] text-xs font-semibold px-2.5 bg-secondary/40 border border-border rounded-lg shrink-0 hover:bg-secondary/60 transition-colors shadow-none"
+										className="h-4 w-[60px] text-xs font-semibold px-2 bg-secondary/60 border-0 ring-1 ring-border/40 shrink-0"
 									>
 										<SelectValue />
 									</SelectTrigger>
@@ -650,7 +655,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 						)}
 
 					{genMode === "genre" && (
-						<div className="flex flex-wrap gap-2 border-t border-border/40 pt-4 mt-3">
+						<div className="flex flex-wrap gap-1.5">
 							{POPULAR_GENRES.map((genre) => (
 								<Button
 									key={genre.id}
@@ -659,10 +664,10 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 										selectedGenres.includes(genre.name) ? "default" : "ghost"
 									}
 									className={cn(
-										"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200",
+										"h-auto rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
 										selectedGenres.includes(genre.name)
-											? "bg-primary text-primary-foreground border-transparent hover:scale-105"
-											: "bg-secondary/40 text-muted-foreground border border-border hover:bg-secondary/60 hover:text-foreground",
+											? "bg-foreground text-background"
+											: "bg-secondary/60 text-muted-foreground hover:bg-secondary",
 									)}
 									onClick={() => toggleGenre(genre.name)}
 								>
@@ -682,8 +687,8 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 
 			{isGenerating && (
 				<div className="space-y-4 animate-in fade-in duration-300">
-					<div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm shadow-none">
-						<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
+					<div className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/50 px-4 py-3 text-sm shadow-sm">
+						<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
 							<BrainCircuit className="size-4 animate-pulse" />
 						</div>
 						<div>
@@ -805,8 +810,8 @@ function HistoryAccordionItem({
 		<AccordionItem
 			value={entry._id}
 			className={cn(
-				"rounded-2xl border border-border bg-card overflow-hidden transition-colors shadow-none",
-				isActive && "ring-1 ring-border",
+				"rounded-xl border border-border/40 bg-card overflow-hidden transition-colors",
+				isActive && "ring-1 ring-border/60",
 			)}
 		>
 			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
@@ -875,7 +880,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="secondary"
-							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-all shadow-none"
+							className="gap-1.5 text-xs h-8 shrink-0"
 							onClick={(e) => {
 								e.stopPropagation();
 								onSelect();
@@ -888,7 +893,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="secondary"
-							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-all shadow-none"
+							className="gap-1.5 text-xs h-8 shrink-0"
 							disabled={isGenerating}
 							onClick={(e) => {
 								e.stopPropagation();
@@ -903,7 +908,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="secondary"
-							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-all shadow-none"
+							className="gap-1.5 text-xs h-8 shrink-0"
 							disabled={isGenerating}
 							onClick={(e) => {
 								e.stopPropagation();
@@ -916,7 +921,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="ghost"
-							className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-auto shrink-0 rounded-lg transition-colors"
+							className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-auto shrink-0"
 							onClick={(e) => {
 								e.stopPropagation();
 								onDelete();
