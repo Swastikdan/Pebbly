@@ -247,6 +247,7 @@ const HomepageRecommendationCard = memo(
 					release_date={resolvedData.releaseDate}
 					overview={resolvedData.overview}
 					is_on_homepage={true}
+					relevanceScore={recommendation.relevanceScore}
 				/>
 
 				{/* Top-left absolute overlays for feedback buttons */}
