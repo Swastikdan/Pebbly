@@ -507,7 +507,7 @@ function WatchlistTabContent() {
 			</div>
 
 			{watchlistLoading ? (
-				<DefaultLoader className="min-h-[calc(100vh-112px)] grid h-full place-content-center items-center justify-center" />
+				<DefaultLoader />
 			) : error && filteredWatchlist.length === 0 ? (
 				<DefaultEmptyState message={error.message} description={false} />
 			) : filteredWatchlist?.length === 0 ? (
@@ -869,7 +869,7 @@ function CustomListView({
 
 			<SilentErrorBoundary>
 				{!items ? (
-					<DefaultLoader className="min-h-[50vh] grid place-content-center items-center justify-center" />
+					<DefaultLoader className="min-h-[50vh]" />
 				) : items.length === 0 ? (
 					<div className="flex flex-col items-center justify-center gap-4 py-20 text-center text-muted-foreground animate-fade-in-up">
 						<div className="flex size-14 items-center justify-center rounded-2xl bg-secondary/60">
