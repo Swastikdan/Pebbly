@@ -149,10 +149,10 @@ export function CustomListDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[420px] overflow-hidden rounded-3xl p-0 border border-border/40 bg-background backdrop-blur-xl shadow-2xl">
+			<DialogContent className="sm:max-w-[420px] overflow-hidden rounded-3xl p-0">
 				<div className="px-6 py-5 space-y-4">
 					<DialogHeader className="relative">
-						<DialogTitle className="text-xl font-bold tracking-wide font-heading text-left pr-6">
+						<DialogTitle className="text-lg font-semibold tracking-tight text-left pr-6">
 							{isEditing ? "Edit Collection" : "Create New Collection"}
 						</DialogTitle>
 					</DialogHeader>
@@ -179,10 +179,9 @@ export function CustomListDialog({
 								maxLength={50}
 								autoFocus
 								className={cn(
-									"h-11 w-full rounded-xl border bg-secondary/20 pl-4 pr-16 text-xs",
+									"h-11 w-full rounded-xl border bg-muted/40 pl-4 pr-16 text-xs transition-all duration-200",
 									"placeholder:text-muted-foreground/40",
-									"transition-all duration-200",
-									"focus-visible:border-foreground/20 focus-visible:bg-secondary/40 focus-visible:ring-1 focus-visible:ring-foreground/10",
+									"focus-visible:border-border/80 focus-visible:bg-muted/65 focus-visible:ring-1 focus-visible:ring-foreground/10",
 									error ? "border-destructive/50" : "border-border/50",
 								)}
 							/>
@@ -215,7 +214,7 @@ export function CustomListDialog({
 
 					{/* Color Picker Drawer */}
 					{showColorPicker && (
-						<div className="p-3 bg-secondary/30 rounded-2xl border border-border/20 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+						<div className="p-3 bg-muted/50 rounded-2xl border border-border/40 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
 							<div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
 								Select Color
 							</div>
@@ -262,10 +261,9 @@ export function CustomListDialog({
 							onChange={(e) => setDescription(e.target.value.substring(0, 150))}
 							maxLength={150}
 							className={cn(
-								"min-h-[70px] w-full rounded-xl border bg-secondary/20 p-3 text-xs resize-none outline-none",
+								"min-h-[70px] w-full rounded-xl border bg-muted/40 p-3 text-xs resize-none outline-none transition-all duration-200",
 								"placeholder:text-muted-foreground/40",
-								"transition-all duration-200",
-								"focus-visible:border-foreground/20 focus-visible:bg-secondary/40 focus-visible:ring-1 focus-visible:ring-foreground/10",
+								"focus-visible:border-border/80 focus-visible:bg-muted/65 focus-visible:ring-1 focus-visible:ring-foreground/10",
 								"border-border/50",
 							)}
 						/>
@@ -274,86 +272,82 @@ export function CustomListDialog({
 					{/* Visibility & List Type Section */}
 					<div className="grid grid-cols-2 gap-4">
 						{/* Visibility Selection */}
-						<div className="space-y-2">
-							<div>
-								<div className="text-xs font-semibold text-foreground">
-									Visibility
-								</div>
-								<div className="text-[10px] text-muted-foreground leading-snug">
-									{visibility === "private"
-										? "Only you can see this watchlist"
-										: "Anyone with link can view"}
-								</div>
-							</div>
-							<div className="flex p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
+						<div className="flex flex-col space-y-2">
+							<Label className="text-xs text-muted-foreground font-medium">
+								Visibility
+							</Label>
+							<div className="flex p-1 rounded-xl bg-muted/70 border border-border/50">
 								<button
 									type="button"
 									onClick={() => setVisibility("private")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all border",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-all border",
 										visibility === "private"
-											? "bg-white text-zinc-900 border-zinc-200 shadow-sm dark:bg-zinc-800 dark:text-foreground dark:border-zinc-700/55 dark:shadow-none"
-											: "bg-transparent border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50 dark:text-muted-foreground/85 dark:hover:text-foreground dark:hover:bg-zinc-800/25",
+											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
+											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
 									)}
 								>
-									<Lock size={12} />
+									<Lock size={11} />
 									Private
 								</button>
 								<button
 									type="button"
 									onClick={() => setVisibility("public")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all border",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-all border",
 										visibility === "public"
-											? "bg-white text-zinc-900 border-zinc-200 shadow-sm dark:bg-zinc-800 dark:text-foreground dark:border-zinc-700/55 dark:shadow-none"
-											: "bg-transparent border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50 dark:text-muted-foreground/85 dark:hover:text-foreground dark:hover:bg-zinc-800/25",
+											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
+											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
 									)}
 								>
-									<Globe size={12} />
+									<Globe size={11} />
 									Public
 								</button>
+							</div>
+							<div className="text-[10px] text-muted-foreground/80 leading-snug min-h-[30px]">
+								{visibility === "private"
+									? "Only you can see this watchlist"
+									: "Anyone with link can view"}
 							</div>
 						</div>
 
 						{/* List Type Selection */}
-						<div className="space-y-2">
-							<div>
-								<div className="text-xs font-semibold text-foreground">
-									List Type
-								</div>
-								<div className="text-[10px] text-muted-foreground leading-snug">
-									{listType === "unordered"
-										? "Items are in a simple list"
-										: "Items are numbered/ranked"}
-								</div>
-							</div>
-							<div className="flex p-1 rounded-xl bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
+						<div className="flex flex-col space-y-2">
+							<Label className="text-xs text-muted-foreground font-medium">
+								List Type
+							</Label>
+							<div className="flex p-1 rounded-xl bg-muted/70 border border-border/50">
 								<button
 									type="button"
 									onClick={() => setListType("unordered")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all border",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-all border",
 										listType === "unordered"
-											? "bg-white text-zinc-900 border-zinc-200 shadow-sm dark:bg-zinc-800 dark:text-foreground dark:border-zinc-700/55 dark:shadow-none"
-											: "bg-transparent border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50 dark:text-muted-foreground/85 dark:hover:text-foreground dark:hover:bg-zinc-800/25",
+											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
+											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
 									)}
 								>
-									<List size={12} />
+									<List size={11} />
 									Unordered
 								</button>
 								<button
 									type="button"
 									onClick={() => setListType("ordered")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold rounded-lg cursor-pointer transition-all border",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-all border",
 										listType === "ordered"
-											? "bg-white text-zinc-900 border-zinc-200 shadow-sm dark:bg-zinc-800 dark:text-foreground dark:border-zinc-700/55 dark:shadow-none"
-											: "bg-transparent border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50 dark:text-muted-foreground/85 dark:hover:text-foreground dark:hover:bg-zinc-800/25",
+											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
+											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
 									)}
 								>
-									<ListOrdered size={12} />
+									<ListOrdered size={11} />
 									Ordered
 								</button>
+							</div>
+							<div className="text-[10px] text-muted-foreground/80 leading-snug min-h-[30px]">
+								{listType === "unordered"
+									? "Items are in a simple list"
+									: "Items are numbered/ranked"}
 							</div>
 						</div>
 					</div>
@@ -367,12 +361,7 @@ export function CustomListDialog({
 					<Button
 						onClick={handleSubmit}
 						disabled={saving || !name.trim()}
-						className={cn(
-							"w-full h-11 rounded-xl text-xs font-bold transition-all cursor-pointer mt-1 border",
-							saving || !name.trim()
-								? "bg-zinc-900/40 text-muted-foreground/40 border-zinc-900/30 cursor-not-allowed"
-								: "bg-zinc-950 hover:bg-zinc-900 text-white border-zinc-800",
-						)}
+						className="w-full h-11 rounded-xl text-xs font-bold transition-all cursor-pointer mt-1"
 					>
 						{saving
 							? "Saving..."
