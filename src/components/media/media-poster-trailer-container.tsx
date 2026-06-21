@@ -6,7 +6,6 @@ import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
-	DialogOverlay,
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
@@ -75,10 +74,15 @@ export function MediaPosterTrailerContainer(props: {
 								open={search.trailer === video.key}
 								onOpenChange={(isOpen) =>
 									navigate({
-										search: (prev: any) => ({
-											...prev,
-											trailer: isOpen ? video.key : undefined,
-										}),
+										search: (prev: any) => {
+											const next = { ...prev };
+											if (isOpen) {
+												next.trailer = video.key;
+											} else {
+												delete next.trailer;
+											}
+											return next;
+										},
 										resetScroll: false,
 										replace: true,
 									} as any)
@@ -107,8 +111,10 @@ export function MediaPosterTrailerContainer(props: {
 										</div>
 									</Button>
 								</DialogTrigger>
-								<DialogOverlay className="bg-black/80 backdrop-blur-md">
-									<DialogContent className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0">
+								<DialogContent
+									overlayClassName="bg-black/80 backdrop-blur-md"
+									className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0 gap-0 overflow-hidden"
+								>
 										<DialogHeader className="sr-only">
 											<DialogTitle>{video.name}</DialogTitle>
 										</DialogHeader>
@@ -164,8 +170,7 @@ export function MediaPosterTrailerContainer(props: {
 												</Button>
 											)}
 										</div>
-									</DialogContent>
-								</DialogOverlay>
+								</DialogContent>
 							</Dialog>
 						))}
 					</div>

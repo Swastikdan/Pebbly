@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { Maximize2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,43 +43,18 @@ export function VideoPlayerModal({
 	const [isOpen, setIsOpen] = useState(false);
 	const [closeVisible, setCloseVisible] = useState(true);
 	const { isSignedIn, hasFeature, loading } = usePermissions();
-	const contentRef = useRef<HTMLDivElement>(null);
+	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	// Prevents the auto-open effect from re-opening the modal immediately
 	// after the user explicitly closes it (play param has a 150ms removal delay)
 	const closedByUserRef = useRef(false);
-
-	const [isPortrait, setIsPortrait] = useState(false);
-	const [isMobile, setIsMobile] = useState(false);
-
-	useEffect(() => {
-		if (typeof window === "undefined") return;
-
-		setIsMobile(
-			/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
-				(("ontouchstart" in window || navigator.maxTouchPoints > 0) &&
-					window.matchMedia("(max-width: 1024px)").matches),
-		);
-
-		const handleResize = () => {
-			setIsPortrait(window.innerHeight > window.innerWidth);
-		};
-
-		handleResize();
-		window.addEventListener("resize", handleResize);
-		window.addEventListener("orientationchange", handleResize);
-
-		return () => {
-			window.removeEventListener("resize", handleResize);
-			window.removeEventListener("orientationchange", handleResize);
-		};
-	}, []);
 
 	const navigate = useNavigate();
 	const search = useSearch({ strict: false }) as Record<string, unknown>;
 
 	usePlayerProgressListener();
 
+	// Auto-open when ?play=true is in the URL
 	useEffect(() => {
 		const shouldPlay = search.play === true || search.play === "true";
 		if (!shouldPlay) {
@@ -90,74 +66,7 @@ export function VideoPlayerModal({
 		}
 	}, [search.play, isOpen]);
 
-	useEffect(() => {
-		if (isOpen) {
-			const el = contentRef.current;
-			if (el) {
-				const requestFs = async () => {
-					if (!document.fullscreenElement) {
-						try {
-							await el.requestFullscreen();
-							const screenOrientation = window.screen?.orientation as {
-								lock?: (orientation: string) => Promise<void>;
-							} | null;
-							if (screenOrientation?.lock) {
-								await screenOrientation.lock("landscape");
-							}
-						} catch (err) {
-							console.warn("Fullscreen or orientation lock failed:", err);
-						}
-					}
-				};
-				requestFs();
-			}
-		} else {
-			if (document.fullscreenElement) {
-				document.exitFullscreen().catch(() => {});
-			}
-			const screenOrientation = window.screen?.orientation as {
-				unlock?: () => void;
-			} | null;
-			screenOrientation?.unlock?.();
-		}
-
-		const handleFsChange = () => {
-			if (!document.fullscreenElement && isOpen) {
-				if (search?.play) {
-					// biome-ignore lint/suspicious/noExplicitAny: TanStack Router search param workaround
-					(navigate as any)({
-						search: (prev: Record<string, unknown>) => {
-							const next = { ...prev };
-							delete next.play;
-							return next;
-						},
-						resetScroll: false,
-						replace: true,
-					});
-				}
-				setIsOpen(false);
-			}
-			if (!document.fullscreenElement) {
-				const screenOrientation = window.screen?.orientation as {
-					unlock?: () => void;
-				} | null;
-				screenOrientation?.unlock?.();
-			}
-		};
-
-		document.addEventListener("fullscreenchange", handleFsChange);
-		return () => {
-			document.removeEventListener("fullscreenchange", handleFsChange);
-			if (document.fullscreenElement) {
-				document.exitFullscreen().catch(() => {});
-			}
-			const screenOrientation = window.screen?.orientation as {
-				unlock?: () => void;
-			} | null;
-			screenOrientation?.unlock?.();
-		};
-	}, [isOpen, navigate, search.play]);
-
+	// Inactivity timer to hide close button
 	const resetInactivityTimer = useCallback(() => {
 		setCloseVisible(true);
 		if (inactivityTimerRef.current) {
@@ -223,6 +132,7 @@ export function VideoPlayerModal({
 		setIsOpen(open);
 		if (!open) {
 			setIsLoading(true);
+			// Exit browser fullscreen if active
 			if (document.fullscreenElement) {
 				document.exitFullscreen().catch(() => {});
 			}
@@ -243,7 +153,22 @@ export function VideoPlayerModal({
 		}
 	};
 
-	const shouldRotateCSS = isOpen && isMobile && isPortrait;
+	const handleFullscreen = () => {
+		const iframe = iframeRef.current as HTMLIFrameElement & {
+			webkitRequestFullscreen?: () => Promise<void>;
+			msRequestFullscreen?: () => Promise<void>;
+		};
+		if (!iframe) return;
+		if (iframe.requestFullscreen) {
+			iframe.requestFullscreen();
+		} else if (iframe.webkitRequestFullscreen) {
+			/* Safari */
+			iframe.webkitRequestFullscreen();
+		} else if (iframe.msRequestFullscreen) {
+			/* IE11 */
+			iframe.msRequestFullscreen();
+		}
+	};
 
 	return (
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -295,12 +220,8 @@ export function VideoPlayerModal({
 				)}
 			</DialogTrigger>
 			<DialogContent
-				ref={contentRef}
-				className={cn(
-					"h-[100dvh] w-screen max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0",
-					shouldRotateCSS &&
-						"!w-[100dvh] !h-[100vw] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90 origin-center",
-				)}
+				noOverlay
+				className="h-[100dvh] w-screen max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0"
 				closeClassName={
 					closeVisible
 						? "top-3 right-3 z-[70] bg-black/65 text-white opacity-100 shadow-xl backdrop-blur-md transition-all duration-300 hover:bg-white hover:text-black hover:scale-105 active:scale-95 dark:bg-black/65 dark:text-white dark:hover:bg-white dark:hover:text-black before:absolute before:-inset-5 before:content-['']"
@@ -317,14 +238,29 @@ export function VideoPlayerModal({
 						</div>
 					)}
 					<iframe
-						allowFullScreen
-						allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-						className="size-full"
-						sandbox="allow-scripts allow-presentation allow-popups allow-forms"
-						src={videoUrl}
-						title={title}
-						onLoad={() => setIsLoading(false)}
-					/>
+					ref={iframeRef}
+					allowFullScreen
+					allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+					className="size-full"
+					
+					src={videoUrl}
+					title={title}
+					onLoad={() => setIsLoading(false)}
+				/>
+					{/* Fullscreen button — visible on inactivity timeout like the close button */}
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						aria-label="Toggle fullscreen"
+						onClick={handleFullscreen}
+						className={cn(
+							"absolute bottom-4 right-4 z-[70] rounded-full bg-black/65 p-2.5 text-white shadow-xl backdrop-blur-md transition-all duration-300 hover:bg-white hover:text-black hover:scale-105 active:scale-95",
+							closeVisible ? "opacity-100" : "opacity-0 hover:opacity-100",
+						)}
+					>
+						<Maximize2 className="size-4" />
+					</Button>
 				</div>
 			</DialogContent>
 		</Dialog>

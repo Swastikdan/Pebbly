@@ -60,6 +60,9 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/")({
 		return {
 			trailer: search.trailer as string | undefined,
 			play: search.play === true || search.play === "true" ? true : undefined,
+			video: search.video as string | undefined,
+			backdrop: search.backdrop as string | undefined,
+			poster: search.poster as string | undefined,
 		};
 	},
 	component: MovieHomePage,
