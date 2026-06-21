@@ -45,10 +45,10 @@ export function MediaPosterTrailerContainer(props: {
 			className="flex flex-col justify-start gap-3 pb-3 sm:flex-row animate-fade-in-up"
 			style={{ animationDelay: "100ms" }}
 		>
-			<div className="relative group shrink-0 w-full sm:w-auto overflow-hidden rounded-xl ring-1 ring-border/40 dark:ring-white/[0.06]">
+			<div className="surface-raised relative group shrink-0 w-full sm:w-auto overflow-hidden rounded-xl">
 				<Image
 					alt={title}
-					className="bg-secondary h-full w-full rounded-xl object-cover aspect-[2/3] sm:h-56 sm:w-auto md:h-[17.5rem] lg:h-80"
+					className="media-detail-poster bg-secondary h-full w-full rounded-xl object-cover aspect-[2/3] sm:h-56 sm:w-auto md:h-[17.5rem] lg:h-80"
 					height={450}
 					src={image}
 					width={300}

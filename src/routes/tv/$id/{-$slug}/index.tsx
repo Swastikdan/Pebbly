@@ -25,11 +25,16 @@ import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/")({
-	loader: async ({ params }) => {
+	loader: async ({ params, context }) => {
 		const { id, slug } = params;
-		if (!parseAndValidateId(id).success) {
+		const parsed = parseAndValidateId(id);
+		if (!parsed.success) {
 			throw notFound();
 		}
+		await context.queryClient.ensureQueryData({
+			queryKey: ["tv_details", parsed.data],
+			queryFn: () => getTvDetails({ id: parsed.data }),
+		});
 		const title = slug ? formatMediaTitle.decode(slug) : "Tv Page";
 		return { id, slug, title };
 	},
