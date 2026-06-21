@@ -225,12 +225,6 @@ function useTmdbSearchFallback(
 	};
 }
 
-function getScoreColor(score: number) {
-	if (score >= 80) return "bg-green-100/90 text-green-600";
-	if (score >= 60) return "bg-yellow-100/90 text-yellow-600";
-	return "bg-secondary text-muted-foreground";
-}
-
 function formatTimestamp(ts: number) {
 	return new Date(ts).toLocaleDateString(undefined, {
 		month: "short",
@@ -843,14 +837,18 @@ function HistoryAccordionItem({
 								{tvCount}
 							</span>
 						)}
-						<Badge
+						<span
 							className={cn(
-								"text-[9px] tabular-nums font-semibold",
-								getScoreColor(avgScore),
+								"text-[10px] font-semibold tabular-nums",
+								avgScore >= 80
+									? "text-emerald-600 dark:text-emerald-400"
+									: avgScore >= 60
+										? "text-amber-600 dark:text-amber-400"
+										: "text-muted-foreground",
 							)}
 						>
-							{avgScore}%
-						</Badge>
+							{avgScore}% Match
+						</span>
 					</div>
 
 					<div className="flex w-full items-center gap-2 text-[11px] text-muted-foreground/60 sm:hidden">
@@ -939,14 +937,14 @@ function HistoryAccordionItem({
 						</span>
 						<span className="text-muted-foreground/30">·</span>
 						<span>
-							Avg relevance:{" "}
+							Avg match:{" "}
 							<span
 								className={cn(
 									"font-semibold",
 									avgScore >= 80
-										? "text-green-600 dark:text-green-400"
+										? "text-emerald-600 dark:text-emerald-400"
 										: avgScore >= 60
-											? "text-yellow-600 dark:text-yellow-400"
+											? "text-amber-600 dark:text-amber-400"
 											: "text-muted-foreground",
 								)}
 							>
@@ -1141,29 +1139,18 @@ function RecommendationCard({
 
 	if (usesCachedData) {
 		return (
-			<div className="relative">
-				<div className="absolute top-2 left-2 z-20">
-					<Badge
-						className={cn(
-							"tabular-nums font-semibold text-[10px]",
-							getScoreColor(relevanceScore),
-						)}
-					>
-						{relevanceScore}%
-					</Badge>
-				</div>
-				<MediaCard
-					card_type="horizontal"
-					id={recommendation.verifiedTmdbId as number}
-					title={recommendation.verifiedTitle ?? title}
-					rating={recommendation.rating ?? 0}
-					image={recommendation.posterPath ?? ""}
-					poster_path={recommendation.posterPath ?? ""}
-					media_type={mediaType}
-					release_date={recommendation.releaseDate ?? null}
-					overview={recommendation.overview ?? ""}
-				/>
-			</div>
+			<MediaCard
+				card_type="horizontal"
+				id={recommendation.verifiedTmdbId as number}
+				title={recommendation.verifiedTitle ?? title}
+				rating={recommendation.rating ?? 0}
+				image={recommendation.posterPath ?? ""}
+				poster_path={recommendation.posterPath ?? ""}
+				media_type={mediaType}
+				release_date={recommendation.releaseDate ?? null}
+				overview={recommendation.overview ?? ""}
+				relevanceScore={relevanceScore}
+			/>
 		);
 	}
 
@@ -1173,29 +1160,18 @@ function RecommendationCard({
 
 	if (resolvedData) {
 		return (
-			<div className="relative">
-				<div className="absolute top-2 left-2 z-20">
-					<Badge
-						className={cn(
-							"tabular-nums font-semibold text-[10px]",
-							getScoreColor(relevanceScore),
-						)}
-					>
-						{relevanceScore}%
-					</Badge>
-				</div>
-				<MediaCard
-					card_type="horizontal"
-					id={resolvedData.id}
-					title={resolvedData.title}
-					rating={resolvedData.rating}
-					image={resolvedData.posterPath ?? ""}
-					poster_path={resolvedData.posterPath ?? ""}
-					media_type={mediaType}
-					release_date={resolvedData.releaseDate}
-					overview={resolvedData.overview}
-				/>
-			</div>
+			<MediaCard
+				card_type="horizontal"
+				id={resolvedData.id}
+				title={resolvedData.title}
+				rating={resolvedData.rating}
+				image={resolvedData.posterPath ?? ""}
+				poster_path={resolvedData.posterPath ?? ""}
+				media_type={mediaType}
+				release_date={resolvedData.releaseDate}
+				overview={resolvedData.overview}
+				relevanceScore={relevanceScore}
+			/>
 		);
 	}
 
@@ -1207,15 +1183,7 @@ function RecommendationCard({
 				className="relative aspect-[2/3] h-auto w-full overflow-hidden rounded-xl bg-muted p-0 text-left ring-1 ring-border/40 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-muted"
 				onClick={() => navigate({ to: "/search", search: { query: title } })}
 			>
-				<div className="absolute top-0 left-0 right-0 z-10 flex items-start justify-between p-2.5">
-					<Badge
-						className={cn(
-							"tabular-nums font-semibold text-[10px]",
-							getScoreColor(relevanceScore),
-						)}
-					>
-						{relevanceScore}%
-					</Badge>
+				<div className="absolute top-0 left-0 right-0 z-10 flex items-start justify-end p-2.5">
 					<span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground capitalize">
 						{mediaType === "movie" ? "Movie" : "TV"}
 					</span>
@@ -1228,10 +1196,26 @@ function RecommendationCard({
 					<p className="text-[10.5px] leading-relaxed text-muted-foreground line-clamp-3">
 						{reasoning}
 					</p>
-					<span className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground/50 transition-colors duration-200 group-hover/card:text-foreground">
-						<ArrowUpRight size={11} />
-						Search
-					</span>
+					<div className="flex items-center justify-between mt-1 w-full">
+						<span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground/50 transition-colors duration-200 group-hover/card:text-foreground">
+							<ArrowUpRight size={11} />
+							Search
+						</span>
+						{relevanceScore && (
+							<span
+								className={cn(
+									"text-[10.5px] font-semibold",
+									relevanceScore >= 80
+										? "text-emerald-600 dark:text-emerald-400"
+										: relevanceScore >= 60
+											? "text-amber-600 dark:text-amber-400"
+											: "text-muted-foreground",
+								)}
+							>
+								{relevanceScore}% Match
+							</span>
+						)}
+					</div>
 				</div>
 			</Button>
 		</div>

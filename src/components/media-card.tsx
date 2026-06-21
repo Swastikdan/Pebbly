@@ -9,7 +9,7 @@ import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
 import { useWatchProgress } from "@/hooks/useWatchProgress";
 import { getTvSeasonDetails } from "@/lib/queries";
-import { formatMediaTitle } from "@/lib/utils";
+import { cn, formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
 	id: number;
@@ -30,6 +30,7 @@ interface MediaCardSpecificProps extends BaseCardProps {
 	isContinueWatching?: boolean;
 	overview?: string;
 	priority?: boolean;
+	relevanceScore?: number;
 }
 
 interface PersonCardSpecificProps extends BaseCardProps {
@@ -73,6 +74,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 		isContinueWatching,
 		overview,
 		priority,
+		relevanceScore,
 	} = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
@@ -118,9 +120,26 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 						text={title}
 						className="text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary"
 					/>
-					<span className="text-xs font-medium text-muted-foreground/70 min-h-4">
-						{year}
-					</span>
+					<div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/70 min-h-4">
+						{year && <span>{year}</span>}
+						{year && relevanceScore && (
+							<span className="text-muted-foreground/30">•</span>
+						)}
+						{relevanceScore && (
+							<span
+								className={cn(
+									"font-semibold",
+									relevanceScore >= 80
+										? "text-emerald-600 dark:text-emerald-400"
+										: relevanceScore >= 60
+											? "text-amber-600 dark:text-amber-400"
+											: "text-muted-foreground",
+								)}
+							>
+								{relevanceScore}% Match
+							</span>
+						)}
+					</div>
 				</div>
 			</Link>
 
