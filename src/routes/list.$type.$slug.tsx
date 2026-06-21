@@ -164,7 +164,7 @@ function MediaListPage() {
 							/>
 						) : (
 							<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
-								{results?.map((item) => (
+								{results?.map((item, index) => (
 									<MediaCard
 										card_type="horizontal"
 										key={item.id}
@@ -179,6 +179,7 @@ function MediaListPage() {
 										}
 										title={item.title ?? item.name ?? "Untitled"}
 										overview={item.overview}
+										priority={index < 7}
 									/>
 								))}
 							</div>

@@ -52,6 +52,7 @@ export function MediaPosterTrailerContainer(props: {
 					height={450}
 					src={image}
 					width={300}
+					priority
 				/>
 
 				<VideoPlayerModal

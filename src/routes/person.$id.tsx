@@ -179,6 +179,7 @@ function PersonPage() {
 								className="h-full w-full object-cover"
 								width={300}
 								height={450}
+								priority
 							/>
 						) : (
 							<div className="flex h-full w-full items-center justify-center bg-secondary text-sm text-muted-foreground">
