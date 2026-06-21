@@ -71,7 +71,7 @@
 }
 
 :root {
-	--radius: 0.625rem;
+	--radius: 0.75rem;
 	--background: oklch(0.99 0 0);
 	--foreground: oklch(0 0 0);
 	--card: oklch(1 0 0);
@@ -90,7 +90,12 @@
 	--destructive-foreground: oklch(1 0 0);
 	--border: oklch(0.92 0 0);
 	--input: oklch(0.94 0 0);
-	--ring: oklch(0 0 0);
+	--ring: oklch(0.42 0 0);
+	--surface-1: oklch(1 0 0);
+	--surface-2: oklch(0.975 0 0);
+	--surface-3: oklch(0.945 0 0);
+	--success: oklch(0.64 0.16 155);
+	--warning: oklch(0.72 0.16 75);
 	--chart-1: oklch(0.81 0.17 75.35);
 	--chart-2: oklch(0.55 0.22 264.53);
 	--chart-3: oklch(0.72 0 0);
@@ -130,22 +135,27 @@
 .dark {
 	--background: oklch(0.145 0 0);
 	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
+	--card: oklch(0.19 0 0);
 	--card-foreground: oklch(0.985 0 0);
 	--popover: oklch(0.205 0 0);
 	--popover-foreground: oklch(0.985 0 0);
 	--primary: oklch(0.922 0 0);
 	--primary-foreground: oklch(0.205 0 0);
-	--secondary: oklch(0.269 0 0);
+	--secondary: oklch(0.245 0 0);
 	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
+	--muted: oklch(0.225 0 0);
 	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
+	--accent: oklch(0.265 0 0);
 	--accent-foreground: oklch(0.985 0 0);
 	--destructive: oklch(0.704 0.191 22.216);
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.556 0 0);
+	--ring: oklch(0.72 0 0);
+	--surface-1: oklch(0.17 0 0);
+	--surface-2: oklch(0.205 0 0);
+	--surface-3: oklch(0.245 0 0);
+	--success: oklch(0.72 0.16 155);
+	--warning: oklch(0.8 0.15 80);
 	--chart-1: oklch(0.488 0.243 264.376);
 	--chart-2: oklch(0.696 0.17 162.48);
 	--chart-3: oklch(0.769 0.188 70.08);
@@ -244,6 +254,14 @@
 
 	body {
 		@apply bg-background text-foreground;
+		background-image: radial-gradient(
+			circle at 50% -20%,
+			white 0%,
+			transparent 32rem
+		);
+		background-size: 100% 32rem;
+		background-repeat: no-repeat;
+		background-blend-mode: soft-light;
 		padding-top: env(safe-area-inset-top);
 		padding-bottom: env(safe-area-inset-bottom);
 		padding-left: env(safe-area-inset-left);
@@ -346,7 +364,103 @@
 	}
 }
 
+/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
+::view-transition-old(root),
+/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
+	::view-transition-new(root) {
+	animation-duration: 180ms;
+	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
+::view-transition-old(root) {
+	animation-name: route-out;
+}
+/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
+::view-transition-new(root) {
+	animation-name: route-in;
+}
+
+/* The clicked card alone receives this name, preventing carousel duplicates. */
+.media-detail-poster {
+	view-transition-name: media-poster;
+}
+
+::view-transition-group(media-poster) {
+	animation-duration: 320ms;
+	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes route-out {
+	to {
+		opacity: 0.72;
+	}
+}
+@keyframes route-in {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		/* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override component animations */
+		scroll-behavior: auto !important;
+		/* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override component animations */
+		animation-duration: 0.01ms !important;
+		/* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override component animations */
+		animation-iteration-count: 1 !important;
+		/* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override component animations */
+		transition-duration: 0.01ms !important;
+	}
+	/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
+	::view-transition-old(root),
+	/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
+		::view-transition-new(root) {
+		animation: none;
+	}
+}
+
 @layer utilities {
+	.surface-raised {
+		background: var(--surface-2);
+		border: 1px solid color-mix(in oklab, var(--foreground) 9%, transparent);
+		box-shadow:
+			inset 0 1px 0 color-mix(in oklab, white 6%, transparent),
+			0 1px 2px rgb(0 0 0 / 14%),
+			0 8px 24px rgb(0 0 0 / 10%);
+	}
+
+	.surface-floating {
+		background: color-mix(in oklab, var(--surface-2) 94%, transparent);
+		border: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
+		box-shadow:
+			inset 0 1px 0 color-mix(in oklab, white 7%, transparent),
+			0 2px 5px rgb(0 0 0 / 16%),
+			0 18px 48px rgb(0 0 0 / 20%);
+		backdrop-filter: blur(16px) saturate(120%);
+	}
+
+	.interactive-raised {
+		transition:
+			transform 150ms ease,
+			border-color 150ms ease,
+			box-shadow 150ms ease;
+	}
+	.interactive-raised:hover {
+		transform: translateY(-2px);
+		box-shadow:
+			inset 0 1px 0 color-mix(in oklab, white 8%, transparent),
+			0 3px 7px rgb(0 0 0 / 18%),
+			0 16px 36px rgb(0 0 0 / 14%);
+	}
+	.interactive-raised:active {
+		transform: translateY(0) scale(0.985);
+	}
+
 	.pressable {
 		@apply cursor-pointer
            select-none

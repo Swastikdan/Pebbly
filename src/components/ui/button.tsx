@@ -5,19 +5,20 @@ import type * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-	"inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+	"inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent font-semibold text-sm outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:translate-y-px active:shadow-none focus-visible:ring-[3px] focus-visible:ring-ring/25 disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive aria-invalid:ring-destructive/20 motion-reduce:transition-none motion-reduce:active:transform-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
 	{
 		variants: {
 			variant: {
-				default: "bg-primary text-primary-foreground hover:bg-primary/90",
+				default:
+					"border-primary/80 bg-primary text-primary-foreground shadow-[0_1px_0_color-mix(in_oklab,var(--primary),white_18%)_inset,0_1px_2px_rgb(0_0_0/0.18)] hover:bg-primary/90 hover:shadow-[0_1px_0_color-mix(in_oklab,var(--primary),white_22%)_inset,0_3px_8px_rgb(0_0_0/0.16)]",
 				destructive:
-					"bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+					"border-destructive/80 bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/25",
 				outline:
-					"border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+					"border-border/90 bg-background/80 shadow-xs hover:border-border hover:bg-accent hover:text-accent-foreground dark:bg-white/[0.035] dark:hover:bg-white/[0.07]",
 				secondary:
-					"bg-secondary text-secondary-foreground hover:bg-secondary/80",
+					"border-border/70 bg-secondary text-secondary-foreground shadow-[0_1px_0_rgb(255_255_255/0.06)_inset,0_1px_2px_rgb(0_0_0/0.12)] hover:bg-secondary/80",
 				ghost:
-					"hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+					"text-muted-foreground hover:bg-accent hover:text-foreground dark:hover:bg-white/[0.06]",
 				link: "text-primary underline-offset-4 hover:underline",
 				light:
 					"bg-primary-foreground text-primary hover:bg-primary-foreground/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 ",

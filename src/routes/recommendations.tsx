@@ -469,7 +469,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 
 	return (
 		<div className="space-y-8">
-			<div className="rounded-[calc(var(--radius-2xl)+4px)] border border-border bg-card p-2">
+			<div className="rounded-[calc(var(--radius-2xl)+4px)] border border-border bg-card p-3">
 				<div className="space-y-3">
 					<div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2">
 						<Select

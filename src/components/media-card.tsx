@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import type { MouseEvent } from "react";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
@@ -60,6 +61,11 @@ const MediaCard = (props: CardProps) => {
 	}
 };
 
+const preparePosterTransition = (event: MouseEvent<HTMLAnchorElement>) => {
+	const artwork = event.currentTarget.querySelector("img");
+	artwork?.classList.add("media-detail-poster");
+};
+
 const HorizontalCard = (props: MediaCardSpecificProps) => {
 	const {
 		title,
@@ -88,9 +94,13 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
 				search={(isContinueWatching ? { play: true } : undefined) as any}
+				onClick={preparePosterTransition}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
 			>
-				<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60  dark:ring-white/[0.06] dark:group-hover:ring-white/10">
+				<div
+					data-media-poster
+					className="surface-raised interactive-raised relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted"
+				>
 					<Image
 						alt={title}
 						src={imageUrl}
@@ -215,9 +225,13 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
 				search={(isContinueWatching ? { play: true } : undefined) as any}
+				onClick={preparePosterTransition}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
 			>
-				<div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60 dark:ring-white/[0.06] dark:group-hover:ring-white/10">
+				<div
+					data-media-poster
+					className="surface-raised interactive-raised relative aspect-video w-full overflow-hidden rounded-xl bg-muted"
+				>
 					<Image
 						alt={title}
 						src={imageUrl}
@@ -302,7 +316,7 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 			params={{ id: String(id) }}
 			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable "
 		>
-			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border/40 transition-all duration-500 ease-out group-hover:ring-border/60  dark:ring-white/[0.06] dark:group-hover:ring-white/10">
+			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-muted shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color,box-shadow] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">
 				<Image
 					alt={name}
 					src={imageUrl}
