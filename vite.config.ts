@@ -31,16 +31,21 @@ const config = defineConfig(({ mode }) => ({
     },
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      treeshake: {
+        moduleSideEffects: (id) => {
+          if (id.endsWith(".css") || id.endsWith(".scss")) {
+            return true;
+          }
+          return false;
+        },
+        propertyReadSideEffects: false,
+        tryCatchDeoptimization: false,
+      },
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom"],
-          tanstack: [
-            "@tanstack/react-query",
-            "@tanstack/react-router",
-            "@tanstack/react-start",
-          ],
-          convex: ["convex", "@convex-dev/react-query"],
-          clerk: ["@clerk/clerk-react", "@clerk/themes"],
+        manualChunks(id) {
+          if (id.includes("/src/") || id.includes("\\src\\")) {
+            return "app";
+          }
         },
       },
     },
