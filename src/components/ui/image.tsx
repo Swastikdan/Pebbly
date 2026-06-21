@@ -8,6 +8,7 @@ const ImageComponent = ({
 	src: initialSrc,
 	fallbackImage,
 	alt,
+	priority,
 	...props
 }: ImageProps & {
 	fallbackImage?: string;
@@ -32,6 +33,9 @@ const ImageComponent = ({
 				loading ? "animate-pulse" : "",
 				props.className,
 			)}
+			priority={priority}
+			loading={priority ? "eager" : "lazy"}
+			fetchPriority={priority ? "high" : undefined}
 			{...props}
 			src={src}
 			onError={handleError}

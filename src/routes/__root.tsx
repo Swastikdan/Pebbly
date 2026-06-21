@@ -315,16 +315,15 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 			{
 				rel: "preconnect",
-				href: "https://fonts.googleapis.com",
-			},
-			{
-				rel: "preconnect",
-				href: "https://fonts.gstatic.com",
+				href:
+					import.meta.env.CONVEX_CLERK_ISSUER_URL ||
+					"https://rested-adder-44.clerk.accounts.dev",
 				crossOrigin: "anonymous",
 			},
 			{
-				href: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap",
-				rel: "stylesheet",
+				rel: "preconnect",
+				href: "https://api.themoviedb.org",
+				crossOrigin: "anonymous",
 			},
 		],
 	}),

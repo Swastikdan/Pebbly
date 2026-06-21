@@ -21,7 +21,15 @@ import {
 } from "@/constants";
 import { useContinueWatching } from "@/hooks/useWatchProgress";
 
+import { getMedia } from "@/lib/queries";
+
 export const Route = createFileRoute("/")({
+	loader: async ({ context }) => {
+		await context.queryClient.ensureQueryData({
+			queryKey: ["trending_day"],
+			queryFn: () => getMedia({ type: "trending_day" }),
+		});
+	},
 	component: HomePage,
 });
 
@@ -94,9 +102,7 @@ function HomePage() {
 						style={{ containIntrinsicHeight: "auto 280px" }}
 					>
 						<div className="flex items-center gap-4">
-							<h2 className="text-h2">
-								Upcoming Movies
-							</h2>
+							<h2 className="text-h2">Upcoming Movies</h2>
 						</div>
 						<div>
 							<Deferred>

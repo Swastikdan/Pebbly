@@ -6,6 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 
 const config = defineConfig(({ mode }) => ({
+  envPrefix: ["VITE_", "CONVEX_"],
   server: {
     port: 3000,
   },

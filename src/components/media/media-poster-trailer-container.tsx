@@ -115,61 +115,61 @@ export function MediaPosterTrailerContainer(props: {
 									overlayClassName="bg-black/80 backdrop-blur-md"
 									className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0 gap-0 overflow-hidden"
 								>
-										<DialogHeader className="sr-only">
-											<DialogTitle>{video.name}</DialogTitle>
-										</DialogHeader>
-										<div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
-											<iframe
-												allowFullScreen
-												allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
-												className="size-full rounded-xl"
-												sandbox="allow-scripts allow-presentation allow-popups allow-forms"
-												src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
-												title={video.name}
-											/>
-											{index > 0 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
-														navigate({
-															search: (prev: any) => ({
-																...prev,
-																trailer: trailervideos[index - 1].key,
-															}),
-															resetScroll: false,
-															replace: true,
-														} as any);
-													}}
-												>
-													<ChevronLeft className="size-6" />
-												</Button>
-											)}
-											{index < trailervideos.length - 1 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
-														navigate({
-															search: (prev: any) => ({
-																...prev,
-																trailer: trailervideos[index + 1].key,
-															}),
-															resetScroll: false,
-															replace: true,
-														} as any);
-													}}
-												>
-													<ChevronRight className="size-6" />
-												</Button>
-											)}
-										</div>
+									<DialogHeader className="sr-only">
+										<DialogTitle>{video.name}</DialogTitle>
+									</DialogHeader>
+									<div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
+										<iframe
+											allowFullScreen
+											allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
+											className="size-full rounded-xl"
+											sandbox="allow-scripts allow-presentation allow-popups allow-forms"
+											src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
+											title={video.name}
+										/>
+										{index > 0 && (
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+												onClick={(e) => {
+													e.stopPropagation();
+													navigate({
+														search: (prev: any) => ({
+															...prev,
+															trailer: trailervideos[index - 1].key,
+														}),
+														resetScroll: false,
+														replace: true,
+													} as any);
+												}}
+											>
+												<ChevronLeft className="size-6" />
+											</Button>
+										)}
+										{index < trailervideos.length - 1 && (
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+												onClick={(e) => {
+													e.stopPropagation();
+													navigate({
+														search: (prev: any) => ({
+															...prev,
+															trailer: trailervideos[index + 1].key,
+														}),
+														resetScroll: false,
+														replace: true,
+													} as any);
+												}}
+											>
+												<ChevronRight className="size-6" />
+											</Button>
+										)}
+									</div>
 								</DialogContent>
 							</Dialog>
 						))}
