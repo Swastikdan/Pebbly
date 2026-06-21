@@ -40,11 +40,11 @@ function HomePage() {
 			<div className="relative w-full overflow-hidden">
 				<div className="mx-auto max-w-screen-lg px-4 py-8 pt-6 pb-6 text-center sm:px-6 md:pt-12 md:pb-8 lg:px-8">
 					<div className="py-4 animate-fade-in-up">
-						<h1 className="items-center justify-center font-black text-2xl tracking-tight sm:text-5xl md:text-[4rem] lg:text-[4.5rem] lg:leading-[1.1]">
+						<h1 className="items-center justify-center text-display">
 							Welcome to
 							<span className="px-2 text-blue-500">{SITE_CONFIG.name}</span>
 						</h1>
-						<p className="mt-2 mb-4 text-xs text-muted-foreground tracking-wide sm:text-sm">
+						<p className="mt-2 mb-4 text-body text-muted-foreground">
 							Millions of movies, TV shows, and people to discover.
 						</p>
 					</div>
@@ -61,7 +61,7 @@ function HomePage() {
 				<div className="flex w-full flex-col gap-10">
 					<Tabs defaultValue="trending_day">
 						<div className="flex items-center gap-4">
-							<h2 className="font-semibold text-lg md:text-xl">Trending</h2>
+							<h2 className="text-h2">Trending</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>
 								<TabsTrigger
 									value="trending_day"
@@ -94,7 +94,7 @@ function HomePage() {
 						style={{ containIntrinsicHeight: "auto 280px" }}
 					>
 						<div className="flex items-center gap-4">
-							<h2 className="font-semibold text-lg md:text-xl">
+							<h2 className="text-h2">
 								Upcoming Movies
 							</h2>
 						</div>
@@ -111,7 +111,7 @@ function HomePage() {
 						style={{ containIntrinsicHeight: "auto 360px" }}
 					>
 						<div className="flex items-center gap-4">
-							<h2 className="font-semibold text-lg md:text-xl">{`What's Popular`}</h2>
+							<h2 className="text-h2">{`What's Popular`}</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>
 								<TabsTrigger
 									value="popular_movie"
@@ -145,7 +145,7 @@ function HomePage() {
 						style={{ containIntrinsicHeight: "auto 360px" }}
 					>
 						<div className="flex items-center gap-4">
-							<h2 className="font-semibold text-lg md:text-xl">Top Rated</h2>
+							<h2 className="text-h2">Top Rated</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>
 								<TabsTrigger
 									value="top_rated_movies"
@@ -187,7 +187,7 @@ function ContinueWatchingSection() {
 	return (
 		<section>
 			<div className="flex items-center gap-4">
-				<h2 className="font-semibold text-lg md:text-xl">Continue Watching</h2>
+				<h2 className="text-h2">Continue Watching</h2>
 			</div>
 			<div>
 				<Deferred>

@@ -62,6 +62,9 @@ const MediaCard = (props: CardProps) => {
 };
 
 const preparePosterTransition = (event: MouseEvent<HTMLAnchorElement>) => {
+	document.querySelectorAll(".media-detail-poster").forEach((el) => {
+		el.classList.remove("media-detail-poster");
+	});
 	const artwork = event.currentTarget.querySelector("img");
 	artwork?.classList.add("media-detail-poster");
 };
@@ -112,15 +115,15 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-label text-white backdrop-blur-md flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
-							<span className="font-semibold text-white">
+							<span className="font-semibold tabular-nums text-white">
 								{rating.toFixed(1)}
 							</span>
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-label text-white backdrop-blur-md border-0">
 						{media_type === "movie" ? "Movie" : "TV"}
 					</Badge>
 				</div>
@@ -130,15 +133,15 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 						text={title}
 						className="text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary"
 					/>
-					<div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/70 min-h-4">
-						{year && <span>{year}</span>}
+					<div className="flex items-center gap-1.5 text-compact text-muted-foreground/70 min-h-4">
+						{year && <span className="tabular-nums">{year}</span>}
 						{year && relevanceScore && (
 							<span className="text-muted-foreground/30">•</span>
 						)}
 						{relevanceScore && (
 							<span
 								className={cn(
-									"font-semibold",
+									"font-semibold tabular-nums",
 									relevanceScore >= 80
 										? "text-emerald-600 dark:text-emerald-400"
 										: relevanceScore >= 60
@@ -244,15 +247,15 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-label text-white backdrop-blur-md flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
-							<span className="font-semibold text-white">
+							<span className="font-semibold tabular-nums text-white">
 								{rating.toFixed(1)}
 							</span>
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium tracking-normal text-white backdrop-blur-md capitalize border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-label text-white backdrop-blur-md border-0">
 						{media_type === "movie" ? "Movie" : "TV Series"}
 					</Badge>
 				</div>
@@ -260,7 +263,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 				<div className="mt-2.5 flex flex-col gap-1 overflow-hidden">
 					{isTVContinueWatching && season && episode && (
 						<div className="flex items-center gap-1.5 flex-wrap">
-							<span className="text-xs font-bold text-blue-500 dark:text-blue-400">
+							<span className="text-compact font-bold tabular-nums text-blue-500 dark:text-blue-400">
 								S{season} E{episode}
 							</span>
 							{episodeDetail?.name && (
@@ -281,7 +284,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					/>
 
 					{!isTVContinueWatching && (
-						<span className="text-xs font-medium text-muted-foreground/70 capitalize">
+						<span className="text-compact tabular-nums text-muted-foreground/70 capitalize">
 							{year}
 						</span>
 					)}
@@ -314,6 +317,7 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 		<Link
 			to="/person/$id"
 			params={{ id: String(id) }}
+			onClick={preparePosterTransition}
 			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable "
 		>
 			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-muted shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color,box-shadow] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">
@@ -332,7 +336,7 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 					text={name}
 					className="w-full truncate text-sm font-bold leading-tight text-foreground group-hover:text-primary transition-colors duration-200"
 				/>
-				<span className="w-full truncate text-[11px] font-medium text-muted-foreground/70">
+				<span className="w-full truncate text-label text-muted-foreground/70">
 					{known_for_department}
 				</span>
 			</div>

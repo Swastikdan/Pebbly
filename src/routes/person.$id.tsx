@@ -26,12 +26,17 @@ type KnownForCredit = {
 };
 
 export const Route = createFileRoute("/person/$id")({
-	loader: async ({ params }) => {
+	loader: async ({ params, context }) => {
 		const { id } = params;
 		const parsed = parseAndValidateId(id);
 		if (!parsed.success) {
 			throw notFound();
 		}
+		const personId = parsed.data;
+		await context.queryClient.ensureQueryData({
+			queryKey: ["person_details", personId],
+			queryFn: () => getPersonDetails({ id: personId }),
+		});
 		return { id };
 	},
 	head: () => ({
@@ -176,7 +181,7 @@ function PersonPage() {
 							<Image
 								src={imageUrl}
 								alt={name}
-								className="h-full w-full object-cover"
+								className="media-detail-poster h-full w-full object-cover"
 								width={300}
 								height={450}
 								priority

@@ -16,7 +16,7 @@ interface FetchOptions {
 
 const tmdbApi = async <T>(
 	endpoint: string,
-	options?: FetchOptions,
+	_options?: FetchOptions,
 ): Promise<TmdbApiResult<T>> => {
 	const normalizedEndpoint = endpoint.startsWith("/")
 		? endpoint
@@ -30,9 +30,7 @@ const tmdbApi = async <T>(
 			Authorization: `Bearer ${ACCESS_TOKEN}`,
 		},
 		signal: AbortSignal.timeout(15_000),
-		...(options?.revalidate
-			? { cache: "default" as RequestCache }
-			: { cache: "no-store" as RequestCache }),
+		cache: "default" as RequestCache,
 	};
 
 	try {

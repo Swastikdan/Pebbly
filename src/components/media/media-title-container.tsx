@@ -116,7 +116,7 @@ export const MediaTitleContainer = (props: {
 					</div>
 				</div>
 				{renderWatchListSection("flex justify-end sm:hidden")}
-				<h1 className="text-[19px] font-bold tracking-tight sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
+				<h1 className="text-h1 lg:px-0">
 					{imdb_url ? (
 						<a
 							className="transition-opacity hover:opacity-70"
@@ -131,33 +131,33 @@ export const MediaTitleContainer = (props: {
 					)}
 				</h1>
 				{tagline && (
-					<h2 className="hidden text-muted-foreground/80 italic sm:flex">
+					<h2 className="hidden text-compact italic text-muted-foreground/80 sm:flex">
 						{tagline}
 					</h2>
 				)}
 			</div>
 			<div className="flex flex-row items-center justify-between">
-				<span className="flex items-center gap-1.5 text-sm font-light text-muted-foreground whitespace-nowrap">
+				<span className="flex items-center gap-1.5 text-compact text-muted-foreground whitespace-nowrap">
 					{releaseyear && releaseyear !== "null" && (
 						<>
-							<span>{releaseyear}</span>
+							<span className="tabular-nums">{releaseyear}</span>
 							<span className="text-border">·</span>
 						</>
 					)}
 
-					<span className="rounded-md border border-border/80 px-1.5 py-0.5 text-xs font-medium text-foreground">
+					<span className="rounded-md border border-border/80 px-1.5 py-0.5 text-label text-foreground">
 						{uscertification}
 					</span>
 					{runtime && (
 						<>
 							<span className="text-border">·</span>
-							<span>{runtime}</span>
+							<span className="tabular-nums">{runtime}</span>
 						</>
 					)}
 					{tv_status && (
 						<>
 							<span className="text-border">·</span>
-							<span>{tv_status}</span>
+							<span className="tabular-nums">{tv_status}</span>
 						</>
 					)}
 				</span>

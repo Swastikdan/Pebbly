@@ -16,10 +16,15 @@ export function updateDialogSearch(
 	value?: string,
 ) {
 	navigate({
-		search: (prev: MediaDialogSearch) => ({
-			...prev,
-			[key]: value,
-		}),
+		search: (prev: MediaDialogSearch) => {
+			const next = { ...prev };
+			if (value === undefined) {
+				delete next[key];
+			} else {
+				next[key] = value;
+			}
+			return next;
+		},
 		resetScroll: false,
 		replace: true,
 	} as never);

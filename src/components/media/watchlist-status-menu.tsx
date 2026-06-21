@@ -128,7 +128,7 @@ export function WatchlistStatusMenu({
 							<span className="text-xs font-bold text-muted-foreground tracking-wider">
 								Watchlist Status
 							</span>
-							<button
+							{/* <button
 								type="button"
 								onClick={() => {
 									onRemove();
@@ -137,7 +137,7 @@ export function WatchlistStatusMenu({
 								className="text-[11px] font-semibold text-destructive hover:underline cursor-pointer"
 							>
 								Remove
-							</button>
+							</button> */}
 						</div>
 
 						<div className="p-2.5 space-y-0.5">

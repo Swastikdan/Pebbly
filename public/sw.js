@@ -48,7 +48,36 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. Navigation requests (document loading): Network First, fallback to cached offline page
+  // 1. TMDB API Requests: Cache First with 7-day expiration
+  if (url.hostname.includes('api.themoviedb.org')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          if (cachedResponse) {
+            const dateHeader = cachedResponse.headers.get('date');
+            if (dateHeader) {
+              const cachedTime = new Date(dateHeader).getTime();
+              const now = Date.now();
+              const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+              if (now - cachedTime < sevenDaysInMs) {
+                return cachedResponse;
+              }
+            }
+          }
+
+          return fetch(request).then((networkResponse) => {
+            if (networkResponse.status === 200) {
+              cache.put(request, networkResponse.clone());
+            }
+            return networkResponse;
+          });
+        });
+      })
+    );
+    return;
+  }
+
+  // 2. Navigation requests (document loading): Network First, fallback to cached offline page
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
