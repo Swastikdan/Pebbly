@@ -180,7 +180,7 @@ function SearchPage() {
 							</div>
 						) : (
 							<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
-								{trendingData?.map((item) => (
+								{trendingData?.map((item, index) => (
 									<MediaCard
 										key={item.id}
 										id={item.id}
@@ -195,6 +195,7 @@ function SearchPage() {
 										title={item.title ?? item.name ?? "Untitled"}
 										overview={item.overview ?? undefined}
 										card_type="horizontal"
+										priority={index < 7}
 									/>
 								))}
 							</div>
@@ -347,7 +348,7 @@ function SearchPage() {
 
 					<div className="flex min-h-96 w-full items-center justify-center">
 						<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
-							{filteredData.map((item) => (
+							{filteredData.map((item, index) => (
 								<MediaCard
 									key={item.id}
 									id={item.id}
@@ -362,6 +363,7 @@ function SearchPage() {
 									title={item.title ?? item.name ?? "Untitled"}
 									overview={item.overview ?? undefined}
 									card_type="horizontal"
+									priority={index < 7}
 								/>
 							))}
 						</div>

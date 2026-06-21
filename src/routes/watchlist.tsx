@@ -547,12 +547,13 @@ function WatchlistTabContent() {
 			) : (
 				<div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 					{filteredWatchlist.map(
-						(item) =>
+						(item, index) =>
 							item && (
 								<WatchlistCard
 									key={`${item.type}-${item.external_id}`}
 									item={item}
 									onRemoveFromWatchlist={handleRemoveFromWatchlist}
+									priority={index < 7}
 								/>
 							),
 					)}
@@ -892,11 +893,12 @@ function CustomListView({
 					</div>
 				) : (
 					<div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-fade-in">
-						{filteredItems.map((item) => (
+						{filteredItems.map((item, index) => (
 							<CustomListMediaCard
 								key={`${item.tmdbId}-${item.mediaType}`}
 								item={item}
 								listId={list._id}
+								priority={index < 7}
 							/>
 						))}
 					</div>
@@ -1114,6 +1116,7 @@ function CustomListCard({
 function CustomListMediaCard({
 	item,
 	listId,
+	priority,
 }: {
 	item: {
 		_id: string;
@@ -1129,6 +1132,7 @@ function CustomListMediaCard({
 		reaction?: string;
 	};
 	listId: string;
+	priority?: boolean;
 }) {
 	const toggleListItem = useToggleListItem();
 	const hasMetadata = !!(item.title && (item.backdrop || item.image));
@@ -1179,6 +1183,7 @@ function CustomListMediaCard({
 						height={210}
 						src={imageUrl}
 						width={140}
+						priority={priority}
 					/>
 				) : (
 					<div className="flex h-[140px] w-[93px] shrink-0 items-center justify-center rounded-xl bg-secondary text-xs font-semibold uppercase text-muted-foreground animate-pulse">
@@ -1271,9 +1276,11 @@ function CustomListMediaCard({
 function WatchlistCard({
 	item,
 	onRemoveFromWatchlist,
+	priority,
 }: {
 	item: WatchlistItem;
 	onRemoveFromWatchlist: (item: WatchlistItem) => void;
+	priority?: boolean;
 }) {
 	const progressStatus = item.progressStatus ?? "watch-later";
 	const reaction = item.reaction ?? null;
@@ -1299,6 +1306,7 @@ function WatchlistCard({
 					height={210}
 					src={imageUrl}
 					width={140}
+					priority={priority}
 				/>
 			</Link>
 

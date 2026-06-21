@@ -311,17 +311,16 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 			{
 				rel: "preconnect",
+				href: "https://image.tmdb.org",
+			},
+			{
+				rel: "preconnect",
 				href: "https://fonts.googleapis.com",
 			},
 			{
 				rel: "preconnect",
 				href: "https://fonts.gstatic.com",
 				crossOrigin: "anonymous",
-			},
-			{
-				href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap",
-				rel: "preload",
-				as: "style",
 			},
 			{
 				href: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap",

@@ -88,7 +88,7 @@ function TvSeasonsPage() {
 				</h1>
 			</div>
 			<div className="flex flex-col gap-5 py-5 pb-32">
-				{seasons.map((season: SeasonInfo) => (
+				{seasons.map((season: SeasonInfo, index) => (
 					<Link
 						key={season.id}
 						// @ts-expect-error - correct link
@@ -103,6 +103,7 @@ function TvSeasonsPage() {
 									height={300}
 									src={IMAGE_PREFIX.HD_POSTER + season.poster_path}
 									width={200}
+									priority={index === 0}
 								/>
 							</div>
 							<div className="flex flex-1 flex-col items-start justify-center gap-2 overflow-hidden py-3">

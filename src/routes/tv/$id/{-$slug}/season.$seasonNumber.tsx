@@ -118,7 +118,7 @@ function TvSeasonDetailPage() {
 			</div>
 
 			<div className="flex flex-col gap-4 pb-32">
-				{episodes.map((episode) => (
+				{episodes.map((episode, index) => (
 					<div
 						key={episode.id}
 						className="group relative overflow-hidden rounded-2xl border-2 border-default bg-secondary/10 transition-all duration-300 hover:border-foreground/20 hover:bg-secondary/20 hover:"
@@ -135,6 +135,7 @@ function TvSeasonDetailPage() {
 											: `https://placehold.co/500x281?text=No+Image`
 									}
 									width={320}
+									priority={index === 0}
 								/>
 								<VideoPlayerModal
 									tmdbId={tvId}

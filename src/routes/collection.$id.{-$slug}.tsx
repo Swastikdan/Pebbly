@@ -102,6 +102,7 @@ function MovieCollnetionPage() {
 						height={300}
 						src={IMAGE_PREFIX.HD_POSTER + poster_path}
 						width={200}
+						priority
 					/>
 				</div>
 
