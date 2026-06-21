@@ -1,11 +1,14 @@
 @import "tailwindcss";
 @import "@fontsource-variable/ibm-plex-sans";
+@import "@fontsource-variable/bricolage-grotesque";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-	--font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	--font-sans:
+		"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		sans-serif;
 	--font-display: "Bricolage Grotesque", var(--font-sans);
 
 	--animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
@@ -247,7 +250,12 @@
 		-webkit-tap-highlight-color: transparent;
 	}
 
-	h1, h2, h3, h4, h5, h6 {
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
 		font-family: var(--font-display);
 		font-weight: 700;
 	}
@@ -395,9 +403,6 @@
 	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-
-
-
 @keyframes route-out {
 	to {
 		opacity: 0.72;
@@ -533,7 +538,9 @@
            ease-out
            active:scale-[0.96]
            will-change-transform;
-		transition: transform 120ms ease-out, opacity 120ms ease-out;
+		transition:
+			transform 120ms ease-out,
+			opacity 120ms ease-out;
 		touch-action: manipulation;
 	}
 	.pressable-small {
@@ -541,7 +548,9 @@
 		dark:active:opacity-50
         ease-out
         will-change-transform;
-		transition: transform 120ms ease-out, opacity 120ms ease-out;
+		transition:
+			transform 120ms ease-out,
+			opacity 120ms ease-out;
 		touch-action: manipulation;
 	}
 

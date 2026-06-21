@@ -139,19 +139,19 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 			return;
 		}
 
-		updateScrollButtons();
+		scheduleButtonStateUpdate();
 		currentScrollRef.addEventListener("scroll", scheduleButtonStateUpdate, {
 			passive: true,
 		});
-		window.addEventListener("resize", updateScrollButtons);
+		window.addEventListener("resize", scheduleButtonStateUpdate);
 
-		const resizeObserver = new ResizeObserver(updateScrollButtons);
+		const resizeObserver = new ResizeObserver(scheduleButtonStateUpdate);
 		resizeObserver.observe(currentScrollRef);
 		window.addEventListener("keydown", handleKeyDown);
 
 		return () => {
 			currentScrollRef.removeEventListener("scroll", scheduleButtonStateUpdate);
-			window.removeEventListener("resize", updateScrollButtons);
+			window.removeEventListener("resize", scheduleButtonStateUpdate);
 			window.removeEventListener("keydown", handleKeyDown);
 			resizeObserver.disconnect();
 			if (rafIdRef.current !== null) {
@@ -159,17 +159,12 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 				rafIdRef.current = null;
 			}
 		};
-	}, [
-		handleKeyDown,
-		isControlsEnabled,
-		scheduleButtonStateUpdate,
-		updateScrollButtons,
-	]);
+	}, [handleKeyDown, isControlsEnabled, scheduleButtonStateUpdate]);
 
 	useEffect(() => {
 		void children;
-		updateScrollButtons();
-	}, [children, updateScrollButtons]);
+		scheduleButtonStateUpdate();
+	}, [children, scheduleButtonStateUpdate]);
 
 	return (
 		<div className={cn("relative w-full overflow-hidden", className)}>

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface AutoScrollTitleProps {
 	text: string;
@@ -15,7 +15,7 @@ export function AutoScrollTitle({
 	const measureRef = useRef<HTMLSpanElement>(null);
 	const [isOverflow, setIsOverflow] = useState(false);
 
-	useLayoutEffect(() => {
+	useEffect(() => {
 		const container = containerRef.current;
 		const measure = measureRef.current;
 		if (!container || !measure) return;
@@ -23,8 +23,6 @@ export function AutoScrollTitle({
 		const check = () => {
 			setIsOverflow(measure.scrollWidth > container.clientWidth);
 		};
-
-		check();
 
 		const ro = new ResizeObserver(check);
 		ro.observe(container);

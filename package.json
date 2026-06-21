@@ -59,6 +59,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
+    "@fontsource-variable/bricolage-grotesque": "^5.2.10",
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.8",
