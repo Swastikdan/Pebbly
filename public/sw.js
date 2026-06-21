@@ -1,9 +1,9 @@
-const CACHE_NAME = 'pebbly-cache-v1';
-const OFFLINE_SHELL = '/_shell.html';
+const CACHE_NAME = 'pebbly-cache-v2';
+const OFFLINE_FALLBACK = '/offline.html';
 
 const STATIC_ASSETS = [
   '/',
-  OFFLINE_SHELL,
+  OFFLINE_FALLBACK,
   '/manifest.json',
   '/logo.svg',
   '/favicon.svg',
@@ -48,12 +48,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. Navigation requests (document loading): Network First, fallback to cached SPA shell
+  // 1. Navigation requests (document loading): Network First, fallback to cached offline page
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .catch(() => {
-          return caches.match(OFFLINE_SHELL) || caches.match('/');
+          return caches.match(OFFLINE_FALLBACK) || caches.match('/');
         })
     );
     return;
