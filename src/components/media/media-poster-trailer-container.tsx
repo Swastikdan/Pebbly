@@ -142,6 +142,7 @@ export function MediaPosterTrailerContainer(props: {
 														}),
 														resetScroll: false,
 														replace: true,
+														viewTransition: false,
 													} as any);
 												}}
 											>
