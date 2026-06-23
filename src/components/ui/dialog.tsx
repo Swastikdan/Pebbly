@@ -69,7 +69,7 @@ function DialogContent({
 				{children}
 				<DialogPrimitive.Close
 					className={cn(
-						"absolute top-4 right-4 z-20 cursor-pointer active:scale-90 duration-300 transition-all p-3 bg-muted hover:bg-muted/80 dark:bg-foreground dark:hover:bg-foreground/90 rounded-full pressable text-foreground dark:text-background",
+						"absolute top-4 right-4 z-50 cursor-pointer active:scale-90 duration-300 transition-all p-3 bg-muted hover:bg-muted/80 dark:bg-foreground dark:hover:bg-foreground/90 rounded-lg pressable text-foreground dark:text-background",
 						closeClassName,
 					)}
 				>

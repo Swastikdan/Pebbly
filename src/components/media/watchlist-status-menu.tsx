@@ -244,7 +244,7 @@ export function WatchlistStatusMenu({
 						<div className="p-2.5 border-t border-border">
 							<button
 								type="button"
-								className="flex items-center justify-center gap-2 w-full rounded-full py-2 px-3 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors border border-destructive/25 cursor-pointer"
+								className="flex items-center justify-center gap-2 w-full rounded-lg py-2 px-3 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors border border-destructive/25 cursor-pointer"
 								onClick={() => {
 									onRemove();
 									setOpen(false);

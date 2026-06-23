@@ -59,7 +59,7 @@ export const SeasonContainer = (props: { tv_id: number }) => {
 						</div>
 					</div>
 					<div className="flex flex-1 flex-col items-start justify-center gap-2 overflow-hidden py-3">
-						<div className="line-clamp-1 text-xl font-bold transition-opacity duration-200 ease-in-out hover:opacity-90 md:text-2xl dark:hover:opacity-70">
+						<div className="line-clamp-1 text-xl font-bold font-heading transition-opacity duration-200 ease-in-out hover:opacity-90 md:text-2xl dark:hover:opacity-70">
 							{season.name}
 						</div>
 						<div className="flex flex-wrap items-center gap-2">

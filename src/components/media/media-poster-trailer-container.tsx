@@ -132,7 +132,7 @@ export function MediaPosterTrailerContainer(props: {
 												type="button"
 												variant="ghost"
 												size="icon"
-												className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+												className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 												onClick={(e) => {
 													e.stopPropagation();
 													navigate({
@@ -153,7 +153,7 @@ export function MediaPosterTrailerContainer(props: {
 												type="button"
 												variant="ghost"
 												size="icon"
-												className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+												className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 												onClick={(e) => {
 													e.stopPropagation();
 													navigate({

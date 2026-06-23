@@ -30,7 +30,7 @@ export const CastSection = (props: {
 			<div className="flex flex-col gap-3">
 				<Link
 					aria-label="View full cast and crew"
-					className="w-fit text-lg font-semibold transition-opacity hover:opacity-70 md:text-xl"
+					className="w-fit text-lg font-semibold font-heading transition-opacity hover:opacity-70 md:text-xl"
 					// @ts-expect-error - correct link
 					to={`/${type}/${id}/${encodeURIComponent(urltitle)}/cast-crew`}
 				>

@@ -1,11 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bookmark, ListPlus, Plus, SlidersHorizontal, X } from "lucide-react";
-import {
-	useCallback,
-	useId,
-	useMemo,
-	useState,
-} from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { CustomListDialog } from "@/components/custom-list-dialog";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultLoader } from "@/components/default-loader";
@@ -32,17 +27,9 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	SECTION_TAB_LIST_CLASS,
-	SECTION_TAB_TRIGGER_CLASS,
-} from "@/constants";
-import {
-	REACTION_OPTIONS,
-} from "@/constants/watchlist";
-import {
-	useCustomLists,
-	useDeleteCustomList,
-} from "@/hooks/use-custom-lists";
+import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
+import { REACTION_OPTIONS } from "@/constants/watchlist";
+import { useCustomLists, useDeleteCustomList } from "@/hooks/use-custom-lists";
 import {
 	useToggleWatchlistItem,
 	useWatchlist,
@@ -490,11 +477,7 @@ function WatchlistTabContent() {
 							</p>
 						</div>
 						<Link to="/search">
-							<Button
-								variant="secondary"
-								size="lg"
-								className="gap-2"
-							>
+							<Button variant="secondary" size="lg" className="gap-2">
 								<SearchFilledIcon className="size-4" />
 								Browse titles
 							</Button>

@@ -6,6 +6,7 @@ import {
 	useMutation,
 } from "convex/react";
 import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
+import { usePermissions } from "@/hooks/use-permissions";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
@@ -393,7 +394,9 @@ export function HomepageRecommendations() {
 		[setFeedback],
 	);
 
-	if (!isLoaded || !isSignedIn) {
+	const { hasFeature } = usePermissions();
+
+	if (!isLoaded || !isSignedIn || !hasFeature("ai-recommendations")) {
 		return null;
 	}
 

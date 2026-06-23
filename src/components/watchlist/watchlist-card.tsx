@@ -26,7 +26,8 @@ export function WatchlistCard({
 	onRemoveFromWatchlist: (item: any) => void;
 	priority?: boolean;
 }) {
-	const progressStatus = (item.progressStatus ?? "watch-later") as ProgressStatus;
+	const progressStatus = (item.progressStatus ??
+		"watch-later") as ProgressStatus;
 	const reaction = (item.reaction ?? null) as ReactionStatus | null;
 	const progressOption = getProgressOption(progressStatus);
 	const reactionOption = reaction ? getReactionOption(reaction) : null;

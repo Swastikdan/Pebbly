@@ -281,7 +281,7 @@ export function VideoPlayerModal({
 							aria-label="Toggle fullscreen"
 							onClick={handleFullscreen}
 							className={cn(
-								"absolute bottom-4 right-4 z-[70] rounded-full bg-black/65 p-2.5 text-white shadow-xl backdrop-blur-md transition-all duration-300 hover:bg-white hover:text-black hover:scale-105 active:scale-95",
+								"absolute bottom-4 right-4 z-[70] rounded-lg bg-black/65 p-2.5 text-white shadow-xl backdrop-blur-md transition-all duration-300 hover:bg-white hover:text-black hover:scale-105 active:scale-95",
 								closeVisible ? "opacity-100" : "opacity-0 hover:opacity-100",
 							)}
 						>
