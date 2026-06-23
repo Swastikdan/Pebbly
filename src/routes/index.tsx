@@ -46,7 +46,7 @@ function HomePage() {
 	return (
 		<section className="flex flex-col items-center justify-center">
 			<div className="relative w-full overflow-hidden">
-				<div className="mx-auto max-w-screen-lg px-4 py-8 pt-6 pb-6 text-center sm:px-6 md:pt-12 md:pb-8 lg:px-8">
+				<div className="mx-auto max-w-5xl px-4 py-8 pt-6 pb-6 text-center sm:px-6 md:pt-12 md:pb-8 lg:px-8">
 					<div className="py-4 animate-fade-in-up">
 						<h1 className="items-center justify-center text-display">
 							Welcome to

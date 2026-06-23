@@ -15,7 +15,7 @@ export function DefaultNotFoundComponent() {
 					</p>
 				</div>
 				<Link to="/">
-					<Button variant="secondary" size="lg" className="rounded-xl">
+					<Button variant="secondary" size="lg">
 						Back to home
 					</Button>
 				</Link>
@@ -30,7 +30,7 @@ export function DefaultErrorComponent() {
 	return (
 		<div className="grid h-full min-h-[calc(100vh-200px)] place-content-center items-center justify-center px-6">
 			<div className="flex flex-col items-center justify-center gap-6 text-center animate-fade-in-up max-w-md">
-				<div className="flex size-16 items-center justify-center rounded-2xl bg-destructive/10 dark:bg-destructive/20">
+				<div className="flex size-16 items-center justify-center rounded-xl bg-destructive/10 dark:bg-destructive/20">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 24 24"
@@ -57,13 +57,12 @@ export function DefaultErrorComponent() {
 				<div className="flex items-center gap-3">
 					<Button
 						variant="outline"
-						className="rounded-xl"
 						onClick={() => router.invalidate()}
 					>
 						Try again
 					</Button>
 					<Link to="/">
-						<Button variant="secondary" className="rounded-xl">
+						<Button variant="secondary">
 							Back to home
 						</Button>
 					</Link>

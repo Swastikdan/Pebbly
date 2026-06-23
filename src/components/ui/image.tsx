@@ -13,31 +13,41 @@ const ImageComponent = ({
 }: ImageProps & {
 	fallbackImage?: string;
 }) => {
-	const [src, setSrc] = useState(initialSrc);
+	const [error, setError] = useState(false);
 	const [loading, setLoading] = useState(true);
+	const [prevSrc, setPrevSrc] = useState(initialSrc);
+
+	// Reset state immediately if the initialSrc prop changes
+	if (initialSrc !== prevSrc) {
+		setPrevSrc(initialSrc);
+		setError(false);
+		setLoading(true);
+	}
 
 	const handleError = useCallback(() => {
+		setError(true);
 		setLoading(false);
-		setSrc(fallbackImage ?? DEFAULT_PLACEHOLDER_IMAGE);
-	}, [fallbackImage]);
+	}, []);
 
 	const handleLoad = useCallback(() => {
 		setLoading(false);
 	}, []);
 
+	const currentSrc = error ? (fallbackImage ?? DEFAULT_PLACEHOLDER_IMAGE) : initialSrc;
+
 	return (
 		<ReactImage
+			key={currentSrc}
 			alt={alt ?? "Image"}
 			className={cn(
 				"bg-foreground/10",
 				loading ? "animate-pulse" : "",
 				props.className,
 			)}
-			priority={priority}
 			loading={priority ? "eager" : "lazy"}
 			fetchPriority={priority ? "high" : undefined}
 			{...props}
-			src={src}
+			src={currentSrc}
 			onError={handleError}
 			onLoad={handleLoad}
 		/>

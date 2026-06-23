@@ -123,7 +123,7 @@ export function AdminUserTable() {
 														key={config.value}
 														variant={isActive ? "secondary" : "outline"}
 														size="sm"
-														className="h-7 rounded-lg px-2.5 text-xs"
+														className="h-7 px-2.5 text-xs"
 														onClick={toggleRole}
 													>
 														{isActive && <Check className="mr-1 size-3" />}

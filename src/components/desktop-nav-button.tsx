@@ -36,7 +36,7 @@ const DesktopNavButton = ({
 		<Button
 			variant={isActive ? "secondary" : "outline"}
 			size="icon"
-			className={cn(className, "rounded-lg pressable")}
+			className={cn(className, "rounded-full pressable")}
 			asChild
 		>
 			<Link to={href} aria-label={label} className="cursor-pointer">
@@ -73,14 +73,14 @@ const DesktopNavButtons = () => {
 			/>
 			<ThemeSwitch />
 			<ClerkLoading>
-				<Skeleton className="size-9 rounded-lg" />
+				<Skeleton className="size-9 rounded-full" />
 			</ClerkLoading>
 			<ClerkLoaded>
 				<SignedOut>
 					<SignInButton mode="modal">
 						<Button
 							variant="outline"
-							className="rounded-lg size-9 flex items-center justify-center  p-0"
+							className="rounded-full size-9 flex items-center justify-center  p-0"
 						>
 							<UserIcon className="size-5" />
 						</Button>
@@ -92,8 +92,8 @@ const DesktopNavButtons = () => {
 							appearance={{
 								elements: {
 									userButtonAvatarBox:
-										"!size-9 !rounded-lg !border-2 !border-secondary",
-									userButtonTrigger: "!h-9 !w-9 !rounded-lg",
+										"!size-9 !rounded-full !border-2 !border-secondary",
+									userButtonTrigger: "!h-9 !w-9 !rounded-full",
 								},
 							}}
 						/>

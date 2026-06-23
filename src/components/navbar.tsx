@@ -39,7 +39,7 @@ const DesktopNavMenuItem = ({
 			<DropdownMenuTrigger asChild className="cursor-pointer">
 				<Button
 					variant="secondary"
-					className="rounded-lg px-3 text-base"
+					className="px-3 text-base"
 					aria-haspopup="true"
 					aria-expanded="false"
 				>
@@ -78,7 +78,7 @@ const MobileNavMenuItem = ({
 		<div className="flex flex-col items-start justify-start gap-1.5">
 			<Button
 				variant="secondary"
-				className="w-full justify-start rounded-lg font-bold text-sm h-9"
+				className="w-full justify-start font-bold text-sm h-9"
 			>
 				{item.name}
 			</Button>
@@ -86,7 +86,7 @@ const MobileNavMenuItem = ({
 				<SheetClose asChild key={subitem.slug}>
 					<Button
 						variant="outline"
-						className="h-9 w-full justify-start rounded-lg text-sm"
+						className="h-9 w-full justify-start text-sm"
 						asChild
 					>
 						<Link to={subitem.url} className="w-full pl-3 cursor-pointer">
@@ -139,7 +139,7 @@ const Navbar = () => {
 							<Button
 								variant="outline"
 								size="icon"
-								className="rounded-lg font-heading font-light text-base"
+								className="font-heading font-light text-base"
 								aria-label="Menu"
 							>
 								<MenuIcon />
