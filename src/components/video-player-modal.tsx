@@ -11,11 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { Play } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/spinner";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
 	buildPlayerUrl,
 	usePlayerProgressListener,
-} from "@/hooks/useWatchProgress";
+} from "@/hooks/use-watch-progress";
 import { cn } from "@/lib/utils";
 
 const INACTIVITY_HIDE_DELAY = 3000;

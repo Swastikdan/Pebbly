@@ -13,7 +13,7 @@ import {
 	useCreateCustomList,
 	useCreateCustomListAndAddItem,
 	useUpdateCustomList,
-} from "@/hooks/useCustomLists";
+} from "@/hooks/use-custom-lists";
 import { cn } from "@/lib/utils";
 
 const PRESET_COLORS = [
@@ -48,7 +48,7 @@ export function CustomListDialog({
 	listId?: string;
 	autoAddMedia?: {
 		tmdbId: number;
-		mediaType: string;
+		mediaType: "movie" | "tv";
 		title?: string;
 		image?: string;
 		backdrop?: string;

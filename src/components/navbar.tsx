@@ -23,7 +23,7 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { NAV_ITEMS, SITE_CONFIG } from "@/constants";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const DesktopNavMenuItem = ({
 	item,

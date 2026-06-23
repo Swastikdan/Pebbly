@@ -3,8 +3,8 @@ import { useMutation, useQuery } from "convex/react";
 import { useCallback, useMemo } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { useLocalListsStore } from "./useLocalListsStore";
-import { useWatchlistStore } from "./usewatchlist";
+import { useLocalListsStore } from "./use-local-lists-store";
+import { useWatchlistStore } from "./watchlist-store";
 
 const QUERY_SKIP = "skip" as const;
 
@@ -79,7 +79,7 @@ export function useCustomListItems(listId: string | null) {
 	}, [isSignedIn, remoteItems, listId, localItems, localMediaState]);
 }
 
-export function useItemLists(tmdbId: number, mediaType: string) {
+export function useItemLists(tmdbId: number, mediaType: "movie" | "tv") {
 	const { isSignedIn } = useUser();
 	const localItems = useLocalListsStore((state) => state.listItems);
 	const remoteListIds = useQuery(
@@ -154,7 +154,7 @@ export function useCreateCustomListAndAddItem() {
 			visibility?: string;
 			listType?: string;
 			tmdbId: number;
-			mediaType: string;
+			mediaType: "movie" | "tv";
 			title?: string;
 			image?: string;
 			backdrop?: string;
@@ -217,7 +217,7 @@ export function useToggleListItem() {
 		async (args: {
 			listId: string;
 			tmdbId: number;
-			mediaType: string;
+			mediaType: "movie" | "tv";
 			title?: string;
 			image?: string;
 			backdrop?: string;

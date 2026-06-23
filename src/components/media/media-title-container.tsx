@@ -8,7 +8,7 @@ import {
 	useSetReaction,
 	useToggleWatchlistItem,
 	useWatchlistItem,
-} from "@/hooks/usewatchlist";
+} from "@/hooks/use-watchlist";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export const MediaTitleContainer = (props: {

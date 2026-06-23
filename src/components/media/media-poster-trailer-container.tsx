@@ -12,7 +12,7 @@ import {
 import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { VideoPlayerModal } from "@/components/video-player-modal";
-import { useWatchProgress } from "@/hooks/useWatchProgress";
+import { useWatchProgress } from "@/hooks/use-watch-progress";
 
 export function MediaPosterTrailerContainer(props: {
 	tmdbId: number;

@@ -18,7 +18,7 @@ export function CustomListPicker({
 	mediaType,
 }: {
 	tmdbId: number;
-	mediaType: string;
+	mediaType: "movie" | "tv";
 }) {
 	const { isSignedIn } = useUser();
 	const lists = useQuery(

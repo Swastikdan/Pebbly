@@ -8,9 +8,9 @@ import { api } from "../../convex/_generated/api";
 
 import type { Id } from "../../convex/_generated/dataModel";
 
-import { useLocalProgressStore } from "./useLocalProgressStore";
+import { useLocalProgressStore } from "./use-local-progress-store";
 
-import { useMediaState, useWatchlistStore } from "./usewatchlist";
+import { useMediaState, useWatchlistStore } from "./use-watchlist";
 
 export interface WatchProgressData {
 	id: string;

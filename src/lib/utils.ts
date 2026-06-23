@@ -125,61 +125,6 @@ export function validateResponse<T>(response: ApiResponse<T>): T {
 	return response.data;
 }
 
-export function safeValidateResponse<T>(
-	response: ApiResponse<T>,
-): ValidationResult<T> {
-	try {
-		const data = validateResponse(response);
-
-		return { success: true, data };
-	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error);
-
-		return { success: false, error: errorMessage };
-	}
-}
-
-export function validateArrayResponse<T>(response: ApiResponse<T[]>): T[] {
-	const data = validateResponse(response);
-
-	if (!Array.isArray(data)) {
-		throw new Error(`Expected array data, got ${typeof data}`);
-	}
-
-	if (data.length === 0) {
-		throw new Error("Response contains empty array");
-	}
-
-	return data;
-}
-
-export function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		("data" in value || "error" in value)
-	);
-}
-
-export function validateIds(ids: number[]): ValidationResult<number[]> {
-	const invalidIds: number[] = [];
-
-	for (const id of ids) {
-		if (!isValidId(id)) {
-			invalidIds.push(id);
-		}
-	}
-
-	if (invalidIds.length > 0) {
-		return {
-			success: false,
-			error: `${ERROR_MESSAGES.INVALID_ID}s: ${invalidIds.join(", ")}`,
-		};
-	}
-
-	return { success: true, data: ids };
-}
-
 export const formatMediaTitle = {
 	encode(title: string): string {
 		if (!title || typeof title !== "string") return "";
