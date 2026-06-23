@@ -35,13 +35,13 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { GENRE_LIST, HORIZONTAL_MEDIA_GRID_CLASS } from "@/constants";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePermissions } from "@/hooks/use-permissions";
 import type {
 	GenerateOptions,
 	RecommendationHistoryEntry,
-} from "@/hooks/useRecommendations";
-import { useRecommendations } from "@/hooks/useRecommendations";
-import { useWatchlist } from "@/hooks/usewatchlist";
+} from "@/hooks/use-recommendations";
+import { useRecommendations } from "@/hooks/use-recommendations";
+import { useWatchlist } from "@/hooks/use-watchlist";
 import {
 	getBasicMovieDetails,
 	getBasicTvDetails,

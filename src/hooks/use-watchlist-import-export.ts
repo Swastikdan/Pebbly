@@ -3,8 +3,8 @@ import { useMutation, useQuery } from "convex/react";
 import type React from "react";
 
 import { useCallback, useRef, useState } from "react";
-import { useLocalProgressStore } from "@/hooks/useLocalProgressStore";
-import { useWatchlist, type WatchlistItem } from "@/hooks/usewatchlist";
+import { useLocalProgressStore } from "@/hooks/use-local-progress-store";
+import { useWatchlist, type WatchlistItem } from "@/hooks/use-watchlist";
 import { normalizeProgressStatus } from "@/lib/utils";
 import type { ReactionStatus } from "@/types";
 

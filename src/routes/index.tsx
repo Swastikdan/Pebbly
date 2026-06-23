@@ -19,7 +19,7 @@ import {
 	SECTION_TAB_TRIGGER_CLASS,
 	SITE_CONFIG,
 } from "@/constants";
-import { useContinueWatching } from "@/hooks/useWatchProgress";
+import { useContinueWatching } from "@/hooks/use-watch-progress";
 
 import { getMedia } from "@/lib/queries";
 

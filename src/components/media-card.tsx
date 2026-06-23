@@ -8,7 +8,7 @@ import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
-import { useWatchProgress } from "@/hooks/useWatchProgress";
+import { useWatchProgress } from "@/hooks/use-watch-progress";
 import { getTvSeasonDetails } from "@/lib/queries";
 import { cn, formatMediaTitle } from "@/lib/utils";
 

@@ -5,17 +5,23 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
-
 import { v } from "convex/values";
 
 type WatchlistContext = QueryCtx | MutationCtx;
 type WatchlistUser = Doc<"users">;
 type WatchItem = Doc<"watch_items">;
 type EpisodeProgress = Doc<"episode_progress">;
+
+type MediaType = "movie" | "tv";
+
+const MEDIA_TYPE_VALIDATOR = v.union(v.literal("movie"), v.literal("tv"));
+
 type MediaIdentity = {
   tmdbId: number;
-  mediaType: string;
+  mediaType: MediaType;
 };
+
+
 type WatchItemMetadata = {
   title?: string;
   image?: string;
@@ -30,6 +36,21 @@ const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set([
   "done",
   "dropped",
 ]);
+
+
+const PROGRESS_STATUS_VALIDATOR = v.union(
+  v.literal("watch-later"),
+  v.literal("watching"),
+  v.literal("done"),
+  v.literal("dropped"),
+);
+
+const REACTION_VALIDATOR = v.union(
+  v.literal("loved"),
+  v.literal("liked"),
+  v.literal("mixed"),
+  v.literal("not-for-me"),
+);
 
 function normalizeProgressStatus(status?: string): string | undefined {
   if (!status) return undefined;
@@ -160,7 +181,7 @@ async function syncEpisodeProgressRecord(
 export const updateProgress = mutation({
   args: {
     tmdbId: v.number(),
-    mediaType: v.string(),
+    mediaType: MEDIA_TYPE_VALIDATOR,
     progress: v.optional(v.number()),
     isWatched: v.optional(v.boolean()),
   },
@@ -273,7 +294,7 @@ export const getTrackedTmdbIds = query({
 export const getMediaState = query({
   args: {
     tmdbId: v.number(),
-    mediaType: v.string(),
+    mediaType: MEDIA_TYPE_VALIDATOR,
   },
 
   handler: async (ctx, args) => {
@@ -287,7 +308,7 @@ export const getMediaState = query({
 export const setWatchlistMembership = mutation({
   args: {
     tmdbId: v.number(),
-    mediaType: v.string(),
+    mediaType: MEDIA_TYPE_VALIDATOR,
     inWatchlist: v.boolean(),
     title: v.optional(v.string()),
     image: v.optional(v.string()),
@@ -336,8 +357,8 @@ export const setWatchlistMembership = mutation({
 export const setProgressStatus = mutation({
   args: {
     tmdbId: v.number(),
-    mediaType: v.string(),
-    progressStatus: v.string(),
+    mediaType: MEDIA_TYPE_VALIDATOR,
+    progressStatus: PROGRESS_STATUS_VALIDATOR,
     progress: v.optional(v.number()),
     title: v.optional(v.string()),
     image: v.optional(v.string()),
@@ -387,8 +408,8 @@ export const setProgressStatus = mutation({
 export const setReaction = mutation({
   args: {
     tmdbId: v.number(),
-    mediaType: v.string(),
-    reaction: v.optional(v.string()),
+    mediaType: MEDIA_TYPE_VALIDATOR,
+    reaction: v.optional(REACTION_VALIDATOR),
     clearReaction: v.optional(v.boolean()),
     title: v.optional(v.string()),
     image: v.optional(v.string()),
@@ -456,7 +477,7 @@ export const setReaction = mutation({
 export const markShowEpisodesAndStatus = mutation({
   args: {
     tmdbId: v.number(),
-    mediaType: v.string(),
+    mediaType: MEDIA_TYPE_VALIDATOR,
     seasons: v.array(
       v.object({
         season: v.number(),
@@ -789,7 +810,7 @@ export const getListItems = query({
 });
 
 export const getItemLists = query({
-  args: { tmdbId: v.number(), mediaType: v.string() },
+  args: { tmdbId: v.number(), mediaType: MEDIA_TYPE_VALIDATOR },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) return [];
@@ -809,7 +830,7 @@ export const toggleListItem = mutation({
   args: {
     listId: v.id("lists"),
     tmdbId: v.number(),
-    mediaType: v.string(),
+    mediaType: MEDIA_TYPE_VALIDATOR,
     title: v.optional(v.string()),
     image: v.optional(v.string()),
     backdrop: v.optional(v.string()),
@@ -857,7 +878,7 @@ export const createCustomListAndAddItem = mutation({
     visibility: v.optional(v.string()),
     listType: v.optional(v.string()),
     tmdbId: v.number(),
-    mediaType: v.string(),
+    mediaType: MEDIA_TYPE_VALIDATOR,
     title: v.optional(v.string()),
     image: v.optional(v.string()),
     backdrop: v.optional(v.string()),

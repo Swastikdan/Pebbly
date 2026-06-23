@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePermissions } from "@/hooks/use-permissions";
 
 export const Route = createFileRoute("/admin")({
 	component: AdminPage,

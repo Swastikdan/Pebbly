@@ -17,7 +17,7 @@ import { IMAGE_PREFIX } from "@/constants";
 import {
 	useEpisodeProgress,
 	useEpisodeWatched,
-} from "@/hooks/useWatchProgress";
+} from "@/hooks/use-watch-progress";
 
 import { getTvSeasonDetails } from "@/lib/queries";
 import type { SeasonInfo, TvEpisodeDetail } from "@/types";
