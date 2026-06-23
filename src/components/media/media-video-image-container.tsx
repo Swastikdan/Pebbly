@@ -80,7 +80,9 @@ export const MediaVideoImageContainer = (props: {
 	return (
 		<>
 			<div className="flex flex-col gap-5 py-3">
-				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">Videos</span>
+				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
+					Videos
+				</span>
 				<ScrollContainer isButtonsVisible>
 					<div className="flex items-center justify-center gap-3">
 						{mediaVideos?.map((video, index) => (
@@ -177,7 +179,9 @@ export const MediaVideoImageContainer = (props: {
 				</ScrollContainer>
 			</div>
 			<div className="flex flex-col gap-5 py-3 pb-32">
-				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">Images</span>
+				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
+					Images
+				</span>
 				<div className="flex flex-col gap-3">
 					<span className="w-fit text-lg md:text-xl">Backdrops</span>
 					<ScrollContainer isButtonsVisible>
@@ -367,7 +371,9 @@ const GLobalMediaVideoImageContainerLoader = () => {
 	return (
 		<>
 			<div className="flex flex-col gap-5 py-3">
-				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">Videos</span>
+				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
+					Videos
+				</span>
 				<ScrollContainer isButtonsVisible={false}>
 					<div className="flex items-center justify-center gap-3">
 						{Array.from({ length: 6 }).map((_, index) => (
@@ -380,7 +386,9 @@ const GLobalMediaVideoImageContainerLoader = () => {
 				</ScrollContainer>
 			</div>
 			<div className="flex flex-col gap-5 py-3 pb-32">
-				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">Images</span>
+				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
+					Images
+				</span>
 				<div className="flex flex-col gap-3">
 					<span className="w-fit text-lg md:text-xl">Backdrops</span>
 					<ScrollContainer isButtonsVisible={false}>

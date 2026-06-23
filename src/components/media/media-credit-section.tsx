@@ -63,7 +63,9 @@ export const MediaCreditSection = (props: {
 					<>
 						<div>
 							<span className="flex items-center gap-2">
-								<span className="text-foreground text-2xl font-bold font-heading">Cast</span>
+								<span className="text-foreground text-2xl font-bold font-heading">
+									Cast
+								</span>
 								({cast.length})
 							</span>
 							{cast.length === 0 ? (
@@ -111,7 +113,9 @@ export const MediaCreditSection = (props: {
 
 						<div>
 							<span className="flex items-center gap-2">
-								<span className="text-foreground text-2xl font-bold font-heading">Crew</span>
+								<span className="text-foreground text-2xl font-bold font-heading">
+									Crew
+								</span>
 								({crew.length})
 							</span>
 
