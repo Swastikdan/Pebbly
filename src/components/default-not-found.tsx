@@ -55,16 +55,11 @@ export function DefaultErrorComponent() {
 					</p>
 				</div>
 				<div className="flex items-center gap-3">
-					<Button
-						variant="outline"
-						onClick={() => router.invalidate()}
-					>
+					<Button variant="outline" onClick={() => router.invalidate()}>
 						Try again
 					</Button>
 					<Link to="/">
-						<Button variant="secondary">
-							Back to home
-						</Button>
+						<Button variant="secondary">Back to home</Button>
 					</Link>
 				</div>
 			</div>

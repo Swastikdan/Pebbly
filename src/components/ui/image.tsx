@@ -33,7 +33,9 @@ const ImageComponent = ({
 		setLoading(false);
 	}, []);
 
-	const currentSrc = error ? (fallbackImage ?? DEFAULT_PLACEHOLDER_IMAGE) : initialSrc;
+	const currentSrc = error
+		? (fallbackImage ?? DEFAULT_PLACEHOLDER_IMAGE)
+		: initialSrc;
 
 	return (
 		<ReactImage

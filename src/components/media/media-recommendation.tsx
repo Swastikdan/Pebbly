@@ -37,7 +37,7 @@ export const MediaRecommendations = (props: {
 		return (
 			<div className="pb-5">
 				<div className="flex flex-col gap-3">
-					<span className="w-fit text-xl font-semibold md:text-2xl">
+					<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
 						Recommendations
 					</span>
 					<ScrollContainer isButtonsVisible={false}>
@@ -57,7 +57,7 @@ export const MediaRecommendations = (props: {
 	return (
 		<div className="pb-5">
 			<div className="flex flex-col gap-3">
-				<span className="w-fit text-xl font-semibold md:text-2xl">
+				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
 					Recommendations
 				</span>
 				<ScrollContainer isButtonsVisible={!movie_is_loading}>

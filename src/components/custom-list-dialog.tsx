@@ -152,7 +152,7 @@ export function CustomListDialog({
 			<DialogContent className="sm:max-w-[420px] overflow-hidden rounded-xl p-0">
 				<div className="px-6 py-5 space-y-4">
 					<DialogHeader className="relative">
-						<DialogTitle className="text-lg font-semibold tracking-tight text-left pr-6">
+						<DialogTitle className="text-lg font-semibold font-heading tracking-tight text-left pr-6">
 							{isEditing ? "Edit Collection" : "Create New Collection"}
 						</DialogTitle>
 					</DialogHeader>

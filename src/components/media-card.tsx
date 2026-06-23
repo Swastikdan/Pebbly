@@ -62,17 +62,21 @@ const MediaCard = (props: CardProps) => {
 };
 
 const preparePosterTransition = (event: MouseEvent<HTMLAnchorElement>) => {
-	document.querySelectorAll(".media-detail-poster, .person-detail-poster").forEach((el) => {
-		el.classList.remove("media-detail-poster", "person-detail-poster");
-	});
+	document
+		.querySelectorAll(".media-detail-poster, .person-detail-poster")
+		.forEach((el) => {
+			el.classList.remove("media-detail-poster", "person-detail-poster");
+		});
 	const artwork = event.currentTarget.querySelector("img");
 	artwork?.classList.add("media-detail-poster");
 };
 
 const preparePersonTransition = (event: MouseEvent<HTMLAnchorElement>) => {
-	document.querySelectorAll(".media-detail-poster, .person-detail-poster").forEach((el) => {
-		el.classList.remove("media-detail-poster", "person-detail-poster");
-	});
+	document
+		.querySelectorAll(".media-detail-poster, .person-detail-poster")
+		.forEach((el) => {
+			el.classList.remove("media-detail-poster", "person-detail-poster");
+		});
 	const artwork = event.currentTarget.querySelector("img");
 	artwork?.classList.add("person-detail-poster");
 };

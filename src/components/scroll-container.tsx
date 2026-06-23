@@ -173,7 +173,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 					<div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
 					<Button
 						aria-label="Scroll left"
-						className="absolute left-2 top-1/2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-all duration-200 hover:scale-105 sm:flex"
+						className="absolute left-2 top-1/2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-lg shadow-md backdrop-blur-sm transition-all duration-200 hover:scale-105 sm:flex"
 						variant="light"
 						size="icon"
 						onClick={scrollLeft}
@@ -195,7 +195,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 					<div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
 					<Button
 						aria-label="Scroll right"
-						className="absolute right-2 top-1/2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-all duration-200 hover:scale-105 sm:flex"
+						className="absolute right-2 top-1/2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-lg shadow-md backdrop-blur-sm transition-all duration-200 hover:scale-105 sm:flex"
 						variant="light"
 						size="icon"
 						onClick={scrollRight}

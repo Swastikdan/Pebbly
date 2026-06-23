@@ -32,7 +32,7 @@ export const Collections = (props: { id: number }) => {
 					/>
 
 					<div className="relative flex h-full flex-col items-start justify-center p-5">
-						<span className="text-background dark:text-foreground text-lg font-bold md:text-xl lg:text-2xl xl:text-3xl">
+						<span className="text-background dark:text-foreground text-lg font-bold font-heading md:text-xl lg:text-2xl xl:text-3xl">
 							Part of the {data?.name}
 						</span>
 						<span className="text-background dark:text-foreground mt-2 flex flex-wrap text-xs font-light md:text-sm lg:text-base">

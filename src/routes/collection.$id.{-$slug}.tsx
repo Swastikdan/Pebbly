@@ -132,7 +132,7 @@ function MovieCollnetionPage() {
 				</div>
 			</div>
 			<div className="flex flex-col gap-5 py-10">
-				<span className="text-foreground text-2xl font-semibold">
+				<span className="text-foreground text-2xl font-semibold font-heading">
 					All Movies
 				</span>
 				<div className="grid w-full grid-cols-2 items-center justify-center gap-5 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
