@@ -152,7 +152,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 										<Button
 											type="button"
 											variant="ghost"
-											className="absolute inset-0 size-full p-0 hover:bg-transparent"
+											className="absolute inset-0 size-full p-0 hover:bg-transparent rounded-xl"
 										>
 											<div className="absolute inset-0 flex items-center justify-center">
 												<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
