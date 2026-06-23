@@ -2,12 +2,27 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { syncRolePermissions } from "./admin";
 
+/**
+ * Derive admin status from Clerk's identity metadata (set server-side via Clerk Dashboard)
+ * rather than trusting client-provided values.
+ *
+ * Clerk puts public metadata in the JWT under `public_meta` (snake_case in token claims)
+ * or `publicMetadata` (camelCase in some SDK versions).
+ */
+function isAdminFromIdentity(
+  identity: Record<string, unknown>,
+): boolean {
+  const meta =
+    (identity.public_meta as Record<string, unknown> | undefined) ??
+    (identity.publicMetadata as Record<string, unknown> | undefined);
+  return meta?.isAdmin === true;
+}
+
 export const store = mutation({
   args: {
     email: v.optional(v.string()),
     name: v.optional(v.string()),
     image: v.optional(v.string()),
-    isAdmin: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -16,6 +31,8 @@ export const store = mutation({
     }
     const userId = identity.subject;
     await syncRolePermissions(ctx);
+
+    const isAdmin = isAdminFromIdentity(identity);
 
     const existing = await ctx.db
       .query("users")
@@ -27,7 +44,7 @@ export const store = mutation({
         name: args.name,
         image: args.image,
         email: args.email,
-        isAdmin: args.isAdmin,
+        isAdmin,
       });
       return existing._id;
     } else {
@@ -36,7 +53,7 @@ export const store = mutation({
         name: args.name,
         image: args.image,
         email: args.email,
-        isAdmin: args.isAdmin,
+        isAdmin,
       });
       return newUserId;
     }

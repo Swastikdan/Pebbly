@@ -29,7 +29,7 @@ import {
 	useCustomLists,
 	useItemLists,
 	useToggleListItem,
-} from "@/hooks/useCustomLists";
+} from "@/hooks/use-custom-lists";
 import { cn } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
@@ -319,7 +319,7 @@ function AddToListDialog({
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	tmdbId: number;
-	mediaType: string;
+	mediaType: "movie" | "tv";
 	metadata?: MediaMetadataForList;
 }) {
 	const { lists } = useCustomLists();

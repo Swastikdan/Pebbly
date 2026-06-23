@@ -3,7 +3,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { memo } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
-import { useContinueWatching } from "@/hooks/useWatchProgress";
+import { useContinueWatching } from "@/hooks/use-watch-progress";
 import {
 	getBasicMovieDetails,
 	getBasicTvDetails,
@@ -222,18 +222,20 @@ function ContinueWatchingContent({
 			if (!data) return null;
 
 			const isMovie = item.type === "movie";
-			return {
+			// TMDB movie/tv response shapes differ for optional fields
+			const raw = data as unknown as Record<string, unknown>;
+			const result: MediaListProps = {
 				id: data.id,
-				title: isMovie ? (data as any).title : (data as any).name,
-				vote_average: (data as any).vote_average ?? 0,
-				poster_path: (data as any).poster_path ?? "",
-				backdrop_path: (data as any).backdrop_path ?? "",
-				first_air_date: isMovie ? undefined : (data as any).first_air_date,
-				release_date: isMovie ? (data as any).release_date : undefined,
-				overview: (data as any).overview,
+				title: (isMovie ? raw.title : raw.name) as string,
+				vote_average: raw.vote_average as number,
+				poster_path: (raw.poster_path ?? "") as string,
+				backdrop_path: (raw.backdrop_path ?? "") as string,
+				overview: raw.overview as string,
 				media_type: item.type,
 				isContinueWatching: true,
-			};
+			} as unknown as MediaListProps;
+
+			return result;
 		})
 		.filter(Boolean) as MediaListProps[];
 
