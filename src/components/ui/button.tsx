@@ -5,7 +5,7 @@ import type * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-	"inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent font-semibold text-sm outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.98] active:shadow-none focus-visible:ring-[3px] focus-visible:ring-ring/25 disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive aria-invalid:ring-destructive/20 motion-reduce:transition-none motion-reduce:active:transform-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+	"inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent font-semibold text-sm outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.98] active:shadow-none focus-visible:ring-[3px] focus-visible:ring-ring/25 disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive aria-invalid:ring-destructive/20 motion-reduce:transition-none motion-reduce:active:transform-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
 	{
 		variants: {
 			variant: {
@@ -27,9 +27,9 @@ const buttonVariants = cva(
 				default: "h-9 px-4 py-2 has-[>svg]:px-3",
 				sm: "h-8 gap-1.5 px-3 has-[>svg]:px-2.5",
 				lg: "h-10 px-6 has-[>svg]:px-4",
-				icon: "size-9 rounded-full",
-				"icon-sm": "size-8 rounded-full",
-				"icon-lg": "size-10 rounded-full",
+				icon: "size-9 rounded-lg",
+				"icon-sm": "size-8 rounded-lg",
+				"icon-lg": "size-10 rounded-lg",
 			},
 		},
 		defaultVariants: {

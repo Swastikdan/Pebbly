@@ -56,9 +56,7 @@ export function useMediaState(id: string, mediaType: MediaType) {
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 	const remoteState = useQuery(
 		api.watchlist.getMediaState,
-		isSignedIn
-			? { tmdbId: Number(id), mediaType }
-			: QUERY_SKIP,
+		isSignedIn ? { tmdbId: Number(id), mediaType } : QUERY_SKIP,
 	);
 
 	return useMemo(() => {

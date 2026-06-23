@@ -36,7 +36,7 @@ const DesktopNavButton = ({
 		<Button
 			variant={isActive ? "secondary" : "outline"}
 			size="icon"
-			className={cn(className, "rounded-full pressable")}
+			className={cn(className, "pressable")}
 			asChild
 		>
 			<Link to={href} aria-label={label} className="cursor-pointer">
@@ -80,7 +80,7 @@ const DesktopNavButtons = () => {
 					<SignInButton mode="modal">
 						<Button
 							variant="outline"
-							className="rounded-full size-9 flex items-center justify-center  p-0"
+							className="size-9 flex items-center justify-center rounded-full p-0"
 						>
 							<UserIcon className="size-5" />
 						</Button>

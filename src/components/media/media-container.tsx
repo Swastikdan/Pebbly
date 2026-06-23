@@ -99,7 +99,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 			<Tabs value={selectedTab} onValueChange={setSelectedTab} className="pb-2">
 				<div className="flex items-center justify-start gap-4 pb-3">
 					<Link
-						className="w-fit text-lg font-semibold transition-opacity hover:opacity-70 md:text-xl"
+						className="w-fit text-lg font-semibold font-heading transition-opacity hover:opacity-70 md:text-xl"
 						to={mediaHref}
 					>
 						Media
@@ -178,11 +178,13 @@ export const MediaContainer = (props: MediaContainerProps) => {
 											}
 										>
 											<DialogContent
-												overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/0"
+												overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
 												className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-2xl border-0 bg-transparent p-0 ring-0 overflow-hidden"
 											>
 												<DialogHeader className="sr-only">
-													<DialogTitle>{activeVideo?.name ?? "Video"}</DialogTitle>
+													<DialogTitle>
+														{activeVideo?.name ?? "Video"}
+													</DialogTitle>
 												</DialogHeader>
 												{activeVideo && (
 													<div className="bg-foreground/10 size-full overflow-hidden rounded-2xl">
@@ -201,7 +203,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 														type="button"
 														variant="ghost"
 														size="icon"
-														className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+														className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 														onClick={(e) => {
 															e.stopPropagation();
 															onUpdateDialogSearch(
@@ -213,23 +215,24 @@ export const MediaContainer = (props: MediaContainerProps) => {
 														<ChevronLeft className="size-6" />
 													</Button>
 												)}
-												{activeVideoIndex < youtubeclips.length - 1 && activeVideoIndex >= 0 && (
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon"
-														className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-														onClick={(e) => {
-															e.stopPropagation();
-															onUpdateDialogSearch(
-																"video",
-																youtubeclips[activeVideoIndex + 1].key,
-															);
-														}}
-													>
-														<ChevronRight className="size-6" />
-													</Button>
-												)}
+												{activeVideoIndex < youtubeclips.length - 1 &&
+													activeVideoIndex >= 0 && (
+														<Button
+															type="button"
+															variant="ghost"
+															size="icon"
+															className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+															onClick={(e) => {
+																e.stopPropagation();
+																onUpdateDialogSearch(
+																	"video",
+																	youtubeclips[activeVideoIndex + 1].key,
+																);
+															}}
+														>
+															<ChevronRight className="size-6" />
+														</Button>
+													)}
 											</DialogContent>
 										</Dialog>
 									);
@@ -262,96 +265,100 @@ export const MediaContainer = (props: MediaContainerProps) => {
 									return (
 										<div
 											key={`backdrop-${index}`}
-										className="group relative cursor-pointer"
-										onClick={() =>
-											onUpdateDialogSearch("backdrop", imagePathClean)
-										}
-									>
-										<Image
-											alt={title}
-											className="bg-foreground/10 aspect-video h-44 w-auto rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-											height={450}
-											src={image.backdrop_image ?? ""}
-											width={300}
-										/>
-									</div>
-								);
-							})}
-							{(() => {
-								const activeBackdropIndex = backdrops.findIndex(
-									(b) => getImageDialogKey(b.backdrop_image) === search.backdrop,
-								);
-								const activeBackdrop = backdrops[activeBackdropIndex];
-								return (
-									<Dialog
-										open={!!activeBackdrop}
-										onOpenChange={(isOpen) =>
-											onUpdateDialogSearch(
-												"backdrop",
-												isOpen ? search.backdrop as string : undefined,
-											)
-										}
-									>
-										<DialogContent
-											overlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/0"
-											className="aspect-video w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
+											className="group relative cursor-pointer"
+											onClick={() =>
+												onUpdateDialogSearch("backdrop", imagePathClean)
+											}
 										>
-											<DialogHeader className="sr-only">
-												<DialogTitle>{title} Backdrop Image</DialogTitle>
-											</DialogHeader>
-											{activeBackdrop && (
-												<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
-													<Image
-														alt={title}
-														className="aspect-video size-full rounded-2xl object-cover"
-														height={300}
-														src={activeBackdrop.backdrop_image_raw ?? ""}
-														width={450}
-													/>
-													{activeBackdropIndex > 0 && (
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-															onClick={(e) => {
-																e.stopPropagation();
-																onUpdateDialogSearch(
-																	"backdrop",
-																	getImageDialogKey(
-																		backdrops[activeBackdropIndex - 1].backdrop_image,
-																	),
-																);
-															}}
-														>
-															<ChevronLeft className="size-6" />
-														</Button>
-													)}
-													{activeBackdropIndex < backdrops.length - 1 && activeBackdropIndex >= 0 && (
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-															onClick={(e) => {
-																e.stopPropagation();
-																onUpdateDialogSearch(
-																	"backdrop",
-																	getImageDialogKey(
-																		backdrops[activeBackdropIndex + 1].backdrop_image,
-																	),
-																);
-															}}
-														>
-															<ChevronRight className="size-6" />
-														</Button>
-													)}
-												</div>
-											)}
-										</DialogContent>
-									</Dialog>
-								);
-							})()}
+											<Image
+												alt={title}
+												className="bg-foreground/10 aspect-video h-44 w-auto rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+												height={450}
+												src={image.backdrop_image ?? ""}
+												width={300}
+											/>
+										</div>
+									);
+								})}
+								{(() => {
+									const activeBackdropIndex = backdrops.findIndex(
+										(b) =>
+											getImageDialogKey(b.backdrop_image) === search.backdrop,
+									);
+									const activeBackdrop = backdrops[activeBackdropIndex];
+									return (
+										<Dialog
+											open={!!activeBackdrop}
+											onOpenChange={(isOpen) =>
+												onUpdateDialogSearch(
+													"backdrop",
+													isOpen ? (search.backdrop as string) : undefined,
+												)
+											}
+										>
+											<DialogContent
+												overlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
+												className="aspect-video w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
+											>
+												<DialogHeader className="sr-only">
+													<DialogTitle>{title} Backdrop Image</DialogTitle>
+												</DialogHeader>
+												{activeBackdrop && (
+													<div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
+														<Image
+															alt={title}
+															className="aspect-video size-full rounded-2xl object-cover"
+															height={300}
+															src={activeBackdrop.backdrop_image_raw ?? ""}
+															width={450}
+														/>
+														{activeBackdropIndex > 0 && (
+															<Button
+																type="button"
+																variant="ghost"
+																size="icon"
+																className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	onUpdateDialogSearch(
+																		"backdrop",
+																		getImageDialogKey(
+																			backdrops[activeBackdropIndex - 1]
+																				.backdrop_image,
+																		),
+																	);
+																}}
+															>
+																<ChevronLeft className="size-6" />
+															</Button>
+														)}
+														{activeBackdropIndex < backdrops.length - 1 &&
+															activeBackdropIndex >= 0 && (
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="icon"
+																	className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		onUpdateDialogSearch(
+																			"backdrop",
+																			getImageDialogKey(
+																				backdrops[activeBackdropIndex + 1]
+																					.backdrop_image,
+																			),
+																		);
+																	}}
+																>
+																	<ChevronRight className="size-6" />
+																</Button>
+															)}
+													</div>
+												)}
+											</DialogContent>
+										</Dialog>
+									);
+								})()}
 								{is_more_backdrops_available && (
 									<Link to={mediaHref}>
 										<Button
@@ -404,12 +411,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 											onOpenChange={(isOpen) =>
 												onUpdateDialogSearch(
 													"poster",
-													isOpen ? search.poster as string : undefined,
+													isOpen ? (search.poster as string) : undefined,
 												)
 											}
 										>
 											<DialogContent
-												overlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/0"
+												overlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
 												className="aspect-[2/3] w-auto h-[90vh] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
 											>
 												<DialogHeader className="sr-only">
@@ -429,13 +436,14 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																type="button"
 																variant="ghost"
 																size="icon"
-																className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+																className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 																onClick={(e) => {
 																	e.stopPropagation();
 																	onUpdateDialogSearch(
 																		"poster",
 																		getImageDialogKey(
-																			posters[activePosterIndex - 1].poster_image,
+																			posters[activePosterIndex - 1]
+																				.poster_image,
 																		),
 																	);
 																}}
@@ -443,25 +451,27 @@ export const MediaContainer = (props: MediaContainerProps) => {
 																<ChevronLeft className="size-6" />
 															</Button>
 														)}
-														{activePosterIndex < posters.length - 1 && activePosterIndex >= 0 && (
-															<Button
-																type="button"
-																variant="ghost"
-																size="icon"
-																className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	onUpdateDialogSearch(
-																		"poster",
-																		getImageDialogKey(
-																			posters[activePosterIndex + 1].poster_image,
-																		),
-																	);
-																}}
-															>
-																<ChevronRight className="size-6" />
-															</Button>
-														)}
+														{activePosterIndex < posters.length - 1 &&
+															activePosterIndex >= 0 && (
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="icon"
+																	className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		onUpdateDialogSearch(
+																			"poster",
+																			getImageDialogKey(
+																				posters[activePosterIndex + 1]
+																					.poster_image,
+																			),
+																		);
+																	}}
+																>
+																	<ChevronRight className="size-6" />
+																</Button>
+															)}
 													</div>
 												)}
 											</DialogContent>

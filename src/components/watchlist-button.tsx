@@ -5,7 +5,10 @@ import {
 	BookMarkIcon,
 	TrashBin,
 } from "@/components/ui/icons";
-import { useToggleWatchlistItem, useWatchlistItem } from "@/hooks/use-watchlist";
+import {
+	useToggleWatchlistItem,
+	useWatchlistItem,
+} from "@/hooks/use-watchlist";
 import { cn } from "@/lib/utils";
 
 interface WatchlistButtonProps {

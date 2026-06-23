@@ -1,4 +1,10 @@
-import { ChevronDown, EllipsisVertical, ListPlus, Pencil, Trash2 } from "lucide-react";
+import {
+	ChevronDown,
+	EllipsisVertical,
+	ListPlus,
+	Pencil,
+	Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DefaultLoader } from "@/components/default-loader";
@@ -197,7 +203,7 @@ export function CustomListView({
 							/>
 						))}
 					</div>
-                )}
+				)}
 			</SilentErrorBoundary>
 		</div>
 	);

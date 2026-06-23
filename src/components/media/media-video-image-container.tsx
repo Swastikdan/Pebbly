@@ -80,7 +80,7 @@ export const MediaVideoImageContainer = (props: {
 	return (
 		<>
 			<div className="flex flex-col gap-5 py-3">
-				<span className="w-fit text-xl font-semibold md:text-2xl">Videos</span>
+				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">Videos</span>
 				<ScrollContainer isButtonsVisible>
 					<div className="flex items-center justify-center gap-3">
 						{mediaVideos?.map((video, index) => (
@@ -120,7 +120,7 @@ export const MediaVideoImageContainer = (props: {
 									</Button>
 								</DialogTrigger>
 								<DialogContent
-									overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/0"
+									overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
 									className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0 gap-0 overflow-hidden"
 								>
 									<DialogHeader className="sr-only">
@@ -141,7 +141,7 @@ export const MediaVideoImageContainer = (props: {
 											type="button"
 											variant="ghost"
 											size="icon"
-											className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+											className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 											onClick={(e) => {
 												e.stopPropagation();
 												onUpdateDialogSearch(
@@ -158,7 +158,7 @@ export const MediaVideoImageContainer = (props: {
 											type="button"
 											variant="ghost"
 											size="icon"
-											className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+											className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 											onClick={(e) => {
 												e.stopPropagation();
 												onUpdateDialogSearch(
@@ -177,7 +177,7 @@ export const MediaVideoImageContainer = (props: {
 				</ScrollContainer>
 			</div>
 			<div className="flex flex-col gap-5 py-3 pb-32">
-				<span className="w-fit text-xl font-semibold md:text-2xl">Images</span>
+				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">Images</span>
 				<div className="flex flex-col gap-3">
 					<span className="w-fit text-lg md:text-xl">Backdrops</span>
 					<ScrollContainer isButtonsVisible>
@@ -205,7 +205,7 @@ export const MediaVideoImageContainer = (props: {
 											/>
 										</DialogTrigger>
 										<DialogContent
-											overlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/0"
+											overlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
 											className="aspect-video w-full max-w-[95vw] sm:max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
 										>
 											<DialogHeader className="sr-only">
@@ -227,7 +227,7 @@ export const MediaVideoImageContainer = (props: {
 													type="button"
 													variant="ghost"
 													size="icon"
-													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
 														const prevImg = mediaImages?.backdrops?.[index - 1];
@@ -247,7 +247,7 @@ export const MediaVideoImageContainer = (props: {
 													type="button"
 													variant="ghost"
 													size="icon"
-													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
 														const nextImg = mediaImages?.backdrops?.[index + 1];
@@ -268,7 +268,7 @@ export const MediaVideoImageContainer = (props: {
 							})}
 						</div>
 					</ScrollContainer>
-					<span className="w-fit text-lg md:text-xl">Posters</span>
+					<span className="w-fit text-lg font-heading md:text-xl">Posters</span>
 					<ScrollContainer isButtonsVisible>
 						<div className="flex items-center justify-center gap-3">
 							{mediaImages?.posters?.map((image, index) => {
@@ -294,7 +294,7 @@ export const MediaVideoImageContainer = (props: {
 											/>
 										</DialogTrigger>
 										<DialogContent
-											overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/0"
+											overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
 											className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden sm:h-full sm:w-auto"
 										>
 											<DialogHeader className="sr-only">
@@ -316,7 +316,7 @@ export const MediaVideoImageContainer = (props: {
 													type="button"
 													variant="ghost"
 													size="icon"
-													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
 														const prevImg = mediaImages?.posters?.[index - 1];
@@ -336,7 +336,7 @@ export const MediaVideoImageContainer = (props: {
 													type="button"
 													variant="ghost"
 													size="icon"
-													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
+													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
 													onClick={(e) => {
 														e.stopPropagation();
 														const nextImg = mediaImages?.posters?.[index + 1];
@@ -367,7 +367,7 @@ const GLobalMediaVideoImageContainerLoader = () => {
 	return (
 		<>
 			<div className="flex flex-col gap-5 py-3">
-				<span className="w-fit text-xl font-semibold md:text-2xl">Videos</span>
+				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">Videos</span>
 				<ScrollContainer isButtonsVisible={false}>
 					<div className="flex items-center justify-center gap-3">
 						{Array.from({ length: 6 }).map((_, index) => (
@@ -380,7 +380,7 @@ const GLobalMediaVideoImageContainerLoader = () => {
 				</ScrollContainer>
 			</div>
 			<div className="flex flex-col gap-5 py-3 pb-32">
-				<span className="w-fit text-xl font-semibold md:text-2xl">Images</span>
+				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">Images</span>
 				<div className="flex flex-col gap-3">
 					<span className="w-fit text-lg md:text-xl">Backdrops</span>
 					<ScrollContainer isButtonsVisible={false}>
@@ -393,7 +393,7 @@ const GLobalMediaVideoImageContainerLoader = () => {
 							))}
 						</div>
 					</ScrollContainer>
-					<span className="w-fit text-lg md:text-xl">Posters</span>
+					<span className="w-fit text-lg font-heading md:text-xl">Posters</span>
 					<ScrollContainer isButtonsVisible={false}>
 						<div className="flex items-center justify-center gap-3">
 							{Array.from({ length: 12 }).map((_, index) => (
