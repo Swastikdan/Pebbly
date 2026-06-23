@@ -50,7 +50,7 @@ export const Collections = (props: { id: number }) => {
 							to={`/collection/${id}/${formatMediaTitle.encode(data?.name ?? "")}`}
 						>
 							<Button
-								className="mt-3 rounded-xl font-medium shadow pressable"
+								className="mt-3 font-medium shadow pressable"
 								size="lg"
 								variant="secondary"
 							>

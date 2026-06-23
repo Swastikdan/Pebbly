@@ -92,7 +92,7 @@ export function WatchlistStatusMenu({
 			{!isOnWatchlist ? (
 				<Button
 					variant="secondary"
-					className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-all flex items-center justify-center"
+					className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-all flex items-center justify-center"
 					onClick={onAdd}
 				>
 					<Bookmark size={16} />
@@ -103,7 +103,7 @@ export function WatchlistStatusMenu({
 					<DropdownMenuTrigger asChild>
 						<Button
 							variant="secondary"
-							className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/15 text-primary transition-all cursor-pointer flex items-center justify-center"
+							className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/15 text-primary transition-all cursor-pointer flex items-center justify-center"
 						>
 							<StatusIcon
 								size={16}
@@ -121,7 +121,7 @@ export function WatchlistStatusMenu({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-80 rounded-2xl p-0 border border-border bg-popover shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
+						className="w-80 rounded-xl p-0 border border-border bg-popover shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
 						onCloseAutoFocus={(e) => e.preventDefault()}
 					>
 						<div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -244,7 +244,7 @@ export function WatchlistStatusMenu({
 						<div className="p-2.5 border-t border-border">
 							<button
 								type="button"
-								className="flex items-center justify-center gap-2 w-full rounded-xl py-2 px-3 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors border border-destructive/25 cursor-pointer"
+								className="flex items-center justify-center gap-2 w-full rounded-full py-2 px-3 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors border border-destructive/25 cursor-pointer"
 								onClick={() => {
 									onRemove();
 									setOpen(false);
@@ -260,7 +260,7 @@ export function WatchlistStatusMenu({
 
 			<Button
 				variant="secondary"
-				className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 rounded-xl px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-all cursor-pointer flex items-center justify-center"
+				className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-all cursor-pointer flex items-center justify-center"
 				onClick={() => setListDialogOpen(true)}
 			>
 				<ListPlus size={16} />
@@ -333,7 +333,7 @@ function AddToListDialog({
 	return (
 		<>
 			<Dialog open={open} onOpenChange={onOpenChange}>
-				<DialogContent className="sm:max-w-[380px] overflow-hidden rounded-2xl p-0">
+				<DialogContent className="sm:max-w-[380px] overflow-hidden rounded-xl p-0">
 					<div className="px-6 pt-6 pb-2">
 						<DialogHeader className="space-y-1">
 							<DialogTitle className="text-base font-semibold tracking-tight">
@@ -408,7 +408,7 @@ function AddToListDialog({
 						<Button
 							type="button"
 							variant="outline"
-							className="h-auto w-full justify-center gap-2 rounded-xl border-dashed py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+							className="h-auto w-full justify-center gap-2 border-dashed py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
 							onClick={() => setShowCreateDialog(true)}
 						>
 							<Plus size={16} />

@@ -149,7 +149,7 @@ export function CustomListDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[420px] overflow-hidden rounded-3xl p-0">
+			<DialogContent className="sm:max-w-[420px] overflow-hidden rounded-xl p-0">
 				<div className="px-6 py-5 space-y-4">
 					<DialogHeader className="relative">
 						<DialogTitle className="text-lg font-semibold tracking-tight text-left pr-6">
@@ -214,7 +214,7 @@ export function CustomListDialog({
 
 					{/* Color Picker Drawer */}
 					{showColorPicker && (
-						<div className="p-3 bg-muted/50 rounded-2xl border border-border/40 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+						<div className="p-3 bg-muted/50 rounded-xl border border-border/40 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
 							<div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
 								Select Color
 							</div>
@@ -361,7 +361,7 @@ export function CustomListDialog({
 					<Button
 						onClick={handleSubmit}
 						disabled={saving || !name.trim()}
-						className="w-full h-11 rounded-xl text-xs font-bold transition-all cursor-pointer mt-1"
+						className="w-full h-11 text-xs font-bold transition-all cursor-pointer mt-1"
 					>
 						{saving
 							? "Saving..."

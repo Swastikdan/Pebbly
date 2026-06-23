@@ -445,7 +445,7 @@ function WatchlistTabContent() {
 						value={mediaFilter}
 						onValueChange={(value) => setMediaFilter(value as MediaFilter)}
 					>
-						<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-lg border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
+						<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
 							<SelectValue placeholder="Type" />
 						</SelectTrigger>
 						<SelectContent className="rounded-xl">
@@ -461,7 +461,7 @@ function WatchlistTabContent() {
 							setReactionFilter(value as ReactionFilter)
 						}
 					>
-						<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-lg border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
+						<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
 							<SelectValue placeholder="Mood" />
 						</SelectTrigger>
 						<SelectContent className="rounded-xl">
@@ -481,7 +481,7 @@ function WatchlistTabContent() {
 						value={sortBy}
 						onValueChange={(value) => setSortBy(value as SortType)}
 					>
-						<SelectTrigger className="w-auto min-w-[120px] gap-1.5 rounded-lg border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
+						<SelectTrigger className="w-auto min-w-[120px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent className="rounded-xl">
@@ -497,7 +497,7 @@ function WatchlistTabContent() {
 							type="button"
 							variant="ghost"
 							onClick={resetSecondaryFilters}
-							className="h-auto items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-transparent hover:text-foreground"
+							className="h-auto items-center gap-1 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-transparent hover:text-foreground"
 						>
 							<X size={12} />
 							Reset
@@ -515,7 +515,7 @@ function WatchlistTabContent() {
 				mediaFilter === "all" &&
 				reactionFilter === "all" ? (
 					<div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center animate-fade-in-up">
-						<div className="flex size-16 items-center justify-center rounded-2xl bg-secondary">
+						<div className="flex size-16 items-center justify-center rounded-xl bg-secondary">
 							<BookMarkFilledIcon className="size-7 text-muted-foreground" />
 						</div>
 						<div>
@@ -531,7 +531,7 @@ function WatchlistTabContent() {
 							<Button
 								variant="secondary"
 								size="lg"
-								className="gap-2 rounded-xl"
+								className="gap-2"
 							>
 								<SearchFilledIcon className="size-4" />
 								Browse titles
@@ -639,7 +639,7 @@ function MyListsTabContent() {
 					variant="secondary"
 					size="sm"
 					onClick={() => setShowCreateList(true)}
-					className="gap-1.5 rounded-xl text-xs"
+					className="gap-1.5 text-xs"
 				>
 					<Plus size={14} />
 					New Collection
@@ -649,9 +649,9 @@ function MyListsTabContent() {
 			{sortedLists.length === 0 ? (
 				<div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-6 py-16 text-center animate-fade-in-up">
 					<div className="relative flex size-20 items-center justify-center">
-						<div className="absolute size-14 rotate-[-6deg] rounded-2xl border border-border/30 bg-muted/40 shadow-sm" />
-						<div className="absolute size-14 rotate-[6deg] rounded-2xl border border-border/40 bg-muted/70 shadow-md" />
-						<div className="absolute flex size-14 items-center justify-center rounded-2xl border border-border/80 bg-background shadow-lg shadow-primary/5">
+						<div className="absolute size-14 rotate-[-6deg] rounded-xl border border-border/30 bg-muted/40 shadow-sm" />
+						<div className="absolute size-14 rotate-[6deg] rounded-xl border border-border/40 bg-muted/70 shadow-md" />
+						<div className="absolute flex size-14 items-center justify-center rounded-xl border border-border/80 bg-background shadow-lg shadow-primary/5">
 							<ListPlus className="size-6 text-primary" />
 						</div>
 					</div>
@@ -667,7 +667,7 @@ function MyListsTabContent() {
 					<Button
 						variant="secondary"
 						size="sm"
-						className="gap-2 rounded-xl px-5 text-xs font-semibold hover:bg-secondary/80"
+						className="gap-2 px-5 text-xs font-semibold hover:bg-secondary/80"
 						onClick={() => setShowCreateList(true)}
 					>
 						<Plus size={14} />
@@ -749,7 +749,7 @@ function CustomListView({
 	return (
 		<div className="pt-5 animate-fade-in space-y-6">
 			{/* Premium Hero Header Banner */}
-			<div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-border/50 dark:border-border/20 px-5 py-4 overflow-hidden bg-gradient-to-r from-secondary/40 to-secondary/10 dark:from-zinc-900/60 dark:to-zinc-950/30 backdrop-blur-sm">
+			<div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-border/50 dark:border-border/20 px-5 py-4 overflow-hidden bg-gradient-to-r from-secondary/40 to-secondary/10 dark:from-zinc-900/60 dark:to-zinc-950/30 backdrop-blur-sm">
 				{list.color && (
 					<div
 						className="absolute right-[-10%] top-[-20%] size-64 rounded-full blur-[100px] opacity-15 pointer-events-none"
@@ -762,7 +762,7 @@ function CustomListView({
 						variant="ghost"
 						size="icon"
 						onClick={onBack}
-						className="rounded-xl shrink-0 border border-border/20 bg-background/50 backdrop-blur-sm hover:bg-background/80"
+						className="shrink-0 border border-border/20 bg-background/50 backdrop-blur-sm hover:bg-background/80"
 						aria-label="Back to collections"
 					>
 						<ChevronDown className="size-5 rotate-90" />
@@ -799,7 +799,7 @@ function CustomListView({
 							<Button
 								variant="ghost"
 								size="icon"
-								className="rounded-xl border border-border/20 bg-background/50 backdrop-blur-sm text-muted-foreground hover:bg-background/80 hover:text-foreground"
+								className="border border-border/20 bg-background/50 backdrop-blur-sm text-muted-foreground hover:bg-background/80 hover:text-foreground"
 								aria-label={`Options for ${list.name}`}
 							>
 								<EllipsisVertical size={16} />
@@ -807,10 +807,10 @@ function CustomListView({
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
 							align="end"
-							className="w-36 rounded-2xl shadow-xl"
+							className="w-36 rounded-xl shadow-xl"
 						>
 							<DropdownMenuItem
-								className="rounded-xl gap-2 text-xs py-2"
+								className="rounded-lg gap-2 text-xs py-2"
 								onSelect={onEdit}
 							>
 								<Pencil size={14} />
@@ -818,7 +818,7 @@ function CustomListView({
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								variant="destructive"
-								className="rounded-xl gap-2 text-xs py-2"
+								className="rounded-lg gap-2 text-xs py-2"
 								onSelect={onDelete}
 							>
 								<Trash2 size={14} />
@@ -872,7 +872,7 @@ function CustomListView({
 					<DefaultLoader className="min-h-[50vh]" />
 				) : items.length === 0 ? (
 					<div className="flex flex-col items-center justify-center gap-4 py-20 text-center text-muted-foreground animate-fade-in-up">
-						<div className="flex size-14 items-center justify-center rounded-2xl bg-secondary/60">
+						<div className="flex size-14 items-center justify-center rounded-xl bg-secondary/60">
 							<ListPlus className="size-6 text-muted-foreground/80" />
 						</div>
 						<div>
@@ -922,7 +922,7 @@ function ListCollage({
 	if (previews.length === 0) {
 		return (
 			<div
-				className="flex size-full items-center justify-center rounded-2xl border border-border/20 shadow-inner bg-card transition-colors duration-300"
+				className="flex size-full items-center justify-center rounded-xl border border-border/20 shadow-inner bg-card transition-colors duration-300"
 				style={{ background: fallbackBg }}
 			>
 				<ListPlus
@@ -937,7 +937,7 @@ function ListCollage({
 
 	if (previews.length === 1) {
 		return (
-			<div className="relative size-full overflow-hidden rounded-2xl border border-border/20 shadow-sm bg-border/20">
+			<div className="relative size-full overflow-hidden rounded-xl border border-border/20 shadow-sm bg-border/20">
 				<Image
 					src={`${IMAGE_PREFIX.LQ_BACKDROP}${previews[0]}`}
 					alt="List preview"
@@ -951,7 +951,7 @@ function ListCollage({
 
 	if (previews.length === 2) {
 		return (
-			<div className="grid size-full grid-cols-2 gap-0.5 overflow-hidden rounded-2xl border border-border/20 shadow-sm bg-border/20">
+			<div className="grid size-full grid-cols-2 gap-0.5 overflow-hidden rounded-xl border border-border/20 shadow-sm bg-border/20">
 				<div className="overflow-hidden size-full">
 					<Image
 						src={`${IMAGE_PREFIX.LQ_BACKDROP}${previews[0]}`}
@@ -974,7 +974,7 @@ function ListCollage({
 
 	if (previews.length === 3) {
 		return (
-			<div className="grid size-full grid-cols-3 gap-0.5 overflow-hidden rounded-2xl border border-border/20 shadow-sm bg-border/20">
+			<div className="grid size-full grid-cols-3 gap-0.5 overflow-hidden rounded-xl border border-border/20 shadow-sm bg-border/20">
 				<div className="col-span-2 h-full overflow-hidden">
 					<Image
 						src={`${IMAGE_PREFIX.LQ_BACKDROP}${previews[0]}`}
@@ -1006,7 +1006,7 @@ function ListCollage({
 	}
 
 	return (
-		<div className="grid size-full grid-cols-2 grid-rows-2 gap-0.5 overflow-hidden rounded-2xl border border-border/20 shadow-sm bg-border/20">
+		<div className="grid size-full grid-cols-2 grid-rows-2 gap-0.5 overflow-hidden rounded-xl border border-border/20 shadow-sm bg-border/20">
 			{previews.map((preview, i) => (
 				<div key={preview} className="overflow-hidden size-full">
 					<Image
@@ -1044,11 +1044,11 @@ function CustomListCard({
 	const itemCount = list.itemCount ?? 0;
 
 	return (
-		<div className="group relative flex flex-col rounded-2xl border border-border/45 dark:border-border/20 bg-card/85 dark:bg-card/40 p-3 transition-all duration-350 hover:-translate-y-1 hover:border-border/80">
+		<div className="group relative flex flex-col rounded-xl border border-border/45 dark:border-border/20 bg-card/85 dark:bg-card/40 p-3 transition-all duration-350 hover:-translate-y-1 hover:border-border/80">
 			<button
 				type="button"
 				onClick={onClick}
-				className="relative aspect-[16/10] w-full overflow-hidden text-left rounded-2xl transition-transform duration-300"
+				className="relative aspect-[16/10] w-full overflow-hidden text-left rounded-xl transition-transform duration-300"
 			>
 				<ListCollage previews={previews} color={list.color} />
 
@@ -1081,7 +1081,7 @@ function CustomListCard({
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="size-8 rounded-xl text-muted-foreground/60 transition-colors hover:bg-secondary hover:text-foreground focus-visible:opacity-100"
+							className="size-8 text-muted-foreground/60 transition-colors hover:bg-secondary hover:text-foreground focus-visible:opacity-100"
 							aria-label={`Options for ${list.name}`}
 						>
 							<EllipsisVertical size={14} />
@@ -1089,10 +1089,10 @@ function CustomListCard({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-36 rounded-2xl shadow-xl border-border/40 backdrop-blur-lg"
+						className="w-36 rounded-xl shadow-xl border-border/40 backdrop-blur-lg"
 					>
 						<DropdownMenuItem
-							className="rounded-xl gap-2 text-xs py-2"
+							className="rounded-lg gap-2 text-xs py-2"
 							onSelect={onEdit}
 						>
 							<Pencil size={13} className="text-muted-foreground" />
@@ -1100,7 +1100,7 @@ function CustomListCard({
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							variant="destructive"
-							className="rounded-xl gap-2 text-xs py-2 text-destructive focus:bg-destructive/15 focus:text-destructive"
+							className="rounded-lg gap-2 text-xs py-2 text-destructive focus:bg-destructive/15 focus:text-destructive"
 							onSelect={onDelete}
 						>
 							<Trash2 size={13} />
@@ -1166,7 +1166,7 @@ function CustomListMediaCard({
 	};
 
 	return (
-		<div className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70 group">
+		<div className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70 group">
 			<Link
 				// @ts-expect-error - correct link
 				to={
@@ -1213,7 +1213,7 @@ function CustomListMediaCard({
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
+							className="shrink-0 p-1.5 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
 							aria-label={`Remove from collection`}
 							onClick={handleRemove}
 						>
@@ -1294,7 +1294,7 @@ function WatchlistCard({
 		: null;
 
 	return (
-		<div className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70">
+		<div className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70">
 			<Link
 				// @ts-expect-error - correct link
 				to={`/${item.type}/${item.external_id}/${formattedTitle}`}
@@ -1326,7 +1326,7 @@ function WatchlistCard({
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="shrink-0 rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive"
+							className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive"
 							aria-label={`Remove ${item.title} from watchlist`}
 							onClick={() => onRemoveFromWatchlist(item)}
 						>
