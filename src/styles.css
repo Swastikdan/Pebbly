@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "@fontsource-variable/ibm-plex-sans";
 @import "@fontsource-variable/bricolage-grotesque";
 @import "tw-animate-css";
 
@@ -7,10 +6,10 @@
 
 @theme {
 	--font-sans:
-		"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		"Bricolage Grotesque Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
 		sans-serif;
-	--font-display: "Bricolage Grotesque", var(--font-sans);
-	--font-heading: "Bricolage Grotesque", var(--font-sans);
+	--font-display: "Bricolage Grotesque Variable", var(--font-sans);
+	--font-heading: "Bricolage Grotesque Variable", var(--font-sans);
 
 	--animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
 	--animate-marquee: marquee var(--marquee-duration, 12s) linear infinite;

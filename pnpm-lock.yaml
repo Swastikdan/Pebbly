@@ -132,9 +132,6 @@ importers:
       '@fontsource-variable/bricolage-grotesque':
         specifier: ^5.2.10
         version: 5.2.10
-      '@fontsource-variable/ibm-plex-sans':
-        specifier: ^5.2.8
-        version: 5.2.8
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.20
@@ -1057,9 +1054,6 @@ packages:
 
   '@fontsource-variable/bricolage-grotesque@5.2.10':
     resolution: {integrity: sha512-5EDsCqgGpKVcJWE4sg9ydli+t5WM97mISYw5lla/Ev4z71FwXh1oN0YUU8xjkRW9+wBCGD9R+ntAvI8G4bUFJg==}
-
-  '@fontsource-variable/ibm-plex-sans@5.2.8':
-    resolution: {integrity: sha512-n5PF2iFa0CZT0QYTPzxvZ39opC9LnU0zdoRccoADbs+Dtsd+lbXOZF7RNuIPHcQX1dKjF63sxnRImQIB5eD0Ag==}
 
   '@google/genai@1.52.0':
     resolution: {integrity: sha512-gwSvbpiN/17O9TbsqSsE/OzZcpv5Fo4RQjdngGgogtuB9RsyJ8ZHhX5KjHj1bp5N9snN2eK8LDGXSaWW2hof8Q==}
@@ -5712,8 +5706,6 @@ snapshots:
   '@floating-ui/utils@0.2.11': {}
 
   '@fontsource-variable/bricolage-grotesque@5.2.10': {}
-
-  '@fontsource-variable/ibm-plex-sans@5.2.8': {}
 
   '@google/genai@1.52.0':
     dependencies:
