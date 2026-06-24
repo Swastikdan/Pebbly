@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bookmark, ListPlus, Plus, SlidersHorizontal, X } from "lucide-react";
-import { useCallback, useId, useMemo, useState } from "react";
-import { CustomListDialog } from "@/components/custom-list-dialog";
+import { useCallback, useId, useMemo, useState, lazy, Suspense } from "react";
+const CustomListDialog = lazy(() =>
+	import("@/components/custom-list-dialog").then((m) => ({
+		default: m.CustomListDialog,
+	})),
+);
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
@@ -552,17 +556,19 @@ function MyListsTabContent() {
 					}}
 				/>
 				{editingList && (
-					<CustomListDialog
-						open={true}
-						onOpenChange={(open) => {
-							if (!open) setEditingList(null);
-						}}
-						listId={editingList.id}
-						initialName={editingList.name}
-						initialColor={editingList.color}
-						initialVisibility={editingList.visibility}
-						initialListType={editingList.listType}
-					/>
+					<Suspense fallback={null}>
+						<CustomListDialog
+							open={true}
+							onOpenChange={(open) => {
+								if (!open) setEditingList(null);
+							}}
+							listId={editingList.id}
+							initialName={editingList.name}
+							initialColor={editingList.color}
+							initialVisibility={editingList.visibility}
+							initialListType={editingList.listType}
+						/>
+					</Suspense>
 				)}
 			</>
 		);
@@ -641,22 +647,26 @@ function MyListsTabContent() {
 				</div>
 			)}
 
-			<CustomListDialog
-				open={showCreateList}
-				onOpenChange={setShowCreateList}
-			/>
-			{editingList && (
+			<Suspense fallback={null}>
 				<CustomListDialog
-					open={true}
-					onOpenChange={(open) => {
-						if (!open) setEditingList(null);
-					}}
-					listId={editingList.id}
-					initialName={editingList.name}
-					initialColor={editingList.color}
-					initialVisibility={editingList.visibility}
-					initialListType={editingList.listType}
+					open={showCreateList}
+					onOpenChange={setShowCreateList}
 				/>
+			</Suspense>
+			{editingList && (
+				<Suspense fallback={null}>
+					<CustomListDialog
+						open={true}
+						onOpenChange={(open) => {
+							if (!open) setEditingList(null);
+						}}
+						listId={editingList.id}
+						initialName={editingList.name}
+						initialColor={editingList.color}
+						initialVisibility={editingList.visibility}
+						initialListType={editingList.listType}
+					/>
+				</Suspense>
 			)}
 		</div>
 	);

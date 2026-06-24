@@ -585,13 +585,16 @@ export const markSeasonEpisodesWatched = mutation({
 
     const now = Date.now();
 
-    const allExisting = await getEpisodeProgressForShow(ctx, user._id, args.tmdbId);
+    const existingEpisodes = await ctx.db
+      .query("episode_progress")
+      .withIndex("by_user_season", (q) =>
+        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("season", args.season),
+      )
+      .collect();
 
     const existingMap = new Map<string, EpisodeProgress>();
-    for (const ep of allExisting) {
-      if (ep.season === args.season) {
-        existingMap.set(`${ep.season}:${ep.episode}`, ep);
-      }
+    for (const ep of existingEpisodes) {
+      existingMap.set(`${ep.season}:${ep.episode}`, ep);
     }
 
     for (const epNum of args.episodes) {
@@ -659,25 +662,35 @@ export const getCustomLists = query({
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
-    const listsWithPreviews = await Promise.all(
-      lists.map(async (list) => {
-        const items = await ctx.db
-          .query("list_items")
-          .withIndex("by_list", (q) => q.eq("listId", list._id))
-          .collect();
+    const allListItems = await ctx.db
+      .query("list_items")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
 
-        const previews = items
-          .map((item) => item.backdrop ?? item.image)
-          .filter((img): img is string => !!img)
-          .slice(0, 4);
+    const itemsByListId = new Map<string, typeof allListItems>();
+    for (const item of allListItems) {
+      const listIdStr = String(item.listId);
+      let list = itemsByListId.get(listIdStr);
+      if (!list) {
+        list = [];
+        itemsByListId.set(listIdStr, list);
+      }
+      list.push(item);
+    }
 
-        return {
-          ...list,
-          previews,
-          itemCount: items.length,
-        };
-      })
-    );
+    const listsWithPreviews = lists.map((list) => {
+      const items = itemsByListId.get(String(list._id)) ?? [];
+      const previews = items
+        .map((item) => item.backdrop ?? item.image)
+        .filter((img): img is string => !!img)
+        .slice(0, 4);
+
+      return {
+        ...list,
+        previews,
+        itemCount: items.length,
+      };
+    });
 
     return listsWithPreviews;
   },
@@ -699,11 +712,12 @@ export const createCustomList = mutation({
       .first();
     if (existing) throw new Error("A list with this name already exists");
 
-    const lists = await ctx.db
+    const highestList = await ctx.db
       .query("lists")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-    const maxSort = lists.reduce((max, l) => Math.max(max, l.sortOrder), 0);
+      .withIndex("by_user_sort", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .first();
+    const maxSort = highestList ? highestList.sortOrder : 0;
 
     const now = Date.now();
     return ctx.db.insert("lists", {
@@ -783,27 +797,30 @@ export const getListItems = query({
       .withIndex("by_list", (q) => q.eq("listId", args.listId))
       .collect();
 
-    const enriched = await Promise.all(
-      items.map(async (item) => {
-        const watchItem = await ctx.db
-          .query("watch_items")
-          .withIndex("by_user_media", (q) =>
-            q.eq("userId", user._id).eq("tmdbId", item.tmdbId).eq("mediaType", item.mediaType),
-          )
-          .first();
+    const allWatchItems = await ctx.db
+      .query("watch_items")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
 
-        return {
-          ...item,
-          title: item.title ?? watchItem?.title,
-          image: item.image ?? watchItem?.image,
-          rating: item.rating ?? watchItem?.rating,
-          release_date: item.release_date ?? watchItem?.release_date,
-          overview: item.overview ?? watchItem?.overview,
-          progressStatus: watchItem?.progressStatus,
-          reaction: watchItem?.reaction,
-        };
-      }),
-    );
+    const watchItemMap = new Map<string, typeof allWatchItems[0]>();
+    for (const w of allWatchItems) {
+      watchItemMap.set(`${w.tmdbId}_${w.mediaType}`, w);
+    }
+
+    const enriched = items.map((item) => {
+      const watchItem = watchItemMap.get(`${item.tmdbId}_${item.mediaType}`);
+
+      return {
+        ...item,
+        title: item.title ?? watchItem?.title,
+        image: item.image ?? watchItem?.image,
+        rating: item.rating ?? watchItem?.rating,
+        release_date: item.release_date ?? watchItem?.release_date,
+        overview: item.overview ?? watchItem?.overview,
+        progressStatus: watchItem?.progressStatus,
+        reaction: watchItem?.reaction,
+      };
+    });
 
     return enriched;
   },
@@ -895,11 +912,12 @@ export const createCustomListAndAddItem = mutation({
       .first();
     if (existing) throw new Error("A list with this name already exists");
 
-    const lists = await ctx.db
+    const highestList = await ctx.db
       .query("lists")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-    const maxSort = lists.reduce((max, l) => Math.max(max, l.sortOrder), 0);
+      .withIndex("by_user_sort", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .first();
+    const maxSort = highestList ? highestList.sortOrder : 0;
 
     const now = Date.now();
     const listId = await ctx.db.insert("lists", {

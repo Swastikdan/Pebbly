@@ -30,7 +30,7 @@ const config = defineConfig(({ mode }) => ({
         shorthand: true,
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       treeshake: {
         moduleSideEffects: (id) => {
@@ -44,8 +44,20 @@ const config = defineConfig(({ mode }) => ({
       },
       output: {
         manualChunks(id) {
-          if (id.includes("/src/") || id.includes("\\src\\")) {
-            return "app";
+          if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/')) {
+            return 'vendor-react';
+          }
+          if (id.includes('/node_modules/@tanstack/')) {
+            return 'vendor-tanstack';
+          }
+          if (id.includes('/node_modules/@clerk/') || id.includes('/node_modules/convex/')) {
+            return 'vendor-auth-db';
+          }
+          if (id.includes('/node_modules/@radix-ui/')) {
+            return 'vendor-radix';
+          }
+          if (id.includes('/node_modules/lucide-react/')) {
+            return 'vendor-icons';
           }
         },
       },

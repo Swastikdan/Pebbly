@@ -40,7 +40,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_user_name", ["userId", "name"]),
+    .index("by_user_name", ["userId", "name"])
+    .index("by_user_sort", ["userId", "sortOrder"]),
 
   list_items: defineTable({
     userId: v.id("users"),
@@ -89,7 +90,8 @@ export default defineSchema({
     generationType: v.optional(v.string()),
     verified: v.optional(v.boolean()),
     createdAt: v.number(),
-  }).index("by_user", ["userId"]),
+  }).index("by_user", ["userId"])
+    .index("by_user_created", ["userId", "createdAt"]),
 
   homepage_recommendations: defineTable({
     userId: v.id("users"),
@@ -109,7 +111,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_user_media", ["userId", "tmdbId", "mediaType"]),
+    .index("by_user_media", ["userId", "tmdbId", "mediaType"])
+    .index("by_user_feedback", ["userId", "feedback"]),
 
   role_permissions: defineTable({
     role: v.string(),

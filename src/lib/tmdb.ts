@@ -10,14 +10,7 @@ interface TmdbApiResult<T> {
 	data?: T;
 	error?: string;
 }
-interface FetchOptions {
-	revalidate?: number;
-}
-
-const tmdbApi = async <T>(
-	endpoint: string,
-	_options?: FetchOptions,
-): Promise<TmdbApiResult<T>> => {
+const tmdbApi = async <T>(endpoint: string): Promise<TmdbApiResult<T>> => {
 	const normalizedEndpoint = endpoint.startsWith("/")
 		? endpoint
 		: `/${endpoint}`;

@@ -108,30 +108,27 @@ async function computeRoleFeatures(
 ): Promise<Record<string, boolean>> {
   const features: Record<string, boolean> = {};
 
-  for (const feature of VALID_FEATURES) {
-    const globalSetting = await ctx.db
-      .query("role_permissions")
-      .withIndex("by_role_feature", (q) =>
-        q.eq("role", "global").eq("feature", feature),
-      )
-      .first();
+  const allPermissions = await ctx.db
+    .query("role_permissions")
+    .collect();
 
-    const isGloballyEnabled = globalSetting ? globalSetting.enabled : true;
+  const permissionMap = new Map<string, boolean>();
+  for (const p of allPermissions) {
+    permissionMap.set(`${p.role}:${p.feature}`, p.enabled);
+  }
+
+  for (const feature of VALID_FEATURES) {
+    const globalEnabled = permissionMap.get(`global:${feature}`);
+    const isGloballyEnabled = globalEnabled !== undefined ? globalEnabled : true;
 
     let enabled = false;
     if (isGloballyEnabled) {
       for (const role of roles) {
         if (!DYNAMIC_ROLES.includes(role as DynamicRbacRole)) continue;
 
-        const existing = await ctx.db
-          .query("role_permissions")
-          .withIndex("by_role_feature", (q) =>
-            q.eq("role", role).eq("feature", feature),
-          )
-          .first();
-
-        if (existing) {
-          if (existing.enabled) enabled = true;
+        const existingEnabled = permissionMap.get(`${role}:${feature}`);
+        if (existingEnabled !== undefined) {
+          if (existingEnabled) enabled = true;
         } else if (
           DEFAULT_PERMISSIONS[role as DynamicRbacRole]?.[feature] === true
         ) {
@@ -185,8 +182,12 @@ export async function hasFeature(
   return false;
 }
 
-export async function syncRolePermissions(ctx: MutationCtx) {
+export async function syncRolePermissions(ctx: MutationCtx, force = false) {
 	const existingPermissions = await ctx.db.query("role_permissions").collect();
+
+	if (!force && existingPermissions.length > 0) {
+		return;
+	}
 
 	for (const permission of existingPermissions) {
 		const isValidRole =
@@ -283,7 +284,7 @@ export const setRolePermission = mutation({
       throw new Error("Invalid feature");
     }
 
-    await syncRolePermissions(ctx);
+    await syncRolePermissions(ctx, true);
 
     const existing = await ctx.db
       .query("role_permissions")

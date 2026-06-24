@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
@@ -48,7 +49,7 @@ export interface MediaCardSkeletonProps {
 	className?: string;
 }
 
-const MediaCard = (props: CardProps) => {
+const MediaCard = memo((props: CardProps) => {
 	if (props.card_type === "horizontal") {
 		return <HorizontalCard {...props} />;
 	}
@@ -58,9 +59,9 @@ const MediaCard = (props: CardProps) => {
 	if (props.card_type === "person") {
 		return <PersonCard {...props} />;
 	}
-};
+});
 
-const HorizontalCard = (props: MediaCardSpecificProps) => {
+const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 	const {
 		title,
 		rating,
@@ -97,7 +98,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 					<Image
 						alt={title}
 						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform sm:group-hover:scale-[1.03]"
+						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] sm:group-hover:will-change-transform sm:group-hover:scale-[1.03]"
 						width={300}
 						height={450}
 						priority={priority}
@@ -162,9 +163,9 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 			</div>
 		</div>
 	);
-};
+});
 
-const VerticalCard = (props: MediaCardSpecificProps) => {
+const VerticalCard = memo((props: MediaCardSpecificProps) => {
 	const {
 		title,
 		rating,
@@ -227,7 +228,7 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 					<Image
 						alt={title}
 						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform sm:group-hover:scale-[1.03]"
+						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] sm:group-hover:will-change-transform sm:group-hover:scale-[1.03]"
 						width={450}
 						height={300}
 						priority={priority}
@@ -296,9 +297,9 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 			</div>
 		</div>
 	);
-};
+});
 
-const PersonCard = (props: PersonCardSpecificProps) => {
+const PersonCard = memo((props: PersonCardSpecificProps) => {
 	const { id, name, profile_path, known_for_department, priority } = props;
 	const imageUrl = `${IMAGE_PREFIX.SD_PROFILE}${profile_path}`;
 
@@ -312,7 +313,7 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 				<Image
 					alt={name}
 					src={imageUrl}
-					className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform sm:group-hover:scale-[1.03]"
+					className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] sm:group-hover:will-change-transform sm:group-hover:scale-[1.03]"
 					width={200}
 					height={300}
 					priority={priority}
@@ -330,7 +331,7 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 			</div>
 		</Link>
 	);
-};
+});
 
 const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
 	if (props.card_type === "horizontal") {

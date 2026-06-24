@@ -25,10 +25,23 @@ import { getMedia } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
 	loader: async ({ context }) => {
-		await context.queryClient.ensureQueryData({
-			queryKey: ["trending_day"],
-			queryFn: () => getMedia({ type: "trending_day" }),
-		});
+		const types = [
+			"trending_day",
+			"trending_week",
+			"movies_upcoming",
+			"movies_popular",
+			"tv-shows_popular",
+			"movies_top-rated",
+			"tv-shows_top-rated",
+		] as const;
+		await Promise.all(
+			types.map((type) =>
+				context.queryClient.ensureQueryData({
+					queryKey: [type],
+					queryFn: () => getMedia({ type }),
+				}),
+			),
+		);
 	},
 	component: HomePage,
 });

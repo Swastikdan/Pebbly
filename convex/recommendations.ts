@@ -92,22 +92,22 @@ export const gatherWatchlistData = internalQuery({
     const watchItems = await ctx.db
       .query("watch_items")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      .take(200);
 
     const lists = await ctx.db
       .query("lists")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      .take(50);
 
     const listItems = await ctx.db
       .query("list_items")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      .take(200);
 
     const episodeProgress = await ctx.db
       .query("episode_progress")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      .take(200);
 
     const watchedEpisodes = episodeProgress.filter((e) => e.isWatched).length;
 
@@ -188,12 +188,11 @@ export const getRecommendationHistory = query({
     const user = await getUserByTokenIdentifier(ctx, identity.subject);
     if (!user) return [];
 
-    const entries = await ctx.db
+    return ctx.db
       .query("ai_recommendations")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_user_created", (q) => q.eq("userId", user._id))
+      .order("desc")
       .collect();
-
-    return entries.sort((a, b) => b.createdAt - a.createdAt);
   },
 });
 
@@ -341,15 +340,29 @@ function buildWatchlistPrompt(
     prompt += `## Content I didn't enjoy (dropped/mixed/not-for-me):\n${scopedDisliked.map(formatItem).join("\n")}\n\n`;
   }
 
+  const listItemsByListId = new Map<string, CustomListItemSummary[]>();
+  for (const li of listItems) {
+    const listIdStr = String(li.listId);
+    let items = listItemsByListId.get(listIdStr);
+    if (!items) {
+      items = [];
+      listItemsByListId.set(listIdStr, items);
+    }
+    items.push(li);
+  }
+
+  const watchItemByMediaKey = new Map<string, WatchItemSummary>();
+  for (const w of watchItems) {
+    watchItemByMediaKey.set(`${w.tmdbId}_${w.mediaType}`, w);
+  }
+
   if (lists.length > 0) {
     prompt += `## My custom lists:\n`;
     for (const list of lists) {
-      const items = listItems.filter((li) => li.listId === list._id);
+      const items = listItemsByListId.get(String(list._id)) ?? [];
       const titles = items
         .map((li) => {
-          const wi = watchItems.find(
-            (w) => w.tmdbId === li.tmdbId && w.mediaType === li.mediaType,
-          );
+          const wi = watchItemByMediaKey.get(`${li.tmdbId}_${li.mediaType}`);
           return wi?.title ?? `TMDB:${li.tmdbId}`;
         })
         .join(", ");
@@ -473,12 +486,15 @@ function buildCustomListPrompt(
   const list = data.lists.find((l) => l._id === listId);
   const listName = list?.name ?? "this custom list";
 
+  const watchItemByMediaKey = new Map<string, WatchItemSummary>();
+  for (const w of data.watchItems) {
+    watchItemByMediaKey.set(`${w.tmdbId}_${w.mediaType}`, w);
+  }
+
   const items = data.listItems.filter((li) => li.listId === listId);
   const titles = items
     .map((li) => {
-      const wi = data.watchItems.find(
-        (w) => w.tmdbId === li.tmdbId && w.mediaType === li.mediaType,
-      );
+      const wi = watchItemByMediaKey.get(`${li.tmdbId}_${li.mediaType}`);
       return wi?.title
         ? `- ${wi.title} (${li.mediaType})`
         : `- TMDB ID: ${li.tmdbId} (${li.mediaType})`;
@@ -531,13 +547,11 @@ const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
 export const getMostRecentEntry = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const entries = await ctx.db
+    return ctx.db
       .query("ai_recommendations")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
-
-    if (entries.length === 0) return null;
-    return entries.sort((a, b) => b.createdAt - a.createdAt)[0];
+      .withIndex("by_user_created", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .first();
   },
 });
 
@@ -779,15 +793,15 @@ export const getHomepageRecommendations = query({
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
       .first();
 
-    const feedbackList = await ctx.db
+    const notInterestedFeedback = await ctx.db
       .query("recommendation_feedback")
-      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
+      .withIndex("by_user_feedback", (q) =>
+        q.eq("userId", dbUser._id).eq("feedback", "not_interested"),
+      )
       .collect();
 
     const notInterestedIds = new Set(
-      feedbackList
-        .filter((f) => f.feedback === "not_interested")
-        .map((f) => f.tmdbId)
+      notInterestedFeedback.map((f) => f.tmdbId),
     );
 
     let recs: Recommendation[] = [];
@@ -880,11 +894,14 @@ export const setRecommendationFeedback = mutation({
 
       if (pebblyList) {
         // Check if item already in the list
-        const listItems = await ctx.db
+        const existingItem = await ctx.db
           .query("list_items")
-          .withIndex("by_list", (q) => q.eq("listId", pebblyList._id))
-          .collect();
-        const alreadyInList = listItems.some((item) => item.tmdbId === args.tmdbId);
+          .withIndex("by_user_media", (q) =>
+            q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
+          )
+          .filter((q) => q.eq(q.field("listId"), pebblyList._id))
+          .first();
+        const alreadyInList = !!existingItem;
 
         if (!alreadyInList) {
           await ctx.db.insert("list_items", {

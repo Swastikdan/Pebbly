@@ -127,9 +127,7 @@ export async function getBasicMovieDetails({
 }): Promise<Types.BasicMovie> {
 	validateId(id);
 	const url = `/movie/${id}?include_adult=true`;
-	const response = await tmdb<Types.BasicMovie>(url, {
-		revalidate: 1000 * 60 * 60 * 48,
-	});
+	const response = await tmdb<Types.BasicMovie>(url);
 
 	return validateResponse(response);
 }
@@ -183,9 +181,7 @@ export async function getBasicTvDetails({
 }): Promise<Types.BasicTv> {
 	validateId(id);
 	const url = `/tv/${id}?include_adult=true`;
-	const response = await tmdb<Types.BasicTv>(url, {
-		revalidate: 1000 * 60 * 60 * 48,
-	});
+	const response = await tmdb<Types.BasicTv>(url);
 
 	return validateResponse(response);
 }

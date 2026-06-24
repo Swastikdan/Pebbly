@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import {
 	Accordion,
 	AccordionContent,
@@ -12,7 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
-import { VideoPlayerModal } from "@/components/video-player-modal";
+const VideoPlayerModal = lazy(() =>
+	import("@/components/video-player-modal").then((m) => ({
+		default: m.VideoPlayerModal,
+	})),
+);
 import { IMAGE_PREFIX } from "@/constants";
 import {
 	useEpisodeProgress,
@@ -285,14 +289,16 @@ function EpisodeCard({
 					}
 					width={250}
 				/>
-				<VideoPlayerModal
-					tmdbId={tvId}
-					type="tv"
-					title={`${showName} - ${episode.name}`}
-					season={seasonNumber}
-					episode={episode.episode_number}
-					variant="card"
-				/>
+				<Suspense fallback={null}>
+					<VideoPlayerModal
+						tmdbId={tvId}
+						type="tv"
+						title={`${showName} - ${episode.name}`}
+						season={seasonNumber}
+						episode={episode.episode_number}
+						variant="card"
+					/>
+				</Suspense>
 			</div>
 
 			<div className="flex flex-1 flex-col gap-1 min-w-0">

@@ -1,15 +1,14 @@
 @import "tailwindcss";
-@import "@fontsource-variable/bricolage-grotesque";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
 	--font-sans:
-		"Bricolage Grotesque Variable", -apple-system, BlinkMacSystemFont,
-		"Segoe UI", Roboto, sans-serif;
-	--font-display: "Bricolage Grotesque Variable", var(--font-sans);
-	--font-heading: "Bricolage Grotesque Variable", var(--font-sans);
+		"Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		sans-serif;
+	--font-display: "Bricolage Grotesque", var(--font-sans);
+	--font-heading: "Bricolage Grotesque", var(--font-sans);
 
 	--animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
 	--animate-marquee: marquee var(--marquee-duration, 12s) linear infinite;
@@ -265,7 +264,6 @@
 		font-family: var(--font-sans);
 		font-optical-sizing: auto;
 		font-style: normal;
-		font-display: swap;
 		background-image: radial-gradient(
 			circle 800px at 50% -250px,
 			color-mix(in oklab, var(--primary) 6.5%, transparent) 0%,
@@ -777,5 +775,3 @@
 		contain: layout style paint;
 	}
 }
-
-
