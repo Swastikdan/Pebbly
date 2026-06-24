@@ -824,10 +824,17 @@ export const setRecommendationFeedback = mutation({
     mediaType: v.string(),
     title: v.string(),
     feedback: v.union(v.literal("not_interested"), v.literal("like")),
+    image: v.optional(v.string()),
+    backdrop: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    release_date: v.optional(v.string()),
+    overview: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireAuthenticatedUser(ctx);
+    const now = Date.now();
 
+    // Save feedback
     const existing = await ctx.db
       .query("recommendation_feedback")
       .withIndex("by_user_media", (q) =>
@@ -838,7 +845,7 @@ export const setRecommendationFeedback = mutation({
     if (existing) {
       await ctx.db.patch(existing._id, {
         feedback: args.feedback,
-        updatedAt: Date.now(),
+        updatedAt: now,
       });
     } else {
       await ctx.db.insert("recommendation_feedback", {
@@ -847,8 +854,54 @@ export const setRecommendationFeedback = mutation({
         mediaType: args.mediaType,
         title: args.title,
         feedback: args.feedback,
-        updatedAt: Date.now(),
+        updatedAt: now,
       });
+    }
+
+    // When user likes a recommendation, auto-add to Pebbly Picks list
+    if (args.feedback === "like") {
+      // Find or create the Pebbly Picks list
+      let pebblyList = await ctx.db
+        .query("lists")
+        .withIndex("by_user_name", (q) => q.eq("userId", user._id).eq("name", "Pebbly Picks"))
+        .first();
+
+      if (!pebblyList) {
+        const listId = await ctx.db.insert("lists", {
+          userId: user._id,
+          name: "Pebbly Picks",
+          listType: "pebbly-picks",
+          sortOrder: 0,
+          createdAt: now,
+          updatedAt: now,
+        });
+        pebblyList = await ctx.db.get(listId);
+      }
+
+      if (pebblyList) {
+        // Check if item already in the list
+        const listItems = await ctx.db
+          .query("list_items")
+          .withIndex("by_list", (q) => q.eq("listId", pebblyList._id))
+          .collect();
+        const alreadyInList = listItems.some((item) => item.tmdbId === args.tmdbId);
+
+        if (!alreadyInList) {
+          await ctx.db.insert("list_items", {
+            userId: user._id,
+            listId: pebblyList._id,
+            tmdbId: args.tmdbId,
+            mediaType: args.mediaType,
+            addedAt: now,
+            title: args.title,
+            image: args.image,
+            backdrop: args.backdrop,
+            rating: args.rating,
+            release_date: args.release_date,
+            overview: args.overview,
+          });
+        }
+      }
     }
   },
 });

@@ -353,54 +353,56 @@ function AddToListDialog({
 								</p>
 							)}
 
-							{safeList.map((list) => {
-								const isInList = safeItemLists.includes(list._id);
-								return (
-									<button
-										key={list._id}
-										type="button"
-										className={cn(
-											"flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-all duration-200 border border-transparent",
-											isInList
-												? "bg-primary/[0.03] border-primary/10 text-foreground font-semibold"
-												: "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-										)}
-										onClick={() =>
-											toggleListItem({
-												listId: list._id,
-												tmdbId,
-												mediaType,
-												title: metadata?.title,
-												image: metadata?.image,
-												backdrop: metadata?.backdrop,
-												rating: metadata?.rating,
-												release_date: metadata?.release_date,
-												overview: metadata?.overview,
-											})
-										}
-									>
-										<div className="flex items-center gap-3 min-w-0">
-											<div
-												className={cn(
-													"flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
-													isInList
-														? "border-primary bg-primary text-primary-foreground scale-105"
-														: "border-muted-foreground/30 bg-transparent",
-												)}
-											>
-												{isInList && <Check size={11} strokeWidth={3} />}
+							{safeList
+								.filter((list) => list.listType !== "pebbly-picks")
+								.map((list) => {
+									const isInList = safeItemLists.includes(list._id);
+									return (
+										<button
+											key={list._id}
+											type="button"
+											className={cn(
+												"flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-all duration-200 border border-transparent",
+												isInList
+													? "bg-primary/[0.03] border-primary/10 text-foreground font-semibold"
+													: "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+											)}
+											onClick={() =>
+												toggleListItem({
+													listId: list._id,
+													tmdbId,
+													mediaType,
+													title: metadata?.title,
+													image: metadata?.image,
+													backdrop: metadata?.backdrop,
+													rating: metadata?.rating,
+													release_date: metadata?.release_date,
+													overview: metadata?.overview,
+												})
+											}
+										>
+											<div className="flex items-center gap-3 min-w-0">
+												<div
+													className={cn(
+														"flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
+														isInList
+															? "border-primary bg-primary text-primary-foreground scale-105"
+															: "border-muted-foreground/30 bg-transparent",
+													)}
+												>
+													{isInList && <Check size={11} strokeWidth={3} />}
+												</div>
+												<span className="truncate">{list.name}</span>
 											</div>
-											<span className="truncate">{list.name}</span>
-										</div>
-										{list.color && (
-											<span
-												className="size-2.5 shrink-0 rounded-full shadow-sm"
-												style={{ backgroundColor: list.color }}
-											/>
-										)}
-									</button>
-								);
-							})}
+											{list.color && (
+												<span
+													className="size-2.5 shrink-0 rounded-full shadow-sm"
+													style={{ backgroundColor: list.color }}
+												/>
+											)}
+										</button>
+									);
+								})}
 						</div>
 					</div>
 

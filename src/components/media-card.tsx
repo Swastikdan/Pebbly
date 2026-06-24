@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import type { MouseEvent } from "react";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
@@ -61,26 +60,6 @@ const MediaCard = (props: CardProps) => {
 	}
 };
 
-const preparePosterTransition = (event: MouseEvent<HTMLAnchorElement>) => {
-	document
-		.querySelectorAll(".media-detail-poster, .person-detail-poster")
-		.forEach((el) => {
-			el.classList.remove("media-detail-poster", "person-detail-poster");
-		});
-	const artwork = event.currentTarget.querySelector("img");
-	artwork?.classList.add("media-detail-poster");
-};
-
-const preparePersonTransition = (event: MouseEvent<HTMLAnchorElement>) => {
-	document
-		.querySelectorAll(".media-detail-poster, .person-detail-poster")
-		.forEach((el) => {
-			el.classList.remove("media-detail-poster", "person-detail-poster");
-		});
-	const artwork = event.currentTarget.querySelector("img");
-	artwork?.classList.add("person-detail-poster");
-};
-
 const HorizontalCard = (props: MediaCardSpecificProps) => {
 	const {
 		title,
@@ -99,7 +78,7 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 	} = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
-	const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${image}`;
+	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
 	const year = release_date ? new Date(release_date).getFullYear() : "";
 
 	return (
@@ -109,7 +88,6 @@ const HorizontalCard = (props: MediaCardSpecificProps) => {
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
 				search={(isContinueWatching ? { play: true } : undefined) as any}
-				onPointerDown={preparePosterTransition}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
 			>
 				<div
@@ -240,7 +218,6 @@ const VerticalCard = (props: MediaCardSpecificProps) => {
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
 				search={(isContinueWatching ? { play: true } : undefined) as any}
-				onPointerDown={preparePosterTransition}
 				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
 			>
 				<div
@@ -329,7 +306,6 @@ const PersonCard = (props: PersonCardSpecificProps) => {
 		<Link
 			to="/person/$id"
 			params={{ id: String(id) }}
-			onPointerDown={preparePersonTransition}
 			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable "
 		>
 			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-muted shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color,box-shadow] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">

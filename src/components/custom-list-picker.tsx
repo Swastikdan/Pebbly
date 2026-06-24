@@ -41,32 +41,34 @@ export function CustomListPicker({
 				Collections
 			</DropdownMenuLabel>
 			<DropdownMenuGroup>
-				{safeList.map((list) => {
-					const isInList = safeItemLists.includes(list._id);
-					return (
-						<DropdownMenuCheckboxItem
-							key={list._id}
-							checked={isInList}
-							className="rounded-lg"
-							onSelect={(e) => e.preventDefault()}
-							onCheckedChange={() => {
-								toggleListItem({
-									listId: list._id,
-									tmdbId,
-									mediaType,
-								});
-							}}
-						>
-							{list.color && (
-								<span
-									className="size-2 rounded-full shrink-0"
-									style={{ backgroundColor: list.color }}
-								/>
-							)}
-							{list.name}
-						</DropdownMenuCheckboxItem>
-					);
-				})}
+				{safeList
+					.filter((list) => list.listType !== "pebbly-picks")
+					.map((list) => {
+						const isInList = safeItemLists.includes(list._id);
+						return (
+							<DropdownMenuCheckboxItem
+								key={list._id}
+								checked={isInList}
+								className="rounded-lg"
+								onSelect={(e) => e.preventDefault()}
+								onCheckedChange={() => {
+									toggleListItem({
+										listId: list._id,
+										tmdbId,
+										mediaType,
+									});
+								}}
+							>
+								{list.color && (
+									<span
+										className="size-2 rounded-full shrink-0"
+										style={{ backgroundColor: list.color }}
+									/>
+								)}
+								{list.name}
+							</DropdownMenuCheckboxItem>
+						);
+					})}
 				<DropdownMenuItem
 					className="rounded-lg"
 					onSelect={(e) => {

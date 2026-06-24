@@ -6,11 +6,11 @@ import {
 	useMutation,
 } from "convex/react";
 import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
-import { usePermissions } from "@/hooks/use-permissions";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
 	getBasicMovieDetails,
 	getBasicTvDetails,
@@ -193,6 +193,12 @@ const HomepageRecommendationCard = memo(
 			rec: AIRecommendation,
 			resolvedId: number,
 			feedback: "not_interested" | "like",
+			metadata?: {
+				image?: string;
+				rating?: number;
+				release_date?: string;
+				overview?: string;
+			},
 		) => void;
 	}) => {
 		const { title, tmdbId, mediaType } = recommendation;
@@ -265,7 +271,12 @@ const HomepageRecommendationCard = memo(
 						onClick={(e) => {
 							e.stopPropagation();
 							e.preventDefault();
-							onFeedback(recommendation, resolvedData.id, "like");
+							onFeedback(recommendation, resolvedData.id, "like", {
+								image: resolvedData.posterPath ?? undefined,
+								rating: resolvedData.rating,
+								release_date: resolvedData.releaseDate ?? undefined,
+								overview: resolvedData.overview,
+							});
 						}}
 						title="Recommend more like this"
 					>
@@ -367,6 +378,12 @@ export function HomepageRecommendations() {
 			rec: AIRecommendation,
 			resolvedId: number,
 			feedback: "not_interested" | "like",
+			metadata?: {
+				image?: string;
+				rating?: number;
+				release_date?: string;
+				overview?: string;
+			},
 		) => {
 			const key = getDismissKey(rec);
 
@@ -385,6 +402,10 @@ export function HomepageRecommendations() {
 					mediaType: rec.mediaType,
 					title: rec.title,
 					feedback,
+					image: metadata?.image,
+					rating: metadata?.rating,
+					release_date: metadata?.release_date,
+					overview: metadata?.overview,
 				});
 			} catch (err) {
 				console.error("Failed to set recommendation feedback:", err);

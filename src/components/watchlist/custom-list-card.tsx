@@ -1,13 +1,14 @@
 import { EllipsisVertical, Pencil, Trash2 } from "lucide-react";
-
-import { ListCollage } from "@/components/watchlist/list-collage";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { ListCollage } from "@/components/watchlist/list-collage";
+
+const PEBBLY_PICKS_TYPE = "pebbly-picks";
 
 export function CustomListCard({
 	list,
@@ -19,6 +20,7 @@ export function CustomListCard({
 		_id: string;
 		name: string;
 		color?: string;
+		listType?: string;
 		createdAt: number;
 		updatedAt: number;
 		previews?: string[];
@@ -30,6 +32,7 @@ export function CustomListCard({
 }) {
 	const previews = list.previews ?? [];
 	const itemCount = list.itemCount ?? 0;
+	const isPebblyPicks = list.listType === PEBBLY_PICKS_TYPE;
 
 	return (
 		<div className="group relative flex flex-col rounded-xl border border-border/45 dark:border-border/20 bg-card/85 dark:bg-card/40 p-3 transition-all duration-350 hover:-translate-y-1 hover:border-border/80">
@@ -63,39 +66,41 @@ export function CustomListCard({
 					</p>
 				</button>
 
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							className="size-8 text-muted-foreground/60 transition-colors hover:bg-secondary hover:text-foreground focus-visible:opacity-100"
-							aria-label={`Options for ${list.name}`}
+				{!isPebblyPicks && (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								className="size-8 text-muted-foreground/60 transition-colors hover:bg-secondary hover:text-foreground focus-visible:opacity-100"
+								aria-label={`Options for ${list.name}`}
+							>
+								<EllipsisVertical size={14} />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							className="w-36 rounded-xl shadow-xl border-border/40 backdrop-blur-lg"
 						>
-							<EllipsisVertical size={14} />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent
-						align="end"
-						className="w-36 rounded-xl shadow-xl border-border/40 backdrop-blur-lg"
-					>
-						<DropdownMenuItem
-							className="rounded-lg gap-2 text-xs py-2"
-							onSelect={onEdit}
-						>
-							<Pencil size={13} className="text-muted-foreground" />
-							Edit
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							variant="destructive"
-							className="rounded-lg gap-2 text-xs py-2 text-destructive focus:bg-destructive/15 focus:text-destructive"
-							onSelect={onDelete}
-						>
-							<Trash2 size={13} />
-							Delete
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
+							<DropdownMenuItem
+								className="rounded-lg gap-2 text-xs py-2"
+								onSelect={onEdit}
+							>
+								<Pencil size={13} className="text-muted-foreground" />
+								Edit
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								variant="destructive"
+								className="rounded-lg gap-2 text-xs py-2 text-destructive focus:bg-destructive/15 focus:text-destructive"
+								onSelect={onDelete}
+							>
+								<Trash2 size={13} />
+								Delete
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				)}
 			</div>
 		</div>
 	);

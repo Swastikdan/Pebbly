@@ -181,7 +181,7 @@ function PersonPage() {
 							<Image
 								src={imageUrl}
 								alt={name}
-								className="person-detail-poster h-full w-full object-cover"
+								className="h-full w-full object-cover"
 								width={300}
 								height={450}
 								priority

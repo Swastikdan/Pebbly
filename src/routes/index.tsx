@@ -68,7 +68,7 @@ function HomePage() {
 			<div className="mx-auto flex w-full max-w-screen-xl px-5 py-6 md:pt-10 md:pb-8">
 				<div className="flex w-full flex-col gap-10">
 					<Tabs defaultValue="trending_day">
-						<div className="flex items-center gap-4">
+						<div className="flex items-center gap-4 mt-2">
 							<h2 className="text-h2">Trending</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>
 								<TabsTrigger
@@ -101,7 +101,7 @@ function HomePage() {
 						className="content-visibility-auto"
 						style={{ containIntrinsicHeight: "auto 280px" }}
 					>
-						<div className="flex items-center gap-4">
+						<div className="flex items-center gap-4 mt-2">
 							<h2 className="text-h2">Upcoming Movies</h2>
 						</div>
 						<div>
@@ -116,7 +116,7 @@ function HomePage() {
 						className="content-visibility-auto"
 						style={{ containIntrinsicHeight: "auto 360px" }}
 					>
-						<div className="flex items-center gap-4">
+						<div className="flex items-center gap-4 mt-2">
 							<h2 className="text-h2">{`What's Popular`}</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>
 								<TabsTrigger
@@ -150,7 +150,7 @@ function HomePage() {
 						className="content-visibility-auto"
 						style={{ containIntrinsicHeight: "auto 360px" }}
 					>
-						<div className="flex items-center gap-4">
+						<div className="flex items-center gap-4 mt-2">
 							<h2 className="text-h2">Top Rated</h2>
 							<TabsList className={SECTION_TAB_LIST_CLASS}>
 								<TabsTrigger
@@ -192,7 +192,7 @@ function ContinueWatchingSection() {
 
 	return (
 		<section>
-			<div className="flex items-center gap-4">
+			<div className="flex items-center gap-4 mt-2">
 				<h2 className="text-h2">Continue Watching</h2>
 			</div>
 			<div>

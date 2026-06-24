@@ -15,8 +15,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
+import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { useCustomListItems } from "@/hooks/use-custom-lists";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +41,7 @@ export function CustomListView({
 }) {
 	const items = useCustomListItems(list._id);
 	const [mediaFilter, setMediaFilter] = useState<"all" | "movie" | "tv">("all");
+	const isPebblyPicks = list.listType === "pebbly-picks";
 
 	const filteredItems = useMemo(() => {
 		if (!items) return [];
@@ -94,40 +95,42 @@ export function CustomListView({
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2 shrink-0 self-end md:self-center z-10">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="border border-border/20 bg-background/50 backdrop-blur-sm text-muted-foreground hover:bg-background/80 hover:text-foreground"
-								aria-label={`Options for ${list.name}`}
+				{!isPebblyPicks && (
+					<div className="flex items-center gap-2 shrink-0 self-end md:self-center z-10">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="border border-border/20 bg-background/50 backdrop-blur-sm text-muted-foreground hover:bg-background/80 hover:text-foreground"
+									aria-label={`Options for ${list.name}`}
+								>
+									<EllipsisVertical size={16} />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="w-36 rounded-xl shadow-xl"
 							>
-								<EllipsisVertical size={16} />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent
-							align="end"
-							className="w-36 rounded-xl shadow-xl"
-						>
-							<DropdownMenuItem
-								className="rounded-lg gap-2 text-xs py-2"
-								onSelect={onEdit}
-							>
-								<Pencil size={14} />
-								Edit Details
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								variant="destructive"
-								className="rounded-lg gap-2 text-xs py-2"
-								onSelect={onDelete}
-							>
-								<Trash2 size={14} />
-								Delete
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
+								<DropdownMenuItem
+									className="rounded-lg gap-2 text-xs py-2"
+									onSelect={onEdit}
+								>
+									<Pencil size={14} />
+									Edit Details
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									variant="destructive"
+									className="rounded-lg gap-2 text-xs py-2"
+									onSelect={onDelete}
+								>
+									<Trash2 size={14} />
+									Delete
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				)}
 			</div>
 
 			{/* Filters Pill Row */}
@@ -200,6 +203,7 @@ export function CustomListView({
 								item={item}
 								listId={list._id}
 								priority={index < 7}
+								readOnly={isPebblyPicks}
 							/>
 						))}
 					</div>
