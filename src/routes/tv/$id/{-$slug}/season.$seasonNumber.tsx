@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
@@ -7,7 +8,11 @@ import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
-import { VideoPlayerModal } from "@/components/video-player-modal";
+const VideoPlayerModal = lazy(() =>
+	import("@/components/video-player-modal").then((m) => ({
+		default: m.VideoPlayerModal,
+	})),
+);
 import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
@@ -137,14 +142,16 @@ function TvSeasonDetailPage() {
 									width={320}
 									priority={index === 0}
 								/>
-								<VideoPlayerModal
-									tmdbId={tvId}
-									type="tv"
-									title={`${showName} - ${episode.name}`}
-									season={seasonNumber}
-									episode={episode.episode_number}
-									variant="card"
-								/>
+								<Suspense fallback={null}>
+									<VideoPlayerModal
+										tmdbId={tvId}
+										type="tv"
+										title={`${showName} - ${episode.name}`}
+										season={seasonNumber}
+										episode={episode.episode_number}
+										variant="card"
+									/>
+								</Suspense>
 							</div>
 
 							<div className="flex flex-1 flex-col gap-2">
@@ -157,14 +164,16 @@ function TvSeasonDetailPage() {
 											{episode.name}
 										</h3>
 									</div>
-									<VideoPlayerModal
-										tmdbId={tvId}
-										type="tv"
-										title={`${showName} - ${episode.name}`}
-										season={seasonNumber}
-										episode={episode.episode_number}
-										variant="episode"
-									/>
+									<Suspense fallback={null}>
+										<VideoPlayerModal
+											tmdbId={tvId}
+											type="tv"
+											title={`${showName} - ${episode.name}`}
+											season={seasonNumber}
+											episode={episode.episode_number}
+											variant="episode"
+										/>
+									</Suspense>
 								</div>
 
 								<div className="flex flex-wrap items-center gap-2">

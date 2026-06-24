@@ -19,6 +19,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 	scrollPercentage = 0.9,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const contentRef = useRef<HTMLDivElement>(null);
 	const rafIdRef = useRef<number | null>(null);
 	const scrollStateRef = useRef({
 		canScrollLeft: false,
@@ -55,57 +56,45 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 		const nextCanScrollRight =
 			Math.ceil(scrollLeft + clientWidth) < scrollWidth;
 
-		if (scrollStateRef.current.canScrollLeft !== nextCanScrollLeft) {
-			scrollStateRef.current.canScrollLeft = nextCanScrollLeft;
+		if (
+			nextCanScrollLeft !== scrollStateRef.current.canScrollLeft ||
+			nextCanScrollRight !== scrollStateRef.current.canScrollRight
+		) {
+			scrollStateRef.current = {
+				canScrollLeft: nextCanScrollLeft,
+				canScrollRight: nextCanScrollRight,
+			};
 			setCanScrollLeft(nextCanScrollLeft);
-		}
-
-		if (scrollStateRef.current.canScrollRight !== nextCanScrollRight) {
-			scrollStateRef.current.canScrollRight = nextCanScrollRight;
 			setCanScrollRight(nextCanScrollRight);
 		}
 	}, [isControlsEnabled]);
 
 	const scheduleButtonStateUpdate = useCallback(() => {
 		if (rafIdRef.current !== null) {
-			return;
+			cancelAnimationFrame(rafIdRef.current);
 		}
-
 		rafIdRef.current = requestAnimationFrame(() => {
-			rafIdRef.current = null;
 			updateScrollButtons();
+			rafIdRef.current = null;
 		});
 	}, [updateScrollButtons]);
 
-	const scrollLeft = useCallback(() => {
-		if (!scrollRef.current) return;
+	const scroll = useCallback(
+		(direction: "left" | "right") => {
+			if (!scrollRef.current) return;
+			const { clientWidth } = scrollRef.current;
+			const scrollAmount = clientWidth * scrollPercentage;
+			scrollRef.current.scrollBy({
+				left: direction === "left" ? -scrollAmount : scrollAmount,
+				behavior: "smooth",
+			});
+			scheduleButtonStateUpdate();
+		},
+		[scrollPercentage, scheduleButtonStateUpdate],
+	);
 
-		const scrollAmount = Math.min(
-			scrollRef.current.scrollLeft,
-			scrollPercentage * scrollRef.current.clientWidth,
-		);
-
-		scrollRef.current.scrollBy({
-			left: -scrollAmount,
-			behavior: "smooth",
-		});
-	}, [scrollPercentage]);
-
-	const scrollRight = useCallback(() => {
-		if (!scrollRef.current) return;
-
-		const { scrollWidth, scrollLeft, clientWidth } = scrollRef.current;
-		const remainingScroll = scrollWidth - (scrollLeft + clientWidth);
-		const scrollAmount = Math.min(
-			remainingScroll,
-			scrollPercentage * clientWidth,
-		);
-
-		scrollRef.current.scrollBy({
-			left: scrollAmount,
-			behavior: "smooth",
-		});
-	}, [scrollPercentage]);
+	const scrollLeft = useCallback(() => scroll("left"), [scroll]);
+	const scrollRight = useCallback(() => scroll("right"), [scroll]);
 
 	const handleKeyDown = useCallback(
 		(e: KeyboardEvent) => {
@@ -147,6 +136,9 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 
 		const resizeObserver = new ResizeObserver(scheduleButtonStateUpdate);
 		resizeObserver.observe(currentScrollRef);
+		if (contentRef.current) {
+			resizeObserver.observe(contentRef.current);
+		}
 		window.addEventListener("keydown", handleKeyDown);
 
 		return () => {
@@ -160,11 +152,6 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 			}
 		};
 	}, [handleKeyDown, isControlsEnabled, scheduleButtonStateUpdate]);
-
-	useEffect(() => {
-		void children;
-		scheduleButtonStateUpdate();
-	}, [children, scheduleButtonStateUpdate]);
 
 	return (
 		<div className={cn("relative w-full overflow-hidden", className)}>
@@ -188,7 +175,9 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 				aria-label="Scrollable content"
 				className="scrollbar-hidden relative w-full overflow-x-auto scroll-smooth rounded-md scroll-snap-x"
 			>
-				<div className="flex w-max items-center">{children}</div>
+				<div ref={contentRef} className="flex w-max items-center">
+					{children}
+				</div>
 			</section>
 			{isControlsEnabled && canScrollRight && (
 				<>

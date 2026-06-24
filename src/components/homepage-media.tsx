@@ -16,44 +16,48 @@ interface MediaListProps extends MediaListResultsEntity {
 	is_on_homepage?: boolean;
 	isContinueWatching?: boolean;
 }
-const MediaList = (props: {
-	data: MediaListProps[];
-	cardType?: "horizontal" | "vertical";
-	defaultMediatype?: "movie" | "tv";
-	priorityCount?: number;
-}) => {
-	return (
-		<ScrollContainer isButtonsVisible={true}>
-			<div className="flex gap-2 p-4 first:pl-0 last:pr-0">
-				{props.data.map((item, index) => (
-					<MediaCard
-						key={item.id}
-						id={item.id}
-						title={item.title ?? item.name ?? "Untitled"}
-						rating={item.vote_average}
-						image={
-							props.cardType === "vertical"
-								? (item.backdrop_path ?? "")
-								: (item.poster_path ?? "")
-						}
-						poster_path={item.poster_path}
-						media_type={
-							props.defaultMediatype ??
-							(item.media_type as unknown as "movie" | "tv")
-						}
-						release_date={item.first_air_date ?? item.release_date ?? null}
-						is_on_watchlist_page={item.is_on_watchlist_page}
-						is_on_homepage={item.is_on_homepage}
-						isContinueWatching={item.isContinueWatching}
-						card_type={props.cardType as unknown as "horizontal" | "vertical"}
-						overview={item.overview}
-						priority={props.priorityCount ? index < props.priorityCount : false}
-					/>
-				))}
-			</div>
-		</ScrollContainer>
-	);
-};
+const MediaList = memo(
+	(props: {
+		data: MediaListProps[];
+		cardType?: "horizontal" | "vertical";
+		defaultMediatype?: "movie" | "tv";
+		priorityCount?: number;
+	}) => {
+		return (
+			<ScrollContainer isButtonsVisible={true}>
+				<div className="flex gap-2 p-4 first:pl-0 last:pr-0">
+					{props.data.map((item, index) => (
+						<MediaCard
+							key={item.id}
+							id={item.id}
+							title={item.title ?? item.name ?? "Untitled"}
+							rating={item.vote_average}
+							image={
+								props.cardType === "vertical"
+									? (item.backdrop_path ?? "")
+									: (item.poster_path ?? "")
+							}
+							poster_path={item.poster_path}
+							media_type={
+								props.defaultMediatype ??
+								(item.media_type as unknown as "movie" | "tv")
+							}
+							release_date={item.first_air_date ?? item.release_date ?? null}
+							is_on_watchlist_page={item.is_on_watchlist_page}
+							is_on_homepage={item.is_on_homepage}
+							isContinueWatching={item.isContinueWatching}
+							card_type={props.cardType as unknown as "horizontal" | "vertical"}
+							overview={item.overview}
+							priority={
+								props.priorityCount ? index < props.priorityCount : false
+							}
+						/>
+					))}
+				</div>
+			</ScrollContainer>
+		);
+	},
+);
 
 const MediaSkeletonList = memo(
 	(props: { count?: number; cardType?: "horizontal" | "vertical" }) => {
@@ -196,7 +200,16 @@ function ContinueWatching() {
 function ContinueWatchingContent({
 	items,
 }: {
-	items: { id: string; type: "movie" | "tv"; percent: number }[];
+	items: {
+		id: string;
+		type: "movie" | "tv";
+		percent: number;
+		title?: string;
+		image?: string;
+		rating?: number;
+		release_date?: string;
+		overview?: string;
+	}[];
 }) {
 	const queries = items.map((item) => ({
 		queryKey: ["continue-watching", item.id, item.type],
@@ -205,12 +218,13 @@ function ContinueWatchingContent({
 				? getBasicMovieDetails({ id: Number(item.id) })
 				: getBasicTvDetails({ id: Number(item.id) }),
 		staleTime: 1000 * 60 * 30,
+		enabled: !item.title || !item.overview,
 	}));
 
 	const results = useQueries({ queries });
 
-	const isLoading = results.some((r) => r.isLoading);
-	const hasError = results.some((r) => r.isError);
+	const isLoading = results.some((r, i) => queries[i].enabled && r.isLoading);
+	const hasError = results.some((r, i) => queries[i].enabled && r.isError);
 
 	if (isLoading) return <MediaSkeletonList cardType="vertical" />;
 	if (hasError) return null;
@@ -219,30 +233,33 @@ function ContinueWatchingContent({
 		.map((r, i) => {
 			const data = r.data;
 			const item = items[i];
-			if (!data) return null;
 
-			const isMovie = item.type === "movie";
-			// TMDB movie/tv response shapes differ for optional fields
-			const raw = data as unknown as Record<string, unknown>;
-			const title = (isMovie ? raw.title : raw.name) as string | undefined;
-			const overview = raw.overview as string | undefined;
+			const title =
+				item.title ??
+				(data
+					? item.type === "movie"
+						? (data as any).title
+						: (data as any).name
+					: undefined);
+			const overview = item.overview ?? data?.overview;
 
 			// Skip items missing required fields
 			if (!title || !overview) return null;
 
+			const raw = data as unknown as Record<string, unknown>;
 			const result: MediaListProps = {
-				id: data.id,
+				id: Number(item.id),
 				title,
-				vote_average: (raw.vote_average as number) ?? 0,
-				vote_count: (raw.vote_count as number) ?? 0,
-				poster_path: (raw.poster_path ?? "") as string,
-				backdrop_path: (raw.backdrop_path ?? "") as string,
+				vote_average: item.rating ?? (raw?.vote_average as number) ?? 0,
+				vote_count: (raw?.vote_count as number) ?? 0,
+				poster_path: item.image ?? (raw?.poster_path as string) ?? "",
+				backdrop_path: item.image ?? (raw?.backdrop_path as string) ?? "",
 				overview,
 				media_type: item.type,
-				adult: (raw.adult as boolean) ?? false,
-				original_language: (raw.original_language as string) ?? "",
-				popularity: (raw.popularity as number) ?? 0,
-				video: (raw.video as boolean) ?? false,
+				adult: (raw?.adult as boolean) ?? false,
+				original_language: (raw?.original_language as string) ?? "",
+				popularity: (raw?.popularity as number) ?? 0,
+				video: (raw?.video as boolean) ?? false,
 				isContinueWatching: true,
 			};
 

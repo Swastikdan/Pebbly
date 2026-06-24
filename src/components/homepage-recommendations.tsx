@@ -185,10 +185,12 @@ const HomepageRecommendationCard = memo(
 	({
 		recommendation,
 		likedIds,
+		isLiked: isLikedProp,
 		onFeedback,
 	}: {
 		recommendation: AIRecommendation;
-		likedIds: Set<number>;
+		likedIds?: Set<number>;
+		isLiked?: boolean;
 		onFeedback: (
 			rec: AIRecommendation,
 			resolvedId: number,
@@ -239,7 +241,12 @@ const HomepageRecommendationCard = memo(
 			return null;
 		}
 
-		const isLiked = likedIds.has(resolvedData.id);
+		const isLiked =
+			isLikedProp !== undefined
+				? isLikedProp
+				: likedIds
+					? likedIds.has(resolvedData.id)
+					: false;
 
 		return (
 			<div className="relative group/rec-card">
@@ -486,7 +493,8 @@ export function HomepageRecommendations() {
 							<HomepageRecommendationCard
 								key={getDismissKey(rec)}
 								recommendation={rec}
-								likedIds={likedIds}
+								isLiked={rec.tmdbId ? likedIds.has(rec.tmdbId) : undefined}
+								likedIds={rec.tmdbId ? undefined : likedIds}
 								onFeedback={handleFeedback}
 							/>
 						))}

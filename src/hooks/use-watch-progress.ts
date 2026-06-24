@@ -172,29 +172,42 @@ export function usePlayerProgressListener() {
 		if (typeof window === "undefined") return;
 
 		let lastSavedPercent = 0;
+		let cachedIframeOrigins: string[] = [];
+		let cachedIframeWindows = new Set<Window>();
+		let lastQueryTime = 0;
 
 		function handleMessage(event: MessageEvent) {
-			const trustedPlayerIframes = Array.from(
-				document.querySelectorAll<HTMLIFrameElement>('iframe[src*="/embed/"]'),
-			);
-			const expectedOrigins = trustedPlayerIframes
-				.map((frame) => {
-					try {
-						return new URL(frame.src, window.location.href).origin;
-					} catch {
-						return null;
-					}
-				})
-				.filter((origin): origin is string => Boolean(origin));
-			const hasTrustedSource = trustedPlayerIframes.some(
-				(frame) =>
-					frame.contentWindow != null && frame.contentWindow === event.source,
-			);
+			const now = Date.now();
+			if (now - lastQueryTime > 2000) {
+				lastQueryTime = now;
+				const trustedPlayerIframes = Array.from(
+					document.querySelectorAll<HTMLIFrameElement>(
+						'iframe[src*="/embed/"]',
+					),
+				);
+				cachedIframeWindows = new Set(
+					trustedPlayerIframes
+						.map((frame) => frame.contentWindow)
+						.filter((win): win is Window => win !== null),
+				);
+				cachedIframeOrigins = trustedPlayerIframes
+					.map((frame) => {
+						try {
+							return new URL(frame.src, window.location.href).origin;
+						} catch {
+							return null;
+						}
+					})
+					.filter((origin): origin is string => Boolean(origin));
+			}
+
+			const hasTrustedSource =
+				event.source && cachedIframeWindows.has(event.source as Window);
 
 			if (
 				!hasTrustedSource &&
-				(expectedOrigins.length === 0 ||
-					!expectedOrigins.includes(event.origin))
+				(cachedIframeOrigins.length === 0 ||
+					!cachedIframeOrigins.includes(event.origin))
 			) {
 				return;
 			}
@@ -416,6 +429,11 @@ export function useContinueWatching() {
 					percent: item.progress ?? 0,
 					duration: 0,
 					lastUpdated: item.updatedAt,
+					title: item.title,
+					image: item.image,
+					rating: item.rating,
+					release_date: item.release_date,
+					overview: item.overview,
 				}))
 				.sort((a, b) => b.lastUpdated - a.lastUpdated);
 		}
@@ -429,6 +447,11 @@ export function useContinueWatching() {
 				percent: item.progress ?? 0,
 				duration: 0,
 				lastUpdated: item.updated_at,
+				title: item.title,
+				image: item.image,
+				rating: item.rating,
+				release_date: item.release_date,
+				overview: item.overview,
 			}))
 			.sort((a, b) => b.lastUpdated - a.lastUpdated);
 	}, [isSignedIn, convexData, localMediaState]);

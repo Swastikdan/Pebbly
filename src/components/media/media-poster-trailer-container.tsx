@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ScrollContainer } from "@/components/scroll-container";
@@ -11,7 +12,11 @@ import {
 } from "@/components/ui/dialog";
 import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
-import { VideoPlayerModal } from "@/components/video-player-modal";
+const VideoPlayerModal = lazy(() =>
+	import("@/components/video-player-modal").then((m) => ({
+		default: m.VideoPlayerModal,
+	})),
+);
 import { useWatchProgress } from "@/hooks/use-watch-progress";
 
 export function MediaPosterTrailerContainer(props: {
@@ -54,15 +59,17 @@ export function MediaPosterTrailerContainer(props: {
 					priority
 				/>
 
-				<VideoPlayerModal
-					tmdbId={tmdbId}
-					type={type}
-					title={title}
-					variant="card"
-					className="opacity-100 bg-black/20 hover:bg-black/30 transition-colors"
-					season={defaultSeason}
-					episode={defaultEpisode}
-				/>
+				<Suspense fallback={null}>
+					<VideoPlayerModal
+						tmdbId={tmdbId}
+						type={type}
+						title={title}
+						variant="card"
+						className="opacity-100 bg-black/20 hover:bg-black/30 transition-colors"
+						season={defaultSeason}
+						episode={defaultEpisode}
+					/>
+				</Suspense>
 			</div>
 
 			{trailervideos.length > 0 && (
