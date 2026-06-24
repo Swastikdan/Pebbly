@@ -313,8 +313,15 @@ const HomepageRecommendationCard = memo(
 	},
 );
 
+// Module-level cache to prevent flashes during navigation
+let cachedRecommendations: {
+	userId: string | null;
+	recommendationsData: any;
+	feedbackList: any;
+} | null = null;
+
 export function HomepageRecommendations() {
-	const { isSignedIn, isLoaded } = useUser();
+	const { isSignedIn, isLoaded, user } = useUser();
 	const { hasFeature } = usePermissions();
 	const [localDismissedKeys, setLocalDismissedKeys] = useState<Set<string>>(
 		new Set(),
@@ -332,6 +339,32 @@ export function HomepageRecommendations() {
 		canAccessFeature ? {} : "skip",
 	);
 
+	// Update module-level cache when fresh data is loaded
+	useEffect(() => {
+		if (recommendationsData && feedbackList) {
+			cachedRecommendations = {
+				userId: user?.id ?? null,
+				recommendationsData,
+				feedbackList,
+			};
+		}
+	}, [recommendationsData, feedbackList, user?.id]);
+
+	// Use cached data as fallback to prevent skeleton flashes during page transitions
+	const hasCache =
+		cachedRecommendations &&
+		cachedRecommendations.userId === (user?.id ?? null);
+	const resolvedRecsData =
+		recommendationsData ||
+		(hasCache
+			? (cachedRecommendations!.recommendationsData as typeof recommendationsData)
+			: null);
+	const resolvedFeedbackList =
+		feedbackList ||
+		(hasCache
+			? (cachedRecommendations!.feedbackList as typeof feedbackList)
+			: null);
+
 	const generateRecs = useAction(
 		api.recommendations.generateHomepageRecommendations,
 	);
@@ -344,7 +377,7 @@ export function HomepageRecommendations() {
 	useEffect(() => {
 		if (
 			canAccessFeature &&
-			recommendationsData?.needsRefresh &&
+			resolvedRecsData?.needsRefresh &&
 			!isGenerating
 		) {
 			setIsGenerating(true);
@@ -358,27 +391,27 @@ export function HomepageRecommendations() {
 		}
 	}, [
 		canAccessFeature,
-		recommendationsData?.needsRefresh,
+		resolvedRecsData?.needsRefresh,
 		generateRecs,
 		isGenerating,
 	]);
 
 	const likedIds = useMemo(() => {
 		const set = new Set<number>();
-		for (const f of feedbackList ?? []) {
+		for (const f of resolvedFeedbackList ?? []) {
 			if (f.feedback === "like") {
 				set.add(f.tmdbId);
 			}
 		}
 		return set;
-	}, [feedbackList]);
+	}, [resolvedFeedbackList]);
 
 	const recs = useMemo(() => {
-		if (!recommendationsData?.recommendations) return [];
-		return recommendationsData.recommendations.filter(
+		if (!resolvedRecsData?.recommendations) return [];
+		return resolvedRecsData.recommendations.filter(
 			(r) => !localDismissedKeys.has(getDismissKey(r)),
 		);
-	}, [recommendationsData?.recommendations, localDismissedKeys]);
+	}, [resolvedRecsData?.recommendations, localDismissedKeys]);
 
 	const handleFeedback = useCallback(
 		async (
@@ -434,9 +467,9 @@ export function HomepageRecommendations() {
 	}
 
 	const hasNoWatchHistory =
-		recommendationsData?.status === "failed" &&
-		(!recommendationsData.recommendations ||
-			recommendationsData.recommendations.length === 0);
+		resolvedRecsData?.status === "failed" &&
+		(!resolvedRecsData.recommendations ||
+			resolvedRecsData.recommendations.length === 0);
 
 	if (hasNoWatchHistory) {
 		return (
@@ -455,7 +488,7 @@ export function HomepageRecommendations() {
 		);
 	}
 
-	if (!recommendationsData) {
+	if (!resolvedRecsData) {
 		return (
 			<div className="my-6">
 				<h2 className="font-semibold text-lg md:text-xl px-4 md:px-0 mb-1">
