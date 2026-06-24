@@ -5,30 +5,19 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
 import { formatMediaTitle } from "@/lib/utils";
-import type { ProgressStatus, ReactionStatus } from "@/types";
+import type { WatchlistItem } from "@/hooks/watchlist-store";
 
 export function WatchlistCard({
 	item,
 	onRemoveFromWatchlist,
 	priority,
 }: {
-	item: {
-		title: string;
-		type: string;
-		external_id: string;
-		image: string;
-		release_date?: string | null;
-		rating: number;
-		overview?: string | null;
-		progressStatus?: string | null;
-		reaction?: string | null;
-	};
-	onRemoveFromWatchlist: (item: any) => void;
+	item: WatchlistItem;
+	onRemoveFromWatchlist: (item: WatchlistItem) => void;
 	priority?: boolean;
 }) {
-	const progressStatus = (item.progressStatus ??
-		"watch-later") as ProgressStatus;
-	const reaction = (item.reaction ?? null) as ReactionStatus | null;
+	const progressStatus = item.progressStatus ?? "watch-later";
+	const reaction = item.reaction ?? null;
 	const progressOption = getProgressOption(progressStatus);
 	const reactionOption = reaction ? getReactionOption(reaction) : null;
 	const ProgressIcon = progressOption.icon;
