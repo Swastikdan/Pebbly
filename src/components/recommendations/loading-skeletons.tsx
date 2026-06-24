@@ -1,5 +1,5 @@
-import { HORIZONTAL_MEDIA_GRID_CLASS } from "@/constants";
 import { MediaCardSkeleton } from "@/components/media-card";
+import { HORIZONTAL_MEDIA_GRID_CLASS } from "@/constants";
 
 export function LoadingSkeletons() {
 	return (

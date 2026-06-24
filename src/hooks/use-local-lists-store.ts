@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { createMemoryStorage } from "@/lib/utils";
+import { createLRUStorage, createMemoryStorage } from "@/lib/utils";
 
 export type LocalList = {
 	_id: string;
@@ -77,6 +77,7 @@ interface LocalListsStore {
 }
 
 const memoryStorage = createMemoryStorage();
+const lruStorage = createLRUStorage();
 
 export const useLocalListsStore = create<LocalListsStore>()(
 	persist(
@@ -193,7 +194,7 @@ export const useLocalListsStore = create<LocalListsStore>()(
 		{
 			name: "local-lists-store",
 			storage: createJSONStorage(() =>
-				typeof window !== "undefined" ? window.localStorage : memoryStorage,
+				typeof window !== "undefined" ? lruStorage : memoryStorage,
 			),
 		},
 	),

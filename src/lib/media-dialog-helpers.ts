@@ -27,6 +27,5 @@ export function updateDialogSearch(
 		},
 		resetScroll: false,
 		replace: true,
-		viewTransition: false,
 	} as never);
 }

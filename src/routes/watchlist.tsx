@@ -6,10 +6,6 @@ import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
-import { WatchlistCard } from "@/components/watchlist/watchlist-card";
-import { CustomListCard } from "@/components/watchlist/custom-list-card";
-import { CustomListView } from "@/components/watchlist/custom-list-view";
-import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { Button } from "@/components/ui/button";
 import {
 	BookMarkFilledIcon,
@@ -27,6 +23,10 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CustomListCard } from "@/components/watchlist/custom-list-card";
+import { CustomListView } from "@/components/watchlist/custom-list-view";
+import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
+import { WatchlistCard } from "@/components/watchlist/watchlist-card";
 import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
 import { REACTION_OPTIONS } from "@/constants/watchlist";
 import { useCustomLists, useDeleteCustomList } from "@/hooks/use-custom-lists";

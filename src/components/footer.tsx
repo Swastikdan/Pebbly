@@ -1,8 +1,11 @@
 import { Link } from "@tanstack/react-router";
 
 import { SITE_CONFIG } from "@/constants";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const Footer = () => {
+	const { isSignedIn, isAdmin } = usePermissions();
+
 	return (
 		<footer className="mx-auto flex w-full items-center justify-center border-border/60 border-t">
 			<section className="flex w-full max-w-screen-xl flex-col items-center justify-between gap-2 px-5 py-4 text-sm text-muted-foreground md:flex-row md:px-10">
@@ -22,6 +25,17 @@ const Footer = () => {
 					By Swastik Dan
 				</p>
 				<div className="flex items-center gap-1">
+					{isSignedIn && isAdmin && (
+						<>
+							<Link
+								to="/admin"
+								className="rounded-md px-2 py-1 transition-colors hover:text-foreground"
+							>
+								Admin
+							</Link>
+							<span className="text-border">|</span>
+						</>
+					)}
 					<Link
 						aria-label="User disclaimer"
 						to={SITE_CONFIG.Footerlinks.disclaimer}

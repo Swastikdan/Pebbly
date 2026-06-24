@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Star, TrashBin } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
+import { Star, TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
@@ -12,6 +12,7 @@ export function CustomListMediaCard({
 	item,
 	listId,
 	priority,
+	readOnly,
 }: {
 	item: {
 		_id: string;
@@ -28,6 +29,7 @@ export function CustomListMediaCard({
 	};
 	listId: string;
 	priority?: boolean;
+	readOnly?: boolean;
 }) {
 	const toggleListItem = useToggleListItem();
 	const hasMetadata = !!(item.title && (item.backdrop || item.image));
@@ -103,16 +105,18 @@ export function CustomListMediaCard({
 							</h3>
 						</Link>
 
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							className="shrink-0 p-1.5 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
-							aria-label={`Remove from collection`}
-							onClick={handleRemove}
-						>
-							<TrashBin size={14} />
-						</Button>
+						{!readOnly && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								className="shrink-0 p-1.5 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
+								aria-label={`Remove from collection`}
+								onClick={handleRemove}
+							>
+								<TrashBin size={14} />
+							</Button>
+						)}
 					</div>
 
 					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/90 dark:text-muted-foreground/75">

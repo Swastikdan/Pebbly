@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { createMemoryStorage, normalizeProgressStatus } from "@/lib/utils";
+import {
+	createLRUStorage,
+	createMemoryStorage,
+	normalizeProgressStatus,
+} from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export type MediaType = "tv" | "movie";
@@ -59,6 +63,7 @@ interface WatchlistStore {
 }
 
 const memoryStorage = createMemoryStorage();
+const lruStorage = createLRUStorage();
 
 function isSameItem(item: WatchlistItem, id: string, type: MediaType) {
 	return item.external_id === id && item.type === type;
@@ -257,7 +262,7 @@ export const useWatchlistStore = create<WatchlistStore>()(
 		{
 			name: "watchlist-storage",
 			storage: createJSONStorage(() =>
-				typeof window !== "undefined" ? window.localStorage : memoryStorage,
+				typeof window !== "undefined" ? lruStorage : memoryStorage,
 			),
 		},
 	),

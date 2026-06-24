@@ -47,7 +47,7 @@ export function MediaPosterTrailerContainer(props: {
 			<div className="surface-raised relative group shrink-0 w-full sm:w-auto overflow-hidden rounded-xl">
 				<Image
 					alt={title}
-					className="media-detail-poster bg-secondary h-full w-full rounded-xl object-cover aspect-[2/3] sm:h-56 sm:w-auto md:h-[17.5rem] lg:h-80"
+					className="bg-secondary h-full w-full rounded-xl object-cover aspect-[2/3] sm:h-56 sm:w-auto md:h-[17.5rem] lg:h-80"
 					height={450}
 					src={image}
 					width={300}
@@ -142,7 +142,6 @@ export function MediaPosterTrailerContainer(props: {
 														}),
 														resetScroll: false,
 														replace: true,
-														viewTransition: false,
 													} as any);
 												}}
 											>

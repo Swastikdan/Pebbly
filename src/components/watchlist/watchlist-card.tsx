@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Star, TrashBin } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
+import { Star, TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
-import { formatMediaTitle } from "@/lib/utils";
 import type { WatchlistItem } from "@/hooks/watchlist-store";
+import { formatMediaTitle } from "@/lib/utils";
 
 export function WatchlistCard({
 	item,

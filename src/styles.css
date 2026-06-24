@@ -377,59 +377,6 @@
 	}
 }
 
-/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
-/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
-::view-transition-old(root),
-/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
-	::view-transition-new(root) {
-	animation-duration: 180ms;
-	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
-	mix-blend-mode: normal;
-	will-change: opacity, transform;
-}
-
-/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
-::view-transition-old(root) {
-	animation-name: route-out;
-}
-/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
-::view-transition-new(root) {
-	animation-name: route-in;
-}
-
-/* The clicked card alone receives this name, preventing carousel duplicates. */
-.media-detail-poster {
-	view-transition-name: media-poster;
-}
-
-::view-transition-group(media-poster) {
-	animation-duration: 320ms;
-	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
-	will-change: transform;
-}
-
-.person-detail-poster {
-	view-transition-name: person-poster;
-}
-
-::view-transition-group(person-poster) {
-	animation-duration: 320ms;
-	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
-	will-change: transform;
-}
-
-@keyframes route-out {
-	to {
-		opacity: 0.72;
-	}
-}
-@keyframes route-in {
-	from {
-		opacity: 0;
-		transform: translateY(4px);
-	}
-}
-
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -440,12 +387,6 @@
 		transition: none !important;
 		/* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override component animations */
 		animation: none !important;
-	}
-	/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
-	::view-transition-old(root),
-	/* biome-ignore lint/correctness/noUnknownTypeSelector: View Transition API pseudo-element */
-		::view-transition-new(root) {
-		animation: none;
 	}
 }
 
@@ -532,9 +473,9 @@
 
 	.interactive-raised {
 		transition:
-			transform 150ms ease,
-			border-color 150ms ease,
-			box-shadow 150ms ease;
+			transform 150ms cubic-bezier(0.23, 1, 0.32, 1),
+			border-color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+			box-shadow 150ms cubic-bezier(0.23, 1, 0.32, 1);
 	}
 	.interactive-raised:hover {
 		transform: translateY(-2px);
@@ -551,7 +492,7 @@
 		@apply cursor-pointer
            select-none
            ease-out
-           active:scale-[0.96]
+           active:scale-[0.95]
            will-change-transform;
 		transition:
 			transform 120ms ease-out,
@@ -574,8 +515,8 @@
 			0 1px 3px rgba(0, 0, 0, 0.06),
 			0 4px 12px rgba(0, 0, 0, 0.03);
 		transition:
-			box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-			transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+			transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 	.card-elevated:hover {
 		box-shadow:
@@ -837,17 +778,4 @@
 	}
 }
 
-@media (prefers-reduced-motion: reduce) {
-	* {
-		/* biome-ignore lint/complexity/noImportantStyles: standard reset */
-		transition: none !important;
-		/* biome-ignore lint/complexity/noImportantStyles: standard reset */
-		animation: none !important;
-		/* biome-ignore lint/complexity/noImportantStyles: standard reset */
-		scroll-behavior: auto !important;
-		/* biome-ignore lint/complexity/noImportantStyles: standard reset */
-		scroll-snap-type: none !important;
-		/* biome-ignore lint/complexity/noImportantStyles: standard reset */
-		scroll-snap-stop: normal !important;
-	}
-}
+

@@ -23,7 +23,6 @@ export const getRouter = () => {
 		routeTree,
 		context: { ...rqContext },
 		defaultPreload: "viewport",
-		defaultViewTransition: true,
 		defaultPendingMs: 500,
 		defaultPendingMinMs: 180,
 		Wrap: (props: { children: React.ReactNode }) => {

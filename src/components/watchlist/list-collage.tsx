@@ -1,7 +1,6 @@
 import { ListPlus } from "lucide-react";
-
-import { IMAGE_PREFIX } from "@/constants";
 import { Image } from "@/components/ui/image";
+import { IMAGE_PREFIX } from "@/constants";
 
 const imgClass = "size-full object-cover transition-transform duration-500";
 

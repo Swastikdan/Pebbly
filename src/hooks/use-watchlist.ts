@@ -1,16 +1,16 @@
 import { useUser } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { getTvDetails } from "@/lib/queries";
+import type { ProgressStatus, ReactionStatus } from "@/types";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import type { ProgressStatus, ReactionStatus } from "@/types";
-import { getTvDetails } from "@/lib/queries";
 import { useLocalProgressStore } from "./use-local-progress-store";
 import {
-	useWatchlistStore,
-	mapConvexItemToWatchlistItem,
-	type MediaType,
 	type MediaMetadata,
+	type MediaType,
+	mapConvexItemToWatchlistItem,
+	useWatchlistStore,
 	type WatchlistItem,
 } from "./watchlist-store";
 
