@@ -22,7 +22,7 @@ export const getRouter = () => {
 	const router = createRouter({
 		routeTree,
 		context: { ...rqContext },
-		defaultPreload: "viewport",
+		defaultPreload: "intent",
 		defaultPendingMs: 500,
 		defaultPendingMinMs: 180,
 		Wrap: (props: { children: React.ReactNode }) => {

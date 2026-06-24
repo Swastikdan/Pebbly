@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bookmark, ListPlus, Plus, SlidersHorizontal, X } from "lucide-react";
-import { useCallback, useId, useMemo, useState, lazy, Suspense } from "react";
+import { lazy, Suspense, useCallback, useId, useMemo, useState } from "react";
+
 const CustomListDialog = lazy(() =>
 	import("@/components/custom-list-dialog").then((m) => ({
 		default: m.CustomListDialog,
 	})),
 );
+
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";

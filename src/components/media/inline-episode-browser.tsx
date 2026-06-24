@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { useState, lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import {
 	Accordion,
 	AccordionContent,
@@ -12,11 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
+
 const VideoPlayerModal = lazy(() =>
 	import("@/components/video-player-modal").then((m) => ({
 		default: m.VideoPlayerModal,
 	})),
 );
+
 import { IMAGE_PREFIX } from "@/constants";
 import {
 	useEpisodeProgress,

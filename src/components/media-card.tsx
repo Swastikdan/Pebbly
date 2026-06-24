@@ -1,6 +1,6 @@
-import { memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { memo } from "react";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";

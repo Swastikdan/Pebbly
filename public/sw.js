@@ -101,14 +101,6 @@ self.addEventListener('fetch', (event) => {
       caches.match(request)
         .then((cachedResponse) => {
           if (cachedResponse) {
-            // Serve cached, revalidate in background
-            fetch(request)
-              .then((networkResponse) => {
-                if (networkResponse.status === 200) {
-                  caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse));
-                }
-              })
-              .catch(() => { /* ignore background revalidate failures when offline */ });
             return cachedResponse;
           }
 
