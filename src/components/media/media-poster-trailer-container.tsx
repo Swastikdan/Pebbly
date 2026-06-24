@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { lazy, Suspense } from "react";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,11 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
+
 const VideoPlayerModal = lazy(() =>
 	import("@/components/video-player-modal").then((m) => ({
 		default: m.VideoPlayerModal,
 	})),
 );
+
 import { useWatchProgress } from "@/hooks/use-watch-progress";
 
 export function MediaPosterTrailerContainer(props: {
