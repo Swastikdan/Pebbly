@@ -297,18 +297,21 @@ const HomepageRecommendationCard = memo(
 
 export function HomepageRecommendations() {
 	const { isSignedIn, isLoaded } = useUser();
+	const { hasFeature } = usePermissions();
 	const [localDismissedKeys, setLocalDismissedKeys] = useState<Set<string>>(
 		new Set(),
 	);
 
+	const canAccessFeature = isSignedIn && hasFeature("ai-recommendations");
+
 	const recommendationsData = useConvexQuery(
 		api.recommendations.getHomepageRecommendations,
-		isSignedIn ? {} : "skip",
+		canAccessFeature ? {} : "skip",
 	);
 
 	const feedbackList = useConvexQuery(
 		api.recommendations.getRecommendationFeedback,
-		isSignedIn ? {} : "skip",
+		canAccessFeature ? {} : "skip",
 	);
 
 	const generateRecs = useAction(
@@ -321,7 +324,11 @@ export function HomepageRecommendations() {
 	const [isGenerating, setIsGenerating] = useState(false);
 
 	useEffect(() => {
-		if (isSignedIn && recommendationsData?.needsRefresh && !isGenerating) {
+		if (
+			canAccessFeature &&
+			recommendationsData?.needsRefresh &&
+			!isGenerating
+		) {
 			setIsGenerating(true);
 			generateRecs()
 				.catch((err) => {
@@ -332,7 +339,7 @@ export function HomepageRecommendations() {
 				});
 		}
 	}, [
-		isSignedIn,
+		canAccessFeature,
 		recommendationsData?.needsRefresh,
 		generateRecs,
 		isGenerating,
@@ -394,9 +401,7 @@ export function HomepageRecommendations() {
 		[setFeedback],
 	);
 
-	const { hasFeature } = usePermissions();
-
-	if (!isLoaded || !isSignedIn || !hasFeature("ai-recommendations")) {
+	if (!isLoaded || !canAccessFeature) {
 		return null;
 	}
 

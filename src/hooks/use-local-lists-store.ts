@@ -17,7 +17,7 @@ export type LocalListItem = {
 	_id: string;
 	listId: string;
 	tmdbId: number;
-	mediaType: string;
+	mediaType: "movie" | "tv";
 	addedAt: number;
 	title?: string;
 	image?: string;
@@ -44,7 +44,7 @@ interface LocalListsStore {
 		visibility?: string;
 		listType?: string;
 		tmdbId: number;
-		mediaType: string;
+		mediaType: "movie" | "tv";
 		title?: string;
 		image?: string;
 		backdrop?: string;
@@ -66,7 +66,7 @@ interface LocalListsStore {
 	toggleListItem: (args: {
 		listId: string;
 		tmdbId: number;
-		mediaType: string;
+		mediaType: "movie" | "tv";
 		title?: string;
 		image?: string;
 		backdrop?: string;

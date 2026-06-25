@@ -224,16 +224,27 @@ function ContinueWatchingContent({
 			const isMovie = item.type === "movie";
 			// TMDB movie/tv response shapes differ for optional fields
 			const raw = data as unknown as Record<string, unknown>;
+			const title = (isMovie ? raw.title : raw.name) as string | undefined;
+			const overview = raw.overview as string | undefined;
+
+			// Skip items missing required fields
+			if (!title || !overview) return null;
+
 			const result: MediaListProps = {
 				id: data.id,
-				title: (isMovie ? raw.title : raw.name) as string,
-				vote_average: raw.vote_average as number,
+				title,
+				vote_average: (raw.vote_average as number) ?? 0,
+				vote_count: (raw.vote_count as number) ?? 0,
 				poster_path: (raw.poster_path ?? "") as string,
 				backdrop_path: (raw.backdrop_path ?? "") as string,
-				overview: raw.overview as string,
+				overview,
 				media_type: item.type,
+				adult: (raw.adult as boolean) ?? false,
+				original_language: (raw.original_language as string) ?? "",
+				popularity: (raw.popularity as number) ?? 0,
+				video: (raw.video as boolean) ?? false,
 				isContinueWatching: true,
-			} as unknown as MediaListProps;
+			};
 
 			return result;
 		})

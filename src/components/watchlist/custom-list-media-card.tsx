@@ -16,15 +16,15 @@ export function CustomListMediaCard({
 	item: {
 		_id: string;
 		tmdbId: number;
-		mediaType: string;
+		mediaType: "movie" | "tv";
 		title?: string;
 		image?: string;
 		backdrop?: string;
 		rating?: number;
 		release_date?: string;
 		overview?: string;
-		progressStatus?: string;
-		reaction?: string;
+		progressStatus?: ProgressStatus;
+		reaction?: ReactionStatus;
 	};
 	listId: string;
 	priority?: boolean;
@@ -43,9 +43,8 @@ export function CustomListMediaCard({
 		? new Date(item.release_date).getFullYear()
 		: null;
 
-	const progressStatus =
-		(item.progressStatus as ProgressStatus) ?? "watch-later";
-	const reaction = (item.reaction as ReactionStatus) ?? null;
+	const progressStatus = item.progressStatus ?? "watch-later";
+	const reaction = item.reaction ?? null;
 	const progressOption = getProgressOption(progressStatus);
 	const reactionOption = reaction ? getReactionOption(reaction) : null;
 	const ProgressIcon = progressOption.icon;
@@ -56,7 +55,7 @@ export function CustomListMediaCard({
 		toggleListItem({
 			listId: listId,
 			tmdbId: item.tmdbId,
-			mediaType: item.mediaType as "movie" | "tv",
+			mediaType: item.mediaType,
 		}).catch(console.error);
 	};
 

@@ -5,6 +5,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useLocalListsStore } from "./use-local-lists-store";
 import { useWatchlistStore } from "./watchlist-store";
+import type { ProgressStatus, ReactionStatus } from "@/types";
 
 const QUERY_SKIP = "skip" as const;
 
@@ -56,7 +57,14 @@ export function useCustomListItems(listId: string | null) {
 	);
 
 	return useMemo(() => {
-		if (isSignedIn) return remoteItems ?? [];
+		if (isSignedIn) {
+			return (remoteItems ?? []).map((item) => ({
+				...item,
+				mediaType: item.mediaType as "movie" | "tv",
+				progressStatus: item.progressStatus as ProgressStatus | undefined,
+				reaction: item.reaction as ReactionStatus | undefined,
+			}));
+		}
 		if (!listId) return [];
 
 		const filtered = localItems.filter((item) => item.listId === listId);
