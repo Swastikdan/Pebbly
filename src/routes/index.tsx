@@ -1,6 +1,6 @@
 import { useUser } from "@clerk/clerk-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 import {
 	ContinueWatching,
 	PopularMovies,
@@ -14,6 +14,7 @@ import {
 import { HomepageRecommendations } from "@/components/homepage-recommendations";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LazySection } from "@/components/ui/lazy-section";
 import {
 	SECTION_TAB_LIST_CLASS,
 	SECTION_TAB_TRIGGER_CLASS,
@@ -25,35 +26,13 @@ import { getMedia } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
 	loader: async ({ context }) => {
-		const types = [
-			"trending_day",
-			"trending_week",
-			"movies_upcoming",
-			"movies_popular",
-			"tv-shows_popular",
-			"movies_top-rated",
-			"tv-shows_top-rated",
-		] as const;
-		await Promise.all(
-			types.map((type) =>
-				context.queryClient.ensureQueryData({
-					queryKey: [type],
-					queryFn: () => getMedia({ type }),
-				}),
-			),
-		);
+		await context.queryClient.ensureQueryData({
+			queryKey: ["trending_day"],
+			queryFn: () => getMedia({ type: "trending_day" }),
+		});
 	},
 	component: HomePage,
 });
-
-function Deferred({ children }: { children: React.ReactNode }) {
-	const [mounted, setMounted] = useState(false);
-	useEffect(() => {
-		const t = setTimeout(() => setMounted(true), 50);
-		return () => clearTimeout(t);
-	}, []);
-	return mounted ? children : <div className="min-h-[300px]" />;
-}
 
 function HomePage() {
 	return (
@@ -108,28 +87,21 @@ function HomePage() {
 
 					<ContinueWatchingSection />
 
-					<HomepageRecommendations />
+					<LazySection minHeight="300px">
+						<HomepageRecommendations />
+					</LazySection>
 
-					<section
-						className="content-visibility-auto"
-						style={{ containIntrinsicHeight: "auto 280px" }}
-					>
+					<LazySection minHeight="280px" className="content-visibility-auto">
 						<div className="flex items-center gap-4 mt-2">
 							<h2 className="text-h2">Upcoming Movies</h2>
 						</div>
 						<div>
-							<Deferred>
-								<UpcomingMovies />
-							</Deferred>
+							<UpcomingMovies />
 						</div>
-					</section>
+					</LazySection>
 
-					<Deferred>
-						<Tabs
-							defaultValue="popular_movie"
-							className="content-visibility-auto"
-							style={{ containIntrinsicHeight: "auto 360px" }}
-						>
+					<LazySection minHeight="360px" className="content-visibility-auto">
+						<Tabs defaultValue="popular_movie">
 							<div className="flex items-center gap-4 mt-2">
 								<h2 className="text-h2">{`What's Popular`}</h2>
 								<TabsList className={SECTION_TAB_LIST_CLASS}>
@@ -154,14 +126,10 @@ function HomePage() {
 								<PopularTv />
 							</TabsContent>
 						</Tabs>
-					</Deferred>
+					</LazySection>
 
-					<Deferred>
-						<Tabs
-							defaultValue="top_rated_movies"
-							className="content-visibility-auto"
-							style={{ containIntrinsicHeight: "auto 360px" }}
-						>
+					<LazySection minHeight="360px" className="content-visibility-auto">
+						<Tabs defaultValue="top_rated_movies">
 							<div className="flex items-center gap-4 mt-2">
 								<h2 className="text-h2">Top Rated</h2>
 								<TabsList className={SECTION_TAB_LIST_CLASS}>
@@ -186,7 +154,7 @@ function HomePage() {
 								<TopRatedTv />
 							</TabsContent>
 						</Tabs>
-					</Deferred>
+					</LazySection>
 				</div>
 			</div>
 		</section>
@@ -205,9 +173,9 @@ function ContinueWatchingSection() {
 				<h2 className="text-h2">Continue Watching</h2>
 			</div>
 			<div>
-				<Deferred>
+				<LazySection minHeight="280px">
 					<ContinueWatching />
-				</Deferred>
+				</LazySection>
 			</div>
 		</section>
 	);

@@ -17,7 +17,6 @@ import { UserSync } from "@/components/user-sync";
 import { SITE_CONFIG } from "@/constants";
 
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
-import TanStackQueryDevtools from "@/lib/query/devtools";
 import appCss from "@/styles.css?url";
 
 interface RouterContext {
@@ -118,19 +117,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 		],
 		links: [
 			{
-				rel: "preconnect",
-				href: "https://fonts.googleapis.com",
-			},
-			{
-				rel: "preconnect",
-				href: "https://fonts.gstatic.com",
-				crossOrigin: "anonymous",
-			},
-			{
-				rel: "stylesheet",
-				href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap",
-			},
-			{
 				rel: "manifest",
 				href: "/manifest.json",
 			},
@@ -161,166 +147,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 				href: "/favicon-16x16.png",
 				sizes: "16x16",
 				type: "image/png",
-			},
-			{
-				rel: "apple-touch-icon-precomposed",
-				sizes: "57x57",
-				href: "/apple-touch-icon-57x57.png",
-			},
-			{
-				rel: "apple-touch-icon-precomposed",
-				sizes: "114x114",
-				href: "/apple-touch-icon-114x114.png",
-			},
-			{
-				rel: "apple-touch-icon-precomposed",
-				sizes: "72x72",
-				href: "/apple-touch-icon-72x72.png",
-			},
-			{
-				rel: "apple-touch-icon-precomposed",
-				sizes: "144x144",
-				href: "/apple-touch-icon-144x144.png",
-			},
-			{
-				rel: "apple-touch-icon-precomposed",
-				sizes: "60x60",
-				href: "/apple-touch-icon-60x60.png",
-			},
-			{
-				rel: "apple-touch-icon-precomposed",
-				sizes: "120x120",
-				href: "/apple-touch-icon-120x120.png",
-			},
-			{
-				rel: "apple-touch-icon-precomposed",
-				sizes: "76x76",
-				href: "/apple-touch-icon-76x76.png",
-			},
-			{
-				rel: "apple-touch-icon-precomposed",
-				sizes: "152x152",
-				href: "/apple-touch-icon-152x152.png",
-			},
-			{
-				rel: "icon",
-				type: "image/png",
-				href: "/favicon-196x196.png",
-				sizes: "196x196",
-			},
-			{
-				rel: "icon",
-				type: "image/png",
-				href: "/favicon-96x96.png",
-				sizes: "96x96",
-			},
-			{
-				rel: "icon",
-				type: "image/png",
-				href: "/favicon-32x32.png",
-				sizes: "32x32",
-			},
-			{
-				rel: "icon",
-				type: "image/png",
-				href: "/favicon-16x16.png",
-				sizes: "16x16",
-			},
-			{
-				rel: "icon",
-				type: "image/png",
-				href: "/favicon-128.png",
-				sizes: "128x128",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
-			},
-			{
-				rel: "apple-touch-startup-image",
-				media:
-					"(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)",
-				href: "/apple-touch-icon.png",
 			},
 			{
 				rel: "preconnect",
@@ -379,7 +205,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		Promise.all([
 			import("@tanstack/react-devtools"),
 			import("@tanstack/react-router-devtools"),
-		]).then(([reactDevtools, routerDevtools]) => {
+			import("@/lib/query/devtools"),
+		]).then(([reactDevtools, routerDevtools, queryDevtools]) => {
 			const TanStackDevtoolsComponent = reactDevtools.TanStackDevtools;
 			const TanStackRouterDevtoolsPanelComponent =
 				routerDevtools.TanStackRouterDevtoolsPanel;
@@ -394,7 +221,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 							name: "Tanstack Router",
 							render: <TanStackRouterDevtoolsPanelComponent />,
 						},
-						TanStackQueryDevtools,
+						queryDevtools.default,
 					]}
 				/>,
 			);

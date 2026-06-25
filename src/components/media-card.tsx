@@ -98,15 +98,16 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 					<Image
 						alt={title}
 						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] sm:group-hover:will-change-transform sm:group-hover:scale-[1.03]"
+						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:group-hover:scale-[1.03]"
 						width={300}
 						height={450}
 						priority={priority}
+						sizes="(max-width: 640px) 160px, (max-width: 768px) 176px, 192px"
 					/>
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-label text-white backdrop-blur-md flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white sm:backdrop-blur-md flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
 							<span className="font-semibold tabular-nums text-white">
 								{rating.toFixed(1)}
@@ -114,7 +115,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-label text-white backdrop-blur-md border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white sm:backdrop-blur-md border-0">
 						{media_type === "movie" ? "Movie" : "TV"}
 					</Badge>
 				</div>
@@ -228,16 +229,17 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 					<Image
 						alt={title}
 						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] sm:group-hover:will-change-transform sm:group-hover:scale-[1.03]"
+						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:group-hover:scale-[1.03]"
 						width={450}
 						height={300}
 						priority={priority}
+						sizes="(max-width: 640px) 256px, (max-width: 768px) 288px, 320px"
 					/>
 
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-label text-white backdrop-blur-md flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white sm:backdrop-blur-md flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
 							<span className="font-semibold tabular-nums text-white">
 								{rating.toFixed(1)}
@@ -245,7 +247,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/60 px-2 py-1 text-label text-white backdrop-blur-md border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white sm:backdrop-blur-md border-0">
 						{media_type === "movie" ? "Movie" : "TV Series"}
 					</Badge>
 				</div>
@@ -313,10 +315,11 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
 				<Image
 					alt={name}
 					src={imageUrl}
-					className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] sm:group-hover:will-change-transform sm:group-hover:scale-[1.03]"
+					className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:group-hover:scale-[1.03]"
 					width={200}
 					height={300}
 					priority={priority}
+					sizes="(max-width: 640px) 96px, (max-width: 768px) 112px, 128px"
 				/>
 			</div>
 
