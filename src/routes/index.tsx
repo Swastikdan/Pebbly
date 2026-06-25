@@ -124,73 +124,69 @@ function HomePage() {
 						</div>
 					</section>
 
-					<Tabs
-						defaultValue="popular_movie"
-						className="content-visibility-auto"
-						style={{ containIntrinsicHeight: "auto 360px" }}
-					>
-						<div className="flex items-center gap-4 mt-2">
-							<h2 className="text-h2">{`What's Popular`}</h2>
-							<TabsList className={SECTION_TAB_LIST_CLASS}>
-								<TabsTrigger
-									value="popular_movie"
-									className={SECTION_TAB_TRIGGER_CLASS}
-								>
-									Theaters
-								</TabsTrigger>
-								<TabsTrigger
-									value="popular_tv"
-									className={SECTION_TAB_TRIGGER_CLASS}
-								>
-									On TV
-								</TabsTrigger>
-							</TabsList>
-						</div>
-						<TabsContent value="popular_movie">
-							<Deferred>
+					<Deferred>
+						<Tabs
+							defaultValue="popular_movie"
+							className="content-visibility-auto"
+							style={{ containIntrinsicHeight: "auto 360px" }}
+						>
+							<div className="flex items-center gap-4 mt-2">
+								<h2 className="text-h2">{`What's Popular`}</h2>
+								<TabsList className={SECTION_TAB_LIST_CLASS}>
+									<TabsTrigger
+										value="popular_movie"
+										className={SECTION_TAB_TRIGGER_CLASS}
+									>
+										Theaters
+									</TabsTrigger>
+									<TabsTrigger
+										value="popular_tv"
+										className={SECTION_TAB_TRIGGER_CLASS}
+									>
+										On TV
+									</TabsTrigger>
+								</TabsList>
+							</div>
+							<TabsContent value="popular_movie">
 								<PopularMovies />
-							</Deferred>
-						</TabsContent>
-						<TabsContent value="popular_tv">
-							<Deferred>
+							</TabsContent>
+							<TabsContent value="popular_tv">
 								<PopularTv />
-							</Deferred>
-						</TabsContent>
-					</Tabs>
+							</TabsContent>
+						</Tabs>
+					</Deferred>
 
-					<Tabs
-						defaultValue="top_rated_movies"
-						className="content-visibility-auto"
-						style={{ containIntrinsicHeight: "auto 360px" }}
-					>
-						<div className="flex items-center gap-4 mt-2">
-							<h2 className="text-h2">Top Rated</h2>
-							<TabsList className={SECTION_TAB_LIST_CLASS}>
-								<TabsTrigger
-									value="top_rated_movies"
-									className={SECTION_TAB_TRIGGER_CLASS}
-								>
-									Movies
-								</TabsTrigger>
-								<TabsTrigger
-									value="top_rated_tv"
-									className={SECTION_TAB_TRIGGER_CLASS}
-								>
-									TV Shows
-								</TabsTrigger>
-							</TabsList>
-						</div>
-						<TabsContent value="top_rated_movies">
-							<Deferred>
+					<Deferred>
+						<Tabs
+							defaultValue="top_rated_movies"
+							className="content-visibility-auto"
+							style={{ containIntrinsicHeight: "auto 360px" }}
+						>
+							<div className="flex items-center gap-4 mt-2">
+								<h2 className="text-h2">Top Rated</h2>
+								<TabsList className={SECTION_TAB_LIST_CLASS}>
+									<TabsTrigger
+										value="top_rated_movies"
+										className={SECTION_TAB_TRIGGER_CLASS}
+									>
+										Movies
+									</TabsTrigger>
+									<TabsTrigger
+										value="top_rated_tv"
+										className={SECTION_TAB_TRIGGER_CLASS}
+									>
+										TV Shows
+									</TabsTrigger>
+								</TabsList>
+							</div>
+							<TabsContent value="top_rated_movies">
 								<TopRatedMovies />
-							</Deferred>
-						</TabsContent>
-						<TabsContent value="top_rated_tv">
-							<Deferred>
+							</TabsContent>
+							<TabsContent value="top_rated_tv">
 								<TopRatedTv />
-							</Deferred>
-						</TabsContent>
-					</Tabs>
+							</TabsContent>
+						</Tabs>
+					</Deferred>
 				</div>
 			</div>
 		</section>

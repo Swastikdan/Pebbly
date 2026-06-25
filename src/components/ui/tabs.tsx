@@ -1,16 +1,33 @@
 import * as TabsPrimitive from "@radix-ui/react-tabs";
-import type * as React from "react";
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
 function Tabs({
 	className,
+	value,
+	defaultValue,
+	onValueChange,
 	...props
 }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+	const isControlled = value !== undefined;
+	const [localValue, setLocalValue] = React.useState(defaultValue);
+
+	const activeValue = isControlled ? value : localValue;
+
+	const handleValueChange = (val: string) => {
+		if (!isControlled) {
+			setLocalValue(val);
+		}
+		onValueChange?.(val);
+	};
+
 	return (
 		<TabsPrimitive.Root
 			data-slot="tabs"
 			className={cn("flex flex-col gap-2", className)}
+			value={activeValue}
+			onValueChange={handleValueChange}
 			{...props}
 		/>
 	);

@@ -357,7 +357,8 @@ export function HomepageRecommendations() {
 	const resolvedRecsData =
 		recommendationsData ||
 		(hasCache
-			? (cachedRecommendations!.recommendationsData as typeof recommendationsData)
+			? (cachedRecommendations!
+					.recommendationsData as typeof recommendationsData)
 			: null);
 	const resolvedFeedbackList =
 		feedbackList ||
@@ -375,11 +376,7 @@ export function HomepageRecommendations() {
 	const [isGenerating, setIsGenerating] = useState(false);
 
 	useEffect(() => {
-		if (
-			canAccessFeature &&
-			resolvedRecsData?.needsRefresh &&
-			!isGenerating
-		) {
+		if (canAccessFeature && resolvedRecsData?.needsRefresh && !isGenerating) {
 			setIsGenerating(true);
 			generateRecs()
 				.catch((err) => {

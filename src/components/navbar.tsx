@@ -161,7 +161,11 @@ const Navbar = () => {
 											className="h-9 w-full justify-start gap-2 text-sm"
 											asChild
 										>
-											<Link to="/watchlist" className="w-full">
+											<Link
+												to="/watchlist"
+												search={{ tab: "watchlist" }}
+												className="w-full"
+											>
 												<BookMarkFilledIcon className="size-4 fill-current" />
 												Watchlist
 											</Link>
@@ -174,7 +178,11 @@ const Navbar = () => {
 												className="h-9 w-full justify-start gap-2 text-sm"
 												asChild
 											>
-												<Link to="/watchlist" className="w-full">
+												<Link
+													to="/watchlist"
+													search={{ tab: "collections" }}
+													className="w-full"
+												>
 													<ListPlus className="size-4" />
 													My Collections
 												</Link>

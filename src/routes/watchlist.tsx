@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Bookmark, ListPlus, Plus, SlidersHorizontal, X } from "lucide-react";
 import { lazy, Suspense, useCallback, useId, useMemo, useState } from "react";
 
@@ -46,6 +46,11 @@ import { cn } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export const Route = createFileRoute("/watchlist")({
+	validateSearch: (search: Record<string, unknown>) => {
+		return {
+			tab: (search.tab as string | undefined) || undefined,
+		};
+	},
 	head: () => ({
 		meta: [
 			{ title: "Watchlist | Pebbly" },
@@ -65,7 +70,21 @@ type ReactionFilter = "all" | "none" | ReactionStatus;
 type PageTab = "watchlist" | "my-lists";
 
 function WatchlistPage() {
-	const [activeTab, setActiveTab] = useState<PageTab>("watchlist");
+	const search = Route.useSearch();
+	const navigate = useNavigate({ from: Route.fullPath });
+
+	const activeTab: PageTab =
+		search.tab === "collections" || search.tab === "my-lists"
+			? "my-lists"
+			: "watchlist";
+
+	const handleTabChange = (v: string) => {
+		navigate({
+			search: {
+				tab: v === "my-lists" ? "collections" : "watchlist",
+			},
+		});
+	};
 
 	return (
 		<section className="flex min-h-screen w-full justify-center">
@@ -79,7 +98,7 @@ function WatchlistPage() {
 					<div className="flex items-center gap-4">
 						<Tabs
 							value={activeTab}
-							onValueChange={(v) => setActiveTab(v as PageTab)}
+							onValueChange={handleTabChange}
 							className="w-full"
 						>
 							<div className="flex items-center justify-between gap-3">
@@ -515,7 +534,7 @@ function WatchlistTabContent() {
 }
 
 function MyListsTabContent() {
-	const { lists: customLists } = useCustomLists();
+	const { lists: customLists, loading } = useCustomLists();
 	const deleteCustomList = useDeleteCustomList();
 	const [showCreateList, setShowCreateList] = useState(false);
 	const [editingList, setEditingList] = useState<{
@@ -536,6 +555,10 @@ function MyListsTabContent() {
 		() => sortedLists.find((l) => l._id === selectedListId) ?? null,
 		[sortedLists, selectedListId],
 	);
+
+	if (loading) {
+		return <DefaultLoader />;
+	}
 
 	if (selectedList) {
 		return (

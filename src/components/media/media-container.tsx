@@ -91,6 +91,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 		activeTabFromSearch ?? defaultSelectedKey,
 	);
 
+	const [prevId, setPrevId] = useState(id);
+	if (id !== prevId) {
+		setPrevId(id);
+		setSelectedTab(activeTabFromSearch ?? defaultSelectedKey);
+	}
+
 	const mediaHref = `/${type}/${id}/${urltitle}/media`;
 
 	if (!hasVideos && !hasBackdrops && !hasPosters) return null;
