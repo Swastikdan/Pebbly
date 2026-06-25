@@ -3,6 +3,8 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+const TabsContext = React.createContext<{ activeValue?: string } | null>(null);
+
 function Tabs({
 	className,
 	value,
@@ -23,13 +25,15 @@ function Tabs({
 	};
 
 	return (
-		<TabsPrimitive.Root
-			data-slot="tabs"
-			className={cn("flex flex-col gap-2", className)}
-			value={activeValue}
-			onValueChange={handleValueChange}
-			{...props}
-		/>
+		<TabsContext.Provider value={{ activeValue }}>
+			<TabsPrimitive.Root
+				data-slot="tabs"
+				className={cn("flex flex-col gap-2", className)}
+				value={activeValue}
+				onValueChange={handleValueChange}
+				{...props}
+			/>
+		</TabsContext.Provider>
 	);
 }
 
@@ -67,8 +71,19 @@ function TabsTrigger({
 
 function TabsContent({
 	className,
+	value,
 	...props
 }: React.ComponentProps<typeof TabsPrimitive.Content>) {
+	const context = React.useContext(TabsContext);
+	const isActive = context?.activeValue === value;
+	const [hasRendered, setHasRendered] = React.useState(isActive);
+
+	React.useEffect(() => {
+		if (isActive) {
+			setHasRendered(true);
+		}
+	}, [isActive]);
+
 	return (
 		<TabsPrimitive.Content
 			data-slot="tabs-content"
@@ -76,8 +91,11 @@ function TabsContent({
 				"flex-1 outline-none data-[state=active]:animate-tab-fade-in",
 				className,
 			)}
+			value={value}
 			{...props}
-		/>
+		>
+			{hasRendered ? props.children : null}
+		</TabsPrimitive.Content>
 	);
 }
 

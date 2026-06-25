@@ -109,7 +109,7 @@ function TrendingDayMovies() {
 	const { data, isFetching, error, cardType } = useMediaQuery("trending_day");
 
 	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
-	return <MediaList data={data ?? []} cardType={cardType} priorityCount={4} />;
+	return <MediaList data={data ?? []} cardType={cardType} priorityCount={2} />;
 }
 
 function TrendingWeekMovies() {

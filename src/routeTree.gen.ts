@@ -33,17 +33,19 @@ const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
   path: '/watchlist',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/watchlist.lazy').then((d) => d.Route))
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/search.lazy').then((d) => d.Route))
 const RecommendationsRoute = RecommendationsRouteImport.update({
   id: '/recommendations',
   path: '/recommendations',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import('./routes/recommendations.lazy').then((d) => d.Route),
+)
 const DisclaimerRoute = DisclaimerRouteImport.update({
   id: '/disclaimer',
   path: '/disclaimer',

@@ -16,6 +16,13 @@ export function AutoScrollTitle({
 	const [isOverflow, setIsOverflow] = useState(false);
 
 	useEffect(() => {
+		if (
+			typeof window !== "undefined" &&
+			!window.matchMedia("(hover: hover)").matches
+		) {
+			return;
+		}
+
 		const container = containerRef.current;
 		const measure = measureRef.current;
 		if (!container || !measure) return;
@@ -50,7 +57,7 @@ export function AutoScrollTitle({
 			</span>
 
 			<span
-				className={`block truncate will-change-transform transition-opacity duration-300 ease-in-out ${
+				className={`block truncate transition-opacity duration-300 ease-in-out ${
 					isOverflow ? "group-hover:opacity-0" : ""
 				}`}
 			>

@@ -1,0 +1,22 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 3,
+      "staticDistDir": "./.output/public",
+      "settings": {
+        "emulatedFormFactor": "mobile",
+        "throttlingMethod": "simulate"
+      }
+    },
+    "assert": {
+      "budgetsFile": "./budget.json",
+      "assertions": {
+        "first-contentful-paint": ["warn", {"maxNumericValue": 2000}],
+        "largest-contentful-paint": ["error", {"maxNumericValue": 2500}],
+        "interactive": ["error", {"maxNumericValue": 3500}],
+        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
+        "total-blocking-time": ["error", {"maxNumericValue": 200}]
+      }
+    }
+  }
+}
