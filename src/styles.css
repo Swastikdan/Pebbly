@@ -6,10 +6,10 @@
 
 @theme {
 	--font-sans:
-		"Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-		sans-serif;
-	--font-display: "Bricolage Grotesque", var(--font-sans);
-	--font-heading: "Bricolage Grotesque", var(--font-sans);
+		"Bricolage Grotesque Variable", -apple-system, BlinkMacSystemFont, "Segoe UI",
+		Roboto, sans-serif;
+	--font-display: "Bricolage Grotesque Variable", var(--font-sans);
+	--font-heading: "Bricolage Grotesque Variable", var(--font-sans);
 
 	--animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
 	--animate-marquee: marquee var(--marquee-duration, 12s) linear infinite;
@@ -773,10 +773,6 @@
 
 @supports not (content-visibility: auto) {
 	.content-visibility-auto {
-		contain: layout style paint;
-	}
-}
-ibility-auto {
 		contain: layout style paint;
 	}
 }

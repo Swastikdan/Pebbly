@@ -3,18 +3,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:vite": "vite dev --port 3000 --host",
-    "dev:convex": "convex dev",
-    "dev": "npm-run-all --parallel dev:vite dev:convex",
+    "dev": "concurrently -n web,convex -c blue,magenta \"vite dev --port 5296\" \"pnpm dlx convex dev\"",
+    "dev:web": "vite dev --port 3000",
     "build": "vite build",
-    "prepare": "biome format --write",
-    "serve": "vite build && node .output/server/index.mjs",
-    "vite:serve": "vite preview",
-    "format": "biome format --write",
+    "build:vercel": "pnpm dlx convex deploy --cmd 'pnpm run build' --cmd-url-env-var-name VITE_CONVEX_URL",
+    "start": "vite preview --port 5296",
     "lint": "biome lint --max-diagnostics 20",
-    "lint:fix": "biome lint --fix --max-diagnostics 1000",
-    "check": "biome check && tsc --noEmit",
-    "check:fix": "biome check --fix --max-diagnostics 1000"
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "typecheck:convex": "pnpm dlx convex typecheck",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc}": [
+      "biome check --fix --no-errors-on-unmatched --files-ignore-unknown=true"
+    ]
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.60.2",
@@ -66,8 +69,10 @@
     "@vitejs/plugin-react": "^5.0.4",
     "babel-plugin-react-compiler": "^1.0.0",
     "baseline-browser-mapping": "^2.9.19",
+    "concurrently": "^9.0.0",
+    "husky": "^9.1.7",
     "jsdom": "^27.0.0",
-    "npm-run-all": "^4.1.5",
+    "lint-staged": "^17.0.8",
     "terser": "^5.46.0",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5.7.2",

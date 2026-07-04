@@ -23,7 +23,7 @@ export const getRouter = () => {
 		routeTree,
 		context: { ...rqContext },
 		defaultPreload: "intent",
-		defaultPendingMs: 500,
+		defaultPendingMs: 0,
 		defaultPendingMinMs: 180,
 		Wrap: (props: { children: React.ReactNode }) => {
 			return (
