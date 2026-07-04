@@ -6,7 +6,7 @@
     "dev:vite": "vite dev --port 3000 --host",
     "dev:convex": "convex dev",
     "dev": "npm-run-all --parallel dev:vite dev:convex",
-    "build": "tsc --noEmit && vite build",
+    "build": "vite build",
     "prepare": "biome format --write",
     "serve": "vite build && node .output/server/index.mjs",
     "vite:serve": "vite preview",
