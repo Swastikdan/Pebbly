@@ -12,9 +12,9 @@ import {
 	UpcomingMovies,
 } from "@/components/homepage-media";
 import { HomepageRecommendations } from "@/components/homepage-recommendations";
+import { LazySection } from "@/components/ui/lazy-section";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LazySection } from "@/components/ui/lazy-section";
 import {
 	SECTION_TAB_LIST_CLASS,
 	SECTION_TAB_TRIGGER_CLASS,

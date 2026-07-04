@@ -16,8 +16,8 @@ import {
 
 const QUERY_SKIP = "skip" as const;
 
-export type { MediaType, MediaMetadata, WatchlistItem };
 export { useWatchlistStore } from "./watchlist-store";
+export type { MediaMetadata, MediaType, WatchlistItem };
 
 function logWatchlistError(action: string, error: unknown) {
 	console.error(`Failed to ${action}`, error);

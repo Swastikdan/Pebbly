@@ -83,6 +83,7 @@ export function MediaPosterTrailerContainer(props: {
 								open={search.trailer === video.key}
 								onOpenChange={(isOpen) =>
 									navigate({
+										// biome-ignore lint/suspicious/noExplicitAny: navigate requires route-specific search type
 										search: (prev: any) => {
 											const next = { ...prev };
 											if (isOpen) {
@@ -94,6 +95,7 @@ export function MediaPosterTrailerContainer(props: {
 										},
 										resetScroll: false,
 										replace: true,
+										// biome-ignore lint/suspicious/noExplicitAny: navigate options need route-specific type
 									} as any)
 								}
 							>
@@ -145,12 +147,14 @@ export function MediaPosterTrailerContainer(props: {
 												onClick={(e) => {
 													e.stopPropagation();
 													navigate({
+														// biome-ignore lint/suspicious/noExplicitAny: navigate requires route-specific search type
 														search: (prev: any) => ({
 															...prev,
 															trailer: trailervideos[index - 1].key,
 														}),
 														resetScroll: false,
 														replace: true,
+														// biome-ignore lint/suspicious/noExplicitAny: navigate options need route-specific type
 													} as any);
 												}}
 											>
@@ -166,12 +170,14 @@ export function MediaPosterTrailerContainer(props: {
 												onClick={(e) => {
 													e.stopPropagation();
 													navigate({
+														// biome-ignore lint/suspicious/noExplicitAny: navigate requires route-specific search type
 														search: (prev: any) => ({
 															...prev,
 															trailer: trailervideos[index + 1].key,
 														}),
 														resetScroll: false,
 														replace: true,
+														// biome-ignore lint/suspicious/noExplicitAny: navigate options need route-specific type
 													} as any);
 												}}
 											>

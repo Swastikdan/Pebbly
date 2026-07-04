@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
 	"vcs": {
 		"enabled": false,
 		"clientKind": "git",
@@ -12,27 +12,59 @@
 			"**/.vscode/**/*",
 			"**/index.html",
 			"**/vite.config.js",
-			"!**/src/routeTree.gen.ts"
+			"!**/src/routeTree.gen.ts",
+			"!**/src/styles.css"
 		]
 	},
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab"
 	},
-	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
 	"linter": {
 		"enabled": true,
 		"rules": {
 			"recommended": true,
 			"suspicious": {
-				"noArrayIndexKey": "off",
-				"noUnknownAtRules": "off"
-			}
+				"noArrayIndexKey": "off"
+			},
+			"nursery": {}
 		}
 	},
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"src/hooks/use-watchlist.ts",
+				"src/hooks/use-watch-progress.ts",
+				"src/hooks/use-custom-lists.ts"
+			],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noExplicitAny": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/styles.css"],
+			"linter": {
+				"enabled": false
+			},
+			"formatter": {
+				"enabled": false
+			}
+		}
+	]
 }

@@ -247,7 +247,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<ThemeProvider>
 					<UserSync />
 					<Navbar />
-					{/* biome-ignore lint/correctness/useUniqueElementIds: static ID needed for skip link anchor target */}
 					<main id="main-content" tabIndex={-1} className="outline-none">
 						{children}
 					</main>

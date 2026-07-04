@@ -9,7 +9,7 @@ import {
 	getBasicTvDetails,
 	getMedia,
 } from "@/lib/queries";
-import type { MediaListResultsEntity } from "@/types";
+import type { BasicMovie, BasicTv, MediaListResultsEntity } from "@/types";
 
 interface MediaListProps extends MediaListResultsEntity {
 	is_on_watchlist_page?: boolean;
@@ -238,8 +238,8 @@ function ContinueWatchingContent({
 				item.title ??
 				(data
 					? item.type === "movie"
-						? (data as any).title
-						: (data as any).name
+						? (data as BasicMovie).title
+						: (data as BasicTv).name
 					: undefined);
 			const overview = item.overview ?? data?.overview;
 
@@ -273,12 +273,12 @@ function ContinueWatchingContent({
 }
 
 export {
-	TrendingDayMovies,
-	TrendingWeekMovies,
-	UpcomingMovies,
+	ContinueWatching,
 	PopularMovies,
 	PopularTv,
 	TopRatedMovies,
 	TopRatedTv,
-	ContinueWatching,
+	TrendingDayMovies,
+	TrendingWeekMovies,
+	UpcomingMovies,
 };
