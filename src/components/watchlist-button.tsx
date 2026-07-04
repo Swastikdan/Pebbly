@@ -100,7 +100,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 			onClick={handleWatchList}
 			data-active={isActive ? "true" : "false"}
 			className={cn(
-				"pressable relative transition-all duration-200",
+				"pressable relative transition-[color,background-color,box-shadow,transform] duration-200",
 				isActive && !is_on_watchlist_page
 					? "bg-foreground text-background ring-2 ring-foreground/20 shadow-lg shadow-foreground/10 hover:bg-foreground/90"
 					: "bg-black/40 dark:bg-white/10 text-white backdrop-blur-sm hover:bg-black/60 dark:hover:bg-white/20",

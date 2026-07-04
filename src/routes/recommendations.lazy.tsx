@@ -501,14 +501,14 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 						<div className="w-full sm:w-auto flex items-center gap-2">
 							<div className="flex flex-1 sm:flex-none gap-1 rounded-xl bg-secondary/20 p-1 h-10 items-center border border-border">
 								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-all duration-200"
+									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform,box-shadow] duration-150"
 									variant={!mediaType ? "default" : "ghost"}
 									onClick={() => setMediaType(undefined)}
 								>
 									All
 								</Button>
 								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-all duration-200"
+									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform,box-shadow] duration-150"
 									variant={mediaType === "movie" ? "default" : "ghost"}
 									onClick={() =>
 										setMediaType(mediaType === "movie" ? undefined : "movie")
@@ -517,7 +517,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 									Movies
 								</Button>
 								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-all duration-200"
+									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform,box-shadow] duration-150"
 									variant={mediaType === "tv" ? "default" : "ghost"}
 									onClick={() =>
 										setMediaType(mediaType === "tv" ? undefined : "tv")
@@ -547,7 +547,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 									(genMode === "list" && !listId)
 								}
 								variant="secondary"
-								className="gap-2 h-10 w-full sm:w-auto rounded-xl px-5 border border-border hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-none"
+								className="gap-2 h-10 w-full sm:w-auto rounded-xl px-5 border border-border hover:scale-[1.02] active:scale-[0.98] transition-[color,background-color,border-color,transform,box-shadow] duration-150 shadow-none"
 							>
 								{isGenerating ? (
 									<RefreshCw className="size-4 animate-spin" />
@@ -573,7 +573,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 											selectedEras.includes(era.label) ? "default" : "ghost"
 										}
 										className={cn(
-											"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 shrink-0",
+											"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform,box-shadow] duration-150 shrink-0",
 											selectedEras.includes(era.label)
 												? "bg-primary text-primary-foreground border-transparent hover:scale-105"
 												: "bg-secondary/40 text-muted-foreground border border-border hover:bg-secondary/60 hover:text-foreground",
@@ -638,7 +638,7 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 										selectedGenres.includes(genre.name) ? "default" : "ghost"
 									}
 									className={cn(
-										"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200",
+										"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform,box-shadow] duration-150",
 										selectedGenres.includes(genre.name)
 											? "bg-primary text-primary-foreground border-transparent hover:scale-105"
 											: "bg-secondary/40 text-muted-foreground border border-border hover:bg-secondary/60 hover:text-foreground",
@@ -858,7 +858,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="secondary"
-							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-all shadow-none"
+							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-[color,background-color,border-color,transform] shadow-none"
 							onClick={(e) => {
 								e.stopPropagation();
 								onSelect();
@@ -871,7 +871,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="secondary"
-							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-all shadow-none"
+							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-[color,background-color,border-color,transform] shadow-none"
 							disabled={isGenerating}
 							onClick={(e) => {
 								e.stopPropagation();
@@ -886,7 +886,7 @@ function HistoryAccordionItem({
 						<Button
 							size="sm"
 							variant="secondary"
-							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-all shadow-none"
+							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-[color,background-color,border-color,transform] shadow-none"
 							disabled={isGenerating}
 							onClick={(e) => {
 								e.stopPropagation();
@@ -1165,7 +1165,7 @@ function RecommendationCard({
 			<Button
 				type="button"
 				variant="ghost"
-				className="relative aspect-[2/3] h-auto w-full overflow-hidden rounded-xl bg-muted p-0 text-left ring-1 ring-border/40 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-muted"
+				className="relative aspect-[2/3] h-auto w-full overflow-hidden rounded-xl bg-muted p-0 text-left ring-1 ring-border/40 transition-[box-shadow,border-color] duration-200 hover:bg-muted"
 				onClick={() => navigate({ to: "/search", search: { query: title } })}
 			>
 				<div className="absolute top-0 left-0 right-0 z-10 flex items-start justify-end p-2.5">

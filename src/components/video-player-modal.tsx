@@ -206,7 +206,7 @@ export function VideoPlayerModal({
 							setIsOpen(true);
 						}}
 					>
-						<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover/play:scale-110 group-hover/play:bg-black/80">
+						<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,border-color,transform,opacity] duration-200 group-hover/play:scale-110 group-hover/play:bg-black/80">
 							<Play className="size-6 fill-white text-white" />
 						</div>
 					</Button>
@@ -214,7 +214,7 @@ export function VideoPlayerModal({
 					<Button
 						type="button"
 						className={cn(
-							"pressable inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
+							"pressable inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-foreground/90 hover:shadow-xl",
 							className,
 						)}
 						aria-label={`Play ${title}`}
@@ -226,7 +226,7 @@ export function VideoPlayerModal({
 					<Button
 						type="button"
 						className={cn(
-							"pressable inline-flex items-center gap-2.5 rounded-2xl bg-foreground px-7 py-3.5 text-base font-semibold text-background transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl",
+							"pressable inline-flex items-center gap-2.5 rounded-2xl bg-foreground px-7 py-3.5 text-base font-semibold text-background transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-foreground/90 hover:shadow-xl",
 							className,
 						)}
 						aria-label={`Play ${title}`}
@@ -241,8 +241,8 @@ export function VideoPlayerModal({
 				className="h-[100dvh] w-screen max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0"
 				closeClassName={
 					closeVisible
-						? "top-3 right-3 z-[70] bg-black/65 text-white opacity-100 shadow-xl backdrop-blur-md transition-all duration-300 hover:bg-white hover:text-black hover:scale-105 active:scale-95 dark:bg-black/65 dark:text-white dark:hover:bg-white dark:hover:text-black before:absolute before:-inset-5 before:content-['']"
-						: "top-3 right-3 z-[70] bg-black/65 text-white opacity-0 hover:opacity-100 shadow-xl backdrop-blur-md transition-all duration-300 hover:bg-white hover:text-black hover:scale-105 active:scale-95 dark:bg-black/65 dark:text-white dark:hover:bg-white dark:hover:text-black before:absolute before:-inset-5 before:content-['']"
+						? "top-3 right-3 z-[70] bg-black/65 text-white opacity-100 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white hover:text-black hover:scale-105 active:scale-95 dark:bg-black/65 dark:text-white dark:hover:bg-white dark:hover:text-black before:absolute before:-inset-5 before:content-['']"
+						: "top-3 right-3 z-[70] bg-black/65 text-white opacity-0 hover:opacity-100 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white hover:text-black hover:scale-105 active:scale-95 dark:bg-black/65 dark:text-white dark:hover:bg-white dark:hover:text-black before:absolute before:-inset-5 before:content-['']"
 				}
 			>
 				<DialogHeader className="sr-only">
@@ -281,7 +281,7 @@ export function VideoPlayerModal({
 							aria-label="Toggle fullscreen"
 							onClick={handleFullscreen}
 							className={cn(
-								"absolute bottom-4 right-4 z-[70] rounded-lg bg-black/65 p-2.5 text-white shadow-xl backdrop-blur-md transition-all duration-300 hover:bg-white hover:text-black hover:scale-105 active:scale-95",
+								"absolute bottom-4 right-4 z-[70] rounded-lg bg-black/65 p-2.5 text-white shadow-xl backdrop-blur-md transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white hover:text-black hover:scale-105 active:scale-95",
 								closeVisible ? "opacity-100" : "opacity-0 hover:opacity-100",
 							)}
 						>

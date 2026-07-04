@@ -89,7 +89,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
 				search={(isContinueWatching ? { play: true } : undefined) as any}
-				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
+				className="block h-full w-full outline-none ring-offset-background transition-[color,background-color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
 			>
 				<div
 					data-media-poster
@@ -148,7 +148,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 				</div>
 			</Link>
 
-			<div className="absolute right-2 top-2 z-10 transition-all duration-300 ease-out">
+			<div className="absolute right-2 top-2 z-10 transition-[transform,opacity] duration-200 ease-out">
 				<WatchlistButton
 					id={id}
 					image={poster_path}
@@ -159,7 +159,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 backdrop-blur-sm transition-all duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
+					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 backdrop-blur-sm transition-[color,background-color,transform] duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
 				/>
 			</div>
 		</div>
@@ -220,7 +220,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
 				search={(isContinueWatching ? { play: true } : undefined) as any}
-				className="block h-full w-full outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
+				className="block h-full w-full outline-none ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
 			>
 				<div
 					data-media-poster
@@ -283,7 +283,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 				</div>
 			</Link>
 
-			<div className="absolute right-2 top-2 z-10 transition-all duration-300 ease-out">
+			<div className="absolute right-2 top-2 z-10 transition-[color,background-color,box-shadow,transform] duration-300 ease-out">
 				<WatchlistButton
 					id={id}
 					image={poster_path}
@@ -294,7 +294,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 backdrop-blur-sm transition-all duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
+					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 backdrop-blur-sm transition-[color,background-color,box-shadow,transform] duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
 				/>
 			</div>
 		</div>
@@ -309,7 +309,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
 		<Link
 			to="/person/$id"
 			params={{ id: String(id) }}
-			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable "
+			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable "
 		>
 			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-muted shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color,box-shadow] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">
 				<Image

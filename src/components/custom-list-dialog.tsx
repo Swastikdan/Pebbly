@@ -179,7 +179,7 @@ export function CustomListDialog({
 								maxLength={50}
 								autoFocus
 								className={cn(
-									"h-11 w-full rounded-xl border bg-muted/40 pl-4 pr-16 text-xs transition-all duration-200",
+									"h-11 w-full rounded-xl border bg-muted/40 pl-4 pr-16 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
 									"placeholder:text-muted-foreground/40",
 									"focus-visible:border-border/80 focus-visible:bg-muted/65 focus-visible:ring-1 focus-visible:ring-foreground/10",
 									error ? "border-destructive/50" : "border-border/50",
@@ -198,7 +198,7 @@ export function CustomListDialog({
 									type="button"
 									onClick={() => setShowColorPicker(!showColorPicker)}
 									className={cn(
-										"size-5 rounded-full flex items-center justify-center cursor-pointer transition-all border border-border/40",
+										"size-5 rounded-full flex items-center justify-center cursor-pointer transition-[color,background-color,border-color,box-shadow] border border-border/40",
 										color
 											? "scale-105"
 											: "bg-gradient-to-tr from-violet-500 to-cyan-400 hover:scale-105",
@@ -226,7 +226,7 @@ export function CustomListDialog({
 											key={c.hex}
 											type="button"
 											className={cn(
-												"relative size-6 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer border border-border/20",
+												"relative size-6 rounded-full transition-[color,background-color,border-color,box-shadow] duration-200 hover:scale-110 cursor-pointer border border-border/20",
 												isSelected &&
 													"ring-2 ring-foreground ring-offset-2 ring-offset-background",
 											)}
@@ -261,7 +261,7 @@ export function CustomListDialog({
 							onChange={(e) => setDescription(e.target.value.substring(0, 150))}
 							maxLength={150}
 							className={cn(
-								"min-h-[70px] w-full rounded-xl border bg-muted/40 p-3 text-xs resize-none outline-none transition-all duration-200",
+								"min-h-[70px] w-full rounded-xl border bg-muted/40 p-3 text-xs resize-none outline-none transition-[color,background-color,border-color,box-shadow] duration-200",
 								"placeholder:text-muted-foreground/40",
 								"focus-visible:border-border/80 focus-visible:bg-muted/65 focus-visible:ring-1 focus-visible:ring-foreground/10",
 								"border-border/50",
@@ -281,7 +281,7 @@ export function CustomListDialog({
 									type="button"
 									onClick={() => setVisibility("private")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-all border",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
 										visibility === "private"
 											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
 											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
@@ -294,7 +294,7 @@ export function CustomListDialog({
 									type="button"
 									onClick={() => setVisibility("public")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-all border",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
 										visibility === "public"
 											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
 											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
@@ -321,7 +321,7 @@ export function CustomListDialog({
 									type="button"
 									onClick={() => setListType("unordered")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-all border",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
 										listType === "unordered"
 											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
 											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
@@ -334,7 +334,7 @@ export function CustomListDialog({
 									type="button"
 									onClick={() => setListType("ordered")}
 									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-all border",
+										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
 										listType === "ordered"
 											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
 											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
@@ -361,7 +361,7 @@ export function CustomListDialog({
 					<Button
 						onClick={handleSubmit}
 						disabled={saving || !name.trim()}
-						className="w-full h-11 text-xs font-bold transition-all cursor-pointer mt-1"
+						className="w-full h-11 text-xs font-bold transition-[color,background-color,border-color,box-shadow] cursor-pointer mt-1"
 					>
 						{saving
 							? "Saving..."

@@ -184,7 +184,7 @@ const SearchBar = memo(
 						disabled={disabled || isLoading}
 						autoFocus={autoFocus}
 						className={cn(
-							"peer h-11 w-full rounded-xl bg-background/95 ps-11 pr-11 text-[16px] md:text-[15px] border border-border transition-all duration-200 placeholder:text-muted-foreground/70 focus:bg-background focus:border-ring/40 focus:ring-2 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background shadow-none",
+							"peer h-11 w-full rounded-xl bg-background/95 ps-11 pr-11 text-[16px] md:text-[15px] border border-border transition-[color,background-color,border-color,box-shadow] duration-150 placeholder:text-muted-foreground/70 focus:bg-background focus:border-ring/40 focus:ring-2 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background shadow-none",
 							disabled && "cursor-not-allowed opacity-50",
 						)}
 						aria-label="Search Input"
@@ -197,7 +197,7 @@ const SearchBar = memo(
 						<button
 							type="button"
 							onClick={handleClear}
-							className="absolute inset-y-0 end-0 z-20 flex w-11 cursor-pointer items-center justify-center transition-all duration-150 hover:opacity-70 active:scale-90"
+							className="absolute inset-y-0 end-0 z-20 flex w-11 cursor-pointer items-center justify-center transition-[color,background-color,box-shadow] duration-150 hover:opacity-70 active:scale-90"
 							aria-label="Clear Search"
 						>
 							<XCircleIcon size={20} aria-hidden="true" />

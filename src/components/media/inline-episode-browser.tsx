@@ -175,7 +175,7 @@ export function InlineEpisodeBrowser({
 					type="button"
 					variant="outline"
 					onClick={() => setShowAllSeasons(true)}
-					className="mt-3 h-auto w-full rounded-xl border-dashed py-3 text-xs font-medium text-muted-foreground transition-all hover:bg-secondary/5 hover:text-foreground"
+					className="mt-3 h-auto w-full rounded-xl border-dashed py-3 text-xs font-medium text-muted-foreground transition-[color,background-color,border-color,box-shadow] hover:bg-secondary/5 hover:text-foreground"
 				>
 					{`View all ${allSeasons.length} seasons`}
 				</Button>
@@ -318,7 +318,7 @@ function EpisodeCard({
 						type="button"
 						variant="ghost"
 						onClick={onToggleWatched}
-						className={`pressable-small h-auto shrink-0 rounded-lg border p-1.5 text-[10px] font-medium transition-all ${
+						className={`pressable-small h-auto shrink-0 rounded-lg border p-1.5 text-[10px] font-medium transition-[color,background-color,border-color] ${
 							isWatched
 								? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
 								: "border-border/50 bg-transparent text-muted-foreground hover:border-foreground/20 hover:text-foreground"

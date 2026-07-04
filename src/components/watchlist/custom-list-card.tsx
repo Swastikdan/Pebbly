@@ -35,7 +35,7 @@ export function CustomListCard({
 	const isPebblyPicks = list.listType === PEBBLY_PICKS_TYPE;
 
 	return (
-		<div className="group relative flex flex-col rounded-xl border border-border/45 dark:border-border/20 bg-card/85 dark:bg-card/40 p-3 transition-all duration-350 hover:-translate-y-1 hover:border-border/80">
+		<div className="group relative flex flex-col rounded-xl border border-border/45 dark:border-border/20 bg-card/85 dark:bg-card/40 p-3 transition-[transform,border-color,box-shadow] duration-250 hover:-translate-y-1 hover:border-border/80">
 			<button
 				type="button"
 				onClick={onClick}
