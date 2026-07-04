@@ -316,7 +316,9 @@ const HomepageRecommendationCard = memo(
 // Module-level cache to prevent flashes during navigation
 let cachedRecommendations: {
 	userId: string | null;
+	// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result, derived type is complex
 	recommendationsData: any;
+	// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result, derived type is complex
 	feedbackList: any;
 } | null = null;
 
@@ -357,13 +359,12 @@ export function HomepageRecommendations() {
 	const resolvedRecsData =
 		recommendationsData ||
 		(hasCache
-			? (cachedRecommendations!
-					.recommendationsData as typeof recommendationsData)
+			? (cachedRecommendations?.recommendationsData as typeof recommendationsData)
 			: null);
 	const resolvedFeedbackList =
 		feedbackList ||
 		(hasCache
-			? (cachedRecommendations!.feedbackList as typeof feedbackList)
+			? (cachedRecommendations?.feedbackList as typeof feedbackList)
 			: null);
 
 	const generateRecs = useAction(

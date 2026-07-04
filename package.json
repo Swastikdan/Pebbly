@@ -55,12 +55,11 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
+    "@biomejs/biome": "2.4.13",
     "@fontsource-variable/bricolage-grotesque": "^5.2.10",
     "@tanstack/react-devtools": "^0.7.0",
     "@tanstack/react-query-devtools": "^5.84.2",
     "@tanstack/react-router-devtools": "^1.132.0",
-
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",

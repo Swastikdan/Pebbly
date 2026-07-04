@@ -140,10 +140,19 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
 								{youtubeclips.map((video) => (
+									// biome-ignore lint/a11y/useSemanticElements: contains nested <button>, cannot use <button> wrapper
 									<div
 										key={video.key}
 										className="group relative cursor-pointer"
+										role="button"
+										tabIndex={0}
 										onClick={() => onUpdateDialogSearch("video", video.key)}
+										onKeyDown={(e) => {
+											if (e.key === "Enter" || e.key === " ") {
+												e.preventDefault();
+												onUpdateDialogSearch("video", video.key);
+											}
+										}}
 									>
 										<Image
 											alt={video.name}
@@ -269,12 +278,21 @@ export const MediaContainer = (props: MediaContainerProps) => {
 										image.backdrop_image,
 									);
 									return (
+										// biome-ignore lint/a11y/useSemanticElements: keeping div for consistent styling with other interactive containers
 										<div
 											key={`backdrop-${index}`}
 											className="group relative cursor-pointer"
+											role="button"
+											tabIndex={0}
 											onClick={() =>
 												onUpdateDialogSearch("backdrop", imagePathClean)
 											}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.preventDefault();
+													onUpdateDialogSearch("backdrop", imagePathClean);
+												}
+											}}
 										>
 											<Image
 												alt={title}
@@ -389,12 +407,21 @@ export const MediaContainer = (props: MediaContainerProps) => {
 								{posters.map((image, index) => {
 									const imagePathClean = getImageDialogKey(image.poster_image);
 									return (
+										// biome-ignore lint/a11y/useSemanticElements: keeping div for consistent styling with other interactive containers
 										<div
 											key={`poster-${index}`}
 											className="group relative cursor-pointer"
+											role="button"
+											tabIndex={0}
 											onClick={() =>
 												onUpdateDialogSearch("poster", imagePathClean)
 											}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.preventDefault();
+													onUpdateDialogSearch("poster", imagePathClean);
+												}
+											}}
 										>
 											<Image
 												alt={title}
