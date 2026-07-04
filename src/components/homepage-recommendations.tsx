@@ -270,7 +270,7 @@ const HomepageRecommendationCard = memo(
 						variant="secondary"
 						size="icon"
 						className={cn(
-							"h-8 w-8 rounded-lg bg-black/45 text-white border backdrop-blur-sm transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer pressable",
+							"h-8 w-8 rounded-lg bg-black/45 text-white border backdrop-blur-sm transition-[color,background-color,box-shadow,transform] duration-200 hover:scale-105 active:scale-95 cursor-pointer pressable",
 							isLiked
 								? "bg-green-500/25 text-green-400 border-green-500/40 hover:bg-green-500/35"
 								: "border-transparent hover:bg-black/60",
@@ -297,7 +297,7 @@ const HomepageRecommendationCard = memo(
 					<Button
 						variant="secondary"
 						size="icon"
-						className="h-8 w-8 rounded-lg bg-black/45 text-white border border-transparent backdrop-blur-sm transition-all duration-200 hover:bg-red-500/25 hover:text-red-400 hover:border-red-500/40 hover:scale-105 active:scale-95 cursor-pointer pressable"
+						className="h-8 w-8 rounded-lg bg-black/45 text-white border border-transparent backdrop-blur-sm transition-[color,background-color,border-color,transform] duration-200 hover:bg-red-500/25 hover:text-red-400 hover:border-red-500/40 hover:scale-105 active:scale-95 cursor-pointer pressable"
 						onClick={(e) => {
 							e.stopPropagation();
 							e.preventDefault();

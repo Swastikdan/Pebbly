@@ -23,7 +23,7 @@ export function ReactionSelector({
 						aria-label={option.label}
 						aria-pressed={isSelected}
 						className={cn(
-							"size-8 rounded-lg p-0 text-base transition-all hover:bg-accent",
+							"size-8 rounded-lg p-0 text-base transition-[color,background-color,box-shadow] hover:bg-accent",
 							isSelected && "bg-accent ring-1 ring-foreground/20",
 						)}
 						onClick={(e) => {

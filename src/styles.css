@@ -67,7 +67,7 @@
 
 	@keyframes ripple {
 		0% {
-			transform: scale(0);
+			transform: scale(0.3);
 			opacity: 0.4;
 		}
 		100% {
@@ -514,13 +514,15 @@
 			0 1px 3px rgba(0, 0, 0, 0.06),
 			0 4px 12px rgba(0, 0, 0, 0.03);
 		transition:
-			box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-			transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+			box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+			transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 	}
-	.card-elevated:hover {
-		box-shadow:
-			0 8px 24px rgba(0, 0, 0, 0.1),
-			0 16px 48px rgba(0, 0, 0, 0.05);
+	@media (hover: hover) and (pointer: fine) {
+		.card-elevated:hover {
+			box-shadow:
+				0 8px 24px rgba(0, 0, 0, 0.1),
+				0 16px 48px rgba(0, 0, 0, 0.05);
+		}
 	}
 
 	.card-glass {
@@ -771,6 +773,10 @@
 
 @supports not (content-visibility: auto) {
 	.content-visibility-auto {
+		contain: layout style paint;
+	}
+}
+ibility-auto {
 		contain: layout style paint;
 	}
 }

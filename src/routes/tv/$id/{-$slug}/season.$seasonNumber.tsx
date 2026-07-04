@@ -113,7 +113,7 @@ function TvSeasonDetailPage() {
 						key={s.id}
 						// @ts-expect-error - correct link
 						to={`/tv/${id}/${urltitle}/season/${s.season_number}`}
-						className={`pressable-small whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 ${
+						className={`pressable-small whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-[color,background-color,border-color,box-shadow] duration-150 ${
 							s.season_number === seasonNumber
 								? "bg-foreground text-background "
 								: "bg-secondary/50 text-foreground hover:bg-secondary"
@@ -128,7 +128,7 @@ function TvSeasonDetailPage() {
 				{episodes.map((episode, index) => (
 					<div
 						key={episode.id}
-						className="group relative overflow-hidden rounded-2xl border-2 border-default bg-secondary/10 transition-all duration-300 hover:border-foreground/20 hover:bg-secondary/20 hover:"
+						className="group relative overflow-hidden rounded-2xl border-2 border-default bg-secondary/10 transition-[color,background-color,border-color,box-shadow] duration-150 hover:border-foreground/20 hover:bg-secondary/20 hover:"
 					>
 						<div className="flex flex-col gap-4 p-3 sm:flex-row sm:items-start md:p-4">
 							<div className="relative shrink-0">

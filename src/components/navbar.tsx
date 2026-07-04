@@ -105,7 +105,7 @@ const Navbar = () => {
 	const { hasFeature } = usePermissions();
 
 	return (
-		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border/60 border-b bg-background/80 backdrop-blur-xl backdrop-saturate-150 transition-all duration-300">
+		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border/60 border-b bg-background/80 backdrop-blur-xl backdrop-saturate-150 transition-[border-color,background-color,backdrop-filter] duration-300">
 			<nav
 				className="flex w-full max-w-screen-xl items-center justify-between px-4 py-2.5 md:px-5"
 				aria-label="Main Navigation"

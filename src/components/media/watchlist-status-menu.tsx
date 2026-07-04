@@ -92,7 +92,7 @@ export function WatchlistStatusMenu({
 			{!isOnWatchlist ? (
 				<Button
 					variant="secondary"
-					className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-all flex items-center justify-center"
+					className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-[color,background-color,border-color] flex items-center justify-center"
 					onClick={onAdd}
 				>
 					<Bookmark size={16} />
@@ -103,7 +103,7 @@ export function WatchlistStatusMenu({
 					<DropdownMenuTrigger asChild>
 						<Button
 							variant="secondary"
-							className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/15 text-primary transition-all cursor-pointer flex items-center justify-center"
+							className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/15 text-primary transition-[color,background-color,border-color] cursor-pointer flex items-center justify-center"
 						>
 							<StatusIcon
 								size={16}
@@ -215,7 +215,7 @@ export function WatchlistStatusMenu({
 											key={option.value}
 											type="button"
 											className={cn(
-												"flex flex-col items-center justify-center gap-1.5 rounded-xl py-2 px-1 transition-all duration-200 border cursor-pointer",
+												"flex flex-col items-center justify-center gap-1.5 rounded-xl py-2 px-1 transition-[color,background-color,border-color] duration-150 border cursor-pointer",
 												isSelected
 													? "bg-primary/10 border-primary/40 text-primary"
 													: "bg-secondary/20 border-border/30 hover:border-border/60 hover:bg-secondary/50 text-muted-foreground hover:text-foreground",
@@ -260,7 +260,7 @@ export function WatchlistStatusMenu({
 
 			<Button
 				variant="secondary"
-				className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-all cursor-pointer flex items-center justify-center"
+				className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold border border-border hover:bg-secondary/80 transition-[color,background-color,border-color] cursor-pointer flex items-center justify-center"
 				onClick={() => setListDialogOpen(true)}
 			>
 				<ListPlus size={16} />
@@ -293,7 +293,7 @@ function StatusButton({
 		<button
 			type="button"
 			className={cn(
-				"flex items-center gap-2.5 w-full rounded-xl p-3 text-xs font-semibold transition-all duration-200 text-left border border-border cursor-pointer",
+				"flex items-center gap-2.5 w-full rounded-xl p-3 text-xs font-semibold transition-[color,background-color,border-color] duration-200 text-left border border-border cursor-pointer",
 				active
 					? "bg-primary/10 text-primary border-primary/30 font-bold"
 					: "hover:bg-secondary/40 text-muted-foreground hover:text-foreground",
@@ -362,7 +362,7 @@ function AddToListDialog({
 											key={list._id}
 											type="button"
 											className={cn(
-												"flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-all duration-200 border border-transparent",
+												"flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-[color,background-color,border-color] duration-200 border border-transparent",
 												isInList
 													? "bg-primary/[0.03] border-primary/10 text-foreground font-semibold"
 													: "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
@@ -384,7 +384,7 @@ function AddToListDialog({
 											<div className="flex items-center gap-3 min-w-0">
 												<div
 													className={cn(
-														"flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
+														"flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-[color,background-color,border-color] duration-200",
 														isInList
 															? "border-primary bg-primary text-primary-foreground scale-105"
 															: "border-muted-foreground/30 bg-transparent",

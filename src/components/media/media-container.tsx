@@ -170,7 +170,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 											className="absolute inset-0 size-full p-0 hover:bg-transparent rounded-xl"
 										>
 											<div className="absolute inset-0 flex items-center justify-center">
-												<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+												<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
 													<Play className="size-6 fill-white text-white" />
 												</div>
 											</div>
