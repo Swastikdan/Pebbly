@@ -12,16 +12,22 @@ import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
-import type { SeasonInfo } from "@/types";
+import type { SeasonInfo, Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
-	loader: async ({ params }) => {
+	loader: async ({ params, context }) => {
 		const { id, slug } = params;
-		if (!parseAndValidateId(id).success) {
+		const parsed = parseAndValidateId(id);
+		if (!parsed.success) {
 			throw notFound();
 		}
+		await context.queryClient.ensureQueryData({
+			queryKey: ["tv_details", id],
+			queryFn: () => getTvDetails({ id: parsed.data }),
+		});
+		const data = context.queryClient.getQueryData<Tv>(["tv_details", id]);
 		const title = formatMediaTitle.decode(slug ?? "");
-		return { id, slug, title };
+		return { id, slug, title, posterPath: data?.poster_path ?? null };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
@@ -32,6 +38,9 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
 				description: loaderData?.title
 					? `All seasons of  ${loaderData.title}.`
 					: "Explore all seasons of your favorite shows on Pebbly.",
+				ogImage: loaderData?.posterPath
+					? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
+					: undefined,
 				url:
 					loaderData?.id &&
 					loaderData.title &&

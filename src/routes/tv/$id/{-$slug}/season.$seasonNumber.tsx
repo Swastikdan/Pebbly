@@ -21,17 +21,29 @@ import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails, getTvSeasonDetails } from "@/lib/queries";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
+import type { Tv } from "@/types";
+
 export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
-	loader: async ({ params }) => {
+	loader: async ({ params, context }) => {
 		const { id, slug, seasonNumber } = params;
-		if (
-			!parseAndValidateId(id).success ||
-			!parseAndValidateId(seasonNumber).success
-		) {
+		const parsedId = parseAndValidateId(id);
+		const parsedSeason = parseAndValidateId(seasonNumber);
+		if (!parsedId.success || !parsedSeason.success) {
 			throw notFound();
 		}
+		await context.queryClient.ensureQueryData({
+			queryKey: ["tv_details", id],
+			queryFn: () => getTvDetails({ id: parsedId.data }),
+		});
+		const data = context.queryClient.getQueryData<Tv>(["tv_details", id]);
 		const title = formatMediaTitle.decode(slug ?? "");
-		return { id, slug, title, seasonNumber: parseInt(seasonNumber, 10) };
+		return {
+			id,
+			slug,
+			title,
+			seasonNumber: parsedSeason.data,
+			posterPath: data?.poster_path ?? null,
+		};
 	},
 	head: ({ loaderData }) => ({
 		meta: [
@@ -42,6 +54,9 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
 				description: loaderData?.title
 					? `All episodes of ${loaderData.title} Season ${loaderData.seasonNumber}.`
 					: "Explore all episodes of your favorite shows on Pebbly.",
+				ogImage: loaderData?.posterPath
+					? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
+					: undefined,
 				url:
 					loaderData?.id &&
 					loaderData.title &&

@@ -59,7 +59,7 @@ const MediaList = memo(
 	},
 );
 
-const MediaSkeletonList = memo(
+export const MediaSkeletonList = memo(
 	(props: { count?: number; cardType?: "horizontal" | "vertical" }) => {
 		const cardCount = props.count ?? 6;
 		return (

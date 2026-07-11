@@ -3,20 +3,27 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { MediaCreditSection } from "@/components/media/media-credit-section";
-import { VITE_PUBLIC_APP_URL } from "@/constants";
+import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicTvDetails } from "@/lib/queries";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
+import type { Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/cast-crew")({
-	loader: async ({ params }) => {
+	loader: async ({ params, context }) => {
 		const { id, slug } = params;
-		if (!parseAndValidateId(id).success) {
+		const parsed = parseAndValidateId(id);
+		if (!parsed.success) {
 			throw notFound();
 		}
+		await context.queryClient.ensureQueryData({
+			queryKey: ["basic_tv-details", id],
+			queryFn: () => getBasicTvDetails({ id: parsed.data }),
+		});
+		const data = context.queryClient.getQueryData<Tv>(["basic_tv-details", id]);
 		const title = formatMediaTitle.decode(slug ?? "");
-		return { id, slug, title };
+		return { id, slug, title, posterPath: data?.poster_path ?? null };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
@@ -27,6 +34,9 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/cast-crew")({
 				description: loaderData?.title
 					? `Explore the cast and crew of ${loaderData.title}.`
 					: "Discover the cast and crew of your favorite shows on Pebbly.",
+				ogImage: loaderData?.posterPath
+					? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
+					: undefined,
 				url:
 					loaderData?.id &&
 					loaderData?.title &&

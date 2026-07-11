@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 import {
 	ContinueWatching,
+	MediaSkeletonList,
 	PopularMovies,
 	PopularTv,
 	TopRatedMovies,
@@ -87,23 +88,34 @@ function HomePage() {
 
 					<ContinueWatchingSection />
 
-					<LazySection minHeight="300px">
+					<LazySection
+						minHeight="300px"
+						fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+					>
 						<HomepageRecommendations />
 					</LazySection>
 
-					<LazySection minHeight="280px" className="content-visibility-auto">
-						<div className="flex items-center gap-4 mt-2">
-							<h2 className="text-h2">Upcoming Movies</h2>
-						</div>
+					<div className="flex items-center gap-4 mt-2">
+						<h2 className="text-h2">Upcoming Movies</h2>
+					</div>
+					<LazySection
+						minHeight="280px"
+						className="content-visibility-auto"
+						fallback={<MediaSkeletonList cardType="vertical" count={6} />}
+					>
 						<div>
 							<UpcomingMovies />
 						</div>
 					</LazySection>
 
-					<LazySection minHeight="360px" className="content-visibility-auto">
+					<h2 className="text-h2 mt-2">{`What's Popular`}</h2>
+					<LazySection
+						minHeight="360px"
+						className="content-visibility-auto"
+						fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+					>
 						<Tabs defaultValue="popular_movie">
-							<div className="flex items-center gap-4 mt-2">
-								<h2 className="text-h2">{`What's Popular`}</h2>
+							<div className="flex items-center gap-4">
 								<TabsList className={SECTION_TAB_LIST_CLASS}>
 									<TabsTrigger
 										value="popular_movie"
@@ -128,10 +140,14 @@ function HomePage() {
 						</Tabs>
 					</LazySection>
 
-					<LazySection minHeight="360px" className="content-visibility-auto">
+					<h2 className="text-h2 mt-2">Top Rated</h2>
+					<LazySection
+						minHeight="360px"
+						className="content-visibility-auto"
+						fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+					>
 						<Tabs defaultValue="top_rated_movies">
-							<div className="flex items-center gap-4 mt-2">
-								<h2 className="text-h2">Top Rated</h2>
+							<div className="flex items-center gap-4">
 								<TabsList className={SECTION_TAB_LIST_CLASS}>
 									<TabsTrigger
 										value="top_rated_movies"
@@ -173,7 +189,10 @@ function ContinueWatchingSection() {
 				<h2 className="text-h2">Continue Watching</h2>
 			</div>
 			<div>
-				<LazySection minHeight="280px">
+				<LazySection
+					minHeight="280px"
+					fallback={<MediaSkeletonList cardType="vertical" count={6} />}
+				>
 					<ContinueWatching />
 				</LazySection>
 			</div>
