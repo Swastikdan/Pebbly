@@ -62,16 +62,16 @@ export function CustomListMediaCard({
 	};
 
 	return (
-		<div className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70 group">
-			<Link
-				// @ts-expect-error - correct link
-				to={
-					formattedTitle
-						? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
-						: `/${item.mediaType}/${item.tmdbId}`
-				}
-				className="relative shrink-0"
-			>
+		<Link
+			// @ts-expect-error - correct link
+			to={
+				formattedTitle
+					? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
+					: `/${item.mediaType}/${item.tmdbId}`
+			}
+			className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70 group"
+		>
+			<div className="relative shrink-0">
 				{hasMetadata && imageUrl ? (
 					<Image
 						alt={item.title ?? ""}
@@ -86,24 +86,15 @@ export function CustomListMediaCard({
 						{item.mediaType === "movie" ? "MOV" : "TV"}
 					</div>
 				)}
-			</Link>
+			</div>
 
 			<div className="flex min-w-0 flex-1 flex-col justify-between">
 				<div>
 					<div className="flex items-start justify-between gap-2">
-						<Link
-							// @ts-expect-error - correct link
-							to={
-								formattedTitle
-									? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
-									: `/${item.mediaType}/${item.tmdbId}`
-							}
-						>
-							<h3 className="line-clamp-2 text-sm font-semibold leading-snug hover:text-primary transition-colors">
-								{item.title ??
-									`${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`}
-							</h3>
-						</Link>
+						<h3 className="line-clamp-2 text-sm font-semibold leading-snug hover:text-primary transition-colors">
+							{item.title ??
+								`${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`}
+						</h3>
 
 						{!readOnly && (
 							<Button
@@ -167,6 +158,6 @@ export function CustomListMediaCard({
 					</div>
 				)}
 			</div>
-		</div>
+		</Link>
 	);
 }

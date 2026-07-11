@@ -7,6 +7,16 @@ import { getProgressOption, getReactionOption } from "@/constants/watchlist";
 import type { WatchlistItem } from "@/hooks/watchlist-store";
 import { formatMediaTitle } from "@/lib/utils";
 
+function handleRemove(
+	e: React.MouseEvent,
+	item: WatchlistItem,
+	onRemoveFromWatchlist: (item: WatchlistItem) => void,
+) {
+	e.preventDefault();
+	e.stopPropagation();
+	onRemoveFromWatchlist(item);
+}
+
 export function WatchlistCard({
 	item,
 	onRemoveFromWatchlist,
@@ -28,12 +38,12 @@ export function WatchlistCard({
 		: null;
 
 	return (
-		<div className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70">
-			<Link
-				// @ts-expect-error - correct link
-				to={`/${item.type}/${item.external_id}/${formattedTitle}`}
-				className="relative shrink-0"
-			>
+		<Link
+			// @ts-expect-error - correct link
+			to={`/${item.type}/${item.external_id}/${formattedTitle}`}
+			className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70"
+		>
+			<div className="relative shrink-0">
 				<Image
 					alt={item.title}
 					className="h-[140px] w-[93px] rounded-xl bg-muted object-cover"
@@ -42,19 +52,14 @@ export function WatchlistCard({
 					width={140}
 					priority={priority}
 				/>
-			</Link>
+			</div>
 
 			<div className="flex min-w-0 flex-1 flex-col justify-between">
 				<div>
 					<div className="flex items-start justify-between gap-2">
-						<Link
-							// @ts-expect-error - correct link
-							to={`/${item.type}/${item.external_id}/${formattedTitle}`}
-						>
-							<h3 className="line-clamp-2 text-sm font-semibold leading-snug">
-								{item.title}
-							</h3>
-						</Link>
+						<h3 className="line-clamp-2 text-sm font-semibold leading-snug">
+							{item.title}
+						</h3>
 
 						<Button
 							type="button"
@@ -62,7 +67,7 @@ export function WatchlistCard({
 							size="icon"
 							className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:bg-destructive/10 hover:text-destructive"
 							aria-label={`Remove ${item.title} from watchlist`}
-							onClick={() => onRemoveFromWatchlist(item)}
+							onClick={(e) => handleRemove(e, item, onRemoveFromWatchlist)}
 						>
 							<TrashBin size={14} />
 						</Button>
@@ -110,6 +115,6 @@ export function WatchlistCard({
 					)}
 				</div>
 			</div>
-		</div>
+		</Link>
 	);
 }

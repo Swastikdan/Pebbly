@@ -14,7 +14,7 @@ import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContainer } from "@/components/media/media-title-container";
-import { VITE_PUBLIC_APP_URL } from "@/constants";
+import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { buildSharedMediaPageData } from "@/lib/media-page";
@@ -35,8 +35,12 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/")({
 			queryKey: ["tv_details", parsed.data],
 			queryFn: () => getTvDetails({ id: parsed.data }),
 		});
+		const data = context.queryClient.getQueryData<Tv>([
+			"tv_details",
+			parsed.data,
+		]);
 		const title = slug ? formatMediaTitle.decode(slug) : "Tv Page";
-		return { id, slug, title };
+		return { id, slug, title, posterPath: data?.poster_path ?? null };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
@@ -47,9 +51,9 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/")({
 				description: loaderData?.title
 					? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
 					: "Explore detailed information about movies and shows on Pebbly.",
-				ogImage:
-					loaderData?.id &&
-					`${VITE_PUBLIC_APP_URL}/api/metaimage?id=${encodeURIComponent(loaderData?.id ?? "")}&type=tv`,
+				ogImage: loaderData?.posterPath
+					? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
+					: undefined,
 				url:
 					loaderData?.id &&
 					loaderData?.title &&

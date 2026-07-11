@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 interface LazySectionProps {
 	children: React.ReactNode;
+	fallback?: React.ReactNode;
 	rootMargin?: string;
 	minHeight?: string;
 	className?: string;
@@ -9,6 +10,7 @@ interface LazySectionProps {
 
 export function LazySection({
 	children,
+	fallback,
 	rootMargin = "300px",
 	minHeight = "280px",
 	className,
@@ -17,7 +19,7 @@ export function LazySection({
 	const ref = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		if (hasIntersected) return;
+		if (!ref.current) return;
 
 		const observer = new IntersectionObserver(
 			([entry]) => {
@@ -28,17 +30,10 @@ export function LazySection({
 			{ rootMargin },
 		);
 
-		const element = ref.current;
-		if (element) {
-			observer.observe(element);
-		}
+		observer.observe(ref.current);
 
-		return () => {
-			if (element) {
-				observer.unobserve(element);
-			}
-		};
-	}, [hasIntersected, rootMargin]);
+		return () => observer.disconnect();
+	}, [rootMargin]);
 
 	return (
 		<div
@@ -48,7 +43,7 @@ export function LazySection({
 				minHeight: hasIntersected ? undefined : minHeight,
 			}}
 		>
-			{hasIntersected ? children : null}
+			{hasIntersected ? children : fallback}
 		</div>
 	);
 }
