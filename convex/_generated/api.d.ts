@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as crons from "../crons.js";
 import type * as recommendations from "../recommendations.js";
 import type * as users from "../users.js";
 import type * as watchlist from "../watchlist.js";
@@ -21,6 +22,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  crons: typeof crons;
   recommendations: typeof recommendations;
   users: typeof users;
   watchlist: typeof watchlist;

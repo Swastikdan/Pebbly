@@ -33,6 +33,14 @@ export type WatchlistItem = {
 	progress?: number;
 };
 
+export type LocalWatchlistImportItem = MediaMetadata & {
+	id: string;
+	type: MediaType;
+	progressStatus: ProgressStatus;
+	progress?: number;
+	reaction?: ReactionStatus | null;
+};
+
 interface WatchlistStore {
 	mediaState: WatchlistItem[];
 	setWatchlistMembershipLocal: (
@@ -60,6 +68,7 @@ interface WatchlistStore {
 		progress: number,
 		metadata?: MediaMetadata,
 	) => void;
+	importWatchlistLocal: (items: LocalWatchlistImportItem[]) => void;
 }
 
 const memoryStorage = createMemoryStorage();
@@ -103,7 +112,7 @@ export function mapConvexItemToWatchlistItem(item: {
 	progress?: number;
 	inWatchlist?: boolean;
 	progressStatus?: string;
-	reaction?: string;
+	reaction?: string | null;
 }): WatchlistItem {
 	return {
 		title: item.title ?? "Unknown Title",
@@ -257,6 +266,55 @@ export const useWatchlistStore = create<WatchlistStore>()(
 							}),
 						),
 					};
+				}),
+			importWatchlistLocal: (items) =>
+				set((state) => {
+					const importedByKey = new Map<string, LocalWatchlistImportItem>();
+					for (const item of items) {
+						importedByKey.set(`${item.type}:${item.id}`, item);
+					}
+
+					const existingByKey = new Map(
+						state.mediaState.map((item) => [
+							`${item.type}:${item.external_id}`,
+							item,
+						]),
+					);
+					const nextItems = [...state.mediaState];
+					const now = Date.now();
+
+					for (const imported of importedByKey.values()) {
+						const key = `${imported.type}:${imported.id}`;
+						const existing = existingByKey.get(key);
+						const progress =
+							imported.progress ??
+							(imported.progressStatus === "done"
+								? 100
+								: imported.progressStatus === "watch-later"
+									? 0
+									: existing?.progress);
+						const nextItem: WatchlistItem = {
+							...(existing ?? buildFallbackItem(imported.id, imported.type)),
+							title: imported.title ?? existing?.title ?? `Media ${imported.id}`,
+							image: imported.image ?? existing?.image ?? "",
+							rating: imported.rating ?? existing?.rating ?? 0,
+							release_date: imported.release_date ?? existing?.release_date ?? "",
+							overview: imported.overview ?? existing?.overview,
+							inWatchlist: true,
+							progressStatus: imported.progressStatus,
+							progress,
+							reaction: imported.reaction ?? existing?.reaction ?? null,
+							updated_at: now,
+						};
+
+						if (existing) {
+							nextItems[nextItems.indexOf(existing)] = nextItem;
+						} else {
+							nextItems.unshift(nextItem);
+						}
+					}
+
+					return { mediaState: nextItems };
 				}),
 		}),
 		{

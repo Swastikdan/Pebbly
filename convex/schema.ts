@@ -17,7 +17,7 @@ export default defineSchema({
     mediaType: v.string(),
     inWatchlist: v.optional(v.boolean()),
     progressStatus: v.optional(v.string()),
-    reaction: v.optional(v.string()),
+    reaction: v.optional(v.union(v.string(), v.null())),
     progress: v.optional(v.number()),
     title: v.optional(v.string()),
     image: v.optional(v.string()),
@@ -28,6 +28,14 @@ export default defineSchema({
   })
     .index("by_user_media", ["userId", "tmdbId", "mediaType"])
     .index("by_user", ["userId"]),
+
+  // Deliberately small recovery points. The source watch-item documents retain
+  // the metadata; snapshots only record which saved items belonged together.
+  watchlist_snapshots: defineTable({
+    userId: v.id("users"),
+    itemIds: v.array(v.id("watch_items")),
+    createdAt: v.number(),
+  }).index("by_user_and_createdAt", ["userId", "createdAt"]),
 
   lists: defineTable({
     userId: v.id("users"),
