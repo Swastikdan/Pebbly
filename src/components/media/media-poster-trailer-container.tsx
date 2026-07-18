@@ -132,9 +132,9 @@ export function MediaPosterTrailerContainer(props: {
 									<div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
 										<iframe
 											allowFullScreen
-											allow="accelerometer;encrypted-media; gyroscope; picture-in-picture;"
+											allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
 											className="size-full rounded-xl"
-											sandbox="allow-scripts allow-presentation allow-popups allow-forms"
+											sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-forms"
 											src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
 											title={video.name}
 										/>
