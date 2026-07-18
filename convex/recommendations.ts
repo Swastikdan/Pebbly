@@ -234,7 +234,11 @@ const MODELS_TO_TRY = [
 const RATE_LIMIT_MS = 2 * 60 * 1000;
 
 function computeHash(
-	items: Array<{ tmdbId: number; progressStatus?: string; reaction?: string }>,
+	items: Array<{
+		tmdbId: number;
+		progressStatus?: string;
+		reaction?: string | null;
+	}>,
 	mediaTypePreference?: string,
 	genrePreference?: string,
 ): string {

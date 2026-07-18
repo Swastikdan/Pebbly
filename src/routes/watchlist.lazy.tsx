@@ -1,5 +1,5 @@
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bookmark, ListPlus, Plus, SlidersHorizontal, X } from "lucide-react";
+import { Bookmark, ListPlus, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { lazy, Suspense, useCallback, useId, useMemo, useState } from "react";
 
 const CustomListDialog = lazy(() =>
@@ -133,9 +133,11 @@ function WatchlistTabContent() {
 	const [mediaFilter, setMediaFilter] = useState<MediaFilter>("all");
 	const [sortBy, setSortBy] = useState<SortType>("recent");
 	const [filtersOpen, setFiltersOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
 
 	const {
 		importLoading,
+		importTotal,
 		exportLoading,
 		error,
 		fileInputRef,
@@ -145,12 +147,14 @@ function WatchlistTabContent() {
 	} = useWatchlistImportExport();
 
 	const activeSecondaryCount = [
+		searchQuery.trim().length > 0,
 		mediaFilter !== "all",
 		reactionFilter !== "all",
 		sortBy !== "recent",
 	].filter(Boolean).length;
 
 	const resetSecondaryFilters = useCallback(() => {
+		setSearchQuery("");
 		setMediaFilter("all");
 		setReactionFilter("all");
 		setSortBy("recent");
@@ -158,6 +162,15 @@ function WatchlistTabContent() {
 
 	const filteredWatchlist = useMemo(() => {
 		let items = watchlistData;
+		const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+
+		if (normalizedQuery) {
+			items = items.filter((item) =>
+				[item.title, item.overview, item.release_date]
+					.filter(Boolean)
+					.some((value) => value?.toLocaleLowerCase().includes(normalizedQuery)),
+			);
+		}
 
 		if (activeFilter !== "all") {
 			items = items.filter(
@@ -194,7 +207,14 @@ function WatchlistTabContent() {
 					);
 			}
 		});
-	}, [watchlistData, activeFilter, reactionFilter, mediaFilter, sortBy]);
+	}, [
+		watchlistData,
+		searchQuery,
+		activeFilter,
+		reactionFilter,
+		mediaFilter,
+		sortBy,
+	]);
 
 	const counts = useMemo(() => {
 		const result = {
@@ -302,8 +322,35 @@ function WatchlistTabContent() {
 					{error.message}
 				</div>
 			)}
+			{importLoading && importTotal !== null && (
+				<div className="mb-4 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-sm text-muted-foreground" role="status">
+					Importing {importTotal} title{importTotal === 1 ? "" : "s"} in one batch…
+				</div>
+			)}
 
-			<div className="mb-6 space-y-3">
+			<div className="mb-6 space-y-3 rounded-2xl border border-border/60 bg-card/35 p-3 shadow-sm sm:p-4">
+				<div className="relative">
+					<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+					<Input
+						value={searchQuery}
+						onChange={(event) => setSearchQuery(event.target.value)}
+						placeholder="Search saved titles, details, or release year"
+						aria-label="Search watchlist"
+						className="h-10 rounded-xl bg-background pl-9 pr-10 text-sm"
+					/>
+					{searchQuery && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							onClick={() => setSearchQuery("")}
+							className="absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-lg text-muted-foreground"
+							aria-label="Clear watchlist search"
+						>
+							<X size={14} />
+						</Button>
+					)}
+				</div>
 				<div className="flex items-center gap-2">
 					<div className="scrollbar-hidden flex flex-1 gap-1 overflow-x-auto">
 						{primaryTabs.map((tab) => {
@@ -375,7 +422,7 @@ function WatchlistTabContent() {
 									filtersOpen ? "opacity-100" : "opacity-0",
 								)}
 							>
-								Simple
+									Hide
 							</span>
 							<span
 								className={cn(
@@ -383,9 +430,9 @@ function WatchlistTabContent() {
 									filtersOpen ? "opacity-0" : "opacity-100",
 								)}
 							>
-								Full options
+									Filters
 							</span>
-							<span className="invisible">Full options</span>
+								<span className="invisible">Filters</span>
 						</span>
 						{activeSecondaryCount > 0 && (
 							<span className="text-[10px] opacity-70">
@@ -464,6 +511,14 @@ function WatchlistTabContent() {
 						</Button>
 					)}
 				</div>
+				<div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
+					<span>
+						Showing {filteredWatchlist.length} of {watchlistData.length} saved
+					</span>
+					{watchlistData.length >= 25 && (
+						<span className="hidden sm:inline">Use Collections to group a big queue.</span>
+					)}
+				</div>
 			</div>
 
 			{watchlistLoading ? (
@@ -472,6 +527,7 @@ function WatchlistTabContent() {
 				<DefaultEmptyState message={error.message} description={false} />
 			) : filteredWatchlist?.length === 0 ? (
 				activeFilter === "all" &&
+				searchQuery.trim().length === 0 &&
 				mediaFilter === "all" &&
 				reactionFilter === "all" ? (
 					<div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center animate-fade-in-up">
