@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Maximize2 } from "lucide-react";
+import { Maximize2, Minimize } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +9,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Play } from "@/components/ui/icons";
+import { Play, XIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
@@ -49,6 +49,18 @@ export function VideoPlayerModal({
 	// Prevents the auto-open effect from re-opening the modal immediately
 	// after the user explicitly closes it (play param has a 150ms removal delay)
 	const closedByUserRef = useRef(false);
+
+	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+
+		setIsMobile(
+			/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
+				(("ontouchstart" in window || navigator.maxTouchPoints > 0) &&
+					window.matchMedia("(max-width: 1024px)").matches),
+		);
+	}, []);
 
 	const navigate = useNavigate();
 	const search = useSearch({ strict: false }) as Record<string, unknown>;
@@ -112,6 +124,11 @@ export function VideoPlayerModal({
 		for (const evt of events) {
 			document.addEventListener(evt, resetInactivityTimer);
 		}
+		// Tapping inside a cross-origin iframe does not bubble events to this
+		// document (mobile especially), but it blurs the window. Use blur/focus
+		// so tapping the video still reveals the controls for a few seconds.
+		window.addEventListener("blur", resetInactivityTimer);
+		window.addEventListener("focus", resetInactivityTimer);
 
 		return () => {
 			if (inactivityTimerRef.current) {
@@ -120,6 +137,8 @@ export function VideoPlayerModal({
 			for (const evt of events) {
 				document.removeEventListener(evt, resetInactivityTimer);
 			}
+			window.removeEventListener("blur", resetInactivityTimer);
+			window.removeEventListener("focus", resetInactivityTimer);
 		};
 	}, [isOpen, resetInactivityTimer]);
 
@@ -179,8 +198,22 @@ export function VideoPlayerModal({
 		try {
 			if (document.fullscreenElement) {
 				await document.exitFullscreen();
+				const screenOrientation = window.screen?.orientation as {
+					unlock?: () => void;
+				} | null;
+				screenOrientation?.unlock?.();
 			} else {
 				await element.requestFullscreen();
+				if (isMobile) {
+					try {
+						const screenOrientation = window.screen?.orientation as {
+							lock?: (orientation: string) => Promise<void>;
+						} | null;
+						await screenOrientation?.lock?.("landscape");
+					} catch (err) {
+						console.warn("Orientation lock failed:", err);
+					}
+				}
 			}
 		} catch (error) {
 			console.error("Failed to toggle fullscreen:", error);
@@ -239,11 +272,11 @@ export function VideoPlayerModal({
 			<DialogContent
 				noOverlay
 				className="h-[100dvh] w-screen max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0"
-				closeClassName={
-					closeVisible
-						? "top-3 right-3 z-[70] bg-black/65 text-white opacity-100 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white hover:text-black hover:scale-105 active:scale-95 dark:bg-black/65 dark:text-white dark:hover:bg-white dark:hover:text-black before:absolute before:-inset-5 before:content-['']"
-						: "top-3 right-3 z-[70] bg-black/65 text-white opacity-0 hover:opacity-100 shadow-xl backdrop-blur-md transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white hover:text-black hover:scale-105 active:scale-95 dark:bg-black/65 dark:text-white dark:hover:bg-white dark:hover:text-black before:absolute before:-inset-5 before:content-['']"
-				}
+				// The built-in close button is rendered by DialogContent, which is
+				// outside the fullscreen element, so it would be hidden behind the
+				// video in fullscreen. A matching close button lives inside the
+				// player container instead.
+				closeClassName="hidden"
 			>
 				<DialogHeader className="sr-only">
 					<DialogTitle>{title}</DialogTitle>
@@ -272,22 +305,44 @@ export function VideoPlayerModal({
 						allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
 						onLoad={() => setIsLoading(false)}
 					/>
-					{/* Fullscreen button — visible on inactivity timeout like the close button */}
-					{!isFullscreen && (
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							aria-label="Toggle fullscreen"
-							onClick={handleFullscreen}
-							className={cn(
-								"absolute bottom-4 right-4 z-[70] rounded-lg bg-black/65 p-2.5 text-white shadow-xl backdrop-blur-md transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white hover:text-black hover:scale-105 active:scale-95",
-								closeVisible ? "opacity-100" : "opacity-0 hover:opacity-100",
-							)}
-						>
-							<Maximize2 className="size-4" />
-						</Button>
-					)}
+					{/* Transparent overlay used to reveal the controls when hovering the
+					video (desktop). It is pass-through on mobile, where a tap inside
+					the iframe blurs the window and reveals the controls instead. */}
+					<div
+						className={cn(
+							"absolute inset-0 z-[5]",
+							!isMobile && !closeVisible
+								? "pointer-events-auto"
+								: "pointer-events-none",
+						)}
+						onPointerMove={!isMobile ? resetInactivityTimer : undefined}
+					/>
+					<button
+						type="button"
+						aria-label="Close"
+						onClick={() => handleOpenChange(false)}
+						className={cn(
+							"pressable absolute right-3 top-3 z-[70] flex items-center justify-center rounded-lg bg-white p-3 text-black shadow-xl transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white/90 hover:text-black hover:scale-105 active:scale-95",
+							closeVisible ? "opacity-100" : "pointer-events-none opacity-0",
+						)}
+					>
+						<XIcon className="size-5.5" />
+					</button>
+					<button
+						type="button"
+						aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+						onClick={handleFullscreen}
+						className={cn(
+							"pressable absolute right-24 top-3 z-[70] flex items-center justify-center rounded-lg bg-white p-3 text-black shadow-xl transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white/90 hover:text-black hover:scale-105 active:scale-95",
+							closeVisible ? "opacity-100" : "pointer-events-none opacity-0",
+						)}
+					>
+						{isFullscreen ? (
+							<Minimize className="size-5.5" />
+						) : (
+							<Maximize2 className="size-5.5" />
+						)}
+					</button>
 				</div>
 			</DialogContent>
 		</Dialog>
