@@ -6,6 +6,7 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
 type WatchlistContext = QueryCtx | MutationCtx;
@@ -641,11 +642,21 @@ export const importWatchlist = mutation({
 
 /** Daily maintenance entry point used by the cron job below. */
 export const createDailySnapshots = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const users = await ctx.db.query("users").collect();
-    for (const user of users) {
+  args: {
+    cursor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Process users in chunks of 50 to avoid timeout and document read limit exhaustion on growing tables.
+    const batch = await ctx.db
+      .query("users")
+      .paginate({ cursor: args.cursor ?? null, numItems: 50 });
+    for (const user of batch.page) {
       await createWatchlistSnapshot(ctx, user._id);
+    }
+    if (!batch.isDone) {
+      await ctx.scheduler.runAfter(0, internal.watchlist.createDailySnapshots, {
+        cursor: batch.continueCursor,
+      });
     }
   },
 });

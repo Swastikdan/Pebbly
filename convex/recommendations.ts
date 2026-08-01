@@ -873,8 +873,10 @@ export const generateRecommendations = action({
 });
 
 export const getHomepageRecommendations = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    now: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
     const user = await ctx.auth.getUserIdentity();
     if (!user) return null;
 
@@ -926,9 +928,11 @@ export const getHomepageRecommendations = query({
     const lastUpdatedAt = entry?.lastUpdatedAt ?? 0;
     const status = entry?.status ?? "none";
 
-    const isOlderThan12Hours = Date.now() - lastAttemptedAt > 12 * 60 * 60 * 1000;
-    const hasFailedRecently = status === "failed" && Date.now() - lastAttemptedAt < 1 * 60 * 60 * 1000;
-    const needsRefresh = !entry || (isOlderThan12Hours && !hasFailedRecently);
+    // Rely on client-supplied timestamp or fallback to 0 to preserve query reactivity without calling Date.now().
+    const currentTime = args.now ?? 0;
+    const isOlderThan12Hours = currentTime > 0 && (currentTime - lastAttemptedAt > 12 * 60 * 60 * 1000);
+    const hasFailedRecently = status === "failed" && currentTime > 0 && (currentTime - lastAttemptedAt < 1 * 60 * 60 * 1000);
+    const needsRefresh = !entry || (currentTime > 0 && isOlderThan12Hours && !hasFailedRecently);
 
     return {
       recommendations: recs,
@@ -1001,13 +1005,12 @@ export const setRecommendationFeedback = mutation({
       }
 
       if (pebblyList) {
-        // Check if item already in the list
+        // Check if item already in the list using exact composite index instead of filtering
         const existingItem = await ctx.db
           .query("list_items")
-          .withIndex("by_user_media", (q) =>
-            q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
+          .withIndex("by_list_media", (q) =>
+            q.eq("listId", pebblyList._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
           )
-          .filter((q) => q.eq(q.field("listId"), pebblyList._id))
           .first();
         const alreadyInList = !!existingItem;
 

@@ -8,6 +8,7 @@ crons.daily(
   "watchlist media snapshot",
   { hourUTC: 3, minuteUTC: 0 },
   internal.watchlist.createDailySnapshots,
+  {},
 );
 
 export default crons;

@@ -193,12 +193,15 @@ export function HomepageRecommendations() {
 	const [localDismissedKeys, setLocalDismissedKeys] = useState<Set<string>>(
 		new Set(),
 	);
+	const [hourBucket] = useState(
+		() => Math.floor(Date.now() / (1000 * 60 * 60)) * (1000 * 60 * 60),
+	);
 
 	const canAccessFeature = isSignedIn && hasFeature("ai-recommendations");
 
 	const recommendationsData = useConvexQuery(
 		api.recommendations.getHomepageRecommendations,
-		canAccessFeature ? {} : "skip",
+		canAccessFeature ? { now: hourBucket } : "skip",
 	);
 
 	const feedbackList = useConvexQuery(
