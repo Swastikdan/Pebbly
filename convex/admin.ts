@@ -337,8 +337,10 @@ export const setUserRoles = mutation({
 });
 
 export const listUsers = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
 
@@ -347,7 +349,8 @@ export const listUsers = query({
       throw new Error("Forbidden: admin access required");
     }
 
-    const users = await ctx.db.query("users").collect();
+    // Bound the query to prevent document read limit exceptions as user base grows.
+    const users = await ctx.db.query("users").take(args.limit ?? 200);
 
     return users.map((u) => ({
       _id: u._id,
