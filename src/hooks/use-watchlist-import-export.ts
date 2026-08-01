@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
 import type React from "react";
 
@@ -214,17 +214,19 @@ export const useWatchlistImportExport = () => {
 
 					setImportTotal(validatedList.length);
 					const importItems = validatedList.map((item) => ({
-							tmdbId: Number(item.external_id),
-							mediaType: item.type,
-							title: item.title,
-							image: item.image,
-							rating: item.rating,
-							release_date: item.release_date,
-							overview: item.overview,
-							progressStatus: normalizeProgressStatus(item.progressStatus as string) ?? "watch-later",
-							progress: item.progress,
-							reaction: (item.reaction as ReactionStatus | null) ?? null,
-						}));
+						tmdbId: Number(item.external_id),
+						mediaType: item.type,
+						title: item.title,
+						image: item.image,
+						rating: item.rating,
+						release_date: item.release_date,
+						overview: item.overview,
+						progressStatus:
+							normalizeProgressStatus(item.progressStatus as string) ??
+							"watch-later",
+						progress: item.progress,
+						reaction: (item.reaction as ReactionStatus | null) ?? null,
+					}));
 
 					if (isSignedIn) {
 						await importWatchlistBatch({

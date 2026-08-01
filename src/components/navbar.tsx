@@ -1,4 +1,4 @@
-import { SignedIn } from "@clerk/clerk-react";
+import { Show } from "@clerk/react";
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
 import { ListPlus } from "lucide-react";
@@ -171,7 +171,7 @@ const Navbar = () => {
 											</Link>
 										</Button>
 									</SheetClose>
-									<SignedIn>
+									<Show when="signed-in">
 										<SheetClose asChild>
 											<Button
 												variant="outline"
@@ -188,7 +188,7 @@ const Navbar = () => {
 												</Link>
 											</Button>
 										</SheetClose>
-									</SignedIn>
+									</Show>
 									{hasFeature("ai-recommendations") && (
 										<SheetClose asChild>
 											<Button

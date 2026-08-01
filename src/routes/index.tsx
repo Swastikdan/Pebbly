@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 import {

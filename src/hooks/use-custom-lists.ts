@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useMemo } from "react";
 import type { ProgressStatus, ReactionStatus } from "@/types";

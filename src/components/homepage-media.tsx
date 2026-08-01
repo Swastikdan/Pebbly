@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { memo } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";

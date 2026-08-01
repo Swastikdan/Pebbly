@@ -1,5 +1,5 @@
-import { ClerkProvider, useAuth } from "@clerk/clerk-react";
-import { shadcn } from "@clerk/themes";
+import { ClerkProvider, useAuth } from "@clerk/react";
+import { shadcn } from "@clerk/ui/themes";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { ConvexReactClient } from "convex/react";
