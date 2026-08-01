@@ -1,5 +1,3 @@
-export const VITE_PUBLIC_APP_URL = import.meta.env
-	.VITE_PUBLIC_APP_URL as string;
 export const SITE_CONFIG = {
 	name: "Pebbly",
 	description: "Explore a vast collection of movies and TV shows with Pebbly.",
@@ -50,6 +48,10 @@ export const SITE_CONFIG = {
 		disclaimer: "/disclaimer",
 	},
 };
+
+export const VITE_PUBLIC_APP_URL =
+	(import.meta.env.VITE_PUBLIC_APP_URL as string | undefined) ??
+	SITE_CONFIG.url;
 
 export const NAV_ITEMS = SITE_CONFIG.navItems;
 

@@ -18,6 +18,16 @@ export const MetaImageTagsGenerator = (props: {
 		imageHeight = "630",
 	} = props;
 
+	const twitterDomain = url
+		? (() => {
+				try {
+					return new URL(url).hostname;
+				} catch {
+					return "";
+				}
+			})()
+		: "";
+
 	return [
 		{ title },
 		{ name: "description", content: description },
@@ -34,7 +44,7 @@ export const MetaImageTagsGenerator = (props: {
 		{ name: "twitter:title", content: title },
 		{ name: "twitter:description", content: description },
 		{ name: "twitter:image", content: ogImage },
-		{ property: "twitter:domain", content: url ? new URL(url).hostname : "" },
+		{ property: "twitter:domain", content: twitterDomain },
 		{ name: "twitter:url", content: url },
 	];
 };
