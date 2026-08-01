@@ -1,11 +1,10 @@
 import {
 	ClerkLoaded,
 	ClerkLoading,
-	SignedIn,
-	SignedOut,
+	Show,
 	SignInButton,
 	UserButton,
-} from "@clerk/clerk-react";
+} from "@clerk/react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,7 +75,7 @@ const DesktopNavButtons = () => {
 				<Skeleton className="size-9 rounded-full" />
 			</ClerkLoading>
 			<ClerkLoaded>
-				<SignedOut>
+				<Show when="signed-out">
 					<SignInButton mode="modal">
 						<Button
 							variant="outline"
@@ -85,8 +84,8 @@ const DesktopNavButtons = () => {
 							<UserIcon className="size-5" />
 						</Button>
 					</SignInButton>
-				</SignedOut>
-				<SignedIn>
+				</Show>
+				<Show when="signed-in">
 					<div className="flex size-10 items-center justify-center">
 						<UserButton
 							appearance={{
@@ -98,7 +97,7 @@ const DesktopNavButtons = () => {
 							}}
 						/>
 					</div>
-				</SignedIn>
+				</Show>
 			</ClerkLoaded>
 		</>
 	);

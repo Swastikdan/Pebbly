@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { useCallback, useState } from "react";
 import { usePermissions } from "@/hooks/use-permissions";

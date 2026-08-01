@@ -12,5 +12,8 @@ allowBuilds:
   '@parcel/watcher': true
   '@tailwindcss/oxide': true
   browser-tabs-lock: true
+  bufferutil: false
+  core-js: false
   esbuild: true
   protobufjs: true
+  utf-8-validate: false

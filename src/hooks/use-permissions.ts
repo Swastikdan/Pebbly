@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/react";
 import { useQuery } from "convex/react";
 import { useCallback } from "react";
 import type { RbacFeature, RbacRole } from "@/constants";
