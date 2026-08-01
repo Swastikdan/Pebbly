@@ -142,9 +142,10 @@ export function VideoPlayerModal({
 		};
 	}, [isOpen, resetInactivityTimer]);
 
-	// While the player is open, confirm before leaving the page so an embedded
-	// player cannot silently redirect us to a random ad site (the provider
-	// refuses to run inside a sandboxed iframe, so this is the fallback).
+	// While the player is open, confirm before leaving the page. The embed
+	// iframe is sandboxed (no allow-popups / allow-top-navigation) so the
+	// provider cannot redirect the app to another site or open new windows;
+	// this beforeunload guard is kept as a defense-in-depth fallback.
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -320,6 +321,13 @@ export function VideoPlayerModal({
 						className="size-full border-0"
 						allowFullScreen
 						allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
+						// Block the provider from navigating the top window
+						// (no allow-top-navigation) or opening new windows/tabs
+						// (no allow-popups). If the provider ever stops loading
+						// inside this sandbox, re-adding `allow-popups` would
+						// re-enable the new-window redirect, so keep both out.
+						sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-presentation allow-pointer-lock allow-downloads"
+						referrerPolicy="no-referrer"
 						onLoad={() => setIsLoading(false)}
 					/>
 					{/* Transparent overlay used to reveal the controls when hovering the

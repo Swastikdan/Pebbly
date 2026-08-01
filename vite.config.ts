@@ -6,7 +6,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 
 const config = defineConfig(({ mode }) => ({
-  envPrefix: ["VITE_", "CONVEX_"],
+  // Only VITE_-prefixed variables are inlined into the client bundle.
+  // CONVEX_* vars (e.g. CONVEX_DEPLOY_KEY) stay server-side only.
+  envPrefix: ["VITE_"],
   server: {
     port: 3000,
   },

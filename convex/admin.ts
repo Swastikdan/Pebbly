@@ -257,6 +257,14 @@ export const getUserFeatures = query({
 export const getRolePermissions = query({
   args: {},
   handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    const caller = await getUserByToken(ctx, identity.subject);
+    if (!caller || !isClerkAdmin(identity, caller)) {
+      throw new Error("Forbidden: admin access required");
+    }
+
     const perms = await ctx.db.query("role_permissions").collect();
 
 		const result: Record<string, Record<string, boolean>> = {};

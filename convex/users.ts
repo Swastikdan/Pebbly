@@ -49,24 +49,23 @@ export const store = mutation({
         image: args.image,
         email: args.email,
       };
-      // JWT claim is the source of truth. Fall back to the client-provided
-      // value (from Clerk's useUser().publicMetadata) when the JWT is stale
-      // and doesn't carry isAdmin at all.
+      // The signed JWT claim is the only source of truth for admin status.
+      // The client-supplied value is never trusted to elevate privileges; it
+      // is only used to downgrade when the JWT is stale and carries no claim.
       if (adminFromJwt !== null) {
         update.isAdmin = adminFromJwt;
-      } else if (args.isAdmin !== undefined) {
-        update.isAdmin = args.isAdmin;
+      } else if (args.isAdmin === false) {
+        update.isAdmin = false;
       }
       await ctx.db.patch(existing._id, update);
       return existing._id;
     } else {
-      const resolvedAdmin = adminFromJwt ?? args.isAdmin ?? false;
       const newUserId = await ctx.db.insert("users", {
         tokenIdentifier: userId,
         name: args.name,
         image: args.image,
         email: args.email,
-        isAdmin: resolvedAdmin,
+        isAdmin: adminFromJwt ?? false,
       });
       return newUserId;
     }

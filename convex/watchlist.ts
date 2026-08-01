@@ -638,7 +638,7 @@ export const markShowEpisodesAndStatus = mutation({
     ),
     isWatched: v.boolean(),
     clearAllEpisodes: v.optional(v.boolean()),
-    progressStatus: v.optional(v.string()),
+    progressStatus: v.optional(PROGRESS_STATUS_VALIDATOR),
     progress: v.optional(v.number()),
     title: v.optional(v.string()),
     image: v.optional(v.string()),
@@ -944,6 +944,11 @@ export const getListItems = query({
     const user = await getCurrentUser(ctx);
     if (!user) return [];
 
+    const list = await ctx.db.get(args.listId);
+    // Only the list owner can read the contents. The `visibility` column is
+    // not enforced anywhere, so default to private.
+    if (!list || list.userId !== user._id) return [];
+
     const items = await ctx.db
       .query("list_items")
       .withIndex("by_list", (q) => q.eq("listId", args.listId))
@@ -1009,6 +1014,9 @@ export const toggleListItem = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
+
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.userId !== user._id) throw new Error("List not found");
 
     const items = await ctx.db
       .query("list_items")

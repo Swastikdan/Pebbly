@@ -155,7 +155,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			{
 				rel: "preconnect",
 				href:
-					import.meta.env.CONVEX_CLERK_ISSUER_URL ||
+					import.meta.env.VITE_CLERK_ISSUER_URL ||
 					"https://rested-adder-44.clerk.accounts.dev",
 				crossOrigin: "anonymous",
 			},
