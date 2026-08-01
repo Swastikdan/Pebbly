@@ -559,6 +559,19 @@ export const getMostRecentEntry = internalQuery({
   },
 });
 
+export const getHomepageAttemptInfo = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const entry = await ctx.db
+      .query("homepage_recommendations")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+    return entry
+      ? { lastAttemptedAt: entry.lastAttemptedAt, status: entry.status }
+      : null;
+  },
+});
+
 interface Recommendation {
   title: string;
   tmdbId: number | null;
@@ -674,13 +687,12 @@ export const generateRecommendations = action({
       }
     }
 
-    const isGenerateMore = excludeTmdbIds.length > 0;
     const mostRecent = await ctx.runQuery(
       internal.recommendations.getMostRecentEntry,
       { userId: user._id },
     );
 
-    if (!isGenerateMore && mostRecent && Date.now() - mostRecent.createdAt < RATE_LIMIT_MS) {
+    if (mostRecent && Date.now() - mostRecent.createdAt < RATE_LIMIT_MS) {
       return { error: "rate_limited" };
     }
 
@@ -1094,6 +1106,17 @@ export const generateHomepageRecommendations = action({
   handler: async (ctx): Promise<{ success: boolean; error?: string }> => {
     const user = await ctx.runQuery(internal.recommendations.getAuthorizedUser);
     const data = await ctx.runQuery(internal.recommendations.gatherWatchlistData);
+
+    const attemptInfo = await ctx.runQuery(
+      internal.recommendations.getHomepageAttemptInfo,
+      { userId: user._id },
+    );
+    if (
+      attemptInfo &&
+      Date.now() - attemptInfo.lastAttemptedAt < RATE_LIMIT_MS
+    ) {
+      return { success: false, error: "rate_limited" };
+    }
 
     const feedbackList = await ctx.runQuery(
       api.recommendations.getRecommendationFeedback
