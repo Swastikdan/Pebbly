@@ -14,6 +14,28 @@ if (workbox) {
     event.waitUntil(
       caches.open('pebbly-offline').then((cache) => cache.addAll([OFFLINE_FALLBACK, '/']))
     );
+    self.skipWaiting();
+  });
+
+  // Purge caches from previous cache policies so oversized stores (e.g. the old
+  // uncapped image cache) are dropped immediately on update instead of slowly
+  // evicting over time.
+  const CURRENT_CACHES = new Set([
+    'pebbly-static-assets-v2',
+    'pebbly-tmdb-api-v2',
+    'pebbly-tmdb-images-v2',
+    'pebbly-navigations-v2',
+    'pebbly-offline',
+  ]);
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      caches.keys().then((keys) =>
+        Promise.all(
+          keys.filter((key) => !CURRENT_CACHES.has(key)).map((key) => caches.delete(key))
+        )
+      )
+    );
+    self.clients.claim();
   });
 
   // Skip Clerk auth and Convex sync / admin endpoints
@@ -37,10 +59,13 @@ if (workbox) {
       );
     },
     new CacheFirst({
-      cacheName: 'pebbly-static-assets',
+      cacheName: 'pebbly-static-assets-v2',
       plugins: [
         new CacheableResponsePlugin({
           statuses: [0, 200],
+        }),
+        new ExpirationPlugin({
+          maxEntries: 50,
         }),
       ],
     })
@@ -50,7 +75,7 @@ if (workbox) {
   registerRoute(
     ({ url }) => !shouldSkipRequest(url) && url.hostname.includes('api.themoviedb.org'),
     new StaleWhileRevalidate({
-      cacheName: 'pebbly-tmdb-api',
+      cacheName: 'pebbly-tmdb-api-v2',
       plugins: [
         new CacheableResponsePlugin({
           statuses: [0, 200],
@@ -63,18 +88,23 @@ if (workbox) {
     })
   );
 
-  // 3. TMDB images
+  // 3. TMDB images (only sized variants — skip multi-MB original-size images
+  // used in the lightbox, which are left to the browser HTTP cache)
   registerRoute(
-    ({ url }) => !shouldSkipRequest(url) && url.hostname.includes('image.tmdb.org'),
+    ({ url }) =>
+      !shouldSkipRequest(url) &&
+      url.hostname.includes('image.tmdb.org') &&
+      !url.pathname.includes('/t/p/original/'),
     new CacheFirst({
-      cacheName: 'pebbly-tmdb-images',
+      cacheName: 'pebbly-tmdb-images-v2',
       plugins: [
         new CacheableResponsePlugin({
           statuses: [0, 200],
         }),
         new ExpirationPlugin({
-          maxEntries: 200,
+          maxEntries: 120,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          maxSizeInBytes: 100 * 1024 * 1024, // 100 MB
         }),
       ],
     })
@@ -85,10 +115,14 @@ if (workbox) {
     ({ request, url }) => !shouldSkipRequest(url) && request.mode === 'navigate',
     new NetworkFirst({
       networkTimeoutSeconds: 3,
-      cacheName: 'pebbly-navigations',
+      cacheName: 'pebbly-navigations-v2',
       plugins: [
         new CacheableResponsePlugin({
           statuses: [0, 200],
+        }),
+        new ExpirationPlugin({
+          maxEntries: 10,
+          maxAgeSeconds: 24 * 60 * 60, // 1 day
         }),
       ],
     })
