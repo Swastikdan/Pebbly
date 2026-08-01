@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	notFound,
@@ -63,7 +63,8 @@ function KeywordPage() {
 	} = useQuery({
 		queryKey: ["discover-movies-keyword", id, page],
 		queryFn: () => getDiscoverMovies({ with_keywords: id, page }),
-		enabled: !!id,
+		enabled: typeof window !== "undefined" && !!id,
+		placeholderData: keepPreviousData,
 	});
 
 	const handlePageChange = useCallback(
@@ -95,7 +96,10 @@ function KeywordPage() {
 		setIsPending(false);
 	}, [pageNumber, page]);
 
-	const isLoading = isMediaListLoading || isPending || isMediaListFetching;
+	const isLoading =
+		isMediaListLoading ||
+		(isPending && !mediaListData) ||
+		(isMediaListFetching && !mediaListData);
 	const results = mediaListData?.results ?? [];
 	const hasResults = !!results?.length;
 	const showPagination = hasResults && (mediaListData?.total_pages ?? 0) > 1;

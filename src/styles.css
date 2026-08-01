@@ -488,25 +488,27 @@
 	}
 
 	.pressable {
-		@apply cursor-pointer
-           select-none
-           ease-out
-           active:scale-[0.95]
-           will-change-transform;
+		@apply cursor-pointer select-none ease-out active:scale-[0.95];
 		transition:
 			transform 120ms ease-out,
 			opacity 120ms ease-out;
 		touch-action: manipulation;
 	}
 	.pressable-small {
-		@apply active:opacity-70
-		dark:active:opacity-50
-        ease-out
-        will-change-transform;
+		@apply active:opacity-70 dark:active:opacity-50 ease-out;
 		transition:
 			transform 120ms ease-out,
 			opacity 120ms ease-out;
 		touch-action: manipulation;
+	}
+	/* Only promote touch feedback to a compositor layer on hover-capable
+	   devices. Touch screens have no hover/scale affordance, and a permanent
+	   will-change per card wastes GPU memory and slows layer management. */
+	@media (hover: hover) and (pointer: fine) {
+		.pressable,
+		.pressable-small {
+			will-change: transform;
+		}
 	}
 
 	.card-elevated {
