@@ -98,10 +98,14 @@ export function VideoPlayerModal({
 		if (inactivityTimerRef.current) {
 			clearTimeout(inactivityTimerRef.current);
 		}
+		// On mobile, tapping inside the cross-origin iframe often never blurs
+		// the window (especially in fullscreen), so the controls could never
+		// come back. Keep them always visible on touch devices instead.
+		if (isMobile) return;
 		inactivityTimerRef.current = setTimeout(() => {
 			setCloseVisible(false);
 		}, INACTIVITY_HIDE_DELAY);
-	}, []);
+	}, [isMobile]);
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -238,6 +242,11 @@ export function VideoPlayerModal({
 		}
 	};
 
+	// Controls are hidden after inactivity on desktop (mouse hover reveals
+	// them), but on mobile the auto-hide makes them impossible to bring back
+	// inside the cross-origin iframe, so keep them always visible there.
+	const controlsVisible = isMobile || closeVisible;
+
 	return (
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
@@ -323,10 +332,13 @@ export function VideoPlayerModal({
 						allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
 						// Block the provider from navigating the top window
 						// (no allow-top-navigation) or opening new windows/tabs
-						// (no allow-popups). If the provider ever stops loading
+						// (no allow-popups). `allow-same-origin` must stay OFF:
+						// combined with `allow-scripts` it lets embedded content
+						// strip its own sandbox attribute and open windows again.
+						// Playback events come in via postMessage, which works
+						// fine cross-origin. If the provider ever stops loading
 						// inside this sandbox, re-adding `allow-popups` would
 						// re-enable the new-window redirect, so keep both out.
-						sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-presentation allow-pointer-lock allow-downloads"
 						referrerPolicy="no-referrer"
 						onLoad={() => setIsLoading(false)}
 					/>
@@ -347,8 +359,9 @@ export function VideoPlayerModal({
 						aria-label="Close"
 						onClick={() => handleOpenChange(false)}
 						className={cn(
-							"pressable absolute right-3 top-3 z-[70] flex items-center justify-center rounded-lg bg-white p-3 text-black shadow-xl transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white/90 hover:text-black hover:scale-105 active:scale-95",
-							closeVisible ? "opacity-100" : "pointer-events-none opacity-0",
+							"pressable absolute z-[70] flex items-center justify-center rounded-lg bg-white text-black shadow-xl transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white/90 hover:text-black hover:scale-105 active:scale-95 p-3.5 sm:p-3",
+							"right-[max(0.75rem,_env(safe-area-inset-right))] top-[max(0.75rem,_env(safe-area-inset-top))]",
+							controlsVisible ? "opacity-100" : "pointer-events-none opacity-0",
 						)}
 					>
 						<XIcon className="size-5.5" />
@@ -358,8 +371,9 @@ export function VideoPlayerModal({
 						aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
 						onClick={handleFullscreen}
 						className={cn(
-							"pressable absolute right-24 top-3 z-[70] flex items-center justify-center rounded-lg bg-white p-3 text-black shadow-xl transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white/90 hover:text-black hover:scale-105 active:scale-95",
-							closeVisible ? "opacity-100" : "pointer-events-none opacity-0",
+							"pressable absolute z-[70] flex items-center justify-center rounded-lg bg-white text-black shadow-xl transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-white/90 hover:text-black hover:scale-105 active:scale-95 p-3.5 sm:p-3",
+							"right-[calc(max(0.75rem,_env(safe-area-inset-right))+4rem)] top-[max(0.75rem,_env(safe-area-inset-top))]",
+							controlsVisible ? "opacity-100" : "pointer-events-none opacity-0",
 						)}
 					>
 						{isFullscreen ? (

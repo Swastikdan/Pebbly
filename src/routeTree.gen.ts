@@ -9,46 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WatchlistRouteImport } from './routes/watchlist'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as RecommendationsRouteImport } from './routes/recommendations'
-import { Route as DisclaimerRouteImport } from './routes/disclaimer'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PersonIdRouteImport } from './routes/person.$id'
-import { Route as KeywordIdRouteImport } from './routes/keyword.$id'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as DisclaimerRouteImport } from './routes/disclaimer'
+import { Route as RecommendationsRouteImport } from './routes/recommendations'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as ApiMetaimageRouteImport } from './routes/api.metaimage'
-import { Route as ListTypeSlugRouteImport } from './routes/list.$type.$slug'
+import { Route as KeywordIdRouteImport } from './routes/keyword.$id'
+import { Route as PersonIdRouteImport } from './routes/person.$id'
 import { Route as CollectionIdChar123SlugChar125RouteImport } from './routes/collection.$id.{-$slug}'
-import { Route as TvIdChar123SlugChar125IndexRouteImport } from './routes/tv/$id/{-$slug}/index'
+import { Route as ListTypeSlugRouteImport } from './routes/list.$type.$slug'
 import { Route as MovieIdChar123SlugChar125IndexRouteImport } from './routes/movie/$id/{-$slug}/index'
-import { Route as TvIdChar123SlugChar125SeasonsRouteImport } from './routes/tv/$id/{-$slug}/seasons'
-import { Route as TvIdChar123SlugChar125MediaRouteImport } from './routes/tv/$id/{-$slug}/media'
-import { Route as TvIdChar123SlugChar125CastCrewRouteImport } from './routes/tv/$id/{-$slug}/cast-crew'
-import { Route as MovieIdChar123SlugChar125MediaRouteImport } from './routes/movie/$id/{-$slug}/media'
 import { Route as MovieIdChar123SlugChar125CastCrewRouteImport } from './routes/movie/$id/{-$slug}/cast-crew'
+import { Route as MovieIdChar123SlugChar125MediaRouteImport } from './routes/movie/$id/{-$slug}/media'
+import { Route as TvIdChar123SlugChar125IndexRouteImport } from './routes/tv/$id/{-$slug}/index'
+import { Route as TvIdChar123SlugChar125CastCrewRouteImport } from './routes/tv/$id/{-$slug}/cast-crew'
+import { Route as TvIdChar123SlugChar125MediaRouteImport } from './routes/tv/$id/{-$slug}/media'
+import { Route as TvIdChar123SlugChar125SeasonsRouteImport } from './routes/tv/$id/{-$slug}/seasons'
 import { Route as TvIdChar123SlugChar125SeasonSeasonNumberRouteImport } from './routes/tv/$id/{-$slug}/season.$seasonNumber'
 
-const WatchlistRoute = WatchlistRouteImport.update({
-  id: '/watchlist',
-  path: '/watchlist',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/watchlist.lazy').then((d) => d.Route))
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/search.lazy').then((d) => d.Route))
-const RecommendationsRoute = RecommendationsRouteImport.update({
-  id: '/recommendations',
-  path: '/recommendations',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() =>
-  import('./routes/recommendations.lazy').then((d) => d.Route),
-)
-const DisclaimerRoute = DisclaimerRouteImport.update({
-  id: '/disclaimer',
-  path: '/disclaimer',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -56,14 +39,31 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DisclaimerRoute = DisclaimerRouteImport.update({
+  id: '/disclaimer',
+  path: '/disclaimer',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PersonIdRoute = PersonIdRouteImport.update({
-  id: '/person/$id',
-  path: '/person/$id',
+const RecommendationsRoute = RecommendationsRouteImport.update({
+  id: '/recommendations',
+  path: '/recommendations',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./routes/recommendations.lazy').then((d) => d.Route),
+)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/search.lazy').then((d) => d.Route))
+const WatchlistRoute = WatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/watchlist.lazy').then((d) => d.Route))
+const ApiMetaimageRoute = ApiMetaimageRouteImport.update({
+  id: '/api/metaimage',
+  path: '/api/metaimage',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KeywordIdRoute = KeywordIdRouteImport.update({
@@ -71,14 +71,9 @@ const KeywordIdRoute = KeywordIdRouteImport.update({
   path: '/keyword/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMetaimageRoute = ApiMetaimageRouteImport.update({
-  id: '/api/metaimage',
-  path: '/api/metaimage',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ListTypeSlugRoute = ListTypeSlugRouteImport.update({
-  id: '/list/$type/$slug',
-  path: '/list/$type/$slug',
+const PersonIdRoute = PersonIdRouteImport.update({
+  id: '/person/$id',
+  path: '/person/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CollectionIdChar123SlugChar125Route =
@@ -87,34 +82,21 @@ const CollectionIdChar123SlugChar125Route =
     path: '/collection/$id/{-$slug}',
     getParentRoute: () => rootRouteImport,
   } as any)
-const TvIdChar123SlugChar125IndexRoute =
-  TvIdChar123SlugChar125IndexRouteImport.update({
-    id: '/tv/$id/{-$slug}/',
-    path: '/tv/$id/{-$slug}/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+const ListTypeSlugRoute = ListTypeSlugRouteImport.update({
+  id: '/list/$type/$slug',
+  path: '/list/$type/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MovieIdChar123SlugChar125IndexRoute =
   MovieIdChar123SlugChar125IndexRouteImport.update({
     id: '/movie/$id/{-$slug}/',
     path: '/movie/$id/{-$slug}/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const TvIdChar123SlugChar125SeasonsRoute =
-  TvIdChar123SlugChar125SeasonsRouteImport.update({
-    id: '/tv/$id/{-$slug}/seasons',
-    path: '/tv/$id/{-$slug}/seasons',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const TvIdChar123SlugChar125MediaRoute =
-  TvIdChar123SlugChar125MediaRouteImport.update({
-    id: '/tv/$id/{-$slug}/media',
-    path: '/tv/$id/{-$slug}/media',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const TvIdChar123SlugChar125CastCrewRoute =
-  TvIdChar123SlugChar125CastCrewRouteImport.update({
-    id: '/tv/$id/{-$slug}/cast-crew',
-    path: '/tv/$id/{-$slug}/cast-crew',
+const MovieIdChar123SlugChar125CastCrewRoute =
+  MovieIdChar123SlugChar125CastCrewRouteImport.update({
+    id: '/movie/$id/{-$slug}/cast-crew',
+    path: '/movie/$id/{-$slug}/cast-crew',
     getParentRoute: () => rootRouteImport,
   } as any)
 const MovieIdChar123SlugChar125MediaRoute =
@@ -123,10 +105,28 @@ const MovieIdChar123SlugChar125MediaRoute =
     path: '/movie/$id/{-$slug}/media',
     getParentRoute: () => rootRouteImport,
   } as any)
-const MovieIdChar123SlugChar125CastCrewRoute =
-  MovieIdChar123SlugChar125CastCrewRouteImport.update({
-    id: '/movie/$id/{-$slug}/cast-crew',
-    path: '/movie/$id/{-$slug}/cast-crew',
+const TvIdChar123SlugChar125IndexRoute =
+  TvIdChar123SlugChar125IndexRouteImport.update({
+    id: '/tv/$id/{-$slug}/',
+    path: '/tv/$id/{-$slug}/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const TvIdChar123SlugChar125CastCrewRoute =
+  TvIdChar123SlugChar125CastCrewRouteImport.update({
+    id: '/tv/$id/{-$slug}/cast-crew',
+    path: '/tv/$id/{-$slug}/cast-crew',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const TvIdChar123SlugChar125MediaRoute =
+  TvIdChar123SlugChar125MediaRouteImport.update({
+    id: '/tv/$id/{-$slug}/media',
+    path: '/tv/$id/{-$slug}/media',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const TvIdChar123SlugChar125SeasonsRoute =
+  TvIdChar123SlugChar125SeasonsRouteImport.update({
+    id: '/tv/$id/{-$slug}/seasons',
+    path: '/tv/$id/{-$slug}/seasons',
     getParentRoute: () => rootRouteImport,
   } as any)
 const TvIdChar123SlugChar125SeasonSeasonNumberRoute =
@@ -290,32 +290,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/watchlist': {
-      id: '/watchlist'
-      path: '/watchlist'
-      fullPath: '/watchlist'
-      preLoaderRoute: typeof WatchlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recommendations': {
-      id: '/recommendations'
-      path: '/recommendations'
-      fullPath: '/recommendations'
-      preLoaderRoute: typeof RecommendationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/disclaimer': {
-      id: '/disclaimer'
-      path: '/disclaimer'
-      fullPath: '/disclaimer'
-      preLoaderRoute: typeof DisclaimerRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -325,25 +304,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/disclaimer': {
+      id: '/disclaimer'
+      path: '/disclaimer'
+      fullPath: '/disclaimer'
+      preLoaderRoute: typeof DisclaimerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/person/$id': {
-      id: '/person/$id'
-      path: '/person/$id'
-      fullPath: '/person/$id'
-      preLoaderRoute: typeof PersonIdRouteImport
+    '/recommendations': {
+      id: '/recommendations'
+      path: '/recommendations'
+      fullPath: '/recommendations'
+      preLoaderRoute: typeof RecommendationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/keyword/$id': {
-      id: '/keyword/$id'
-      path: '/keyword/$id'
-      fullPath: '/keyword/$id'
-      preLoaderRoute: typeof KeywordIdRouteImport
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/watchlist': {
+      id: '/watchlist'
+      path: '/watchlist'
+      fullPath: '/watchlist'
+      preLoaderRoute: typeof WatchlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/metaimage': {
@@ -353,11 +339,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMetaimageRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/list/$type/$slug': {
-      id: '/list/$type/$slug'
-      path: '/list/$type/$slug'
-      fullPath: '/list/$type/$slug'
-      preLoaderRoute: typeof ListTypeSlugRouteImport
+    '/keyword/$id': {
+      id: '/keyword/$id'
+      path: '/keyword/$id'
+      fullPath: '/keyword/$id'
+      preLoaderRoute: typeof KeywordIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/person/$id': {
+      id: '/person/$id'
+      path: '/person/$id'
+      fullPath: '/person/$id'
+      preLoaderRoute: typeof PersonIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/collection/$id/{-$slug}': {
@@ -367,11 +360,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectionIdChar123SlugChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tv/$id/{-$slug}/': {
-      id: '/tv/$id/{-$slug}/'
-      path: '/tv/$id/{-$slug}'
-      fullPath: '/tv/$id/{-$slug}/'
-      preLoaderRoute: typeof TvIdChar123SlugChar125IndexRouteImport
+    '/list/$type/$slug': {
+      id: '/list/$type/$slug'
+      path: '/list/$type/$slug'
+      fullPath: '/list/$type/$slug'
+      preLoaderRoute: typeof ListTypeSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/movie/$id/{-$slug}/': {
@@ -381,25 +374,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MovieIdChar123SlugChar125IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tv/$id/{-$slug}/seasons': {
-      id: '/tv/$id/{-$slug}/seasons'
-      path: '/tv/$id/{-$slug}/seasons'
-      fullPath: '/tv/$id/{-$slug}/seasons'
-      preLoaderRoute: typeof TvIdChar123SlugChar125SeasonsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tv/$id/{-$slug}/media': {
-      id: '/tv/$id/{-$slug}/media'
-      path: '/tv/$id/{-$slug}/media'
-      fullPath: '/tv/$id/{-$slug}/media'
-      preLoaderRoute: typeof TvIdChar123SlugChar125MediaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tv/$id/{-$slug}/cast-crew': {
-      id: '/tv/$id/{-$slug}/cast-crew'
-      path: '/tv/$id/{-$slug}/cast-crew'
-      fullPath: '/tv/$id/{-$slug}/cast-crew'
-      preLoaderRoute: typeof TvIdChar123SlugChar125CastCrewRouteImport
+    '/movie/$id/{-$slug}/cast-crew': {
+      id: '/movie/$id/{-$slug}/cast-crew'
+      path: '/movie/$id/{-$slug}/cast-crew'
+      fullPath: '/movie/$id/{-$slug}/cast-crew'
+      preLoaderRoute: typeof MovieIdChar123SlugChar125CastCrewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/movie/$id/{-$slug}/media': {
@@ -409,11 +388,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MovieIdChar123SlugChar125MediaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/movie/$id/{-$slug}/cast-crew': {
-      id: '/movie/$id/{-$slug}/cast-crew'
-      path: '/movie/$id/{-$slug}/cast-crew'
-      fullPath: '/movie/$id/{-$slug}/cast-crew'
-      preLoaderRoute: typeof MovieIdChar123SlugChar125CastCrewRouteImport
+    '/tv/$id/{-$slug}/': {
+      id: '/tv/$id/{-$slug}/'
+      path: '/tv/$id/{-$slug}'
+      fullPath: '/tv/$id/{-$slug}/'
+      preLoaderRoute: typeof TvIdChar123SlugChar125IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tv/$id/{-$slug}/cast-crew': {
+      id: '/tv/$id/{-$slug}/cast-crew'
+      path: '/tv/$id/{-$slug}/cast-crew'
+      fullPath: '/tv/$id/{-$slug}/cast-crew'
+      preLoaderRoute: typeof TvIdChar123SlugChar125CastCrewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tv/$id/{-$slug}/media': {
+      id: '/tv/$id/{-$slug}/media'
+      path: '/tv/$id/{-$slug}/media'
+      fullPath: '/tv/$id/{-$slug}/media'
+      preLoaderRoute: typeof TvIdChar123SlugChar125MediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tv/$id/{-$slug}/seasons': {
+      id: '/tv/$id/{-$slug}/seasons'
+      path: '/tv/$id/{-$slug}/seasons'
+      fullPath: '/tv/$id/{-$slug}/seasons'
+      preLoaderRoute: typeof TvIdChar123SlugChar125SeasonsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tv/$id/{-$slug}/season/$seasonNumber': {
