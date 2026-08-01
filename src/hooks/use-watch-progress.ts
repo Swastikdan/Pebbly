@@ -459,6 +459,35 @@ export function useContinueWatching() {
 	return { items, allItems: items };
 }
 
+export function useRemoveFromContinueWatching() {
+	const { isSignedIn } = useUser();
+	const convexRemove = useMutation(api.watchlist.removeFromContinueWatching);
+	const setProgressStatusLocal = useWatchlistStore(
+		(state) => state.setProgressStatusLocal,
+	);
+	const clearShowProgress = useLocalProgressStore(
+		(state) => state.clearShowProgress,
+	);
+
+	const removeFromContinueWatching = useCallback(
+		async (tmdbId: number, mediaType: "movie" | "tv") => {
+			if (isSignedIn) {
+				try {
+					await convexRemove({ tmdbId, mediaType });
+				} catch (error) {
+					console.error("Failed to remove item from continue watching:", error);
+				}
+			}
+
+			setProgressStatusLocal(String(tmdbId), mediaType, "watch-later", 0);
+			clearShowProgress(tmdbId);
+		},
+		[isSignedIn, convexRemove, setProgressStatusLocal, clearShowProgress],
+	);
+
+	return { removeFromContinueWatching };
+}
+
 function markEpisodeWatchedOptimisticUpdate(localStore: any, args: any) {
 	const current =
 		localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
