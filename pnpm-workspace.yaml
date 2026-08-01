@@ -5,6 +5,7 @@ trustPolicyExclude:
   - chokidar
   - semver
   - undici-types
+  - '@hono/node-server'
 allowBuilds:
   '@clerk/shared': true
   '@google/genai': true
