@@ -3,12 +3,15 @@ import { Link } from "@tanstack/react-router";
 import { memo } from "react";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
-import { Star } from "@/components/ui/icons";
+import { Star, XIcon } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
-import { useWatchProgress } from "@/hooks/use-watch-progress";
+import {
+	useRemoveFromContinueWatching,
+	useWatchProgress,
+} from "@/hooks/use-watch-progress";
 import { getTvSeasonDetails } from "@/lib/queries";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
@@ -82,6 +85,8 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
 	const year = release_date ? new Date(release_date).getFullYear() : "";
 
+	const { removeFromContinueWatching } = useRemoveFromContinueWatching();
+
 	return (
 		<div className="group relative w-40 md:w-44 lg:w-48 ">
 			<Link
@@ -148,7 +153,22 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 				</div>
 			</Link>
 
-			<div className="absolute right-2 top-2 z-10 transition-[transform,opacity] duration-200 ease-out">
+			<div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 transition-[transform,opacity] duration-200 ease-out">
+				{isContinueWatching && (
+					<button
+						type="button"
+						title="Remove from Continue Watching"
+						aria-label="Remove from Continue Watching"
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							removeFromContinueWatching(id, media_type);
+						}}
+						className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-all duration-200 hover:bg-red-600 hover:text-white hover:scale-105"
+					>
+						<XIcon className="size-4" />
+					</button>
+				)}
 				<WatchlistButton
 					id={id}
 					image={poster_path}
@@ -159,7 +179,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 transition-[color,background-color,transform] duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
+					className="h-8 w-8 rounded-lg shadow-md hover:scale-105"
 				/>
 			</div>
 		</div>
@@ -212,6 +232,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 			imageUrl = `${IMAGE_PREFIX.SD_POSTER}${seasonDetails.poster_path}`;
 		}
 	}
+	const { removeFromContinueWatching } = useRemoveFromContinueWatching();
 
 	return (
 		<div className="group relative w-64 md:w-72 lg:w-80 ">
@@ -283,7 +304,22 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 				</div>
 			</Link>
 
-			<div className="absolute right-2 top-2 z-10 transition-[color,background-color,box-shadow,transform] duration-300 ease-out">
+			<div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 transition-[color,background-color,box-shadow,transform] duration-300 ease-out">
+				{isContinueWatching && (
+					<button
+						type="button"
+						title="Remove from Continue Watching"
+						aria-label="Remove from Continue Watching"
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							removeFromContinueWatching(id, media_type);
+						}}
+						className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-all duration-200 hover:bg-red-600 hover:text-white hover:scale-105"
+					>
+						<XIcon className="size-4" />
+					</button>
+				)}
 				<WatchlistButton
 					id={id}
 					image={poster_path}
@@ -294,7 +330,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 transition-[color,background-color,box-shadow,transform] duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
+					className="h-8 w-8 rounded-lg shadow-md hover:scale-105"
 				/>
 			</div>
 		</div>

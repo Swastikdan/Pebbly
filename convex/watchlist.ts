@@ -114,10 +114,10 @@ async function createWatchlistSnapshot(
     .query("watch_items")
     .withIndex("by_user", (q) => q.eq("userId", userId))
     .collect();
-  const itemIds = items
+  const watchlistItems = items
     .filter((item) => item.inWatchlist)
-    .map((item) => item._id)
-    .sort();
+    .map((item) => ({ tmdbId: item.tmdbId, mediaType: item.mediaType }))
+    .sort((a, b) => a.tmdbId - b.tmdbId || a.mediaType.localeCompare(b.mediaType));
   const latest = await ctx.db
     .query("watchlist_snapshots")
     .withIndex("by_user_and_createdAt", (q) => q.eq("userId", userId))
@@ -126,15 +126,20 @@ async function createWatchlistSnapshot(
 
   if (
     latest &&
-    latest.itemIds.length === itemIds.length &&
-    latest.itemIds.every((id, index) => id === itemIds[index])
+    latest.items &&
+    latest.items.length === watchlistItems.length &&
+    latest.items.every(
+      (item, index) =>
+        item.tmdbId === watchlistItems[index].tmdbId &&
+        item.mediaType === watchlistItems[index].mediaType,
+    )
   ) {
     return;
   }
 
   await ctx.db.insert("watchlist_snapshots", {
     userId,
-    itemIds,
+    items: watchlistItems,
     createdAt: Date.now(),
   });
 }
@@ -271,6 +276,25 @@ export const updateProgress = mutation({
       inWatchlist: false,
       progress: nextProgress,
       progressStatus: nextProgressStatus,
+      updatedAt: now,
+    });
+  },
+});
+
+export const removeFromContinueWatching = mutation({
+  args: {
+    tmdbId: v.number(),
+    mediaType: MEDIA_TYPE_VALIDATOR,
+  },
+  handler: async (ctx, args) => {
+    const user = await requireCurrentUser(ctx);
+    const existing = await getWatchItem(ctx, user._id, args);
+    if (!existing) return;
+
+    const now = Date.now();
+    await ctx.db.patch(existing._id, {
+      progressStatus: existing.inWatchlist ? "watch-later" : undefined,
+      progress: 0,
       updatedAt: now,
     });
   },
@@ -1018,14 +1042,13 @@ export const toggleListItem = mutation({
     const list = await ctx.db.get(args.listId);
     if (!list || list.userId !== user._id) throw new Error("List not found");
 
-    const items = await ctx.db
+    const existing = await ctx.db
       .query("list_items")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
+      .withIndex("by_list_media", (q) =>
+        q.eq("listId", args.listId).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
       )
-      .collect();
+      .first();
 
-    const existing = items.find((i) => i.listId === args.listId);
     if (existing) {
       await ctx.db.delete(existing._id);
       return false;

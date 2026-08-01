@@ -3,9 +3,9 @@ import { internal } from "./_generated/api";
 
 const crons = cronJobs();
 
-// Snapshots are tiny (only watch-item IDs) and only a new state is retained.
+// Snapshots record watchlist media state (TMDB IDs & media types) and only a new state is retained.
 crons.daily(
-  "watchlist ID snapshot",
+  "watchlist media snapshot",
   { hourUTC: 3, minuteUTC: 0 },
   internal.watchlist.createDailySnapshots,
 );

@@ -33,7 +33,12 @@ export default defineSchema({
   // the metadata; snapshots only record which saved items belonged together.
   watchlist_snapshots: defineTable({
     userId: v.id("users"),
-    itemIds: v.array(v.id("watch_items")),
+    items: v.array(
+      v.object({
+        tmdbId: v.number(),
+        mediaType: v.string(),
+      }),
+    ),
     createdAt: v.number(),
   }).index("by_user_and_createdAt", ["userId", "createdAt"]),
 
@@ -65,6 +70,7 @@ export default defineSchema({
     overview: v.optional(v.string()),
   })
     .index("by_list", ["listId"])
+    .index("by_list_media", ["listId", "tmdbId", "mediaType"])
     .index("by_user_media", ["userId", "tmdbId", "mediaType"])
     .index("by_user", ["userId"]),
 

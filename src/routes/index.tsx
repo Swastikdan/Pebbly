@@ -1,6 +1,7 @@
 import { useUser } from "@clerk/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
+import { DailyPickButton } from "@/components/daily-pick";
 import {
 	ContinueWatching,
 	MediaSkeletonList,
@@ -54,6 +55,13 @@ function HomePage() {
 						<Suspense fallback={<SearchBarSkeleton />}>
 							<SearchBar />
 						</Suspense>
+					</div>
+
+					<div
+						className="mt-4 flex justify-center animate-fade-in"
+						style={{ animationDelay: "250ms" }}
+					>
+						<DailyPickButton />
 					</div>
 				</div>
 			</div>

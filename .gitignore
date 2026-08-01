@@ -16,3 +16,6 @@ todos.json
 .commandcode/taste/taste.md
 docs
 implementation_plan.md
+.skills-lock.json
+.agents
+skills-lock.json
