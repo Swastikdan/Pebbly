@@ -142,204 +142,27 @@ function SearchPage() {
 	const isLoadingState =
 		isLoading || (isPending && !data) || (isFetching && !data);
 
+	let content: React.ReactNode;
 	if (!query) {
-		return (
-			<section className="flex w-full justify-center">
-				<div className="mx-auto w-full max-w-screen-xl p-5">
-					<div className="mb-6 flex flex-col gap-1">
-						<h1 className="text-2xl font-bold tracking-tight md:text-3xl animate-fade-in">
-							Search
-						</h1>
-						<p className="text-sm text-muted-foreground">
-							Find movies, TV shows, and more
-						</p>
-					</div>
-					<SearchBar query={query} updateUrlOnChange autoFocus />
-					<SearchHistory navigate={navigate} />
-					<div className="flex flex-col gap-5 py-6">
-						<h2 className="text-lg font-semibold">Trending Now</h2>
-						{isTrendingLoading ? (
-							<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
-								{Array.from({ length: 12 }).map((_, index) => (
-									<MediaCardSkeleton key={index} card_type="horizontal" />
-								))}
-							</div>
-						) : (
-							<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
-								{trendingData?.map((item, index) => (
-									<MediaCard
-										key={item.id}
-										id={item.id}
-										image={item.poster_path ?? ""}
-										known_for_department=""
-										media_type={item.media_type as MediaType}
-										poster_path={item.poster_path ?? ""}
-										rating={item.vote_average ?? 0}
-										release_date={
-											item.first_air_date ?? item.release_date ?? null
-										}
-										title={item.title ?? item.name ?? "Untitled"}
-										overview={item.overview ?? undefined}
-										card_type="horizontal"
-										priority={index < 7}
-									/>
-								))}
-							</div>
-						)}
-					</div>
-				</div>
-			</section>
-		);
-	}
-
-	if (isLoadingState) {
-		return (
-			<section className="flex w-full justify-center">
-				<div className="mx-auto w-full max-w-screen-xl p-5">
-					<SearchBar query={query} updateUrlOnChange />
-					<div className="flex h-full flex-col gap-5 py-5">
-						<div className="flex flex-wrap items-center gap-2">
-							<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 ring-1 ring-border/40">
-								<Skeleton className="h-7 w-10 rounded-md" />
-								<Skeleton className="h-7 w-16 rounded-md" />
-								<Skeleton className="h-7 w-14 rounded-md" />
-							</div>
-
-							<Skeleton className="h-8 w-[100px] rounded-lg" />
-
-							<Skeleton className="ml-auto h-3 w-[70px] rounded" />
+		content = (
+			<>
+				<SearchHistory navigate={navigate} />
+				<div className="flex flex-col gap-5 py-6">
+					<h2 className="text-lg font-semibold">Trending Now</h2>
+					{isTrendingLoading ? (
+						<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
+							{Array.from({ length: 12 }).map((_, index) => (
+								<MediaCardSkeleton key={index} card_type="horizontal" />
+							))}
 						</div>
-						<div className="flex min-h-96 w-full items-center justify-center">
-							<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
-								{Array.from({ length: 12 }).map((_, index) => (
-									<MediaCardSkeleton key={index} card_type="horizontal" />
-								))}
-							</div>
-						</div>
-					</div>
-				</div>
-			</section>
-		);
-	}
-
-	if (error) {
-		return (
-			<section className="flex w-full justify-center">
-				<div className="mx-auto w-full max-w-screen-xl p-5">
-					<SearchBar query={query} updateUrlOnChange />
-					<DefaultEmptyState
-						onReset={() => {
-							navigate({
-								to: "/search",
-								search: {
-									query: undefined,
-									page: undefined,
-								},
-							});
-						}}
-						message="Something went wrong. Please try again later"
-					/>
-				</div>
-			</section>
-		);
-	}
-
-	if (filteredData.length === 0) {
-		return (
-			<section className="flex w-full justify-center">
-				<div className="mx-auto w-full max-w-screen-xl p-5">
-					<SearchBar query={query} updateUrlOnChange />
-					<DefaultEmptyState
-						onReset={() => {
-							if (noResultsDueToFilters) {
-								setType(null);
-								setMinRating("0");
-							} else {
-								navigate({ to: "/search" });
-							}
-						}}
-						message={
-							noResultsDueToFilters
-								? "No movies or TV shows found with the selected filter"
-								: "No movies or TV shows found matching your search"
-						}
-					/>
-					<Pagination
-						currentPage={page}
-						totalPages={totalPages}
-						onPageChange={handlePageChange}
-					/>
-				</div>
-			</section>
-		);
-	}
-
-	return (
-		<section className="flex w-full justify-center">
-			<div className="mx-auto w-full max-w-screen-xl p-5">
-				<SearchBar query={query} updateUrlOnChange />
-				<div className="flex h-full flex-col gap-5 py-5">
-					<div className="flex flex-wrap items-center gap-2">
-						<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-8 items-center ring-1 ring-border/40">
-							<Button
-								className="h-7 px-3 text-xs font-semibold rounded-md"
-								variant={!type ? "default" : "ghost"}
-								onClick={handleAllClick}
-							>
-								All
-							</Button>
-							<Button
-								className="h-7 px-3 text-xs font-semibold rounded-md"
-								variant={type === "movie" ? "default" : "ghost"}
-								onClick={handleMovieClick}
-							>
-								Movies
-							</Button>
-							<Button
-								className="h-7 px-3 text-xs font-semibold rounded-md"
-								variant={type === "tv" ? "default" : "ghost"}
-								onClick={handleTVClick}
-							>
-								Series
-							</Button>
-						</div>
-
-						<Select value={minRating} onValueChange={setMinRating}>
-							<SelectTrigger className="h-8 gap-2 rounded-lg border-border/60 bg-secondary/30 px-3 text-xs font-medium">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent className="rounded-xl">
-								<SelectItem className="rounded-lg" value="0">
-									Any Rating
-								</SelectItem>
-								<SelectItem className="rounded-lg" value="6">
-									6+ Rating
-								</SelectItem>
-								<SelectItem className="rounded-lg" value="7">
-									7+ Rating
-								</SelectItem>
-								<SelectItem className="rounded-lg" value="8">
-									8+ Rating
-								</SelectItem>
-								<SelectItem className="rounded-lg" value="9">
-									9+ Rating
-								</SelectItem>
-							</SelectContent>
-						</Select>
-
-						<span className="ml-auto text-[10px] tracking-wider text-muted-foreground">
-							{data?.total_results ?? 0} results
-						</span>
-					</div>
-
-					<div className="flex min-h-96 w-full items-center justify-center">
+					) : (
 						<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
-							{filteredData.map((item, index) => (
+							{trendingData?.map((item, index) => (
 								<MediaCard
 									key={item.id}
 									id={item.id}
-									image={item.poster_path ?? item.profile_path ?? ""}
-									known_for_department={item.known_for_department ?? ""}
+									image={item.poster_path ?? ""}
+									known_for_department=""
 									media_type={item.media_type as MediaType}
 									poster_path={item.poster_path ?? ""}
 									rating={item.vote_average ?? 0}
@@ -353,15 +176,175 @@ function SearchPage() {
 								/>
 							))}
 						</div>
-					</div>
-					{showPagination && (
-						<Pagination
-							currentPage={page}
-							totalPages={totalPages}
-							onPageChange={handlePageChange}
-						/>
 					)}
 				</div>
+			</>
+		);
+	} else if (isLoadingState) {
+		content = (
+			<div className="flex h-full flex-col gap-5 py-5">
+				<div className="flex flex-wrap items-center gap-2">
+					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 ring-1 ring-border/40">
+						<Skeleton className="h-7 w-10 rounded-md" />
+						<Skeleton className="h-7 w-16 rounded-md" />
+						<Skeleton className="h-7 w-14 rounded-md" />
+					</div>
+
+					<Skeleton className="h-8 w-[100px] rounded-lg" />
+
+					<Skeleton className="ml-auto h-3 w-[70px] rounded" />
+				</div>
+				<div className="flex min-h-96 w-full items-center justify-center">
+					<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
+						{Array.from({ length: 12 }).map((_, index) => (
+							<MediaCardSkeleton key={index} card_type="horizontal" />
+						))}
+					</div>
+				</div>
+			</div>
+		);
+	} else if (error) {
+		content = (
+			<DefaultEmptyState
+				onReset={() => {
+					navigate({
+						to: "/search",
+						search: {
+							query: undefined,
+							page: undefined,
+						},
+					});
+				}}
+				message="Something went wrong. Please try again later"
+			/>
+		);
+	} else if (filteredData.length === 0) {
+		content = (
+			<>
+				<DefaultEmptyState
+					onReset={() => {
+						if (noResultsDueToFilters) {
+							setType(null);
+							setMinRating("0");
+						} else {
+							navigate({ to: "/search" });
+						}
+					}}
+					message={
+						noResultsDueToFilters
+							? "No movies or TV shows found with the selected filter"
+							: "No movies or TV shows found matching your search"
+					}
+				/>
+				<Pagination
+					currentPage={page}
+					totalPages={totalPages}
+					onPageChange={handlePageChange}
+				/>
+			</>
+		);
+	} else {
+		content = (
+			<div className="flex h-full flex-col gap-5 py-5">
+				<div className="flex flex-wrap items-center gap-2">
+					<div className="flex gap-0.5 rounded-lg bg-secondary/40 p-0.5 h-8 items-center ring-1 ring-border/40">
+						<Button
+							className="h-7 px-3 text-xs font-semibold rounded-md"
+							variant={!type ? "default" : "ghost"}
+							onClick={handleAllClick}
+						>
+							All
+						</Button>
+						<Button
+							className="h-7 px-3 text-xs font-semibold rounded-md"
+							variant={type === "movie" ? "default" : "ghost"}
+							onClick={handleMovieClick}
+						>
+							Movies
+						</Button>
+						<Button
+							className="h-7 px-3 text-xs font-semibold rounded-md"
+							variant={type === "tv" ? "default" : "ghost"}
+							onClick={handleTVClick}
+						>
+							Series
+						</Button>
+					</div>
+
+					<Select value={minRating} onValueChange={setMinRating}>
+						<SelectTrigger className="h-8 gap-2 rounded-lg border-border/60 bg-secondary/30 px-3 text-xs font-medium">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent className="rounded-xl">
+							<SelectItem className="rounded-lg" value="0">
+								Any Rating
+							</SelectItem>
+							<SelectItem className="rounded-lg" value="6">
+								6+ Rating
+							</SelectItem>
+							<SelectItem className="rounded-lg" value="7">
+								7+ Rating
+							</SelectItem>
+							<SelectItem className="rounded-lg" value="8">
+								8+ Rating
+							</SelectItem>
+							<SelectItem className="rounded-lg" value="9">
+								9+ Rating
+							</SelectItem>
+						</SelectContent>
+					</Select>
+
+					<span className="ml-auto text-[10px] tracking-wider text-muted-foreground">
+						{data?.total_results ?? 0} results
+					</span>
+				</div>
+
+				<div className="flex min-h-96 w-full items-center justify-center">
+					<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
+						{filteredData.map((item, index) => (
+							<MediaCard
+								key={item.id}
+								id={item.id}
+								image={item.poster_path ?? item.profile_path ?? ""}
+								known_for_department={item.known_for_department ?? ""}
+								media_type={item.media_type as MediaType}
+								poster_path={item.poster_path ?? ""}
+								rating={item.vote_average ?? 0}
+								release_date={item.first_air_date ?? item.release_date ?? null}
+								title={item.title ?? item.name ?? "Untitled"}
+								overview={item.overview ?? undefined}
+								card_type="horizontal"
+								priority={index < 7}
+							/>
+						))}
+					</div>
+				</div>
+				{showPagination && (
+					<Pagination
+						currentPage={page}
+						totalPages={totalPages}
+						onPageChange={handlePageChange}
+					/>
+				)}
+			</div>
+		);
+	}
+
+	return (
+		<section className="flex w-full justify-center">
+			<div className="mx-auto w-full max-w-screen-xl p-5">
+				{!query && (
+					<div className="mb-6 flex flex-col gap-1">
+						<h1 className="text-2xl font-bold tracking-tight md:text-3xl animate-fade-in">
+							Search
+						</h1>
+						<p className="text-sm text-muted-foreground">
+							Find movies, TV shows, and more
+						</p>
+					</div>
+				)}
+				<SearchBar query={query} updateUrlOnChange autoFocus={!query} />
+				{content}
 			</div>
 		</section>
 	);

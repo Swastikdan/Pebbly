@@ -55,11 +55,20 @@ export function VideoPlayerModal({
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 
-		setIsMobile(
-			/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
-				(("ontouchstart" in window || navigator.maxTouchPoints > 0) &&
-					window.matchMedia("(max-width: 1024px)").matches),
-		);
+		const coarsePointer = window.matchMedia("(pointer: coarse)");
+		const updateIsMobile = () => {
+			// iPad/tablets report themselves as "Macintosh" in the user agent
+			// and can be wider than 1024px in landscape, so also check the
+			// primary pointer type to keep controls always visible on touch.
+			setIsMobile(
+				/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
+					coarsePointer.matches,
+			);
+		};
+
+		updateIsMobile();
+		coarsePointer.addEventListener?.("change", updateIsMobile);
+		return () => coarsePointer.removeEventListener?.("change", updateIsMobile);
 	}, []);
 
 	const navigate = useNavigate();
@@ -101,11 +110,10 @@ export function VideoPlayerModal({
 		// On mobile, tapping inside the cross-origin iframe often never blurs
 		// the window (especially in fullscreen), so the controls could never
 		// come back. Keep them always visible on touch devices instead.
-		if (isMobile) return;
 		inactivityTimerRef.current = setTimeout(() => {
 			setCloseVisible(false);
 		}, INACTIVITY_HIDE_DELAY);
-	}, [isMobile]);
+	}, []);
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -245,7 +253,7 @@ export function VideoPlayerModal({
 	// Controls are hidden after inactivity on desktop (mouse hover reveals
 	// them), but on mobile the auto-hide makes them impossible to bring back
 	// inside the cross-origin iframe, so keep them always visible there.
-	const controlsVisible = isMobile || closeVisible;
+	const controlsVisible = closeVisible;
 
 	return (
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -308,8 +316,13 @@ export function VideoPlayerModal({
 				<DialogHeader className="sr-only">
 					<DialogTitle>{title}</DialogTitle>
 				</DialogHeader>
+				{/* biome-ignore lint/a11y/useKeyWithClickEvents: gesture listener */}
+				{/* biome-ignore lint/a11y/noStaticElementInteractions: gesture listener */}
 				<div
 					ref={playerContainerRef}
+					onTouchStartCapture={resetInactivityTimer}
+					onPointerDownCapture={resetInactivityTimer}
+					onClick={resetInactivityTimer}
 					className="
                         relative isolate z-[1] size-full overflow-hidden bg-black p-0
                         [&:fullscreen]:fixed
@@ -342,17 +355,18 @@ export function VideoPlayerModal({
 						referrerPolicy="no-referrer"
 						onLoad={() => setIsLoading(false)}
 					/>
-					{/* Transparent overlay used to reveal the controls when hovering the
-					video (desktop). It is pass-through on mobile, where a tap inside
-					the iframe blurs the window and reveals the controls instead. */}
+					{/* Transparent overlay used to reveal the controls when hovering/tapping the
+					video. It is pass-through when controls are visible so clicks reach iframe. */}
+					{/* biome-ignore lint/a11y/useKeyWithClickEvents: gesture listener */}
+					{/* biome-ignore lint/a11y/noStaticElementInteractions: gesture listener */}
 					<div
 						className={cn(
 							"absolute inset-0 z-[5]",
-							!isMobile && !closeVisible
-								? "pointer-events-auto"
-								: "pointer-events-none",
+							!closeVisible ? "pointer-events-auto" : "pointer-events-none",
 						)}
-						onPointerMove={!isMobile ? resetInactivityTimer : undefined}
+						onPointerMove={resetInactivityTimer}
+						onTouchStart={resetInactivityTimer}
+						onClick={resetInactivityTimer}
 					/>
 					<button
 						type="button"
