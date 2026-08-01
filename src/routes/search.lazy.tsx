@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
 	createLazyFileRoute,
 	useNavigate,
@@ -49,11 +49,12 @@ function SearchPage() {
 	const { data, error, isFetching, isLoading } = useQuery({
 		queryKey: ["search", query, page],
 		queryFn: () => getSearchResult(query, page),
-		enabled: !!query,
+		enabled: typeof window !== "undefined" && !!query,
 		staleTime: 1000 * 60 * 60 * 24,
 		gcTime: 1000 * 60 * 60 * 24,
 		retry: 2,
 		refetchOnWindowFocus: false,
+		placeholderData: keepPreviousData,
 	});
 
 	const { data: trendingData, isLoading: isTrendingLoading } = useQuery({
@@ -63,7 +64,7 @@ function SearchPage() {
 		gcTime: 1000 * 60 * 60 * 24,
 		retry: 2,
 		refetchOnWindowFocus: false,
-		enabled: !query,
+		enabled: typeof window !== "undefined" && !query,
 	});
 
 	useEffect(() => {
@@ -138,7 +139,8 @@ function SearchPage() {
 		filteredData.length === 0 && hasActiveFilters && baselineNonPersonCount > 0;
 	const totalPages = Math.min(data?.total_pages ?? 0, MAX_PAGINATION_LIMIT);
 	const showPagination = hasResults && totalPages > 1;
-	const isLoadingState = isLoading || isPending || isFetching;
+	const isLoadingState =
+		isLoading || (isPending && !data) || (isFetching && !data);
 
 	if (!query) {
 		return (

@@ -8,13 +8,21 @@ const searchPageSearchSchema = object({
 
 export const Route = createFileRoute("/search")({
 	validateSearch: searchPageSearchSchema,
-	head: () => ({
-		meta: [
-			{ title: "Search Results | Pebbly" },
-			{
-				name: "description",
-				content: "Search for movies and TV shows",
-			},
-		],
-	}),
+	head: ({ match }) => {
+		const query = (match.search as { query?: string }).query?.trim();
+		const title = query
+			? `Search: ${query} | Pebbly`
+			: "Search Results | Pebbly";
+		return {
+			meta: [
+				{ title },
+				{
+					name: "description",
+					content: query
+						? `Search results for "${query}"`
+						: "Search for movies and TV shows",
+				},
+			],
+		};
+	},
 });

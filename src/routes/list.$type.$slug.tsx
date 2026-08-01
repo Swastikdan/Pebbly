@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	notFound,
@@ -89,7 +89,8 @@ function MediaListPage() {
 	} = useQuery({
 		queryKey: ["media-list", query, page],
 		queryFn: () => getMediaList({ type: query, page }),
-		enabled: !!query,
+		enabled: typeof window !== "undefined" && !!query,
+		placeholderData: keepPreviousData,
 	});
 
 	const handlePageChange = useCallback(
@@ -123,7 +124,10 @@ function MediaListPage() {
 		setIsPending(false);
 	}, [pageNumber, page]);
 
-	const isLoading = isMediaListLoading || isPending || isMediaListFetching;
+	const isLoading =
+		isMediaListLoading ||
+		(isPending && !mediaListData) ||
+		(isMediaListFetching && !mediaListData);
 	const results = mediaListData?.results ?? [];
 	const hasResults = !!results?.length;
 	const showPagination = hasResults && (mediaListData?.total_pages ?? 0) > 1;

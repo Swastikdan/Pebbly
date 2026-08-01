@@ -26,17 +26,12 @@ type KnownForCredit = {
 };
 
 export const Route = createFileRoute("/person/$id")({
-	loader: async ({ params, context }) => {
+	loader: async ({ params }) => {
 		const { id } = params;
 		const parsed = parseAndValidateId(id);
 		if (!parsed.success) {
 			throw notFound();
 		}
-		const personId = parsed.data;
-		await context.queryClient.ensureQueryData({
-			queryKey: ["person_details", personId],
-			queryFn: () => getPersonDetails({ id: personId }),
-		});
 		return { id };
 	},
 	head: () => ({
@@ -68,6 +63,7 @@ function PersonPage() {
 	const { data, error, isLoading } = useQuery<PersonDetails>({
 		queryKey: ["person_details", personId],
 		queryFn: async () => await getPersonDetails({ id: personId }),
+		enabled: typeof window !== "undefined",
 	});
 
 	const knownForCredits = useMemo(() => {

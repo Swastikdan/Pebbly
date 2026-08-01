@@ -47,6 +47,7 @@ function MovieCollnetionPage() {
 	const { data, error, isLoading } = useQuery<Collection>({
 		queryKey: ["movie_details", id],
 		queryFn: async () => await getCollection({ id: parseInt(id, 10) }),
+		enabled: typeof window !== "undefined",
 	});
 
 	useCanonicalSlugRedirect({

@@ -107,7 +107,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white sm:backdrop-blur-md flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
 							<span className="font-semibold tabular-nums text-white">
 								{rating.toFixed(1)}
@@ -115,7 +115,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white sm:backdrop-blur-md border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white border-0">
 						{media_type === "movie" ? "Movie" : "TV"}
 					</Badge>
 				</div>
@@ -159,7 +159,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 backdrop-blur-sm transition-[color,background-color,transform] duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
+					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 transition-[color,background-color,transform] duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
 				/>
 			</div>
 		</div>
@@ -239,7 +239,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white sm:backdrop-blur-md flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
 							<span className="font-semibold tabular-nums text-white">
 								{rating.toFixed(1)}
@@ -247,7 +247,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white sm:backdrop-blur-md border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white border-0">
 						{media_type === "movie" ? "Movie" : "TV Series"}
 					</Badge>
 				</div>
@@ -294,7 +294,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 					release_date={release_date ?? ""}
 					title={title}
 					overview={overview}
-					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 backdrop-blur-sm transition-[color,background-color,box-shadow,transform] duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
+					className="h-8 w-8 rounded-lg bg-black/50 dark:bg-white/90 text-white dark:text-neutral-900 transition-[color,background-color,box-shadow,transform] duration-200 hover:bg-black/70 dark:hover:bg-white/80 hover:scale-105"
 				/>
 			</div>
 		</div>
