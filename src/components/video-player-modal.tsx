@@ -142,6 +142,23 @@ export function VideoPlayerModal({
 		};
 	}, [isOpen, resetInactivityTimer]);
 
+	// While the player is open, confirm before leaving the page so an embedded
+	// player cannot silently redirect us to a random ad site (the provider
+	// refuses to run inside a sandboxed iframe, so this is the fallback).
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+			event.returnValue = "";
+		};
+		window.addEventListener("beforeunload", handleBeforeUnload);
+
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		};
+	}, [isOpen]);
+
 	if (!isSignedIn || loading || !hasFeature("video-player")) return null;
 
 	const videoUrl = buildPlayerUrl({
