@@ -8,7 +8,7 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { GoogleGenAI } from "@google/genai";
 import { hasFeature } from "./admin";
@@ -51,7 +51,6 @@ async function requireAuthenticatedUser(
 
   return user;
 }
-
 
 async function requireOwnedRecommendationEntry(
   ctx: MutationCtx,
@@ -234,13 +233,13 @@ const MODELS_TO_TRY = [
 const RATE_LIMIT_MS = 2 * 60 * 1000;
 
 function computeHash(
-	items: Array<{
-		tmdbId: number;
-		progressStatus?: string;
-		reaction?: string | null;
-	}>,
-	mediaTypePreference?: string,
-	genrePreference?: string,
+  items: Array<{
+    tmdbId: number;
+    progressStatus?: string;
+    reaction?: string | null;
+  }>,
+  mediaTypePreference?: string,
+  genrePreference?: string,
 ): string {
   const sorted = items
     .map((i) => `${i.tmdbId}:${i.progressStatus ?? ""}:${i.reaction ?? ""}`)
@@ -250,12 +249,12 @@ function computeHash(
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash + char) | 0;
-	}
-	return hash.toString(36);
+  }
+  return hash.toString(36);
 }
 
 function normalizeTitleKey(title?: string | null): string {
-	return (title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return (title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 type WatchlistData = {
@@ -270,15 +269,29 @@ type WatchlistData = {
   };
 };
 
-function buildWatchlistPrompt(
+interface FeedbackSignals {
+  likedTitles?: string[];
+  dislikedTitles?: string[];
+  dislikedTmdbIds?: number[];
+  previousTitles?: string[];
+}
+
+function formatItem(i: WatchItemSummary): string {
+  const parts = [`- ${i.title ?? "Unknown"} (TMDB ID: ${i.tmdbId}, ${i.mediaType})`];
+  if (i.rating) parts.push(`Rating: ${i.rating}/10`);
+  if (i.reaction) parts.push(`Reaction: ${i.reaction}`);
+  return parts.join(" | ");
+}
+
+function buildWatchlistContext(
   data: WatchlistData,
-  mediaTypePreference?: string,
   excludeTmdbIds: number[] = [],
-  yearFrom?: number,
-  yearTo?: number,
-  count?: number,
-): string {
-  const { watchItems, lists, listItems, inputStats } = data;
+): {
+  contextPrompt: string;
+  existingIds: number[];
+  existingTitles: string[];
+} {
+  const { watchItems } = data;
 
   const loved = watchItems.filter(
     (i) => i.reaction === "loved" || i.reaction === "liked",
@@ -302,26 +315,18 @@ function buildWatchlistPrompt(
       i.reaction !== "liked",
   );
 
-  const formatItem = (i: WatchItemSummary) => {
-    const parts = [`- ${i.title ?? "Unknown"} (TMDB ID: ${i.tmdbId}, ${i.mediaType})`];
-    if (i.rating) parts.push(`Rating: ${i.rating}/10`);
-    if (i.reaction) parts.push(`Reaction: ${i.reaction}`);
-    return parts.join(" | ");
-  };
-
   const prioritized = new Set(
     [...loved, ...watching, ...done, ...watchLater, ...disliked]
       .slice(0, 50)
       .map((i) => i.tmdbId),
   );
-  const existingIds = [...watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
+  const existingIds = [...new Set([...watchItems.map((i) => i.tmdbId), ...excludeTmdbIds])];
   const existingTitles = watchItems
     .map((i) => i.title)
     .filter((title): title is string => !!title);
   const inScope = (item: WatchItemSummary) => prioritized.has(item.tmdbId);
 
-  let prompt = `Here is my watchlist data:\n\n`;
-
+  let prompt = "";
   const scopedLoved = loved.filter(inScope);
   const scopedWatching = watching.filter(inScope);
   const scopedDone = done.filter(inScope);
@@ -344,6 +349,40 @@ function buildWatchlistPrompt(
     prompt += `## Content I didn't enjoy (dropped/mixed/not-for-me):\n${scopedDisliked.map(formatItem).join("\n")}\n\n`;
   }
 
+  return { contextPrompt: prompt, existingIds, existingTitles };
+}
+
+function appendFeedbackSignals(prompt: string, feedback?: FeedbackSignals): string {
+  let result = prompt;
+  if (feedback?.likedTitles && feedback.likedTitles.length > 0) {
+    result += `## Recommendations I explicitly liked and want more content similar to:\n${feedback.likedTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
+  }
+  if (feedback?.dislikedTitles && feedback.dislikedTitles.length > 0) {
+    result += `## Recommendations I explicitly marked as "not interested" (avoid similar styles/genres):\n${feedback.dislikedTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
+  }
+  if (feedback?.previousTitles && feedback.previousTitles.length > 0) {
+    result += `## Previously recommended titles (do NOT repeat these):\n${feedback.previousTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
+  }
+  return result;
+}
+
+function buildWatchlistPrompt(
+  data: WatchlistData,
+  mediaTypePreference?: string,
+  excludeTmdbIds: number[] = [],
+  yearFrom?: number,
+  yearTo?: number,
+  count?: number,
+  feedback?: FeedbackSignals,
+): string {
+  const { lists, listItems, inputStats } = data;
+  const { contextPrompt, existingIds, existingTitles } = buildWatchlistContext(
+    data,
+    excludeTmdbIds,
+  );
+
+  let prompt = `Here is my watchlist data:\n\n` + contextPrompt;
+
   const listItemsByListId = new Map<string, CustomListItemSummary[]>();
   for (const li of listItems) {
     const listIdStr = String(li.listId);
@@ -356,7 +395,7 @@ function buildWatchlistPrompt(
   }
 
   const watchItemByMediaKey = new Map<string, WatchItemSummary>();
-  for (const w of watchItems) {
+  for (const w of data.watchItems) {
     watchItemByMediaKey.set(`${w.tmdbId}_${w.mediaType}`, w);
   }
 
@@ -374,6 +413,8 @@ function buildWatchlistPrompt(
     }
     prompt += "\n";
   }
+
+  prompt = appendFeedbackSignals(prompt, feedback);
 
   prompt += `## Stats:\n- ${inputStats.movieCount} movies, ${inputStats.tvCount} TV shows tracked\n- ${inputStats.episodesWatched} episodes watched\n\n`;
 
@@ -416,11 +457,9 @@ function buildGenrePrompt(
   yearFrom?: number,
   yearTo?: number,
   count?: number,
+  feedback?: FeedbackSignals,
 ): string {
-  const existingIds = [...data.watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
-  const existingTitles = data.watchItems
-    .map((i) => i.title)
-    .filter((title): title is string => !!title);
+  const { existingIds, existingTitles } = buildWatchlistContext(data, excludeTmdbIds);
 
   const mediaLabel =
     mediaTypePreference === "movie"
@@ -438,6 +477,8 @@ function buildGenrePrompt(
   prompt += `.\n\n`;
 
   prompt += `Focus on well-known, critically acclaimed titles that are widely loved. Include a mix of classic and recent titles.\n\n`;
+
+  prompt = appendFeedbackSignals(prompt, feedback);
 
   if (mediaTypePreference === "movie") {
     prompt += `IMPORTANT: Only recommend MOVIES. Do not suggest any TV shows.\n\n`;
@@ -473,11 +514,9 @@ function buildCustomListPrompt(
   yearFrom?: number,
   yearTo?: number,
   count?: number,
+  feedback?: FeedbackSignals,
 ): string {
-  const existingIds = [...data.watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
-  const existingTitles = data.watchItems
-    .map((i) => i.title)
-    .filter((title): title is string => !!title);
+  const { existingIds, existingTitles } = buildWatchlistContext(data, excludeTmdbIds);
 
   const mediaLabel =
     mediaTypePreference === "movie"
@@ -508,6 +547,8 @@ function buildCustomListPrompt(
   let prompt = `Here are the movies and TV shows in my custom list "${listName}":\n\n${titles}\n\n`;
   prompt += `Based on these titles, recommend exactly ${titleCount} ${mediaLabel} I would likely enjoy.\n`;
   prompt += `Find movies/shows that share similar themes, genres, directors, actors, or vibe as the ones in the list.\n\n`;
+
+  prompt = appendFeedbackSignals(prompt, feedback);
 
   if (mediaTypePreference === "movie") {
     prompt += `IMPORTANT: Only recommend MOVIES. Do not suggest any TV shows.\n\n`;
@@ -569,6 +610,16 @@ export const getHomepageAttemptInfo = internalQuery({
     return entry
       ? { lastAttemptedAt: entry.lastAttemptedAt, status: entry.status }
       : null;
+  },
+});
+
+export const getHomepageRecommendationEntryInternal = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return ctx.db
+      .query("homepage_recommendations")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
   },
 });
 
@@ -668,7 +719,6 @@ export const generateRecommendations = action({
   },
   handler: async (ctx, args): Promise<GenerateResult> => {
     const genType = args.generationType ?? "watchlist";
-    const excludeTmdbIds = args.excludeTmdbIds ?? [];
 
     const user = await ctx.runQuery(
       internal.recommendations.getAuthorizedUser,
@@ -696,6 +746,30 @@ export const generateRecommendations = action({
       return { error: "rate_limited" };
     }
 
+    const feedbackList = await ctx.runQuery(
+      internal.recommendations.getRecommendationFeedbackInternal,
+    );
+
+    const likedTitles = feedbackList
+      .filter((f) => f.feedback === "like")
+      .map((f) => f.title);
+    const dislikedTitles = feedbackList
+      .filter((f) => f.feedback === "not_interested")
+      .map((f) => f.title);
+    const dislikedTmdbIds = feedbackList
+      .filter((f) => f.feedback === "not_interested")
+      .map((f) => f.tmdbId);
+
+    const excludeTmdbIds = [
+      ...new Set([...(args.excludeTmdbIds ?? []), ...dislikedTmdbIds]),
+    ];
+
+    const feedbackSignals: FeedbackSignals = {
+      likedTitles,
+      dislikedTitles,
+      dislikedTmdbIds,
+    };
+
     const userPrompt =
       genType === "watchlist"
         ? buildWatchlistPrompt(
@@ -705,6 +779,7 @@ export const generateRecommendations = action({
             args.yearFrom,
             args.yearTo,
             args.count,
+            feedbackSignals,
           )
         : genType === "list" && args.listId
           ? buildCustomListPrompt(
@@ -715,6 +790,7 @@ export const generateRecommendations = action({
               args.yearFrom,
               args.yearTo,
               args.count,
+              feedbackSignals,
             )
           : buildGenrePrompt(
               data,
@@ -724,6 +800,7 @@ export const generateRecommendations = action({
               args.yearFrom,
               args.yearTo,
               args.count,
+              feedbackSignals,
             );
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -820,11 +897,26 @@ export const getHomepageRecommendations = query({
       notInterestedFeedback.map((f) => f.tmdbId),
     );
 
+    // NEW: Also filter out any items already in the user's watchlist!
+    const watchItems = await ctx.db
+      .query("watch_items")
+      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
+      .collect();
+    const watchlistTmdbIds = new Set(watchItems.map((w) => w.tmdbId));
+    const watchlistTitles = new Set(
+      watchItems.map((w) => normalizeTitleKey(w.title)),
+    );
+
     let recs: Recommendation[] = [];
     if (entry && entry.recommendations) {
       try {
         const parsed = JSON.parse(entry.recommendations) as Recommendation[];
-        recs = parsed.filter((r) => r.tmdbId === null || !notInterestedIds.has(r.tmdbId));
+        recs = parsed.filter(
+          (r) =>
+            (r.tmdbId === null || !notInterestedIds.has(r.tmdbId)) &&
+            (r.tmdbId === null || !watchlistTmdbIds.has(r.tmdbId)) &&
+            !watchlistTitles.has(normalizeTitleKey(r.title)),
+        );
       } catch (e) {
         console.error("Failed to parse homepage recommendations", e);
       }
@@ -939,6 +1031,26 @@ export const setRecommendationFeedback = mutation({
   },
 });
 
+export const removeRecommendationFeedback = mutation({
+  args: {
+    tmdbId: v.number(),
+    mediaType: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireAuthenticatedUser(ctx);
+    const existing = await ctx.db
+      .query("recommendation_feedback")
+      .withIndex("by_user_media", (q) =>
+        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.delete(existing._id);
+    }
+  },
+});
+
 export const getRecommendationFeedback = query({
   args: {},
   handler: async (ctx) => {
@@ -951,6 +1063,18 @@ export const getRecommendationFeedback = query({
     return ctx.db
       .query("recommendation_feedback")
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
+      .collect();
+  },
+});
+
+export const getRecommendationFeedbackInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireAuthenticatedUser(ctx);
+
+    return ctx.db
+      .query("recommendation_feedback")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
   },
 });
@@ -1016,77 +1140,26 @@ export const saveHomepageFailure = internalMutation({
 function buildHomepageRecommendationsPrompt(
   data: WatchlistData,
   likedFeedbackTitles: string[],
+  dislikedFeedbackTitles: string[],
   excludeTmdbIds: number[],
+  previousTitles: string[],
 ): string {
-  const { watchItems, inputStats } = data;
-
-  const loved = watchItems.filter(
-    (i) => i.reaction === "loved" || i.reaction === "liked",
-  );
-  const watching = watchItems.filter(
-    (i) => i.progressStatus === "watching",
-  );
-  const watchLater = watchItems.filter(
-    (i) => i.progressStatus === "watch-later",
-  );
-  const disliked = watchItems.filter(
-    (i) =>
-      i.reaction === "not-for-me" ||
-      i.reaction === "mixed" ||
-      i.progressStatus === "dropped",
-  );
-  const done = watchItems.filter(
-    (i) =>
-      i.progressStatus === "done" &&
-      i.reaction !== "loved" &&
-      i.reaction !== "liked",
+  const { inputStats } = data;
+  const { contextPrompt, existingIds, existingTitles } = buildWatchlistContext(
+    data,
+    excludeTmdbIds,
   );
 
-  const formatItem = (i: WatchItemSummary) => {
-    const parts = [`- ${i.title ?? "Unknown"} (TMDB ID: ${i.tmdbId}, ${i.mediaType})`];
-    if (i.rating) parts.push(`Rating: ${i.rating}/10`);
-    if (i.reaction) parts.push(`Reaction: ${i.reaction}`);
-    return parts.join(" | ");
-  };
+  let prompt =
+    `You are generating personalized recommendations for the user's homepage.\n\n` +
+    `Here is the user's watchlist/viewing data:\n\n` +
+    contextPrompt;
 
-  const prioritized = new Set(
-    [...loved, ...watching, ...done, ...watchLater, ...disliked]
-      .slice(0, 50)
-      .map((i) => i.tmdbId),
-  );
-  const existingIds = [...watchItems.map((i) => i.tmdbId), ...excludeTmdbIds];
-  const existingTitles = watchItems
-    .map((i) => i.title)
-    .filter((title): title is string => !!title);
-  const inScope = (item: WatchItemSummary) => prioritized.has(item.tmdbId);
-
-  let prompt = `You are generating personalized recommendations for the user's homepage.\n\nHere is the user's watchlist/viewing data:\n\n`;
-
-  const scopedLoved = loved.filter(inScope);
-  const scopedWatching = watching.filter(inScope);
-  const scopedDone = done.filter(inScope);
-  const scopedWatchLater = watchLater.filter(inScope);
-  const scopedDisliked = disliked.filter(inScope);
-
-  if (scopedLoved.length > 0) {
-    prompt += `## Content I loved/liked:\n${scopedLoved.map(formatItem).join("\n")}\n\n`;
-  }
-  if (scopedWatching.length > 0) {
-    prompt += `## Currently watching:\n${scopedWatching.map(formatItem).join("\n")}\n\n`;
-  }
-  if (scopedDone.length > 0) {
-    prompt += `## Completed (no strong reaction):\n${scopedDone.map(formatItem).join("\n")}\n\n`;
-  }
-  if (scopedWatchLater.length > 0) {
-    prompt += `## On my watch-later list:\n${scopedWatchLater.map(formatItem).join("\n")}\n\n`;
-  }
-  if (scopedDisliked.length > 0) {
-    prompt += `## Content I didn't enjoy (dropped/mixed/not-for-me):\n${scopedDisliked.map(formatItem).join("\n")}\n\n`;
-  }
-
-  if (likedFeedbackTitles.length > 0) {
-    prompt += `## Recommendations I explicitly liked and want more like:\n${likedFeedbackTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
-  }
+  prompt = appendFeedbackSignals(prompt, {
+    likedTitles: likedFeedbackTitles,
+    dislikedTitles: dislikedFeedbackTitles,
+    previousTitles,
+  });
 
   prompt += `## Stats:\n- ${inputStats.movieCount} movies, ${inputStats.tvCount} TV shows tracked\n- ${inputStats.episodesWatched} episodes watched\n\n`;
 
@@ -1119,16 +1192,40 @@ export const generateHomepageRecommendations = action({
     }
 
     const feedbackList = await ctx.runQuery(
-      api.recommendations.getRecommendationFeedback
+      internal.recommendations.getRecommendationFeedbackInternal,
     );
 
     const likedFeedback = feedbackList
-      .filter((f: any) => f.feedback === "like")
-      .map((f: any) => f.title);
+      .filter((f) => f.feedback === "like")
+      .map((f) => f.title);
+
+    const dislikedFeedbackTitles = feedbackList
+      .filter((f) => f.feedback === "not_interested")
+      .map((f) => f.title);
 
     const dislikedFeedbackIds = feedbackList
-      .filter((f: any) => f.feedback === "not_interested")
-      .map((f: any) => f.tmdbId);
+      .filter((f) => f.feedback === "not_interested")
+      .map((f) => f.tmdbId);
+
+    // Get previous recommendations to prevent repeating recommendations across refresh cycles
+    const homepageEntry = await ctx.runQuery(
+      internal.recommendations.getHomepageRecommendationEntryInternal,
+      { userId: user._id },
+    );
+
+    let previousTitles: string[] = [];
+    let previousTmdbIds: number[] = [];
+    if (homepageEntry?.recommendations) {
+      try {
+        const prevRecs = JSON.parse(homepageEntry.recommendations) as Recommendation[];
+        previousTitles = prevRecs.map((r) => r.title);
+        previousTmdbIds = prevRecs
+          .map((r) => r.tmdbId)
+          .filter((id): id is number => typeof id === "number");
+      } catch {
+        // ignore parse error
+      }
+    }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -1143,7 +1240,9 @@ export const generateHomepageRecommendations = action({
     const prompt = buildHomepageRecommendationsPrompt(
       data,
       likedFeedback,
-      dislikedFeedbackIds
+      dislikedFeedbackTitles,
+      [...dislikedFeedbackIds, ...previousTmdbIds],
+      previousTitles,
     );
 
     let responseText = "";
@@ -1185,7 +1284,7 @@ export const generateHomepageRecommendations = action({
       if (!Array.isArray(parsed.recommendations)) {
         throw new Error("Response recommendations is not an array");
       }
-    } catch (e) {
+    } catch {
       await ctx.runMutation(internal.recommendations.saveHomepageFailure, {
         userId: user._id,
       });
