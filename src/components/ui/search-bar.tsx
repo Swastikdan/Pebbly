@@ -46,8 +46,11 @@ const SearchBar = memo(
 			useState<NodeJS.Timeout | null>(null);
 
 		useEffect(() => {
+			if (document.activeElement?.id === searchId && query) {
+				return;
+			}
 			setValue(query ?? "");
-		}, [query]);
+		}, [query, searchId]);
 
 		const handleChange = useCallback(
 			(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,7 +184,7 @@ const SearchBar = memo(
 						value={value}
 						onChange={handleChange}
 						onKeyDown={handleKeyDown}
-						disabled={disabled || isLoading}
+						disabled={disabled}
 						autoFocus={autoFocus}
 						className={cn(
 							"peer h-11 w-full rounded-xl bg-background/95 ps-11 pr-11 text-[16px] md:text-[15px] border border-border transition-[color,background-color,border-color,box-shadow] duration-150 placeholder:text-muted-foreground/70 focus:bg-background focus:border-ring/40 focus:ring-2 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background shadow-none",
