@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n web,convex -c blue,magenta \"vite dev --port 5296\" \"pnpm dlx convex dev\"",
+    "dev": "concurrently -n web,convex -c blue,magenta \"vite dev --port 5296 --host\" \"pnpm dlx convex dev\"",
     "dev:web": "vite dev --port 3000",
     "build": "vite build",
     "build:vercel": "pnpm dlx convex deploy --cmd 'pnpm run build' --cmd-url-env-var-name VITE_CONVEX_URL",
