@@ -16,7 +16,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
-import { ThemeSwitch } from "./theme-switch";
 
 const DesktopNavButton = ({
 	href,
@@ -70,7 +69,6 @@ const DesktopNavButtons = () => {
 				label="Search"
 				icon={<SearchFilledIcon />}
 			/>
-			<ThemeSwitch />
 			<ClerkLoading>
 				<Skeleton className="size-9 rounded-full" />
 			</ClerkLoading>

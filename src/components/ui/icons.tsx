@@ -55,23 +55,6 @@ export const Logo: React.FC<IconSvgProps> = ({ ...props }) => (
 	</svg>
 );
 
-export const MoonFilledIcon = ({ ...props }: IconSvgProps) => (
-	<svg
-		height={props.size ?? 24}
-		width={props.size ?? 24}
-		className={props.className}
-		viewBox="0 0 24 24"
-		xmlns="http://www.w3.org/2000/svg"
-		{...props}
-	>
-		<title> Icon </title>
-		<path
-			d="M12 22c5.523 0 10-4.477 10-10c0-.463-.694-.54-.933-.143a6.5 6.5 0 1 1-8.924-8.924C12.54 2.693 12.463 2 12 2C6.477 2 2 6.477 2 12s4.477 10 10 10"
-			fill="currentColor"
-		/>
-	</svg>
-);
-
 export const SparklesFilledIcon = ({ ...props }: IconSvgProps) => (
 	<svg
 		height={props.size ?? 24}
@@ -85,26 +68,6 @@ export const SparklesFilledIcon = ({ ...props }: IconSvgProps) => (
 		<path
 			d="M9,6 Q9,13 16,13 Q9,13 9,20 Q9,13 2,13 Q9,13 9,6 Z M17,3 Q17,7 21,7 Q17,7 17,11 Q17,7 13,7 Q17,7 17,3 Z M16,15.5 Q16,18 18.5,18 Q16,18 16,20.5 Q16,18 13.5,18 Q16,18 16,15.5 Z"
 			fill="currentColor"
-		/>
-	</svg>
-);
-
-export const SunFilledIcon = ({ ...props }: IconSvgProps) => (
-	<svg
-		height={props.size ?? 24}
-		width={props.size ?? 24}
-		className={props.className}
-		viewBox="0 0 24 24"
-		xmlns="http://www.w3.org/2000/svg"
-		{...props}
-	>
-		<title> Icon </title>
-		<path d="M18 12a6 6 0 1 1-12 0a6 6 0 0 1 12 0" fill="currentColor" />
-		<path
-			clipRule="evenodd"
-			d="M12 1.25a.75.75 0 0 1 .75.75v1a.75.75 0 0 1-1.5 0V2a.75.75 0 0 1 .75-.75M4.399 4.399a.75.75 0 0 1 1.06 0l.393.392a.75.75 0 0 1-1.06 1.061l-.393-.393a.75.75 0 0 1 0-1.06m15.202 0a.75.75 0 0 1 0 1.06l-.393.393a.75.75 0 0 1-1.06-1.06l.393-.393a.75.75 0 0 1 1.06 0M1.25 12a.75.75 0 0 1 .75-.75h1a.75.75 0 0 1 0 1.5H2a.75.75 0 0 1-.75-.75m19 0a.75.75 0 0 1 .75-.75h1a.75.75 0 0 1 0 1.5h-1a.75.75 0 0 1-.75-.75m-2.102 6.148a.75.75 0 0 1 1.06 0l.393.393a.75.75 0 1 1-1.06 1.06l-.393-.393a.75.75 0 0 1 0-1.06m-12.296 0a.75.75 0 0 1 0 1.06l-.393.393a.75.75 0 1 1-1.06-1.06l.392-.393a.75.75 0 0 1 1.061 0M12 20.25a.75.75 0 0 1 .75.75v1a.75.75 0 0 1-1.5 0v-1a.75.75 0 0 1 .75-.75"
-			fill="currentColor"
-			fillRule="evenodd"
 		/>
 	</svg>
 );

@@ -12,7 +12,6 @@ import {
 } from "@/components/default-not-found";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
-import { ThemeProvider } from "@/components/theme-provider";
 import { UserSync } from "@/components/user-sync";
 import { SITE_CONFIG } from "@/constants";
 
@@ -229,7 +228,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="en" className="dark" suppressHydrationWarning>
 			<head>
 				<meta
 					name="google-site-verification"
@@ -244,17 +243,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				>
 					Skip to main content
 				</a>
-				<ThemeProvider>
-					<UserSync />
-					<Navbar />
-					<main id="main-content" tabIndex={-1} className="outline-none">
-						{children}
-					</main>
-					<Footer />
-					{devtoolsPlugin}
-					<SpeedInsights />
-					<Scripts />
-				</ThemeProvider>
+				<UserSync />
+				<Navbar />
+				<main id="main-content" tabIndex={-1} className="outline-none">
+					{children}
+				</main>
+				<Footer />
+				{devtoolsPlugin}
+				<SpeedInsights />
+				<Scripts />
 			</body>
 		</html>
 	);

@@ -92,17 +92,17 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 
 	return (
 		<Button
-			variant="ghost"
+			variant={null}
 			aria-label={isActive ? "Remove from watchlist" : "Add to watchlist"}
 			aria-pressed={isActive}
 			size="icon"
 			onClick={handleWatchList}
 			data-active={isActive ? "true" : "false"}
 			className={cn(
-				"pressable relative shrink-0 transition-all duration-200 opacity-100",
+				"pressable relative shrink-0 transition-colors duration-150 rounded-lg shadow-md",
 				isActive && !is_on_watchlist_page
-					? "bg-primary text-primary-foreground border border-primary/50 shadow-md hover:bg-primary/90"
-					: "bg-black/75 dark:bg-neutral-800 text-white dark:text-neutral-100 border border-white/20 dark:border-neutral-600 shadow-md hover:bg-black/90 dark:hover:bg-neutral-700",
+					? "bg-primary text-primary-foreground border border-primary hover:bg-primary/90 dark:hover:bg-primary/90 hover:text-primary-foreground dark:hover:text-primary-foreground"
+					: "bg-neutral-900 text-white border border-neutral-700 hover:bg-neutral-800 dark:hover:bg-neutral-800 hover:text-white dark:hover:text-white",
 				props.className,
 			)}
 		>
