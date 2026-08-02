@@ -159,7 +159,12 @@ function createOptimisticEpisodeProgress(
 	};
 }
 
-export function usePlayerProgressListener() {
+export function usePlayerProgressListener(activeContext?: {
+	tmdbId: number;
+	mediaType: "movie" | "tv";
+	season?: number;
+	episode?: number;
+}) {
 	const { isSignedIn } = useUser();
 	const updateProgress = useMutation(api.watchlist.updateProgress);
 	const markEpisodeWatchedMut = useMutation(api.watchlist.markEpisodeWatched);
@@ -224,6 +229,15 @@ export function usePlayerProgressListener() {
 				episode,
 				event: playerEvent,
 			} = payload.data;
+
+			if (activeContext) {
+				if (
+					Number(id) !== activeContext.tmdbId ||
+					mediaType !== activeContext.mediaType
+				) {
+					return;
+				}
+			}
 
 			const safeProgress = Number.isFinite(progress) ? progress : 0;
 			const safeCurrentTime = Number.isFinite(currentTime) ? currentTime : 0;
@@ -304,6 +318,7 @@ export function usePlayerProgressListener() {
 		isSignedIn,
 		setLocalProgress,
 		markLocalEpisode,
+		activeContext,
 	]);
 }
 

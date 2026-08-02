@@ -201,7 +201,7 @@ export function HomepageRecommendations() {
 
 	const recommendationsData = useConvexQuery(
 		api.recommendations.getHomepageRecommendations,
-		canAccessFeature ? { now: hourBucket } : "skip",
+		canAccessFeature ? {} : "skip",
 	);
 
 	const feedbackList = useConvexQuery(

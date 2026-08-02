@@ -589,6 +589,33 @@ const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
   ]
 }`;
 
+export const checkAndSetRecommendationCooldown = internalMutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const mostRecent = await ctx.db
+      .query("ai_recommendations")
+      .withIndex("by_user_created", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .first();
+
+    const now = Date.now();
+    if (mostRecent && now - mostRecent.createdAt < RATE_LIMIT_MS) {
+      return false;
+    }
+
+    await ctx.db.insert("ai_recommendations", {
+      userId: args.userId,
+      recommendations: "[]",
+      watchlistHash: "",
+      inputStats: { movieCount: 0, tvCount: 0, episodesWatched: 0, totalItems: 0 },
+      model: "placeholder",
+      createdAt: now,
+    });
+
+    return true;
+  },
+});
+
 export const getMostRecentEntry = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
@@ -737,12 +764,12 @@ export const generateRecommendations = action({
       }
     }
 
-    const mostRecent = await ctx.runQuery(
-      internal.recommendations.getMostRecentEntry,
+    const allowed = await ctx.runMutation(
+      internal.recommendations.checkAndSetRecommendationCooldown,
       { userId: user._id },
     );
 
-    if (mostRecent && Date.now() - mostRecent.createdAt < RATE_LIMIT_MS) {
+    if (!allowed) {
       return { error: "rate_limited" };
     }
 
@@ -928,11 +955,10 @@ export const getHomepageRecommendations = query({
     const lastUpdatedAt = entry?.lastUpdatedAt ?? 0;
     const status = entry?.status ?? "none";
 
-    // Rely on client-supplied timestamp or fallback to 0 to preserve query reactivity without calling Date.now().
-    const currentTime = args.now ?? 0;
+    const currentTime = args.now ?? Date.now();
     const isOlderThan12Hours = currentTime > 0 && (currentTime - lastAttemptedAt > 12 * 60 * 60 * 1000);
     const hasFailedRecently = status === "failed" && currentTime > 0 && (currentTime - lastAttemptedAt < 1 * 60 * 60 * 1000);
-    const needsRefresh = !entry || (currentTime > 0 && isOlderThan12Hours && !hasFailedRecently);
+    const needsRefresh = !entry || (isOlderThan12Hours && !hasFailedRecently);
 
     return {
       recommendations: recs,
