@@ -13,13 +13,13 @@ import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/media")({
-	loader: async ({ params, context }) => {
+	loader: ({ params, context }) => {
 		const { id, slug } = params;
 		const parsed = parseAndValidateId(id);
 		if (!parsed.success) {
 			throw notFound();
 		}
-		await context.queryClient.ensureQueryData({
+		context.queryClient.prefetchQuery({
 			queryKey: ["basic_tv-details", id],
 			queryFn: () => getBasicTvDetails({ id: parsed.data }),
 		});

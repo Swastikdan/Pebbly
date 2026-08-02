@@ -869,12 +869,16 @@
 	padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
 	padding-left: env(safe-area-inset-left);
 	padding-right: env(safe-area-inset-right);
-	background: oklch(0.145 0 0 / 82%);
-	backdrop-filter: blur(20px) saturate(1.5);
-	-webkit-backdrop-filter: blur(20px) saturate(1.5);
+	background: var(--background);
 	border-top: 1px solid oklch(1 0 0 / 8%);
 	transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
 	will-change: transform;
+}
+
+@media (min-width: 768px) {
+	.mobile-bottom-nav {
+		display: none !important;
+	}
 }
 
 .mobile-bottom-nav-hidden {
