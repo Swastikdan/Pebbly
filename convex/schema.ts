@@ -9,6 +9,7 @@ export default defineSchema({
     email: v.optional(v.string()),
     roles: v.optional(v.array(v.string())),
     isAdmin: v.optional(v.boolean()),
+    isBanned: v.optional(v.boolean()),
   }).index("by_token", ["tokenIdentifier"]),
 
   watch_items: defineTable({

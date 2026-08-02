@@ -10,12 +10,14 @@ interface UserFeaturesResult {
 	roles: string[];
 	features: Record<string, boolean>;
 	isAdmin: boolean;
+	isBanned: boolean;
 }
 
 interface PermissionState {
 	roles: RbacRole[];
 	features: Record<RbacFeature, boolean>;
 	isAdmin: boolean;
+	isBanned: boolean;
 	loading: boolean;
 	isSignedIn: boolean;
 }
@@ -34,35 +36,47 @@ export function usePermissions(): PermissionState & {
 	const loading =
 		!isLoaded || (isSignedIn && !clerkIsAdmin && raw === undefined);
 
+	const isBanned = raw?.isBanned === true;
+
 	const features = clerkIsAdmin
 		? ({
 				"video-player": true,
 				"ai-recommendations": true,
 			} as Record<RbacFeature, boolean>)
-		: ((raw?.features ?? {}) as Record<RbacFeature, boolean>);
+		: isBanned
+			? ({
+					"video-player": false,
+					"ai-recommendations": false,
+				} as Record<RbacFeature, boolean>)
+			: ((raw?.features ?? {}) as Record<RbacFeature, boolean>);
+
 	const roles = clerkIsAdmin
 		? (["admin"] as RbacRole[])
 		: ((raw?.roles ?? []) as RbacRole[]);
+
 	const isAdmin = clerkIsAdmin;
 
 	const hasFeature = useCallback(
 		(feature: RbacFeature): boolean => {
+			if (isBanned) return false;
 			return features[feature] === true;
 		},
-		[features],
+		[features, isBanned],
 	);
 
 	const hasRole = useCallback(
 		(role: RbacRole): boolean => {
+			if (isBanned) return false;
 			return roles.includes(role);
 		},
-		[roles],
+		[roles, isBanned],
 	);
 
 	return {
 		roles,
 		features,
 		isAdmin,
+		isBanned,
 		loading,
 		isSignedIn: !!isSignedIn,
 		hasFeature,
