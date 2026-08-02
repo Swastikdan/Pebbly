@@ -150,6 +150,7 @@ export async function hasFeature(
   if (!identity) return false;
 
   const user = await getUserByToken(ctx, identity.subject);
+  if (user?.isBanned === true) return false;
   if (isClerkAdmin(identity, user)) return true;
   if (!user) return false;
 
@@ -228,18 +229,27 @@ export const getUserFeatures = query({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return { roles: [] as string[], features: {}, isAdmin: false };
+    if (!identity) return { roles: [] as string[], features: {}, isAdmin: false, isBanned: false };
 
     const user = await getUserByToken(ctx, identity.subject);
+    if (user?.isBanned === true) {
+      return {
+        roles: [] as string[],
+        features: {},
+        isAdmin: false,
+        isBanned: true,
+      };
+    }
     if (isClerkAdmin(identity, user)) {
       return {
         roles: [] as string[],
         features: { ...ADMIN_PERMISSIONS },
         isAdmin: true,
+        isBanned: false,
       };
     }
 
-    if (!user) return { roles: [] as string[], features: {}, isAdmin: false };
+    if (!user) return { roles: [] as string[], features: {}, isAdmin: false, isBanned: false };
 
     const roles = (user.roles ?? []).filter((role) =>
       DYNAMIC_ROLES.includes(role as DynamicRbacRole),
@@ -250,6 +260,7 @@ export const getUserFeatures = query({
       roles,
       features,
       isAdmin: false,
+      isBanned: false,
     };
   },
 });
@@ -336,6 +347,32 @@ export const setUserRoles = mutation({
   },
 });
 
+export const setUserBanned = mutation({
+  args: {
+    tokenIdentifier: v.string(),
+    banned: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    const target = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
+      .first();
+
+    if (!target) throw new Error("User not found");
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity && identity.subject === target.tokenIdentifier) {
+      throw new Error("Cannot ban yourself");
+    }
+
+    await ctx.db.patch(target._id, {
+      isBanned: args.banned,
+    });
+  },
+});
+
 export const listUsers = query({
   args: {
     limit: v.optional(v.number()),
@@ -361,6 +398,8 @@ export const listUsers = query({
       roles: (u.roles ?? []).filter((role) =>
         DYNAMIC_ROLES.includes(role as DynamicRbacRole),
       ),
+      isBanned: u.isBanned ?? false,
+      isAdmin: isClerkAdmin(null, u),
     }));
   },
 });
