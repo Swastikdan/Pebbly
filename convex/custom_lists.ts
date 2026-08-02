@@ -6,7 +6,7 @@ import {
   getCurrentUser,
   type WatchlistUser,
   MEDIA_TYPE_VALIDATOR,
-} from "./helpers/watch-item";
+} from "./helpers/watch_item";
 
 export const getCustomLists = query({
   args: {},

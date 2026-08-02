@@ -9,7 +9,7 @@ import {
   buildMetadataPatch,
   MEDIA_TYPE_VALIDATOR,
   PROGRESS_STATUS_VALIDATOR,
-} from "./helpers/watch-item";
+} from "./helpers/watch_item";
 
 export async function getEpisodeProgressEntry(
   ctx: WatchlistContext,

@@ -18,12 +18,12 @@ import {
   MEDIA_TYPE_VALIDATOR,
   PROGRESS_STATUS_VALIDATOR,
   REACTION_VALIDATOR,
-} from "./helpers/watch-item";
+} from "./helpers/watch_item";
 
 // Re-export everything from the new modules to not break existing clients
-export * from "./episode-progress";
-export * from "./custom-lists";
-export * from "./import-export";
+export * from "./episode_progress";
+export * from "./custom_lists";
+export * from "./import_export";
 
 export async function createWatchlistSnapshot(
   ctx: MutationCtx,
