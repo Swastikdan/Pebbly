@@ -3,16 +3,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { DailyPickButton } from "@/components/daily-pick";
 import {
-	ContinueWatching,
 	MediaSkeletonList,
-	PopularMovies,
-	PopularTv,
-	TopRatedMovies,
-	TopRatedTv,
 	TrendingDayMovies,
 	TrendingWeekMovies,
-	UpcomingMovies,
 } from "@/components/homepage-media";
+import { lazy } from "react";
+
+const ContinueWatching = lazy(() => import("@/components/homepage-media").then(m => ({ default: m.ContinueWatching })));
+const PopularMovies = lazy(() => import("@/components/homepage-media").then(m => ({ default: m.PopularMovies })));
+const PopularTv = lazy(() => import("@/components/homepage-media").then(m => ({ default: m.PopularTv })));
+const TopRatedMovies = lazy(() => import("@/components/homepage-media").then(m => ({ default: m.TopRatedMovies })));
+const TopRatedTv = lazy(() => import("@/components/homepage-media").then(m => ({ default: m.TopRatedTv })));
+const UpcomingMovies = lazy(() => import("@/components/homepage-media").then(m => ({ default: m.UpcomingMovies })));
 import { HomepageRecommendations } from "@/components/homepage-recommendations";
 import { LazySection } from "@/components/ui/lazy-section";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";

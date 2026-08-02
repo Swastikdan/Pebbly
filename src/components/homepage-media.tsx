@@ -105,18 +105,46 @@ const useMediaQuery = (
 	};
 };
 
-function TrendingDayMovies() {
-	const { data, isFetching, error, cardType } = useMediaQuery("trending_day");
+function MediaSection({
+	queryType,
+	cardTypeOverride,
+	mediaType,
+	priorityCount,
+}: {
+	queryType:
+		| "trending_day"
+		| "trending_week"
+		| "movies_upcoming"
+		| "movies_popular"
+		| "tv-shows_popular"
+		| "movies_top-rated"
+		| "tv-shows_top-rated";
+	cardTypeOverride?: "horizontal" | "vertical";
+	mediaType?: "movie" | "tv";
+	priorityCount?: number;
+}) {
+	const { data, isFetching, error, cardType } = useMediaQuery(queryType, {
+		cardType: cardTypeOverride,
+		mediaType,
+	});
 
 	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
-	return <MediaList data={data ?? []} cardType={cardType} priorityCount={2} />;
+	return (
+		<MediaList
+			data={data ?? []}
+			cardType={cardType}
+			defaultMediatype={mediaType}
+			priorityCount={priorityCount}
+		/>
+	);
+}
+
+function TrendingDayMovies() {
+	return <MediaSection queryType="trending_day" priorityCount={2} />;
 }
 
 function TrendingWeekMovies() {
-	const { data, isFetching, error, cardType } = useMediaQuery("trending_week");
-
-	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
-	return <MediaList data={data ?? []} cardType={cardType} />;
+	return <MediaSection queryType="trending_week" />;
 }
 
 function UpcomingMovies() {
@@ -125,68 +153,29 @@ function UpcomingMovies() {
 	const showContinueWatching = isSignedIn && items.length > 0;
 	const resolvedCardType = showContinueWatching ? "horizontal" : "vertical";
 
-	const { data, isFetching, error } = useMediaQuery("movies_upcoming", {
-		cardType: resolvedCardType,
-		mediaType: "movie",
-	});
-
-	if (isFetching || error)
-		return <MediaSkeletonList cardType={resolvedCardType} />;
 	return (
-		<MediaList
-			data={data ?? []}
-			cardType={resolvedCardType}
-			defaultMediatype="movie"
+		<MediaSection
+			queryType="movies_upcoming"
+			cardTypeOverride={resolvedCardType}
+			mediaType="movie"
 		/>
 	);
 }
 
 function PopularMovies() {
-	const { data, isFetching, error, cardType } = useMediaQuery(
-		"movies_popular",
-		{ mediaType: "movie" },
-	);
-
-	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
-	return (
-		<MediaList data={data ?? []} cardType={cardType} defaultMediatype="movie" />
-	);
+	return <MediaSection queryType="movies_popular" mediaType="movie" />;
 }
 
 function PopularTv() {
-	const { data, isFetching, error, cardType } = useMediaQuery(
-		"tv-shows_popular",
-		{ mediaType: "tv" },
-	);
-
-	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
-	return (
-		<MediaList data={data ?? []} cardType={cardType} defaultMediatype="tv" />
-	);
+	return <MediaSection queryType="tv-shows_popular" mediaType="tv" />;
 }
 
 function TopRatedMovies() {
-	const { data, isFetching, error, cardType } = useMediaQuery(
-		"movies_top-rated",
-		{ mediaType: "movie" },
-	);
-
-	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
-	return (
-		<MediaList data={data ?? []} cardType={cardType} defaultMediatype="movie" />
-	);
+	return <MediaSection queryType="movies_top-rated" mediaType="movie" />;
 }
 
 function TopRatedTv() {
-	const { data, isFetching, error, cardType } = useMediaQuery(
-		"tv-shows_top-rated",
-		{ mediaType: "tv" },
-	);
-
-	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
-	return (
-		<MediaList data={data ?? []} cardType={cardType} defaultMediatype="tv" />
-	);
+	return <MediaSection queryType="tv-shows_top-rated" mediaType="tv" />;
 }
 
 function ContinueWatching() {

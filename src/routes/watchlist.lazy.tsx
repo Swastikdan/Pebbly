@@ -1,6 +1,6 @@
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Bookmark, ListPlus, Plus, Search, SlidersHorizontal, X } from "lucide-react";
-import { lazy, Suspense, useCallback, useId, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useId, useMemo, useState, useDeferredValue } from "react";
 
 const CustomListDialog = lazy(() =>
 	import("@/components/custom-list-dialog").then((m) => ({
@@ -134,6 +134,7 @@ function WatchlistTabContent() {
 	const [sortBy, setSortBy] = useState<SortType>("recent");
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
+	const deferredSearchQuery = useDeferredValue(searchQuery);
 
 	const {
 		importLoading,
@@ -162,7 +163,7 @@ function WatchlistTabContent() {
 
 	const filteredWatchlist = useMemo(() => {
 		let items = watchlistData;
-		const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+		const normalizedQuery = deferredSearchQuery.trim().toLocaleLowerCase();
 
 		if (normalizedQuery) {
 			items = items.filter((item) =>
@@ -209,7 +210,7 @@ function WatchlistTabContent() {
 		});
 	}, [
 		watchlistData,
-		searchQuery,
+		deferredSearchQuery,
 		activeFilter,
 		reactionFilter,
 		mediaFilter,

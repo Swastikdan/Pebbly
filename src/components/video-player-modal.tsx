@@ -364,6 +364,7 @@ export function VideoPlayerModal({
 							"absolute inset-0 z-[5]",
 							!closeVisible ? "pointer-events-auto" : "pointer-events-none",
 						)}
+						aria-hidden="true"
 						onPointerMove={resetInactivityTimer}
 						onTouchStart={resetInactivityTimer}
 						onClick={resetInactivityTimer}

@@ -64,50 +64,72 @@ const MediaCard = memo((props: CardProps) => {
 	}
 });
 
-const HorizontalCard = memo((props: MediaCardSpecificProps) => {
+interface BaseMediaCardProps extends MediaCardSpecificProps {
+	imageUrl: string;
+	formattedTitle: string;
+	containerClassName: string;
+	imageContainerClassName: string;
+	imageWidth: number;
+	imageHeight: number;
+	imageSizes: string;
+	mediaTypeLabel: string;
+	actionsClassName: string;
+	linkClassName: string;
+	children: React.ReactNode;
+}
+
+const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 	const {
+		id,
 		title,
 		rating,
-		image,
-		id,
-		poster_path,
 		media_type,
+		poster_path,
 		release_date,
 		is_on_homepage,
 		is_on_watchlist_page,
 		isContinueWatching,
 		overview,
 		priority,
-		relevanceScore,
+		imageUrl,
+		formattedTitle,
+		containerClassName,
+		imageContainerClassName,
+		imageWidth,
+		imageHeight,
+		imageSizes,
+		mediaTypeLabel,
+		actionsClassName,
+		linkClassName,
+		children,
 	} = props;
-
-	const formattedTitle = formatMediaTitle.encode(title);
-	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
-	const year = release_date ? new Date(release_date).getFullYear() : "";
 
 	const { removeFromContinueWatching } = useRemoveFromContinueWatching();
 
 	return (
-		<div className="group relative w-40 md:w-44 lg:w-48 ">
+		<div className={cn("group relative", containerClassName)}>
 			<Link
 				// @ts-expect-error - correct link
 				to={`/${media_type}/${id}/${formattedTitle}`}
 				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
 				search={(isContinueWatching ? { play: true } : undefined) as any}
-				className="block h-full w-full outline-none ring-offset-background transition-[color,background-color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
+				className={linkClassName}
 			>
 				<div
 					data-media-poster
-					className="surface-raised interactive-raised relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted"
+					className={cn(
+						"surface-raised interactive-raised relative w-full overflow-hidden rounded-xl bg-muted",
+						imageContainerClassName,
+					)}
 				>
 					<Image
 						alt={title}
 						src={imageUrl}
 						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:group-hover:scale-[1.03]"
-						width={300}
-						height={450}
+						width={imageWidth}
+						height={imageHeight}
 						priority={priority}
-						sizes="(max-width: 640px) 160px, (max-width: 768px) 176px, 192px"
+						sizes={imageSizes}
 					/>
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
 
@@ -121,39 +143,14 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 					)}
 
 					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white border-0">
-						{media_type === "movie" ? "Movie" : "TV"}
+						{mediaTypeLabel}
 					</Badge>
 				</div>
 
-				<div className="mt-2.5 flex flex-col gap-0.5 overflow-hidden">
-					<AutoScrollTitle
-						text={title}
-						className="text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary"
-					/>
-					<div className="flex items-center gap-1.5 text-compact text-muted-foreground/70 min-h-4">
-						{year && <span className="tabular-nums">{year}</span>}
-						{year && relevanceScore && (
-							<span className="text-muted-foreground/30">•</span>
-						)}
-						{relevanceScore && (
-							<span
-								className={cn(
-									"font-semibold tabular-nums",
-									relevanceScore >= 80
-										? "text-emerald-600 dark:text-emerald-400"
-										: relevanceScore >= 60
-											? "text-amber-600 dark:text-amber-400"
-											: "text-muted-foreground",
-								)}
-							>
-								{relevanceScore}% Match
-							</span>
-						)}
-					</div>
-				</div>
+				{children}
 			</Link>
 
-			<div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 transition-[transform,opacity] duration-200 ease-out">
+			<div className={cn("absolute right-2 top-2 z-10 flex items-center gap-1.5", actionsClassName)}>
 				{isContinueWatching && (
 					<button
 						type="button"
@@ -186,20 +183,71 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 	);
 });
 
+const HorizontalCard = memo((props: MediaCardSpecificProps) => {
+	const {
+		title,
+		image,
+		media_type,
+		release_date,
+		relevanceScore,
+	} = props;
+
+	const formattedTitle = formatMediaTitle.encode(title);
+	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
+	const year = release_date ? new Date(release_date).getFullYear() : "";
+
+	return (
+		<BaseMediaCard
+			{...props}
+			imageUrl={imageUrl}
+			formattedTitle={formattedTitle}
+			containerClassName="w-40 md:w-44 lg:w-48"
+			imageContainerClassName="aspect-[2/3]"
+			imageWidth={300}
+			imageHeight={450}
+			imageSizes="(max-width: 640px) 160px, (max-width: 768px) 176px, 192px"
+			mediaTypeLabel={media_type === "movie" ? "Movie" : "TV"}
+			linkClassName="block h-full w-full outline-none ring-offset-background transition-[color,background-color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
+			actionsClassName="transition-[transform,opacity] duration-200 ease-out"
+		>
+			<div className="mt-2.5 flex flex-col gap-0.5 overflow-hidden">
+				<AutoScrollTitle
+					text={title}
+					className="text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary"
+				/>
+				<div className="flex items-center gap-1.5 text-compact text-muted-foreground/70 min-h-4">
+					{year && <span className="tabular-nums">{year}</span>}
+					{year && relevanceScore && (
+						<span className="text-muted-foreground/30">•</span>
+					)}
+					{relevanceScore && (
+						<span
+							className={cn(
+								"font-semibold tabular-nums",
+								relevanceScore >= 80
+									? "text-emerald-600 dark:text-emerald-400"
+									: relevanceScore >= 60
+										? "text-amber-600 dark:text-amber-400"
+										: "text-muted-foreground",
+							)}
+						>
+							{relevanceScore}% Match
+						</span>
+					)}
+				</div>
+			</div>
+		</BaseMediaCard>
+	);
+});
+
 const VerticalCard = memo((props: MediaCardSpecificProps) => {
 	const {
 		title,
-		rating,
 		image,
 		id,
-		poster_path,
 		media_type,
 		release_date,
-		is_on_homepage,
-		is_on_watchlist_page,
 		isContinueWatching,
-		overview,
-		priority,
 	} = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
@@ -232,108 +280,50 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 			imageUrl = `${IMAGE_PREFIX.SD_POSTER}${seasonDetails.poster_path}`;
 		}
 	}
-	const { removeFromContinueWatching } = useRemoveFromContinueWatching();
-
 	return (
-		<div className="group relative w-64 md:w-72 lg:w-80 ">
-			<Link
-				// @ts-expect-error - correct link
-				to={`/${media_type}/${id}/${formattedTitle}`}
-				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
-				search={(isContinueWatching ? { play: true } : undefined) as any}
-				className="block h-full w-full outline-none ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
-			>
-				<div
-					data-media-poster
-					className="surface-raised interactive-raised relative aspect-video w-full overflow-hidden rounded-xl bg-muted"
-				>
-					<Image
-						alt={title}
-						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:group-hover:scale-[1.03]"
-						width={450}
-						height={300}
-						priority={priority}
-						sizes="(max-width: 640px) 256px, (max-width: 768px) 288px, 320px"
-					/>
-
-					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
-
-					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white flex items-center gap-1 border-0">
-							<Star className="size-3 fill-yellow-400 text-yellow-400" />
-							<span className="font-semibold tabular-nums text-white">
-								{rating.toFixed(1)}
-							</span>
-						</Badge>
-					)}
-
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white border-0">
-						{media_type === "movie" ? "Movie" : "TV Series"}
-					</Badge>
-				</div>
-
-				<div className="mt-2.5 flex flex-col gap-1 overflow-hidden">
-					{isTVContinueWatching && season && episode && (
-						<div className="flex items-center gap-1.5 flex-wrap">
-							<span className="text-compact font-bold tabular-nums text-blue-500 dark:text-blue-400">
-								S{season} E{episode}
-							</span>
-							{episodeDetail?.name && (
-								<>
-									<span className="text-muted-foreground/50 text-[10px]">
-										•
-									</span>
-									<span className="truncate text-xs font-medium text-muted-foreground/80 max-w-[150px]">
-										{episodeDetail.name}
-									</span>
-								</>
-							)}
-						</div>
-					)}
-					<AutoScrollTitle
-						text={title}
-						className="min-h-5 text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary"
-					/>
-
-					{!isTVContinueWatching && (
-						<span className="text-compact tabular-nums text-muted-foreground/70 capitalize">
-							{year}
+		<BaseMediaCard
+			{...props}
+			imageUrl={imageUrl}
+			formattedTitle={formattedTitle}
+			containerClassName="w-64 md:w-72 lg:w-80"
+			imageContainerClassName="aspect-video"
+			imageWidth={450}
+			imageHeight={300}
+			imageSizes="(max-width: 640px) 256px, (max-width: 768px) 288px, 320px"
+			mediaTypeLabel={media_type === "movie" ? "Movie" : "TV Series"}
+			linkClassName="block h-full w-full outline-none ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
+			actionsClassName="transition-[color,background-color,box-shadow,transform] duration-300 ease-out"
+		>
+			<div className="mt-2.5 flex flex-col gap-1 overflow-hidden">
+				{isTVContinueWatching && season && episode && (
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className="text-compact font-bold tabular-nums text-blue-500 dark:text-blue-400">
+							S{season} E{episode}
 						</span>
-					)}
-				</div>
-			</Link>
-
-			<div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 transition-[color,background-color,box-shadow,transform] duration-300 ease-out">
-				{isContinueWatching && (
-					<button
-						type="button"
-						title="Remove from Continue Watching"
-						aria-label="Remove from Continue Watching"
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							removeFromContinueWatching(id, media_type);
-						}}
-						className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-all duration-200 hover:bg-red-600 hover:text-white hover:scale-105"
-					>
-						<XIcon className="size-4" />
-					</button>
+						{episodeDetail?.name && (
+							<>
+								<span className="text-muted-foreground/50 text-[10px]">
+									•
+								</span>
+								<span className="truncate text-xs font-medium text-muted-foreground/80 max-w-[150px]">
+									{episodeDetail.name}
+								</span>
+							</>
+						)}
+					</div>
 				)}
-				<WatchlistButton
-					id={id}
-					image={poster_path}
-					is_on_homepage={is_on_homepage}
-					is_on_watchlist_page={is_on_watchlist_page}
-					media_type={media_type}
-					rating={rating}
-					release_date={release_date ?? ""}
-					title={title}
-					overview={overview}
-					className="h-8 w-8 rounded-lg shadow-md hover:scale-105"
+				<AutoScrollTitle
+					text={title}
+					className="min-h-5 text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary"
 				/>
+
+				{!isTVContinueWatching && (
+					<span className="text-compact tabular-nums text-muted-foreground/70 capitalize">
+						{year}
+					</span>
+				)}
 			</div>
-		</div>
+		</BaseMediaCard>
 	);
 });
 
