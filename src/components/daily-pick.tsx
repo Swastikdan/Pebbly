@@ -333,7 +333,7 @@ export function DailyPickButton() {
 									}
 									title={title}
 									overview={selectedItem.overview}
-									className="h-10 w-10 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80"
+									className="h-10 w-10 rounded-xl"
 								/>
 
 								<Button
