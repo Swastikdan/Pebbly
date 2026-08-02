@@ -140,7 +140,7 @@ async function createWatchlistSnapshot(
 
   await ctx.db.insert("watchlist_snapshots", {
     userId,
-    items: watchlistItems,
+    items: watchlistItems.slice(0, 8000),
     createdAt: Date.now(),
   });
 }
@@ -651,7 +651,11 @@ export const createDailySnapshots = internalMutation({
       .query("users")
       .paginate({ cursor: args.cursor ?? null, numItems: 50 });
     for (const user of batch.page) {
-      await createWatchlistSnapshot(ctx, user._id);
+      try {
+        await createWatchlistSnapshot(ctx, user._id);
+      } catch (error) {
+        console.error(`Failed to create snapshot for user ${user._id}:`, error);
+      }
     }
     if (!batch.isDone) {
       await ctx.scheduler.runAfter(0, internal.watchlist.createDailySnapshots, {
@@ -729,7 +733,8 @@ export const markShowEpisodesAndStatus = mutation({
       }
     } else {
       for (const seasonData of args.seasons) {
-        for (const epNum of seasonData.episodes) {
+        const uniqueEpisodes = Array.from(new Set(seasonData.episodes));
+        for (const epNum of uniqueEpisodes) {
           const key = `${seasonData.season}:${epNum}`;
           const existing = existingMap.get(key);
 
@@ -745,7 +750,18 @@ export const markShowEpisodesAndStatus = mutation({
 
           if (!args.isWatched) continue;
 
-          await ctx.db.insert("episode_progress", {
+          const newId = await ctx.db.insert("episode_progress", {
+            userId: user._id,
+            tmdbId: args.tmdbId,
+            season: seasonData.season,
+            episode: epNum,
+            isWatched: args.isWatched,
+            updatedAt: now,
+          });
+
+          existingMap.set(key, {
+            _id: newId,
+            _creationTime: now,
             userId: user._id,
             tmdbId: args.tmdbId,
             season: seasonData.season,
@@ -784,7 +800,8 @@ export const markSeasonEpisodesWatched = mutation({
       existingMap.set(`${ep.season}:${ep.episode}`, ep);
     }
 
-    for (const epNum of args.episodes) {
+    const uniqueEpisodes = Array.from(new Set(args.episodes));
+    for (const epNum of uniqueEpisodes) {
       const key = `${args.season}:${epNum}`;
       const existing = existingMap.get(key);
 
@@ -800,7 +817,18 @@ export const markSeasonEpisodesWatched = mutation({
 
       if (!args.isWatched) continue;
 
-      await ctx.db.insert("episode_progress", {
+      const newId = await ctx.db.insert("episode_progress", {
+        userId: user._id,
+        tmdbId: args.tmdbId,
+        season: args.season,
+        episode: epNum,
+        isWatched: args.isWatched,
+        updatedAt: now,
+      });
+
+      existingMap.set(key, {
+        _id: newId,
+        _creationTime: now,
         userId: user._id,
         tmdbId: args.tmdbId,
         season: args.season,

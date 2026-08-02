@@ -74,7 +74,7 @@ export function VideoPlayerModal({
 	const navigate = useNavigate();
 	const search = useSearch({ strict: false }) as Record<string, unknown>;
 
-	usePlayerProgressListener();
+	usePlayerProgressListener({ tmdbId, mediaType: type, season, episode });
 
 	// Auto-open when ?play=true is in the URL
 	useEffect(() => {
