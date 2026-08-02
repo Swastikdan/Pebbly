@@ -654,3 +654,38 @@ export const FilmIcon = ({ ...props }: IconSvgProps) => (
 		<path d="M17 16.5h4" />
 	</svg>
 );
+
+export const HomeIcon = ({ ...props }: IconSvgProps) => (
+	<svg
+		height={props.size ?? 24}
+		width={props.size ?? 24}
+		className={props.className}
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		viewBox="0 0 24 24"
+		xmlns="http://www.w3.org/2000/svg"
+		{...props}
+	>
+		<title>Home</title>
+		<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+		<path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+	</svg>
+);
+
+export const HomeFilledIcon = ({ ...props }: IconSvgProps) => (
+	<svg
+		height={props.size ?? 24}
+		width={props.size ?? 24}
+		className={props.className}
+		viewBox="0 0 24 24"
+		xmlns="http://www.w3.org/2000/svg"
+		fill="currentColor"
+		{...props}
+	>
+		<title>Home</title>
+		<path d="M12.707 2.293a1 1 0 0 0-1.414 0l-7 7A1 1 0 0 0 4 10v9a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v6a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-9a1 1 0 0 0-.293-.707z" />
+	</svg>
+);

@@ -1,7 +1,5 @@
-import { Show } from "@clerk/react";
 import { Link } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
-import { ListPlus } from "lucide-react";
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,48 +8,13 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	BookMarkFilledIcon,
-	MenuIcon,
-	SparklesFilledIcon,
-} from "@/components/ui/icons";
-import {
-	Sheet,
-	SheetClose,
-	SheetContent,
-	SheetTitle,
-	SheetTrigger,
-} from "@/components/ui/sheet";
 import { NAV_ITEMS, SITE_CONFIG } from "@/constants";
-import { usePermissions } from "@/hooks/use-permissions";
 
 const NavSubmenuItems = ({
 	items,
-	isMobile,
 }: {
 	items: { name: string; url: string; slug: string }[];
-	isMobile?: boolean;
 }) => {
-	if (isMobile) {
-		return (
-			<>
-				{items.map((subitem) => (
-					<SheetClose asChild key={subitem.slug}>
-						<Button
-							variant="outline"
-							className="h-9 w-full justify-start text-sm"
-							asChild
-						>
-							<Link to={subitem.url} className="w-full pl-3 cursor-pointer">
-								{subitem.name}
-							</Link>
-						</Button>
-					</SheetClose>
-				))}
-			</>
-		);
-	}
-
 	return (
 		<>
 			{items.map((subitem) => (
@@ -99,35 +62,9 @@ const DesktopNavMenuItem = ({
 
 DesktopNavMenuItem.displayName = "DesktopNavMenuItem";
 
-const MobileNavMenuItem = ({
-	item,
-}: {
-	item: {
-		name: string;
-		slug: string;
-		submenu: { name: string; url: string; slug: string }[];
-	};
-}) => {
-	return (
-		<div className="flex flex-col items-start justify-start gap-1.5">
-			<Button
-				variant="secondary"
-				className="w-full justify-start font-bold text-sm h-9"
-			>
-				{item.name}
-			</Button>
-			<NavSubmenuItems items={item.submenu} isMobile />
-		</div>
-	);
-};
-
-MobileNavMenuItem.displayName = "MobileNavMenuItem";
-
 const Navbar = () => {
-	const { hasFeature } = usePermissions();
-
 	return (
-		<header className="sticky top-0 z-50 mx-auto flex w-full flex-col items-center border-border/60 border-b bg-background/95 transition-[border-color,background-color] duration-300 supports-[backdrop-filter]:bg-background/90 md:bg-background/80 md:backdrop-blur-xl md:backdrop-saturate-150">
+		<header className="sticky top-0 z-50 mx-auto hidden w-full md:flex flex-col items-center border-border/60 border-b bg-background/95 transition-[border-color,background-color] duration-300 supports-[backdrop-filter]:bg-background/90 md:bg-background/80 md:backdrop-blur-xl md:backdrop-saturate-150">
 			<nav
 				className="flex w-full max-w-screen-xl items-center justify-between px-4 py-2.5 md:px-5"
 				aria-label="Main Navigation"
@@ -155,81 +92,9 @@ const Navbar = () => {
 							<DesktopNavMenuItem key={item.slug} item={item} />
 						))}
 					</ul>
-					<DesktopNavButtons />
-					<Sheet>
-						<SheetTrigger className="md:hidden" asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								className="font-heading font-light text-base"
-								aria-label="Menu"
-							>
-								<MenuIcon />
-							</Button>
-						</SheetTrigger>
-						<SheetContent
-							className="border-none px-3 duration-0"
-							aria-label="Mobile Navigation"
-						>
-							<SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
-							<div className="scrollbar-small flex h-full flex-col gap-4 overflow-y-auto py-12 pt-20">
-								{NAV_ITEMS.map((item) => (
-									<MobileNavMenuItem key={item.slug} item={item} />
-								))}
-								<div className="flex flex-col gap-1.5 mt-1">
-									<SheetClose asChild>
-										<Button
-											variant="secondary"
-											className="h-9 w-full justify-start gap-2 text-sm"
-											asChild
-										>
-											<Link
-												to="/watchlist"
-												search={{ tab: "watchlist" }}
-												className="w-full"
-											>
-												<BookMarkFilledIcon className="size-4 fill-current" />
-												Watchlist
-											</Link>
-										</Button>
-									</SheetClose>
-									<Show when="signed-in">
-										<SheetClose asChild>
-											<Button
-												variant="outline"
-												className="h-9 w-full justify-start gap-2 text-sm"
-												asChild
-											>
-												<Link
-													to="/watchlist"
-													search={{ tab: "collections" }}
-													className="w-full"
-												>
-													<ListPlus className="size-4" />
-													My Collections
-												</Link>
-											</Button>
-										</SheetClose>
-									</Show>
-									{hasFeature("ai-recommendations") && (
-										<SheetClose asChild>
-											<Button
-												variant="outline"
-												className="h-9 w-full justify-start gap-2 text-sm"
-												asChild
-											>
-												{/* @ts-expect-error correct link */}
-												<Link to="/recommendations" className="w-full">
-													<SparklesFilledIcon className="size-4" />
-													AI Recommendations
-												</Link>
-											</Button>
-										</SheetClose>
-									)}
-								</div>
-							</div>
-						</SheetContent>
-					</Sheet>
+					<div className="hidden md:flex md:items-center md:gap-1.5">
+						<DesktopNavButtons />
+					</div>
 				</section>
 			</nav>
 		</header>
