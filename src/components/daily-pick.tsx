@@ -363,7 +363,10 @@ export function DailyPickButton() {
 					<span>What to Watch Today</span>
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="max-w-md overflow-hidden rounded-2xl border-white/10 bg-background/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-lg">
+			<DialogContent
+				className="max-w-[92vw] overflow-hidden rounded-2xl border-white/10 bg-background/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-lg"
+				closeClassName="top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white dark:bg-black/60 dark:hover:bg-black/80 dark:text-white border border-white/20 backdrop-blur-md z-30"
+			>
 				{selectedItem ? (
 					<div className="relative">
 						{/* Backdrop banner */}
@@ -382,23 +385,23 @@ export function DailyPickButton() {
 							<div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
 							{/* Header badges */}
-							<div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
+							<div className="absolute top-3 left-3 pr-12 flex flex-wrap items-center gap-1.5">
 								{selectedItem.isCurrentlyWatching ? (
-									<span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/90 text-black px-3 py-1 text-xs font-bold shadow-md backdrop-blur-md">
-										<Eye className="size-3.5" />
+									<span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/90 text-black px-2.5 py-0.5 text-[11px] font-bold shadow-md backdrop-blur-md">
+										<Eye className="size-3" />
 										Watching
 										{selectedItem.watchProgress
 											? ` (${Math.round(selectedItem.watchProgress) + 1}%)`
 											: ""}
 									</span>
 								) : selectedItem.isFromWatchlist ? (
-									<span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 px-3 py-1 text-xs font-bold text-white shadow-md backdrop-blur-md">
-										<BookMarkIcon className="size-3.5 fill-white" />
+									<span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md backdrop-blur-md">
+										<BookMarkIcon className="size-3 fill-white" />
 										From Your Watchlist
 									</span>
 								) : (
-									<span className="inline-flex items-center gap-1 rounded-full bg-black/75 px-3 py-1 text-xs font-bold text-amber-400 backdrop-blur-md">
-										<SparklesIcon className="size-3.5 fill-amber-400" />
+									<span className="inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-amber-400 backdrop-blur-md border border-amber-400/20">
+										<SparklesIcon className="size-3 fill-amber-400" />
 										Today's Pick
 									</span>
 								)}
@@ -406,14 +409,14 @@ export function DailyPickButton() {
 						</div>
 
 						{/* Content details */}
-						<div className="relative -mt-12 px-6 pb-6">
-							<div className="flex gap-4">
+						<div className="relative -mt-10 sm:-mt-12 px-4 pb-5 sm:px-6 sm:pb-6">
+							<div className="flex gap-3 sm:gap-4 items-end">
 								{/* Poster thumbnail - Clickable Link */}
 								{posterUrl && (
 									<Link
 										to={targetPath}
 										onClick={() => setIsOpen(false)}
-										className="relative aspect-[2/3] w-24 shrink-0 overflow-hidden rounded-xl border border-white/20 shadow-xl bg-muted group/poster hover:opacity-90 transition-opacity"
+										className="relative aspect-[2/3] w-20 sm:w-24 shrink-0 overflow-hidden rounded-xl border-2 border-background/60 shadow-xl bg-muted group/poster hover:opacity-90 transition-opacity"
 										title={`View ${title}`}
 									>
 										<Image
@@ -426,22 +429,22 @@ export function DailyPickButton() {
 									</Link>
 								)}
 
-								<div className="flex flex-col justify-end gap-1">
+								<div className="flex flex-col justify-end gap-1 min-w-0 flex-1 pb-0.5">
 									{/* Title Link */}
 									<Link
 										to={targetPath}
 										onClick={() => setIsOpen(false)}
 										className="group/title inline-block"
 									>
-										<h3 className="text-xl font-bold leading-tight text-foreground group-hover/title:text-primary transition-colors flex items-center gap-1.5">
-											<span>{title}</span>
+										<h3 className="text-lg sm:text-xl font-bold leading-tight text-foreground group-hover/title:text-primary transition-colors line-clamp-2">
+											{title}
 										</h3>
 									</Link>
 
-									<div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
+									<div className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-muted-foreground">
 										{year && <span>{year}</span>}
 										{year && <span>•</span>}
-										<span className="uppercase font-semibold text-primary">
+										<span className="uppercase font-semibold text-primary text-[11px]">
 											{mediaType === "tv" ? "TV Series" : "Movie"}
 										</span>
 										{rating > 0 && (
@@ -457,67 +460,73 @@ export function DailyPickButton() {
 								</div>
 							</div>
 
-							<p className="mt-4 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+							<p className="mt-3 sm:mt-4 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
 								{selectedItem.overview}
 							</p>
 
 							{/* Action buttons */}
-							<div className="mt-6 flex flex-wrap items-center gap-2">
-								{isVideoPlaybackEnabled ? (
-									<Link
-										to={targetPath}
-										// biome-ignore lint/suspicious/noExplicitAny: dynamic route
-										search={{ play: true } as any}
-										onClick={() => setIsOpen(false)}
-										className="flex-1 min-w-[120px]"
-									>
-										<Button className="w-full rounded-xl bg-primary text-primary-foreground font-semibold shadow-md hover:bg-primary/90">
-											▶ Watch Now
+							<div className="mt-5 flex flex-col gap-2">
+								{/* Main action row */}
+								<div className="flex items-center gap-2">
+									{isVideoPlaybackEnabled ? (
+										<Link
+											to={targetPath}
+											// biome-ignore lint/suspicious/noExplicitAny: dynamic route
+											search={{ play: true } as any}
+											onClick={() => setIsOpen(false)}
+											className="flex-1"
+										>
+											<Button className="w-full h-10 sm:h-11 rounded-xl bg-primary text-primary-foreground font-semibold shadow-md hover:bg-primary/90 text-xs sm:text-sm">
+												▶ Watch Now
+											</Button>
+										</Link>
+									) : (
+										<Button
+											disabled
+											title="Video playback feature is disabled"
+											className="flex-1 h-10 sm:h-11 rounded-xl bg-muted text-muted-foreground font-semibold cursor-not-allowed opacity-60 text-xs sm:text-sm"
+										>
+											▶ Playback Disabled
 										</Button>
-									</Link>
-								) : (
+									)}
+
+									<WatchlistButton
+										id={selectedItem.id}
+										image={selectedItem.poster_path ?? ""}
+										media_type={mediaType}
+										rating={rating}
+										release_date={
+											selectedItem.release_date ??
+											selectedItem.first_air_date ??
+											""
+										}
+										title={title}
+										overview={selectedItem.overview}
+										className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl shrink-0"
+									/>
+								</div>
+
+								{/* Secondary action grid */}
+								<div className="grid grid-cols-2 gap-2">
 									<Button
-										disabled
-										title="Video playback feature is disabled"
-										className="flex-1 min-w-[120px] rounded-xl bg-muted text-muted-foreground font-semibold cursor-not-allowed opacity-60"
+										variant="outline"
+										onClick={handleDislike}
+										title="Dislike / Not for me (Removes from picks)"
+										className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive transition-colors"
 									>
-										▶ Playback Disabled
+										<ThumbsDown className="mr-1.5 size-3.5" />
+										<span>Dislike</span>
 									</Button>
-								)}
 
-								<WatchlistButton
-									id={selectedItem.id}
-									image={selectedItem.poster_path ?? ""}
-									media_type={mediaType}
-									rating={rating}
-									release_date={
-										selectedItem.release_date ??
-										selectedItem.first_air_date ??
-										""
-									}
-									title={title}
-									overview={selectedItem.overview}
-									className="h-10 w-10 rounded-xl shrink-0"
-								/>
-
-								<Button
-									variant="outline"
-									onClick={handleDislike}
-									title="Dislike / Not for me (Removes from picks)"
-									className="rounded-xl border-border px-3 text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
-								>
-									<ThumbsDown className="mr-1.5 size-4" />
-									<span>Dislike</span>
-								</Button>
-
-								<Button
-									variant="outline"
-									onClick={handleShuffle}
-									title="Pick Another"
-									className="rounded-xl border-border px-3 hover:bg-accent shrink-0"
-								>
-									🎲 Another
-								</Button>
+									<Button
+										variant="outline"
+										onClick={handleShuffle}
+										title="Pick Another"
+										className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs hover:bg-accent"
+									>
+										🎲 Another
+									</Button>
+								</div>
 							</div>
 						</div>
 					</div>
