@@ -164,6 +164,11 @@ export function usePlayerProgressListener(activeContext?: {
 	mediaType: "movie" | "tv";
 	season?: number;
 	episode?: number;
+	title?: string;
+	image?: string;
+	rating?: number;
+	release_date?: string;
+	overview?: string;
 }) {
 	const { isSignedIn } = useUser();
 	const updateProgress = useMutation(api.watchlist.updateProgress);
@@ -193,7 +198,7 @@ export function usePlayerProgressListener(activeContext?: {
 				cachedIframeWindows = new Set(
 					trustedPlayerIframes
 						.map((frame) => frame.contentWindow)
-						.filter((win): win is Window => win !== null),
+						.filter((win): win is Window => Boolean(win)),
 				);
 				cachedIframeOrigins = trustedPlayerIframes
 					.map((frame) => {
@@ -273,11 +278,20 @@ export function usePlayerProgressListener(activeContext?: {
 			) {
 				lastSavedPercent = safeProgress;
 
+				const metadata = {
+					title: activeContext?.title,
+					image: activeContext?.image,
+					rating: activeContext?.rating,
+					release_date: activeContext?.release_date,
+					overview: activeContext?.overview,
+				};
+
 				if (isSignedIn) {
 					void updateProgress({
 						tmdbId: Number(id),
 						mediaType,
 						progress: safeProgress,
+						...metadata,
 					}).catch((error) =>
 						logWatchProgressError("persist playback progress", error),
 					);
@@ -301,7 +315,7 @@ export function usePlayerProgressListener(activeContext?: {
 						);
 					}
 				} else {
-					setLocalProgress(String(id), mediaType, safeProgress);
+					setLocalProgress(String(id), mediaType, safeProgress, metadata);
 
 					if (
 						(playerEvent === "ended" || safeProgress >= 95) &&

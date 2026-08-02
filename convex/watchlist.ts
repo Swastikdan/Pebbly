@@ -11,6 +11,7 @@ import {
   getCurrentUser,
   getWatchItem,
   upsertWatchItem,
+  buildMetadataPatch,
   normalizeProgressStatus,
   type WatchlistUser,
   type MediaType,
@@ -68,6 +69,11 @@ export const updateProgress = mutation({
     mediaType: MEDIA_TYPE_VALIDATOR,
     progress: v.optional(v.number()),
     isWatched: v.optional(v.boolean()),
+    title: v.optional(v.string()),
+    image: v.optional(v.string()),
+    rating: v.optional(v.number()),
+    release_date: v.optional(v.string()),
+    overview: v.optional(v.string()),
   },
 
   handler: async (ctx, args) => {
@@ -96,7 +102,9 @@ export const updateProgress = mutation({
       await ctx.db.patch(existing._id, {
         progress: nextProgress,
         progressStatus: nextProgressStatus,
+        inWatchlist: true,
         updatedAt: now,
+        ...buildMetadataPatch(args, existing),
       });
       return;
     }
@@ -105,10 +113,11 @@ export const updateProgress = mutation({
       userId: user._id,
       tmdbId: args.tmdbId,
       mediaType: args.mediaType as MediaType,
-      inWatchlist: false,
+      inWatchlist: true,
       progress: nextProgress,
       progressStatus: nextProgressStatus,
       updatedAt: now,
+      ...buildMetadataPatch(args),
     });
   },
 });
@@ -239,6 +248,7 @@ export const setProgressStatus = mutation({
       }
 
       return {
+        inWatchlist: true,
         progressStatus: normalized,
         progress: nextProgress,
         title: args.title,

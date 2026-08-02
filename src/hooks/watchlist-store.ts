@@ -114,6 +114,12 @@ export function mapConvexItemToWatchlistItem(item: {
 	progressStatus?: string;
 	reaction?: string | null;
 }): WatchlistItem {
+	const normStatus = normalizeProgressStatus(item.progressStatus);
+	const isTrackedOrWatched =
+		Boolean(item.inWatchlist) ||
+		normStatus === "watching" ||
+		(item.progress ?? 0) > 0;
+
 	return {
 		title: item.title ?? "Unknown Title",
 		type: item.mediaType as MediaType,
@@ -124,8 +130,8 @@ export function mapConvexItemToWatchlistItem(item: {
 		overview: item.overview,
 		updated_at: item.updatedAt,
 		created_at: item.updatedAt,
-		inWatchlist: item.inWatchlist ?? true,
-		progressStatus: normalizeProgressStatus(item.progressStatus),
+		inWatchlist: isTrackedOrWatched,
+		progressStatus: normStatus,
 		reaction: (item.reaction as ReactionStatus | undefined) ?? null,
 		progress: item.progress ?? 0,
 	};
@@ -218,11 +224,13 @@ export const useWatchlistStore = create<WatchlistStore>()(
 							metadata,
 							(fallback) => ({
 								...fallback,
+								inWatchlist: true,
 								progressStatus,
 								progress: nextProgress ?? 0,
 							}),
 							(current) => ({
 								...current,
+								inWatchlist: true,
 								progressStatus,
 								progress: nextProgress ?? current.progress,
 							}),
@@ -252,6 +260,7 @@ export const useWatchlistStore = create<WatchlistStore>()(
 							metadata,
 							(fallback) => ({
 								...fallback,
+								inWatchlist: true,
 								progress,
 								progressStatus:
 									fallback.progressStatus ??
@@ -259,10 +268,14 @@ export const useWatchlistStore = create<WatchlistStore>()(
 							}),
 							(current) => ({
 								...current,
+								inWatchlist: true,
 								progress,
 								progressStatus:
-									current.progressStatus ??
-									(progress >= 95 ? "done" : progress > 0 ? "watching" : null),
+									progress >= 95
+										? "done"
+										: progress > 0
+											? "watching"
+											: current.progressStatus,
 							}),
 						),
 					};
