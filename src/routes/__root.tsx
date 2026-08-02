@@ -11,6 +11,7 @@ import {
 	DefaultNotFoundComponent,
 } from "@/components/default-not-found";
 import { Footer } from "@/components/footer";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { Navbar } from "@/components/navbar";
 import { UserSync } from "@/components/user-sync";
 import { SITE_CONFIG } from "@/constants";
@@ -245,10 +246,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				</a>
 				<UserSync />
 				<Navbar />
-				<main id="main-content" tabIndex={-1} className="outline-none">
+				<main
+					id="main-content"
+					tabIndex={-1}
+					className="outline-none mobile-nav-spacer"
+				>
 					{children}
 				</main>
 				<Footer />
+				<MobileBottomNav />
 				{devtoolsPlugin}
 				<SpeedInsights />
 				<Scripts />
