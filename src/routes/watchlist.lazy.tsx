@@ -1,6 +1,21 @@
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bookmark, ListPlus, Plus, Search, SlidersHorizontal, X } from "lucide-react";
-import { lazy, Suspense, useCallback, useId, useMemo, useState, useDeferredValue } from "react";
+import {
+	Bookmark,
+	ListPlus,
+	Plus,
+	Search,
+	SlidersHorizontal,
+	X,
+} from "lucide-react";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useDeferredValue,
+	useId,
+	useMemo,
+	useState,
+} from "react";
 
 const CustomListDialog = lazy(() =>
 	import("@/components/custom-list-dialog").then((m) => ({
@@ -169,7 +184,9 @@ function WatchlistTabContent() {
 			items = items.filter((item) =>
 				[item.title, item.overview, item.release_date]
 					.filter(Boolean)
-					.some((value) => value?.toLocaleLowerCase().includes(normalizedQuery)),
+					.some((value) =>
+						value?.toLocaleLowerCase().includes(normalizedQuery),
+					),
 			);
 		}
 
@@ -324,14 +341,21 @@ function WatchlistTabContent() {
 				</div>
 			)}
 			{importLoading && importTotal !== null && (
-				<div className="mb-4 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-sm text-muted-foreground" role="status">
-					Importing {importTotal} title{importTotal === 1 ? "" : "s"} in one batch…
+				<div
+					className="mb-4 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-sm text-muted-foreground"
+					role="status"
+				>
+					Importing {importTotal} title{importTotal === 1 ? "" : "s"} in one
+					batch…
 				</div>
 			)}
 
 			<div className="mb-6 space-y-3 rounded-2xl border border-border/60 bg-card/35 p-3 shadow-sm sm:p-4">
 				<div className="relative">
-					<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+					<Search
+						className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+						aria-hidden="true"
+					/>
 					<Input
 						value={searchQuery}
 						onChange={(event) => setSearchQuery(event.target.value)}
@@ -423,7 +447,7 @@ function WatchlistTabContent() {
 									filtersOpen ? "opacity-100" : "opacity-0",
 								)}
 							>
-									Hide
+								Hide
 							</span>
 							<span
 								className={cn(
@@ -431,9 +455,9 @@ function WatchlistTabContent() {
 									filtersOpen ? "opacity-0" : "opacity-100",
 								)}
 							>
-									Filters
+								Filters
 							</span>
-								<span className="invisible">Filters</span>
+							<span className="invisible">Filters</span>
 						</span>
 						{activeSecondaryCount > 0 && (
 							<span className="text-[10px] opacity-70">
@@ -517,7 +541,9 @@ function WatchlistTabContent() {
 						Showing {filteredWatchlist.length} of {watchlistData.length} saved
 					</span>
 					{watchlistData.length >= 25 && (
-						<span className="hidden sm:inline">Use Collections to group a big queue.</span>
+						<span className="hidden sm:inline">
+							Use Collections to group a big queue.
+						</span>
 					)}
 				</div>
 			</div>

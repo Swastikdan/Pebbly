@@ -25,7 +25,7 @@ function DisclaimerPage() {
 							Disclaimer
 						</h1>
 						<p className="mt-4 text-lg text-muted-foreground">
-							Last updated: March 08, 2026
+							Last updated: August 02, 2026
 						</p>
 					</div>
 

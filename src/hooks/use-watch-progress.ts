@@ -343,7 +343,10 @@ export function useWatchProgress(
 
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
-	const [lastPlayed, setLastPlayed] = useState<{season: number, episode: number} | null>(() => {
+	const [lastPlayed, setLastPlayed] = useState<{
+		season: number;
+		episode: number;
+	} | null>(() => {
 		if (mediaType !== "tv" || typeof window === "undefined") return null;
 		const lastPlayedStr = localStorage.getItem(`last_played:${id}`);
 		if (lastPlayedStr) {
@@ -372,7 +375,10 @@ export function useWatchProgress(
 		const handleCustom = (e: Event) => {
 			const custom = e as CustomEvent;
 			if (custom.detail.id === String(id)) {
-				setLastPlayed({ season: custom.detail.season, episode: custom.detail.episode });
+				setLastPlayed({
+					season: custom.detail.season,
+					episode: custom.detail.episode,
+				});
 			}
 		};
 		window.addEventListener("storage", handleStorage);
@@ -568,7 +574,7 @@ const markEpisodeWatchedOptimisticUpdate = createOptimisticUpdater(
 			),
 		];
 	},
-	(args) => ({ tmdbId: args.tmdbId })
+	(args) => ({ tmdbId: args.tmdbId }),
 );
 
 const markSeasonEpisodesWatchedOptimisticUpdate = createOptimisticUpdater(
@@ -598,7 +604,7 @@ const markSeasonEpisodesWatchedOptimisticUpdate = createOptimisticUpdater(
 		);
 		return [...filtered, ...newEpisodes];
 	},
-	(args) => ({ tmdbId: args.tmdbId })
+	(args) => ({ tmdbId: args.tmdbId }),
 );
 
 export function useEpisodeWatched(
@@ -678,7 +684,8 @@ export function useEpisodeWatched(
 	const currentProgress = mediaState?.progress ?? 0;
 	const currentProgressStatus = mediaState?.progressStatus ?? null;
 
-	const hasEpisodeTotal = typeof totalEpisodes === "number" && totalEpisodes > 0;
+	const hasEpisodeTotal =
+		typeof totalEpisodes === "number" && totalEpisodes > 0;
 	const safeTotalEpisodes = hasEpisodeTotal ? totalEpisodes : 0;
 
 	const { derivedProgress, derivedStatus } = useMemo(() => {
@@ -703,7 +710,8 @@ export function useEpisodeWatched(
 		if (!hasMediaState && watchedCount === 0) return;
 		if (currentProgressStatus === "dropped") return;
 
-		const shouldWriteProgress = !hasMediaState || currentProgress !== derivedProgress;
+		const shouldWriteProgress =
+			!hasMediaState || currentProgress !== derivedProgress;
 		const shouldWriteStatus = currentProgressStatus !== derivedStatus;
 
 		if (!shouldWriteProgress && !shouldWriteStatus) return;
@@ -717,7 +725,12 @@ export function useEpisodeWatched(
 						progress: derivedProgress,
 					}).catch((error) => logWatchProgressError("sync TV progress", error));
 				} else {
-					setProgressLocal(String(tvId), "tv", derivedProgress, localShowMetadata);
+					setProgressLocal(
+						String(tvId),
+						"tv",
+						derivedProgress,
+						localShowMetadata,
+					);
 				}
 			}
 			return;
@@ -731,7 +744,9 @@ export function useEpisodeWatched(
 					progressStatus: derivedStatus as any,
 					progress: derivedProgress,
 					...remoteShowMetadata,
-				}).catch((error) => logWatchProgressError("sync TV progress status", error));
+				}).catch((error) =>
+					logWatchProgressError("sync TV progress status", error),
+				);
 			} else if (shouldWriteProgress) {
 				void updateProgress({
 					tmdbId,
@@ -772,8 +787,6 @@ export function useEpisodeWatched(
 		setProgressStatusLocal,
 	]);
 
-
-
 	const isEpisodeWatched = useCallback(
 		(season: number, episode: number) => {
 			return !!watchedMap[makeEpisodeKey(tmdbId, season, episode)];
@@ -809,20 +822,15 @@ export function useEpisodeWatched(
 
 			markLocalSeason(tmdbId, season, episodes, true);
 		},
-		[
-			isSignedIn,
-			markEpisodesWatchedBatch,
-			markLocalSeason,
-			tmdbId,
-		],
+		[isSignedIn, markEpisodesWatchedBatch, markLocalSeason, tmdbId],
 	);
 
 	const unmarkSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
-			let watchedToRemove = 0;
+			let _watchedToRemove = 0;
 			for (const episode of episodes) {
 				if (watchedMap[makeEpisodeKey(tmdbId, season, episode)]) {
-					watchedToRemove++;
+					_watchedToRemove++;
 				}
 			}
 
@@ -837,12 +845,7 @@ export function useEpisodeWatched(
 				markLocalSeason(tmdbId, season, episodes, false);
 			}
 		},
-		[
-			isSignedIn,
-			markEpisodesWatchedBatch,
-			markLocalSeason,
-			tmdbId,
-		],
+		[isSignedIn, markEpisodesWatchedBatch, markLocalSeason, tmdbId, watchedMap],
 	);
 
 	const isSeasonFullyWatched = useCallback(

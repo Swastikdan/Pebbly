@@ -1,13 +1,13 @@
 import { useUser } from "@clerk/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { getTvDetails } from "@/lib/queries";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { useLocalProgressStore } from "./use-local-progress-store";
 import { createOptimisticUpdater } from "./optimistic-helpers";
+import { useLocalProgressStore } from "./use-local-progress-store";
 import {
 	type MediaMetadata,
 	type MediaType,
@@ -114,7 +114,7 @@ const updateWatchlistMembership = createOptimisticUpdater(
 					: i,
 			);
 		}
-	}
+	},
 );
 
 function setWatchlistMembershipOptimisticUpdate(localStore: any, args: any) {
@@ -218,7 +218,7 @@ const updateProgressStatus = createOptimisticUpdater(
 					}
 				: i,
 		);
-	}
+	},
 );
 
 function setProgressStatusOptimisticUpdate(localStore: any, args: any) {
@@ -270,7 +270,7 @@ const updateMarkShowEpisodes = createOptimisticUpdater(
 		}
 		return current;
 	},
-	(args) => ({ tmdbId: args.tmdbId })
+	(args) => ({ tmdbId: args.tmdbId }),
 );
 
 function markShowEpisodesAndStatusOptimisticUpdate(localStore: any, args: any) {
@@ -382,10 +382,11 @@ export function useSetProgressStatus() {
 							logWatchlistError("clear remote show episode status", error),
 						);
 					} else if (needsEpisodeUpdate) {
-						queryClient.ensureQueryData({
-							queryKey: ["tv", Number(id)],
-							queryFn: () => getTvDetails({ id: Number(id) }),
-						})
+						queryClient
+							.ensureQueryData({
+								queryKey: ["tv", Number(id)],
+								queryFn: () => getTvDetails({ id: Number(id) }),
+							})
 							.then((details) => {
 								void markShowEpisodesAndStatus({
 									tmdbId: Number(id),
@@ -435,10 +436,11 @@ export function useSetProgressStatus() {
 					if (isLeavingCompletion && !shouldMarkWatched) {
 						clearLocalShowProgress(Number(id));
 					} else if (needsEpisodeUpdate) {
-						queryClient.ensureQueryData({
-							queryKey: ["tv", Number(id)],
-							queryFn: () => getTvDetails({ id: Number(id) }),
-						})
+						queryClient
+							.ensureQueryData({
+								queryKey: ["tv", Number(id)],
+								queryFn: () => getTvDetails({ id: Number(id) }),
+							})
 							.then((details) => {
 								for (const season of buildSeasonEpisodeSelections(details)) {
 									markLocalSeason(
@@ -488,6 +490,7 @@ export function useSetProgressStatus() {
 			setProgressStatusLocal,
 			markLocalSeason,
 			clearLocalShowProgress,
+			queryClient.ensureQueryData,
 		],
 	);
 }
@@ -504,7 +507,7 @@ const updateReaction = createOptimisticUpdater(
 					}
 				: i,
 		);
-	}
+	},
 );
 
 function setReactionOptimisticUpdate(localStore: any, args: any) {
