@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
 import { WatchlistStatusMenu } from "@/components/media/watchlist-status-menu";
@@ -55,14 +56,45 @@ export const MediaTitleContainer = (props: {
 	const progressStatus = mediaState?.progressStatus ?? null;
 	const reaction = mediaState?.reaction ?? null;
 
-	const metadata = {
+	const metadata = useMemo(
+		() => ({
+			title,
+			image: poster_path,
+			backdrop: props.backdrop_path,
+			rating,
+			release_date: release_date ?? "",
+			overview: props.description,
+		}),
+		[
+			title,
+			poster_path,
+			props.backdrop_path,
+			rating,
+			release_date,
+			props.description,
+		],
+	);
+
+	useEffect(() => {
+		if (
+			mediaState &&
+			(!mediaState.title || mediaState.title === "Unknown Title") &&
+			title &&
+			title !== "Unknown Title"
+		) {
+			if (progressStatus) {
+				setProgressStatus(String(id), media_type, progressStatus, metadata);
+			}
+		}
+	}, [
+		mediaState,
 		title,
-		image: poster_path,
-		backdrop: props.backdrop_path,
-		rating,
-		release_date: release_date ?? "",
-		overview: props.description,
-	};
+		id,
+		media_type,
+		progressStatus,
+		setProgressStatus,
+		metadata,
+	]);
 
 	const handleAdd = () => {
 		toggleWatchlist({

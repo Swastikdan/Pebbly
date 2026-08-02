@@ -38,12 +38,22 @@ export function useWatchlist() {
 			if (!convexWatchlistData) return [];
 			return convexWatchlistData
 				.map((item) => mapConvexItemToWatchlistItem(item))
-				.filter((item) => item.inWatchlist)
+				.filter(
+					(item) =>
+						item.inWatchlist ||
+						item.progressStatus === "watching" ||
+						(item.progress ?? 0) > 0,
+				)
 				.sort((a, b) => b.updated_at - a.updated_at);
 		}
 
 		return [...localMediaState]
-			.filter((item) => item.inWatchlist)
+			.filter(
+				(item) =>
+					item.inWatchlist ||
+					item.progressStatus === "watching" ||
+					(item.progress ?? 0) > 0,
+			)
 			.sort((a, b) => b.updated_at - a.updated_at);
 	}, [isSignedIn, convexWatchlistData, localMediaState]);
 
@@ -51,6 +61,31 @@ export function useWatchlist() {
 		!isLoaded || (isSignedIn && convexWatchlistData === undefined);
 
 	return { watchlist, loading };
+}
+
+export function useAllMediaStates() {
+	const { isSignedIn, isLoaded } = useUser();
+	const convexWatchlistData = useQuery(
+		api.watchlist.getWatchlist,
+		isSignedIn ? {} : QUERY_SKIP,
+	);
+	const localMediaState = useWatchlistStore((state) => state.mediaState);
+
+	const allMediaStates: WatchlistItem[] = useMemo(() => {
+		if (isSignedIn) {
+			if (!convexWatchlistData) return [];
+			return convexWatchlistData
+				.map((item) => mapConvexItemToWatchlistItem(item))
+				.sort((a, b) => b.updated_at - a.updated_at);
+		}
+
+		return [...localMediaState].sort((a, b) => b.updated_at - a.updated_at);
+	}, [isSignedIn, convexWatchlistData, localMediaState]);
+
+	const loading =
+		!isLoaded || (isSignedIn && convexWatchlistData === undefined);
+
+	return { allMediaStates, loading };
 }
 
 export function useMediaState(id: string, mediaType: MediaType) {
@@ -212,6 +247,7 @@ const updateProgressStatus = createOptimisticUpdater(
 			i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
 				? {
 						...i,
+						inWatchlist: true,
 						progressStatus: args.progressStatus,
 						progress: args.progress ?? i.progress,
 						updatedAt: Date.now(),
@@ -232,6 +268,7 @@ function setProgressStatusOptimisticUpdate(localStore: any, args: any) {
 	if (currentMediaState) {
 		localStore.setQuery(api.watchlist.getMediaState, mediaStateArgs, {
 			...currentMediaState,
+			inWatchlist: true,
 			progressStatus: args.progressStatus,
 			progress: args.progress ?? currentMediaState.progress,
 			updatedAt: Date.now(),

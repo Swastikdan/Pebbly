@@ -144,6 +144,7 @@ export const markShowEpisodesWatched = mutation({
 
       if (existing) {
         await ctx.db.patch(existing._id, {
+          inWatchlist: true,
           progressStatus: args.progressStatus,
           progress: args.progress ?? existing.progress,
           updatedAt: now,
@@ -154,7 +155,7 @@ export const markShowEpisodesWatched = mutation({
           userId: user._id,
           tmdbId: args.tmdbId,
           mediaType: args.mediaType,
-          inWatchlist: false,
+          inWatchlist: true,
           progressStatus: args.progressStatus,
           progress: args.progress ?? 0,
           updatedAt: now,
