@@ -1,11 +1,16 @@
-export function createOptimisticUpdater<T>(
+// biome-ignore lint/suspicious/noExplicitAny: generic optimistic updater helper for convex queries
+export function createOptimisticUpdater<T, A = any>(
+	// biome-ignore lint/suspicious/noExplicitAny: generic optimistic updater helper for convex queries
 	queryReference: any,
-	updateFn: (items: T[], args: any) => T[],
-	getQueryArgs: (args: any) => any = () => ({})
+	updateFn: (items: T[], args: A) => T[],
+	// biome-ignore lint/suspicious/noExplicitAny: generic optimistic updater helper for convex queries
+	getQueryArgs: (args: A) => any = () => ({}),
 ) {
-	return (localStore: any, args: any) => {
+	// biome-ignore lint/suspicious/noExplicitAny: generic optimistic updater helper for convex queries
+	return (localStore: any, args: A) => {
 		const queryArgs = getQueryArgs(args);
-		const current = localStore.getQuery(queryReference, queryArgs) ?? [];
+		const current =
+			(localStore.getQuery(queryReference, queryArgs) as T[] | undefined) ?? [];
 		localStore.setQuery(queryReference, queryArgs, updateFn(current, args));
 	};
 }

@@ -150,7 +150,12 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 				{children}
 			</Link>
 
-			<div className={cn("absolute right-2 top-2 z-10 flex items-center gap-1.5", actionsClassName)}>
+			<div
+				className={cn(
+					"absolute right-2 top-2 z-10 flex items-center gap-1.5",
+					actionsClassName,
+				)}
+			>
 				{isContinueWatching && (
 					<button
 						type="button"
@@ -184,13 +189,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 });
 
 const HorizontalCard = memo((props: MediaCardSpecificProps) => {
-	const {
-		title,
-		image,
-		media_type,
-		release_date,
-		relevanceScore,
-	} = props;
+	const { title, image, media_type, release_date, relevanceScore } = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
 	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
@@ -241,14 +240,8 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 });
 
 const VerticalCard = memo((props: MediaCardSpecificProps) => {
-	const {
-		title,
-		image,
-		id,
-		media_type,
-		release_date,
-		isContinueWatching,
-	} = props;
+	const { title, image, id, media_type, release_date, isContinueWatching } =
+		props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
 	const year = release_date ? new Date(release_date).getFullYear() : "";
@@ -302,9 +295,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 						</span>
 						{episodeDetail?.name && (
 							<>
-								<span className="text-muted-foreground/50 text-[10px]">
-									•
-								</span>
+								<span className="text-muted-foreground/50 text-[10px]">•</span>
 								<span className="truncate text-xs font-medium text-muted-foreground/80 max-w-[150px]">
 									{episodeDetail.name}
 								</span>

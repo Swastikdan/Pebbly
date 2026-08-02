@@ -295,10 +295,12 @@ export const useWatchlistStore = create<WatchlistStore>()(
 									: existing?.progress);
 						const nextItem: WatchlistItem = {
 							...(existing ?? buildFallbackItem(imported.id, imported.type)),
-							title: imported.title ?? existing?.title ?? `Media ${imported.id}`,
+							title:
+								imported.title ?? existing?.title ?? `Media ${imported.id}`,
 							image: imported.image ?? existing?.image ?? "",
 							rating: imported.rating ?? existing?.rating ?? 0,
-							release_date: imported.release_date ?? existing?.release_date ?? "",
+							release_date:
+								imported.release_date ?? existing?.release_date ?? "",
 							overview: imported.overview ?? existing?.overview,
 							inWatchlist: true,
 							progressStatus: imported.progressStatus,

@@ -357,8 +357,6 @@ export function VideoPlayerModal({
 					/>
 					{/* Transparent overlay used to reveal the controls when hovering/tapping the
 					video. It is pass-through when controls are visible so clicks reach iframe. */}
-					{/* biome-ignore lint/a11y/useKeyWithClickEvents: gesture listener */}
-					{/* biome-ignore lint/a11y/noStaticElementInteractions: gesture listener */}
 					<div
 						className={cn(
 							"absolute inset-0 z-[5]",
