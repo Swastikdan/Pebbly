@@ -1,11 +1,13 @@
 import { useUser } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { getTvDetails } from "@/lib/queries";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useLocalProgressStore } from "./use-local-progress-store";
+import { createOptimisticUpdater } from "./optimistic-helpers";
 import {
 	type MediaMetadata,
 	type MediaType,
@@ -73,52 +75,50 @@ export function useMediaState(id: string, mediaType: MediaType) {
 	}, [isSignedIn, localMediaState, id, mediaType, remoteState]);
 }
 
-function setWatchlistMembershipOptimisticUpdate(localStore: any, args: any) {
-	const current = localStore.getQuery(api.watchlist.getWatchlist, {}) ?? [];
-	if (args.inWatchlist) {
-		const existing = current.find(
-			(i: any) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
-		);
-		if (existing) {
-			localStore.setQuery(
-				api.watchlist.getWatchlist,
-				{},
-				current.map((i: any) =>
+const updateWatchlistMembership = createOptimisticUpdater(
+	api.watchlist.getWatchlist,
+	(current: any[], args: any) => {
+		if (args.inWatchlist) {
+			const existing = current.find(
+				(i: any) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
+			);
+			if (existing) {
+				return current.map((i: any) =>
 					i === existing
 						? { ...i, inWatchlist: true, updatedAt: Date.now() }
 						: i,
-				),
-			);
+				);
+			} else {
+				return [
+					...current,
+					{
+						tmdbId: args.tmdbId,
+						mediaType: args.mediaType,
+						title: args.title,
+						image: args.image,
+						rating: args.rating,
+						release_date: args.release_date,
+						overview: args.overview,
+						inWatchlist: true,
+						updatedAt: Date.now(),
+						userId: "optimistic" as unknown as Id<"users">,
+						_id: `optimistic_${Date.now()}` as unknown as Id<"watch_items">,
+						_creationTime: Date.now(),
+					},
+				];
+			}
 		} else {
-			localStore.setQuery(api.watchlist.getWatchlist, {}, [
-				...current,
-				{
-					tmdbId: args.tmdbId,
-					mediaType: args.mediaType,
-					title: args.title,
-					image: args.image,
-					rating: args.rating,
-					release_date: args.release_date,
-					overview: args.overview,
-					inWatchlist: true,
-					updatedAt: Date.now(),
-					userId: "optimistic" as unknown as Id<"users">,
-					_id: `optimistic_${Date.now()}` as unknown as Id<"watch_items">,
-					_creationTime: Date.now(),
-				},
-			]);
-		}
-	} else {
-		localStore.setQuery(
-			api.watchlist.getWatchlist,
-			{},
-			current.map((i: any) =>
+			return current.map((i: any) =>
 				i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
 					? { ...i, inWatchlist: false }
 					: i,
-			),
-		);
+			);
+		}
 	}
+);
+
+function setWatchlistMembershipOptimisticUpdate(localStore: any, args: any) {
+	updateWatchlistMembership(localStore, args);
 
 	const mediaStateArgs = { tmdbId: args.tmdbId, mediaType: args.mediaType };
 	const currentMediaState = localStore.getQuery(
@@ -205,12 +205,10 @@ export function useToggleWatchlistItem() {
 	);
 }
 
-function setProgressStatusOptimisticUpdate(localStore: any, args: any) {
-	const current = localStore.getQuery(api.watchlist.getWatchlist, {}) ?? [];
-	localStore.setQuery(
-		api.watchlist.getWatchlist,
-		{},
-		current.map((i: any) =>
+const updateProgressStatus = createOptimisticUpdater(
+	api.watchlist.getWatchlist,
+	(current: any[], args: any) => {
+		return current.map((i: any) =>
 			i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
 				? {
 						...i,
@@ -219,8 +217,12 @@ function setProgressStatusOptimisticUpdate(localStore: any, args: any) {
 						updatedAt: Date.now(),
 					}
 				: i,
-		),
-	);
+		);
+	}
+);
+
+function setProgressStatusOptimisticUpdate(localStore: any, args: any) {
+	updateProgressStatus(localStore, args);
 
 	const mediaStateArgs = { tmdbId: args.tmdbId, mediaType: args.mediaType };
 	const currentMediaState = localStore.getQuery(
@@ -237,23 +239,43 @@ function setProgressStatusOptimisticUpdate(localStore: any, args: any) {
 	}
 }
 
+const updateMarkShowEpisodes = createOptimisticUpdater(
+	api.watchlist.getAllWatchedEpisodes,
+	(current: any[], args: any) => {
+		if (args.isWatched) {
+			const now = Date.now();
+			const filtered = current.filter(
+				(e: any) =>
+					!args.seasons.some(
+						(s: any) => e.season === s.season && s.episodes.includes(e.episode),
+					),
+			);
+
+			const newEpisodes = args.seasons.flatMap((s: any) =>
+				s.episodes.map((ep: any) => ({
+					_id: `optimistic_${now}_${s.season}_${ep}` as Id<"episode_progress">,
+					_creationTime: now,
+					userId: "optimistic" as unknown as Id<"users">,
+					tmdbId: args.tmdbId,
+					season: s.season,
+					episode: ep,
+					isWatched: true as const,
+					updatedAt: now,
+				})),
+			);
+
+			return [...filtered, ...newEpisodes];
+		} else if (args.clearAllEpisodes || args.seasons.length > 0) {
+			return [];
+		}
+		return current;
+	},
+	(args) => ({ tmdbId: args.tmdbId })
+);
+
 function markShowEpisodesAndStatusOptimisticUpdate(localStore: any, args: any) {
 	if (args.progressStatus !== undefined) {
-		const current = localStore.getQuery(api.watchlist.getWatchlist, {}) ?? [];
-		localStore.setQuery(
-			api.watchlist.getWatchlist,
-			{},
-			current.map((i: any) =>
-				i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
-					? {
-							...i,
-							progressStatus: args.progressStatus,
-							progress: args.progress ?? i.progress,
-							updatedAt: Date.now(),
-						}
-					: i,
-			),
-		);
+		updateProgressStatus(localStore, args);
 
 		const mediaStateArgs = { tmdbId: args.tmdbId, mediaType: args.mediaType };
 		const currentMediaState = localStore.getQuery(
@@ -270,45 +292,7 @@ function markShowEpisodesAndStatusOptimisticUpdate(localStore: any, args: any) {
 		}
 	}
 
-	const current =
-		localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
-			tmdbId: args.tmdbId,
-		}) ?? [];
-
-	if (args.isWatched) {
-		const now = Date.now();
-		const filtered = current.filter(
-			(e: any) =>
-				!args.seasons.some(
-					(s: any) => e.season === s.season && s.episodes.includes(e.episode),
-				),
-		);
-
-		const newEpisodes = args.seasons.flatMap((s: any) =>
-			s.episodes.map((ep: any) => ({
-				_id: `optimistic_${now}_${s.season}_${ep}` as Id<"episode_progress">,
-				_creationTime: now,
-				userId: "optimistic" as unknown as Id<"users">,
-				tmdbId: args.tmdbId,
-				season: s.season,
-				episode: ep,
-				isWatched: true as const,
-				updatedAt: now,
-			})),
-		);
-
-		localStore.setQuery(
-			api.watchlist.getAllWatchedEpisodes,
-			{ tmdbId: args.tmdbId },
-			[...filtered, ...newEpisodes],
-		);
-	} else if (args.clearAllEpisodes || args.seasons.length > 0) {
-		localStore.setQuery(
-			api.watchlist.getAllWatchedEpisodes,
-			{ tmdbId: args.tmdbId },
-			[],
-		);
-	}
+	updateMarkShowEpisodes(localStore, args);
 }
 
 function getTrackableTvSeasons(details?: {
@@ -335,6 +319,7 @@ function buildSeasonEpisodeSelections(details?: {
 
 export function useSetProgressStatus() {
 	const { isSignedIn } = useUser();
+	const queryClient = useQueryClient();
 	const setProgressStatus = useMutation(
 		api.watchlist.setProgressStatus,
 	).withOptimisticUpdate(setProgressStatusOptimisticUpdate);
@@ -397,7 +382,10 @@ export function useSetProgressStatus() {
 							logWatchlistError("clear remote show episode status", error),
 						);
 					} else if (needsEpisodeUpdate) {
-						getTvDetails({ id: Number(id) })
+						queryClient.ensureQueryData({
+							queryKey: ["tv", Number(id)],
+							queryFn: () => getTvDetails({ id: Number(id) }),
+						})
 							.then((details) => {
 								void markShowEpisodesAndStatus({
 									tmdbId: Number(id),
@@ -447,7 +435,10 @@ export function useSetProgressStatus() {
 					if (isLeavingCompletion && !shouldMarkWatched) {
 						clearLocalShowProgress(Number(id));
 					} else if (needsEpisodeUpdate) {
-						getTvDetails({ id: Number(id) })
+						queryClient.ensureQueryData({
+							queryKey: ["tv", Number(id)],
+							queryFn: () => getTvDetails({ id: Number(id) }),
+						})
 							.then((details) => {
 								for (const season of buildSeasonEpisodeSelections(details)) {
 									markLocalSeason(
@@ -501,12 +492,10 @@ export function useSetProgressStatus() {
 	);
 }
 
-function setReactionOptimisticUpdate(localStore: any, args: any) {
-	const current = localStore.getQuery(api.watchlist.getWatchlist, {}) ?? [];
-	localStore.setQuery(
-		api.watchlist.getWatchlist,
-		{},
-		current.map((i: any) =>
+const updateReaction = createOptimisticUpdater(
+	api.watchlist.getWatchlist,
+	(current: any[], args: any) => {
+		return current.map((i: any) =>
 			i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
 				? {
 						...i,
@@ -514,8 +503,12 @@ function setReactionOptimisticUpdate(localStore: any, args: any) {
 						updatedAt: Date.now(),
 					}
 				: i,
-		),
-	);
+		);
+	}
+);
+
+function setReactionOptimisticUpdate(localStore: any, args: any) {
+	updateReaction(localStore, args);
 
 	const mediaStateArgs = { tmdbId: args.tmdbId, mediaType: args.mediaType };
 	const currentMediaState = localStore.getQuery(

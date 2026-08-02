@@ -2,7 +2,7 @@ import { useUser } from "@clerk/react";
 
 import { useMutation, useQuery } from "convex/react";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { api } from "../../convex/_generated/api";
 
@@ -257,6 +257,11 @@ export function usePlayerProgressListener(activeContext?: {
 						`last_played:${id}`,
 						JSON.stringify({ season, episode }),
 					);
+					window.dispatchEvent(
+						new CustomEvent("last_played_update", {
+							detail: { id: String(id), season, episode },
+						}),
+					);
 				} catch {}
 			}
 
@@ -338,36 +343,67 @@ export function useWatchProgress(
 
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
+	const [lastPlayed, setLastPlayed] = useState<{season: number, episode: number} | null>(() => {
+		if (mediaType !== "tv" || typeof window === "undefined") return null;
+		const lastPlayedStr = localStorage.getItem(`last_played:${id}`);
+		if (lastPlayedStr) {
+			try {
+				const { season, episode } = JSON.parse(lastPlayedStr);
+				if (typeof season === "number" && typeof episode === "number") {
+					return { season, episode };
+				}
+			} catch {}
+		}
+		return null;
+	});
+
+	useEffect(() => {
+		if (mediaType !== "tv") return;
+		const handleStorage = (e: StorageEvent) => {
+			if (e.key === `last_played:${id}` && e.newValue) {
+				try {
+					const { season, episode } = JSON.parse(e.newValue);
+					if (typeof season === "number" && typeof episode === "number") {
+						setLastPlayed({ season, episode });
+					}
+				} catch {}
+			}
+		};
+		const handleCustom = (e: Event) => {
+			const custom = e as CustomEvent;
+			if (custom.detail.id === String(id)) {
+				setLastPlayed({ season: custom.detail.season, episode: custom.detail.episode });
+			}
+		};
+		window.addEventListener("storage", handleStorage);
+		window.addEventListener("last_played_update", handleCustom);
+		return () => {
+			window.removeEventListener("storage", handleStorage);
+			window.removeEventListener("last_played_update", handleCustom);
+		};
+	}, [id, mediaType]);
+
 	const progress: WatchProgressData | null = useMemo(() => {
 		if (!mediaState) return null;
 
 		let context: { season?: number; episode?: number } | undefined;
 
 		if (mediaType === "tv") {
-			// First, check if there's a last-played episode in localStorage
-			const lastPlayedStr =
-				typeof window !== "undefined"
-					? localStorage.getItem(`last_played:${id}`)
-					: null;
-			if (lastPlayedStr) {
-				try {
-					const { season, episode } = JSON.parse(lastPlayedStr);
-					if (typeof season === "number" && typeof episode === "number") {
-						// Check if this episode is already fully watched.
-						const isThisWatched = isSignedIn
-							? watchedEpisodes.some(
-									(e) =>
-										e.season === season && e.episode === episode && e.isWatched,
-								)
-							: !!localEpisodes[`${tmdbId}:${season}:${episode}`];
+			if (lastPlayed) {
+				const { season, episode } = lastPlayed;
+				// Check if this episode is already fully watched.
+				const isThisWatched = isSignedIn
+					? watchedEpisodes.some(
+							(e) =>
+								e.season === season && e.episode === episode && e.isWatched,
+						)
+					: !!localEpisodes[`${tmdbId}:${season}:${episode}`];
 
-						if (isThisWatched) {
-							context = { season, episode: episode + 1 };
-						} else {
-							context = { season, episode };
-						}
-					}
-				} catch {}
+				if (isThisWatched) {
+					context = { season, episode: episode + 1 };
+				} else {
+					context = { season, episode };
+				}
 			}
 
 			// If not in localStorage, fall back to the highest watched episode + 1, or S1E1
@@ -418,7 +454,7 @@ export function useWatchProgress(
 		watchedEpisodes,
 		localEpisodes,
 		tmdbId,
-		id,
+		lastPlayed,
 	]);
 
 	return { progress };
@@ -503,37 +539,25 @@ export function useRemoveFromContinueWatching() {
 	return { removeFromContinueWatching };
 }
 
-function markEpisodeWatchedOptimisticUpdate(localStore: any, args: any) {
-	const current =
-		localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
-			tmdbId: args.tmdbId,
-		}) ?? [];
+import { createOptimisticUpdater } from "./optimistic-helpers";
 
-	if (!args.isWatched) {
-		localStore.setQuery(
-			api.watchlist.getAllWatchedEpisodes,
-			{ tmdbId: args.tmdbId },
-			current.filter(
+const markEpisodeWatchedOptimisticUpdate = createOptimisticUpdater(
+	api.watchlist.getAllWatchedEpisodes,
+	(current: any[], args: any) => {
+		if (!args.isWatched) {
+			return current.filter(
 				(episode: any) =>
 					!(episode.season === args.season && episode.episode === args.episode),
-			),
+			);
+		}
+		const already = current.some(
+			(episode: any) =>
+				episode.season === args.season && episode.episode === args.episode,
 		);
-		return;
-	}
+		if (already) return current;
 
-	const already = current.some(
-		(episode: any) =>
-			episode.season === args.season && episode.episode === args.episode,
-	);
-	if (already) {
-		return;
-	}
-
-	const now = Date.now();
-	localStore.setQuery(
-		api.watchlist.getAllWatchedEpisodes,
-		{ tmdbId: args.tmdbId },
-		[
+		const now = Date.now();
+		return [
 			...current,
 			createOptimisticEpisodeProgress(
 				args.tmdbId,
@@ -542,49 +566,40 @@ function markEpisodeWatchedOptimisticUpdate(localStore: any, args: any) {
 				String(now),
 				now,
 			),
-		],
-	);
-}
+		];
+	},
+	(args) => ({ tmdbId: args.tmdbId })
+);
 
-function markSeasonEpisodesWatchedOptimisticUpdate(localStore: any, args: any) {
-	const current =
-		localStore.getQuery(api.watchlist.getAllWatchedEpisodes, {
-			tmdbId: args.tmdbId,
-		}) ?? [];
-	const filtered = current.filter(
-		(episode: any) =>
-			!(
-				episode.season === args.season &&
-				args.episodes.includes(episode.episode)
-			),
-	);
-
-	if (!args.isWatched) {
-		localStore.setQuery(
-			api.watchlist.getAllWatchedEpisodes,
-			{ tmdbId: args.tmdbId },
-			filtered,
+const markSeasonEpisodesWatchedOptimisticUpdate = createOptimisticUpdater(
+	api.watchlist.getAllWatchedEpisodes,
+	(current: any[], args: any) => {
+		const filtered = current.filter(
+			(episode: any) =>
+				!(
+					episode.season === args.season &&
+					args.episodes.includes(episode.episode)
+				),
 		);
-		return;
-	}
 
-	const now = Date.now();
-	const newEpisodes = args.episodes.map((episode: any) =>
-		createOptimisticEpisodeProgress(
-			args.tmdbId,
-			args.season,
-			episode,
-			`${now}_${episode}`,
-			now,
-		),
-	);
+		if (!args.isWatched) {
+			return filtered;
+		}
 
-	localStore.setQuery(
-		api.watchlist.getAllWatchedEpisodes,
-		{ tmdbId: args.tmdbId },
-		[...filtered, ...newEpisodes],
-	);
-}
+		const now = Date.now();
+		const newEpisodes = args.episodes.map((episode: any) =>
+			createOptimisticEpisodeProgress(
+				args.tmdbId,
+				args.season,
+				episode,
+				`${now}_${episode}`,
+				now,
+			),
+		);
+		return [...filtered, ...newEpisodes];
+	},
+	(args) => ({ tmdbId: args.tmdbId })
+);
 
 export function useEpisodeWatched(
 	tvId: number | string,
@@ -662,135 +677,102 @@ export function useEpisodeWatched(
 	const hasMediaState = !!mediaState;
 	const currentProgress = mediaState?.progress ?? 0;
 	const currentProgressStatus = mediaState?.progressStatus ?? null;
-	const prevWatchedCountRef = useRef<number | null>(null);
-	const prevTmdbIdRef = useRef<number | null>(null);
 
-	const syncProgressFromWatchedCount = useCallback(
-		(newWatchedCount: number) => {
-			if (
-				prevWatchedCountRef.current === newWatchedCount &&
-				prevTmdbIdRef.current === tmdbId
-			) {
-				return;
-			}
+	const hasEpisodeTotal = typeof totalEpisodes === "number" && totalEpisodes > 0;
+	const safeTotalEpisodes = hasEpisodeTotal ? totalEpisodes : 0;
 
-			prevWatchedCountRef.current = newWatchedCount;
-			prevTmdbIdRef.current = tmdbId;
+	const { derivedProgress, derivedStatus } = useMemo(() => {
+		const progress =
+			watchedCount <= 0
+				? 0
+				: hasEpisodeTotal
+					? Math.min(100, Math.floor((watchedCount / safeTotalEpisodes) * 100))
+					: Math.max(currentProgress, 1);
 
-			if (!hasMediaState && newWatchedCount === 0) {
-				return;
-			}
+		const status =
+			watchedCount <= 0
+				? "watch-later"
+				: hasEpisodeTotal && watchedCount >= safeTotalEpisodes
+					? "done"
+					: "watching";
 
-			if (currentProgressStatus === "dropped") {
-				return;
-			}
+		return { derivedProgress: progress, derivedStatus: status };
+	}, [watchedCount, hasEpisodeTotal, safeTotalEpisodes, currentProgress]);
 
-			const hasEpisodeTotal =
-				typeof totalEpisodes === "number" && totalEpisodes > 0;
-			const safeTotalEpisodes = hasEpisodeTotal ? totalEpisodes : 0;
-			const nextProgress =
-				newWatchedCount <= 0
-					? 0
-					: hasEpisodeTotal
-						? Math.min(
-								100,
-								Math.floor((newWatchedCount / safeTotalEpisodes) * 100),
-							)
-						: Math.max(currentProgress, 1);
-			const allEpisodesWatched =
-				hasEpisodeTotal && newWatchedCount >= safeTotalEpisodes;
-			const derivedProgressStatus =
-				newWatchedCount <= 0
-					? "watch-later"
-					: allEpisodesWatched
-						? "done"
-						: "watching";
-			const shouldWriteProgress =
-				!hasMediaState || currentProgress !== nextProgress;
+	useEffect(() => {
+		if (!hasMediaState && watchedCount === 0) return;
+		if (currentProgressStatus === "dropped") return;
 
-			if (
-				currentProgressStatus === "watching" &&
-				derivedProgressStatus !== "watching"
-			) {
-				if (shouldWriteProgress) {
-					if (isSignedIn) {
-						void updateProgress({
-							tmdbId,
-							mediaType: "tv",
-							progress: nextProgress,
-						}).catch((error) =>
-							logWatchProgressError("sync TV progress", error),
-						);
-					} else {
-						setProgressLocal(
-							String(tvId),
-							"tv",
-							nextProgress,
-							localShowMetadata,
-						);
-					}
-				}
-				return;
-			}
+		const shouldWriteProgress = !hasMediaState || currentProgress !== derivedProgress;
+		const shouldWriteStatus = currentProgressStatus !== derivedStatus;
 
-			const shouldWriteStatus = currentProgressStatus !== derivedProgressStatus;
+		if (!shouldWriteProgress && !shouldWriteStatus) return;
 
-			if (isSignedIn) {
-				if (shouldWriteStatus) {
-					void setProgressStatus({
-						tmdbId,
-						mediaType: "tv",
-						progressStatus: derivedProgressStatus,
-						progress: nextProgress,
-						...remoteShowMetadata,
-					}).catch((error) =>
-						logWatchProgressError("sync TV progress status", error),
-					);
-				} else if (shouldWriteProgress) {
+		if (currentProgressStatus === "watching" && derivedStatus !== "watching") {
+			if (shouldWriteProgress) {
+				if (isSignedIn) {
 					void updateProgress({
 						tmdbId,
 						mediaType: "tv",
-						progress: nextProgress,
+						progress: derivedProgress,
 					}).catch((error) => logWatchProgressError("sync TV progress", error));
+				} else {
+					setProgressLocal(String(tvId), "tv", derivedProgress, localShowMetadata);
 				}
-
-				return;
 			}
+			return;
+		}
 
-			if (shouldWriteProgress) {
-				setProgressLocal(String(tvId), "tv", nextProgress, localShowMetadata);
-			}
-
+		if (isSignedIn) {
 			if (shouldWriteStatus) {
-				setProgressStatusLocal(
-					String(tvId),
-					"tv",
-					derivedProgressStatus,
-					nextProgress,
-					localShowMetadata,
-				);
+				void setProgressStatus({
+					tmdbId,
+					mediaType: "tv",
+					progressStatus: derivedStatus as any,
+					progress: derivedProgress,
+					...remoteShowMetadata,
+				}).catch((error) => logWatchProgressError("sync TV progress status", error));
+			} else if (shouldWriteProgress) {
+				void updateProgress({
+					tmdbId,
+					mediaType: "tv",
+					progress: derivedProgress,
+				}).catch((error) => logWatchProgressError("sync TV progress", error));
 			}
-		},
-		[
-			hasMediaState,
-			currentProgress,
-			currentProgressStatus,
-			isSignedIn,
-			localShowMetadata,
-			tmdbId,
-			totalEpisodes,
-			tvId,
-			remoteShowMetadata,
-			updateProgress,
-			setProgressLocal,
-			setProgressStatus,
-			setProgressStatusLocal,
-		],
-	);
+			return;
+		}
 
-	useEffect(() => {
-		syncProgressFromWatchedCount(watchedCount);
-	}, [syncProgressFromWatchedCount, watchedCount]);
+		if (shouldWriteProgress) {
+			setProgressLocal(String(tvId), "tv", derivedProgress, localShowMetadata);
+		}
+		if (shouldWriteStatus) {
+			setProgressStatusLocal(
+				String(tvId),
+				"tv",
+				derivedStatus as any,
+				derivedProgress,
+				localShowMetadata,
+			);
+		}
+	}, [
+		derivedProgress,
+		derivedStatus,
+		currentProgress,
+		currentProgressStatus,
+		hasMediaState,
+		watchedCount,
+		isSignedIn,
+		localShowMetadata,
+		remoteShowMetadata,
+		tmdbId,
+		tvId,
+		updateProgress,
+		setProgressStatus,
+		setProgressLocal,
+		setProgressStatusLocal,
+	]);
+
+
 
 	const isEpisodeWatched = useCallback(
 		(season: number, episode: number) => {
@@ -808,19 +790,13 @@ export function useEpisodeWatched(
 			} else {
 				markLocalEpisode(tmdbId, season, episode, isWatched);
 			}
-
-			syncProgressFromWatchedCount(
-				Math.max(0, watchedCount + (isWatched ? 1 : -1)),
-			);
 		},
 		[
 			isEpisodeWatched,
 			isSignedIn,
 			markEpisodeWatchedMut,
 			markLocalEpisode,
-			syncProgressFromWatchedCount,
 			tmdbId,
-			watchedCount,
 		],
 	);
 
@@ -832,24 +808,12 @@ export function useEpisodeWatched(
 			}
 
 			markLocalSeason(tmdbId, season, episodes, true);
-
-			let newlyWatched = 0;
-			for (const episode of episodes) {
-				if (!watchedMap[makeEpisodeKey(tmdbId, season, episode)]) {
-					newlyWatched++;
-				}
-			}
-
-			syncProgressFromWatchedCount(watchedCount + newlyWatched);
 		},
 		[
 			isSignedIn,
 			markEpisodesWatchedBatch,
 			markLocalSeason,
-			syncProgressFromWatchedCount,
 			tmdbId,
-			watchedCount,
-			watchedMap,
 		],
 	);
 
@@ -872,17 +836,12 @@ export function useEpisodeWatched(
 			} else {
 				markLocalSeason(tmdbId, season, episodes, false);
 			}
-
-			syncProgressFromWatchedCount(Math.max(0, watchedCount - watchedToRemove));
 		},
 		[
 			isSignedIn,
 			markEpisodesWatchedBatch,
 			markLocalSeason,
-			syncProgressFromWatchedCount,
 			tmdbId,
-			watchedCount,
-			watchedMap,
 		],
 	);
 

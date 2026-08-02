@@ -3,111 +3,28 @@ import {
   mutation,
   query,
   type MutationCtx,
-  type QueryCtx,
 } from "./_generated/server";
-import type { Doc } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import {
+  requireCurrentUser,
+  getCurrentUser,
+  getWatchItem,
+  upsertWatchItem,
+  normalizeProgressStatus,
+  type WatchlistUser,
+  type MediaType,
+  MEDIA_TYPE_VALIDATOR,
+  PROGRESS_STATUS_VALIDATOR,
+  REACTION_VALIDATOR,
+} from "./helpers/watch-item";
 
-type WatchlistContext = QueryCtx | MutationCtx;
-type WatchlistUser = Doc<"users">;
-type WatchItem = Doc<"watch_items">;
-type EpisodeProgress = Doc<"episode_progress">;
+// Re-export everything from the new modules to not break existing clients
+export * from "./episode-progress";
+export * from "./custom-lists";
+export * from "./import-export";
 
-type MediaType = "movie" | "tv";
-
-const MEDIA_TYPE_VALIDATOR = v.union(v.literal("movie"), v.literal("tv"));
-
-type MediaIdentity = {
-  tmdbId: number;
-  mediaType: MediaType;
-};
-
-type ImportWatchlistItem = MediaIdentity & {
-  title: string;
-  image?: string;
-  rating?: number;
-  release_date?: string;
-  overview?: string;
-  progressStatus?: "watch-later" | "watching" | "done" | "dropped";
-  progress?: number;
-  reaction?: "loved" | "liked" | "mixed" | "not-for-me" | null;
-};
-
-
-type WatchItemMetadata = {
-  title?: string;
-  image?: string;
-  rating?: number;
-  release_date?: string;
-  overview?: string;
-};
-
-const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set([
-  "watch-later",
-  "watching",
-  "done",
-  "dropped",
-]);
-
-
-const PROGRESS_STATUS_VALIDATOR = v.union(
-  v.literal("watch-later"),
-  v.literal("watching"),
-  v.literal("done"),
-  v.literal("dropped"),
-);
-
-const REACTION_VALIDATOR = v.union(
-  v.literal("loved"),
-  v.literal("liked"),
-  v.literal("mixed"),
-  v.literal("not-for-me"),
-);
-
-const REACTION_OR_NULL_VALIDATOR = v.union(REACTION_VALIDATOR, v.null());
-
-function normalizeProgressStatus(status?: string): string | undefined {
-  if (!status) return undefined;
-  return VALID_PROGRESS_STATUSES.has(status) ? status : undefined;
-}
-
-async function getCurrentUser(ctx: WatchlistContext) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return null;
-
-  return ctx.db
-    .query("users")
-    .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
-    .first();
-}
-
-async function requireCurrentUser(ctx: WatchlistContext): Promise<WatchlistUser> {
-  const user = await getCurrentUser(ctx);
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
-
-  return user;
-}
-
-async function getWatchItem(
-  ctx: WatchlistContext,
-  userId: WatchlistUser["_id"],
-  media: MediaIdentity,
-) {
-  return ctx.db
-    .query("watch_items")
-    .withIndex("by_user_media", (q) =>
-      q
-        .eq("userId", userId)
-        .eq("tmdbId", media.tmdbId)
-        .eq("mediaType", media.mediaType),
-    )
-    .first();
-}
-
-async function createWatchlistSnapshot(
+export async function createWatchlistSnapshot(
   ctx: MutationCtx,
   userId: WatchlistUser["_id"],
 ) {
@@ -142,92 +59,6 @@ async function createWatchlistSnapshot(
     userId,
     items: watchlistItems.slice(0, 8000),
     createdAt: Date.now(),
-  });
-}
-
-async function getEpisodeProgressEntry(
-  ctx: WatchlistContext,
-  userId: WatchlistUser["_id"],
-  tmdbId: number,
-  season: number,
-  episode: number,
-) {
-  return ctx.db
-    .query("episode_progress")
-    .withIndex("by_user_episode", (q) =>
-      q
-        .eq("userId", userId)
-        .eq("tmdbId", tmdbId)
-        .eq("season", season)
-        .eq("episode", episode),
-    )
-    .first();
-}
-
-async function getEpisodeProgressForShow(
-  ctx: WatchlistContext,
-  userId: WatchlistUser["_id"],
-  tmdbId: number,
-) {
-  return ctx.db
-    .query("episode_progress")
-    .withIndex("by_user_media", (q) => q.eq("userId", userId).eq("tmdbId", tmdbId))
-    .collect();
-}
-
-function buildMetadataPatch(
-  metadata: WatchItemMetadata,
-  existing?: WatchItem,
-): WatchItemMetadata {
-  return {
-    title: metadata.title ?? existing?.title,
-    image: metadata.image ?? existing?.image,
-    rating: metadata.rating ?? existing?.rating,
-    release_date: metadata.release_date ?? existing?.release_date,
-    overview: metadata.overview ?? existing?.overview,
-  };
-}
-
-async function syncEpisodeProgressRecord(
-  ctx: MutationCtx,
-  userId: WatchlistUser["_id"],
-  args: {
-    tmdbId: number;
-    season: number;
-    episode: number;
-    isWatched: boolean;
-  },
-  now: number,
-) {
-  const existing = await getEpisodeProgressEntry(
-    ctx,
-    userId,
-    args.tmdbId,
-    args.season,
-    args.episode,
-  );
-
-  if (existing) {
-    if (existing.isWatched !== args.isWatched) {
-      await ctx.db.patch(existing._id, {
-        isWatched: args.isWatched,
-        updatedAt: now,
-      });
-    }
-    return;
-  }
-
-  if (!args.isWatched) {
-    return;
-  }
-
-  await ctx.db.insert("episode_progress", {
-    userId,
-    tmdbId: args.tmdbId,
-    season: args.season,
-    episode: args.episode,
-    isWatched: args.isWatched,
-    updatedAt: now,
   });
 }
 
@@ -273,7 +104,7 @@ export const updateProgress = mutation({
     await ctx.db.insert("watch_items", {
       userId: user._id,
       tmdbId: args.tmdbId,
-      mediaType: args.mediaType,
+      mediaType: args.mediaType as MediaType,
       inWatchlist: false,
       progress: nextProgress,
       progressStatus: nextProgressStatus,
@@ -298,36 +129,6 @@ export const removeFromContinueWatching = mutation({
       progress: 0,
       updatedAt: now,
     });
-  },
-});
-
-export const markEpisodeWatched = mutation({
-  args: {
-    tmdbId: v.number(),
-    season: v.number(),
-    episode: v.number(),
-    isWatched: v.boolean(),
-  },
-
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-    await syncEpisodeProgressRecord(ctx, user._id, args, Date.now());
-  },
-});
-
-export const getAllWatchedEpisodes = query({
-  args: {
-    tmdbId: v.number(),
-  },
-
-  handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return [];
-
-    return ctx.db
-      .query("episode_progress")
-      .withIndex("by_user_media", (q) => q.eq("userId", user._id).eq("tmdbId", args.tmdbId))
-      .collect();
   },
 });
 
@@ -391,37 +192,24 @@ export const setWatchlistMembership = mutation({
 
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
-    const existing = await getWatchItem(ctx, user._id, args);
+    await upsertWatchItem(ctx, user._id, args.tmdbId, args.mediaType as MediaType, (existing) => {
+      if (!existing && !args.inWatchlist) return null;
 
-    const now = Date.now();
-    const metadataPatch = buildMetadataPatch(args, existing ?? undefined);
+      const normalizedExisting = existing ? normalizeProgressStatus(existing.progressStatus) : undefined;
+      const progressStatus = existing
+        ? (normalizedExisting ?? (args.inWatchlist ? "watch-later" : undefined))
+        : "watch-later";
 
-    if (existing) {
-      const normalizedExisting = normalizeProgressStatus(existing.progressStatus);
-      await ctx.db.patch(existing._id, {
+      return {
         inWatchlist: args.inWatchlist,
-        updatedAt: now,
-        progressStatus:
-          normalizedExisting ??
-          (args.inWatchlist ? "watch-later" : undefined),
-        reaction: existing.reaction,
-        ...metadataPatch,
-      });
-
-      return;
-    }
-
-    if (!args.inWatchlist) return;
-
-    await ctx.db.insert("watch_items", {
-      userId: user._id,
-      tmdbId: args.tmdbId,
-      mediaType: args.mediaType,
-      inWatchlist: true,
-      progressStatus: "watch-later",
-      progress: 0,
-      updatedAt: now,
-      ...buildMetadataPatch(args),
+        progressStatus,
+        ...(existing ? {} : { progress: 0 }),
+        title: args.title,
+        image: args.image,
+        rating: args.rating,
+        release_date: args.release_date,
+        overview: args.overview,
+      };
     });
   },
 });
@@ -441,38 +229,24 @@ export const setProgressStatus = mutation({
 
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
-    const existing = await getWatchItem(ctx, user._id, args);
+    await upsertWatchItem(ctx, user._id, args.tmdbId, args.mediaType as MediaType, (existing) => {
+      const normalized = normalizeProgressStatus(args.progressStatus) ?? args.progressStatus;
+      let nextProgress = args.progress;
+      if (nextProgress === undefined) {
+        if (normalized === "watch-later") nextProgress = 0;
+        else if (normalized === "done") nextProgress = 100;
+        else nextProgress = existing?.progress;
+      }
 
-    const now = Date.now();
-
-    const normalized = normalizeProgressStatus(args.progressStatus) ?? args.progressStatus;
-
-    let nextProgress = args.progress;
-    if (nextProgress === undefined) {
-      if (normalized === "watch-later") nextProgress = 0;
-      else if (normalized === "done") nextProgress = 100;
-      else nextProgress = existing?.progress;
-    }
-
-    if (existing) {
-      await ctx.db.patch(existing._id, {
+      return {
         progressStatus: normalized,
         progress: nextProgress,
-        updatedAt: now,
-        ...buildMetadataPatch(args, existing),
-      });
-      return;
-    }
-
-    await ctx.db.insert("watch_items", {
-      userId: user._id,
-      tmdbId: args.tmdbId,
-      mediaType: args.mediaType,
-      inWatchlist: false,
-      progressStatus: normalized,
-      progress: nextProgress,
-      updatedAt: now,
-      ...buildMetadataPatch(args),
+        title: args.title,
+        image: args.image,
+        rating: args.rating,
+        release_date: args.release_date,
+        overview: args.overview,
+      };
     });
   },
 });
@@ -492,161 +266,26 @@ export const setReaction = mutation({
 
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
-    const existing = await getWatchItem(ctx, user._id, args);
-
-    const now = Date.now();
-    const metadataPatch = buildMetadataPatch(args, existing ?? undefined);
-
-    if (existing) {
-      const patch: {
-        reaction?: string | undefined;
-        updatedAt: number;
-        title?: string;
-        image?: string;
-        rating?: number;
-        release_date?: string;
-        overview?: string;
-      } = {
-        updatedAt: now,
-        ...metadataPatch,
+    await upsertWatchItem(ctx, user._id, args.tmdbId, args.mediaType as MediaType, (existing) => {
+      const reaction = args.clearReaction ? null : (args.reaction !== undefined ? args.reaction : existing?.reaction);
+      
+      return {
+        reaction,
+        title: args.title,
+        image: args.image,
+        rating: args.rating,
+        release_date: args.release_date,
+        overview: args.overview,
       };
-
-      if (args.clearReaction) patch.reaction = undefined;
-      else if (args.reaction !== undefined) patch.reaction = args.reaction;
-
-      await ctx.db.patch(existing._id, patch);
-      return;
-    }
-
-    const doc: {
-      userId: typeof user._id;
-      tmdbId: number;
-      mediaType: string;
-      inWatchlist: boolean;
-      reaction?: string;
-      updatedAt: number;
-      title?: string;
-      image?: string;
-      rating?: number;
-      release_date?: string;
-      overview?: string;
-    } = {
-      userId: user._id,
-      tmdbId: args.tmdbId,
-      mediaType: args.mediaType,
-      inWatchlist: false,
-      updatedAt: now,
-      ...buildMetadataPatch(args),
-    };
-    if (!args.clearReaction && args.reaction !== undefined) {
-      doc.reaction = args.reaction;
-    }
-
-    await ctx.db.insert("watch_items", doc);
+    });
   },
 });
 
-const IMPORT_ITEM_VALIDATOR = v.object({
-  tmdbId: v.number(),
-  mediaType: MEDIA_TYPE_VALIDATOR,
-  title: v.string(),
-  image: v.optional(v.string()),
-  rating: v.optional(v.number()),
-  release_date: v.optional(v.string()),
-  overview: v.optional(v.string()),
-  progressStatus: v.optional(PROGRESS_STATUS_VALIDATOR),
-  progress: v.optional(v.number()),
-  reaction: v.optional(REACTION_OR_NULL_VALIDATOR),
-});
-
-/** Imports a complete file in one transaction instead of one network request per field. */
-export const importWatchlist = mutation({
-  args: {
-    items: v.array(IMPORT_ITEM_VALIDATOR),
-    watchedEpisodes: v.array(
-      v.object({
-        tmdbId: v.number(),
-        season: v.number(),
-        episode: v.number(),
-      }),
-    ),
-  },
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-    const now = Date.now();
-    const importedItems = new Map<string, ImportWatchlistItem>();
-
-    // A duplicate in a hand-edited export should resolve predictably to its
-    // final occurrence instead of multiplying work or records.
-    for (const item of args.items) {
-      importedItems.set(`${item.mediaType}:${item.tmdbId}`, item);
-    }
-
-    for (const item of importedItems.values()) {
-      const existing = await getWatchItem(ctx, user._id, item);
-      const progressStatus = item.progressStatus ?? "watch-later";
-      const progress =
-        item.progress ??
-        (progressStatus === "done"
-          ? 100
-          : progressStatus === "watch-later"
-            ? 0
-            : existing?.progress);
-      const metadata = buildMetadataPatch(item, existing ?? undefined);
-
-      if (existing) {
-        await ctx.db.patch(existing._id, {
-          inWatchlist: true,
-          progressStatus,
-          progress,
-          reaction: item.reaction ?? existing.reaction ?? null,
-          updatedAt: now,
-          ...metadata,
-        });
-      } else {
-        await ctx.db.insert("watch_items", {
-          userId: user._id,
-          tmdbId: item.tmdbId,
-          mediaType: item.mediaType,
-          inWatchlist: true,
-          progressStatus,
-          progress,
-          reaction: item.reaction ?? null,
-          updatedAt: now,
-          ...metadata,
-        });
-      }
-    }
-
-    const importedTvIds = new Set(
-      [...importedItems.values()]
-        .filter((item) => item.mediaType === "tv")
-        .map((item) => item.tmdbId),
-    );
-    const episodeKeys = new Set<string>();
-    for (const episode of args.watchedEpisodes) {
-      if (!importedTvIds.has(episode.tmdbId)) continue;
-      const key = `${episode.tmdbId}:${episode.season}:${episode.episode}`;
-      if (episodeKeys.has(key)) continue;
-      episodeKeys.add(key);
-      await syncEpisodeProgressRecord(ctx, user._id, {
-        ...episode,
-        isWatched: true,
-      }, now);
-    }
-
-    await createWatchlistSnapshot(ctx, user._id);
-    return { imported: importedItems.size };
-  },
-});
-
-/** Daily maintenance entry point used by the cron job below. */
 export const createDailySnapshots = internalMutation({
   args: {
     cursor: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Process users in chunks of 50 to avoid timeout and document read limit exhaustion on growing tables.
     const batch = await ctx.db
       .query("users")
       .paginate({ cursor: args.cursor ?? null, numItems: 50 });
@@ -662,511 +301,5 @@ export const createDailySnapshots = internalMutation({
         cursor: batch.continueCursor,
       });
     }
-  },
-});
-
-export const markShowEpisodesAndStatus = mutation({
-  args: {
-    tmdbId: v.number(),
-    mediaType: MEDIA_TYPE_VALIDATOR,
-    seasons: v.array(
-      v.object({
-        season: v.number(),
-        episodes: v.array(v.number()),
-      }),
-    ),
-    isWatched: v.boolean(),
-    clearAllEpisodes: v.optional(v.boolean()),
-    progressStatus: v.optional(PROGRESS_STATUS_VALIDATOR),
-    progress: v.optional(v.number()),
-    title: v.optional(v.string()),
-    image: v.optional(v.string()),
-    rating: v.optional(v.number()),
-    release_date: v.optional(v.string()),
-    overview: v.optional(v.string()),
-  },
-
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-
-    const now = Date.now();
-
-    if (args.progressStatus !== undefined) {
-      const existing = await getWatchItem(ctx, user._id, args);
-
-      if (existing) {
-        await ctx.db.patch(existing._id, {
-          progressStatus: args.progressStatus,
-          progress: args.progress ?? existing.progress,
-          updatedAt: now,
-          ...buildMetadataPatch(args, existing),
-        });
-      } else {
-        await ctx.db.insert("watch_items", {
-          userId: user._id,
-          tmdbId: args.tmdbId,
-          mediaType: args.mediaType,
-          inWatchlist: false,
-          progressStatus: args.progressStatus,
-          progress: args.progress ?? 0,
-          updatedAt: now,
-          ...buildMetadataPatch(args),
-        });
-      }
-    }
-
-    const allExisting = await getEpisodeProgressForShow(ctx, user._id, args.tmdbId);
-
-    const existingMap = new Map<string, EpisodeProgress>();
-    for (const ep of allExisting) {
-      existingMap.set(`${ep.season}:${ep.episode}`, ep);
-    }
-
-    if (args.clearAllEpisodes || (!args.isWatched && args.seasons.length > 0)) {
-      for (const ep of allExisting) {
-        if (ep.isWatched) {
-          await ctx.db.patch(ep._id, {
-            isWatched: false,
-            updatedAt: now,
-          });
-        }
-      }
-    } else {
-      for (const seasonData of args.seasons) {
-        const uniqueEpisodes = Array.from(new Set(seasonData.episodes));
-        for (const epNum of uniqueEpisodes) {
-          const key = `${seasonData.season}:${epNum}`;
-          const existing = existingMap.get(key);
-
-          if (existing) {
-            if (existing.isWatched !== args.isWatched) {
-              await ctx.db.patch(existing._id, {
-                isWatched: args.isWatched,
-                updatedAt: now,
-              });
-            }
-            continue;
-          }
-
-          if (!args.isWatched) continue;
-
-          const newId = await ctx.db.insert("episode_progress", {
-            userId: user._id,
-            tmdbId: args.tmdbId,
-            season: seasonData.season,
-            episode: epNum,
-            isWatched: args.isWatched,
-            updatedAt: now,
-          });
-
-          existingMap.set(key, {
-            _id: newId,
-            _creationTime: now,
-            userId: user._id,
-            tmdbId: args.tmdbId,
-            season: seasonData.season,
-            episode: epNum,
-            isWatched: args.isWatched,
-            updatedAt: now,
-          });
-        }
-      }
-    }
-  },
-});
-
-export const markSeasonEpisodesWatched = mutation({
-  args: {
-    tmdbId: v.number(),
-    season: v.number(),
-    episodes: v.array(v.number()),
-    isWatched: v.boolean(),
-  },
-
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-
-    const now = Date.now();
-
-    const existingEpisodes = await ctx.db
-      .query("episode_progress")
-      .withIndex("by_user_season", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("season", args.season),
-      )
-      .collect();
-
-    const existingMap = new Map<string, EpisodeProgress>();
-    for (const ep of existingEpisodes) {
-      existingMap.set(`${ep.season}:${ep.episode}`, ep);
-    }
-
-    const uniqueEpisodes = Array.from(new Set(args.episodes));
-    for (const epNum of uniqueEpisodes) {
-      const key = `${args.season}:${epNum}`;
-      const existing = existingMap.get(key);
-
-      if (existing) {
-        if (existing.isWatched !== args.isWatched) {
-          await ctx.db.patch(existing._id, {
-            isWatched: args.isWatched,
-            updatedAt: now,
-          });
-        }
-        continue;
-      }
-
-      if (!args.isWatched) continue;
-
-      const newId = await ctx.db.insert("episode_progress", {
-        userId: user._id,
-        tmdbId: args.tmdbId,
-        season: args.season,
-        episode: epNum,
-        isWatched: args.isWatched,
-        updatedAt: now,
-      });
-
-      existingMap.set(key, {
-        _id: newId,
-        _creationTime: now,
-        userId: user._id,
-        tmdbId: args.tmdbId,
-        season: args.season,
-        episode: epNum,
-        isWatched: args.isWatched,
-        updatedAt: now,
-      });
-    }
-  },
-});
-
-export const getAllEpisodeProgress = query({
-  args: {},
-  handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return [];
-
-    return ctx.db
-      .query("episode_progress")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-  },
-});
-
-export const syncEpisodeProgressItem = mutation({
-  args: {
-    tmdbId: v.number(),
-    season: v.number(),
-    episode: v.number(),
-    isWatched: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-    await syncEpisodeProgressRecord(ctx, user._id, args, Date.now());
-  },
-});
-
-export const getCustomLists = query({
-  args: {},
-  handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return [];
-
-    const lists = await ctx.db
-      .query("lists")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-
-    const allListItems = await ctx.db
-      .query("list_items")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-
-    const itemsByListId = new Map<string, typeof allListItems>();
-    for (const item of allListItems) {
-      const listIdStr = String(item.listId);
-      let list = itemsByListId.get(listIdStr);
-      if (!list) {
-        list = [];
-        itemsByListId.set(listIdStr, list);
-      }
-      list.push(item);
-    }
-
-    const listsWithPreviews = lists.map((list) => {
-      const items = itemsByListId.get(String(list._id)) ?? [];
-      const previews = items
-        .map((item) => item.backdrop ?? item.image)
-        .filter((img): img is string => !!img)
-        .slice(0, 4);
-
-      return {
-        ...list,
-        previews,
-        itemCount: items.length,
-      };
-    });
-
-    return listsWithPreviews;
-  },
-});
-
-export const createCustomList = mutation({
-  args: {
-    name: v.string(),
-    color: v.optional(v.string()),
-    visibility: v.optional(v.string()),
-    listType: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-
-    const existing = await ctx.db
-      .query("lists")
-      .withIndex("by_user_name", (q) => q.eq("userId", user._id).eq("name", args.name))
-      .first();
-    if (existing) throw new Error("A list with this name already exists");
-
-    const highestList = await ctx.db
-      .query("lists")
-      .withIndex("by_user_sort", (q) => q.eq("userId", user._id))
-      .order("desc")
-      .first();
-    const maxSort = highestList ? highestList.sortOrder : 0;
-
-    const now = Date.now();
-    return ctx.db.insert("lists", {
-      userId: user._id,
-      name: args.name,
-      color: args.color,
-      visibility: args.visibility,
-      listType: args.listType,
-      sortOrder: maxSort + 1,
-      createdAt: now,
-      updatedAt: now,
-    });
-  },
-});
-
-export const updateCustomList = mutation({
-  args: {
-    listId: v.id("lists"),
-    name: v.optional(v.string()),
-    color: v.optional(v.string()),
-    visibility: v.optional(v.string()),
-    listType: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-
-    const list = await ctx.db.get(args.listId);
-    if (!list || list.userId !== user._id) throw new Error("List not found");
-
-    if (args.name !== undefined && args.name !== list.name) {
-      const nameToCheck = args.name;
-      const dup = await ctx.db
-        .query("lists")
-        .withIndex("by_user_name", (q) => q.eq("userId", user._id).eq("name", nameToCheck))
-        .first();
-      if (dup) throw new Error("A list with this name already exists");
-    }
-
-    await ctx.db.patch(args.listId, {
-      ...(args.name !== undefined ? { name: args.name } : {}),
-      ...(args.color !== undefined ? { color: args.color } : {}),
-      ...(args.visibility !== undefined ? { visibility: args.visibility } : {}),
-      ...(args.listType !== undefined ? { listType: args.listType } : {}),
-      updatedAt: Date.now(),
-    });
-  },
-});
-
-export const deleteCustomList = mutation({
-  args: { listId: v.id("lists") },
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-
-    const list = await ctx.db.get(args.listId);
-    if (!list || list.userId !== user._id) throw new Error("List not found");
-
-    const items = await ctx.db
-      .query("list_items")
-      .withIndex("by_list", (q) => q.eq("listId", args.listId))
-      .collect();
-    for (const item of items) {
-      await ctx.db.delete(item._id);
-    }
-
-    await ctx.db.delete(args.listId);
-  },
-});
-
-export const getListItems = query({
-  args: { listId: v.id("lists") },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return [];
-
-    const list = await ctx.db.get(args.listId);
-    // Only the list owner can read the contents. The `visibility` column is
-    // not enforced anywhere, so default to private.
-    if (!list || list.userId !== user._id) return [];
-
-    const items = await ctx.db
-      .query("list_items")
-      .withIndex("by_list", (q) => q.eq("listId", args.listId))
-      .collect();
-
-    const allWatchItems = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
-
-    const watchItemMap = new Map<string, typeof allWatchItems[0]>();
-    for (const w of allWatchItems) {
-      watchItemMap.set(`${w.tmdbId}_${w.mediaType}`, w);
-    }
-
-    const enriched = items.map((item) => {
-      const watchItem = watchItemMap.get(`${item.tmdbId}_${item.mediaType}`);
-
-      return {
-        ...item,
-        title: item.title ?? watchItem?.title,
-        image: item.image ?? watchItem?.image,
-        rating: item.rating ?? watchItem?.rating,
-        release_date: item.release_date ?? watchItem?.release_date,
-        overview: item.overview ?? watchItem?.overview,
-        progressStatus: watchItem?.progressStatus,
-        reaction: watchItem?.reaction,
-      };
-    });
-
-    return enriched;
-  },
-});
-
-export const getItemLists = query({
-  args: { tmdbId: v.number(), mediaType: MEDIA_TYPE_VALIDATOR },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) return [];
-
-    const items = await ctx.db
-      .query("list_items")
-      .withIndex("by_user_media", (q) =>
-        q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-      )
-      .collect();
-
-    return items.map((i) => i.listId);
-  },
-});
-
-export const toggleListItem = mutation({
-  args: {
-    listId: v.id("lists"),
-    tmdbId: v.number(),
-    mediaType: MEDIA_TYPE_VALIDATOR,
-    title: v.optional(v.string()),
-    image: v.optional(v.string()),
-    backdrop: v.optional(v.string()),
-    rating: v.optional(v.number()),
-    release_date: v.optional(v.string()),
-    overview: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-
-    const list = await ctx.db.get(args.listId);
-    if (!list || list.userId !== user._id) throw new Error("List not found");
-
-    const existing = await ctx.db
-      .query("list_items")
-      .withIndex("by_list_media", (q) =>
-        q.eq("listId", args.listId).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
-      )
-      .first();
-
-    if (existing) {
-      await ctx.db.delete(existing._id);
-      return false;
-    }
-
-    await ctx.db.insert("list_items", {
-      userId: user._id,
-      listId: args.listId,
-      tmdbId: args.tmdbId,
-      mediaType: args.mediaType,
-      addedAt: Date.now(),
-      title: args.title,
-      image: args.image,
-      backdrop: args.backdrop,
-      rating: args.rating,
-      release_date: args.release_date,
-      overview: args.overview,
-    });
-    return true;
-  },
-});
-
-export const createCustomListAndAddItem = mutation({
-  args: {
-    name: v.string(),
-    color: v.optional(v.string()),
-    visibility: v.optional(v.string()),
-    listType: v.optional(v.string()),
-    tmdbId: v.number(),
-    mediaType: MEDIA_TYPE_VALIDATOR,
-    title: v.optional(v.string()),
-    image: v.optional(v.string()),
-    backdrop: v.optional(v.string()),
-    rating: v.optional(v.number()),
-    release_date: v.optional(v.string()),
-    overview: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const user = await requireCurrentUser(ctx);
-
-    const existing = await ctx.db
-      .query("lists")
-      .withIndex("by_user_name", (q) => q.eq("userId", user._id).eq("name", args.name))
-      .first();
-    if (existing) throw new Error("A list with this name already exists");
-
-    const highestList = await ctx.db
-      .query("lists")
-      .withIndex("by_user_sort", (q) => q.eq("userId", user._id))
-      .order("desc")
-      .first();
-    const maxSort = highestList ? highestList.sortOrder : 0;
-
-    const now = Date.now();
-    const listId = await ctx.db.insert("lists", {
-      userId: user._id,
-      name: args.name,
-      color: args.color,
-      visibility: args.visibility,
-      listType: args.listType,
-      sortOrder: maxSort + 1,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    await ctx.db.insert("list_items", {
-      userId: user._id,
-      listId,
-      tmdbId: args.tmdbId,
-      mediaType: args.mediaType,
-      addedAt: now,
-      title: args.title,
-      image: args.image,
-      backdrop: args.backdrop,
-      rating: args.rating,
-      release_date: args.release_date,
-      overview: args.overview,
-    });
-
-    return listId;
   },
 });

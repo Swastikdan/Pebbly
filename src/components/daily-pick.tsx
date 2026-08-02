@@ -57,6 +57,7 @@ export function DailyPickButton() {
 			return items;
 		},
 		staleTime: 1000 * 60 * 60, // 1 hour
+		enabled: isOpen,
 	});
 
 	const { data: popularTv, isLoading: isLoadingTv } = useQuery({
@@ -66,6 +67,7 @@ export function DailyPickButton() {
 			return items;
 		},
 		staleTime: 1000 * 60 * 60, // 1 hour
+		enabled: isOpen,
 	});
 
 	// Build combined candidate list from Watchlist + Movies + TV Shows

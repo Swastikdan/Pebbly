@@ -25,6 +25,46 @@ import {
 import { NAV_ITEMS, SITE_CONFIG } from "@/constants";
 import { usePermissions } from "@/hooks/use-permissions";
 
+const NavSubmenuItems = ({
+	items,
+	isMobile,
+}: {
+	items: { name: string; url: string; slug: string }[];
+	isMobile?: boolean;
+}) => {
+	if (isMobile) {
+		return (
+			<>
+				{items.map((subitem) => (
+					<SheetClose asChild key={subitem.slug}>
+						<Button
+							variant="outline"
+							className="h-9 w-full justify-start text-sm"
+							asChild
+						>
+							<Link to={subitem.url} className="w-full pl-3 cursor-pointer">
+								{subitem.name}
+							</Link>
+						</Button>
+					</SheetClose>
+				))}
+			</>
+		);
+	}
+
+	return (
+		<>
+			{items.map((subitem) => (
+				<Link key={subitem.slug} to={subitem.url} className="cursor-pointer ">
+					<DropdownMenuItem className="h-9 cursor-pointer rounded-lg px-3 text-base">
+						{subitem.name}
+					</DropdownMenuItem>
+				</Link>
+			))}
+		</>
+	);
+};
+
 const DesktopNavMenuItem = ({
 	item,
 }: {
@@ -51,13 +91,7 @@ const DesktopNavMenuItem = ({
 				align="end"
 				className="mt-2 w-40 rounded-xl p-2 shadow-none"
 			>
-				{item.submenu.map((subitem) => (
-					<Link key={subitem.slug} to={subitem.url} className="cursor-pointer ">
-						<DropdownMenuItem className="h-9 cursor-pointer rounded-lg px-3 text-base">
-							{subitem.name}
-						</DropdownMenuItem>
-					</Link>
-				))}
+				<NavSubmenuItems items={item.submenu} />
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
@@ -82,19 +116,7 @@ const MobileNavMenuItem = ({
 			>
 				{item.name}
 			</Button>
-			{item.submenu.map((subitem) => (
-				<SheetClose asChild key={subitem.slug}>
-					<Button
-						variant="outline"
-						className="h-9 w-full justify-start text-sm"
-						asChild
-					>
-						<Link to={subitem.url} className="w-full pl-3 cursor-pointer">
-							{subitem.name}
-						</Link>
-					</Button>
-				</SheetClose>
-			))}
+			<NavSubmenuItems items={item.submenu} isMobile />
 		</div>
 	);
 };

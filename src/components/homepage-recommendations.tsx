@@ -178,6 +178,24 @@ const HomepageRecommendationCard = memo(
 	},
 );
 
+function RecommendationSectionHeader() {
+	return (
+		<div className="flex items-center justify-between px-4 md:px-0 mb-1">
+			<div className="flex items-center gap-2">
+				<h2 className="font-semibold text-lg md:text-xl">Picks For You</h2>
+				<Sparkles size={14} className="text-primary/70 animate-pulse" />
+			</div>
+			<Link
+				to="/recommendations"
+				search={{ activeId: undefined }}
+				className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
+			>
+				See All →
+			</Link>
+		</div>
+	);
+}
+
 // Module-level cache to prevent flashes during navigation
 let cachedRecommendations: {
 	userId: string | null;
@@ -193,7 +211,7 @@ export function HomepageRecommendations() {
 	const [localDismissedKeys, setLocalDismissedKeys] = useState<Set<string>>(
 		new Set(),
 	);
-	const [hourBucket] = useState(
+	const [_hourBucket] = useState(
 		() => Math.floor(Date.now() / (1000 * 60 * 60)) * (1000 * 60 * 60),
 	);
 
@@ -369,19 +387,7 @@ export function HomepageRecommendations() {
 	if (!resolvedRecsData) {
 		return (
 			<div className="my-6">
-				<div className="flex items-center justify-between px-4 md:px-0 mb-1">
-					<div className="flex items-center gap-2">
-						<h2 className="font-semibold text-lg md:text-xl">Picks For You</h2>
-						<Sparkles size={14} className="text-primary/70 animate-pulse" />
-					</div>
-					<Link
-						to="/recommendations"
-						search={{ activeId: undefined }}
-						className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
-					>
-						See All →
-					</Link>
-				</div>
+				<RecommendationSectionHeader />
 				<MediaSkeletonList />
 			</div>
 		);
@@ -391,21 +397,7 @@ export function HomepageRecommendations() {
 		if (isGenerating) {
 			return (
 				<div className="my-6">
-					<div className="flex items-center justify-between px-4 md:px-0 mb-1">
-						<div className="flex items-center gap-2">
-							<h2 className="font-semibold text-lg md:text-xl">
-								Picks For You
-							</h2>
-							<Sparkles size={14} className="text-primary/70 animate-pulse" />
-						</div>
-						<Link
-							to="/recommendations"
-							search={{ activeId: undefined }}
-							className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
-						>
-							See All →
-						</Link>
-					</div>
+					<RecommendationSectionHeader />
 					<MediaSkeletonList />
 				</div>
 			);
@@ -416,19 +408,7 @@ export function HomepageRecommendations() {
 	return (
 		<div className="w-full my-6">
 			<section className="w-full">
-				<div className="flex items-center justify-between px-4 md:px-0 mb-1">
-					<div className="flex items-center gap-2">
-						<h2 className="font-semibold text-lg md:text-xl">Picks For You</h2>
-						<Sparkles size={14} className="text-primary/70 animate-pulse" />
-					</div>
-					<Link
-						to="/recommendations"
-						search={{ activeId: undefined }}
-						className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
-					>
-						See All →
-					</Link>
-				</div>
+				<RecommendationSectionHeader />
 				<ScrollContainer isButtonsVisible={true}>
 					<div className="flex gap-2 p-4 first:pl-0 last:pr-0">
 						{recs.map((rec) => (
