@@ -159,8 +159,11 @@ export function useRecommendations() {
 		[updateVerifiedMutation],
 	);
 
+	const loading = isSignedIn && rawHistory === undefined;
+
 	return {
 		history,
+		loading,
 		isGenerating,
 		error,
 		generate,

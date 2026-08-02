@@ -43,6 +43,7 @@ export const REACTION_VALIDATOR = v.union(
   v.literal("liked"),
   v.literal("mixed"),
   v.literal("not-for-me"),
+  v.literal("recommended"),
 );
 
 export const REACTION_OR_NULL_VALIDATOR = v.union(REACTION_VALIDATOR, v.null());

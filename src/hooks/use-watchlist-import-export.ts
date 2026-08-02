@@ -230,7 +230,8 @@ export const useWatchlistImportExport = () => {
 
 					if (isSignedIn) {
 						await importWatchlistBatch({
-							items: importItems,
+							// biome-ignore lint/suspicious/noExplicitAny: dynamic reaction item import
+							items: importItems as any,
 							watchedEpisodes,
 						});
 					} else {

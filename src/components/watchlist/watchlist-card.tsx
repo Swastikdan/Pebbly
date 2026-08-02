@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Star, TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
@@ -29,7 +30,9 @@ export function WatchlistCard({
 	const progressStatus = item.progressStatus ?? "watch-later";
 	const reaction = item.reaction ?? null;
 	const progressOption = getProgressOption(progressStatus);
-	const reactionOption = reaction ? getReactionOption(reaction) : null;
+	const reactionOption =
+		reaction && reaction !== "recommended" ? getReactionOption(reaction) : null;
+	const isRecommended = reaction === "recommended";
 	const ProgressIcon = progressOption.icon;
 	const formattedTitle = formatMediaTitle.encode(item.title);
 	const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${item.image}`;
@@ -99,11 +102,17 @@ export function WatchlistCard({
 					)}
 				</div>
 
-				<div className="flex items-center gap-1.5 pt-2">
+				<div className="flex items-center gap-1.5 pt-2 flex-wrap">
 					<span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground">
 						<ProgressIcon size={12} />
 						{progressOption.label}
 					</span>
+					{isRecommended && (
+						<span className="inline-flex items-center gap-1 rounded-lg bg-blue-500/15 text-blue-500 border border-blue-500/30 px-2.5 py-1 text-[10px] font-semibold">
+							<Sparkles size={11} />
+							Recommended
+						</span>
+					)}
 					{reactionOption && (
 						<span
 							className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground"
@@ -116,5 +125,24 @@ export function WatchlistCard({
 				</div>
 			</div>
 		</Link>
+	);
+}
+
+export function WatchlistCardSkeleton() {
+	return (
+		<div className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 animate-pulse">
+			<div className="h-[140px] w-[93px] rounded-xl bg-muted shrink-0" />
+			<div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
+				<div>
+					<div className="h-4 w-3/4 rounded bg-muted mb-2" />
+					<div className="h-3 w-1/3 rounded bg-muted mb-3" />
+					<div className="h-3 w-full rounded bg-muted mb-1.5" />
+					<div className="h-3 w-4/5 rounded bg-muted" />
+				</div>
+				<div className="flex gap-2 pt-2">
+					<div className="h-6 w-20 rounded-lg bg-muted" />
+				</div>
+			</div>
+		</div>
 	);
 }

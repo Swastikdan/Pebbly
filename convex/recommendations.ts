@@ -536,15 +536,15 @@ export const getHomepageRecommendations = query({
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
       .first();
 
-    const notInterestedFeedback = await ctx.db
+    const userFeedback = await ctx.db
       .query("recommendation_feedback")
-      .withIndex("by_user_feedback", (q) =>
-        q.eq("userId", dbUser._id).eq("feedback", "not_interested"),
-      )
+      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
       .collect();
 
-    const notInterestedIds = new Set(
-      notInterestedFeedback.map((f) => f.tmdbId),
+    const excludedFeedbackIds = new Set(
+      userFeedback
+        .filter((f) => f.feedback === "not_interested" || f.feedback === "dislike")
+        .map((f) => f.tmdbId),
     );
 
     // NEW: Also filter out any items already in the user's watchlist!
@@ -563,7 +563,7 @@ export const getHomepageRecommendations = query({
         const parsed = JSON.parse(entry.recommendations) as Recommendation[];
         recs = parsed.filter(
           (r) =>
-            (r.tmdbId === null || !notInterestedIds.has(r.tmdbId)) &&
+            (r.tmdbId === null || !excludedFeedbackIds.has(r.tmdbId)) &&
             (r.tmdbId === null || !watchlistTmdbIds.has(r.tmdbId)) &&
             !watchlistTitles.has(normalizeTitleKey(r.title)),
         );
@@ -577,9 +577,9 @@ export const getHomepageRecommendations = query({
     const status = entry?.status ?? "none";
 
     const currentTime = args.now ?? Date.now();
-    const isOlderThan12Hours = currentTime > 0 && (currentTime - lastAttemptedAt > 12 * 60 * 60 * 1000);
+    const isOlderThan24Hours = currentTime > 0 && (currentTime - lastAttemptedAt > 24 * 60 * 60 * 1000);
     const hasFailedRecently = status === "failed" && currentTime > 0 && (currentTime - lastAttemptedAt < 1 * 60 * 60 * 1000);
-    const needsRefresh = !entry || (isOlderThan12Hours && !hasFailedRecently);
+    const needsRefresh = !entry || (isOlderThan24Hours && !hasFailedRecently);
 
     return {
       recommendations: recs,
@@ -631,8 +631,39 @@ export const setRecommendationFeedback = mutation({
       });
     }
 
-    // When user likes a recommendation, auto-add to Pebbly Picks list
+    // When user likes a recommendation, auto-add to watchlist with "recommended" reaction & Pebbly Picks list
     if (args.feedback === "like") {
+      // Add to user's main watchlist
+      const existingWatchItem = await ctx.db
+        .query("watch_items")
+        .withIndex("by_user_media", (q) =>
+          q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType)
+        )
+        .first();
+
+      if (existingWatchItem) {
+        await ctx.db.patch(existingWatchItem._id, {
+          inWatchlist: true,
+          reaction: existingWatchItem.reaction ?? "recommended",
+          updatedAt: now,
+        });
+      } else {
+        await ctx.db.insert("watch_items", {
+          userId: user._id,
+          tmdbId: args.tmdbId,
+          mediaType: args.mediaType,
+          inWatchlist: true,
+          progressStatus: "watch-later",
+          reaction: "recommended",
+          title: args.title,
+          image: args.image,
+          rating: args.rating,
+          release_date: args.release_date,
+          overview: args.overview,
+          updatedAt: now,
+        });
+      }
+
       // Find or create the Pebbly Picks list
       let pebblyList = await ctx.db
         .query("lists")
@@ -652,16 +683,14 @@ export const setRecommendationFeedback = mutation({
       }
 
       if (pebblyList) {
-        // Check if item already in the list using exact composite index instead of filtering
         const existingItem = await ctx.db
           .query("list_items")
           .withIndex("by_list_media", (q) =>
             q.eq("listId", pebblyList._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
           )
           .first();
-        const alreadyInList = !!existingItem;
 
-        if (!alreadyInList) {
+        if (!existingItem) {
           await ctx.db.insert("list_items", {
             userId: user._id,
             listId: pebblyList._id,
@@ -815,11 +844,11 @@ export const generateHomepageRecommendations = action({
       .map((f) => f.title);
 
     const dislikedFeedbackTitles = feedbackList
-      .filter((f) => f.feedback === "not_interested")
+      .filter((f) => f.feedback === "not_interested" || f.feedback === "dislike")
       .map((f) => f.title);
 
     const dislikedFeedbackIds = feedbackList
-      .filter((f) => f.feedback === "not_interested")
+      .filter((f) => f.feedback === "not_interested" || f.feedback === "dislike")
       .map((f) => f.tmdbId);
 
     // Get previous recommendations to prevent repeating recommendations across refresh cycles

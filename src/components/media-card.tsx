@@ -35,6 +35,8 @@ interface MediaCardSpecificProps extends BaseCardProps {
 	overview?: string;
 	priority?: boolean;
 	relevanceScore?: number;
+	hideWatchlistButton?: boolean;
+	isRecommended?: boolean;
 }
 
 interface PersonCardSpecificProps extends BaseCardProps {
@@ -102,6 +104,8 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 		actionsClassName,
 		linkClassName,
 		children,
+		hideWatchlistButton,
+		isRecommended,
 	} = props;
 
 	const { removeFromContinueWatching } = useRemoveFromContinueWatching();
@@ -132,6 +136,12 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 						sizes={imageSizes}
 					/>
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
+
+					{isRecommended && (
+						<Badge className="absolute top-2 left-2 rounded-md bg-blue-600/90 px-2 py-0.5 text-[10px] font-bold text-white border-0 shadow-md">
+							Recommended
+						</Badge>
+					)}
 
 					{rating > 0 && (
 						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white flex items-center gap-1 border-0">
@@ -171,18 +181,20 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 						<XIcon className="size-4" />
 					</button>
 				)}
-				<WatchlistButton
-					id={id}
-					image={poster_path}
-					is_on_homepage={is_on_homepage}
-					is_on_watchlist_page={is_on_watchlist_page}
-					media_type={media_type}
-					rating={rating}
-					release_date={release_date ?? ""}
-					title={title}
-					overview={overview}
-					className="h-8 w-8 rounded-lg shadow-md hover:scale-105"
-				/>
+				{!hideWatchlistButton && (
+					<WatchlistButton
+						id={id}
+						image={poster_path}
+						is_on_homepage={is_on_homepage}
+						is_on_watchlist_page={is_on_watchlist_page}
+						media_type={media_type}
+						rating={rating}
+						release_date={release_date ?? ""}
+						title={title}
+						overview={overview}
+						className="h-8 w-8 rounded-lg shadow-md hover:scale-105"
+					/>
+				)}
 			</div>
 		</div>
 	);

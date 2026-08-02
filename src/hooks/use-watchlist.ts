@@ -34,6 +34,10 @@ export function useWatchlist() {
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
 	const watchlist: WatchlistItem[] = useMemo(() => {
+		if (!isLoaded) {
+			return [];
+		}
+
 		if (isSignedIn) {
 			if (!convexWatchlistData) return [];
 			return convexWatchlistData
@@ -55,7 +59,7 @@ export function useWatchlist() {
 					(item.progress ?? 0) > 0,
 			)
 			.sort((a, b) => b.updated_at - a.updated_at);
-	}, [isSignedIn, convexWatchlistData, localMediaState]);
+	}, [isLoaded, isSignedIn, convexWatchlistData, localMediaState]);
 
 	const loading =
 		!isLoaded || (isSignedIn && convexWatchlistData === undefined);
@@ -605,7 +609,8 @@ export function useSetReaction() {
 					payload.clearReaction = true;
 				}
 
-				setReaction(payload).catch((error) =>
+				// biome-ignore lint/suspicious/noExplicitAny: dynamic reaction payload
+				setReaction(payload as any).catch((error) =>
 					logWatchlistError("set remote reaction", error),
 				);
 				return;
