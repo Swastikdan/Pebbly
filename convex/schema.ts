@@ -34,12 +34,15 @@ export default defineSchema({
   // the metadata; snapshots only record which saved items belonged together.
   watchlist_snapshots: defineTable({
     userId: v.id("users"),
-    items: v.array(
-      v.object({
-        tmdbId: v.number(),
-        mediaType: v.string(),
-      }),
+    items: v.optional(
+      v.array(
+        v.object({
+          tmdbId: v.number(),
+          mediaType: v.string(),
+        }),
+      ),
     ),
+    itemIds: v.optional(v.array(v.any())),
     createdAt: v.number(),
   }).index("by_user_and_createdAt", ["userId", "createdAt"]),
 
