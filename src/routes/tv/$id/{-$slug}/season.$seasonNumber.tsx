@@ -24,14 +24,14 @@ import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
-	loader: async ({ params, context }) => {
+	loader: ({ params, context }) => {
 		const { id, slug, seasonNumber } = params;
 		const parsedId = parseAndValidateId(id);
 		const parsedSeason = parseAndValidateId(seasonNumber);
 		if (!parsedId.success || !parsedSeason.success) {
 			throw notFound();
 		}
-		await context.queryClient.ensureQueryData({
+		context.queryClient.prefetchQuery({
 			queryKey: ["tv_details", id],
 			queryFn: () => getTvDetails({ id: parsedId.data }),
 		});

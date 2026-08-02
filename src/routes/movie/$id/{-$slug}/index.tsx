@@ -24,13 +24,13 @@ import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Movie } from "@/types";
 
 export const Route = createFileRoute("/movie/$id/{-$slug}/")({
-	loader: async ({ params, context }) => {
+	loader: ({ params, context }) => {
 		const { id, slug } = params;
 		const parsed = parseAndValidateId(id);
 		if (!parsed.success) {
 			throw notFound();
 		}
-		await context.queryClient.ensureQueryData({
+		context.queryClient.prefetchQuery({
 			queryKey: ["movie_details", parsed.data],
 			queryFn: () => getMovieDetails({ id: parsed.data }),
 		});
