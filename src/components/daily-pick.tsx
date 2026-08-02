@@ -19,7 +19,7 @@ import {
 	useSetReaction,
 	useWatchlist,
 } from "@/hooks/use-watchlist";
-import { getMedia } from "@/lib/queries";
+import { getMedia, getMovieDetails, getTvDetails } from "@/lib/queries";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 interface PickItem {
@@ -192,7 +192,7 @@ export function DailyPickButton() {
 						overview: item.overview || tmdbInfo?.overview,
 						vote_average: item.rating || tmdbInfo?.vote_average || 0,
 						poster_path: item.image || tmdbInfo?.poster_path,
-						backdrop_path: item.image || tmdbInfo?.backdrop_path,
+						backdrop_path: tmdbInfo?.backdrop_path,
 						media_type: item.type,
 						release_date: item.release_date || tmdbInfo?.release_date,
 						first_air_date: tmdbInfo?.first_air_date,
@@ -319,6 +319,28 @@ export function DailyPickButton() {
 	const isLoading =
 		isLoadingTrending && isLoadingTv && candidateItems.length === 0;
 
+	const { data: selectedDetails } = useQuery({
+		queryKey: [
+			"daily-pick-details",
+			selectedItem?.media_type,
+			selectedItem?.id,
+		],
+		queryFn: async () => {
+			if (!selectedItem) return null;
+			if (selectedItem.media_type === "movie") {
+				return getMovieDetails({ id: selectedItem.id });
+			}
+			return getTvDetails({ id: selectedItem.id });
+		},
+		enabled: !!selectedItem && !selectedItem.backdrop_path && isOpen,
+		staleTime: 1000 * 60 * 60,
+	});
+
+	const effectiveBackdropPath =
+		selectedItem?.backdrop_path || selectedDetails?.backdrop_path;
+	const effectivePosterPath =
+		selectedItem?.poster_path || selectedDetails?.poster_path;
+
 	const title = selectedItem?.title ?? "Daily Pick";
 	const mediaType = selectedItem?.media_type ?? "movie";
 	const formattedTitle =
@@ -329,11 +351,11 @@ export function DailyPickButton() {
 			? new Date(selectedItem.first_air_date).getFullYear()
 			: "";
 	const rating = selectedItem?.vote_average ?? 0;
-	const backdropUrl = selectedItem?.backdrop_path
-		? `${IMAGE_PREFIX.HD_BACKDROP}${selectedItem.backdrop_path}`
+	const backdropUrl = effectiveBackdropPath
+		? `${IMAGE_PREFIX.HD_BACKDROP}${effectiveBackdropPath}`
 		: "";
-	const posterUrl = selectedItem?.poster_path
-		? `${IMAGE_PREFIX.SD_POSTER}${selectedItem.poster_path}`
+	const posterUrl = effectivePosterPath
+		? `${IMAGE_PREFIX.SD_POSTER}${effectivePosterPath}`
 		: "";
 
 	const targetPath = formattedTitle
