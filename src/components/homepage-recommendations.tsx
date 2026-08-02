@@ -1,5 +1,4 @@
 import { useUser } from "@clerk/react";
-import { Link } from "@tanstack/react-router";
 import {
 	useAction,
 	useQuery as useConvexQuery,
@@ -11,6 +10,7 @@ import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useToggleWatchlistItem } from "@/hooks/use-watchlist";
 import {
 	type AIRecommendation,
 	titlesMatch,
@@ -54,7 +54,7 @@ const HomepageRecommendationCard = memo(
 		onFeedback: (
 			rec: AIRecommendation,
 			resolvedId: number,
-			feedback: "not_interested" | "like" | "unlike",
+			feedback: "dislike" | "like" | "unlike",
 			metadata?: {
 				image?: string;
 				rating?: number;
@@ -122,18 +122,19 @@ const HomepageRecommendationCard = memo(
 					overview={resolvedData.overview}
 					is_on_homepage={true}
 					relevanceScore={recommendation.relevanceScore}
+					hideWatchlistButton={true}
 				/>
 
-				{/* Top-left absolute overlays for feedback buttons */}
-				<div className="absolute left-2 top-2 z-20 flex gap-1 animate-fade-in opacity-0 group-hover/rec-card:opacity-100 transition-opacity duration-300 md:opacity-100">
+				{/* Top-right solid action buttons overlay */}
+				<div className="absolute right-2 top-2 z-20 flex gap-1.5 animate-fade-in opacity-0 group-hover/rec-card:opacity-100 transition-opacity duration-300 md:opacity-100">
 					<Button
 						variant="secondary"
 						size="icon"
 						className={cn(
-							"h-8 w-8 rounded-lg bg-black/45 text-white border backdrop-blur-sm transition-[color,background-color,box-shadow,transform] duration-200 hover:scale-105 active:scale-95 cursor-pointer pressable",
+							"h-8 w-8 rounded-lg border shadow-md transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer pressable",
 							isLiked
-								? "bg-green-500/25 text-green-400 border-green-500/40 hover:bg-green-500/35"
-								: "border-transparent hover:bg-black/60",
+								? "bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700"
+								: "bg-neutral-900/90 text-white border-neutral-700 hover:bg-neutral-800",
 						)}
 						onClick={(e) => {
 							e.stopPropagation();
@@ -150,25 +151,25 @@ const HomepageRecommendationCard = memo(
 								},
 							);
 						}}
-						title={isLiked ? "Remove like" : "Recommend more like this"}
+						title={
+							isLiked ? "Remove from Watchlist" : "Add to Watchlist & Like"
+						}
 					>
 						<ThumbsUp
 							size={13}
-							className={
-								isLiked ? "fill-green-400 text-green-400" : "text-white"
-							}
+							className={isLiked ? "fill-white text-white" : "text-white"}
 						/>
 					</Button>
 					<Button
 						variant="secondary"
 						size="icon"
-						className="h-8 w-8 rounded-lg bg-black/45 text-white border border-transparent backdrop-blur-sm transition-[color,background-color,border-color,transform] duration-200 hover:bg-red-500/25 hover:text-red-400 hover:border-red-500/40 hover:scale-105 active:scale-95 cursor-pointer pressable"
+						className="h-8 w-8 rounded-lg bg-neutral-900/90 text-white border border-neutral-700 shadow-md transition-all duration-200 hover:bg-red-900/90 hover:border-red-600 hover:text-red-200 hover:scale-105 active:scale-95 cursor-pointer pressable"
 						onClick={(e) => {
 							e.stopPropagation();
 							e.preventDefault();
-							onFeedback(recommendation, resolvedData.id, "not_interested");
+							onFeedback(recommendation, resolvedData.id, "dislike");
 						}}
-						title="Not interested"
+						title="Dislike"
 					>
 						<ThumbsDown size={13} />
 					</Button>
@@ -181,17 +182,7 @@ const HomepageRecommendationCard = memo(
 function RecommendationSectionHeader() {
 	return (
 		<div className="flex items-center justify-between px-4 md:px-0 mb-1">
-			<div className="flex items-center gap-2">
-				<h2 className="font-semibold text-lg md:text-xl">Picks For You</h2>
-				<Sparkles size={14} className="text-primary/70 animate-pulse" />
-			</div>
-			<Link
-				to="/recommendations"
-				search={{ activeId: undefined }}
-				className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
-			>
-				See All →
-			</Link>
+			<h2 className="font-semibold text-lg md:text-xl">Picks For You</h2>
 		</div>
 	);
 }
@@ -285,6 +276,8 @@ export function HomepageRecommendations() {
 		}
 	}, [canAccessFeature, resolvedRecsData?.needsRefresh, generateRecs]);
 
+	const toggleWatchlist = useToggleWatchlistItem();
+
 	const likedIds = useMemo(() => {
 		const set = new Set<number>();
 		for (const f of resolvedFeedbackList ?? []) {
@@ -306,7 +299,7 @@ export function HomepageRecommendations() {
 		async (
 			rec: AIRecommendation,
 			resolvedId: number,
-			feedback: "not_interested" | "like" | "unlike",
+			feedback: "dislike" | "like" | "unlike",
 			metadata?: {
 				image?: string;
 				rating?: number;
@@ -316,13 +309,26 @@ export function HomepageRecommendations() {
 		) => {
 			const key = getDismissKey(rec);
 
-			if (feedback === "not_interested") {
+			if (feedback === "dislike") {
 				// Hide card immediately on UI
 				setLocalDismissedKeys((prev) => {
 					const next = new Set(prev);
 					next.add(key);
 					return next;
 				});
+			}
+
+			// Toggle watchlist item if liking or unliking
+			if (feedback === "like" || feedback === "unlike") {
+				toggleWatchlist({
+					id: String(resolvedId),
+					title: rec.title,
+					media_type: rec.mediaType,
+					rating: metadata?.rating ?? 0,
+					image: metadata?.image ?? "",
+					release_date: metadata?.release_date ?? "",
+					overview: metadata?.overview,
+				}).catch(console.error);
 			}
 
 			try {
@@ -336,7 +342,7 @@ export function HomepageRecommendations() {
 						tmdbId: resolvedId,
 						mediaType: rec.mediaType,
 						title: rec.title,
-						feedback,
+						feedback: feedback === "dislike" ? "not_interested" : "like",
 						image: metadata?.image,
 						rating: metadata?.rating,
 						release_date: metadata?.release_date,
@@ -345,7 +351,7 @@ export function HomepageRecommendations() {
 				}
 			} catch (err) {
 				console.error("Failed to update recommendation feedback:", err);
-				if (feedback === "not_interested") {
+				if (feedback === "dislike") {
 					// Revert local dismiss on failure
 					setLocalDismissedKeys((prev) => {
 						const next = new Set(prev);
@@ -355,7 +361,7 @@ export function HomepageRecommendations() {
 				}
 			}
 		},
-		[setFeedback, removeFeedback],
+		[setFeedback, removeFeedback, toggleWatchlist],
 	);
 
 	if (!isLoaded || !canAccessFeature) {

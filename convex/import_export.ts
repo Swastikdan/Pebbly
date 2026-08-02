@@ -22,7 +22,7 @@ type ImportWatchlistItem = {
   overview?: string;
   progressStatus?: string;
   progress?: number;
-  reaction?: "loved" | "liked" | "mixed" | "not-for-me" | null;
+  reaction?: "loved" | "liked" | "mixed" | "not-for-me" | "recommended" | null;
 };
 
 const IMPORT_ITEM_VALIDATOR = v.object({

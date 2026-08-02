@@ -47,7 +47,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CustomListCard } from "@/components/watchlist/custom-list-card";
 import { CustomListView } from "@/components/watchlist/custom-list-view";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
-import { WatchlistCard } from "@/components/watchlist/watchlist-card";
+import {
+	WatchlistCard,
+	WatchlistCardSkeleton,
+} from "@/components/watchlist/watchlist-card";
 import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
 import { REACTION_OPTIONS } from "@/constants/watchlist";
 import { useCustomLists, useDeleteCustomList } from "@/hooks/use-custom-lists";
@@ -548,8 +551,12 @@ function WatchlistTabContent() {
 				</div>
 			</div>
 
-			{watchlistLoading ? (
-				<DefaultLoader />
+			{watchlistLoading && watchlistData.length === 0 ? (
+				<div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+					{Array.from({ length: 6 }).map((_, i) => (
+						<WatchlistCardSkeleton key={i} />
+					))}
+				</div>
 			) : error && filteredWatchlist.length === 0 ? (
 				<DefaultEmptyState message={error.message} description={false} />
 			) : filteredWatchlist?.length === 0 ? (

@@ -633,7 +633,12 @@ export interface TvEpisodeDetail {
 
 export type ProgressStatus = "watch-later" | "watching" | "done" | "dropped";
 
-export type ReactionStatus = "loved" | "liked" | "mixed" | "not-for-me";
+export type ReactionStatus =
+	| "loved"
+	| "liked"
+	| "mixed"
+	| "not-for-me"
+	| "recommended";
 
 export interface PersonDetails {
 	adult: boolean;

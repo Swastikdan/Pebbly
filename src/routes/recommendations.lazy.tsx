@@ -18,7 +18,6 @@ import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
-import { LoadingSkeletons } from "@/components/recommendations/loading-skeletons";
 import {
 	Accordion,
 	AccordionContent,
@@ -92,17 +91,20 @@ function RecommendationsPage() {
 		setIsMounted(true);
 	}, []);
 
-	if (!isMounted || accessLoading) {
-		return <DefaultLoader />;
-	}
-
-	if (!isSignedIn || !hasFeature("ai-recommendations")) {
+	if (
+		isMounted &&
+		!accessLoading &&
+		(!isSignedIn || !hasFeature("ai-recommendations"))
+	) {
 		return <DefaultNotFoundComponent />;
 	}
 
 	return (
 		<PageShell>
-			<RecommendationsContent isSignedIn={isSignedIn} />
+			<RecommendationsContent
+				isSignedIn={isSignedIn}
+				accessLoading={!isMounted || accessLoading}
+			/>
 		</PageShell>
 	);
 }
@@ -136,9 +138,16 @@ const ERA_PRESETS = [
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 25, 30] as const;
 
-function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
+function RecommendationsContent({
+	isSignedIn,
+	accessLoading,
+}: {
+	isSignedIn: boolean;
+	accessLoading: boolean;
+}) {
 	const {
 		history,
+		loading: historyLoading,
 		isGenerating,
 		error,
 		generate,
@@ -524,6 +533,12 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 				</div>
 			)}
 
+			{(accessLoading || historyLoading) && !isGenerating && (
+				<div className="rounded-[calc(var(--radius-2xl)+4px)] border border-border bg-card p-3 my-6">
+					<DefaultLoader />
+				</div>
+			)}
+
 			{isGenerating && (
 				<div className="space-y-4 animate-in fade-in duration-300">
 					<div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm shadow-none">
@@ -538,11 +553,13 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 							</p>
 						</div>
 					</div>
-					<LoadingSkeletons showMessage={false} />
+					<div className="rounded-[calc(var(--radius-2xl)+4px)] border border-border bg-card p-3 my-6">
+						<DefaultLoader />
+					</div>
 				</div>
 			)}
 
-			{!isGenerating && activeEntry && (
+			{!accessLoading && !historyLoading && !isGenerating && activeEntry && (
 				<div className="space-y-3">
 					<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
 						<Badge
@@ -579,15 +596,18 @@ function RecommendationsContent({ isSignedIn }: { isSignedIn: boolean }) {
 				</div>
 			)}
 
-			{!isGenerating && filteredHistory.length === 0 && (
-				<div className="flex flex-col items-center justify-center gap-4 py-20">
-					<BrainCircuit className="size-10 text-muted-foreground/40" />
-					<p className="text-sm text-muted-foreground text-center max-w-sm">
-						Generate your first recommendations using your watchlist or by
-						selecting genres above.
-					</p>
-				</div>
-			)}
+			{!accessLoading &&
+				!historyLoading &&
+				!isGenerating &&
+				filteredHistory.length === 0 && (
+					<div className="flex flex-col items-center justify-center gap-4 py-20">
+						<BrainCircuit className="size-10 text-muted-foreground/40" />
+						<p className="text-sm text-muted-foreground text-center max-w-sm">
+							Generate your first recommendations using your watchlist or by
+							selecting genres above.
+						</p>
+					</div>
+				)}
 
 			{filteredHistory.length > 0 && (
 				<div className="space-y-3">
