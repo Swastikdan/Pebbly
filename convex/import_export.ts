@@ -8,8 +8,8 @@ import {
   PROGRESS_STATUS_VALIDATOR,
   REACTION_OR_NULL_VALIDATOR,
   type MediaType,
-} from "./helpers/watch-item";
-import { syncEpisodeProgressRecord } from "./episode-progress";
+} from "./helpers/watch_item";
+import { syncEpisodeProgressRecord } from "./episode_progress";
 import { createWatchlistSnapshot } from "./watchlist";
 
 type ImportWatchlistItem = {
