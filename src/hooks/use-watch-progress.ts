@@ -532,7 +532,7 @@ export function useContinueWatching() {
 
 export function useRemoveFromContinueWatching() {
 	const { isSignedIn } = useUser();
-	const convexRemove = useMutation(api.watchlist.removeFromContinueWatching);
+	const setProgressStatusConvex = useMutation(api.watchlist.setProgressStatus);
 	const setProgressStatusLocal = useWatchlistStore(
 		(state) => state.setProgressStatusLocal,
 	);
@@ -544,7 +544,12 @@ export function useRemoveFromContinueWatching() {
 		async (tmdbId: number, mediaType: "movie" | "tv") => {
 			if (isSignedIn) {
 				try {
-					await convexRemove({ tmdbId, mediaType });
+					await setProgressStatusConvex({
+						tmdbId,
+						mediaType,
+						progressStatus: "watch-later",
+						progress: 0,
+					});
 				} catch (error) {
 					console.error("Failed to remove item from continue watching:", error);
 				}
@@ -553,7 +558,12 @@ export function useRemoveFromContinueWatching() {
 			setProgressStatusLocal(String(tmdbId), mediaType, "watch-later", 0);
 			clearShowProgress(tmdbId);
 		},
-		[isSignedIn, convexRemove, setProgressStatusLocal, clearShowProgress],
+		[
+			isSignedIn,
+			setProgressStatusConvex,
+			setProgressStatusLocal,
+			clearShowProgress,
+		],
 	);
 
 	return { removeFromContinueWatching };
