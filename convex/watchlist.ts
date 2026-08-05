@@ -32,7 +32,7 @@ export async function createWatchlistSnapshot(
   const items = await ctx.db
     .query("watch_items")
     .withIndex("by_user", (q) => q.eq("userId", userId))
-    .collect();
+    .take(500);
   const watchlistItems = items
     .filter((item) => item.inWatchlist)
     .map((item) => ({ tmdbId: item.tmdbId, mediaType: item.mediaType }))
@@ -142,16 +142,24 @@ export const removeFromContinueWatching = mutation({
 });
 
 export const getWatchlist = query({
-  args: {},
+  args: {
+    limit: v.optional(v.number()),
+    statusFilter: v.optional(v.string()),
+  },
 
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     if (!user) return [];
 
-    const items = await ctx.db
+    let queryBuilder = ctx.db
       .query("watch_items")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      .withIndex("by_user", (q) => q.eq("userId", user._id));
+
+    const items = await queryBuilder.take(args.limit ?? 200);
+
+    if (args.statusFilter) {
+      return items.filter((i) => i.progressStatus === args.statusFilter);
+    }
 
     return items;
   },
@@ -167,7 +175,7 @@ export const getTrackedTmdbIds = query({
     const items = await ctx.db
       .query("watch_items")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      .take(500);
 
     return items.map((item) => item.tmdbId);
   },
