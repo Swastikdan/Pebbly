@@ -1,52 +1,42 @@
-import { cache } from "react";
+import { createFetch } from "@better-fetch/fetch";
+import { logger } from "@better-fetch/logger";
 
 const ACCESS_TOKEN = import.meta.env.VITE_PUBLIC_TMDB_ACCESS_TOKEN;
 const BASE_URL = import.meta.env.VITE_PUBLIC_TMDB_API_URL;
 
-if (ACCESS_TOKEN === undefined || BASE_URL === undefined) {
-	throw new Error("Missing TMDB env variables");
+if (!ACCESS_TOKEN || !BASE_URL) {
+	throw new Error("Missing TMDB environment variables");
 }
-interface TmdbApiResult<T> {
-	data?: T;
-	error?: string;
-}
-const tmdbApi = async <T>(endpoint: string): Promise<TmdbApiResult<T>> => {
-	const normalizedEndpoint = endpoint.startsWith("/")
-		? endpoint
-		: `/${endpoint}`;
-	const fetchUrl = `${BASE_URL}${normalizedEndpoint}`;
 
-	const requestOptions: RequestInit = {
-		method: "GET",
-		headers: {
-			accept: "application/json",
-			Authorization: `Bearer ${ACCESS_TOKEN}`,
-		},
-		signal: AbortSignal.timeout(15_000),
-		cache: "default" as RequestCache,
-	};
-
-	try {
-		const response = await fetch(fetchUrl, requestOptions);
-
-		if (!response.ok) {
-			const errorMessage = `TMDB API error: ${response.status} ${response.statusText}`;
-			console.error(errorMessage, { endpoint: normalizedEndpoint });
-			return { error: errorMessage };
+export const tmdbFetch = createFetch({
+	baseURL: BASE_URL,
+	throw: true,
+	timeout: 15_000,
+	headers: {
+		accept: "application/json",
+		Authorization: `Bearer ${ACCESS_TOKEN}`,
+	},
+	retry: {
+		type: "linear",
+		attempts: 2,
+		delay: 500,
+	},
+	plugins: [
+		logger({
+			enabled: import.meta.env.DEV,
+			verbose: true,
+		}),
+	],
+	onError(context) {
+		if (import.meta.env.DEV) {
+			const fullUrl = context.request?.url || "Unknown URL";
+			console.error(`[Better Fetch Error] ❌ ${context.error?.message || "Fetch Error"}`, {
+				url: fullUrl,
+				status: context.response?.status,
+				statusText: context.response?.statusText,
+				error: context.error,
+				issues: (context.error as any)?.issues || (context.error as any)?.cause?.issues,
+			});
 		}
-
-		const data = (await response.json()) as T;
-		return { data };
-	} catch (error) {
-		const errorMessage =
-			error instanceof Error
-				? `Network error: ${error.message}`
-				: `Unknown error: ${String(error)}`;
-		console.error("TMDB API fetch failed:", errorMessage, {
-			endpoint: normalizedEndpoint,
-		});
-		return { error: errorMessage };
-	}
-};
-
-export const tmdb = cache(tmdbApi);
+	},
+});

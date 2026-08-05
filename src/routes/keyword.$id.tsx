@@ -150,7 +150,7 @@ function KeywordPage() {
 											item.first_air_date ?? item.release_date ?? null
 										}
 										title={item.title ?? item.name ?? "Untitled"}
-										overview={item.overview}
+										overview={item.overview ?? ""}
 									/>
 								))}
 							</div>

@@ -52,7 +52,8 @@ export const MediaRecommendations = (props: {
 		);
 	}
 	const hasMediaRecommendations =
-		(movie_data && movie_data?.length > 0) || (tv_data && tv_data?.length > 0);
+		(movie_data?.results && movie_data.results.length > 0) ||
+		(tv_data?.results && tv_data.results.length > 0);
 	if (!hasMediaRecommendations) return null;
 	return (
 		<div className="pb-5">
@@ -63,12 +64,12 @@ export const MediaRecommendations = (props: {
 				<ScrollContainer isButtonsVisible={!movie_is_loading}>
 					<div className="flex gap-4 p-4 first:pl-0 last:pr-0">
 						{type === "movie"
-							? movie_data?.map((item) => (
+							? movie_data?.results?.map((item) => (
 									<MediaCard
 										key={item.id}
 										card_type="vertical"
 										id={item.id}
-										image={item.backdrop_path}
+										image={item.backdrop_path ?? undefined}
 										media_type="movie"
 										poster_path={item.poster_path}
 										rating={item.vote_average}
@@ -76,12 +77,12 @@ export const MediaRecommendations = (props: {
 										title={item.title}
 									/>
 								))
-							: tv_data?.map((item) => (
+							: tv_data?.results?.map((item) => (
 									<MediaCard
 										key={item.id}
 										card_type="vertical"
 										id={item.id}
-										image={item.backdrop_path}
+										image={item.backdrop_path ?? undefined}
 										media_type="tv"
 										poster_path={item.poster_path}
 										rating={item.vote_average}
