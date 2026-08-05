@@ -201,7 +201,7 @@ export const getRecommendationHistory = query({
       .query("ai_recommendations")
       .withIndex("by_user_created", (q) => q.eq("userId", user._id))
       .order("desc")
-      .collect();
+      .take(20);
   },
 });
 
@@ -539,7 +539,7 @@ export const getHomepageRecommendations = query({
     const userFeedback = await ctx.db
       .query("recommendation_feedback")
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
-      .collect();
+      .take(50);
 
     const excludedFeedbackIds = new Set(
       userFeedback
@@ -551,7 +551,7 @@ export const getHomepageRecommendations = query({
     const watchItems = await ctx.db
       .query("watch_items")
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
-      .take(500);
+      .take(100);
     const watchlistTmdbIds = new Set(watchItems.map((w) => w.tmdbId));
     const watchlistTitles = new Set(
       watchItems.map((w) => normalizeTitleKey(w.title)),
@@ -742,7 +742,7 @@ export const getRecommendationFeedback = query({
     return ctx.db
       .query("recommendation_feedback")
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
-      .collect();
+      .take(100);
   },
 });
 
@@ -754,7 +754,7 @@ export const getRecommendationFeedbackInternal = internalQuery({
     return ctx.db
       .query("recommendation_feedback")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      .take(100);
   },
 });
 
