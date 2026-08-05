@@ -553,7 +553,7 @@ function RecommendationsContent({
 							</p>
 						</div>
 					</div>
-					<div className="rounded-[calc(var(--radius-2xl)+4px)] border border-border bg-card p-3 my-6">
+					<div className="rounded-[calc(var(--radius-2xl)+4px)] p-3 my-6">
 						<DefaultLoader />
 					</div>
 				</div>
