@@ -2,14 +2,18 @@ import { Shield } from "lucide-react";
 import { useState } from "react";
 import { AdminPermissionToggles } from "@/components/admin/admin-permission-toggles";
 import { AdminUserTable } from "@/components/admin/admin-user-table";
+import { GoBack } from "@/components/go-back";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function AdminDashboard() {
 	const [tab, setTab] = useState("users");
 
 	return (
-		<div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8 animate-fade-in">
-			<div className="mx-auto max-w-5xl space-y-8">
+		<div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 animate-fade-in">
+			<div className="mx-auto max-w-5xl space-y-6">
+				<div className="md:hidden">
+					<GoBack title="Back" hideLabelOnMobile />
+				</div>
 				<div className="flex items-center gap-3">
 					<Shield className="size-7 text-foreground" />
 					<h1 className="font-bold text-3xl tracking-tight">Admin Dashboard</h1>

@@ -5,6 +5,18 @@ import viteTsConfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 
+const decodeRouteUrlPlugin = () => ({
+  name: "decode-route-url",
+  configureServer(server: any) {
+    server.middlewares.use((req: any, _res: any, next: any) => {
+      if (req.url && (req.url.includes("%7B") || req.url.includes("%7D"))) {
+        req.url = decodeURIComponent(req.url);
+      }
+      next();
+    });
+  },
+});
+
 const config = defineConfig(({ mode }) => ({
   // Only VITE_-prefixed variables are inlined into the client bundle.
   // CONVEX_* vars (e.g. CONVEX_DEPLOY_KEY) stay server-side only.
@@ -66,6 +78,7 @@ const config = defineConfig(({ mode }) => ({
     },
   },
   plugins: [
+    decodeRouteUrlPlugin(),
     nitro(),
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],
