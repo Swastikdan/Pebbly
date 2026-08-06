@@ -47,13 +47,11 @@ const MediaSkeletonList = memo(
 const HomepageRecommendationCard = memo(
 	({
 		recommendation,
-		likedIds,
-		isLiked: isLikedProp,
+		likedKeys,
 		onFeedback,
 	}: {
 		recommendation: AIRecommendation;
-		likedIds?: Set<number>;
-		isLiked?: boolean;
+		likedKeys: Set<string>;
 		onFeedback: (
 			rec: AIRecommendation,
 			resolvedId: number,
@@ -104,12 +102,7 @@ const HomepageRecommendationCard = memo(
 			return null;
 		}
 
-		const isLiked =
-			isLikedProp !== undefined
-				? isLikedProp
-				: likedIds
-					? likedIds.has(resolvedData.id)
-					: false;
+		const isLiked = likedKeys.has(`${mediaType}:${resolvedData.id}`);
 
 		return (
 			<div className="relative group/rec-card">
@@ -205,6 +198,7 @@ export function HomepageRecommendations() {
 	const [localDismissedKeys, setLocalDismissedKeys] = useState<Set<string>>(
 		new Set(),
 	);
+	const [localLikedKeys, setLocalLikedKeys] = useState<Set<string>>(new Set());
 	const [_hourBucket] = useState(
 		() => Math.floor(Date.now() / (1000 * 60 * 60)) * (1000 * 60 * 60),
 	);
@@ -281,26 +275,36 @@ export function HomepageRecommendations() {
 
 	const toggleWatchlist = useToggleWatchlistItem();
 
-	const likedIds = useMemo(() => {
-		const set = new Set<number>();
+	const likedKeys = useMemo(() => {
+		const set = new Set<string>(localLikedKeys);
 		for (const f of resolvedFeedbackList ?? []) {
 			if (f.feedback === "like") {
-				set.add(f.tmdbId);
+				set.add(`${f.mediaType}:${f.tmdbId}`);
+			}
+		}
+		return set;
+	}, [resolvedFeedbackList, localLikedKeys]);
+
+	const dislikedKeys = useMemo(() => {
+		const set = new Set<string>();
+		for (const f of resolvedFeedbackList ?? []) {
+			if (f.feedback === "not_interested") {
+				set.add(`${f.mediaType}:${f.tmdbId}`);
 			}
 		}
 		return set;
 	}, [resolvedFeedbackList]);
 
 	const { allMediaStates } = useAllMediaStates();
-	const watchlistTmdbIds = useMemo(() => {
-		const set = new Set<number>();
+	const watchlistKeys = useMemo(() => {
+		const set = new Set<string>();
 		for (const item of allMediaStates) {
 			if (
 				item.inWatchlist ||
 				item.progressStatus === "watching" ||
 				(item.progress ?? 0) > 0
 			) {
-				set.add(Number(item.external_id));
+				set.add(`${item.type}:${item.external_id}`);
 			}
 		}
 		return set;
@@ -308,12 +312,22 @@ export function HomepageRecommendations() {
 
 	const recs = useMemo(() => {
 		if (!resolvedRecsData?.recommendations) return [];
-		return resolvedRecsData.recommendations.filter(
-			(r) =>
-				!localDismissedKeys.has(getDismissKey(r)) &&
-				(r.tmdbId === null || !watchlistTmdbIds.has(r.tmdbId)),
-		);
-	}, [resolvedRecsData?.recommendations, localDismissedKeys, watchlistTmdbIds]);
+		return resolvedRecsData.recommendations.filter((r) => {
+			if (localDismissedKeys.has(getDismissKey(r))) return false;
+			if (r.tmdbId !== null && r.tmdbId !== undefined) {
+				const key = `${r.mediaType}:${r.tmdbId}`;
+				if (dislikedKeys.has(key)) return false;
+				if (watchlistKeys.has(key) && !likedKeys.has(key)) return false;
+			}
+			return true;
+		});
+	}, [
+		resolvedRecsData?.recommendations,
+		localDismissedKeys,
+		watchlistKeys,
+		likedKeys,
+		dislikedKeys,
+	]);
 
 	const handleFeedback = useCallback(
 		async (
@@ -329,11 +343,25 @@ export function HomepageRecommendations() {
 		) => {
 			const key = getDismissKey(rec);
 
+			const mediaKey = `${rec.mediaType}:${resolvedId}`;
+
 			if (feedback === "dislike") {
 				// Hide card immediately on UI
 				setLocalDismissedKeys((prev) => {
 					const next = new Set(prev);
 					next.add(key);
+					return next;
+				});
+			} else if (feedback === "like") {
+				setLocalLikedKeys((prev) => {
+					const next = new Set(prev);
+					next.add(mediaKey);
+					return next;
+				});
+			} else if (feedback === "unlike") {
+				setLocalLikedKeys((prev) => {
+					const next = new Set(prev);
+					next.delete(mediaKey);
 					return next;
 				});
 			}
@@ -376,6 +404,18 @@ export function HomepageRecommendations() {
 					setLocalDismissedKeys((prev) => {
 						const next = new Set(prev);
 						next.delete(key);
+						return next;
+					});
+				} else if (feedback === "like") {
+					setLocalLikedKeys((prev) => {
+						const next = new Set(prev);
+						next.delete(mediaKey);
+						return next;
+					});
+				} else if (feedback === "unlike") {
+					setLocalLikedKeys((prev) => {
+						const next = new Set(prev);
+						next.add(mediaKey);
 						return next;
 					});
 				}
@@ -441,8 +481,7 @@ export function HomepageRecommendations() {
 							<HomepageRecommendationCard
 								key={getDismissKey(rec)}
 								recommendation={rec}
-								isLiked={rec.tmdbId ? likedIds.has(rec.tmdbId) : undefined}
-								likedIds={rec.tmdbId ? undefined : likedIds}
+								likedKeys={likedKeys}
 								onFeedback={handleFeedback}
 							/>
 						))}

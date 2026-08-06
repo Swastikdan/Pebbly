@@ -28,8 +28,8 @@ import { useContinueWatching } from "@/hooks/use-watch-progress";
 import { getMedia } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
-	loader: ({ context }) => {
-		context.queryClient.prefetchQuery({
+	loader: async ({ context }) => {
+		await context.queryClient.ensureQueryData({
 			queryKey: ["trending_day"],
 			queryFn: () => getMedia({ type: "trending_day" }),
 		});
