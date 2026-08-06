@@ -25,7 +25,12 @@ export const GoBack = (props: {
 	}
 
 	return (
-		<Button className={className} variant="secondary" onClick={goBack}>
+		<Button
+			className={className}
+			variant="secondary"
+			onClick={goBack}
+			aria-label={title ?? "Go Back"}
+		>
 			<span className="flex w-full items-center gap-1">
 				<ArrowLeft size={20} />
 				<span

@@ -17,12 +17,12 @@ export const getCustomLists = query({
     const lists = await ctx.db
       .query("lists")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .take(100);
+      .collect();
 
     const allUserListItems = await ctx.db
       .query("list_items")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .take(500);
+      .collect();
 
     const itemsByList = new Map<string, typeof allUserListItems>();
     for (const item of allUserListItems) {
@@ -138,12 +138,15 @@ export const deleteCustomList = mutation({
     const list = await ctx.db.get(args.listId);
     if (!list || list.userId !== user._id) throw new Error("List not found");
 
-    const items = await ctx.db
-      .query("list_items")
-      .withIndex("by_list", (q) => q.eq("listId", args.listId))
-      .take(200);
-    for (const item of items) {
-      await ctx.db.delete(item._id);
+    while (true) {
+      const items = await ctx.db
+        .query("list_items")
+        .withIndex("by_list", (q) => q.eq("listId", args.listId))
+        .take(200);
+      if (items.length === 0) break;
+      for (const item of items) {
+        await ctx.db.delete(item._id);
+      }
     }
 
     await ctx.db.delete(args.listId);
@@ -162,7 +165,7 @@ export const getListItems = query({
     const items = await ctx.db
       .query("list_items")
       .withIndex("by_list", (q) => q.eq("listId", args.listId))
-      .take(200);
+      .collect();
 
     const watchItemPromises = items.map((item) =>
       ctx.db
@@ -211,7 +214,7 @@ export const getItemLists = query({
       .withIndex("by_user_media", (q) =>
         q.eq("userId", user._id).eq("tmdbId", args.tmdbId).eq("mediaType", args.mediaType),
       )
-      .take(50);
+      .collect();
 
     return items.map((i) => i.listId);
   },

@@ -101,7 +101,7 @@ export function useTmdbSearchFallback(
 	const { data: searchData, isLoading: searchLoading } = useQuery({
 		queryKey: ["tmdb_search_fallback", title, mediaType],
 		queryFn: async () => {
-			const results = await getSearchResult(title, 1);
+			const results = await getSearchResult({ query: title, page: 1 });
 			const filtered = (results.results ?? []).filter(
 				(r) => r.media_type === mediaType,
 			);

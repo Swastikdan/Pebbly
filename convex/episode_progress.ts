@@ -38,7 +38,7 @@ export async function getEpisodeProgressForShow(
   return ctx.db
     .query("episode_progress")
     .withIndex("by_user_media", (q) => q.eq("userId", userId).eq("tmdbId", tmdbId))
-    .take(500);
+    .collect();
 }
 
 export async function syncEpisodeProgressRecord(
@@ -110,7 +110,7 @@ export const getAllWatchedEpisodes = query({
     return ctx.db
       .query("episode_progress")
       .withIndex("by_user_media", (q) => q.eq("userId", user._id).eq("tmdbId", args.tmdbId))
-      .take(500);
+      .collect();
   },
 });
 
@@ -229,7 +229,7 @@ export const getAllEpisodeProgress = query({
     return ctx.db
       .query("episode_progress")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .take(2000);
+      .collect();
   },
 });
 

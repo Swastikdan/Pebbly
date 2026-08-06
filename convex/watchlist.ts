@@ -151,17 +151,22 @@ export const getWatchlist = query({
     const user = await getCurrentUser(ctx);
     if (!user) return [];
 
-    let queryBuilder = ctx.db
-      .query("watch_items")
-      .withIndex("by_user", (q) => q.eq("userId", user._id));
-
-    const items = await queryBuilder.take(args.limit ?? 200);
+    const requestedLimit = args.limit !== undefined && args.limit > 0 ? Math.floor(args.limit) : 200;
+    const boundedLimit = Math.min(requestedLimit, 500);
 
     if (args.statusFilter) {
-      return items.filter((i) => i.progressStatus === args.statusFilter);
+      return ctx.db
+        .query("watch_items")
+        .withIndex("by_user_status", (q) =>
+          q.eq("userId", user._id).eq("progressStatus", args.statusFilter),
+        )
+        .take(boundedLimit);
     }
 
-    return items;
+    return ctx.db
+      .query("watch_items")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .take(boundedLimit);
   },
 });
 

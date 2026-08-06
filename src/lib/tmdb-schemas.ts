@@ -90,8 +90,8 @@ export const CrewMemberSchema = v.looseObject({
 export type CrewMember = v.InferOutput<typeof CrewMemberSchema>;
 
 export const CreditsSchema = v.looseObject({
-	cast: v.fallback(v.nullable(v.array(CastMemberSchema)), []),
-	crew: v.fallback(v.nullable(v.array(CrewMemberSchema)), []),
+	cast: v.nullish(v.array(CastMemberSchema), () => []),
+	crew: v.nullish(v.array(CrewMemberSchema), () => []),
 });
 export type Credits = v.InferOutput<typeof CreditsSchema>;
 
@@ -119,9 +119,9 @@ export type LogosEntity = v.InferOutput<typeof LogosEntitySchema>;
 
 export const MediaImagesSchema = v.looseObject({
 	id: numNull(),
-	backdrops: v.fallback(v.nullable(v.array(ImageAssetSchema)), []),
-	logos: v.fallback(v.nullable(v.array(LogoAssetSchema)), []),
-	posters: v.fallback(v.nullable(v.array(ImageAssetSchema)), []),
+	backdrops: v.nullish(v.array(ImageAssetSchema), () => []),
+	logos: v.nullish(v.array(LogoAssetSchema), () => []),
+	posters: v.nullish(v.array(ImageAssetSchema), () => []),
 });
 export type MediaImages = v.InferOutput<typeof MediaImagesSchema>;
 
@@ -224,7 +224,7 @@ export type SearchResultsEntity = v.InferOutput<
 
 export const SearchResultsSchema = v.looseObject({
 	page: num(1),
-	results: v.fallback(v.nullable(v.array(SearchResultsEntitySchema)), []),
+	results: v.nullish(v.array(SearchResultsEntitySchema), () => []),
 	total_pages: num(1),
 	total_results: num(0),
 });
@@ -232,7 +232,7 @@ export type SearchResults = v.InferOutput<typeof SearchResultsSchema>;
 
 export const MediaListResultsEntitySchema = v.looseObject({
 	adult: bool(),
-	backdrop_path: str(),
+	backdrop_path: strNull(),
 	genre_ids: v.optional(v.fallback(v.nullable(v.array(v.number())), null)),
 	id: v.number(),
 	original_language: str(),
@@ -240,7 +240,7 @@ export const MediaListResultsEntitySchema = v.looseObject({
 	original_name: strOpt(),
 	overview: str(),
 	popularity: num(),
-	poster_path: str(),
+	poster_path: strNull(),
 	release_date: strOpt(),
 	first_air_date: strOpt(),
 	media_type: strOpt(),
@@ -300,33 +300,27 @@ export type MovieKeywords = v.InferOutput<typeof MovieKeywordsSchema>;
 
 export const BasicMovieSchema = v.looseObject({
 	adult: bool(),
-	backdrop_path: str(),
-	belongs_to_collection: v.fallback(v.nullable(CollectionInfoSchema), null),
+	backdrop_path: strNull(),
+	belongs_to_collection: v.nullable(CollectionInfoSchema),
 	budget: num(),
-	genres: v.fallback(v.nullable(v.array(GenreSchema)), []),
-	homepage: str(),
+	genres: v.nullish(v.array(GenreSchema), () => []),
+	homepage: strNull(),
 	id: v.number(),
 	imdb_id: strNull(),
-	origin_country: v.fallback(v.nullable(v.array(v.string())), []),
+	origin_country: v.nullish(v.array(v.string()), () => []),
 	original_language: str(),
 	original_title: str(),
 	overview: str(),
 	popularity: num(),
-	poster_path: str(),
-	production_companies: v.fallback(
-		v.nullable(v.array(ProductionCompanySchema)),
-		[],
-	),
-	production_countries: v.fallback(
-		v.nullable(v.array(ProductionCountrySchema)),
-		[],
-	),
+	poster_path: strNull(),
+	production_companies: v.nullish(v.array(ProductionCompanySchema), () => []),
+	production_countries: v.nullish(v.array(ProductionCountrySchema), () => []),
 	release_date: str(),
 	revenue: num(),
 	runtime: numOpt(),
-	spoken_languages: v.fallback(v.nullable(v.array(SpokenLanguageSchema)), []),
+	spoken_languages: v.nullish(v.array(SpokenLanguageSchema), () => []),
 	status: str(),
-	tagline: str(),
+	tagline: strNull(),
 	title: str(),
 	video: bool(),
 	vote_average: num(),
@@ -357,18 +351,17 @@ export const MovieSchema = v.looseObject({
 export type Movie = v.InferOutput<typeof MovieSchema>;
 
 export const MovieRecommendationsResultsEntitySchema = v.looseObject({
-	backdrop_path: str(),
+	adult: bool(),
+	backdrop_path: strNull(),
+	genre_ids: v.nullish(v.array(v.number()), () => []),
 	id: v.number(),
-	title: str(),
+	original_language: str(),
 	original_title: str(),
 	overview: str(),
-	poster_path: str(),
-	media_type: str("movie"),
-	adult: bool(),
-	original_language: str(),
-	genre_ids: v.fallback(v.nullable(v.array(v.number())), []),
 	popularity: num(),
+	poster_path: strNull(),
 	release_date: str(),
+	title: str(),
 	video: bool(),
 	vote_average: num(),
 	vote_count: num(),
@@ -379,9 +372,9 @@ export type MovieRecommendationsResultsEntity = v.InferOutput<
 
 export const MovieRecommendationsSchema = v.looseObject({
 	page: num(1),
-	results: v.fallback(
-		v.nullable(v.array(MovieRecommendationsResultsEntitySchema)),
-		[],
+	results: v.nullish(
+		v.array(MovieRecommendationsResultsEntitySchema),
+		() => [],
 	),
 	total_pages: num(1),
 	total_results: num(0),
@@ -431,7 +424,7 @@ export const SeasonInfoSchema = v.looseObject({
 	id: v.number(),
 	name: str(),
 	overview: str(),
-	poster_path: str(),
+	poster_path: strNull(),
 	season_number: num(),
 	vote_average: num(),
 });
@@ -439,40 +432,34 @@ export type SeasonInfo = v.InferOutput<typeof SeasonInfoSchema>;
 
 export const BasicTvSchema = v.looseObject({
 	adult: bool(),
-	backdrop_path: str(),
-	created_by: v.fallback(v.nullable(v.array(CreatorSchema)), []),
-	episode_run_time: v.fallback(v.nullable(v.array(v.unknown())), []),
+	backdrop_path: strNull(),
+	created_by: v.nullish(v.array(CreatorSchema), () => []),
+	episode_run_time: v.nullish(v.array(v.unknown()), () => []),
 	first_air_date: str(),
-	genres: v.fallback(v.nullable(v.array(GenreSchema)), []),
-	homepage: str(),
+	genres: v.nullish(v.array(GenreSchema), () => []),
+	homepage: strNull(),
 	id: v.number(),
 	in_production: bool(),
-	languages: v.fallback(v.nullable(v.array(v.string())), []),
+	languages: v.nullish(v.array(v.string()), () => []),
 	last_air_date: str(),
-	last_episode_to_air: v.fallback(v.nullable(EpisodeInfoSchema), null),
+	last_episode_to_air: v.nullable(EpisodeInfoSchema),
 	name: str(),
-	next_episode_to_air: v.fallback(v.nullable(v.unknown()), null),
-	networks: v.fallback(v.nullable(v.array(NetworkSchema)), []),
+	next_episode_to_air: v.nullable(v.unknown()),
+	networks: v.nullish(v.array(NetworkSchema), () => []),
 	number_of_episodes: num(),
 	number_of_seasons: num(),
-	origin_country: v.fallback(v.nullable(v.array(v.string())), []),
+	origin_country: v.nullish(v.array(v.string()), () => []),
 	original_language: str(),
 	original_name: str(),
 	overview: str(),
 	popularity: num(),
-	poster_path: str(),
-	production_companies: v.fallback(
-		v.nullable(v.array(ProductionCompanySchema)),
-		[],
-	),
-	production_countries: v.fallback(
-		v.nullable(v.array(ProductionCountrySchema)),
-		[],
-	),
-	seasons: v.fallback(v.nullable(v.array(SeasonInfoSchema)), []),
-	spoken_languages: v.fallback(v.nullable(v.array(SpokenLanguageSchema)), []),
+	poster_path: strNull(),
+	production_companies: v.nullish(v.array(ProductionCompanySchema), () => []),
+	production_countries: v.nullish(v.array(ProductionCountrySchema), () => []),
+	seasons: v.nullish(v.array(SeasonInfoSchema), () => []),
+	spoken_languages: v.nullish(v.array(SpokenLanguageSchema), () => []),
 	status: str(),
-	tagline: str(),
+	tagline: strNull(),
 	type: str(),
 	vote_average: num(),
 	vote_count: num(),
@@ -493,21 +480,21 @@ export const TvExternalIdsSchema = v.looseObject({
 export type TvExternalIds = v.InferOutput<typeof TvExternalIdsSchema>;
 
 export const RecommendationResultSchema = v.looseObject({
-	backdrop_path: str(),
+	backdrop_path: strNull(),
 	id: v.number(),
 	name: str(),
 	original_name: str(),
 	overview: str(),
-	poster_path: str(),
+	poster_path: strNull(),
 	media_type: str("tv"),
 	adult: bool(),
 	original_language: str(),
-	genre_ids: v.fallback(v.nullable(v.array(v.number())), []),
+	genre_ids: v.nullish(v.array(v.number()), () => []),
 	popularity: num(),
 	first_air_date: str(),
 	vote_average: num(),
 	vote_count: num(),
-	origin_country: v.fallback(v.nullable(v.array(v.string())), []),
+	origin_country: v.nullish(v.array(v.string()), () => []),
 });
 export type RecommendationResult = v.InferOutput<
 	typeof RecommendationResultSchema
@@ -520,19 +507,19 @@ export type TvRecommendationsResultsEntity = v.InferOutput<
 
 export const TvRecommendationsSchema = v.looseObject({
 	page: num(1),
-	results: v.fallback(v.nullable(v.array(RecommendationResultSchema)), []),
+	results: v.nullish(v.array(RecommendationResultSchema), () => []),
 	total_pages: num(1),
 	total_results: num(0),
 });
 export type TvRecommendations = v.InferOutput<typeof TvRecommendationsSchema>;
 
 export const TvKeywordsSchema = v.looseObject({
-	results: v.fallback(v.nullable(v.array(KeywordResultSchema)), []),
+	results: v.nullish(v.array(KeywordResultSchema), () => []),
 });
 export type TvKeywords = v.InferOutput<typeof TvKeywordsSchema>;
 
 export const ContentRatingsResultsEntitySchema = v.looseObject({
-	descriptors: v.fallback(v.nullable(v.array(v.unknown())), []),
+	descriptors: v.nullish(v.array(v.unknown()), () => []),
 	iso_3166_1: str(),
 	rating: str(),
 });
@@ -541,10 +528,7 @@ export type ContentRatingsResultsEntity = v.InferOutput<
 >;
 
 export const ContentRatingsSchema = v.looseObject({
-	results: v.fallback(
-		v.nullable(v.array(ContentRatingsResultsEntitySchema)),
-		[],
-	),
+	results: v.nullish(v.array(ContentRatingsResultsEntitySchema), () => []),
 });
 export type ContentRatings = v.InferOutput<typeof ContentRatingsSchema>;
 
@@ -581,18 +565,18 @@ export const TvSchema = v.looseObject({
 export type Tv = v.InferOutput<typeof TvSchema>;
 
 export const MediaRecommendationsResultsEntitySchema = v.looseObject({
-	backdrop_path: str(),
+	backdrop_path: strNull(),
 	id: v.number(),
 	title: strOpt(),
 	name: strOpt(),
 	original_title: strOpt(),
 	original_name: strOpt(),
 	overview: str(),
-	poster_path: str(),
+	poster_path: strNull(),
 	media_type: str(),
 	adult: bool(),
 	original_language: str(),
-	genre_ids: v.fallback(v.nullable(v.array(v.number())), []),
+	genre_ids: v.nullish(v.array(v.number()), () => []),
 	popularity: num(),
 	release_date: strOpt(),
 	first_air_date: strOpt(),
@@ -606,9 +590,9 @@ export type MediaRecommendationsResultsEntity = v.InferOutput<
 
 export const MediaRecommendationsSchema = v.looseObject({
 	page: num(1),
-	results: v.fallback(
-		v.nullable(v.array(MediaRecommendationsResultsEntitySchema)),
-		[],
+	results: v.nullish(
+		v.array(MediaRecommendationsResultsEntitySchema),
+		() => [],
 	),
 	total_pages: num(1),
 	total_results: num(0),
@@ -631,15 +615,15 @@ export const TvEpisodeDetailSchema = v.looseObject({
 	still_path: strNull(),
 	vote_average: num(),
 	vote_count: num(),
-	crew: v.fallback(v.nullable(v.array(CrewMemberSchema)), []),
-	guest_stars: v.fallback(v.nullable(v.array(CastMemberSchema)), []),
+	crew: v.nullish(v.array(CrewMemberSchema), () => []),
+	guest_stars: v.nullish(v.array(CastMemberSchema), () => []),
 });
 export type TvEpisodeDetail = v.InferOutput<typeof TvEpisodeDetailSchema>;
 
 export const TvSeasonDetailSchema = v.looseObject({
 	_id: str(),
 	air_date: strNull(),
-	episodes: v.fallback(v.nullable(v.array(TvEpisodeDetailSchema)), []),
+	episodes: v.nullish(v.array(TvEpisodeDetailSchema), () => []),
 	name: str(),
 	overview: str(),
 	id: v.number(),
@@ -652,7 +636,7 @@ export type TvSeasonDetail = v.InferOutput<typeof TvSeasonDetailSchema>;
 export const PersonCreditCastSchema = v.looseObject({
 	adult: bool(),
 	backdrop_path: strNull(),
-	genre_ids: v.fallback(v.nullable(v.array(v.number())), []),
+	genre_ids: v.nullish(v.array(v.number()), () => []),
 	id: v.number(),
 	original_language: str(),
 	original_title: strOpt(),

@@ -25,7 +25,7 @@ interface MediaCardSpecificProps extends BaseCardProps {
 	title: string;
 	rating: number;
 	image?: string;
-	poster_path: string;
+	poster_path?: string | null;
 	media_type: "movie" | "tv";
 	release_date: string | null;
 	known_for_department?: string;
@@ -184,7 +184,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 				{!hideWatchlistButton && (
 					<WatchlistButton
 						id={id}
-						image={poster_path}
+						image={poster_path ?? props.image ?? ""}
 						is_on_homepage={is_on_homepage}
 						is_on_watchlist_page={is_on_watchlist_page}
 						media_type={media_type}

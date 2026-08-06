@@ -49,7 +49,7 @@ function SearchPage() {
 
 	const { data, error, isFetching, isLoading } = useQuery({
 		queryKey: ["search", query, page],
-		queryFn: () => getSearchResult(query, page),
+		queryFn: () => getSearchResult({ query, page }),
 		enabled: typeof window !== "undefined" && !!query,
 		staleTime: 1000 * 60 * 60 * 24,
 		gcTime: 1000 * 60 * 60 * 24,

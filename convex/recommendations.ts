@@ -536,16 +536,24 @@ export const getHomepageRecommendations = query({
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
       .first();
 
-    const userFeedback = await ctx.db
+    const notInterestedFeedback = await ctx.db
       .query("recommendation_feedback")
-      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
-      .take(50);
+      .withIndex("by_user_feedback", (q) =>
+        q.eq("userId", dbUser._id).eq("feedback", "not_interested"),
+      )
+      .collect();
 
-    const excludedFeedbackIds = new Set(
-      userFeedback
-        .filter((f) => f.feedback === "not_interested" || f.feedback === "dislike")
-        .map((f) => f.tmdbId),
-    );
+    const dislikeFeedback = await ctx.db
+      .query("recommendation_feedback")
+      .withIndex("by_user_feedback", (q) =>
+        q.eq("userId", dbUser._id).eq("feedback", "dislike"),
+      )
+      .collect();
+
+    const excludedFeedbackIds = new Set([
+      ...notInterestedFeedback.map((f) => f.tmdbId),
+      ...dislikeFeedback.map((f) => f.tmdbId),
+    ]);
 
     let recs: Recommendation[] = [];
     if (entry && entry.recommendations) {
