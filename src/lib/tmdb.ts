@@ -30,13 +30,18 @@ export const tmdbFetch = createFetch({
 	onError(context) {
 		if (import.meta.env.DEV) {
 			const fullUrl = context.request?.url || "Unknown URL";
-			console.error(`[Better Fetch Error] ❌ ${context.error?.message || "Fetch Error"}`, {
-				url: fullUrl,
-				status: context.response?.status,
-				statusText: context.response?.statusText,
-				error: context.error,
-				issues: (context.error as any)?.issues || (context.error as any)?.cause?.issues,
-			});
+			console.error(
+				`[Better Fetch Error] ❌ ${context.error?.message || "Fetch Error"}`,
+				{
+					url: fullUrl,
+					status: context.response?.status,
+					statusText: context.response?.statusText,
+					error: context.error,
+					issues:
+						(context.error as any)?.issues ||
+						(context.error as any)?.cause?.issues,
+				},
+			);
 		}
 	},
 });

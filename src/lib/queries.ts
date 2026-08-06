@@ -1,7 +1,7 @@
 import { cache } from "react";
 import type * as Types from "@/types";
-import * as Schemas from "./tmdb-schemas";
 import { tmdbFetch } from "./tmdb";
+import * as Schemas from "./tmdb-schemas";
 import { validateId } from "./utils";
 
 /*
@@ -128,7 +128,8 @@ export const getSearchResult = cache(
 		arg2?: number,
 	): Promise<Types.SearchResults> => {
 		const queryStr = typeof arg1 === "string" ? arg1 : arg1.query;
-		const pageNumber = typeof arg1 === "string" ? arg2 ?? 1 : arg1.page ?? 1;
+		const pageNumber =
+			typeof arg1 === "string" ? (arg2 ?? 1) : (arg1.page ?? 1);
 		const url = `/search/multi?query=${encodeURIComponent(queryStr)}&include_adult=false&language=en-US&page=${pageNumber}`;
 
 		return await safeFetch<Types.SearchResults>(
@@ -184,7 +185,8 @@ export const getMovieRecommendations = cache(
 		arg2?: number,
 	): Promise<Types.MovieRecommendations> => {
 		const targetId = typeof arg1 === "number" ? arg1 : arg1.id;
-		const pageNumber = typeof arg1 === "number" ? arg2 ?? 1 : arg1.page ?? 1;
+		const pageNumber =
+			typeof arg1 === "number" ? (arg2 ?? 1) : (arg1.page ?? 1);
 		validateId(targetId);
 		const url = `/movie/${targetId}/recommendations?language=en-US&page=${pageNumber}`;
 
@@ -201,11 +203,7 @@ export const getTvDetails = cache(
 		validateId(id);
 		const url = `/tv/${id}?language=en-US&append_to_response=images,videos,credits,external_ids,recommendations,keywords,content_ratings`;
 
-		return await safeFetch<Types.Tv>(
-			"getTvDetails",
-			url,
-			Schemas.TvSchema,
-		);
+		return await safeFetch<Types.Tv>("getTvDetails", url, Schemas.TvSchema);
 	},
 );
 
@@ -228,7 +226,8 @@ export const getTvRecommendations = cache(
 		arg2?: number,
 	): Promise<Types.TvRecommendations> => {
 		const targetId = typeof arg1 === "number" ? arg1 : arg1.id;
-		const pageNumber = typeof arg1 === "number" ? arg2 ?? 1 : arg1.page ?? 1;
+		const pageNumber =
+			typeof arg1 === "number" ? (arg2 ?? 1) : (arg1.page ?? 1);
 		validateId(targetId);
 		const url = `/tv/${targetId}/recommendations?language=en-US&page=${pageNumber}`;
 
@@ -311,7 +310,10 @@ export const getDiscoverMovies = cache(
 			keywordId = arg1;
 			pageNumber = arg2 ?? 1;
 		} else {
-			keywordId = typeof arg1.with_keywords === "string" ? parseInt(arg1.with_keywords, 10) : arg1.with_keywords;
+			keywordId =
+				typeof arg1.with_keywords === "string"
+					? parseInt(arg1.with_keywords, 10)
+					: arg1.with_keywords;
 			pageNumber = arg1.page ?? 1;
 		}
 

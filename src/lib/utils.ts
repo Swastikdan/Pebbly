@@ -19,7 +19,6 @@ export function normalizeProgressStatus(
 		: null;
 }
 
-
 type ValidationResult<T> =
 	| {
 			success: true;
@@ -208,7 +207,6 @@ export function parseAndValidateId(
 
 	return { success: true, data: id };
 }
-
 
 export const formatMediaTitle = {
 	encode(title: string): string {

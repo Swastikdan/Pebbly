@@ -218,7 +218,9 @@ export const SearchResultsEntitySchema = v.looseObject({
 	profile_path: strNull(),
 	known_for: v.fallback(v.nullable(v.array(v.unknown())), []),
 });
-export type SearchResultsEntity = v.InferOutput<typeof SearchResultsEntitySchema>;
+export type SearchResultsEntity = v.InferOutput<
+	typeof SearchResultsEntitySchema
+>;
 
 export const SearchResultsSchema = v.looseObject({
 	page: num(1),
@@ -341,7 +343,12 @@ export const MovieSchema = v.looseObject({
 		instagram_id: null,
 		twitter_id: null,
 	}),
-	images: v.fallback(MediaImagesSchema, { id: null, backdrops: [], logos: [], posters: [] }),
+	images: v.fallback(MediaImagesSchema, {
+		id: null,
+		backdrops: [],
+		logos: [],
+		posters: [],
+	}),
 	credits: v.fallback(CreditsSchema, { cast: [], crew: [] }),
 	videos: v.fallback(MediaVideosSchema, { id: null, results: [] }),
 	release_dates: v.fallback(MovieReleaseDatesSchema, { results: [] }),
@@ -534,7 +541,10 @@ export type ContentRatingsResultsEntity = v.InferOutput<
 >;
 
 export const ContentRatingsSchema = v.looseObject({
-	results: v.fallback(v.nullable(v.array(ContentRatingsResultsEntitySchema)), []),
+	results: v.fallback(
+		v.nullable(v.array(ContentRatingsResultsEntitySchema)),
+		[],
+	),
 });
 export type ContentRatings = v.InferOutput<typeof ContentRatingsSchema>;
 
@@ -551,7 +561,12 @@ export const TvSchema = v.looseObject({
 		instagram_id: null,
 		twitter_id: null,
 	}),
-	images: v.fallback(MediaImagesSchema, { id: null, backdrops: [], logos: [], posters: [] }),
+	images: v.fallback(MediaImagesSchema, {
+		id: null,
+		backdrops: [],
+		logos: [],
+		posters: [],
+	}),
 	credits: v.fallback(CreditsSchema, { cast: [], crew: [] }),
 	videos: v.fallback(MediaVideosSchema, { id: null, results: [] }),
 	recommendations: v.fallback(TvRecommendationsSchema, {
@@ -690,7 +705,9 @@ export const PersonResultCreditsSchema = v.looseObject({
 	cast: v.fallback(v.nullable(v.array(PersonCreditCastSchema)), []),
 	crew: v.fallback(v.nullable(v.array(PersonCreditCrewSchema)), []),
 });
-export type PersonResultCredits = v.InferOutput<typeof PersonResultCreditsSchema>;
+export type PersonResultCredits = v.InferOutput<
+	typeof PersonResultCreditsSchema
+>;
 
 export const PersonDetailsSchema = v.looseObject({
 	adult: bool(),
@@ -709,7 +726,10 @@ export const PersonDetailsSchema = v.looseObject({
 	profile_path: strNull(),
 	movie_credits: v.fallback(PersonResultCreditsSchema, { cast: [], crew: [] }),
 	tv_credits: v.fallback(PersonResultCreditsSchema, { cast: [], crew: [] }),
-	combined_credits: v.fallback(PersonResultCreditsSchema, { cast: [], crew: [] }),
+	combined_credits: v.fallback(PersonResultCreditsSchema, {
+		cast: [],
+		crew: [],
+	}),
 	images: v.fallback(
 		v.looseObject({
 			profiles: v.fallback(v.nullable(v.array(ImageAssetSchema)), []),
