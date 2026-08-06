@@ -5,7 +5,6 @@ import {
 	DefaultErrorComponent,
 	DefaultNotFoundComponent,
 } from "@/components/default-not-found";
-import { GoBack } from "@/components/go-back";
 import { CastSection } from "@/components/media/cast-section";
 import { GenreContainer } from "@/components/media/genre-container";
 import { InlineEpisodeBrowser } from "@/components/media/inline-episode-browser";
@@ -26,13 +25,13 @@ import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/")({
-	loader: ({ params, context }) => {
+	loader: async ({ params, context }) => {
 		const { id, slug } = params;
 		const parsed = parseAndValidateId(id);
 		if (!parsed.success) {
 			throw notFound();
 		}
-		context.queryClient.prefetchQuery({
+		await context.queryClient.ensureQueryData({
 			queryKey: ["tv_details", parsed.data],
 			queryFn: () => getTvDetails({ id: parsed.data }),
 		});
@@ -141,9 +140,6 @@ function TvHomePage() {
 
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4">
-			<div className="md:hidden pt-4 pb-2">
-				<GoBack title="Back" hideLabelOnMobile />
-			</div>
 			<MediaTitleContainer
 				runtime={null}
 				description={`${overview?.slice(0, 100)}...`}

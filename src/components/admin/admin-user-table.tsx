@@ -184,7 +184,7 @@ export function AdminUserTable() {
 						className="pl-9 h-9 rounded-xl text-sm"
 					/>
 				</div>
-				<div className="flex gap-1 rounded-xl border bg-muted/40 p-1 shrink-0">
+				<div className="flex gap-1 rounded-xl border bg-muted/40 p-1 shrink-0 overflow-x-auto scrollbar-hidden max-w-full">
 					{filterTabs.map((ft) => (
 						<button
 							key={ft.id}

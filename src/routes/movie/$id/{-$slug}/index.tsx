@@ -5,7 +5,6 @@ import {
 	DefaultErrorComponent,
 	DefaultNotFoundComponent,
 } from "@/components/default-not-found";
-import { GoBack } from "@/components/go-back";
 import { CastSection } from "@/components/media/cast-section";
 import { Collections } from "@/components/media/collections";
 import { GenreContainer } from "@/components/media/genre-container";
@@ -25,13 +24,13 @@ import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Movie } from "@/types";
 
 export const Route = createFileRoute("/movie/$id/{-$slug}/")({
-	loader: ({ params, context }) => {
+	loader: async ({ params, context }) => {
 		const { id, slug } = params;
 		const parsed = parseAndValidateId(id);
 		if (!parsed.success) {
 			throw notFound();
 		}
-		context.queryClient.prefetchQuery({
+		await context.queryClient.ensureQueryData({
 			queryKey: ["movie_details", parsed.data],
 			queryFn: () => getMovieDetails({ id: parsed.data }),
 		});
@@ -138,9 +137,6 @@ function MovieHomePage() {
 		keywords?.keywords?.map((k) => ({ name: k.name, id: k.id })) ?? [];
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4">
-			<div className="md:hidden pt-4 pb-2">
-				<GoBack title="Back" hideLabelOnMobile />
-			</div>
 			<MediaTitleContainer
 				runtime={movieRuntime ?? null}
 				description={`${overview?.slice(0, 100)}...`}
