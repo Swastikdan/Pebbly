@@ -21,6 +21,7 @@ import {
 } from "@/hooks/use-watchlist";
 import { getMedia, getMovieDetails, getTvDetails } from "@/lib/queries";
 import { cn, formatMediaTitle } from "@/lib/utils";
+import { Spinner } from "./ui/spinner";
 
 interface PickItem {
 	id: number;
@@ -39,10 +40,10 @@ interface PickItem {
 
 function getTodaySeedIndex(max: number): number {
 	if (max <= 0) return 0;
-	const todayStr = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+	const todayStr = new Date().toISOString().slice(0, 10);
 	let hash = 0;
 	for (let i = 0; i < todayStr.length; i++) {
-		hash = (hash << 5) - hash + todayStr.charCodeAt(i);
+		hash = (hash << 5) - hash + (todayStr.charCodeAt(i) || 0);
 		hash |= 0;
 	}
 	return Math.abs(hash) % max;
@@ -52,7 +53,7 @@ export function DailyPickButton() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [customIndex, setCustomIndex] = useState<number | null>(null);
 
-	const { hasFeature } = usePermissions();
+	const { hasFeature, loading: isPermissionsLoading } = usePermissions();
 	const isVideoPlaybackEnabled = hasFeature("video-player");
 
 	const { watchlist } = useWatchlist();
@@ -148,18 +149,22 @@ export function DailyPickButton() {
 		return map;
 	}, [trendingMedia, popularTv]);
 
-	// Build combined candidate list from Watchlist + Movies + TV Shows
-	// Filter out items that are already watched (done) or disliked (not-for-me)
+	// Prevent flashing: wait for trending/popularTv queries to settle if modal is opened
+	const isDataLoading =
+		isOpen &&
+		(isLoadingTrending || isLoadingTv) &&
+		(!trendingMedia || !popularTv);
+
+	// Build combined candidate list giving 50/50 equal presentation to Watchlist & Discovery items
 	const candidateItems: PickItem[] = useMemo(() => {
-		const result: PickItem[] = [];
-		const seen = new Set<string>();
+		const watchlistItems: PickItem[] = [];
+		const discoveryItems: PickItem[] = [];
+		const seenKeys = new Set<string>();
 
 		const checkFilter = (id: string | number, mediaType: "movie" | "tv") => {
 			const key = `${mediaType}:${id}`;
 			const state = mediaStateMap.get(key);
-			// Exclude watched (done)
 			if (state?.progressStatus === "done") return { exclude: true };
-			// Exclude disliked (not-for-me)
 			if (state?.reaction === "not-for-me") return { exclude: true };
 			return {
 				exclude: false,
@@ -168,11 +173,11 @@ export function DailyPickButton() {
 			};
 		};
 
-		// 1. Add Watchlist items first (if available)
+		// 1. Collect Watchlist items
 		if (watchlist && watchlist.length > 0) {
 			for (const item of watchlist) {
 				const key = `${item.type}:${item.external_id}`;
-				if (!seen.has(key)) {
+				if (!seenKeys.has(key)) {
 					const filterResult = checkFilter(item.external_id, item.type);
 					if (filterResult.exclude) continue;
 
@@ -183,12 +188,10 @@ export function DailyPickButton() {
 							? rawTitle
 							: tmdbInfo?.title;
 
-					if (!validTitle) continue;
-
-					seen.add(key);
-					result.push({
+					seenKeys.add(key);
+					watchlistItems.push({
 						id: Number(item.external_id),
-						title: validTitle,
+						title: validTitle || "Saved Item",
 						overview: item.overview || tmdbInfo?.overview,
 						vote_average: item.rating || tmdbInfo?.vote_average || 0,
 						poster_path: item.image || tmdbInfo?.poster_path,
@@ -204,7 +207,7 @@ export function DailyPickButton() {
 			}
 		}
 
-		// 2. Add Trending Media (Movies & TV Shows)
+		// 2. Collect Discovery Media (Trending & Popular TV)
 		if (trendingMedia) {
 			for (const item of trendingMedia) {
 				const title = item.title ?? item.name;
@@ -212,17 +215,17 @@ export function DailyPickButton() {
 					(item.media_type as "movie" | "tv") ?? (item.name ? "tv" : "movie");
 				const key = `${media_type}:${item.id}`;
 				if (
-					!seen.has(key) &&
+					!seenKeys.has(key) &&
 					title &&
 					title !== "Unknown Title" &&
 					item.overview &&
-					item.vote_average >= 6.5
+					item.vote_average >= 6.0
 				) {
 					const filterResult = checkFilter(item.id, media_type);
 					if (filterResult.exclude) continue;
 
-					seen.add(key);
-					result.push({
+					seenKeys.add(key);
+					discoveryItems.push({
 						id: item.id,
 						title,
 						overview: item.overview,
@@ -240,23 +243,22 @@ export function DailyPickButton() {
 			}
 		}
 
-		// 3. Add Popular TV Shows
 		if (popularTv) {
 			for (const item of popularTv) {
 				const title = item.name ?? item.title;
 				const key = `tv:${item.id}`;
 				if (
-					!seen.has(key) &&
+					!seenKeys.has(key) &&
 					title &&
 					title !== "Unknown Title" &&
 					item.overview &&
-					item.vote_average >= 6.5
+					item.vote_average >= 6.0
 				) {
 					const filterResult = checkFilter(item.id, "tv");
 					if (filterResult.exclude) continue;
 
-					seen.add(key);
-					result.push({
+					seenKeys.add(key);
+					discoveryItems.push({
 						id: item.id,
 						title,
 						overview: item.overview,
@@ -273,14 +275,29 @@ export function DailyPickButton() {
 			}
 		}
 
-		return result;
+		// Interleave 1 Watchlist item for every 1 Discovery item (50/50 balance)
+		const blended: PickItem[] = [];
+		let wIdx = 0;
+		let dIdx = 0;
+
+		while (wIdx < watchlistItems.length || dIdx < discoveryItems.length) {
+			if (wIdx < watchlistItems.length) {
+				blended.push(watchlistItems[wIdx++]);
+			}
+			if (dIdx < discoveryItems.length) {
+				blended.push(discoveryItems[dIdx++]);
+			}
+		}
+
+		return blended;
 	}, [watchlist, trendingMedia, popularTv, mediaStateMap, tmdbInfoMap]);
 
 	const itemsCount = candidateItems.length;
 
 	const selectedIndex = useMemo(() => {
-		if (customIndex !== null && itemsCount > 0) {
-			return customIndex % itemsCount;
+		if (itemsCount === 0) return 0;
+		if (customIndex !== null) {
+			return Math.abs(customIndex) % itemsCount;
 		}
 		return getTodaySeedIndex(itemsCount);
 	}, [customIndex, itemsCount]);
@@ -315,9 +332,6 @@ export function DailyPickButton() {
 		);
 		handleShuffle();
 	};
-
-	const isLoading =
-		isLoadingTrending && isLoadingTv && candidateItems.length === 0;
 
 	const { data: selectedDetails } = useQuery({
 		queryKey: [
@@ -362,14 +376,37 @@ export function DailyPickButton() {
 		? `/${mediaType}/${selectedItem?.id}/${formattedTitle}`
 		: `/${mediaType}/${selectedItem?.id}`;
 
+	// Render placeholder while permissions load to prevent homepage layout shift
+	if (isPermissionsLoading) {
+		return (
+			<Button
+				variant="secondary"
+				size="default"
+				disabled
+				className="pressable opacity-70"
+			>
+				<FilmIcon className="mr-1.5 size-4 text-primary animate-pulse" />
+				<span>What to Watch Today</span>
+			</Button>
+		);
+	}
+
 	if (!isVideoPlaybackEnabled) return null;
 
 	return (
-		<Dialog open={isOpen} onOpenChange={setIsOpen}>
+		<Dialog
+			open={isOpen}
+			onOpenChange={(open) => {
+				setIsOpen(open);
+				if (!open) {
+					setCustomIndex(null);
+				}
+			}}
+		>
 			<DialogTrigger asChild>
 				<Button
-					variant="outline"
-					size="sm"
+					variant="secondary"
+					size="default"
 					disabled={!isVideoPlaybackEnabled}
 					title={
 						!isVideoPlaybackEnabled
@@ -377,7 +414,7 @@ export function DailyPickButton() {
 							: "What to Watch Today"
 					}
 					className={cn(
-						"group relative overflow-hidden rounded-xl border-primary/40 bg-primary/15 px-4 py-2 text-xs font-bold text-primary transition-all duration-300 hover:border-primary/70 hover:bg-primary/25 hover:shadow-lg hover:shadow-primary/20 pressable",
+						"pressable",
 						!isVideoPlaybackEnabled && "opacity-50 cursor-not-allowed",
 					)}
 				>
@@ -389,7 +426,13 @@ export function DailyPickButton() {
 				className="max-w-[92vw] overflow-hidden rounded-2xl border-white/10 bg-background/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-lg"
 				closeClassName="top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white dark:bg-black/60 dark:hover:bg-black/80 dark:text-white border border-white/20 backdrop-blur-md z-30"
 			>
-				{selectedItem ? (
+				{isDataLoading ? (
+					<div className="flex h-72 flex-col items-center justify-center gap-3 p-6 text-center">
+						<div className="grid size-12 place-items-center rounded-xl">
+							<Spinner size="md" className="bg-foreground/70" />
+						</div>
+					</div>
+				) : selectedItem ? (
 					<div className="relative">
 						{/* Backdrop banner */}
 						<div className="relative aspect-video w-full overflow-hidden bg-muted">
@@ -552,7 +595,7 @@ export function DailyPickButton() {
 							</div>
 						</div>
 					</div>
-				) : !isLoading ? (
+				) : (
 					<div className="flex flex-col items-center justify-center p-8 text-center min-h-[250px]">
 						<FilmIcon className="size-10 text-muted-foreground/40 mb-3" />
 						<h4 className="text-base font-semibold text-foreground">
@@ -562,14 +605,6 @@ export function DailyPickButton() {
 							All available recommendations have already been watched or marked
 							as disliked.
 						</p>
-					</div>
-				) : null}
-
-				{isLoading && (
-					<div className="flex h-64 items-center justify-center">
-						<span className="text-xs text-muted-foreground">
-							Finding today's pick...
-						</span>
 					</div>
 				)}
 			</DialogContent>

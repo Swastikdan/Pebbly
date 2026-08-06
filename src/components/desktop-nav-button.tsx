@@ -47,18 +47,25 @@ const DesktopNavButton = ({
 DesktopNavButton.displayName = "DesktopNavButton";
 
 const DesktopNavButtons = () => {
-	const { hasFeature } = usePermissions();
+	const {
+		hasFeature,
+		loading: isPermissionsLoading,
+		isSignedIn,
+	} = usePermissions();
+	const hasAiRecommendations = hasFeature("ai-recommendations");
 
 	return (
 		<>
-			{hasFeature("ai-recommendations") && (
+			{isSignedIn && isPermissionsLoading ? (
+				<Skeleton className="hidden sm:flex size-9 rounded-xl" />
+			) : hasAiRecommendations ? (
 				<DesktopNavButton
 					href="/recommendations"
 					label="AI Recommendations"
 					className="hidden sm:flex"
 					icon={<SparklesFilledIcon className="size-5" />}
 				/>
-			)}
+			) : null}
 			<DesktopNavButton
 				href="/watchlist"
 				label="Watchlist"

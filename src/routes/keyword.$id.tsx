@@ -1,7 +1,6 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
-	notFound,
 	useNavigate,
 	useSearch,
 } from "@tanstack/react-router";
@@ -23,23 +22,18 @@ const keywordPageSearchSchema = object({
 export const Route = createFileRoute("/keyword/$id")({
 	validateSearch: keywordPageSearchSchema,
 	loader: async ({ params }) => {
-		const id = parseInt(params.id, 10);
-		if (Number.isNaN(id)) throw notFound();
-		try {
-			const keyword = await getKeywordDetails({ id });
-			return { keyword };
-		} catch {
-			throw notFound();
-		}
+		const { id } = params;
+		const keyword = await getKeywordDetails({ id: Number(id) });
+		return { keyword };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
 			{
-				title: `${loaderData?.keyword.name || "Keyword"} - Movies | Pebbly`,
+				title: `${loaderData?.keyword?.name ?? "Keyword"} Movies | Pebbly`,
 			},
 			{
 				name: "description",
-				content: `Explore movies tagged with ${loaderData?.keyword.name} on Pebbly.`,
+				content: `Browse movies tagged with ${loaderData?.keyword?.name ?? "keyword"} on Pebbly.`,
 			},
 		],
 	}),
@@ -64,7 +58,6 @@ function KeywordPage() {
 		queryKey: ["discover-movies-keyword", id, page],
 		queryFn: () => getDiscoverMovies({ with_keywords: Number(id), page }),
 		enabled: typeof window !== "undefined" && !!id,
-		placeholderData: keepPreviousData,
 	});
 
 	const handlePageChange = useCallback(
@@ -79,6 +72,9 @@ function KeywordPage() {
 			}
 
 			setIsPending(true);
+			if (typeof window !== "undefined") {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			}
 
 			navigate({
 				to: "/keyword/$id",
@@ -96,13 +92,10 @@ function KeywordPage() {
 		setIsPending(false);
 	}, [pageNumber, page]);
 
-	const isLoading =
-		isMediaListLoading ||
-		(isPending && !mediaListData) ||
-		(isMediaListFetching && !mediaListData);
+	const isLoading = isMediaListLoading || isMediaListFetching || isPending;
 	const results = mediaListData?.results ?? [];
 	const hasResults = !!results?.length;
-	const showPagination = hasResults && (mediaListData?.total_pages ?? 0) > 1;
+	const showPagination = (mediaListData?.total_pages ?? 0) > 1;
 	const totalPages = Math.min(
 		mediaListData?.total_pages ?? 0,
 		MAX_PAGINATION_LIMIT,
@@ -122,9 +115,10 @@ function KeywordPage() {
 				<section className="flex h-full flex-col">
 					<div className="flex min-h-96 w-full items-center justify-center">
 						{isLoading ? (
-							<section className="flex h-full flex-col">
+							<section className="flex h-full flex-col w-full">
 								<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
 									{Array.from({ length: 12 }).map((_, index) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: skeleton loader
 										<MediaCardSkeleton key={index} card_type="horizontal" />
 									))}
 								</div>
