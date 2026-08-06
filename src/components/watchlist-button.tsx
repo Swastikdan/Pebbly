@@ -99,7 +99,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 			onClick={handleWatchList}
 			data-active={isActive ? "true" : "false"}
 			className={cn(
-				"pressable relative shrink-0 transition-colors duration-150 rounded-lg shadow-md",
+				"pressable relative shrink-0 transition-colors duration-150 rounded-xs shadow-md",
 				isActive && !is_on_watchlist_page
 					? "bg-primary text-primary-foreground border border-primary hover:bg-primary/90 dark:hover:bg-primary/90 hover:text-primary-foreground dark:hover:text-primary-foreground"
 					: "bg-neutral-900 text-white border border-neutral-700 hover:bg-neutral-800 dark:hover:bg-neutral-800 hover:text-white dark:hover:text-white",

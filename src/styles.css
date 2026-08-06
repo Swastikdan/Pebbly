@@ -79,7 +79,7 @@
 
 :root {
 	--radius:
-		0.75rem;
+		0.625rem;
 	--background:
 		oklch(0.145 0 0);
 	--foreground:
@@ -462,7 +462,7 @@
 	/* ── Typography System Utilities ── */
 	.text-display {
 		font-family: var(--font-display);
-		font-size: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
+		font-size: clamp(2rem, 1.5rem + 2.5vw, 4.5rem);	
 		line-height: clamp(2.25rem, 1.8rem + 2.25vw, 3.625rem);
 		font-weight: 700;
 		letter-spacing: -0.02em;

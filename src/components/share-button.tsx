@@ -36,7 +36,12 @@ export const ShareButton = (props: {
 	}
 
 	return (
-		<Button variant="secondary" onClick={() => void handleShare()}>
+		<Button
+			variant="secondary"
+			size="lg"
+			onClick={() => void handleShare()}
+			className="border border-border"
+		>
 			<span className="flex w-full items-center gap-1">
 				<ShareBold size={24} />
 				<span

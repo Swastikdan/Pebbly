@@ -5,6 +5,8 @@ import {
 	Ban,
 	Check,
 	Loader2,
+	MoreVertical,
+	Search,
 	ShieldCheck,
 	UserCog,
 	UserX,
@@ -21,33 +23,43 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RbacRole } from "@/constants";
 import { api } from "../../../convex/_generated/api";
 
 type DynamicRbacRole = Exclude<RbacRole, "admin">;
 
-const ROLE_CONFIGS: { value: DynamicRbacRole; label: string }[] = [
-	{ value: "video-player", label: "Video Player" },
-	{ value: "ai-integrations", label: "AI Integrations" },
-];
+const ROLE_CONFIGS: { value: DynamicRbacRole; label: string; short: string }[] =
+	[
+		{ value: "video-player", label: "Video Player", short: "Video" },
+		{ value: "ai-integrations", label: "AI Integrations", short: "AI" },
+	];
+
+const ROLE_COLORS: Partial<Record<RbacRole, string>> = {
+	"video-player":
+		"bg-emerald-100/90 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-500/30",
+	"ai-integrations":
+		"bg-blue-100/90 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-500/30",
+};
 
 function RoleBadge({ roles }: { roles: RbacRole[] }) {
 	if (roles.length === 0) {
 		return <span className="text-sm text-muted-foreground">—</span>;
 	}
 
-	const colors: Partial<Record<RbacRole, string>> = {
-		"video-player":
-			"bg-emerald-100/90 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-		"ai-integrations":
-			"bg-blue-100/90 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-	};
-
 	return (
 		<div className="flex flex-wrap gap-1">
 			{roles.map((role) => (
-				<Badge key={role} className={colors[role]}>
+				<Badge key={role} className={ROLE_COLORS[role]}>
 					{role === "video-player"
 						? "Video"
 						: role === "ai-integrations"
@@ -66,24 +78,28 @@ interface UserTarget {
 	isBanned: boolean;
 }
 
+type FilterTab = "all" | "active" | "banned";
+
 export function AdminUserTable() {
 	const { user: currentUser } = useUser();
 	const users = useQuery(api.admin.listUsers, {});
 	const setUserRoles = useMutation(api.admin.setUserRoles);
 	const setUserBanned = useMutation(api.admin.setUserBanned);
 
-	// Confirmation Dialog state
 	const [selectedUser, setSelectedUser] = useState<UserTarget | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [roleError, setRoleError] = useState<string | null>(null);
+	const [search, setSearch] = useState("");
+	const [filterTab, setFilterTab] = useState<FilterTab>("all");
 
 	if (users === undefined) {
 		return (
-			<div className="space-y-3">
-				<Skeleton className="h-10 w-full rounded-lg" />
-				<Skeleton className="h-10 w-full rounded-lg" />
-				<Skeleton className="h-10 w-full rounded-lg" />
+			<div className="space-y-2">
+				{Array.from({ length: 5 }).map((_, i) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: skeleton loader
+					<Skeleton key={i} className="h-20 w-full rounded-xl" />
+				))}
 			</div>
 		);
 	}
@@ -109,6 +125,35 @@ export function AdminUserTable() {
 		}
 	};
 
+	const lowerSearch = search.toLowerCase().trim();
+	const filteredUsers = users.filter((user) => {
+		const matchesSearch =
+			!lowerSearch ||
+			user.name.toLowerCase().includes(lowerSearch) ||
+			user.email.toLowerCase().includes(lowerSearch);
+
+		const matchesFilter =
+			filterTab === "all" ||
+			(filterTab === "active" && !user.isBanned) ||
+			(filterTab === "banned" && user.isBanned);
+
+		return matchesSearch && matchesFilter;
+	});
+
+	const filterTabs: { id: FilterTab; label: string; count: number }[] = [
+		{ id: "all", label: "All", count: users.length },
+		{
+			id: "active",
+			label: "Active",
+			count: users.filter((u) => !u.isBanned).length,
+		},
+		{
+			id: "banned",
+			label: "Banned",
+			count: users.filter((u) => u.isBanned).length,
+		},
+	];
+
 	return (
 		<div className="space-y-4">
 			{roleError && (
@@ -128,127 +173,203 @@ export function AdminUserTable() {
 				</div>
 			)}
 
-			<div className="rounded-xl border">
+			{/* Search + Filter */}
+			<div className="flex flex-col sm:flex-row gap-3">
+				<div className="relative flex-1">
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+					<Input
+						placeholder="Search users..."
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						className="pl-9 h-9 rounded-xl text-sm"
+					/>
+				</div>
+				<div className="flex gap-1 rounded-xl border bg-muted/40 p-1 shrink-0">
+					{filterTabs.map((ft) => (
+						<button
+							key={ft.id}
+							type="button"
+							onClick={() => setFilterTab(ft.id)}
+							className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-200 ${
+								filterTab === ft.id
+									? "bg-background text-foreground shadow-sm"
+									: "text-muted-foreground hover:text-foreground"
+							}`}
+						>
+							{ft.label}
+							<span
+								className={`text-[10px] rounded-full px-1.5 py-0.5 ${
+									filterTab === ft.id
+										? "bg-foreground/10 text-foreground"
+										: "bg-muted text-muted-foreground"
+								}`}
+							>
+								{ft.count}
+							</span>
+						</button>
+					))}
+				</div>
+			</div>
+
+			{/* Desktop Table */}
+			<div className="hidden md:block rounded-xl border overflow-hidden">
 				<div className="overflow-x-auto">
 					<table className="w-full text-sm">
 						<thead>
-							<tr className="border-b bg-muted/50">
-								<th className="px-4 py-3 text-left font-semibold">User</th>
-								<th className="px-4 py-3 text-left font-semibold">Email</th>
-								<th className="px-4 py-3 text-left font-semibold">Status</th>
-								<th className="px-4 py-3 text-left font-semibold">Roles</th>
-								<th className="px-4 py-3 text-right font-semibold">Actions</th>
+							<tr className="border-b bg-muted/40">
+								<th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+									User
+								</th>
+								<th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+									Status
+								</th>
+								<th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+									Roles
+								</th>
+								<th className="px-4 py-3 text-right font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+									Actions
+								</th>
 							</tr>
 						</thead>
 						<tbody>
-							{users.map((user) => {
-								const currentRoles = (user.roles ?? []).filter(
-									(role) =>
-										role === "video-player" || role === "ai-integrations",
-								) as DynamicRbacRole[];
-
-								const isSelf = currentUser?.id === user.tokenIdentifier;
-								const isBanned = user.isBanned;
-
-								return (
-									<tr
-										key={user._id}
-										className={`border-b last:border-0 hover:bg-muted/30 ${
-											isBanned ? "bg-destructive/5 opacity-85" : ""
-										}`}
+							{filteredUsers.length === 0 ? (
+								<tr>
+									<td
+										colSpan={4}
+										className="py-10 text-center text-muted-foreground text-sm"
 									>
-										<td className="px-4 py-3">
-											<div className="flex items-center gap-3">
-												{user.image ? (
-													<img
-														src={user.image}
-														alt={user.name}
-														className="size-8 rounded-full object-cover"
-													/>
-												) : (
-													<div className="flex size-8 items-center justify-center rounded-full bg-secondary">
-														<UserCog className="size-4 text-muted-foreground" />
-													</div>
-												)}
-												<div className="flex items-center gap-2">
-													<span className="font-medium">{user.name}</span>
-													{user.isAdmin && (
-														<Badge
-															variant="outline"
-															className="border-amber-500/40 bg-amber-500/10 text-amber-500 text-[10px] px-1.5 py-0"
-														>
-															Admin
-														</Badge>
+										No users found
+									</td>
+								</tr>
+							) : (
+								filteredUsers.map((user) => {
+									const currentRoles = (user.roles ?? []).filter(
+										(role) =>
+											role === "video-player" || role === "ai-integrations",
+									) as DynamicRbacRole[];
+
+									const isSelf =
+										currentUser?.id === user.tokenIdentifier ||
+										`clerk|${currentUser?.id}` === user.tokenIdentifier;
+									const isBanned = user.isBanned;
+
+									return (
+										<tr
+											key={user._id}
+											className={`border-b last:border-0 transition-colors ${
+												isBanned ? "bg-destructive/5" : "hover:bg-muted/20"
+											}`}
+										>
+											<td className="px-4 py-3.5">
+												<div className="flex items-center gap-3">
+													{user.image ? (
+														<img
+															src={user.image}
+															alt={user.name}
+															className="size-8 rounded-full object-cover ring-1 ring-border"
+														/>
+													) : (
+														<div className="flex size-8 items-center justify-center rounded-full bg-secondary ring-1 ring-border">
+															<UserCog className="size-4 text-muted-foreground" />
+														</div>
 													)}
+													<div>
+														<div className="flex items-center gap-2">
+															<span className="font-medium">{user.name}</span>
+															{user.isAdmin && (
+																<Badge
+																	variant="outline"
+																	className="border-amber-500/40 bg-amber-500/10 text-amber-500 text-[10px] px-1.5 py-0"
+																>
+																	Admin
+																</Badge>
+															)}
+															{isSelf && (
+																<Badge
+																	variant="outline"
+																	className="border-border text-muted-foreground text-[10px] px-1.5 py-0"
+																>
+																	You
+																</Badge>
+															)}
+														</div>
+														<p className="text-xs text-muted-foreground">
+															{user.email}
+														</p>
+													</div>
 												</div>
-											</div>
-										</td>
-										<td className="px-4 py-3 text-muted-foreground">
-											{user.email}
-										</td>
-										<td className="px-4 py-3">
-											{isBanned ? (
-												<Badge
-													variant="destructive"
-													className="gap-1 bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/20 font-semibold"
-												>
-													<UserX className="size-3" />
-													Banned
-												</Badge>
-											) : (
-												<Badge
-													variant="outline"
-													className="gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold"
-												>
-													<ShieldCheck className="size-3" />
-													Active
-												</Badge>
-											)}
-										</td>
-										<td className="px-4 py-3">
-											<RoleBadge roles={currentRoles} />
-										</td>
-										<td className="px-4 py-3 text-right">
-											<div className="flex items-center justify-end gap-1.5">
-												{ROLE_CONFIGS.map((config) => {
-													const isActive = currentRoles.includes(config.value);
+											</td>
+											<td className="px-4 py-3.5">
+												{isBanned ? (
+													<Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/20 font-semibold">
+														<UserX className="size-3" />
+														Banned
+													</Badge>
+												) : (
+													<Badge className="gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold">
+														<ShieldCheck className="size-3" />
+														Active
+													</Badge>
+												)}
+											</td>
+											<td className="px-4 py-3.5">
+												<div className="flex items-center gap-1 flex-wrap">
+													{ROLE_CONFIGS.map((config) => {
+														const isActive = currentRoles.includes(
+															config.value,
+														);
 
-													const toggleRole = () => {
-														setRoleError(null);
-														const next = isActive
-															? currentRoles.filter((r) => r !== config.value)
-															: [...currentRoles, config.value];
-														setUserRoles({
-															tokenIdentifier: user.tokenIdentifier,
-															roles: next,
-														}).catch((err) => {
-															setRoleError(
-																err instanceof Error
-																	? err.message
-																	: String(err),
-															);
-														});
-													};
+														const toggleRole = () => {
+															setRoleError(null);
+															const next = isActive
+																? currentRoles.filter((r) => r !== config.value)
+																: [...currentRoles, config.value];
+															setUserRoles({
+																tokenIdentifier: user.tokenIdentifier,
+																roles: next,
+															}).catch((err) => {
+																setRoleError(
+																	err instanceof Error
+																		? err.message
+																		: String(err),
+																);
+															});
+														};
 
-													return (
-														<Button
-															key={config.value}
-															variant={isActive ? "secondary" : "outline"}
-															size="sm"
-															className="h-7 px-2.5 text-xs"
-															onClick={toggleRole}
-															disabled={isBanned}
-														>
-															{isActive && <Check className="mr-1 size-3" />}
-															{config.label}
-														</Button>
-													);
-												})}
-
+														return (
+															<button
+																key={config.value}
+																type="button"
+																onClick={toggleRole}
+																disabled={isBanned}
+																title={
+																	isActive
+																		? `Remove ${config.label}`
+																		: `Grant ${config.label}`
+																}
+																className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${
+																	isActive
+																		? (ROLE_COLORS[config.value] ??
+																			"bg-secondary text-foreground border-border")
+																		: "bg-transparent text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+																}`}
+															>
+																{isActive && <Check className="size-3" />}
+																{config.short}
+															</button>
+														);
+													})}
+												</div>
+											</td>
+											<td className="px-4 py-3.5 text-right">
 												<Button
 													variant={isBanned ? "outline" : "destructive"}
 													size="sm"
-													className="h-7 px-2.5 text-xs font-semibold"
+													className={`h-8 px-3 text-xs font-semibold ${
+														isBanned
+															? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+															: ""
+													}`}
 													onClick={() => {
 														setErrorMessage(null);
 														setSelectedUser({
@@ -271,25 +392,199 @@ export function AdminUserTable() {
 												>
 													{isBanned ? (
 														<>
-															<ShieldCheck className="mr-1 size-3" />
+															<ShieldCheck className="mr-1.5 size-3" />
 															Unban
 														</>
 													) : (
 														<>
-															<Ban className="mr-1 size-3" />
+															<Ban className="mr-1.5 size-3" />
 															Ban
 														</>
 													)}
 												</Button>
-											</div>
-										</td>
-									</tr>
-								);
-							})}
+											</td>
+										</tr>
+									);
+								})
+							)}
 						</tbody>
 					</table>
 				</div>
 			</div>
+
+			{/* Mobile Cards */}
+			<div className="md:hidden space-y-3">
+				{filteredUsers.length === 0 ? (
+					<div className="rounded-xl border py-10 text-center text-muted-foreground text-sm">
+						No users found
+					</div>
+				) : (
+					filteredUsers.map((user) => {
+						const currentRoles = (user.roles ?? []).filter(
+							(role) => role === "video-player" || role === "ai-integrations",
+						) as DynamicRbacRole[];
+
+						const isSelf =
+							currentUser?.id === user.tokenIdentifier ||
+							`clerk|${currentUser?.id}` === user.tokenIdentifier;
+						const isBanned = user.isBanned;
+
+						return (
+							<div
+								key={user._id}
+								className={`rounded-xl border p-4 transition-colors ${
+									isBanned
+										? "bg-destructive/5 border-destructive/20"
+										: "bg-card"
+								}`}
+							>
+								<div className="flex items-start justify-between gap-3">
+									{/* User info */}
+									<div className="flex items-center gap-3 min-w-0">
+										{user.image ? (
+											<img
+												src={user.image}
+												alt={user.name}
+												className="size-10 rounded-full object-cover shrink-0 ring-1 ring-border"
+											/>
+										) : (
+											<div className="flex size-10 items-center justify-center rounded-full bg-secondary shrink-0 ring-1 ring-border">
+												<UserCog className="size-5 text-muted-foreground" />
+											</div>
+										)}
+										<div className="min-w-0">
+											<div className="flex items-center gap-1.5 flex-wrap">
+												<span className="font-semibold text-sm truncate">
+													{user.name}
+												</span>
+												{user.isAdmin && (
+													<Badge
+														variant="outline"
+														className="border-amber-500/40 bg-amber-500/10 text-amber-500 text-[10px] px-1.5 py-0 shrink-0"
+													>
+														Admin
+													</Badge>
+												)}
+												{isSelf && (
+													<Badge
+														variant="outline"
+														className="border-border text-muted-foreground text-[10px] px-1.5 py-0 shrink-0"
+													>
+														You
+													</Badge>
+												)}
+											</div>
+											<p className="text-xs text-muted-foreground truncate">
+												{user.email}
+											</p>
+										</div>
+									</div>
+
+									{/* Actions dropdown on mobile */}
+									{!isSelf && !user.isAdmin && (
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-8 w-8 p-0 shrink-0"
+												>
+													<MoreVertical className="size-4" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end" className="w-44">
+												<DropdownMenuLabel className="text-xs text-muted-foreground">
+													Manage Roles
+												</DropdownMenuLabel>
+												{ROLE_CONFIGS.map((config) => {
+													const isActive = currentRoles.includes(config.value);
+													const toggleRole = () => {
+														setRoleError(null);
+														const next = isActive
+															? currentRoles.filter((r) => r !== config.value)
+															: [...currentRoles, config.value];
+														setUserRoles({
+															tokenIdentifier: user.tokenIdentifier,
+															roles: next,
+														}).catch((err) => {
+															setRoleError(
+																err instanceof Error
+																	? err.message
+																	: String(err),
+															);
+														});
+													};
+													return (
+														<DropdownMenuItem
+															key={config.value}
+															onClick={toggleRole}
+															disabled={isBanned}
+															className="text-sm gap-2"
+														>
+															<span
+																className={`size-2 rounded-full ${isActive ? "bg-emerald-500" : "bg-muted-foreground/30"}`}
+															/>
+															{config.label}
+															{isActive && <Check className="ml-auto size-3" />}
+														</DropdownMenuItem>
+													);
+												})}
+												<DropdownMenuSeparator />
+												<DropdownMenuItem
+													onClick={() => {
+														setErrorMessage(null);
+														setSelectedUser({
+															tokenIdentifier: user.tokenIdentifier,
+															name: user.name,
+															email: user.email,
+															isBanned: user.isBanned,
+														});
+													}}
+													className={`text-sm gap-2 ${isBanned ? "text-emerald-600 dark:text-emerald-400" : "text-destructive focus:text-destructive"}`}
+												>
+													{isBanned ? (
+														<>
+															<ShieldCheck className="size-3.5" />
+															Unban User
+														</>
+													) : (
+														<>
+															<Ban className="size-3.5" />
+															Ban User
+														</>
+													)}
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+										</DropdownMenu>
+									)}
+								</div>
+
+								{/* Status + Roles row */}
+								<div className="mt-3 flex items-center gap-2 flex-wrap">
+									{isBanned ? (
+										<Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30 font-semibold text-xs">
+											<UserX className="size-3" />
+											Banned
+										</Badge>
+									) : (
+										<Badge className="gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-semibold text-xs">
+											<ShieldCheck className="size-3" />
+											Active
+										</Badge>
+									)}
+									<RoleBadge roles={currentRoles} />
+								</div>
+							</div>
+						);
+					})
+				)}
+			</div>
+
+			{filteredUsers.length > 0 && (
+				<p className="text-xs text-muted-foreground text-center">
+					Showing {filteredUsers.length} of {users.length} users
+				</p>
+			)}
 
 			{/* Ban / Unban Confirmation Dialog */}
 			<Dialog
@@ -303,13 +598,13 @@ export function AdminUserTable() {
 			>
 				<DialogContent className="sm:max-w-[420px] p-6">
 					<DialogHeader className="space-y-2">
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-3">
 							{selectedUser?.isBanned ? (
-								<div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+								<div className="flex size-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 shrink-0">
 									<ShieldCheck className="size-5" />
 								</div>
 							) : (
-								<div className="flex size-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+								<div className="flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive shrink-0">
 									<Ban className="size-5" />
 								</div>
 							)}
@@ -347,9 +642,14 @@ export function AdminUserTable() {
 						</div>
 					)}
 
-					<DialogFooter className="mt-4 gap-2 sm:gap-0">
+					<DialogFooter className="mt-4 gap-2 sm:gap-2 flex-col sm:flex-row">
 						<DialogClose asChild>
-							<Button variant="outline" type="button" disabled={isSubmitting}>
+							<Button
+								variant="outline"
+								type="button"
+								disabled={isSubmitting}
+								className="flex-1"
+							>
 								Cancel
 							</Button>
 						</DialogClose>
@@ -358,6 +658,11 @@ export function AdminUserTable() {
 							type="button"
 							onClick={handleConfirmBanToggle}
 							disabled={isSubmitting}
+							className={`flex-1 ${
+								selectedUser?.isBanned
+									? "bg-emerald-600 hover:bg-emerald-700 text-white"
+									: ""
+							}`}
 						>
 							{isSubmitting ? (
 								<>
@@ -365,9 +670,15 @@ export function AdminUserTable() {
 									Processing...
 								</>
 							) : selectedUser?.isBanned ? (
-								"Confirm Unban"
+								<>
+									<ShieldCheck className="mr-1.5 size-4" />
+									Confirm Unban
+								</>
 							) : (
-								"Confirm Ban"
+								<>
+									<Ban className="mr-1.5 size-4" />
+									Confirm Ban
+								</>
 							)}
 						</Button>
 					</DialogFooter>

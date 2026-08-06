@@ -132,7 +132,7 @@ export const DEFAULT_PLACEHOLDER_IMAGE =
 export const SECTION_TAB_LIST_CLASS =
 	"h-8 rounded-lg bg-transparent ring-1 ring-border px-0.5 m-1";
 export const SECTION_TAB_TRIGGER_CLASS =
-	"h-7 px-3.5 text-xs font-semibold rounded-lg data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none";
+	"h-7 px-3.5 text-xs font-semibold rounded-[calc(var(--radius)-2px)] data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none";
 const ORIGINAL_IMAGE_PREFIX = "https://image.tmdb.org/t/p/original";
 const PREVIEW_IMAGE_PREFIX = "https://image.tmdb.org/t/p/w92";
 const HD_BACKDROP_IMAGE_PREFIX = "https://image.tmdb.org/t/p/w1280";

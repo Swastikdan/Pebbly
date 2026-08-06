@@ -64,7 +64,7 @@ DesktopNavMenuItem.displayName = "DesktopNavMenuItem";
 
 const Navbar = () => {
 	return (
-		<header className="sticky top-0 z-50 mx-auto hidden w-full md:flex flex-col items-center border-border/60 border-b bg-background/95 transition-[border-color,background-color] duration-300 supports-[backdrop-filter]:bg-background/90 md:bg-background/80 md:backdrop-blur-xl md:backdrop-saturate-150">
+		<header className="sticky top-0 z-50 mx-auto hidden w-full md:flex flex-col items-center border-border/60 border-b bg-background">
 			<nav
 				className="flex w-full max-w-screen-xl items-center justify-between px-4 py-2.5 md:px-5"
 				aria-label="Main Navigation"
