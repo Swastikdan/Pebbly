@@ -18,24 +18,6 @@ const FEATURE_ICONS: Record<RbacFeature, typeof Activity> = {
 	"ai-recommendations": Zap,
 };
 
-const FEATURE_COLORS: Record<
-	RbacFeature,
-	{ icon: string; bg: string; enabledBg: string; enabledText: string }
-> = {
-	"video-player": {
-		icon: "text-emerald-500",
-		bg: "bg-emerald-500/10",
-		enabledBg: "bg-emerald-500",
-		enabledText: "text-emerald-500",
-	},
-	"ai-recommendations": {
-		icon: "text-purple-500",
-		bg: "bg-purple-500/10",
-		enabledBg: "bg-purple-500",
-		enabledText: "text-purple-500",
-	},
-};
-
 function ToggleSwitch({
 	enabled,
 	onChange,
@@ -87,16 +69,13 @@ function FeatureRow({
 }) {
 	const role = FEATURE_ROLES[feature];
 	const enabled = featurePermissions(permissionsByRole, feature);
-	const colors = FEATURE_COLORS[feature];
 	const Icon = FEATURE_ICONS[feature];
 
 	return (
 		<div className="flex items-center justify-between gap-4 rounded-xl border bg-card p-4 transition-colors hover:bg-muted/20">
 			<div className="flex items-center gap-3 min-w-0">
-				<div
-					className={`flex size-9 items-center justify-center rounded-xl ${colors.bg} shrink-0`}
-				>
-					<Icon className={`size-4.5 ${colors.icon}`} />
+				<div className="flex size-9 items-center justify-center rounded-xl bg-muted shrink-0">
+					<Icon className="size-4.5 text-foreground" />
 				</div>
 				<div className="min-w-0">
 					<p className="font-semibold text-sm">{featureLabel}</p>
@@ -106,7 +85,7 @@ function FeatureRow({
 			<div className="flex items-center gap-3 shrink-0">
 				<span
 					className={`text-xs font-semibold min-w-[3.5rem] text-right ${
-						enabled ? colors.enabledText : "text-muted-foreground"
+						enabled ? "text-foreground" : "text-muted-foreground"
 					}`}
 				>
 					{enabled ? "Enabled" : "Disabled"}
@@ -154,13 +133,13 @@ export function AdminPermissionToggles() {
 				))}
 			</div>
 
-			<div className="rounded-xl border bg-amber-500/5 border-amber-500/20 p-4 flex gap-3">
-				<AlertTriangle className="size-4 text-amber-500 shrink-0 mt-0.5" />
-				<div className="space-y-1">
-					<p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+			<div className="rounded-xl border border-border/60 bg-muted/30 p-3 flex gap-2.5 items-start">
+				<AlertTriangle className="size-4 text-muted-foreground shrink-0 mt-0.5" />
+				<div className="space-y-0.5">
+					<p className="text-xs font-semibold text-foreground">
 						Global Feature Flags
 					</p>
-					<p className="text-xs text-muted-foreground">
+					<p className="text-[11px] leading-relaxed text-muted-foreground">
 						These toggles enable or disable features globally. If disabled, a
 						feature will not work for users even if they have the required role
 						— but it will still work for administrators.

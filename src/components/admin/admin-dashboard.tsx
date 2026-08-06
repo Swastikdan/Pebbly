@@ -39,15 +39,15 @@ export function AdminDashboard() {
 				</div>
 			</div>
 
-			<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+			<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6 pb-20 sm:pb-8 space-y-6">
 				{/* Tab Navigation */}
-				<div className="flex gap-1 rounded-xl border bg-muted/40 p-1 w-fit">
+				<div className="grid grid-cols-2 sm:flex gap-1 rounded-xl border bg-muted/40 p-1 w-full sm:w-fit">
 					{tabs.map((t) => (
 						<button
 							key={t.id}
 							type="button"
 							onClick={() => setTab(t.id)}
-							className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+							className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 ${
 								tab === t.id
 									? "bg-background text-foreground shadow-sm"
 									: "text-muted-foreground hover:text-foreground"
