@@ -123,12 +123,12 @@ function MediaSection({
 	mediaType?: "movie" | "tv";
 	priorityCount?: number;
 }) {
-	const { data, isFetching, error, cardType } = useMediaQuery(queryType, {
+	const { data, error, cardType } = useMediaQuery(queryType, {
 		cardType: cardTypeOverride,
 		mediaType,
 	});
 
-	if (isFetching || error) return <MediaSkeletonList cardType={cardType} />;
+	if (!data || error) return <MediaSkeletonList cardType={cardType} />;
 	return (
 		<MediaList
 			data={data ?? []}
