@@ -201,7 +201,7 @@ export const getRecommendationHistory = query({
       .query("ai_recommendations")
       .withIndex("by_user_created", (q) => q.eq("userId", user._id))
       .order("desc")
-      .collect();
+      .take(20);
   },
 });
 
@@ -536,36 +536,31 @@ export const getHomepageRecommendations = query({
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
       .first();
 
-    const userFeedback = await ctx.db
+    const notInterestedFeedback = await ctx.db
       .query("recommendation_feedback")
-      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
+      .withIndex("by_user_feedback", (q) =>
+        q.eq("userId", dbUser._id).eq("feedback", "not_interested"),
+      )
       .collect();
 
-    const excludedFeedbackIds = new Set(
-      userFeedback
-        .filter((f) => f.feedback === "not_interested" || f.feedback === "dislike")
-        .map((f) => f.tmdbId),
-    );
+    const dislikeFeedback = await ctx.db
+      .query("recommendation_feedback")
+      .withIndex("by_user_feedback", (q) =>
+        q.eq("userId", dbUser._id).eq("feedback", "dislike"),
+      )
+      .collect();
 
-    // NEW: Also filter out any items already in the user's watchlist!
-    const watchItems = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
-      .take(500);
-    const watchlistTmdbIds = new Set(watchItems.map((w) => w.tmdbId));
-    const watchlistTitles = new Set(
-      watchItems.map((w) => normalizeTitleKey(w.title)),
-    );
+    const excludedFeedbackIds = new Set([
+      ...notInterestedFeedback.map((f) => f.tmdbId),
+      ...dislikeFeedback.map((f) => f.tmdbId),
+    ]);
 
     let recs: Recommendation[] = [];
     if (entry && entry.recommendations) {
       try {
         const parsed = JSON.parse(entry.recommendations) as Recommendation[];
         recs = parsed.filter(
-          (r) =>
-            (r.tmdbId === null || !excludedFeedbackIds.has(r.tmdbId)) &&
-            (r.tmdbId === null || !watchlistTmdbIds.has(r.tmdbId)) &&
-            !watchlistTitles.has(normalizeTitleKey(r.title)),
+          (r) => r.tmdbId === null || !excludedFeedbackIds.has(r.tmdbId),
         );
       } catch (e) {
         console.error("Failed to parse homepage recommendations", e);
@@ -742,7 +737,7 @@ export const getRecommendationFeedback = query({
     return ctx.db
       .query("recommendation_feedback")
       .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
-      .collect();
+      .take(100);
   },
 });
 
@@ -754,7 +749,7 @@ export const getRecommendationFeedbackInternal = internalQuery({
     return ctx.db
       .query("recommendation_feedback")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+      .take(100);
   },
 });
 

@@ -1,14 +1,35 @@
 import type * as Types from "@/types";
+import { tmdbFetch } from "./tmdb";
+import * as Schemas from "./tmdb-schemas";
+import { validateId } from "./utils";
 
-import { tmdb } from "./tmdb";
-import { validateId, validateResponse } from "./utils";
+/*
+ * Safe fetch helper with dev logging for URL, endpoint, and schema validation issues
+ */
+async function safeFetch<Output>(
+	queryName: string,
+	url: string,
+	schema: unknown,
+): Promise<Output> {
+	try {
+		return (await tmdbFetch(url, { output: schema as any })) as Output;
+	} catch (error: any) {
+		if (import.meta.env.DEV) {
+			console.error(`[${queryName}] ❌ Error fetching TMDB URL: "${url}"`, {
+				queryName,
+				url,
+				fullUrl: `${import.meta.env.VITE_PUBLIC_TMDB_API_URL}${url}`,
+				errorMessage: error?.message,
+				validationIssues: error?.issues || error?.cause?.issues || null,
+				error,
+			});
+		}
+		throw error;
+	}
+}
 
 /*
  * TMDB Query Functions
- *
- * Each function wraps a TMDB API endpoint, validates the response,
- * and returns typed data. These are used by TanStack Query hooks
- * and route loaders for SSR pre-fetching.
  */
 
 export async function getMedia({
@@ -43,10 +64,14 @@ export async function getMedia({
 		default:
 			throw new Error(`Unknown media type: ${type}`);
 	}
-	const response = await tmdb<Types.MediaListResults>(url);
-	const result = validateResponse(response);
 
-	return result.results ?? [];
+	const data = await safeFetch<Types.MediaListResults>(
+		"getMedia",
+		url,
+		Schemas.MediaListResultsSchema,
+	);
+
+	return data.results ?? [];
 }
 
 export async function getMediaList({
@@ -84,24 +109,29 @@ export async function getMediaList({
 		default:
 			throw new Error(`Unknown media list type: ${type}`);
 	}
-	const response = await tmdb<Types.MediaListResults>(url);
 
-	return validateResponse(response);
+	return await safeFetch<Types.MediaListResults>(
+		"getMediaList",
+		url,
+		Schemas.MediaListResultsSchema,
+	);
 }
 
-/*
- * Search & Discovery
- */
-
-export async function getSearchResult(
-	query: string,
-	page: number,
-): Promise<Types.SearchResults> {
+export async function getSearchResult({
+	query,
+	page,
+}: {
+	query: string;
+	page?: number;
+}): Promise<Types.SearchResults> {
 	const pageNumber = page ?? 1;
-	const url = `/search/multi?language=en-US&query=${encodeURIComponent(query)}&page=${pageNumber}`;
-	const response = await tmdb<Types.SearchResults>(url);
+	const url = `/search/multi?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=${pageNumber}`;
 
-	return validateResponse(response);
+	return await safeFetch<Types.SearchResults>(
+		"getSearchResult",
+		url,
+		Schemas.SearchResultsSchema,
+	);
 }
 
 export async function getCollection({
@@ -110,26 +140,13 @@ export async function getCollection({
 	id: number;
 }): Promise<Types.Collection> {
 	validateId(id);
-	const url = `/collection/${id}?language=en-US&include_adult=true`;
-	const response = await tmdb<Types.Collection>(url);
+	const url = `/collection/${id}?language=en-US`;
 
-	return validateResponse(response);
-}
-
-/*
- * Movie Details
- */
-
-export async function getBasicMovieDetails({
-	id,
-}: {
-	id: number;
-}): Promise<Types.BasicMovie> {
-	validateId(id);
-	const url = `/movie/${id}?include_adult=true`;
-	const response = await tmdb<Types.BasicMovie>(url);
-
-	return validateResponse(response);
+	return await safeFetch<Types.Collection>(
+		"getCollection",
+		url,
+		Schemas.CollectionSchema,
+	);
 }
 
 export async function getMovieDetails({
@@ -138,40 +155,53 @@ export async function getMovieDetails({
 	id: number;
 }): Promise<Types.Movie> {
 	validateId(id);
-	const url = `/movie/${id}?include_adult=true&append_to_response=external_ids,images,credits,image,videos,collections,release_dates,keywords`;
-	const response = await tmdb<Types.Movie>(url);
+	const url = `/movie/${id}?language=en-US&append_to_response=images,videos,credits,release_dates,external_ids,keywords`;
 
-	return validateResponse(response);
+	return await safeFetch<Types.Movie>(
+		"getMovieDetails",
+		url,
+		Schemas.MovieSchema,
+	);
+}
+
+export async function getBasicMovieDetails({
+	id,
+}: {
+	id: number;
+}): Promise<Types.BasicMovie> {
+	validateId(id);
+	const url = `/movie/${id}?language=en-US`;
+
+	return await safeFetch<Types.BasicMovie>(
+		"getBasicMovieDetails",
+		url,
+		Schemas.BasicMovieSchema,
+	);
 }
 
 export async function getMovieRecommendations({
 	id,
+	page,
 }: {
 	id: number;
-}): Promise<Types.MovieRecommendationsResultsEntity[]> {
+	page?: number;
+}): Promise<Types.MovieRecommendations> {
 	validateId(id);
-	const url = `/movie/${id}/recommendations?language=en-US`;
-	const response = await tmdb<Types.MovieRecommendations>(url);
-	const result = validateResponse(response);
+	const pageNumber = page ?? 1;
+	const url = `/movie/${id}/recommendations?language=en-US&page=${pageNumber}`;
 
-	return result.results ?? [];
+	return await safeFetch<Types.MovieRecommendations>(
+		"getMovieRecommendations",
+		url,
+		Schemas.MovieRecommendationsSchema,
+	);
 }
 
-/*
- * TV Details
- */
-
-export async function getTvSeriesRecommendations({
-	id,
-}: {
-	id: number;
-}): Promise<Types.TvRecommendationsResultsEntity[]> {
+export async function getTvDetails({ id }: { id: number }): Promise<Types.Tv> {
 	validateId(id);
-	const url = `/tv/${id}/recommendations?language=en-US`;
-	const response = await tmdb<Types.TvRecommendations>(url);
-	const result = validateResponse(response);
+	const url = `/tv/${id}?language=en-US&append_to_response=images,videos,credits,external_ids,recommendations,keywords,content_ratings`;
 
-	return result.results ?? [];
+	return await safeFetch<Types.Tv>("getTvDetails", url, Schemas.TvSchema);
 }
 
 export async function getBasicTvDetails({
@@ -180,79 +210,143 @@ export async function getBasicTvDetails({
 	id: number;
 }): Promise<Types.BasicTv> {
 	validateId(id);
-	const url = `/tv/${id}?include_adult=true`;
-	const response = await tmdb<Types.BasicTv>(url);
+	const url = `/tv/${id}?language=en-US`;
 
-	return validateResponse(response);
+	return await safeFetch<Types.BasicTv>(
+		"getBasicTvDetails",
+		url,
+		Schemas.BasicTvSchema,
+	);
 }
 
-export async function getTvDetails({ id }: { id: number }): Promise<Types.Tv> {
-	validateId(id);
-	const url = `/tv/${id}?include_adult=true&append_to_response=external_ids,images,credits,image,videos,collections,release_dates,recommendations,keywords,content_ratings`;
-	const response = await tmdb<Types.Tv>(url);
-
-	return validateResponse(response);
-}
-
-export async function getTvSeasonDetails({
-	tvId,
-	seasonNumber,
+export async function getTvRecommendations({
+	id,
+	page,
 }: {
-	tvId: number;
-	seasonNumber: number;
-}): Promise<Types.TvSeasonDetail> {
-	validateId(tvId);
-	const url = `/tv/${tvId}/season/${seasonNumber}?language=en-US`;
-	const response = await tmdb<Types.TvSeasonDetail>(url);
+	id: number;
+	page?: number;
+}): Promise<Types.TvRecommendations> {
+	validateId(id);
+	const pageNumber = page ?? 1;
+	const url = `/tv/${id}/recommendations?language=en-US&page=${pageNumber}`;
 
-	return validateResponse(response);
+	return await safeFetch<Types.TvRecommendations>(
+		"getTvRecommendations",
+		url,
+		Schemas.TvRecommendationsSchema,
+	);
 }
 
-/*
- * Shared Media Queries (movie & tv)
- */
+export const getTvSeriesRecommendations = getTvRecommendations;
 
 export async function getCredits({
-	id,
 	type,
+	id,
 }: {
-	id: number;
 	type: "movie" | "tv";
+	id: number;
 }): Promise<Types.Credits> {
 	validateId(id);
-	const url = `/${type}/${id}/credits`;
-	const response = await tmdb<Types.Credits>(url);
+	const url = `/${type}/${id}/credits?language=en-US`;
 
-	return validateResponse(response);
-}
-
-export async function getImages({
-	id,
-	type,
-}: {
-	id: number;
-	type: "movie" | "tv";
-}): Promise<Types.MediaImages> {
-	validateId(id);
-	const url = `/${type}/${id}/images`;
-	const response = await tmdb<Types.MediaImages>(url);
-
-	return validateResponse(response);
+	return await safeFetch<Types.Credits>(
+		"getCredits",
+		url,
+		Schemas.CreditsSchema,
+	);
 }
 
 export async function getVideos({
-	id,
 	type,
+	id,
 }: {
-	id: number;
 	type: "movie" | "tv";
-}): Promise<Types.MediaVideosResultsEntity[]> {
+	id: number;
+}): Promise<Types.MediaVideos> {
 	validateId(id);
 	const url = `/${type}/${id}/videos?language=en-US`;
-	const response = await tmdb<Types.MediaVideos>(url);
-	const result = validateResponse(response);
 
-	return result.results ?? [];
+	return await safeFetch<Types.MediaVideos>(
+		"getVideos",
+		url,
+		Schemas.MediaVideosSchema,
+	);
+}
+
+export async function getImages({
+	type,
+	id,
+}: {
+	type: "movie" | "tv";
+	id: number;
+}): Promise<Types.MediaImages> {
+	validateId(id);
+	const url = `/${type}/${id}/images`;
+
+	return await safeFetch<Types.MediaImages>(
+		"getImages",
+		url,
+		Schemas.MediaImagesSchema,
+	);
+}
+
+export async function getDiscoverMovies({
+	with_keywords,
+	page,
+}: {
+	with_keywords: number;
+	page?: number;
+}): Promise<Types.SearchResults> {
+	const pageNumber = page ?? 1;
+	const url = `/discover/movie?with_keywords=${with_keywords}&language=en-US&page=${pageNumber}`;
+
+	return await safeFetch<Types.SearchResults>(
+		"getDiscoverMovies",
+		url,
+		Schemas.SearchResultsSchema,
+	);
+}
+
+export async function getTvSeasonDetails({
+	id,
+	tvId,
+	seasonNumber,
+}: {
+	id?: number;
+	tvId?: number;
+	seasonNumber: number;
+}): Promise<Types.TvSeasonDetail> {
+	const targetId = id ?? tvId ?? 0;
+	validateId(targetId);
+	const url = `/tv/${targetId}/season/${seasonNumber}?language=en-US`;
+
+	return await safeFetch<Types.TvSeasonDetail>(
+		"getTvSeasonDetails",
+		url,
+		Schemas.TvSeasonDetailSchema,
+	);
+}
+
+export async function getTvEpisodeDetails({
+	id,
+	tvId,
+	seasonNumber,
+	episodeNumber,
+}: {
+	id?: number;
+	tvId?: number;
+	seasonNumber: number;
+	episodeNumber: number;
+}): Promise<Types.TvEpisodeDetail> {
+	const targetId = id ?? tvId ?? 0;
+	validateId(targetId);
+	const url = `/tv/${targetId}/season/${seasonNumber}/episode/${episodeNumber}?language=en-US`;
+
+	return await safeFetch<Types.TvEpisodeDetail>(
+		"getTvEpisodeDetails",
+		url,
+		Schemas.TvEpisodeDetailSchema,
+	);
 }
 
 export async function getMediaRecommendations({
@@ -260,20 +354,20 @@ export async function getMediaRecommendations({
 	id,
 	page,
 }: {
-	type: string;
+	type: "movie" | "tv";
 	id: number;
-	page: number;
+	page?: number;
 }): Promise<Types.MediaRecommendations> {
 	validateId(id);
-	const url = `/${type}/${id}/recommendations?language=en-US&page=${page}`;
-	const response = await tmdb<Types.MediaRecommendations>(url);
+	const pageNumber = page ?? 1;
+	const url = `/${type}/${id}/recommendations?language=en-US&page=${pageNumber}`;
 
-	return validateResponse(response);
+	return await safeFetch<Types.MediaRecommendations>(
+		"getMediaRecommendations",
+		url,
+		Schemas.MediaRecommendationsSchema,
+	);
 }
-
-/*
- * Person & People
- */
 
 export async function getPersonDetails({
 	id,
@@ -281,15 +375,14 @@ export async function getPersonDetails({
 	id: number;
 }): Promise<Types.PersonDetails> {
 	validateId(id);
-	const url = `/person/${id}?language=en-US&append_to_response=movie_credits,tv_credits,images,external_ids`;
-	const response = await tmdb<Types.PersonDetails>(url);
+	const url = `/person/${id}?language=en-US&append_to_response=combined_credits,movie_credits,tv_credits,images,external_ids`;
 
-	return validateResponse(response);
+	return await safeFetch<Types.PersonDetails>(
+		"getPersonDetails",
+		url,
+		Schemas.PersonDetailsSchema,
+	);
 }
-
-/*
- * Keyword & Discovery
- */
 
 export async function getKeywordDetails({
 	id,
@@ -298,35 +391,10 @@ export async function getKeywordDetails({
 }): Promise<{ id: number; name: string }> {
 	validateId(id);
 	const url = `/keyword/${id}`;
-	const response = await tmdb<{ id: number; name: string }>(url);
 
-	return validateResponse(response);
-}
-
-export async function getDiscoverMovies({
-	with_keywords,
-	page,
-}: {
-	with_keywords: string;
-	page: number;
-}): Promise<Types.MediaListResults> {
-	const pageNumber = page ?? 1;
-	const url = `/discover/movie?include_adult=true&include_video=false&language=en-US&page=${pageNumber}&sort_by=popularity.desc&with_keywords=${with_keywords}`;
-	const response = await tmdb<Types.MediaListResults>(url);
-
-	return validateResponse(response);
-}
-
-export async function getDiscoverMoviesByGenre({
-	with_genres,
-	page,
-}: {
-	with_genres: string;
-	page: number;
-}): Promise<Types.MediaListResults> {
-	const pageNumber = page ?? 1;
-	const url = `/discover/movie?include_adult=true&include_video=false&language=en-US&page=${pageNumber}&sort_by=popularity.desc&with_genres=${with_genres}`;
-	const response = await tmdb<Types.MediaListResults>(url);
-
-	return validateResponse(response);
+	return await safeFetch<{ id: number; name: string }>(
+		"getKeywordDetails",
+		url,
+		Schemas.KeywordResultSchema,
+	);
 }

@@ -19,11 +19,6 @@ export function normalizeProgressStatus(
 		: null;
 }
 
-interface ApiResponse<T> {
-	data?: T;
-	error?: string;
-}
-
 type ValidationResult<T> =
 	| {
 			success: true;
@@ -211,18 +206,6 @@ export function parseAndValidateId(
 	}
 
 	return { success: true, data: id };
-}
-
-export function validateResponse<T>(response: ApiResponse<T>): T {
-	if (response.error) {
-		throw new Error(`${ERROR_MESSAGES.API_ERROR}: ${response.error}`);
-	}
-
-	if (response.data === undefined || response.data === null) {
-		throw new Error(ERROR_MESSAGES.NO_DATA_FOUND);
-	}
-
-	return response.data;
 }
 
 export const formatMediaTitle = {

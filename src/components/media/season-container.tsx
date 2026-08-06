@@ -11,7 +11,7 @@ interface Season {
 	id: number;
 	name: string;
 	season_number: number;
-	poster_path: string;
+	poster_path: string | null;
 	vote_average: number;
 	air_date: string | null;
 	episode_count: number;

@@ -110,7 +110,7 @@ async function computeRoleFeatures(
 
   const allPermissions = await ctx.db
     .query("role_permissions")
-    .collect();
+    .take(100);
 
   const permissionMap = new Map<string, boolean>();
   for (const p of allPermissions) {
@@ -184,7 +184,7 @@ export async function hasFeature(
 }
 
 export async function syncRolePermissions(ctx: MutationCtx, force = false) {
-	const existingPermissions = await ctx.db.query("role_permissions").collect();
+	const existingPermissions = await ctx.db.query("role_permissions").take(100);
 
 	if (!force && existingPermissions.length > 0) {
 		return;
@@ -276,7 +276,7 @@ export const getRolePermissions = query({
       throw new Error("Forbidden: admin access required");
     }
 
-    const perms = await ctx.db.query("role_permissions").collect();
+    const perms = await ctx.db.query("role_permissions").take(100);
 
 		const result: Record<string, Record<string, boolean>> = {};
 		for (const role of DYNAMIC_ROLES) {

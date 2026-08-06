@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GoBack } from "@/components/go-back";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/disclaimer")({
@@ -17,8 +18,11 @@ export const Route = createFileRoute("/disclaimer")({
 
 function DisclaimerPage() {
 	return (
-		<div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8 animate-fade-in">
-			<div className="mx-auto max-w-4xl rounded-xl p-8">
+		<div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8 animate-fade-in">
+			<div className="mx-auto max-w-4xl rounded-xl p-4 sm:p-8">
+				<div className="md:hidden mb-6">
+					<GoBack title="Back" hideLabelOnMobile />
+				</div>
 				<div className="space-y-12 stagger-grid">
 					<div className="text-center">
 						<h1 className="text-3xl font-bold tracking-tight sm:text-4xl">

@@ -6,14 +6,27 @@ import {
 	UserButton,
 } from "@clerk/react";
 import { Link, useLocation } from "@tanstack/react-router";
+import {
+	Bookmark,
+	Calendar,
+	Clock,
+	Flame,
+	Github,
+	Grid,
+	Info,
+	PlayCircle,
+	Radio,
+	Search,
+	Shield,
+	Sparkles,
+	Star,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
 	BookMarkFilledIcon,
 	BookMarkIcon,
 	HomeFilledIcon,
 	HomeIcon,
-	MenuIcon,
 	SearchFilledIcon,
 	SearchIcon,
 	UserIcon,
@@ -22,56 +35,13 @@ import {
 	Sheet,
 	SheetClose,
 	SheetContent,
+	SheetDescription,
+	SheetHeader,
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { NAV_ITEMS } from "@/constants";
-
-const MobileNavSubmenuItems = ({
-	items,
-}: {
-	items: { name: string; url: string; slug: string }[];
-}) => {
-	return (
-		<>
-			{items.map((subitem) => (
-				<SheetClose asChild key={subitem.slug}>
-					<Button
-						variant="outline"
-						className="h-9 w-full justify-start text-sm"
-						asChild
-					>
-						<Link to={subitem.url} className="w-full pl-3 cursor-pointer">
-							{subitem.name}
-						</Link>
-					</Button>
-				</SheetClose>
-			))}
-		</>
-	);
-};
-
-const MobileNavMenuItem = ({
-	item,
-}: {
-	item: {
-		name: string;
-		slug: string;
-		submenu: { name: string; url: string; slug: string }[];
-	};
-}) => {
-	return (
-		<div className="flex flex-col items-start justify-start gap-1.5">
-			<Button
-				variant="secondary"
-				className="w-full justify-start font-bold text-sm h-9"
-			>
-				{item.name}
-			</Button>
-			<MobileNavSubmenuItems items={item.submenu} />
-		</div>
-	);
-};
+import { SITE_CONFIG } from "@/constants";
+import { usePermissions } from "@/hooks/use-permissions";
 
 interface TabItem {
 	href: string;
@@ -80,6 +50,121 @@ interface TabItem {
 	activeIcon: React.ReactNode;
 	matchExact?: boolean;
 }
+
+interface NavLinkItem {
+	name: string;
+	url: string;
+	subtext: string;
+	icon: React.ReactNode;
+	isExternal?: boolean;
+}
+
+const MAIN_TABS: TabItem[] = [
+	{
+		href: "/",
+		label: "Home",
+		icon: <HomeIcon className="size-[24px]" />,
+		activeIcon: <HomeFilledIcon className="size-[24px]" />,
+		matchExact: true,
+	},
+	{
+		href: "/search",
+		label: "Search",
+		icon: <SearchIcon className="size-[24px]" />,
+		activeIcon: <SearchFilledIcon className="size-[24px]" />,
+	},
+	{
+		href: "/watchlist",
+		label: "Watchlist",
+		icon: <BookMarkIcon className="size-[24px]" />,
+		activeIcon: <BookMarkFilledIcon className="size-[24px]" />,
+	},
+];
+
+const MOVIE_LINKS: NavLinkItem[] = [
+	{
+		name: "Popular Movies",
+		url: "/list/movies/popular",
+		subtext: "Trending now",
+		icon: <Flame className="size-4 text-foreground" />,
+	},
+	{
+		name: "Now Playing",
+		url: "/list/movies/now-playing",
+		subtext: "In theaters",
+		icon: <PlayCircle className="size-4 text-foreground" />,
+	},
+	{
+		name: "Top Rated",
+		url: "/list/movies/top-rated",
+		subtext: "Highest rated",
+		icon: <Star className="size-4 text-foreground" />,
+	},
+	{
+		name: "Upcoming",
+		url: "/list/movies/upcoming",
+		subtext: "Releasing soon",
+		icon: <Calendar className="size-4 text-foreground" />,
+	},
+];
+
+const TV_LINKS: NavLinkItem[] = [
+	{
+		name: "Popular TV",
+		url: "/list/tv-shows/popular",
+		subtext: "Trending series",
+		icon: <Flame className="size-4 text-foreground" />,
+	},
+	{
+		name: "On The Air",
+		url: "/list/tv-shows/on-the-air",
+		subtext: "Currently airing",
+		icon: <Radio className="size-4 text-foreground" />,
+	},
+	{
+		name: "Top Rated",
+		url: "/list/tv-shows/top-rated",
+		subtext: "Highest rated",
+		icon: <Star className="size-4 text-foreground" />,
+	},
+	{
+		name: "Airing Today",
+		url: "/list/tv-shows/airing-today",
+		subtext: "New episodes",
+		icon: <Clock className="size-4 text-foreground" />,
+	},
+];
+
+const QUICK_LINKS: NavLinkItem[] = [
+	{
+		name: "Watchlist",
+		url: "/watchlist",
+		subtext: "Saved titles",
+		icon: <Bookmark className="size-4 text-foreground" />,
+		isExternal: false,
+	},
+	{
+		name: "Search Catalog",
+		url: "/search",
+		subtext: "Find movies & TV",
+		icon: <Search className="size-4 text-foreground" />,
+		isExternal: false,
+	},
+	{
+		name: "Disclaimer",
+		url: "/disclaimer",
+		subtext: "Terms & info",
+		icon: <Info className="size-4 text-foreground" />,
+		isExternal: false,
+	},
+	{
+		name: "GitHub Code",
+		url: SITE_CONFIG.Footerlinks.github,
+		subtext: "View repository",
+		icon: <Github className="size-4 text-foreground" />,
+		isExternal: true,
+	},
+];
 
 function useScrollDirection() {
 	const [hidden, setHidden] = useState(false);
@@ -90,13 +175,10 @@ function useScrollDirection() {
 		const currentScrollY = window.scrollY;
 		const delta = currentScrollY - lastScrollY.current;
 
-		// Only react to meaningful scroll (> 8px) to avoid jitter
 		if (Math.abs(delta) > 8) {
-			// Scrolling down → hide, scrolling up → show
 			setHidden(delta > 0 && currentScrollY > 60);
 		}
 
-		// Always show at the very top
 		if (currentScrollY <= 10) {
 			setHidden(false);
 		}
@@ -120,31 +202,106 @@ function useScrollDirection() {
 	return hidden;
 }
 
+const NavCard = ({
+	item,
+	isActive,
+	badge,
+	search,
+}: {
+	item: NavLinkItem;
+	isActive?: boolean;
+	badge?: string;
+	search?: Record<string, unknown>;
+}) => {
+	const cardContent = (
+		<>
+			<div className="flex items-center gap-3 min-w-0 flex-1">
+				<div className="rounded-xl bg-muted/60 p-2.5 text-foreground shrink-0">
+					{item.icon}
+				</div>
+				<div className="min-w-0 flex-1">
+					<div className="font-bold text-sm text-foreground truncate">
+						{item.name}
+					</div>
+					<div className="text-[11px] text-muted-foreground truncate">
+						{item.subtext}
+					</div>
+				</div>
+			</div>
+			{badge && (
+				<span className="rounded-full bg-muted px-2.5 py-0.5 font-semibold text-[10px] text-muted-foreground border border-border/50 shrink-0 ml-2">
+					{badge}
+				</span>
+			)}
+		</>
+	);
+
+	const baseClasses =
+		"flex items-center justify-between rounded-2xl border border-white/10 bg-secondary/30 p-3 transition-[color,background-color,border-color,transform] active:scale-[0.98]";
+	const activeClasses = isActive
+		? "ring-2 ring-primary/60 border-primary/50 bg-secondary/80"
+		: "";
+
+	if (item.isExternal) {
+		return (
+			<a
+				href={item.url}
+				target="_blank"
+				rel="noopener noreferrer"
+				className={`${baseClasses} ${activeClasses}`}
+			>
+				{cardContent}
+			</a>
+		);
+	}
+
+	return (
+		<SheetClose asChild>
+			<Link
+				to={item.url}
+				search={search}
+				className={`${baseClasses} ${activeClasses}`}
+			>
+				{cardContent}
+			</Link>
+		</SheetClose>
+	);
+};
+
+const NavSection = ({
+	title,
+	items,
+	currentPath,
+	columns = 2,
+}: {
+	title: string;
+	items: NavLinkItem[];
+	currentPath: string;
+	columns?: 1 | 2;
+}) => (
+	<div className="space-y-2">
+		<div className="text-xs font-semibold text-muted-foreground tracking-wider uppercase px-1">
+			{title}
+		</div>
+		<div
+			className={`grid ${columns === 1 ? "grid-cols-1" : "grid-cols-2"} gap-2`}
+		>
+			{items.map((item) => (
+				<NavCard
+					key={item.name}
+					item={item}
+					isActive={!item.isExternal && currentPath === item.url}
+				/>
+			))}
+		</div>
+	</div>
+);
+
 const MobileBottomNav = () => {
 	const location = useLocation();
 	const isHidden = useScrollDirection();
-
-	const tabs: TabItem[] = [
-		{
-			href: "/",
-			label: "Home",
-			icon: <HomeIcon className="size-[22px]" />,
-			activeIcon: <HomeFilledIcon className="size-[22px]" />,
-			matchExact: true,
-		},
-		{
-			href: "/search",
-			label: "Search",
-			icon: <SearchIcon className="size-[22px]" />,
-			activeIcon: <SearchFilledIcon className="size-[22px]" />,
-		},
-		{
-			href: "/watchlist",
-			label: "Watchlist",
-			icon: <BookMarkIcon className="size-[22px]" />,
-			activeIcon: <BookMarkFilledIcon className="size-[22px]" />,
-		},
-	];
+	const { isAdmin, hasFeature } = usePermissions();
+	const hasAiRecommendations = hasFeature("ai-recommendations");
 
 	const isTabActive = (tab: TabItem) => {
 		if (tab.matchExact) {
@@ -158,7 +315,8 @@ const MobileBottomNav = () => {
 			className={`mobile-bottom-nav md:hidden ${isHidden ? "mobile-bottom-nav-hidden" : ""}`}
 			aria-label="Mobile Navigation"
 		>
-			{tabs.map((tab) => {
+			{/* 1. Home, 2. Search, 3. Watchlist */}
+			{MAIN_TABS.map((tab) => {
 				const active = isTabActive(tab);
 				return (
 					<Link
@@ -177,67 +335,141 @@ const MobileBottomNav = () => {
 				);
 			})}
 
-			{/* Menu tab opens the Sheet drawer */}
+			{/* 4. Account Tab - Expanded tap target */}
+			<div className="mobile-bottom-nav-tab min-h-[44px]" data-active="false">
+				<ClerkLoading>
+					<div className="flex flex-col items-center justify-center w-full h-full">
+						<span className="mobile-bottom-nav-tab-icon">
+							<UserIcon className="size-[24px]" />
+						</span>
+						<span className="mobile-bottom-nav-tab-label">Account</span>
+					</div>
+				</ClerkLoading>
+				<ClerkLoaded>
+					<Show when="signed-out">
+						<SignInButton mode="modal">
+							<button
+								type="button"
+								aria-label="Sign In"
+								className="flex flex-col items-center justify-center w-full h-full cursor-pointer bg-transparent border-none p-0"
+							>
+								<span className="mobile-bottom-nav-tab-icon">
+									<UserIcon className="size-[24px]" />
+								</span>
+								<span className="mobile-bottom-nav-tab-label">Account</span>
+							</button>
+						</SignInButton>
+					</Show>
+					<Show when="signed-in">
+						<div className="flex flex-col items-center justify-center w-full h-full">
+							<span className="mobile-bottom-nav-tab-icon mobile-bottom-nav-account">
+								<UserButton
+									appearance={{
+										elements: {
+											userButtonAvatarBox: "!size-[28px] !rounded-full",
+											userButtonTrigger: "!h-[28px] !w-[28px] !rounded-full",
+										},
+									}}
+								/>
+							</span>
+							<span className="mobile-bottom-nav-tab-label">Account</span>
+						</div>
+					</Show>
+				</ClerkLoaded>
+			</div>
+
+			{/* 5. More Sheet Trigger */}
 			<Sheet>
 				<SheetTrigger asChild>
 					<button
 						type="button"
 						className="mobile-bottom-nav-tab"
 						data-active="false"
-						aria-label="Menu"
+						aria-label="More Options"
 					>
 						<span className="mobile-bottom-nav-tab-icon">
-							<MenuIcon className="size-[22px]" />
+							<Grid className="size-[22px]" />
 						</span>
-						<span className="mobile-bottom-nav-tab-label">Menu</span>
+						<span className="mobile-bottom-nav-tab-label">More</span>
 					</button>
 				</SheetTrigger>
+
 				<SheetContent
-					className="border-none px-3 duration-0"
-					aria-label="Mobile Navigation Menu"
+					side="bottom"
+					className="bg-background/95 backdrop-blur-2xl p-0 outline-none flex flex-col z-50"
 				>
-					<SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
-					<div className="scrollbar-small flex h-full flex-col gap-4 overflow-y-auto py-12 pt-20">
-						{NAV_ITEMS.map((item) => (
-							<MobileNavMenuItem key={item.slug} item={item} />
-						))}
+					{/* Top handle pill */}
+					<div className="pt-3 pb-1 flex justify-center shrink-0">
+						<div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+					</div>
+
+					<SheetHeader className="px-5 pt-1 pb-3 text-left border-b border-border/40 shrink-0">
+						<SheetTitle className="text-lg font-bold font-heading flex items-center gap-2">
+							<Grid className="size-5 text-primary" />
+							Explore & Navigation
+						</SheetTitle>
+						<SheetDescription className="text-xs text-muted-foreground">
+							Browse movies, TV shows, AI tools, and site pages
+						</SheetDescription>
+					</SheetHeader>
+
+					<div className="scrollbar-none overflow-y-auto px-4 py-4 space-y-5 flex-1 min-h-0 pb-10">
+						{/* Featured & Admin */}
+						{(isAdmin || hasAiRecommendations) && (
+							<div className="space-y-2">
+								<div className="text-xs font-semibold text-muted-foreground tracking-wider uppercase px-1">
+									Featured
+								</div>
+								<div className="grid grid-cols-1 gap-2">
+									{isAdmin && (
+										<NavCard
+											item={{
+												name: "Admin Dashboard",
+												url: "/admin",
+												subtext: "Manage users, permissions & system",
+												icon: <Shield className="size-5" />,
+											}}
+											isActive={location.pathname === "/admin"}
+											badge="ADMIN"
+										/>
+									)}
+									{hasAiRecommendations && (
+										<NavCard
+											item={{
+												name: "AI Recommendations",
+												url: "/recommendations",
+												subtext: "Personalized picks powered by AI",
+												icon: <Sparkles className="size-5" />,
+											}}
+											isActive={location.pathname === "/recommendations"}
+											badge="AI"
+											search={{ activeId: undefined }}
+										/>
+									)}
+								</div>
+							</div>
+						)}
+
+						<NavSection
+							title="Movies"
+							items={MOVIE_LINKS}
+							currentPath={location.pathname}
+						/>
+
+						<NavSection
+							title="TV Shows"
+							items={TV_LINKS}
+							currentPath={location.pathname}
+						/>
+
+						<NavSection
+							title="Links"
+							items={QUICK_LINKS}
+							currentPath={location.pathname}
+						/>
 					</div>
 				</SheetContent>
 			</Sheet>
-
-			{/* User account tab — always shows UserIcon as base, Clerk layers on top */}
-			<div className="mobile-bottom-nav-tab" data-active="false">
-				<div className="mobile-bottom-nav-tab-icon mobile-bottom-nav-account">
-					{/* Base fallback icon — always visible until Clerk renders */}
-					<ClerkLoading>
-						<UserIcon className="size-[22px]" />
-					</ClerkLoading>
-					<ClerkLoaded>
-						<Show when="signed-out">
-							<SignInButton mode="modal">
-								<button
-									type="button"
-									aria-label="Sign In"
-									className="flex items-center justify-center"
-								>
-									<UserIcon className="size-[22px]" />
-								</button>
-							</SignInButton>
-						</Show>
-						<Show when="signed-in">
-							<UserButton
-								appearance={{
-									elements: {
-										userButtonAvatarBox: "!size-[26px] !rounded-full",
-										userButtonTrigger: "!h-[26px] !w-[26px] !rounded-full",
-									},
-								}}
-							/>
-						</Show>
-					</ClerkLoaded>
-				</div>
-				<span className="mobile-bottom-nav-tab-label">Account</span>
-			</div>
 		</nav>
 	);
 };
