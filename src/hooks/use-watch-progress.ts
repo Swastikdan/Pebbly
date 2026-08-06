@@ -484,7 +484,7 @@ export function useContinueWatching() {
 	const { isSignedIn } = useUser();
 	const convexData = useQuery(
 		api.watchlist.getWatchlist,
-		isSignedIn ? {} : QUERY_SKIP,
+		isSignedIn ? { statusFilter: "watching", limit: 50 } : QUERY_SKIP,
 	);
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 

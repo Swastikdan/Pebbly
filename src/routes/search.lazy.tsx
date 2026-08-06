@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DefaultEmptyState } from "@/components/default-empty-state";
+import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Button } from "@/components/ui/button";
 import { XCircleIcon } from "@/components/ui/icons";
@@ -48,7 +49,7 @@ function SearchPage() {
 
 	const { data, error, isFetching, isLoading } = useQuery({
 		queryKey: ["search", query, page],
-		queryFn: () => getSearchResult(query, page),
+		queryFn: () => getSearchResult({ query, page }),
 		enabled: typeof window !== "undefined" && !!query,
 		staleTime: 1000 * 60 * 60 * 24,
 		gcTime: 1000 * 60 * 60 * 24,
@@ -333,6 +334,9 @@ function SearchPage() {
 	return (
 		<section className="flex w-full justify-center">
 			<div className="mx-auto w-full max-w-screen-xl p-5">
+				<div className="md:hidden mb-4 flex items-center justify-between gap-3">
+					<GoBack title="Back" hideLabelOnMobile />
+				</div>
 				{!query && (
 					<div className="mb-6 flex flex-col gap-1">
 						<h1 className="text-2xl font-bold tracking-tight md:text-3xl animate-fade-in">

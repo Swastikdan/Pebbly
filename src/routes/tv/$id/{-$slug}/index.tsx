@@ -5,6 +5,7 @@ import {
 	DefaultErrorComponent,
 	DefaultNotFoundComponent,
 } from "@/components/default-not-found";
+import { GoBack } from "@/components/go-back";
 import { CastSection } from "@/components/media/cast-section";
 import { GenreContainer } from "@/components/media/genre-container";
 import { InlineEpisodeBrowser } from "@/components/media/inline-episode-browser";
@@ -140,6 +141,9 @@ function TvHomePage() {
 
 	return (
 		<section className="mx-auto block max-w-screen-xl items-center px-4">
+			<div className="md:hidden pt-4 pb-2">
+				<GoBack title="Back" hideLabelOnMobile />
+			</div>
 			<MediaTitleContainer
 				runtime={null}
 				description={`${overview?.slice(0, 100)}...`}

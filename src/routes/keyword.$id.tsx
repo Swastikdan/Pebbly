@@ -62,7 +62,7 @@ function KeywordPage() {
 		isLoading: isMediaListLoading,
 	} = useQuery({
 		queryKey: ["discover-movies-keyword", id, page],
-		queryFn: () => getDiscoverMovies({ with_keywords: id, page }),
+		queryFn: () => getDiscoverMovies({ with_keywords: Number(id), page }),
 		enabled: typeof window !== "undefined" && !!id,
 		placeholderData: keepPreviousData,
 	});
@@ -150,7 +150,7 @@ function KeywordPage() {
 											item.first_air_date ?? item.release_date ?? null
 										}
 										title={item.title ?? item.name ?? "Untitled"}
-										overview={item.overview}
+										overview={item.overview ?? ""}
 									/>
 								))}
 							</div>

@@ -28,6 +28,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_user_media", ["userId", "tmdbId", "mediaType"])
+    .index("by_user_status", ["userId", "progressStatus"])
     .index("by_user", ["userId"]),
 
   // Deliberately small recovery points. The source watch-item documents retain

@@ -17,14 +17,26 @@ export const getCustomLists = query({
     const lists = await ctx.db
       .query("lists")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .take(100);
+      .collect();
 
-    const listsWithPreviews = await Promise.all(lists.map(async (list) => {
-      const items = await ctx.db
-        .query("list_items")
-        .withIndex("by_list", (q) => q.eq("listId", list._id))
-        .take(100);
+    const allUserListItems = await ctx.db
+      .query("list_items")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
 
+    const itemsByList = new Map<string, typeof allUserListItems>();
+    for (const item of allUserListItems) {
+      const listIdStr = item.listId;
+      const existing = itemsByList.get(listIdStr);
+      if (existing) {
+        existing.push(item);
+      } else {
+        itemsByList.set(listIdStr, [item]);
+      }
+    }
+
+    const listsWithPreviews = lists.map((list) => {
+      const items = itemsByList.get(list._id) ?? [];
       const previews = items
         .map((item) => item.backdrop ?? item.image)
         .filter((img): img is string => !!img)
@@ -35,7 +47,7 @@ export const getCustomLists = query({
         previews,
         itemCount: items.length,
       };
-    }));
+    });
 
     return listsWithPreviews;
   },
@@ -126,12 +138,15 @@ export const deleteCustomList = mutation({
     const list = await ctx.db.get(args.listId);
     if (!list || list.userId !== user._id) throw new Error("List not found");
 
-    const items = await ctx.db
-      .query("list_items")
-      .withIndex("by_list", (q) => q.eq("listId", args.listId))
-      .collect();
-    for (const item of items) {
-      await ctx.db.delete(item._id);
+    while (true) {
+      const items = await ctx.db
+        .query("list_items")
+        .withIndex("by_list", (q) => q.eq("listId", args.listId))
+        .take(200);
+      if (items.length === 0) break;
+      for (const item of items) {
+        await ctx.db.delete(item._id);
+      }
     }
 
     await ctx.db.delete(args.listId);
@@ -152,14 +167,21 @@ export const getListItems = query({
       .withIndex("by_list", (q) => q.eq("listId", args.listId))
       .collect();
 
-    const allWatchItems = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .collect();
+    const watchItemPromises = items.map((item) =>
+      ctx.db
+        .query("watch_items")
+        .withIndex("by_user_media", (q) =>
+          q.eq("userId", user._id).eq("tmdbId", item.tmdbId).eq("mediaType", item.mediaType),
+        )
+        .first(),
+    );
+    const watchItems = await Promise.all(watchItemPromises);
 
-    const watchItemMap = new Map<string, typeof allWatchItems[0]>();
-    for (const w of allWatchItems) {
-      watchItemMap.set(`${w.tmdbId}_${w.mediaType}`, w);
+    const watchItemMap = new Map<string, (typeof watchItems)[0]>();
+    for (const w of watchItems) {
+      if (w) {
+        watchItemMap.set(`${w.tmdbId}_${w.mediaType}`, w);
+      }
     }
 
     const enriched = items.map((item) => {
