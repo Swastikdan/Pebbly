@@ -10,7 +10,10 @@ import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useToggleWatchlistItem } from "@/hooks/use-watchlist";
+import {
+	useAllMediaStates,
+	useToggleWatchlistItem,
+} from "@/hooks/use-watchlist";
 import {
 	type AIRecommendation,
 	titlesMatch,
@@ -288,12 +291,29 @@ export function HomepageRecommendations() {
 		return set;
 	}, [resolvedFeedbackList]);
 
+	const { allMediaStates } = useAllMediaStates();
+	const watchlistTmdbIds = useMemo(() => {
+		const set = new Set<number>();
+		for (const item of allMediaStates) {
+			if (
+				item.inWatchlist ||
+				item.progressStatus === "watching" ||
+				(item.progress ?? 0) > 0
+			) {
+				set.add(Number(item.external_id));
+			}
+		}
+		return set;
+	}, [allMediaStates]);
+
 	const recs = useMemo(() => {
 		if (!resolvedRecsData?.recommendations) return [];
 		return resolvedRecsData.recommendations.filter(
-			(r) => !localDismissedKeys.has(getDismissKey(r)),
+			(r) =>
+				!localDismissedKeys.has(getDismissKey(r)) &&
+				(r.tmdbId === null || !watchlistTmdbIds.has(r.tmdbId)),
 		);
-	}, [resolvedRecsData?.recommendations, localDismissedKeys]);
+	}, [resolvedRecsData?.recommendations, localDismissedKeys, watchlistTmdbIds]);
 
 	const handleFeedback = useCallback(
 		async (

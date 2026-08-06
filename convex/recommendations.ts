@@ -547,25 +547,12 @@ export const getHomepageRecommendations = query({
         .map((f) => f.tmdbId),
     );
 
-    // NEW: Also filter out any items already in the user's watchlist!
-    const watchItems = await ctx.db
-      .query("watch_items")
-      .withIndex("by_user", (q) => q.eq("userId", dbUser._id))
-      .take(100);
-    const watchlistTmdbIds = new Set(watchItems.map((w) => w.tmdbId));
-    const watchlistTitles = new Set(
-      watchItems.map((w) => normalizeTitleKey(w.title)),
-    );
-
     let recs: Recommendation[] = [];
     if (entry && entry.recommendations) {
       try {
         const parsed = JSON.parse(entry.recommendations) as Recommendation[];
         recs = parsed.filter(
-          (r) =>
-            (r.tmdbId === null || !excludedFeedbackIds.has(r.tmdbId)) &&
-            (r.tmdbId === null || !watchlistTmdbIds.has(r.tmdbId)) &&
-            !watchlistTitles.has(normalizeTitleKey(r.title)),
+          (r) => r.tmdbId === null || !excludedFeedbackIds.has(r.tmdbId),
         );
       } catch (e) {
         console.error("Failed to parse homepage recommendations", e);
