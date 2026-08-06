@@ -5,7 +5,6 @@ import {
 	Ban,
 	Check,
 	Loader2,
-	MoreVertical,
 	Search,
 	ShieldCheck,
 	UserCog,
@@ -23,14 +22,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RbacRole } from "@/constants";
@@ -43,33 +34,6 @@ const ROLE_CONFIGS: { value: DynamicRbacRole; label: string; short: string }[] =
 		{ value: "video-player", label: "Video Player", short: "Video" },
 		{ value: "ai-integrations", label: "AI Integrations", short: "AI" },
 	];
-
-const ROLE_COLORS: Partial<Record<RbacRole, string>> = {
-	"video-player":
-		"bg-emerald-100/90 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-500/30",
-	"ai-integrations":
-		"bg-blue-100/90 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-500/30",
-};
-
-function RoleBadge({ roles }: { roles: RbacRole[] }) {
-	if (roles.length === 0) {
-		return <span className="text-sm text-muted-foreground">—</span>;
-	}
-
-	return (
-		<div className="flex flex-wrap gap-1">
-			{roles.map((role) => (
-				<Badge key={role} className={ROLE_COLORS[role]}>
-					{role === "video-player"
-						? "Video"
-						: role === "ai-integrations"
-							? "AI"
-							: role}
-				</Badge>
-			))}
-		</div>
-	);
-}
 
 interface UserTarget {
 	tokenIdentifier: string;
@@ -97,8 +61,10 @@ export function AdminUserTable() {
 		return (
 			<div className="space-y-2">
 				{Array.from({ length: 5 }).map((_, i) => (
-					// biome-ignore lint/suspicious/noArrayIndexKey: skeleton loader
-					<Skeleton key={i} className="h-20 w-full rounded-xl" />
+					<Skeleton
+						key={`user-skeleton-${i}`}
+						className="h-20 w-full rounded-xl"
+					/>
 				))}
 			</div>
 		);
@@ -184,13 +150,13 @@ export function AdminUserTable() {
 						className="pl-9 h-9 rounded-xl text-sm"
 					/>
 				</div>
-				<div className="flex gap-1 rounded-xl border bg-muted/40 p-1 shrink-0 overflow-x-auto scrollbar-hidden max-w-full">
+				<div className="grid grid-cols-3 sm:flex gap-1 rounded-xl border bg-muted/40 p-1 shrink-0 w-full sm:w-auto">
 					{filterTabs.map((ft) => (
 						<button
 							key={ft.id}
 							type="button"
 							onClick={() => setFilterTab(ft.id)}
-							className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-200 ${
+							className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
 								filterTab === ft.id
 									? "bg-background text-foreground shadow-sm"
 									: "text-muted-foreground hover:text-foreground"
@@ -349,9 +315,8 @@ export function AdminUserTable() {
 																}
 																className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${
 																	isActive
-																		? (ROLE_COLORS[config.value] ??
-																			"bg-secondary text-foreground border-border")
-																		: "bg-transparent text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground"
+																		? "bg-secondary text-foreground border-border shadow-xs"
+																		: "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
 																}`}
 															>
 																{isActive && <Check className="size-3" />}
@@ -432,35 +397,35 @@ export function AdminUserTable() {
 						return (
 							<div
 								key={user._id}
-								className={`rounded-xl border p-4 transition-colors ${
+								className={`rounded-2xl border p-4 transition-all ${
 									isBanned
 										? "bg-destructive/5 border-destructive/20"
-										: "bg-card"
+										: "bg-card/90 border-border/60 shadow-xs"
 								}`}
 							>
+								{/* Header Row: User Info + Status Badge */}
 								<div className="flex items-start justify-between gap-3">
-									{/* User info */}
-									<div className="flex items-center gap-3 min-w-0">
+									<div className="flex items-center gap-3 min-w-0 flex-1">
 										{user.image ? (
 											<img
 												src={user.image}
 												alt={user.name}
-												className="size-10 rounded-full object-cover shrink-0 ring-1 ring-border"
+												className="size-11 rounded-full object-cover shrink-0 ring-1 ring-border/60"
 											/>
 										) : (
-											<div className="flex size-10 items-center justify-center rounded-full bg-secondary shrink-0 ring-1 ring-border">
+											<div className="flex size-11 items-center justify-center rounded-full bg-secondary shrink-0 ring-1 ring-border/60">
 												<UserCog className="size-5 text-muted-foreground" />
 											</div>
 										)}
-										<div className="min-w-0">
+										<div className="min-w-0 flex-1">
 											<div className="flex items-center gap-1.5 flex-wrap">
-												<span className="font-semibold text-sm truncate">
+												<span className="font-bold text-sm text-foreground truncate">
 													{user.name}
 												</span>
 												{user.isAdmin && (
 													<Badge
 														variant="outline"
-														className="border-amber-500/40 bg-amber-500/10 text-amber-500 text-[10px] px-1.5 py-0 shrink-0"
+														className="border-amber-500/40 bg-amber-500/10 text-amber-500 text-[10px] px-1.5 py-0 shrink-0 font-semibold"
 													>
 														Admin
 													</Badge>
@@ -468,111 +433,106 @@ export function AdminUserTable() {
 												{isSelf && (
 													<Badge
 														variant="outline"
-														className="border-border text-muted-foreground text-[10px] px-1.5 py-0 shrink-0"
+														className="border-border text-muted-foreground text-[10px] px-1.5 py-0 shrink-0 font-semibold"
 													>
 														You
 													</Badge>
 												)}
 											</div>
-											<p className="text-xs text-muted-foreground truncate">
+											<p className="text-xs text-muted-foreground truncate mt-0.5">
 												{user.email}
 											</p>
 										</div>
 									</div>
 
-									{/* Actions dropdown on mobile */}
-									{!isSelf && !user.isAdmin && (
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="ghost"
-													size="sm"
-													className="h-8 w-8 p-0 shrink-0"
-												>
-													<MoreVertical className="size-4" />
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end" className="w-44">
-												<DropdownMenuLabel className="text-xs text-muted-foreground">
-													Manage Roles
-												</DropdownMenuLabel>
-												{ROLE_CONFIGS.map((config) => {
-													const isActive = currentRoles.includes(config.value);
-													const toggleRole = () => {
-														setRoleError(null);
-														const next = isActive
-															? currentRoles.filter((r) => r !== config.value)
-															: [...currentRoles, config.value];
-														setUserRoles({
-															tokenIdentifier: user.tokenIdentifier,
-															roles: next,
-														}).catch((err) => {
-															setRoleError(
-																err instanceof Error
-																	? err.message
-																	: String(err),
-															);
-														});
-													};
-													return (
-														<DropdownMenuItem
-															key={config.value}
-															onClick={toggleRole}
-															disabled={isBanned}
-															className="text-sm gap-2"
-														>
-															<span
-																className={`size-2 rounded-full ${isActive ? "bg-emerald-500" : "bg-muted-foreground/30"}`}
-															/>
-															{config.label}
-															{isActive && <Check className="ml-auto size-3" />}
-														</DropdownMenuItem>
-													);
-												})}
-												<DropdownMenuSeparator />
-												<DropdownMenuItem
-													onClick={() => {
-														setErrorMessage(null);
-														setSelectedUser({
-															tokenIdentifier: user.tokenIdentifier,
-															name: user.name,
-															email: user.email,
-															isBanned: user.isBanned,
-														});
-													}}
-													className={`text-sm gap-2 ${isBanned ? "text-emerald-600 dark:text-emerald-400" : "text-destructive focus:text-destructive"}`}
-												>
-													{isBanned ? (
-														<>
-															<ShieldCheck className="size-3.5" />
-															Unban User
-														</>
-													) : (
-														<>
-															<Ban className="size-3.5" />
-															Ban User
-														</>
-													)}
-												</DropdownMenuItem>
-											</DropdownMenuContent>
-										</DropdownMenu>
-									)}
-								</div>
-
-								{/* Status + Roles row */}
-								<div className="mt-3 flex items-center gap-2 flex-wrap">
+									{/* Status Badge */}
 									{isBanned ? (
-										<Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30 font-semibold text-xs">
+										<Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30 font-semibold text-xs py-1 shrink-0">
 											<UserX className="size-3" />
 											Banned
 										</Badge>
 									) : (
-										<Badge className="gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-semibold text-xs">
+										<Badge className="gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-semibold text-xs py-1 shrink-0">
 											<ShieldCheck className="size-3" />
 											Active
 										</Badge>
 									)}
-									<RoleBadge roles={currentRoles} />
+								</div>
+
+								{/* Bottom Section: Labeled Feature Roles + Quick Actions */}
+								<div className="mt-3.5 pt-3 border-t border-border/40 flex items-center justify-between gap-2 flex-wrap">
+									<div className="flex items-center gap-1.5 flex-wrap">
+										<span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mr-0.5">
+											Roles:
+										</span>
+										{ROLE_CONFIGS.map((config) => {
+											const isActive = currentRoles.includes(config.value);
+											const toggleRole = () => {
+												setRoleError(null);
+												const next = isActive
+													? currentRoles.filter((r) => r !== config.value)
+													: [...currentRoles, config.value];
+												setUserRoles({
+													tokenIdentifier: user.tokenIdentifier,
+													roles: next,
+												}).catch((err) => {
+													setRoleError(
+														err instanceof Error ? err.message : String(err),
+													);
+												});
+											};
+
+											return (
+												<button
+													key={config.value}
+													type="button"
+													onClick={toggleRole}
+													disabled={isBanned}
+													className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold border transition-all duration-150 min-h-[36px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+														isActive
+															? "bg-secondary text-foreground border-border/80 shadow-xs"
+															: "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
+													}`}
+												>
+													{isActive && <Check className="size-3.5" />}
+													{config.label}
+												</button>
+											);
+										})}
+									</div>
+
+									{!isSelf && !user.isAdmin && (
+										<Button
+											variant={isBanned ? "outline" : "destructive"}
+											size="sm"
+											className={`h-9 px-3.5 text-xs font-semibold rounded-xl ml-auto min-h-[36px] ${
+												isBanned
+													? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+													: ""
+											}`}
+											onClick={() => {
+												setErrorMessage(null);
+												setSelectedUser({
+													tokenIdentifier: user.tokenIdentifier,
+													name: user.name,
+													email: user.email,
+													isBanned: user.isBanned,
+												});
+											}}
+										>
+											{isBanned ? (
+												<>
+													<ShieldCheck className="mr-1 size-3.5" />
+													Unban
+												</>
+											) : (
+												<>
+													<Ban className="mr-1 size-3.5" />
+													Ban
+												</>
+											)}
+										</Button>
+									)}
 								</div>
 							</div>
 						);
@@ -581,7 +541,7 @@ export function AdminUserTable() {
 			</div>
 
 			{filteredUsers.length > 0 && (
-				<p className="text-xs text-muted-foreground text-center">
+				<p className="text-xs text-muted-foreground text-center pt-2 pb-6">
 					Showing {filteredUsers.length} of {users.length} users
 				</p>
 			)}

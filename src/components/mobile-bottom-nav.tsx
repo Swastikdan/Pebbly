@@ -166,10 +166,18 @@ const QUICK_LINKS: NavLinkItem[] = [
 	},
 ];
 
-function useScrollDirection() {
+function useScrollDirection(pathname: string) {
 	const [hidden, setHidden] = useState(false);
 	const lastScrollY = useRef(0);
 	const ticking = useRef(false);
+
+	// Reset nav visibility immediately when navigating to a new route
+	useEffect(() => {
+		if (pathname) {
+			setHidden(false);
+			lastScrollY.current = 0;
+		}
+	}, [pathname]);
 
 	const update = useCallback(() => {
 		const currentScrollY = window.scrollY;
@@ -299,7 +307,7 @@ const NavSection = ({
 
 const MobileBottomNav = () => {
 	const location = useLocation();
-	const isHidden = useScrollDirection();
+	const isHidden = useScrollDirection(location.pathname);
 	const { isAdmin, hasFeature } = usePermissions();
 	const hasAiRecommendations = hasFeature("ai-recommendations");
 
