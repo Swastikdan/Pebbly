@@ -16,7 +16,7 @@ export const MediaTitleContainer = (props: {
 	title: string;
 	rating: number;
 	image: string;
-	poster_path: string;
+	poster_path?: string | null;
 	backdrop_path?: string;
 	id: number;
 	media_type: "movie" | "tv";
@@ -59,7 +59,7 @@ export const MediaTitleContainer = (props: {
 	const metadata = useMemo(
 		() => ({
 			title,
-			image: poster_path,
+			image: poster_path ?? props.image ?? undefined,
 			backdrop: props.backdrop_path,
 			rating,
 			release_date: release_date ?? "",
@@ -72,6 +72,7 @@ export const MediaTitleContainer = (props: {
 			rating,
 			release_date,
 			props.description,
+			props.image,
 		],
 	);
 

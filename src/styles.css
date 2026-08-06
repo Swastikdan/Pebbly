@@ -866,7 +866,7 @@
 	align-items: center;
 	justify-content: space-around;
 	height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 8px));
-	padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+	padding-bottom: calc(env(safe-area-inset-bottom, 8px) + 6px);
 	padding-top: 4px;
 	padding-left: env(safe-area-inset-left);
 	padding-right: env(safe-area-inset-right);
@@ -895,7 +895,7 @@
 	flex: 1;
 	height: 100%;
 	padding: 0.25rem 0;
-	color: oklch(0.6 0 0);
+	color: var(--muted-foreground);
 	transition:
 		color 200ms ease,
 		transform 120ms ease-out;
@@ -914,7 +914,7 @@
 }
 
 .mobile-bottom-nav-tab[data-active="true"] {
-	color: oklch(0.985 0 0);
+	color: var(--foreground);
 }
 
 .mobile-bottom-nav-tab-icon {

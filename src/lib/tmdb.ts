@@ -20,6 +20,11 @@ export const tmdbFetch = createFetch({
 		type: "linear",
 		attempts: 2,
 		delay: 500,
+		shouldRetry(context: any) {
+			if (!context?.response) return true;
+			const status = context.response.status;
+			return status === 408 || status === 429 || status >= 500;
+		},
 	},
 	plugins: [
 		logger({
@@ -27,21 +32,4 @@ export const tmdbFetch = createFetch({
 			verbose: true,
 		}),
 	],
-	onError(context) {
-		if (import.meta.env.DEV) {
-			const fullUrl = context.request?.url || "Unknown URL";
-			console.error(
-				`[Better Fetch Error] ❌ ${context.error?.message || "Fetch Error"}`,
-				{
-					url: fullUrl,
-					status: context.response?.status,
-					statusText: context.response?.statusText,
-					error: context.error,
-					issues:
-						(context.error as any)?.issues ||
-						(context.error as any)?.cause?.issues,
-				},
-			);
-		}
-	},
 });

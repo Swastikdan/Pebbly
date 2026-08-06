@@ -62,7 +62,7 @@ function KeywordPage() {
 		isLoading: isMediaListLoading,
 	} = useQuery({
 		queryKey: ["discover-movies-keyword", id, page],
-		queryFn: () => getDiscoverMovies({ with_keywords: id, page }),
+		queryFn: () => getDiscoverMovies({ with_keywords: Number(id), page }),
 		enabled: typeof window !== "undefined" && !!id,
 		placeholderData: keepPreviousData,
 	});

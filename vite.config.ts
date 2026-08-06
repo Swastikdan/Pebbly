@@ -10,7 +10,7 @@ const decodeRouteUrlPlugin = () => ({
   configureServer(server: any) {
     server.middlewares.use((req: any, _res: any, next: any) => {
       if (req.url && (req.url.includes("%7B") || req.url.includes("%7D"))) {
-        req.url = decodeURIComponent(req.url);
+        req.url = req.url.replace(/%7B/gi, "{").replace(/%7D/gi, "}");
       }
       next();
     });
