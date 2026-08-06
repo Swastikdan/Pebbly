@@ -312,7 +312,7 @@ export function VideoPlayerModal({
 			</DialogTrigger>
 			<DialogContent
 				noOverlay
-				className="h-[100dvh] w-screen max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0"
+				className="fixed inset-0 h-[100dvh] w-full max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0"
 				// The built-in close button is rendered by DialogContent, which is
 				// outside the fullscreen element, so it would be hidden behind the
 				// video in fullscreen. A matching close button lives inside the

@@ -26,12 +26,16 @@ type KnownForCredit = {
 };
 
 export const Route = createFileRoute("/person/$id")({
-	loader: async ({ params }) => {
+	loader: async ({ params, context }) => {
 		const { id } = params;
 		const parsed = parseAndValidateId(id);
 		if (!parsed.success) {
 			throw notFound();
 		}
+		await context.queryClient.ensureQueryData({
+			queryKey: ["person_details", parsed.data],
+			queryFn: () => getPersonDetails({ id: parsed.data }),
+		});
 		return { id };
 	},
 	head: () => ({

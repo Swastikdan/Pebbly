@@ -15,11 +15,16 @@ import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 import type { Collection } from "@/types";
 
 export const Route = createFileRoute("/collection/$id/{-$slug}")({
-	loader: async ({ params }) => {
+	loader: async ({ params, context }) => {
 		const { id, slug } = params;
-		if (!parseAndValidateId(id).success) {
+		const parsed = parseAndValidateId(id);
+		if (!parsed.success) {
 			throw notFound();
 		}
+		await context.queryClient.ensureQueryData({
+			queryKey: ["movie_details", parsed.data],
+			queryFn: () => getCollection({ id: parsed.data }),
+		});
 		const title = slug ? formatMediaTitle.decode(slug) : "Collections";
 		return { id, slug, title };
 	},
