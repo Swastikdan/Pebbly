@@ -118,7 +118,6 @@ function KeywordPage() {
 							<section className="flex h-full flex-col w-full">
 								<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
 									{Array.from({ length: 12 }).map((_, index) => (
-										// biome-ignore lint/suspicious/noArrayIndexKey: skeleton loader
 										<MediaCardSkeleton key={index} card_type="horizontal" />
 									))}
 								</div>

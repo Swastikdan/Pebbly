@@ -1,7 +1,7 @@
 import { useUser } from "@clerk/react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { memo } from "react";
-import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
+import { MediaCard } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
 import { useContinueWatching } from "@/hooks/use-watch-progress";
 import {
@@ -59,23 +59,9 @@ const MediaList = memo(
 	},
 );
 
-export const MediaSkeletonList = memo(
-	(props: { count?: number; cardType?: "horizontal" | "vertical" }) => {
-		const cardCount = props.count ?? 6;
-		return (
-			<ScrollContainer isButtonsVisible={false}>
-				<div className="flex gap-2 p-4 first:pl-0 last:pr-0">
-					{Array.from({ length: cardCount }).map((_, index) => (
-						<MediaCardSkeleton
-							key={index}
-							card_type={props.cardType ?? "horizontal"}
-						/>
-					))}
-				</div>
-			</ScrollContainer>
-		);
-	},
-);
+import { MediaSkeletonList } from "@/components/ui/media-skeleton-list";
+
+export { MediaSkeletonList };
 
 const useMediaQuery = (
 	type:

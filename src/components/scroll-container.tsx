@@ -99,6 +99,8 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 	const handleKeyDown = useCallback(
 		(e: KeyboardEvent) => {
 			if (!isControlsEnabled || !scrollRef.current) return;
+			const isFocused = scrollRef.current.contains(document.activeElement);
+			if (!isFocused) return;
 
 			if (e.key === "ArrowLeft" && canScrollLeft) {
 				e.preventDefault();

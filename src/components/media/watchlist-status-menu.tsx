@@ -9,7 +9,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { Component, type ErrorInfo, type ReactNode, useState } from "react";
+import { useState } from "react";
 import { CustomListDialog } from "@/components/custom-list-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { getProgressOption, REACTION_OPTIONS } from "@/constants/watchlist";
 import {
 	useCustomLists,
@@ -32,21 +33,6 @@ import {
 } from "@/hooks/use-custom-lists";
 import { cn } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
-
-class SilentErrorBoundary extends Component<
-	{ children: ReactNode },
-	{ hasError: boolean }
-> {
-	state = { hasError: false };
-	static getDerivedStateFromError() {
-		return { hasError: true };
-	}
-	componentDidCatch(_error: Error, _info: ErrorInfo) {}
-	render() {
-		if (this.state.hasError) return null;
-		return this.props.children;
-	}
-}
 
 export type MediaMetadataForList = {
 	title?: string;
