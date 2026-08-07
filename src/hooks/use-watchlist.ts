@@ -609,8 +609,7 @@ export function useSetReaction() {
 					payload.clearReaction = true;
 				}
 
-				// biome-ignore lint/suspicious/noExplicitAny: dynamic reaction payload
-				setReaction(payload as any).catch((error) =>
+				setReaction(payload as Record<string, unknown>).catch((error) =>
 					logWatchlistError("set remote reaction", error),
 				);
 				return;

@@ -150,11 +150,17 @@ export function AdminUserTable() {
 						className="pl-9 h-9 rounded-xl text-sm"
 					/>
 				</div>
-				<div className="grid grid-cols-3 sm:flex gap-1 rounded-xl border bg-muted/40 p-1 shrink-0 w-full sm:w-auto">
+				<div
+					role="tablist"
+					aria-label="User filter tabs"
+					className="grid grid-cols-3 sm:flex gap-1 rounded-xl border bg-muted/40 p-1 shrink-0 w-full sm:w-auto"
+				>
 					{filterTabs.map((ft) => (
 						<button
 							key={ft.id}
 							type="button"
+							role="tab"
+							aria-selected={filterTab === ft.id}
 							onClick={() => setFilterTab(ft.id)}
 							className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
 								filterTab === ft.id
