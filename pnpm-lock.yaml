@@ -110,9 +110,6 @@ importers:
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
-      shadcn:
-        specifier: ^4.14.1
-        version: 4.14.1(babel-plugin-macros@3.1.0)(supports-color@10.2.2)(typescript@5.9.3)
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -174,6 +171,9 @@ importers:
       lint-staged:
         specifier: ^17.2.0
         version: 17.2.0
+      shadcn:
+        specifier: ^4.14.1
+        version: 4.14.1(babel-plugin-macros@3.1.0)(supports-color@10.2.2)(typescript@5.9.3)
       terser:
         specifier: ^5.49.0
         version: 5.49.0
@@ -186,9 +186,6 @@ importers:
       vite:
         specifier: ^7.3.6
         version: 7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)
-      web-vitals:
-        specifier: ^5.3.0
-        version: 5.3.0
 
 packages:
 
@@ -6403,9 +6400,6 @@ packages:
   web-streams-polyfill@3.3.3:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
     engines: {node: '>= 8'}
-
-  web-vitals@5.3.0:
-    resolution: {integrity: sha512-q6LWsLatGYZp5VGBIOvbTj6JBV2nOmC8KvWztXBmwJcfFAzhwKwbOxhUH306XY3CcaZDUlSmSuNPBsCn0bFu+g==}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -13124,8 +13118,6 @@ snapshots:
       makeerror: 1.0.12
 
   web-streams-polyfill@3.3.3: {}
-
-  web-vitals@5.3.0: {}
 
   webidl-conversions@3.0.1: {}
 

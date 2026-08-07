@@ -12,15 +12,20 @@ async function safeFetch<Output>(
 	schema: unknown,
 ): Promise<Output> {
 	try {
-		return (await tmdbFetch(url, { output: schema as any })) as Output;
-	} catch (error: any) {
+		return (await (
+			tmdbFetch as (url: string, opts: unknown) => Promise<Output>
+		)(url, { output: schema })) as Output;
+	} catch (error: unknown) {
 		if (import.meta.env.DEV) {
 			console.error(`[${queryName}] ❌ Error fetching TMDB URL: "${url}"`, {
 				queryName,
 				url,
 				fullUrl: `${import.meta.env.VITE_PUBLIC_TMDB_API_URL}${url}`,
-				errorMessage: error?.message,
-				validationIssues: error?.issues || error?.cause?.issues || null,
+				errorMessage: (error as Error)?.message,
+				validationIssues:
+					(error as { issues?: unknown })?.issues ||
+					(error as { cause?: { issues?: unknown } })?.cause?.issues ||
+					null,
 				error,
 			});
 		}

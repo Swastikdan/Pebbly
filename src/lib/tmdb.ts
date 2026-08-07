@@ -1,4 +1,5 @@
 import { createFetch } from "@better-fetch/fetch";
+
 // import { logger } from "@better-fetch/logger";
 
 const ACCESS_TOKEN = import.meta.env.VITE_PUBLIC_TMDB_ACCESS_TOKEN;
@@ -20,7 +21,7 @@ export const tmdbFetch = createFetch({
 		type: "linear",
 		attempts: 2,
 		delay: 500,
-		shouldRetry(context: any) {
+		shouldRetry(context: { response?: { status: number } }) {
 			if (!context?.response) return true;
 			const status = context.response.status;
 			return status === 408 || status === 429 || status >= 500;

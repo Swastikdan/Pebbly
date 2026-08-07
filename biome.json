@@ -11,7 +11,7 @@
 			"**/src/**/*",
 			"**/.vscode/**/*",
 			"**/index.html",
-			"**/vite.config.js",
+			"**/vite.config.ts",
 			"!**/src/routeTree.gen.ts",
 			"!**/src/styles.css"
 		]
@@ -31,6 +31,9 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"a11y": {
+				"noSvgWithoutTitle": "off"
+			},
 			"suspicious": {
 				"noArrayIndexKey": "off"
 			},

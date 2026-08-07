@@ -26,23 +26,7 @@ import { api } from "../../convex/_generated/api";
 const getDismissKey = (rec: AIRecommendation) =>
 	`${rec.mediaType}:${rec.tmdbId ?? ""}:${rec.title}`;
 
-const MediaSkeletonList = memo(
-	(props: { count?: number; cardType?: "horizontal" | "vertical" }) => {
-		const cardCount = props.count ?? 6;
-		return (
-			<ScrollContainer isButtonsVisible={false}>
-				<div className="flex gap-2 p-4 first:pl-0 last:pr-0">
-					{Array.from({ length: cardCount }).map((_, index) => (
-						<MediaCardSkeleton
-							key={index}
-							card_type={props.cardType ?? "horizontal"}
-						/>
-					))}
-				</div>
-			</ScrollContainer>
-		);
-	},
-);
+import { MediaSkeletonList } from "@/components/ui/media-skeleton-list";
 
 const HomepageRecommendationCard = memo(
 	({
@@ -183,15 +167,6 @@ function RecommendationSectionHeader() {
 	);
 }
 
-// Module-level cache to prevent flashes during navigation
-let cachedRecommendations: {
-	userId: string | null;
-	// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result
-	recommendationsData: any;
-	// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result
-	feedbackList: any;
-} | null = null;
-
 export function HomepageRecommendations() {
 	const { isSignedIn, isLoaded, user } = useUser();
 	const { hasFeature } = usePermissions();
@@ -202,6 +177,14 @@ export function HomepageRecommendations() {
 	const [_hourBucket] = useState(
 		() => Math.floor(Date.now() / (1000 * 60 * 60)) * (1000 * 60 * 60),
 	);
+
+	const cachedRecommendationsRef = useRef<{
+		userId: string | null;
+		// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result
+		recommendationsData: any;
+		// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result
+		feedbackList: any;
+	} | null>(null);
 
 	const canAccessFeature = isSignedIn && hasFeature("ai-recommendations");
 
@@ -215,10 +198,10 @@ export function HomepageRecommendations() {
 		canAccessFeature ? {} : "skip",
 	);
 
-	// Update module-level cache when fresh data is loaded
+	// Update ref cache when fresh data is loaded
 	useEffect(() => {
 		if (recommendationsData && feedbackList) {
-			cachedRecommendations = {
+			cachedRecommendationsRef.current = {
 				userId: user?.id ?? null,
 				recommendationsData,
 				feedbackList,
@@ -228,17 +211,18 @@ export function HomepageRecommendations() {
 
 	// Use cached data as fallback to prevent skeleton flashes during page transitions
 	const hasCache =
-		cachedRecommendations &&
-		cachedRecommendations.userId === (user?.id ?? null);
+		cachedRecommendationsRef.current &&
+		cachedRecommendationsRef.current.userId === (user?.id ?? null);
 	const resolvedRecsData =
 		recommendationsData ||
 		(hasCache
-			? (cachedRecommendations?.recommendationsData as typeof recommendationsData)
+			? (cachedRecommendationsRef.current
+					?.recommendationsData as typeof recommendationsData)
 			: null);
 	const resolvedFeedbackList =
 		feedbackList ||
 		(hasCache
-			? (cachedRecommendations?.feedbackList as typeof feedbackList)
+			? (cachedRecommendationsRef.current?.feedbackList as typeof feedbackList)
 			: null);
 
 	const generateRecs = useAction(

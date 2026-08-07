@@ -32,7 +32,6 @@ const ImageComponent = ({
 
 	return (
 		<ReactImage
-			key={currentSrc}
 			alt={alt ?? "Image"}
 			className={cn("bg-foreground/10", props.className)}
 			loading={priority ? "eager" : "lazy"}
