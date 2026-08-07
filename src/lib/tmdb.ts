@@ -1,5 +1,5 @@
 import { createFetch } from "@better-fetch/fetch";
-import { logger } from "@better-fetch/logger";
+// import { logger } from "@better-fetch/logger";
 
 const ACCESS_TOKEN = import.meta.env.VITE_PUBLIC_TMDB_ACCESS_TOKEN;
 const BASE_URL = import.meta.env.VITE_PUBLIC_TMDB_API_URL;
@@ -27,9 +27,9 @@ export const tmdbFetch = createFetch({
 		},
 	},
 	plugins: [
-		logger({
-			enabled: import.meta.env.DEV,
-			verbose: true,
-		}),
+		// logger({
+		// 	enabled: import.meta.env.DEV,
+		// 	verbose: true,
+		// }),
 	],
 });
