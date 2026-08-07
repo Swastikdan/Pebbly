@@ -1,5 +1,13 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
+import {
+	memo,
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { SearchIcon, XCircleIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,8 +50,7 @@ const SearchBar = memo(
 		const navigate = useNavigate();
 		const location = useLocation();
 		const [value, setValue] = useState(query ?? "");
-		const [debounceTimeout, setDebounceTimeout] =
-			useState<NodeJS.Timeout | null>(null);
+		const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 		useEffect(() => {
 			if (document.activeElement?.id === searchId && query) {
@@ -57,11 +64,11 @@ const SearchBar = memo(
 				const newValue = e.target.value;
 				setValue(newValue);
 
-				if (debounceTimeout) {
-					clearTimeout(debounceTimeout);
+				if (debounceTimeoutRef.current) {
+					clearTimeout(debounceTimeoutRef.current);
 				}
 
-				const timeout = setTimeout(() => {
+				debounceTimeoutRef.current = setTimeout(() => {
 					if (onChange) {
 						onChange(newValue);
 					}
@@ -83,17 +90,15 @@ const SearchBar = memo(
 						}
 					}
 				}, debounceDelay);
-
-				setDebounceTimeout(timeout);
 			},
-			[onChange, debounceDelay, debounceTimeout, updateUrlOnChange, navigate],
+			[onChange, debounceDelay, updateUrlOnChange, navigate],
 		);
 
 		const handleClear = useCallback(() => {
 			setValue("");
 
-			if (debounceTimeout) {
-				clearTimeout(debounceTimeout);
+			if (debounceTimeoutRef.current) {
+				clearTimeout(debounceTimeoutRef.current);
 			}
 
 			if (onClear) {
@@ -110,14 +115,14 @@ const SearchBar = memo(
 					replace: true,
 				});
 			}
-		}, [onClear, onChange, debounceTimeout, navigate, location]);
+		}, [onClear, onChange, navigate, location]);
 
 		const handleSubmit = useCallback(
 			(e: React.FormEvent<HTMLFormElement>) => {
 				e.preventDefault();
 
-				if (debounceTimeout) {
-					clearTimeout(debounceTimeout);
+				if (debounceTimeoutRef.current) {
+					clearTimeout(debounceTimeoutRef.current);
 				}
 
 				if (!value.trim()) {
@@ -141,7 +146,7 @@ const SearchBar = memo(
 					replace: true,
 				});
 			},
-			[onSubmit, value, navigate, debounceTimeout],
+			[onSubmit, value, navigate],
 		);
 
 		const handleKeyDown = useCallback(
