@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { syncRolePermissions } from "./admin";
+import { getCurrentUser } from "./helpers/watch_item";
 
 /**
  * Returns `true`/`false` when the JWT explicitly includes `isAdmin`,
@@ -33,15 +34,12 @@ export const store = mutation({
     if (!identity) {
       throw new Error("Called storeUser without authentication present");
     }
-    const userId = identity.subject;
+    const userId = identity.tokenIdentifier;
     await syncRolePermissions(ctx);
 
     const adminFromJwt = getAdminFromJwt(identity);
 
-    const existing = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", userId))
-      .first();
+    const existing = await getCurrentUser(ctx);
 
     if (existing) {
       const update: Record<string, unknown> = {
@@ -75,14 +73,6 @@ export const store = mutation({
 export const getStatus = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return null;
-    }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
-      .first();
-    return user;
+    return getCurrentUser(ctx);
   },
 });
