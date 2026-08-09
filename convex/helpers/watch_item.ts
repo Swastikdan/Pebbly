@@ -57,16 +57,128 @@ export async function getCurrentUser(ctx: WatchlistContext) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
 
-  return ctx.db
-    .query("users")
-    .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.subject))
-    .first();
+  const subject = identity.subject;
+  const tokenIdentifier = identity.tokenIdentifier;
+
+  // 1. Fast path: check exact tokenIdentifier or subject index
+  if (tokenIdentifier) {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+      .first();
+    if (user) return user;
+  }
+
+  if (subject && subject !== tokenIdentifier) {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", subject))
+      .first();
+    if (user) return user;
+  }
+
+  if (subject) {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", `clerk|${subject}`))
+      .first();
+    if (user) return user;
+  }
+
+  // 2. Fallback search across all users to handle multi-format matching
+  const allUsers = await ctx.db.query("users").take(500);
+  const userMatches = allUsers.filter(
+    (u) =>
+      u.tokenIdentifier === tokenIdentifier ||
+      u.tokenIdentifier === subject ||
+      u.tokenIdentifier === `clerk|${subject}` ||
+      (subject && u.tokenIdentifier.endsWith(`|${subject}`)) ||
+      (subject && u.tokenIdentifier.endsWith(subject)),
+  );
+
+  if (userMatches.length === 0) return null;
+  if (userMatches.length === 1) return userMatches[0];
+
+  // If multiple user docs exist, prefer the one that already has watch items
+  for (const candidate of userMatches) {
+    const hasItems = await ctx.db
+      .query("watch_items")
+      .withIndex("by_user", (q) => q.eq("userId", candidate._id))
+      .first();
+    if (hasItems) return candidate;
+  }
+
+  return (
+    userMatches.find((u) => u.tokenIdentifier === tokenIdentifier) ??
+    userMatches[0]
+  );
 }
 
 export async function requireCurrentUser(ctx: WatchlistContext): Promise<WatchlistUser> {
-  const user = await getCurrentUser(ctx);
-  if (!user) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
     throw new Error("Unauthorized");
+  }
+
+  let user = await getCurrentUser(ctx);
+  if (!user) {
+    if ("insert" in ctx.db || typeof (ctx.db as any).insert === "function") {
+      const meta =
+        (identity.public_meta as Record<string, unknown> | undefined) ??
+        (identity.publicMetadata as Record<string, unknown> | undefined);
+      const isAdmin = meta && typeof meta === "object" && "isAdmin" in meta ? meta.isAdmin === true : false;
+
+      const primaryToken = identity.tokenIdentifier ?? identity.subject;
+      const userId = await (ctx as MutationCtx).db.insert("users", {
+        tokenIdentifier: primaryToken,
+        name: identity.name ?? identity.nickname ?? "Anonymous",
+        email: identity.email,
+        image: identity.pictureUrl,
+        isAdmin,
+      });
+      user = (await ctx.db.get(userId))!;
+    } else {
+      throw new Error("Unauthorized");
+    }
+  }
+
+  // Auto-consolidate orphaned watch items from duplicate user documents if any exist
+  if ("patch" in ctx.db || typeof (ctx.db as any).patch === "function") {
+    const subject = identity.subject;
+    const tokenIdentifier = identity.tokenIdentifier;
+    const allUsers = await ctx.db.query("users").take(500);
+    const userMatches = allUsers.filter(
+      (u) =>
+        u.tokenIdentifier === tokenIdentifier ||
+        u.tokenIdentifier === subject ||
+        u.tokenIdentifier === `clerk|${subject}` ||
+        (subject && u.tokenIdentifier.endsWith(`|${subject}`)) ||
+        (subject && u.tokenIdentifier.endsWith(subject)),
+    );
+
+    if (userMatches.length > 1) {
+      for (const dup of userMatches) {
+        if (dup._id === user._id) continue;
+        const dupItems = await ctx.db
+          .query("watch_items")
+          .withIndex("by_user", (q) => q.eq("userId", dup._id))
+          .take(500);
+        for (const item of dupItems) {
+          const existingInMain = await ctx.db
+            .query("watch_items")
+            .withIndex("by_user_media", (q) =>
+              q
+                .eq("userId", user._id)
+                .eq("tmdbId", item.tmdbId)
+                .eq("mediaType", item.mediaType),
+            )
+            .first();
+          if (!existingInMain) {
+            await (ctx as MutationCtx).db.patch(item._id, { userId: user._id });
+          }
+        }
+      }
+    }
   }
 
   return user;

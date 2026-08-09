@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	BookMarkFilledIcon,
@@ -43,6 +43,13 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 	const [isAnimating, setIsAnimating] = useState(false);
 	const [animKey, setAnimKey] = useState(0);
 
+	// Clear optimistic override once server state matches optimistic state
+	useEffect(() => {
+		if (optimisticOn !== null && isOnWatchList === optimisticOn) {
+			setOptimisticOn(null);
+		}
+	}, [isOnWatchList, optimisticOn]);
+
 	// Derived active state: prefer optimistic if set, else server truth
 	const isActive = optimisticOn !== null ? optimisticOn : isOnWatchList;
 
@@ -61,24 +68,26 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 		}
 
 		try {
-			await toggle({
-				title,
-				rating,
-				image,
-				id: itemId,
-				media_type,
-				release_date: release_date ?? "",
-				overview,
-			});
-			// Sync back to server truth — clear optimistic override
-			setOptimisticOn(null);
+			await toggle(
+				{
+					title,
+					rating,
+					image,
+					id: itemId,
+					media_type,
+					release_date: release_date ?? "",
+					overview,
+				},
+				isOnWatchList,
+			);
 		} catch (error) {
 			console.error("Error toggling watchlist:", error);
 			// Revert on failure
-			setOptimisticOn(isActive);
+			setOptimisticOn(null);
 		}
 	}, [
 		isActive,
+		isOnWatchList,
 		title,
 		rating,
 		image,

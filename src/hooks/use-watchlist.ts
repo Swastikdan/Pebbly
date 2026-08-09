@@ -204,19 +204,28 @@ export function useToggleWatchlistItem() {
 	});
 
 	return useCallback(
-		async (item: {
-			title: string;
-			rating: number;
-			image: string;
-			id: string;
-			media_type: MediaType;
-			release_date: string;
-			overview?: string;
-		}) => {
-			const isInWatchlist = watchlistRef.current.some(
-				(i) => i.external_id === item.id && i.type === item.media_type,
-			);
-			const inWatchlist = !isInWatchlist;
+		async (
+			item: {
+				title: string;
+				rating: number;
+				image: string;
+				id: string;
+				media_type: MediaType;
+				release_date: string;
+				overview?: string;
+			},
+			explicitInWatchlist?: boolean,
+		) => {
+			const currentlyInWatchlist =
+				explicitInWatchlist !== undefined
+					? explicitInWatchlist
+					: watchlistRef.current.some(
+							(i) =>
+								String(i.external_id) === String(item.id) &&
+								i.type === item.media_type &&
+								i.inWatchlist,
+						);
+			const inWatchlist = !currentlyInWatchlist;
 
 			if (isSignedIn) {
 				await setWatchlistMembership({
@@ -623,15 +632,24 @@ export function useSetReaction() {
 
 export function useWatchlistItem(id: string, mediaType?: MediaType) {
 	const { watchlist } = useWatchlist();
+	const mediaState = useMediaState(id, mediaType ?? "movie");
 
 	const isOnWatchList = useMemo(() => {
+		if (mediaState !== null && mediaState !== undefined) {
+			return Boolean(mediaState.inWatchlist);
+		}
 		if (!mediaType) {
-			return watchlist.some((item) => item.external_id === id);
+			return watchlist.some(
+				(item) => String(item.external_id) === String(id) && item.inWatchlist,
+			);
 		}
 		return watchlist.some(
-			(item) => item.external_id === id && item.type === mediaType,
+			(item) =>
+				String(item.external_id) === String(id) &&
+				item.type === mediaType &&
+				item.inWatchlist,
 		);
-	}, [watchlist, id, mediaType]);
+	}, [watchlist, id, mediaType, mediaState]);
 
 	return { isOnWatchList };
 }

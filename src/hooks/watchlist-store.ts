@@ -115,10 +115,6 @@ export function mapConvexItemToWatchlistItem(item: {
 	reaction?: string | null;
 }): WatchlistItem {
 	const normStatus = normalizeProgressStatus(item.progressStatus);
-	const isTrackedOrWatched =
-		Boolean(item.inWatchlist) ||
-		normStatus === "watching" ||
-		(item.progress ?? 0) > 0;
 
 	return {
 		title: item.title ?? "Unknown Title",
@@ -130,7 +126,7 @@ export function mapConvexItemToWatchlistItem(item: {
 		overview: item.overview,
 		updated_at: item.updatedAt,
 		created_at: item.updatedAt,
-		inWatchlist: isTrackedOrWatched,
+		inWatchlist: Boolean(item.inWatchlist),
 		progressStatus: normStatus,
 		reaction: (item.reaction as ReactionStatus | undefined) ?? null,
 		progress: item.progress ?? 0,
