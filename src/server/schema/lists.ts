@@ -1,56 +1,61 @@
-import { z } from "zod";
+import * as v from "valibot";
 import { mediaTypeSchema, metadataSchema } from "./common";
 
-export const createCustomListArgsSchema = z.object({
-	name: z.string(),
-	color: z.string().optional(),
-	visibility: z.string().optional(),
-	listType: z.string().optional(),
+export const createCustomListArgsSchema = v.object({
+	name: v.string(),
+	color: v.optional(v.string()),
+	visibility: v.optional(v.string()),
+	listType: v.optional(v.string()),
 });
-export type CreateCustomListArgs = z.infer<typeof createCustomListArgsSchema>;
+export type CreateCustomListArgs = v.InferOutput<
+	typeof createCustomListArgsSchema
+>;
 
-export const updateCustomListArgsSchema = z.object({
-	listId: z.string(),
-	name: z.string().optional(),
-	color: z.string().optional(),
-	visibility: z.string().optional(),
-	listType: z.string().optional(),
+export const updateCustomListArgsSchema = v.object({
+	listId: v.string(),
+	name: v.optional(v.string()),
+	color: v.optional(v.string()),
+	visibility: v.optional(v.string()),
+	listType: v.optional(v.string()),
 });
-export type UpdateCustomListArgs = z.infer<typeof updateCustomListArgsSchema>;
+export type UpdateCustomListArgs = v.InferOutput<
+	typeof updateCustomListArgsSchema
+>;
 
-export const deleteCustomListArgsSchema = z.object({
-	listId: z.string(),
+export const deleteCustomListArgsSchema = v.object({
+	listId: v.string(),
 });
-export type DeleteCustomListArgs = z.infer<typeof deleteCustomListArgsSchema>;
+export type DeleteCustomListArgs = v.InferOutput<
+	typeof deleteCustomListArgsSchema
+>;
 
-export const getListItemsArgsSchema = z.object({
-	listId: z.string(),
+export const getListItemsArgsSchema = v.object({
+	listId: v.string(),
 });
-export type GetListItemsArgs = z.infer<typeof getListItemsArgsSchema>;
+export type GetListItemsArgs = v.InferOutput<typeof getListItemsArgsSchema>;
 
-export const getItemListsArgsSchema = z.object({
-	tmdbId: z.number(),
+export const getItemListsArgsSchema = v.object({
+	tmdbId: v.number(),
 	mediaType: mediaTypeSchema,
 });
-export type GetItemListsArgs = z.infer<typeof getItemListsArgsSchema>;
+export type GetItemListsArgs = v.InferOutput<typeof getItemListsArgsSchema>;
 
-export const toggleListItemArgsSchema = z
-	.object({
-		listId: z.string(),
-		tmdbId: z.number(),
-		mediaType: mediaTypeSchema,
-		backdrop: z.string().optional(),
-	})
-	.merge(metadataSchema);
-export type ToggleListItemArgs = z.infer<typeof toggleListItemArgsSchema>;
+export const toggleListItemArgsSchema = v.object({
+	...metadataSchema.entries,
+	listId: v.string(),
+	tmdbId: v.number(),
+	mediaType: mediaTypeSchema,
+	backdrop: v.optional(v.string()),
+});
+export type ToggleListItemArgs = v.InferOutput<typeof toggleListItemArgsSchema>;
 
-export const createCustomListAndAddItemArgsSchema = createCustomListArgsSchema
-	.extend({
-		tmdbId: z.number(),
-		mediaType: mediaTypeSchema,
-		backdrop: z.string().optional(),
-	})
-	.merge(metadataSchema);
-export type CreateCustomListAndAddItemArgs = z.infer<
+export const createCustomListAndAddItemArgsSchema = v.object({
+	...createCustomListArgsSchema.entries,
+	...metadataSchema.entries,
+	tmdbId: v.number(),
+	mediaType: mediaTypeSchema,
+	backdrop: v.optional(v.string()),
+});
+export type CreateCustomListAndAddItemArgs = v.InferOutput<
 	typeof createCustomListAndAddItemArgsSchema
 >;

@@ -1,33 +1,35 @@
-import { z } from "zod";
+import * as v from "valibot";
 import {
 	mediaTypeSchema,
 	progressStatusSchema,
 	reactionSchema,
 } from "./common";
 
-export const importItemSchema = z.object({
-	tmdbId: z.number(),
+export const importItemSchema = v.object({
+	tmdbId: v.number(),
 	mediaType: mediaTypeSchema,
-	title: z.string(),
-	image: z.string().optional(),
-	rating: z.number().optional(),
-	release_date: z.string().optional(),
-	overview: z.string().optional(),
-	progressStatus: progressStatusSchema.optional(),
-	progress: z.number().optional(),
-	reaction: reactionSchema.nullable().optional(),
+	title: v.string(),
+	image: v.optional(v.string()),
+	rating: v.optional(v.number()),
+	release_date: v.optional(v.string()),
+	overview: v.optional(v.string()),
+	progressStatus: v.optional(progressStatusSchema),
+	progress: v.optional(v.number()),
+	reaction: v.optional(v.nullable(reactionSchema)),
 });
-export type ImportItem = z.infer<typeof importItemSchema>;
+export type ImportItem = v.InferOutput<typeof importItemSchema>;
 
-export const watchedEpisodeSchema = z.object({
-	tmdbId: z.number(),
-	season: z.number(),
-	episode: z.number(),
+export const watchedEpisodeSchema = v.object({
+	tmdbId: v.number(),
+	season: v.number(),
+	episode: v.number(),
 });
-export type WatchedEpisode = z.infer<typeof watchedEpisodeSchema>;
+export type WatchedEpisode = v.InferOutput<typeof watchedEpisodeSchema>;
 
-export const importWatchlistArgsSchema = z.object({
-	items: z.array(importItemSchema),
-	watchedEpisodes: z.array(watchedEpisodeSchema),
+export const importWatchlistArgsSchema = v.object({
+	items: v.array(importItemSchema),
+	watchedEpisodes: v.array(watchedEpisodeSchema),
 });
-export type ImportWatchlistArgs = z.infer<typeof importWatchlistArgsSchema>;
+export type ImportWatchlistArgs = v.InferOutput<
+	typeof importWatchlistArgsSchema
+>;

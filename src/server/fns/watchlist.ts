@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq } from "drizzle-orm";
-import { z } from "zod";
+import * as v from "valibot";
 import { getCurrentUser, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { episodeProgress, watchItems } from "../db/schema";
@@ -488,7 +488,7 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
 export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
 	.validator(
 		// matches the Convex `getAllWatchedEpisodes({ tmdbId })` signature
-		z.object({ tmdbId: z.number() }),
+		v.object({ tmdbId: v.number() }),
 	)
 	.handler(
 		async ({

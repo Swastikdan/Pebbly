@@ -1,42 +1,42 @@
-import { z } from "zod";
+import * as v from "valibot";
 
-export const mediaTypeSchema = z.enum(["movie", "tv"]);
-export type MediaType = z.infer<typeof mediaTypeSchema>;
+export const mediaTypeSchema = v.picklist(["movie", "tv"]);
+export type MediaType = v.InferOutput<typeof mediaTypeSchema>;
 
-export const progressStatusSchema = z.enum([
+export const progressStatusSchema = v.picklist([
 	"watch-later",
 	"watching",
 	"done",
 	"dropped",
 ]);
-export type ProgressStatus = z.infer<typeof progressStatusSchema>;
+export type ProgressStatus = v.InferOutput<typeof progressStatusSchema>;
 
-export const reactionSchema = z.enum([
+export const reactionSchema = v.picklist([
 	"loved",
 	"liked",
 	"mixed",
 	"not-for-me",
 	"recommended",
 ]);
-export type Reaction = z.infer<typeof reactionSchema>;
+export type Reaction = v.InferOutput<typeof reactionSchema>;
 
-export const feedbackSchema = z.enum(["like", "not_interested", "dislike"]);
-export type Feedback = z.infer<typeof feedbackSchema>;
+export const feedbackSchema = v.picklist(["like", "not_interested", "dislike"]);
+export type Feedback = v.InferOutput<typeof feedbackSchema>;
 
-export const metadataSchema = z.object({
-	title: z.string().optional(),
-	image: z.string().optional(),
-	rating: z.number().optional(),
-	release_date: z.string().optional(),
-	overview: z.string().optional(),
+export const metadataSchema = v.object({
+	title: v.optional(v.string()),
+	image: v.optional(v.string()),
+	rating: v.optional(v.number()),
+	release_date: v.optional(v.string()),
+	overview: v.optional(v.string()),
 });
-export type MediaMetadata = z.infer<typeof metadataSchema>;
+export type MediaMetadata = v.InferOutput<typeof metadataSchema>;
 
 // ---------------------------------------------------------------------------
 // Typed error contract (replaces Convex's bare `throw new Error`)
 // ---------------------------------------------------------------------------
 
-export const errorCodeSchema = z.enum([
+export const errorCodeSchema = v.picklist([
 	"UNAUTHORIZED",
 	"FORBIDDEN",
 	"NOT_FOUND",
@@ -44,7 +44,7 @@ export const errorCodeSchema = z.enum([
 	"CONFLICT",
 	"BAD_REQUEST",
 ]);
-export type ErrorCode = z.infer<typeof errorCodeSchema>;
+export type ErrorCode = v.InferOutput<typeof errorCodeSchema>;
 
 export type ApiResult<T> =
 	| { ok: true; data: T }

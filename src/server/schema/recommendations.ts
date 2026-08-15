@@ -1,34 +1,34 @@
-import { z } from "zod";
+import * as v from "valibot";
 import { mediaTypeSchema } from "./common";
 
-export const recommendationSchema = z.object({
-	title: z.string(),
-	tmdbId: z.number().nullable(),
+export const recommendationSchema = v.object({
+	title: v.string(),
+	tmdbId: v.nullable(v.number()),
 	mediaType: mediaTypeSchema,
-	relevanceScore: z.number(),
-	reasoning: z.string(),
+	relevanceScore: v.number(),
+	reasoning: v.string(),
 });
-export type Recommendation = z.infer<typeof recommendationSchema>;
+export type Recommendation = v.InferOutput<typeof recommendationSchema>;
 
-export const inputStatsSchema = z.object({
-	movieCount: z.number(),
-	tvCount: z.number(),
-	episodesWatched: z.number(),
-	totalItems: z.number(),
+export const inputStatsSchema = v.object({
+	movieCount: v.number(),
+	tvCount: v.number(),
+	episodesWatched: v.number(),
+	totalItems: v.number(),
 });
-export type InputStats = z.infer<typeof inputStatsSchema>;
+export type InputStats = v.InferOutput<typeof inputStatsSchema>;
 
-export const generateRecommendationsArgsSchema = z.object({
-	generationType: z.string().optional(),
-	listId: z.string().optional(),
-	mediaTypePreference: mediaTypeSchema.optional(),
-	genrePreference: z.string().optional(),
-	excludeTmdbIds: z.array(z.number()).optional(),
-	yearFrom: z.number().optional(),
-	yearTo: z.number().optional(),
-	count: z.number().optional(),
+export const generateRecommendationsArgsSchema = v.object({
+	generationType: v.optional(v.string()),
+	listId: v.optional(v.string()),
+	mediaTypePreference: v.optional(mediaTypeSchema),
+	genrePreference: v.optional(v.string()),
+	excludeTmdbIds: v.optional(v.array(v.number())),
+	yearFrom: v.optional(v.number()),
+	yearTo: v.optional(v.number()),
+	count: v.optional(v.number()),
 });
-export type GenerateRecommendationsArgs = z.infer<
+export type GenerateRecommendationsArgs = v.InferOutput<
 	typeof generateRecommendationsArgsSchema
 >;
 
@@ -41,48 +41,48 @@ export type GenerateResult =
 	  }
 	| { error: string };
 
-export const deleteRecommendationArgsSchema = z.object({
-	id: z.string(),
+export const deleteRecommendationArgsSchema = v.object({
+	id: v.string(),
 });
-export type DeleteRecommendationArgs = z.infer<
+export type DeleteRecommendationArgs = v.InferOutput<
 	typeof deleteRecommendationArgsSchema
 >;
 
-export const updateVerifiedRecommendationsArgsSchema = z.object({
-	id: z.string(),
-	recommendations: z.string(),
+export const updateVerifiedRecommendationsArgsSchema = v.object({
+	id: v.string(),
+	recommendations: v.string(),
 });
-export type UpdateVerifiedRecommendationsArgs = z.infer<
+export type UpdateVerifiedRecommendationsArgs = v.InferOutput<
 	typeof updateVerifiedRecommendationsArgsSchema
 >;
 
-export const setRecommendationFeedbackArgsSchema = z.object({
-	tmdbId: z.number(),
+export const setRecommendationFeedbackArgsSchema = v.object({
+	tmdbId: v.number(),
 	mediaType: mediaTypeSchema,
-	title: z.string(),
-	feedback: z.enum(["not_interested", "like"]),
-	image: z.string().optional(),
-	backdrop: z.string().optional(),
-	rating: z.number().optional(),
-	release_date: z.string().optional(),
-	overview: z.string().optional(),
+	title: v.string(),
+	feedback: v.picklist(["not_interested", "like"]),
+	image: v.optional(v.string()),
+	backdrop: v.optional(v.string()),
+	rating: v.optional(v.number()),
+	release_date: v.optional(v.string()),
+	overview: v.optional(v.string()),
 });
-export type SetRecommendationFeedbackArgs = z.infer<
+export type SetRecommendationFeedbackArgs = v.InferOutput<
 	typeof setRecommendationFeedbackArgsSchema
 >;
 
-export const removeRecommendationFeedbackArgsSchema = z.object({
-	tmdbId: z.number(),
+export const removeRecommendationFeedbackArgsSchema = v.object({
+	tmdbId: v.number(),
 	mediaType: mediaTypeSchema,
 });
-export type RemoveRecommendationFeedbackArgs = z.infer<
+export type RemoveRecommendationFeedbackArgs = v.InferOutput<
 	typeof removeRecommendationFeedbackArgsSchema
 >;
 
-export const getHomepageRecommendationsArgsSchema = z.object({
-	now: z.number().optional(),
+export const getHomepageRecommendationsArgsSchema = v.object({
+	now: v.optional(v.number()),
 });
-export type GetHomepageRecommendationsArgs = z.infer<
+export type GetHomepageRecommendationsArgs = v.InferOutput<
 	typeof getHomepageRecommendationsArgsSchema
 >;
 
@@ -94,16 +94,13 @@ export type HomepageRecommendationsResult = {
 	needsRefresh: boolean;
 };
 
-export const getUserRecommendationAccessResultSchema = z.discriminatedUnion(
-	"hasAccess",
-	[
-		z.object({ hasAccess: z.literal(true) }),
-		z.object({
-			hasAccess: z.literal(false),
-			reason: z.enum(["not_authenticated", "feature_disabled"]),
-		}),
-	],
-);
-export type UserRecommendationAccessResult = z.infer<
+export const getUserRecommendationAccessResultSchema = v.variant("hasAccess", [
+	v.object({ hasAccess: v.literal(true) }),
+	v.object({
+		hasAccess: v.literal(false),
+		reason: v.picklist(["not_authenticated", "feature_disabled"]),
+	}),
+]);
+export type UserRecommendationAccessResult = v.InferOutput<
 	typeof getUserRecommendationAccessResultSchema
 >;
