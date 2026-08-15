@@ -27,6 +27,13 @@ export type SetWatchlistMembershipArgs = v.InferOutput<
 	typeof setWatchlistMembershipArgsSchema
 >;
 
+export const batchSetWatchlistMembershipArgsSchema = v.object({
+	items: v.array(setWatchlistMembershipArgsSchema),
+});
+export type BatchSetWatchlistMembershipArgs = v.InferOutput<
+	typeof batchSetWatchlistMembershipArgsSchema
+>;
+
 export const setProgressStatusArgsSchema = v.object({
 	...mediaIdentityArgsSchema.entries,
 	...metadataSchema.entries,

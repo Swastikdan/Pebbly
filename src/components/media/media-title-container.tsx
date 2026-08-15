@@ -98,11 +98,14 @@ export const MediaTitleContainer = (props: {
 	]);
 
 	const handleAdd = () => {
-		toggleWatchlist({
-			...metadata,
-			id: String(id),
-			media_type,
-		}).catch(console.error);
+		toggleWatchlist(
+			{
+				...metadata,
+				id: String(id),
+				media_type,
+			},
+			false,
+		).catch(console.error);
 	};
 
 	const handleStatusChange = (status: ProgressStatus) => {
@@ -114,11 +117,14 @@ export const MediaTitleContainer = (props: {
 	};
 
 	const handleRemove = () => {
-		toggleWatchlist({
-			...metadata,
-			id: String(id),
-			media_type,
-		}).catch(console.error);
+		toggleWatchlist(
+			{
+				...metadata,
+				id: String(id),
+				media_type,
+			},
+			true,
+		).catch(console.error);
 	};
 
 	const renderWatchListSection = (className?: string) => (
