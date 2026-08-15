@@ -1,4 +1,4 @@
-import { verifyToken } from "@clerk/backend";
+import { createClerkClient, verifyToken } from "@clerk/backend";
 import { getCookie, getRequestHeader } from "@tanstack/react-start/server";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "./db/client";
@@ -47,7 +47,11 @@ export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
 	if (!secretKey) return null;
 
 	try {
-		const claims = await verifyToken(token, { secretKey });
+		const claims = await verifyToken(token, {
+			secretKey,
+			// Tolerate clock drift / refresh races (Clerk dev JWTs are short-lived).
+			clockSkewInMs: 300_000,
+		});
 		return claims as ClerkSessionClaims;
 	} catch (error) {
 		console.error("Clerk token verification failed:", error);
@@ -72,6 +76,51 @@ export function getAdminFromClaims(
 		return meta.isAdmin === true;
 	}
 	return null;
+}
+
+let clerkApiClient: ReturnType<typeof createClerkClient> | null = null;
+
+function getClerkApiClient() {
+	const secretKey = getEnvVar("CLERK_SECRET_KEY");
+	if (!secretKey) return null;
+	if (!clerkApiClient) {
+		clerkApiClient = createClerkClient({ secretKey });
+	}
+	return clerkApiClient;
+}
+
+const ADMIN_API_CACHE_TTL_MS = 60_000;
+const adminApiCache = new Map<string, { value: boolean; expiresAt: number }>();
+
+/**
+ * Resolve `isAdmin` from Clerk's public metadata via the backend API.
+ *
+ * The Clerk JWT does not carry public metadata unless a custom JWT template /
+ * session claim adds it, while the client SDK (`useUser`) reads it straight
+ * from the user resource. This keeps the server in agreement with the client:
+ * Clerk's public metadata is the source of truth for admin status. Results are
+ * cached briefly (60s) to avoid an API call on every request.
+ */
+export async function isAdminFromClerkApi(sub: string): Promise<boolean> {
+	const cached = adminApiCache.get(sub);
+	if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+	const client = getClerkApiClient();
+	let isAdmin = false;
+	if (client) {
+		try {
+			const clerkUser = await client.users.getUser(sub);
+			isAdmin = clerkUser.publicMetadata?.isAdmin === true;
+		} catch (error) {
+			console.error("Failed to fetch Clerk user for admin check:", error);
+		}
+	}
+
+	adminApiCache.set(sub, {
+		value: isAdmin,
+		expiresAt: Date.now() + ADMIN_API_CACHE_TTL_MS,
+	});
+	return isAdmin;
 }
 
 /**
@@ -145,7 +194,8 @@ export async function requireUser(): Promise<RequireUserResult> {
 	const db = getDb(getEnv());
 	let user = await findUserByClaims(claims);
 	if (!user) {
-		const isAdmin = getAdminFromClaims(claims);
+		const isAdmin =
+			getAdminFromClaims(claims) ?? (await isAdminFromClerkApi(claims.sub));
 		const id = crypto.randomUUID();
 		await db.insert(users).values({
 			id,

@@ -1,24 +1,23 @@
 {
   "name": "pebbly",
   "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "concurrently -n web,convex -c blue,magenta \"vite dev --port 5296 --host\" \"pnpm dlx convex dev\"",
-    "dev:web": "vite dev --port 3000",
-    "dev:cf": "wrangler dev",
-    "build": "vite build",
-    "build:vercel": "pnpm dlx convex deploy --cmd 'pnpm run build' --cmd-url-env-var-name VITE_CONVEX_URL",
-    "start": "vite preview --port 5296",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply pebbly --local",
-    "db:migrate:prod": "wrangler d1 migrations apply pebbly --remote",
-    "deploy:cf": "pnpm build && wrangler deploy",
-    "lint": "biome lint --max-diagnostics 20",
-    "format": "biome format --write .",
-    "typecheck": "tsc --noEmit",
-    "typecheck:convex": "pnpm dlx convex typecheck",
-    "prepare": "husky"
-  },
+  "type": "module",	"scripts": {
+		"dev": "vite dev --port 3000",
+		"dev:web": "vite dev --port 3000",
+		"dev:cf": "wrangler dev",
+		"preview:cf": "pnpm build && wrangler dev",
+		"build": "vite build",
+		"start": "vite preview --port 5296",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate:local": "wrangler d1 migrations apply pebbly --local",
+		"db:migrate:prod": "wrangler d1 migrations apply pebbly --remote",
+		"db:studio": "drizzle-kit studio --config drizzle.studio.config.ts",
+		"deploy:cf": "pnpm build && wrangler deploy",
+		"lint": "biome lint --max-diagnostics 20",
+		"format": "biome format --write .",
+		"typecheck": "tsc --noEmit",
+		"prepare": "husky"
+	},
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,jsonc}": [
       "biome check --fix --no-errors-on-unmatched --files-ignore-unknown=true"

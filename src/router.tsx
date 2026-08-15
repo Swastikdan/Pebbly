@@ -1,9 +1,7 @@
-import { ClerkProvider, useAuth } from "@clerk/react";
+import { ClerkProvider } from "@clerk/react";
 import { shadcn } from "@clerk/ui/themes";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
-import { ConvexReactClient } from "convex/react";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { DefaultLoader } from "@/components/default-loader";
 import {
 	DefaultErrorComponent,
@@ -13,8 +11,6 @@ import { getContext } from "@/lib/query/query-client";
 import { Provider as QueryProvider } from "@/lib/query/root-provider";
 
 import { routeTree } from "@/routeTree.gen";
-
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
 export const getRouter = () => {
 	const rqContext = getContext();
@@ -33,9 +29,7 @@ export const getRouter = () => {
 						theme: shadcn,
 					}}
 				>
-					<ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-						<QueryProvider {...rqContext}>{props.children}</QueryProvider>
-					</ConvexProviderWithClerk>
+					<QueryProvider {...rqContext}>{props.children}</QueryProvider>
 				</ClerkProvider>
 			);
 		},

@@ -1,5 +1,9 @@
 import { and, eq } from "drizzle-orm";
-import type { AuthUser, ClerkSessionClaims } from "./auth";
+import {
+	type AuthUser,
+	type ClerkSessionClaims,
+	isAdminFromClerkApi,
+} from "./auth";
 import type { Db } from "./db/client";
 import { getDb } from "./db/client";
 import { rolePermissions } from "./db/schema";
@@ -126,6 +130,12 @@ export async function hasFeature(
 
 	if (user?.isBanned === true) return false;
 	if (isClerkAdmin(claims as unknown as Record<string, unknown>, user)) {
+		return true;
+	}
+	// The JWT doesn't carry public metadata (no custom session claim), so fall
+	// back to Clerk's API — the same source the client `useUser()` reads. This
+	// keeps the server in agreement with the client's admin/AI feature UI.
+	if (await isAdminFromClerkApi(claims.sub)) {
 		return true;
 	}
 	if (!user) return false;

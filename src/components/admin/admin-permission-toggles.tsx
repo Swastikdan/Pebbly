@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Activity, AlertTriangle, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -6,7 +6,8 @@ import {
 	RBAC_FEATURES,
 	type RbacFeature,
 } from "@/constants";
-import { api } from "../../../convex/_generated/api";
+import { getRolePermissions, setRolePermission } from "@/server/fns/admin";
+import { unwrap } from "@/server/schema/common";
 
 const FEATURE_ROLES: Record<RbacFeature, PermissionRole> = {
 	"video-player": "video-player",
@@ -100,10 +101,18 @@ function FeatureRow({
 }
 
 export function AdminPermissionToggles() {
-	const rawPermissions = useQuery(api.admin.getRolePermissions, {});
-	const setRolePermission = useMutation(api.admin.setRolePermission);
+	const rawPermissions = useQuery({
+		queryKey: ["admin", "role-permissions"],
+		queryFn: () => unwrap(getRolePermissions()),
+	});
+	const setRolePermissionMutation = useMutation({
+		mutationFn: (args: { role: string; feature: string; enabled: boolean }) =>
+			unwrap(setRolePermission({ data: args })),
+	});
 
-	if (rawPermissions === undefined) {
+	const rawPermissionsData = rawPermissions.data;
+
+	if (rawPermissionsData === undefined) {
 		return (
 			<div className="space-y-3">
 				<Skeleton className="h-20 w-full rounded-xl" />
@@ -112,7 +121,7 @@ export function AdminPermissionToggles() {
 		);
 	}
 
-	const permissionsByRole = rawPermissions as Record<
+	const permissionsByRole = rawPermissionsData as Record<
 		PermissionRole,
 		Record<RbacFeature, boolean>
 	>;
@@ -127,7 +136,7 @@ export function AdminPermissionToggles() {
 						featureLabel={config.label}
 						permissionsByRole={permissionsByRole}
 						onToggle={(role, enabled) =>
-							setRolePermission({ role, feature, enabled })
+							setRolePermissionMutation.mutate({ role, feature, enabled })
 						}
 					/>
 				))}

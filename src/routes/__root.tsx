@@ -181,11 +181,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		}
 
 		if (import.meta.env.DEV) {
+			// Unregister any SW left over from a production build/preview and purge
+			// its caches, so stale client JS (with old serverFn IDs) can't be served
+			// against the dev server.
 			navigator.serviceWorker.getRegistrations().then((registrations) => {
 				for (const registration of registrations) {
 					registration.unregister();
 				}
 			});
+			if (typeof caches !== "undefined") {
+				caches.keys().then((keys) => {
+					for (const key of keys) {
+						caches.delete(key);
+					}
+				});
+			}
 			return;
 		}
 

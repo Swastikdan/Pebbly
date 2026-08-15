@@ -383,6 +383,13 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
 				});
 			}
 
+			// Only request a refresh when the user actually has the feature.
+			// Otherwise the client would keep firing generateHomepageRecommendations
+			// (which the server rejects with FORBIDDEN) on every refetch — a loop.
+			const { claims, user: dbUser, error: authError } = await requireUser();
+			const featureEnabled =
+				!authError && (await hasFeature(claims, dbUser, "ai-recommendations"));
+
 			const db = getDb(getEnv());
 			const entry = await db
 				.select()
@@ -444,7 +451,8 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
 				status === "failed" &&
 				currentTime > 0 &&
 				currentTime - lastAttemptedAt < 1 * 60 * 60 * 1000;
-			const needsRefresh = !row || (isOlderThan24Hours && !hasFailedRecently);
+			const needsRefresh =
+				featureEnabled && (!row || (isOlderThan24Hours && !hasFailedRecently));
 
 			return ok({
 				recommendations: recs,

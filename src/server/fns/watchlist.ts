@@ -41,7 +41,7 @@ export const getWatchlist = createServerFn({ method: "POST" })
 			const requestedLimit =
 				data.limit !== undefined && data.limit > 0
 					? Math.floor(data.limit)
-					: 200;
+					: 500;
 			const boundedLimit = Math.min(requestedLimit, 500);
 
 			const filters = [eq(watchItems.userId, user.id)];
