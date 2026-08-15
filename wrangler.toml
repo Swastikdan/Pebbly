@@ -25,5 +25,8 @@ crons = ["0 3 * * *"]
 enabled = true
 invocation_logs = true
 
+[observability.traces]
+enabled = true
+
 # Non-secret server vars only. Secrets: wrangler secret put <NAME>.
 # Client VITE_* vars are inlined at build time from .env — they do NOT go here.

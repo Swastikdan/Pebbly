@@ -11,9 +11,6 @@ export interface Env {
 	CLERK_SECRET_KEY?: string;
 	CLERK_ISSUER_URL?: string;
 	GEMINI_API_KEY?: string;
-	UPSTASH_REDIS_REST_URL?: string;
-	UPSTASH_REDIS_REST_TOKEN?: string;
-	UPSTASH_REDIS_READONLY_REST_TOKEN?: string;
 	CRON_SECRET?: string;
 	[key: string]: unknown;
 }

@@ -1,6 +1,6 @@
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { getCookie, getRequestHeader } from "@tanstack/react-start/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, like, or } from "drizzle-orm";
 import { getDb } from "./db/client";
 import { users, watchItems } from "./db/schema";
 import { getEnv, getEnvVar } from "./env";
@@ -130,21 +130,21 @@ export async function isAdminFromClerkApi(sub: string): Promise<boolean> {
 export async function findUserByClaims(claims: ClerkSessionClaims) {
 	const db = getDb(getEnv());
 	const subject = claims.sub;
+	if (!subject) return null;
 	const tokenIdentifier = toTokenIdentifier(subject);
-	const candidates = new Set<string>([
-		tokenIdentifier,
-		subject,
-		`clerk|${subject}`,
-	]);
 
-	const allUsers = await db.select().from(users).limit(500);
-
-	const matches = allUsers.filter(
-		(u) =>
-			candidates.has(u.tokenIdentifier) ||
-			(subject && u.tokenIdentifier.endsWith(`|${subject}`)) ||
-			(subject && u.tokenIdentifier.endsWith(subject)),
-	);
+	const matches = await db
+		.select()
+		.from(users)
+		.where(
+			or(
+				eq(users.tokenIdentifier, tokenIdentifier),
+				eq(users.tokenIdentifier, subject),
+				eq(users.tokenIdentifier, `clerk|${subject}`),
+				like(users.tokenIdentifier, `%|${subject}`),
+			),
+		)
+		.limit(10);
 
 	if (matches.length === 0) return null;
 	if (matches.length === 1) return matches[0];
@@ -211,45 +211,47 @@ export async function requireUser(): Promise<RequireUserResult> {
 	// Auto-consolidate orphaned watch items from duplicate user documents (port
 	// of the Convex `requireCurrentUser` consolidation step).
 	const subject = claims.sub;
-	const tokenIdentifier = toTokenIdentifier(subject);
-	const candidates = new Set<string>([
-		tokenIdentifier,
-		subject,
-		`clerk|${subject}`,
-	]);
-	const allUsers = await db.select().from(users).limit(500);
-	const userMatches = allUsers.filter(
-		(u) =>
-			candidates.has(u.tokenIdentifier) ||
-			(subject && u.tokenIdentifier.endsWith(`|${subject}`)) ||
-			(subject && u.tokenIdentifier.endsWith(subject)),
-	);
+	if (subject) {
+		const tokenIdentifier = toTokenIdentifier(subject);
+		const userMatches = await db
+			.select()
+			.from(users)
+			.where(
+				or(
+					eq(users.tokenIdentifier, tokenIdentifier),
+					eq(users.tokenIdentifier, subject),
+					eq(users.tokenIdentifier, `clerk|${subject}`),
+					like(users.tokenIdentifier, `%|${subject}`),
+				),
+			)
+			.limit(10);
 
-	if (userMatches.length > 1) {
-		for (const dup of userMatches) {
-			if (dup.id === user.id) continue;
-			const dupItems = await db
-				.select()
-				.from(watchItems)
-				.where(eq(watchItems.userId, dup.id))
-				.limit(500);
-			for (const item of dupItems) {
-				const existingInMain = await db
-					.select({ id: watchItems.id })
+		if (userMatches.length > 1) {
+			for (const dup of userMatches) {
+				if (dup.id === user.id) continue;
+				const dupItems = await db
+					.select()
 					.from(watchItems)
-					.where(
-						and(
-							eq(watchItems.userId, user.id),
-							eq(watchItems.tmdbId, item.tmdbId),
-							eq(watchItems.mediaType, item.mediaType),
-						),
-					)
-					.limit(1);
-				if (existingInMain.length === 0) {
-					await db
-						.update(watchItems)
-						.set({ userId: user.id })
-						.where(eq(watchItems.id, item.id));
+					.where(eq(watchItems.userId, dup.id))
+					.limit(500);
+				for (const item of dupItems) {
+					const existingInMain = await db
+						.select({ id: watchItems.id })
+						.from(watchItems)
+						.where(
+							and(
+								eq(watchItems.userId, user.id),
+								eq(watchItems.tmdbId, item.tmdbId),
+								eq(watchItems.mediaType, item.mediaType),
+							),
+						)
+						.limit(1);
+					if (existingInMain.length === 0) {
+						await db
+							.update(watchItems)
+							.set({ userId: user.id })
+							.where(eq(watchItems.id, item.id));
+					}
 				}
 			}
 		}

@@ -35,14 +35,12 @@ export const getCustomLists = createServerFn({ method: "POST" }).handler(
 			.select()
 			.from(lists)
 			.where(eq(lists.userId, user.id))
-			.orderBy(asc(lists.sortOrder))
-			.$withCache({ config: { ex: 15 } });
+			.orderBy(asc(lists.sortOrder));
 
 		const allUserListItems = await db
 			.select()
 			.from(listItems)
-			.where(eq(listItems.userId, user.id))
-			.$withCache({ config: { ex: 15 } });
+			.where(eq(listItems.userId, user.id));
 
 		const itemsByList = new Map<string, typeof allUserListItems>();
 		for (const item of allUserListItems) {
@@ -93,8 +91,7 @@ export const getListItems = createServerFn({ method: "POST" })
 			.select()
 			.from(lists)
 			.where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
-			.limit(1)
-			.$withCache({ config: { ex: 15 } });
+			.limit(1);
 
 		if (list.length === 0) return ok([]);
 
@@ -103,8 +100,7 @@ export const getListItems = createServerFn({ method: "POST" })
 			.from(listItems)
 			.where(
 				and(eq(listItems.listId, data.listId), eq(listItems.userId, user.id)),
-			)
-			.$withCache({ config: { ex: 15 } });
+			);
 
 		// Enrich with watch_item metadata (port of the N+1 loop — batch in one query).
 		const watchItemPromises = items.map((item) =>
@@ -165,8 +161,7 @@ export const getItemLists = createServerFn({ method: "POST" })
 					eq(listItems.tmdbId, data.tmdbId),
 					eq(listItems.mediaType, data.mediaType),
 				),
-			)
-			.$withCache({ config: { ex: 15 } });
+			);
 
 		return ok(items.map((i) => i.listId));
 	});
