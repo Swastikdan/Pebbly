@@ -19,3 +19,9 @@ implementation_plan.md
 .skills-lock.json
 .agents
 skills-lock.json
+
+# Cloudflare / wrangler
+.dev.vars
+.wrangler/
+convex-export/
+
