@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as v from "valibot";
 import {
 	mediaTypeSchema,
 	metadataSchema,
@@ -6,87 +6,88 @@ import {
 	reactionSchema,
 } from "./common";
 
-export const getWatchlistArgsSchema = z.object({
-	limit: z.number().optional(),
-	statusFilter: z.string().optional(),
+export const getWatchlistArgsSchema = v.object({
+	limit: v.optional(v.number()),
+	statusFilter: v.optional(v.string()),
 });
-export type GetWatchlistArgs = z.infer<typeof getWatchlistArgsSchema>;
+export type GetWatchlistArgs = v.InferOutput<typeof getWatchlistArgsSchema>;
 
-export const mediaIdentityArgsSchema = z.object({
-	tmdbId: z.number(),
+export const mediaIdentityArgsSchema = v.object({
+	tmdbId: v.number(),
 	mediaType: mediaTypeSchema,
 });
-export type MediaIdentityArgs = z.infer<typeof mediaIdentityArgsSchema>;
+export type MediaIdentityArgs = v.InferOutput<typeof mediaIdentityArgsSchema>;
 
-export const setWatchlistMembershipArgsSchema = mediaIdentityArgsSchema
-	.extend({
-		inWatchlist: z.boolean(),
-	})
-	.merge(metadataSchema);
-export type SetWatchlistMembershipArgs = z.infer<
+export const setWatchlistMembershipArgsSchema = v.object({
+	...mediaIdentityArgsSchema.entries,
+	...metadataSchema.entries,
+	inWatchlist: v.boolean(),
+});
+export type SetWatchlistMembershipArgs = v.InferOutput<
 	typeof setWatchlistMembershipArgsSchema
 >;
 
-export const setProgressStatusArgsSchema = mediaIdentityArgsSchema
-	.extend({
-		progressStatus: progressStatusSchema,
-		progress: z.number().optional(),
-	})
-	.merge(metadataSchema);
-export type SetProgressStatusArgs = z.infer<typeof setProgressStatusArgsSchema>;
-
-export const setReactionArgsSchema = mediaIdentityArgsSchema
-	.extend({
-		reaction: reactionSchema.optional(),
-		clearReaction: z.boolean().optional(),
-	})
-	.merge(metadataSchema);
-export type SetReactionArgs = z.infer<typeof setReactionArgsSchema>;
-
-export const updateProgressArgsSchema = mediaIdentityArgsSchema
-	.extend({
-		progress: z.number().optional(),
-		isWatched: z.boolean().optional(),
-	})
-	.merge(metadataSchema);
-export type UpdateProgressArgs = z.infer<typeof updateProgressArgsSchema>;
-
-export const markEpisodeWatchedArgsSchema = z.object({
-	tmdbId: z.number(),
-	season: z.number(),
-	episode: z.number(),
-	isWatched: z.boolean(),
+export const setProgressStatusArgsSchema = v.object({
+	...mediaIdentityArgsSchema.entries,
+	...metadataSchema.entries,
+	progressStatus: progressStatusSchema,
+	progress: v.optional(v.number()),
 });
-export type MarkEpisodeWatchedArgs = z.infer<
+export type SetProgressStatusArgs = v.InferOutput<
+	typeof setProgressStatusArgsSchema
+>;
+
+export const setReactionArgsSchema = v.object({
+	...mediaIdentityArgsSchema.entries,
+	...metadataSchema.entries,
+	reaction: v.optional(reactionSchema),
+	clearReaction: v.optional(v.boolean()),
+});
+export type SetReactionArgs = v.InferOutput<typeof setReactionArgsSchema>;
+
+export const updateProgressArgsSchema = v.object({
+	...mediaIdentityArgsSchema.entries,
+	...metadataSchema.entries,
+	progress: v.optional(v.number()),
+	isWatched: v.optional(v.boolean()),
+});
+export type UpdateProgressArgs = v.InferOutput<typeof updateProgressArgsSchema>;
+
+export const markEpisodeWatchedArgsSchema = v.object({
+	tmdbId: v.number(),
+	season: v.number(),
+	episode: v.number(),
+	isWatched: v.boolean(),
+});
+export type MarkEpisodeWatchedArgs = v.InferOutput<
 	typeof markEpisodeWatchedArgsSchema
 >;
 
-export const markSeasonEpisodesWatchedArgsSchema = z.object({
-	tmdbId: z.number(),
-	season: z.number(),
-	episodes: z.array(z.number()),
-	isWatched: z.boolean(),
+export const markSeasonEpisodesWatchedArgsSchema = v.object({
+	tmdbId: v.number(),
+	season: v.number(),
+	episodes: v.array(v.number()),
+	isWatched: v.boolean(),
 });
-export type MarkSeasonEpisodesWatchedArgs = z.infer<
+export type MarkSeasonEpisodesWatchedArgs = v.InferOutput<
 	typeof markSeasonEpisodesWatchedArgsSchema
 >;
 
-export const markShowEpisodesAndStatusArgsSchema = z
-	.object({
-		tmdbId: z.number(),
-		mediaType: mediaTypeSchema,
-		seasons: z.array(
-			z.object({
-				season: z.number(),
-				episodes: z.array(z.number()),
-			}),
-		),
-		isWatched: z.boolean(),
-		clearAllEpisodes: z.boolean().optional(),
-		progressStatus: progressStatusSchema.optional(),
-		progress: z.number().optional(),
-	})
-	.merge(metadataSchema);
-export type MarkShowEpisodesAndStatusArgs = z.infer<
+export const markShowEpisodesAndStatusArgsSchema = v.object({
+	...metadataSchema.entries,
+	tmdbId: v.number(),
+	mediaType: mediaTypeSchema,
+	seasons: v.array(
+		v.object({
+			season: v.number(),
+			episodes: v.array(v.number()),
+		}),
+	),
+	isWatched: v.boolean(),
+	clearAllEpisodes: v.optional(v.boolean()),
+	progressStatus: v.optional(progressStatusSchema),
+	progress: v.optional(v.number()),
+});
+export type MarkShowEpisodesAndStatusArgs = v.InferOutput<
 	typeof markShowEpisodesAndStatusArgsSchema
 >;

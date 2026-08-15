@@ -69,7 +69,6 @@
     "tailwindcss": "^4.3.3",
     "valibot": "^1.4.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

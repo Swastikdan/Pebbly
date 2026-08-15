@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
-import { z } from "zod";
+import * as v from "valibot";
 import { getAdminFromClaims, getCurrentUser, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { users } from "../db/schema";
@@ -8,11 +8,11 @@ import { getEnv } from "../env";
 import { syncRolePermissions } from "../rbac";
 import { type ApiResult, ok } from "../schema/common";
 
-const storeUserArgsSchema = z.object({
-	email: z.string().optional(),
-	name: z.string().optional(),
-	image: z.string().optional(),
-	isAdmin: z.boolean().optional(),
+const storeUserArgsSchema = v.object({
+	email: v.optional(v.string()),
+	name: v.optional(v.string()),
+	image: v.optional(v.string()),
+	isAdmin: v.optional(v.boolean()),
 });
 
 /**

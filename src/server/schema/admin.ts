@@ -1,25 +1,27 @@
-import { z } from "zod";
+import * as v from "valibot";
 
-export const setRolePermissionArgsSchema = z.object({
-	role: z.string(),
-	feature: z.string(),
-	enabled: z.boolean(),
+export const setRolePermissionArgsSchema = v.object({
+	role: v.string(),
+	feature: v.string(),
+	enabled: v.boolean(),
 });
-export type SetRolePermissionArgs = z.infer<typeof setRolePermissionArgsSchema>;
+export type SetRolePermissionArgs = v.InferOutput<
+	typeof setRolePermissionArgsSchema
+>;
 
-export const setUserRolesArgsSchema = z.object({
-	tokenIdentifier: z.string(),
-	roles: z.array(z.enum(["video-player", "ai-integrations"])),
+export const setUserRolesArgsSchema = v.object({
+	tokenIdentifier: v.string(),
+	roles: v.array(v.picklist(["video-player", "ai-integrations"])),
 });
-export type SetUserRolesArgs = z.infer<typeof setUserRolesArgsSchema>;
+export type SetUserRolesArgs = v.InferOutput<typeof setUserRolesArgsSchema>;
 
-export const setUserBannedArgsSchema = z.object({
-	tokenIdentifier: z.string(),
-	banned: z.boolean(),
+export const setUserBannedArgsSchema = v.object({
+	tokenIdentifier: v.string(),
+	banned: v.boolean(),
 });
-export type SetUserBannedArgs = z.infer<typeof setUserBannedArgsSchema>;
+export type SetUserBannedArgs = v.InferOutput<typeof setUserBannedArgsSchema>;
 
-export const listUsersArgsSchema = z.object({
-	limit: z.number().optional(),
+export const listUsersArgsSchema = v.object({
+	limit: v.optional(v.number()),
 });
-export type ListUsersArgs = z.infer<typeof listUsersArgsSchema>;
+export type ListUsersArgs = v.InferOutput<typeof listUsersArgsSchema>;
