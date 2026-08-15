@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import { requireUser } from "../auth";
 import { getDb } from "../db/client";
-import { watchItems } from "../db/schema";
+import { episodeProgress, watchItems } from "../db/schema";
 import { getEnv } from "../env";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
 import {
@@ -12,7 +12,6 @@ import {
 } from "../helpers/watch-item";
 import { type ApiResult, ok } from "../schema/common";
 import { importWatchlistArgsSchema } from "../schema/import";
-import { syncEpisodeProgressRecord } from "./watchlist";
 
 export const importWatchlist = createServerFn({ method: "POST" })
 	.validator(importWatchlistArgsSchema)
@@ -69,18 +68,35 @@ export const importWatchlist = createServerFn({ method: "POST" })
 					})
 					.where(eq(watchItems.id, existing.id));
 			} else {
-				await db.insert(watchItems).values({
-					id: crypto.randomUUID(),
-					userId: user.id,
-					tmdbId: item.tmdbId,
-					mediaType: item.mediaType,
-					inWatchlist: true,
-					progressStatus,
-					progress,
-					reaction,
-					updatedAt: now,
-					...metadata,
-				});
+				await db
+					.insert(watchItems)
+					.values({
+						id: crypto.randomUUID(),
+						userId: user.id,
+						tmdbId: item.tmdbId,
+						mediaType: item.mediaType,
+						inWatchlist: true,
+						progressStatus,
+						progress,
+						reaction,
+						updatedAt: now,
+						...metadata,
+					})
+					.onConflictDoUpdate({
+						target: [
+							watchItems.userId,
+							watchItems.tmdbId,
+							watchItems.mediaType,
+						],
+						set: {
+							inWatchlist: true,
+							progressStatus,
+							progress,
+							reaction,
+							updatedAt: now,
+							...metadata,
+						},
+					});
 			}
 		}
 
@@ -89,17 +105,84 @@ export const importWatchlist = createServerFn({ method: "POST" })
 				.filter((item) => item.mediaType === "tv")
 				.map((item) => item.tmdbId),
 		);
+
+		const userEpisodes = await db
+			.select()
+			.from(episodeProgress)
+			.where(eq(episodeProgress.userId, user.id));
+
+		const existingEpisodeMap = new Map<
+			string,
+			typeof episodeProgress.$inferSelect
+		>();
+		for (const ep of userEpisodes) {
+			existingEpisodeMap.set(`${ep.tmdbId}:${ep.season}:${ep.episode}`, ep);
+		}
+
 		const episodeKeys = new Set<string>();
+		const episodesToUpsert: Array<{
+			id: string;
+			userId: string;
+			tmdbId: number;
+			season: number;
+			episode: number;
+			isWatched: boolean;
+			updatedAt: number;
+		}> = [];
+
 		for (const episode of data.watchedEpisodes) {
 			if (!importedTvIds.has(episode.tmdbId)) continue;
 			const key = `${episode.tmdbId}:${episode.season}:${episode.episode}`;
 			if (episodeKeys.has(key)) continue;
 			episodeKeys.add(key);
-			await syncEpisodeProgressRecord(
-				user.id,
-				{ ...episode, isWatched: true },
-				now,
-			);
+
+			const existingEp = existingEpisodeMap.get(key);
+			if (existingEp) {
+				if (!existingEp.isWatched) {
+					episodesToUpsert.push({
+						id: existingEp.id,
+						userId: user.id,
+						tmdbId: episode.tmdbId,
+						season: episode.season,
+						episode: episode.episode,
+						isWatched: true,
+						updatedAt: now,
+					});
+				}
+			} else {
+				episodesToUpsert.push({
+					id: crypto.randomUUID(),
+					userId: user.id,
+					tmdbId: episode.tmdbId,
+					season: episode.season,
+					episode: episode.episode,
+					isWatched: true,
+					updatedAt: now,
+				});
+			}
+		}
+
+		// Insert/upsert episodes in chunks of 50 rows (each row has 7 params => 350 params, well within SQLite limits)
+		const CHUNK_SIZE = 50;
+		for (let i = 0; i < episodesToUpsert.length; i += CHUNK_SIZE) {
+			const chunk = episodesToUpsert.slice(i, i + CHUNK_SIZE);
+			if (chunk.length > 0) {
+				await db
+					.insert(episodeProgress)
+					.values(chunk)
+					.onConflictDoUpdate({
+						target: [
+							episodeProgress.userId,
+							episodeProgress.tmdbId,
+							episodeProgress.season,
+							episodeProgress.episode,
+						],
+						set: {
+							isWatched: true,
+							updatedAt: now,
+						},
+					});
+			}
 		}
 
 		await createWatchlistSnapshot(db, user.id);

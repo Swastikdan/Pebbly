@@ -148,21 +148,40 @@ export async function upsertWatchItem(
 	}
 
 	const id = crypto.randomUUID();
-	await db.insert(watchItems).values({
-		id,
-		userId,
-		tmdbId,
-		mediaType,
-		inWatchlist: finalUpdates.inWatchlist ?? false,
-		progressStatus:
-			normalizeProgressStatus(finalUpdates.progressStatus) ?? undefined,
-		progress:
-			typeof finalUpdates.progress === "number"
-				? Math.min(Math.max(finalUpdates.progress, 0), 100)
-				: 0,
-		reaction: normalizeReaction(finalUpdates.reaction) ?? undefined,
-		updatedAt: now,
-		...metadataPatch,
-	});
+	const progressStatus =
+		normalizeProgressStatus(finalUpdates.progressStatus) ?? undefined;
+	const progress =
+		typeof finalUpdates.progress === "number"
+			? Math.min(Math.max(finalUpdates.progress, 0), 100)
+			: 0;
+	const reaction = normalizeReaction(finalUpdates.reaction) ?? undefined;
+
+	await db
+		.insert(watchItems)
+		.values({
+			id,
+			userId,
+			tmdbId,
+			mediaType,
+			inWatchlist: finalUpdates.inWatchlist ?? false,
+			progressStatus,
+			progress,
+			reaction,
+			updatedAt: now,
+			...metadataPatch,
+		})
+		.onConflictDoUpdate({
+			target: [watchItems.userId, watchItems.tmdbId, watchItems.mediaType],
+			set: {
+				...(finalUpdates.inWatchlist !== undefined && {
+					inWatchlist: finalUpdates.inWatchlist,
+				}),
+				...(progressStatus !== undefined && { progressStatus }),
+				...(typeof finalUpdates.progress === "number" && { progress }),
+				...(reaction !== undefined && { reaction }),
+				updatedAt: now,
+				...metadataPatch,
+			},
+		});
 	return undefined;
 }
