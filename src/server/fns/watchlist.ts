@@ -485,18 +485,7 @@ export async function syncEpisodeProgressRecord(
 			isWatched: args.isWatched,
 			updatedAt: now,
 		})
-		.onConflictDoUpdate({
-			target: [
-				episodeProgress.userId,
-				episodeProgress.tmdbId,
-				episodeProgress.season,
-				episodeProgress.episode,
-			],
-			set: {
-				isWatched: args.isWatched,
-				updatedAt: now,
-			},
-		});
+		.onConflictDoNothing();
 }
 
 export const markEpisodeWatched = createServerFn({ method: "POST" })

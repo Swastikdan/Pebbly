@@ -55,11 +55,16 @@ export const importWatchlist = createServerFn({ method: "POST" })
 				null;
 			const metadata = buildMetadataPatch(item, existing ?? undefined);
 
+			const inWatchlist =
+				item.inWatchlist !== undefined && item.inWatchlist !== null
+					? item.inWatchlist
+					: (existing?.inWatchlist ?? true);
+
 			if (existing) {
 				await db
 					.update(watchItems)
 					.set({
-						inWatchlist: true,
+						inWatchlist,
 						progressStatus,
 						progress,
 						reaction,
@@ -75,28 +80,14 @@ export const importWatchlist = createServerFn({ method: "POST" })
 						userId: user.id,
 						tmdbId: item.tmdbId,
 						mediaType: item.mediaType,
-						inWatchlist: true,
+						inWatchlist,
 						progressStatus,
 						progress,
 						reaction,
 						updatedAt: now,
 						...metadata,
 					})
-					.onConflictDoUpdate({
-						target: [
-							watchItems.userId,
-							watchItems.tmdbId,
-							watchItems.mediaType,
-						],
-						set: {
-							inWatchlist: true,
-							progressStatus,
-							progress,
-							reaction,
-							updatedAt: now,
-							...metadata,
-						},
-					});
+					.onConflictDoNothing();
 			}
 		}
 
@@ -120,7 +111,7 @@ export const importWatchlist = createServerFn({ method: "POST" })
 		}
 
 		const episodeKeys = new Set<string>();
-		const episodesToUpsert: Array<{
+		const episodesToInsert: Array<{
 			id: string;
 			userId: string;
 			tmdbId: number;
@@ -139,18 +130,13 @@ export const importWatchlist = createServerFn({ method: "POST" })
 			const existingEp = existingEpisodeMap.get(key);
 			if (existingEp) {
 				if (!existingEp.isWatched) {
-					episodesToUpsert.push({
-						id: existingEp.id,
-						userId: user.id,
-						tmdbId: episode.tmdbId,
-						season: episode.season,
-						episode: episode.episode,
-						isWatched: true,
-						updatedAt: now,
-					});
+					await db
+						.update(episodeProgress)
+						.set({ isWatched: true, updatedAt: now })
+						.where(eq(episodeProgress.id, existingEp.id));
 				}
 			} else {
-				episodesToUpsert.push({
+				episodesToInsert.push({
 					id: crypto.randomUUID(),
 					userId: user.id,
 					tmdbId: episode.tmdbId,
@@ -162,26 +148,12 @@ export const importWatchlist = createServerFn({ method: "POST" })
 			}
 		}
 
-		// Insert/upsert episodes in chunks of 50 rows (each row has 7 params => 350 params, well within SQLite limits)
+		// Insert new episodes in chunks of 50 rows
 		const CHUNK_SIZE = 50;
-		for (let i = 0; i < episodesToUpsert.length; i += CHUNK_SIZE) {
-			const chunk = episodesToUpsert.slice(i, i + CHUNK_SIZE);
+		for (let i = 0; i < episodesToInsert.length; i += CHUNK_SIZE) {
+			const chunk = episodesToInsert.slice(i, i + CHUNK_SIZE);
 			if (chunk.length > 0) {
-				await db
-					.insert(episodeProgress)
-					.values(chunk)
-					.onConflictDoUpdate({
-						target: [
-							episodeProgress.userId,
-							episodeProgress.tmdbId,
-							episodeProgress.season,
-							episodeProgress.episode,
-						],
-						set: {
-							isWatched: true,
-							updatedAt: now,
-						},
-					});
+				await db.insert(episodeProgress).values(chunk).onConflictDoNothing();
 			}
 		}
 
