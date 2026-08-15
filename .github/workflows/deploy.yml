@@ -1,7 +1,10 @@
 name: Deploy Cloudflare
 on:
   push:
-    branches: [master]
+    branches:
+      - cloudflare
+      - feat/convex-to-traditional-backend
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
 
 jobs:
   deploy:
