@@ -5,7 +5,11 @@ import { getDb } from "../db/client";
 import { watchItems } from "../db/schema";
 import { getEnv } from "../env";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
-import { buildMetadataPatch } from "../helpers/watch-item";
+import {
+	buildMetadataPatch,
+	normalizeProgressStatus,
+	normalizeReaction,
+} from "../helpers/watch-item";
 import { type ApiResult, ok } from "../schema/common";
 import { importWatchlistArgsSchema } from "../schema/import";
 import { syncEpisodeProgressRecord } from "./watchlist";
@@ -36,14 +40,20 @@ export const importWatchlist = createServerFn({ method: "POST" })
 
 		for (const item of importedItems.values()) {
 			const existing = existingMap.get(`${item.mediaType}:${item.tmdbId}`);
-			const progressStatus = item.progressStatus ?? "watch-later";
-			const progress =
+			const progressStatus =
+				normalizeProgressStatus(item.progressStatus) ?? "watch-later";
+			const rawProgress =
 				item.progress ??
 				(progressStatus === "done"
 					? 100
 					: progressStatus === "watch-later"
 						? 0
-						: existing?.progress);
+						: (existing?.progress ?? 0));
+			const progress = Math.min(Math.max(rawProgress, 0), 100);
+			const reaction =
+				normalizeReaction(item.reaction) ??
+				normalizeReaction(existing?.reaction) ??
+				null;
 			const metadata = buildMetadataPatch(item, existing ?? undefined);
 
 			if (existing) {
@@ -53,7 +63,7 @@ export const importWatchlist = createServerFn({ method: "POST" })
 						inWatchlist: true,
 						progressStatus,
 						progress,
-						reaction: item.reaction ?? existing.reaction ?? null,
+						reaction,
 						updatedAt: now,
 						...metadata,
 					})
@@ -67,7 +77,7 @@ export const importWatchlist = createServerFn({ method: "POST" })
 					inWatchlist: true,
 					progressStatus,
 					progress,
-					reaction: item.reaction ?? null,
+					reaction,
 					updatedAt: now,
 					...metadata,
 				});

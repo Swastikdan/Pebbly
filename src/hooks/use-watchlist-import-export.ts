@@ -223,7 +223,12 @@ export const useWatchlistImportExport = () => {
 							normalizeProgressStatus(item.progressStatus as string) ??
 							"watch-later",
 						progress: item.progress,
-						reaction: (item.reaction as ReactionStatus | null) ?? null,
+						reaction:
+							item.reaction &&
+							typeof item.reaction === "string" &&
+							item.reaction.trim() !== ""
+								? (item.reaction as ReactionStatus)
+								: null,
 					}));
 
 					if (isSignedIn) {

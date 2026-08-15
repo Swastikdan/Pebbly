@@ -1,9 +1,5 @@
 import * as v from "valibot";
-import {
-	mediaTypeSchema,
-	progressStatusSchema,
-	reactionSchema,
-} from "./common";
+import { mediaTypeSchema } from "./common";
 
 export const importItemSchema = v.object({
 	tmdbId: v.number(),
@@ -13,9 +9,9 @@ export const importItemSchema = v.object({
 	rating: v.optional(v.number()),
 	release_date: v.optional(v.string()),
 	overview: v.optional(v.string()),
-	progressStatus: v.optional(progressStatusSchema),
+	progressStatus: v.optional(v.nullable(v.string())),
 	progress: v.optional(v.number()),
-	reaction: v.optional(v.nullable(reactionSchema)),
+	reaction: v.optional(v.nullable(v.string())),
 });
 export type ImportItem = v.InferOutput<typeof importItemSchema>;
 
