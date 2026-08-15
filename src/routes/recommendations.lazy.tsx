@@ -1,5 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery as useConvexQuery } from "convex/react";
 import {
 	ArrowUpRight,
 	BrainCircuit,
@@ -41,6 +41,7 @@ import type {
 } from "@/hooks/use-recommendations";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { queryKeys } from "@/lib/query/keys";
 import {
 	type AIRecommendation,
 	normalizeTitleKey,
@@ -49,7 +50,9 @@ import {
 	useTmdbSearchFallback,
 } from "@/lib/recommendation-engine";
 import { cn } from "@/lib/utils";
-import { api } from "../../convex/_generated/api";
+import { getCustomLists } from "@/server/fns/lists";
+import { getTrackedTmdbIds } from "@/server/fns/watchlist";
+import { unwrap } from "@/server/schema/common";
 
 export const Route = createLazyFileRoute("/recommendations")({
 	component: RecommendationsPage,
@@ -157,13 +160,14 @@ function RecommendationsContent({
 
 	const { watchlist, loading: watchlistLoading } = useWatchlist();
 
-	const trackedTmdbIds = useConvexQuery(
-		api.watchlist.getTrackedTmdbIds,
-		isSignedIn ? {} : "skip",
-	);
+	const trackedTmdbIdsQuery = useQuery({
+		queryKey: queryKeys.watchlist.trackedTmdbIds(),
+		queryFn: () => unwrap(getTrackedTmdbIds()),
+		enabled: !!isSignedIn,
+	});
 	const trackedIdSet = useMemo<Set<number>>(
-		() => new Set((trackedTmdbIds ?? []) as number[]),
-		[trackedTmdbIds],
+		() => new Set((trackedTmdbIdsQuery.data ?? []) as number[]),
+		[trackedTmdbIdsQuery.data],
 	);
 	const trackedTitleSet = useMemo(
 		() =>
@@ -206,7 +210,7 @@ function RecommendationsContent({
 
 	useEffect(() => {
 		if (!activeId && filteredHistory.length > 0) {
-			setActiveId(filteredHistory[0]._id);
+			setActiveId(filteredHistory[0].id);
 		}
 	}, [activeId, filteredHistory, setActiveId]);
 
@@ -232,11 +236,12 @@ function RecommendationsContent({
 		);
 	};
 
-	const customListsResult = useConvexQuery(
-		api.watchlist.getCustomLists,
-		isSignedIn ? {} : "skip",
-	);
-	const customLists = customListsResult ?? [];
+	const customListsQuery = useQuery({
+		queryKey: queryKeys.lists.all(),
+		queryFn: () => unwrap(getCustomLists()),
+		enabled: !!isSignedIn,
+	});
+	const customLists = customListsQuery.data ?? [];
 
 	const handleGenerate = () => {
 		if (genMode === "watchlist" && watchlist.length === 0) return;
@@ -309,7 +314,7 @@ function RecommendationsContent({
 	};
 
 	const activeEntry =
-		(activeId ? filteredHistory.find((h) => h._id === activeId) : null) ??
+		(activeId ? filteredHistory.find((h) => h.id === activeId) : null) ??
 		filteredHistory[0] ??
 		null;
 
@@ -356,8 +361,8 @@ function RecommendationsContent({
 								</SelectItem>
 								{customLists.map((list) => (
 									<SelectItem
-										key={list._id}
-										value={`list:${list._id}`}
+										key={list.id}
+										value={`list:${list.id}`}
 										className="text-xs"
 									>
 										From List: {list.name}
@@ -612,11 +617,11 @@ function RecommendationsContent({
 					<Accordion type="single" collapsible className="space-y-2 mb-10">
 						{filteredHistory.map((entry) => (
 							<HistoryAccordionItem
-								key={entry._id}
+								key={entry.id}
 								entry={entry}
-								isActive={entry._id === activeEntry?._id}
-								onSelect={() => setActiveId(entry._id)}
-								onDelete={() => handleDelete(entry._id)}
+								isActive={entry.id === activeEntry?.id}
+								onSelect={() => setActiveId(entry.id)}
+								onDelete={() => handleDelete(entry.id)}
 								onGenerateAgain={() => handleGenerateAgain(entry)}
 								onGenerateMore={() => handleGenerateMore(entry)}
 								isGenerating={isGenerating}
@@ -661,7 +666,7 @@ function HistoryAccordionItem({
 
 	return (
 		<AccordionItem
-			value={entry._id}
+			value={entry.id}
 			className={cn(
 				"rounded-2xl border border-border bg-card overflow-hidden transition-colors shadow-none",
 				isActive && "ring-1 ring-border",
@@ -867,7 +872,7 @@ function RecommendationCardGrid({
 	const resolvedCountRef = useRef(0);
 	const hasPushedRef = useRef(false);
 
-	const entryId = entry._id;
+	const entryId = entry.id;
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: entryId is intentionally used to reset refs when the entry changes
 	useEffect(() => {

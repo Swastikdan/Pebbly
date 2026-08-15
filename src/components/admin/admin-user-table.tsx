@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
 	AlertCircle,
 	Ban,
@@ -25,7 +25,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RbacRole } from "@/constants";
-import { api } from "../../../convex/_generated/api";
+import { listUsers, setUserBanned, setUserRoles } from "@/server/fns/admin";
+import { unwrap } from "@/server/schema/common";
 
 type DynamicRbacRole = Exclude<RbacRole, "admin">;
 
@@ -46,9 +47,18 @@ type FilterTab = "all" | "active" | "banned";
 
 export function AdminUserTable() {
 	const { user: currentUser } = useUser();
-	const users = useQuery(api.admin.listUsers, {});
-	const setUserRoles = useMutation(api.admin.setUserRoles);
-	const setUserBanned = useMutation(api.admin.setUserBanned);
+	const usersQuery = useQuery({
+		queryKey: ["admin", "users"],
+		queryFn: () => unwrap(listUsers({ data: {} })),
+	});
+	const setUserRolesMutation = useMutation({
+		mutationFn: (args: { tokenIdentifier: string; roles: DynamicRbacRole[] }) =>
+			unwrap(setUserRoles({ data: args })),
+	});
+	const setUserBannedMutation = useMutation({
+		mutationFn: (args: { tokenIdentifier: string; banned: boolean }) =>
+			unwrap(setUserBanned({ data: args })),
+	});
 
 	const [selectedUser, setSelectedUser] = useState<UserTarget | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,6 +66,8 @@ export function AdminUserTable() {
 	const [roleError, setRoleError] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
 	const [filterTab, setFilterTab] = useState<FilterTab>("all");
+
+	const users = usersQuery.data;
 
 	if (users === undefined) {
 		return (
@@ -76,7 +88,7 @@ export function AdminUserTable() {
 		setErrorMessage(null);
 
 		try {
-			await setUserBanned({
+			await setUserBannedMutation.mutateAsync({
 				tokenIdentifier: selectedUser.tokenIdentifier,
 				banned: !selectedUser.isBanned,
 			});
@@ -296,16 +308,18 @@ export function AdminUserTable() {
 															const next = isActive
 																? currentRoles.filter((r) => r !== config.value)
 																: [...currentRoles, config.value];
-															setUserRoles({
-																tokenIdentifier: user.tokenIdentifier,
-																roles: next,
-															}).catch((err) => {
-																setRoleError(
-																	err instanceof Error
-																		? err.message
-																		: String(err),
-																);
-															});
+															setUserRolesMutation
+																.mutateAsync({
+																	tokenIdentifier: user.tokenIdentifier,
+																	roles: next,
+																})
+																.catch((err) => {
+																	setRoleError(
+																		err instanceof Error
+																			? err.message
+																			: String(err),
+																	);
+																});
 														};
 
 														return (
@@ -478,14 +492,16 @@ export function AdminUserTable() {
 												const next = isActive
 													? currentRoles.filter((r) => r !== config.value)
 													: [...currentRoles, config.value];
-												setUserRoles({
-													tokenIdentifier: user.tokenIdentifier,
-													roles: next,
-												}).catch((err) => {
-													setRoleError(
-														err instanceof Error ? err.message : String(err),
-													);
-												});
+												setUserRolesMutation
+													.mutateAsync({
+														tokenIdentifier: user.tokenIdentifier,
+														roles: next,
+													})
+													.catch((err) => {
+														setRoleError(
+															err instanceof Error ? err.message : String(err),
+														);
+													});
 											};
 
 											return (

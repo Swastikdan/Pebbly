@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq } from "drizzle-orm";
-import { type AuthUser, requireUser } from "../auth";
+import { type AuthUser, isAdminFromClerkApi, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { rolePermissions, users } from "../db/schema";
 import { getEnv } from "../env";
@@ -25,7 +25,10 @@ async function requireAdmin(): Promise<
 	if (result.error) return { user: null, error: result.error };
 
 	const { user, claims } = result;
-	if (!isClerkAdmin(claims as unknown as Record<string, unknown>, user)) {
+	if (
+		!isClerkAdmin(claims as unknown as Record<string, unknown>, user) &&
+		!(await isAdminFromClerkApi(claims.sub))
+	) {
 		return {
 			user: null,
 			error: fail("FORBIDDEN", "Forbidden: admin access required"),
@@ -202,8 +205,19 @@ export const listUsers = createServerFn({ method: "POST" })
 				.from(users)
 				.limit(data.limit ?? 200);
 
-			return ok(
-				rows.map((u) => ({
+			const results: Array<{
+				_id: string;
+				tokenIdentifier: string;
+				name: string;
+				email: string;
+				image: string | null;
+				roles: string[];
+				isBanned: boolean;
+				isAdmin: boolean;
+			}> = [];
+			for (const u of rows) {
+				const sub = u.tokenIdentifier.replace(/^clerk\|/, "");
+				results.push({
 					_id: u.id,
 					tokenIdentifier: u.tokenIdentifier,
 					name: u.name ?? "Anonymous",
@@ -213,8 +227,12 @@ export const listUsers = createServerFn({ method: "POST" })
 						DYNAMIC_ROLES.includes(role as (typeof DYNAMIC_ROLES)[number]),
 					),
 					isBanned: u.isBanned ?? false,
-					isAdmin: isClerkAdmin(null, { isAdmin: u.isAdmin ?? false }),
-				})),
-			);
+					isAdmin:
+						isClerkAdmin(null, { isAdmin: u.isAdmin ?? false }) ||
+						(await isAdminFromClerkApi(sub)),
+				});
+			}
+
+			return ok(results);
 		},
 	);

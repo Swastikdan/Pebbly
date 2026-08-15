@@ -1,30 +1,28 @@
 import { useUser } from "@clerk/react";
-
-import { useMutation, useQuery } from "convex/react";
-
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-import { api } from "../../convex/_generated/api";
-
-import type { Id } from "../../convex/_generated/dataModel";
-
+import { queryKeys } from "@/lib/query/keys";
+import type { EpisodeProgressRow } from "@/lib/server-types";
+import {
+	getAllWatchedEpisodes,
+	getWatchlist,
+	markEpisodeWatched,
+	markSeasonEpisodesWatched,
+	setProgressStatus,
+	updateProgress,
+} from "@/server/fns/watchlist";
+import { unwrap } from "@/server/schema/common";
+import { beginOptimistic } from "./optimistic-helpers";
 import { useLocalProgressStore } from "./use-local-progress-store";
-
 import { useMediaState, useWatchlistStore } from "./use-watchlist";
 
 export interface WatchProgressData {
 	id: string;
-
 	type: "movie" | "tv";
-
 	timestamp: number;
-
 	percent: number;
-
 	duration: number;
-
 	lastUpdated: number;
-
 	context?: {
 		season?: number;
 		episode?: number;
@@ -65,8 +63,6 @@ function makeEpisodeKey(
 ): string {
 	return `${tvId}:${season}:${episode}`;
 }
-
-const QUERY_SKIP = "skip" as const;
 
 function isNonNegativeIntegerLike(value: unknown): boolean {
 	if (typeof value === "number") return Number.isInteger(value) && value >= 0;
@@ -146,15 +142,14 @@ function createOptimisticEpisodeProgress(
 	episode: number,
 	suffix: string,
 	now: number,
-) {
+): EpisodeProgressRow {
 	return {
-		_id: `optimistic_${suffix}` as Id<"episode_progress">,
-		_creationTime: now,
-		userId: "optimistic" as unknown as Id<"users">,
+		id: `optimistic_${suffix}`,
+		userId: "optimistic",
 		tmdbId,
 		season,
 		episode,
-		isWatched: true as const,
+		isWatched: true,
 		updatedAt: now,
 	};
 }
@@ -171,12 +166,32 @@ export function usePlayerProgressListener(activeContext?: {
 	overview?: string;
 }) {
 	const { isSignedIn } = useUser();
-	const updateProgress = useMutation(api.watchlist.updateProgress);
-	const markEpisodeWatchedMut = useMutation(api.watchlist.markEpisodeWatched);
 	const setLocalProgress = useWatchlistStore((state) => state.setProgressLocal);
 	const markLocalEpisode = useLocalProgressStore(
 		(state) => state.markEpisodeWatched,
 	);
+
+	const updateProgressMutation = useMutation({
+		mutationFn: (args: {
+			tmdbId: number;
+			mediaType: "movie" | "tv";
+			progress?: number;
+			title?: string;
+			image?: string;
+			rating?: number;
+			release_date?: string;
+			overview?: string;
+		}) => unwrap(updateProgress({ data: args })),
+	});
+
+	const markEpisodeMutation = useMutation({
+		mutationFn: (args: {
+			tmdbId: number;
+			season: number;
+			episode: number;
+			isWatched: boolean;
+		}) => unwrap(markEpisodeWatched({ data: args })),
+	});
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -287,14 +302,16 @@ export function usePlayerProgressListener(activeContext?: {
 				};
 
 				if (isSignedIn) {
-					void updateProgress({
-						tmdbId: Number(id),
-						mediaType,
-						progress: safeProgress,
-						...metadata,
-					}).catch((error) =>
-						logWatchProgressError("persist playback progress", error),
-					);
+					void updateProgressMutation
+						.mutateAsync({
+							tmdbId: Number(id),
+							mediaType,
+							progress: safeProgress,
+							...metadata,
+						})
+						.catch((error) =>
+							logWatchProgressError("persist playback progress", error),
+						);
 
 					if (
 						(playerEvent === "ended" || safeProgress >= 95) &&
@@ -302,17 +319,19 @@ export function usePlayerProgressListener(activeContext?: {
 						season !== undefined &&
 						episode !== undefined
 					) {
-						void markEpisodeWatchedMut({
-							tmdbId: Number(id),
-							season,
-							episode,
-							isWatched: true,
-						}).catch((error) =>
-							logWatchProgressError(
-								"mark an episode watched from player progress",
-								error,
-							),
-						);
+						void markEpisodeMutation
+							.mutateAsync({
+								tmdbId: Number(id),
+								season,
+								episode,
+								isWatched: true,
+							})
+							.catch((error) =>
+								logWatchProgressError(
+									"mark an episode watched from player progress",
+									error,
+								),
+							);
 					}
 				} else {
 					setLocalProgress(String(id), mediaType, safeProgress, metadata);
@@ -332,8 +351,8 @@ export function usePlayerProgressListener(activeContext?: {
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
 	}, [
-		updateProgress,
-		markEpisodeWatchedMut,
+		updateProgressMutation,
+		markEpisodeMutation,
 		isSignedIn,
 		setLocalProgress,
 		markLocalEpisode,
@@ -349,11 +368,12 @@ export function useWatchProgress(
 	const { isSignedIn } = useUser();
 	const tmdbId = Number(id);
 
-	const watchedEpisodes =
-		useQuery(
-			api.watchlist.getAllWatchedEpisodes,
-			isSignedIn && mediaType === "tv" ? { tmdbId } : QUERY_SKIP,
-		) || [];
+	const watchedEpisodesQuery = useQuery({
+		queryKey: queryKeys.watchlist.episodes(tmdbId),
+		queryFn: () => unwrap(getAllWatchedEpisodes({ data: { tmdbId } })),
+		enabled: !!isSignedIn && mediaType === "tv",
+	});
+	const watchedEpisodes = watchedEpisodesQuery.data ?? [];
 
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
@@ -411,7 +431,6 @@ export function useWatchProgress(
 		if (mediaType === "tv") {
 			if (lastPlayed) {
 				const { season, episode } = lastPlayed;
-				// Check if this episode is already fully watched.
 				const isThisWatched = isSignedIn
 					? watchedEpisodes.some(
 							(e) =>
@@ -426,7 +445,6 @@ export function useWatchProgress(
 				}
 			}
 
-			// If not in localStorage, fall back to the highest watched episode + 1, or S1E1
 			if (!context) {
 				const watchedList = isSignedIn
 					? watchedEpisodes
@@ -482,16 +500,22 @@ export function useWatchProgress(
 
 export function useContinueWatching() {
 	const { isSignedIn } = useUser();
-	const convexData = useQuery(
-		api.watchlist.getWatchlist,
-		isSignedIn ? { statusFilter: "watching", limit: 50 } : QUERY_SKIP,
-	);
+	const remote = useQuery({
+		queryKey: queryKeys.watchlist.list({ statusFilter: "watching", limit: 50 }),
+		queryFn: () =>
+			unwrap(
+				getWatchlist({
+					data: { statusFilter: "watching", limit: 50 },
+				}),
+			),
+		enabled: !!isSignedIn,
+	});
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
 	const items = useMemo(() => {
 		if (isSignedIn) {
-			if (!convexData) return [];
-			return convexData
+			if (!remote.data) return [];
+			return remote.data
 				.filter((item) => item.progressStatus === "watching")
 				.map((item) => ({
 					id: String(item.tmdbId),
@@ -500,11 +524,11 @@ export function useContinueWatching() {
 					percent: item.progress ?? 0,
 					duration: 0,
 					lastUpdated: item.updatedAt,
-					title: item.title,
-					image: item.image,
-					rating: item.rating,
-					release_date: item.release_date,
-					overview: item.overview,
+					title: item.title ?? undefined,
+					image: item.image ?? undefined,
+					rating: item.rating ?? undefined,
+					release_date: item.releaseDate ?? undefined,
+					overview: item.overview ?? undefined,
 				}))
 				.sort((a, b) => b.lastUpdated - a.lastUpdated);
 		}
@@ -525,111 +549,57 @@ export function useContinueWatching() {
 				overview: item.overview,
 			}))
 			.sort((a, b) => b.lastUpdated - a.lastUpdated);
-	}, [isSignedIn, convexData, localMediaState]);
+	}, [isSignedIn, remote.data, localMediaState]);
 
 	return { items, allItems: items };
 }
 
 export function useRemoveFromContinueWatching() {
 	const { isSignedIn } = useUser();
-	const setProgressStatusConvex = useMutation(api.watchlist.setProgressStatus);
-	const setProgressStatusLocal = useWatchlistStore(
+	const queryClient = useQueryClient();
+	const setLocalProgressStatus = useWatchlistStore(
 		(state) => state.setProgressStatusLocal,
 	);
 	const clearShowProgress = useLocalProgressStore(
 		(state) => state.clearShowProgress,
 	);
 
+	const mutation = useMutation({
+		mutationFn: (args: { tmdbId: number; mediaType: "movie" | "tv" }) =>
+			unwrap(
+				setProgressStatus({
+					data: {
+						...args,
+						progressStatus: "watch-later",
+						progress: 0,
+					},
+				}),
+			),
+		onSettled: () => {
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.watchlist.list(),
+			});
+		},
+	});
+
 	const removeFromContinueWatching = useCallback(
 		async (tmdbId: number, mediaType: "movie" | "tv") => {
 			if (isSignedIn) {
 				try {
-					await setProgressStatusConvex({
-						tmdbId,
-						mediaType,
-						progressStatus: "watch-later",
-						progress: 0,
-					});
+					await mutation.mutateAsync({ tmdbId, mediaType });
 				} catch (error) {
 					console.error("Failed to remove item from continue watching:", error);
 				}
 			}
 
-			setProgressStatusLocal(String(tmdbId), mediaType, "watch-later", 0);
+			setLocalProgressStatus(String(tmdbId), mediaType, "watch-later", 0);
 			clearShowProgress(tmdbId);
 		},
-		[
-			isSignedIn,
-			setProgressStatusConvex,
-			setProgressStatusLocal,
-			clearShowProgress,
-		],
+		[isSignedIn, mutation, setLocalProgressStatus, clearShowProgress],
 	);
 
 	return { removeFromContinueWatching };
 }
-
-import { createOptimisticUpdater } from "./optimistic-helpers";
-
-const markEpisodeWatchedOptimisticUpdate = createOptimisticUpdater(
-	api.watchlist.getAllWatchedEpisodes,
-	(current: any[], args: any) => {
-		if (!args.isWatched) {
-			return current.filter(
-				(episode: any) =>
-					!(episode.season === args.season && episode.episode === args.episode),
-			);
-		}
-		const already = current.some(
-			(episode: any) =>
-				episode.season === args.season && episode.episode === args.episode,
-		);
-		if (already) return current;
-
-		const now = Date.now();
-		return [
-			...current,
-			createOptimisticEpisodeProgress(
-				args.tmdbId,
-				args.season,
-				args.episode,
-				String(now),
-				now,
-			),
-		];
-	},
-	(args) => ({ tmdbId: args.tmdbId }),
-);
-
-const markSeasonEpisodesWatchedOptimisticUpdate = createOptimisticUpdater(
-	api.watchlist.getAllWatchedEpisodes,
-	(current: any[], args: any) => {
-		const filtered = current.filter(
-			(episode: any) =>
-				!(
-					episode.season === args.season &&
-					args.episodes.includes(episode.episode)
-				),
-		);
-
-		if (!args.isWatched) {
-			return filtered;
-		}
-
-		const now = Date.now();
-		const newEpisodes = args.episodes.map((episode: any) =>
-			createOptimisticEpisodeProgress(
-				args.tmdbId,
-				args.season,
-				episode,
-				`${now}_${episode}`,
-				now,
-			),
-		);
-		return [...filtered, ...newEpisodes];
-	},
-	(args) => ({ tmdbId: args.tmdbId }),
-);
 
 export function useEpisodeWatched(
 	tvId: number | string,
@@ -639,11 +609,12 @@ export function useEpisodeWatched(
 	const tmdbId = Number(tvId);
 	const { isSignedIn } = useUser();
 	const mediaState = useMediaState(String(tvId), "tv");
-	const watchedEpisodes =
-		useQuery(
-			api.watchlist.getAllWatchedEpisodes,
-			isSignedIn ? { tmdbId } : QUERY_SKIP,
-		) || [];
+	const watchedEpisodesQuery = useQuery({
+		queryKey: queryKeys.watchlist.episodes(tmdbId),
+		queryFn: () => unwrap(getAllWatchedEpisodes({ data: { tmdbId } })),
+		enabled: !!isSignedIn,
+	});
+	const watchedEpisodes = watchedEpisodesQuery.data ?? [];
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 	const markLocalEpisode = useLocalProgressStore(
 		(state) => state.markEpisodeWatched,
@@ -694,16 +665,138 @@ export function useEpisodeWatched(
 
 	const watchedCount = Object.keys(watchedMap).length;
 
-	const markEpisodeWatchedMut = useMutation(
-		api.watchlist.markEpisodeWatched,
-	).withOptimisticUpdate(markEpisodeWatchedOptimisticUpdate);
+	const markEpisodeMutation = useMutation({
+		mutationFn: (args: {
+			tmdbId: number;
+			season: number;
+			episode: number;
+			isWatched: boolean;
+		}) => unwrap(markEpisodeWatched({ data: args })),
+		onMutate: async (args) => {
+			const key = queryKeys.watchlist.episodes(args.tmdbId);
+			return beginOptimistic(queryClient, [key], () => {
+				const current = (queryClient.getQueryData<EpisodeProgressRow[]>(key) ??
+					[]) as EpisodeProgressRow[];
+				if (!args.isWatched) {
+					queryClient.setQueryData<EpisodeProgressRow[]>(
+						key,
+						current.filter(
+							(episode) =>
+								!(
+									episode.season === args.season &&
+									episode.episode === args.episode
+								),
+						),
+					);
+					return;
+				}
+				const already = current.some(
+					(episode) =>
+						episode.season === args.season && episode.episode === args.episode,
+				);
+				if (already) return;
+				const now = Date.now();
+				queryClient.setQueryData<EpisodeProgressRow[]>(key, [
+					...current,
+					createOptimisticEpisodeProgress(
+						args.tmdbId,
+						args.season,
+						args.episode,
+						String(now),
+						now,
+					),
+				]);
+			});
+		},
+		onError: (error, _args, rollback) => {
+			logWatchProgressError("toggle episode watched", error);
+			rollback?.();
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({
+				queryKey: ["watchlist", "episodes"],
+			});
+		},
+	});
 
-	const markEpisodesWatchedBatch = useMutation(
-		api.watchlist.markSeasonEpisodesWatched,
-	).withOptimisticUpdate(markSeasonEpisodesWatchedOptimisticUpdate);
+	const markSeasonMutation = useMutation({
+		mutationFn: (args: {
+			tmdbId: number;
+			season: number;
+			episodes: number[];
+			isWatched: boolean;
+		}) => unwrap(markSeasonEpisodesWatched({ data: args })),
+		onMutate: async (args) => {
+			const key = queryKeys.watchlist.episodes(args.tmdbId);
+			return beginOptimistic(queryClient, [key], () => {
+				const current = (queryClient.getQueryData<EpisodeProgressRow[]>(key) ??
+					[]) as EpisodeProgressRow[];
+				const filtered = current.filter(
+					(episode) =>
+						!(
+							episode.season === args.season &&
+							args.episodes.includes(episode.episode)
+						),
+				);
+				if (!args.isWatched) {
+					queryClient.setQueryData<EpisodeProgressRow[]>(key, filtered);
+					return;
+				}
+				const now = Date.now();
+				const newEpisodes = args.episodes.map((episode) =>
+					createOptimisticEpisodeProgress(
+						args.tmdbId,
+						args.season,
+						episode,
+						`${now}_${episode}`,
+						now,
+					),
+				);
+				queryClient.setQueryData<EpisodeProgressRow[]>(key, [
+					...filtered,
+					...newEpisodes,
+				]);
+			});
+		},
+		onError: (error, _args, rollback) => {
+			logWatchProgressError("mark season episodes watched", error);
+			rollback?.();
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({
+				queryKey: ["watchlist", "episodes"],
+			});
+		},
+	});
 
-	const updateProgress = useMutation(api.watchlist.updateProgress);
-	const setProgressStatus = useMutation(api.watchlist.setProgressStatus);
+	const updateProgressMutation = useMutation({
+		mutationFn: (args: {
+			tmdbId: number;
+			mediaType: "movie" | "tv";
+			progress?: number;
+		}) => unwrap(updateProgress({ data: args })),
+	});
+
+	const setProgressStatusMutation = useMutation({
+		mutationFn: (args: {
+			tmdbId: number;
+			mediaType: "movie" | "tv";
+			progressStatus: "watch-later" | "watching" | "done" | "dropped";
+			progress?: number;
+			title?: string;
+			image?: string;
+			rating?: number;
+			release_date?: string;
+			overview?: string;
+		}) => unwrap(setProgressStatus({ data: args })),
+		onSettled: () => {
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.watchlist.list(),
+			});
+		},
+	});
+
+	const queryClient = useQueryClient();
 	const hasMediaState = !!mediaState;
 	const currentProgress = mediaState?.progress ?? 0;
 	const currentProgressStatus = mediaState?.progressStatus ?? null;
@@ -743,11 +836,13 @@ export function useEpisodeWatched(
 		if (currentProgressStatus === "watching" && derivedStatus !== "watching") {
 			if (shouldWriteProgress) {
 				if (isSignedIn) {
-					void updateProgress({
-						tmdbId,
-						mediaType: "tv",
-						progress: derivedProgress,
-					}).catch((error) => logWatchProgressError("sync TV progress", error));
+					void updateProgressMutation
+						.mutateAsync({
+							tmdbId,
+							mediaType: "tv",
+							progress: derivedProgress,
+						})
+						.catch((error) => logWatchProgressError("sync TV progress", error));
 				} else {
 					setProgressLocal(
 						String(tvId),
@@ -762,21 +857,29 @@ export function useEpisodeWatched(
 
 		if (isSignedIn) {
 			if (shouldWriteStatus) {
-				void setProgressStatus({
-					tmdbId,
-					mediaType: "tv",
-					progressStatus: derivedStatus as any,
-					progress: derivedProgress,
-					...remoteShowMetadata,
-				}).catch((error) =>
-					logWatchProgressError("sync TV progress status", error),
-				);
+				void setProgressStatusMutation
+					.mutateAsync({
+						tmdbId,
+						mediaType: "tv",
+						progressStatus: derivedStatus as
+							| "watch-later"
+							| "watching"
+							| "done"
+							| "dropped",
+						progress: derivedProgress,
+						...remoteShowMetadata,
+					})
+					.catch((error) =>
+						logWatchProgressError("sync TV progress status", error),
+					);
 			} else if (shouldWriteProgress) {
-				void updateProgress({
-					tmdbId,
-					mediaType: "tv",
-					progress: derivedProgress,
-				}).catch((error) => logWatchProgressError("sync TV progress", error));
+				void updateProgressMutation
+					.mutateAsync({
+						tmdbId,
+						mediaType: "tv",
+						progress: derivedProgress,
+					})
+					.catch((error) => logWatchProgressError("sync TV progress", error));
 			}
 			return;
 		}
@@ -788,7 +891,7 @@ export function useEpisodeWatched(
 			setProgressStatusLocal(
 				String(tvId),
 				"tv",
-				derivedStatus as any,
+				derivedStatus as Parameters<typeof setProgressStatusLocal>[2],
 				derivedProgress,
 				localShowMetadata,
 			);
@@ -805,8 +908,8 @@ export function useEpisodeWatched(
 		remoteShowMetadata,
 		tmdbId,
 		tvId,
-		updateProgress,
-		setProgressStatus,
+		updateProgressMutation,
+		setProgressStatusMutation,
 		setProgressLocal,
 		setProgressStatusLocal,
 	]);
@@ -823,7 +926,7 @@ export function useEpisodeWatched(
 			const isWatched = !isEpisodeWatched(season, episode);
 
 			if (isSignedIn) {
-				markEpisodeWatchedMut({ tmdbId, season, episode, isWatched });
+				markEpisodeMutation.mutate({ tmdbId, season, episode, isWatched });
 			} else {
 				markLocalEpisode(tmdbId, season, episode, isWatched);
 			}
@@ -831,7 +934,7 @@ export function useEpisodeWatched(
 		[
 			isEpisodeWatched,
 			isSignedIn,
-			markEpisodeWatchedMut,
+			markEpisodeMutation,
 			markLocalEpisode,
 			tmdbId,
 		],
@@ -840,26 +943,24 @@ export function useEpisodeWatched(
 	const markSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
 			if (isSignedIn) {
-				markEpisodesWatchedBatch({ tmdbId, season, episodes, isWatched: true });
+				markSeasonMutation.mutate({
+					tmdbId,
+					season,
+					episodes,
+					isWatched: true,
+				});
 				return;
 			}
 
 			markLocalSeason(tmdbId, season, episodes, true);
 		},
-		[isSignedIn, markEpisodesWatchedBatch, markLocalSeason, tmdbId],
+		[isSignedIn, markSeasonMutation, markLocalSeason, tmdbId],
 	);
 
 	const unmarkSeasonWatched = useCallback(
 		(season: number, episodes: number[]) => {
-			let _watchedToRemove = 0;
-			for (const episode of episodes) {
-				if (watchedMap[makeEpisodeKey(tmdbId, season, episode)]) {
-					_watchedToRemove++;
-				}
-			}
-
 			if (isSignedIn) {
-				markEpisodesWatchedBatch({
+				markSeasonMutation.mutate({
 					tmdbId,
 					season,
 					episodes,
@@ -869,7 +970,7 @@ export function useEpisodeWatched(
 				markLocalSeason(tmdbId, season, episodes, false);
 			}
 		},
-		[isSignedIn, markEpisodesWatchedBatch, markLocalSeason, tmdbId, watchedMap],
+		[isSignedIn, markSeasonMutation, markLocalSeason, tmdbId],
 	);
 
 	const isSeasonFullyWatched = useCallback(
@@ -905,19 +1006,21 @@ export function useEpisodeWatched(
 	const markShowCompleted = useCallback(
 		(_totalEpisodesOverride: number) => {
 			if (isSignedIn) {
-				void setProgressStatus({
-					tmdbId,
-					mediaType: "tv",
-					progressStatus: "done",
-					progress: 100,
-					title: showMeta?.title ?? `TV Show ${tvId}`,
-					image: showMeta?.image ?? "",
-					rating: showMeta?.rating ?? 0,
-					release_date: showMeta?.release_date || undefined,
-					overview: showMeta?.overview || undefined,
-				}).catch((error) =>
-					logWatchProgressError("mark show completed", error),
-				);
+				void setProgressStatusMutation
+					.mutateAsync({
+						tmdbId,
+						mediaType: "tv",
+						progressStatus: "done",
+						progress: 100,
+						title: showMeta?.title ?? `TV Show ${tvId}`,
+						image: showMeta?.image ?? "",
+						rating: showMeta?.rating ?? 0,
+						release_date: showMeta?.release_date || undefined,
+						overview: showMeta?.overview || undefined,
+					})
+					.catch((error) =>
+						logWatchProgressError("mark show completed", error),
+					);
 				return;
 			}
 
@@ -932,7 +1035,7 @@ export function useEpisodeWatched(
 		[
 			isSignedIn,
 			localShowMetadata,
-			setProgressStatus,
+			setProgressStatusMutation,
 			setProgressStatusLocal,
 			showMeta?.image,
 			showMeta?.overview,
@@ -963,26 +1066,24 @@ export function useEpisodeProgress(
 ) {
 	const { isSignedIn } = useUser();
 
-	const data = useQuery(
-		api.watchlist.getAllWatchedEpisodes,
-		isSignedIn
-			? {
-					tmdbId: Number(tvId),
-				}
-			: QUERY_SKIP,
-	);
+	const data = useQuery({
+		queryKey: queryKeys.watchlist.episodes(Number(tvId)),
+		queryFn: () =>
+			unwrap(getAllWatchedEpisodes({ data: { tmdbId: Number(tvId) } })),
+		enabled: !!isSignedIn,
+	});
 
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
 	return useMemo(() => {
 		if (isSignedIn) {
-			const isWatched = !!data?.some(
+			const isWatched = !!data.data?.some(
 				(e) => e.season === season && e.episode === episode && e.isWatched,
 			);
 			return isWatched ? 100 : 0;
 		}
 		return localEpisodes[makeEpisodeKey(tvId, season, episode)] ? 100 : 0;
-	}, [isSignedIn, data, localEpisodes, tvId, season, episode]);
+	}, [isSignedIn, data.data, localEpisodes, tvId, season, episode]);
 }
 
 export function buildPlayerUrl(opts: {

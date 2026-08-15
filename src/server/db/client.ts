@@ -12,6 +12,14 @@ import * as schema from "./schema";
  * is disabled so hot reads are cached explicitly.
  */
 export function getDb(env: Env) {
+	if (!env.DB) {
+		throw new Error(
+			"D1 binding 'DB' is missing. Full-stack dev needs `pnpm dev:cf` " +
+				"(wrangler dev, provides D1 + .dev.vars secrets). `pnpm dev:web` is " +
+				"UI-only — database-backed server functions will fail there.",
+		);
+	}
+
 	const url = env.UPSTASH_REDIS_REST_URL;
 	const token = env.UPSTASH_REDIS_REST_TOKEN;
 

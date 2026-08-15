@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 
 import { useCallback, useRef, useState } from "react";
@@ -9,10 +9,13 @@ import {
 	useWatchlistStore,
 	type WatchlistItem,
 } from "@/hooks/use-watchlist";
+import { queryKeys } from "@/lib/query/keys";
+import type { AllEpisodeProgressRow } from "@/lib/server-types";
 import { normalizeProgressStatus } from "@/lib/utils";
+import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
+import { getAllEpisodeProgress } from "@/server/fns/watchlist";
+import { unwrap } from "@/server/schema/common";
 import type { ReactionStatus } from "@/types";
-
-import { api } from "../../convex/_generated/api";
 
 function isValidWatchlistItem(item: unknown): item is ImportItem {
 	if (typeof item !== "object" || item === null) return false;
@@ -43,7 +46,6 @@ export const useWatchlistImportExport = () => {
 
 	const { watchlist, loading } = useWatchlist();
 
-	const importWatchlistBatch = useMutation(api.watchlist.importWatchlist);
 	const importWatchlistLocal = useWatchlistStore(
 		(state) => state.importWatchlistLocal,
 	);
@@ -52,10 +54,11 @@ export const useWatchlistImportExport = () => {
 	);
 
 	const { isSignedIn } = useUser();
-	const allEpisodeProgress = useQuery(
-		api.watchlist.getAllEpisodeProgress,
-		isSignedIn ? {} : "skip",
-	);
+	const allEpisodeProgress = useQuery({
+		queryKey: queryKeys.watchlist.allEpisodes(),
+		queryFn: () => unwrap(getAllEpisodeProgress()),
+		enabled: !!isSignedIn,
+	});
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const exportWatchlist = useCallback(async () => {
@@ -72,15 +75,10 @@ export const useWatchlistImportExport = () => {
 				const itemWatched: Record<string, boolean> = {};
 
 				if (item.type === "tv") {
-					if (isSignedIn && allEpisodeProgress) {
-						allEpisodeProgress
+					if (isSignedIn && allEpisodeProgress.data) {
+						allEpisodeProgress.data
 							.filter(
-								(ep: {
-									tmdbId: number;
-									isWatched: boolean;
-									season: number;
-									episode: number;
-								}) =>
+								(ep: AllEpisodeProgressRow) =>
 									String(ep.tmdbId) === String(item.external_id) &&
 									ep.isWatched,
 							)
@@ -129,7 +127,7 @@ export const useWatchlistImportExport = () => {
 		} finally {
 			setExportLoading(false);
 		}
-	}, [watchlist, isSignedIn, allEpisodeProgress]);
+	}, [watchlist, isSignedIn, allEpisodeProgress.data]);
 
 	const importWatchlist = useCallback(
 		async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -229,10 +227,12 @@ export const useWatchlistImportExport = () => {
 					}));
 
 					if (isSignedIn) {
-						await importWatchlistBatch({
-							// biome-ignore lint/suspicious/noExplicitAny: dynamic reaction item import
-							items: importItems as any,
-							watchedEpisodes,
+						await importWatchlistFn({
+							data: {
+								// biome-ignore lint/suspicious/noExplicitAny: dynamic reaction item import
+								items: importItems as any,
+								watchedEpisodes,
+							},
 						});
 					} else {
 						importWatchlistLocal(
@@ -286,12 +286,7 @@ export const useWatchlistImportExport = () => {
 
 			reader.readAsText(file);
 		},
-		[
-			importWatchlistBatch,
-			importWatchlistLocal,
-			isSignedIn,
-			markEpisodeWatchedLocal,
-		],
+		[importWatchlistLocal, isSignedIn, markEpisodeWatchedLocal],
 	);
 
 	const handleImportClick = useCallback(() => {

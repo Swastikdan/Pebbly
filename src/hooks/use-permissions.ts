@@ -1,17 +1,10 @@
 import { useUser } from "@clerk/react";
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import type { RbacFeature, RbacRole } from "@/constants";
-import { api } from "../../convex/_generated/api";
-
-const QUERY_SKIP = "skip" as const;
-
-interface UserFeaturesResult {
-	roles: string[];
-	features: Record<string, boolean>;
-	isAdmin: boolean;
-	isBanned: boolean;
-}
+import { queryKeys } from "@/lib/query/keys";
+import { getUserFeaturesFn } from "@/server/fns/admin";
+import { unwrap } from "@/server/schema/common";
 
 interface PermissionState {
 	roles: RbacRole[];
@@ -27,16 +20,16 @@ export function usePermissions(): PermissionState & {
 	hasRole: (role: RbacRole) => boolean;
 } {
 	const { isSignedIn, isLoaded, user } = useUser();
-	const raw = useQuery(
-		api.admin.getUserFeatures,
-		isSignedIn ? {} : QUERY_SKIP,
-	) as UserFeaturesResult | undefined;
+	const raw = useQuery({
+		queryKey: queryKeys.permissions(),
+		queryFn: () => unwrap(getUserFeaturesFn()),
+		enabled: !!isSignedIn,
+	});
 
 	const clerkIsAdmin = user?.publicMetadata?.isAdmin === true;
-	const loading =
-		!isLoaded || (isSignedIn && !clerkIsAdmin && raw === undefined);
+	const loading = !isLoaded || (isSignedIn && !clerkIsAdmin && raw.isPending);
 
-	const isBanned = raw?.isBanned === true;
+	const isBanned = raw.data?.isBanned === true;
 
 	const features = clerkIsAdmin
 		? ({
@@ -48,11 +41,11 @@ export function usePermissions(): PermissionState & {
 					"video-player": false,
 					"ai-recommendations": false,
 				} as Record<RbacFeature, boolean>)
-			: ((raw?.features ?? {}) as Record<RbacFeature, boolean>);
+			: ((raw.data?.features ?? {}) as Record<RbacFeature, boolean>);
 
 	const roles = clerkIsAdmin
 		? (["admin"] as RbacRole[])
-		: ((raw?.roles ?? []) as RbacRole[]);
+		: ((raw.data?.roles ?? []) as RbacRole[]);
 
 	const isAdmin = clerkIsAdmin;
 

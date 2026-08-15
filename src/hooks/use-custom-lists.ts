@@ -1,29 +1,51 @@
 import { useUser } from "@clerk/react";
-import { useMutation, useQuery } from "convex/react";
+import {
+	type QueryClient,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
+import { queryKeys } from "@/lib/query/keys";
+import type { CustomListRow, ListItemRow } from "@/lib/server-types";
+import {
+	createCustomList,
+	createCustomListAndAddItem,
+	deleteCustomList,
+	getCustomLists,
+	getItemLists,
+	getListItems,
+	toggleListItem,
+	updateCustomList,
+} from "@/server/fns/lists";
+import { unwrap } from "@/server/schema/common";
 import type { ProgressStatus, ReactionStatus } from "@/types";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+import { beginOptimistic } from "./optimistic-helpers";
 import { useLocalListsStore } from "./use-local-lists-store";
 import { useWatchlistStore } from "./watchlist-store";
-
-const QUERY_SKIP = "skip" as const;
-
-function toListId(listId: string) {
-	return listId as Id<"lists">;
-}
 
 export function useCustomLists() {
 	const { isSignedIn } = useUser();
 	const localLists = useLocalListsStore((state) => state.lists);
 	const localItems = useLocalListsStore((state) => state.listItems);
-	const remoteLists = useQuery(
-		api.watchlist.getCustomLists,
-		isSignedIn ? {} : QUERY_SKIP,
-	);
+	const remote = useQuery({
+		queryKey: queryKeys.lists.all(),
+		queryFn: () => unwrap(getCustomLists()),
+		enabled: !!isSignedIn,
+	});
 
 	const lists = useMemo(() => {
-		if (isSignedIn) return remoteLists ?? [];
+		if (isSignedIn) {
+			// Normalize the server rows to the legacy client shape (`_id`,
+			// optional fields) so list consumers work unchanged.
+			return (remote.data ?? []).map((list) => ({
+				...list,
+				_id: list.id,
+				color: list.color ?? undefined,
+				visibility: list.visibility ?? undefined,
+				listType: list.listType ?? undefined,
+			}));
+		}
 
 		return localLists.map((list) => {
 			const items = localItems.filter((i) => i.listId === list._id);
@@ -38,11 +60,11 @@ export function useCustomLists() {
 				itemCount: items.length,
 			};
 		});
-	}, [isSignedIn, remoteLists, localLists, localItems]);
+	}, [isSignedIn, remote.data, localLists, localItems]);
 
 	return {
 		lists,
-		loading: isSignedIn && remoteLists === undefined,
+		loading: isSignedIn && remote.isPending,
 		isAvailable: true,
 	};
 }
@@ -51,15 +73,23 @@ export function useCustomListItems(listId: string | null) {
 	const { isSignedIn } = useUser();
 	const localItems = useLocalListsStore((state) => state.listItems);
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
-	const remoteItems = useQuery(
-		api.watchlist.getListItems,
-		isSignedIn && listId ? { listId: toListId(listId) } : QUERY_SKIP,
-	);
+	const remote = useQuery({
+		queryKey: queryKeys.lists.items(listId ?? ""),
+		queryFn: () => unwrap(getListItems({ data: { listId: listId! } })),
+		enabled: !!isSignedIn && !!listId,
+	});
 
 	return useMemo(() => {
 		if (isSignedIn) {
-			return (remoteItems ?? []).map((item) => ({
+			return (remote.data ?? []).map((item) => ({
 				...item,
+				_id: item.id,
+				title: item.title ?? undefined,
+				image: item.image ?? undefined,
+				backdrop: item.backdrop ?? undefined,
+				rating: item.rating ?? undefined,
+				release_date: item.releaseDate ?? undefined,
+				overview: item.overview ?? undefined,
 				mediaType: item.mediaType as "movie" | "tv",
 				progressStatus: item.progressStatus as ProgressStatus | undefined,
 				reaction: item.reaction as ReactionStatus | undefined,
@@ -84,100 +114,130 @@ export function useCustomListItems(listId: string | null) {
 				reaction: watchItem?.reaction || undefined,
 			};
 		});
-	}, [isSignedIn, remoteItems, listId, localItems, localMediaState]);
+	}, [isSignedIn, remote.data, listId, localItems, localMediaState]);
 }
 
 export function useItemLists(tmdbId: number, mediaType: "movie" | "tv") {
 	const { isSignedIn } = useUser();
 	const localItems = useLocalListsStore((state) => state.listItems);
-	const remoteListIds = useQuery(
-		api.watchlist.getItemLists,
-		isSignedIn ? { tmdbId, mediaType } : QUERY_SKIP,
-	);
+	const remote = useQuery({
+		queryKey: queryKeys.lists.itemLists(tmdbId, mediaType),
+		queryFn: () => unwrap(getItemLists({ data: { tmdbId, mediaType } })),
+		enabled: !!isSignedIn,
+	});
 
 	return useMemo(() => {
-		if (isSignedIn) return remoteListIds ?? [];
+		if (isSignedIn) return remote.data ?? [];
 		return localItems
 			.filter((item) => item.tmdbId === tmdbId && item.mediaType === mediaType)
 			.map((item) => item.listId);
-	}, [isSignedIn, remoteListIds, tmdbId, mediaType, localItems]);
+	}, [isSignedIn, remote.data, tmdbId, mediaType, localItems]);
 }
 
-function deleteCustomListOptimisticUpdate(
-	localStore: any,
-	args: { listId: string },
+async function deleteCustomListOptimistic(
+	queryClient: QueryClient,
+	listId: string,
 ) {
-	const current = localStore.getQuery(api.watchlist.getCustomLists, {}) ?? [];
-	localStore.setQuery(
-		api.watchlist.getCustomLists,
-		{},
-		current.filter((l: any) => l._id !== args.listId),
-	);
+	return beginOptimistic(queryClient, [queryKeys.lists.all()], () => {
+		const current =
+			(queryClient.getQueryData<CustomListRow[]>(queryKeys.lists.all()) as
+				| CustomListRow[]
+				| undefined) ?? [];
+		queryClient.setQueryData<CustomListRow[]>(
+			queryKeys.lists.all(),
+			current.filter((l) => l.id !== listId),
+		);
+	});
 }
 
 export function useDeleteCustomList() {
 	const { isSignedIn } = useUser();
+	const queryClient = useQueryClient();
 	const deleteListLocal = useLocalListsStore((state) => state.deleteList);
-	const deleteList = useMutation(
-		api.watchlist.deleteCustomList,
-	).withOptimisticUpdate(deleteCustomListOptimisticUpdate);
+
+	const mutation = useMutation({
+		mutationFn: (listId: string) =>
+			unwrap(deleteCustomList({ data: { listId } })),
+		onMutate: (listId) => deleteCustomListOptimistic(queryClient, listId),
+		onError: (error, _listId, rollback) => {
+			console.error("Failed to delete custom list", error);
+			rollback?.();
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({ queryKey: queryKeys.lists.all() });
+		},
+	});
 
 	return useCallback(
 		async (listId: string) => {
 			if (isSignedIn) {
-				await deleteList({ listId: toListId(listId) });
+				await mutation.mutateAsync(listId);
 			} else {
 				deleteListLocal(listId);
 			}
 		},
-		[isSignedIn, deleteList, deleteListLocal],
+		[isSignedIn, mutation, deleteListLocal],
 	);
 }
 
-function createCustomListOptimisticUpdate(
-	localStore: any,
-	args: {
-		name: string;
-		color?: string;
-		visibility?: string;
-		listType?: string;
-	},
+type CreateListArgs = {
+	name: string;
+	color?: string;
+	visibility?: string;
+	listType?: string;
+};
+
+async function createCustomListOptimistic(
+	queryClient: QueryClient,
+	args: CreateListArgs,
 ) {
-	const current = localStore.getQuery(api.watchlist.getCustomLists, {}) ?? [];
-	const now = Date.now();
-	localStore.setQuery(api.watchlist.getCustomLists, {}, [
-		...current,
-		{
-			_id: `optimistic_${now}`,
-			name: args.name,
-			color: args.color,
-			visibility: args.visibility,
-			listType: args.listType,
-			sortOrder: current.length,
-			createdAt: now,
-			updatedAt: now,
-			previews: [],
-			itemCount: 0,
-		},
-	]);
+	return beginOptimistic(queryClient, [queryKeys.lists.all()], () => {
+		const current =
+			(queryClient.getQueryData<CustomListRow[]>(queryKeys.lists.all()) as
+				| CustomListRow[]
+				| undefined) ?? [];
+		const now = Date.now();
+		queryClient.setQueryData<CustomListRow[]>(queryKeys.lists.all(), [
+			...current,
+			{
+				id: `optimistic_${now}`,
+				userId: "optimistic",
+				name: args.name,
+				color: args.color ?? null,
+				visibility: args.visibility ?? null,
+				listType: args.listType ?? null,
+				sortOrder: current.length,
+				createdAt: now,
+				updatedAt: now,
+				previews: [],
+				itemCount: 0,
+			},
+		]);
+	});
 }
 
 export function useCreateCustomList() {
 	const { isSignedIn } = useUser();
+	const queryClient = useQueryClient();
 	const createListLocal = useLocalListsStore((state) => state.createList);
-	const createList = useMutation(
-		api.watchlist.createCustomList,
-	).withOptimisticUpdate(createCustomListOptimisticUpdate);
+
+	const mutation = useMutation({
+		mutationFn: (args: CreateListArgs) =>
+			unwrap(createCustomList({ data: args })),
+		onMutate: (args) => createCustomListOptimistic(queryClient, args),
+		onError: (error, _args, rollback) => {
+			console.error("Failed to create custom list", error);
+			rollback?.();
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({ queryKey: queryKeys.lists.all() });
+		},
+	});
 
 	return useCallback(
-		async (args: {
-			name: string;
-			color?: string;
-			visibility?: string;
-			listType?: string;
-		}) => {
+		async (args: CreateListArgs) => {
 			if (isSignedIn) {
-				return await createList(args);
+				return await mutation.mutateAsync(args);
 			}
 			return createListLocal(
 				args.name,
@@ -186,165 +246,158 @@ export function useCreateCustomList() {
 				args.listType,
 			);
 		},
-		[isSignedIn, createList, createListLocal],
+		[isSignedIn, mutation, createListLocal],
 	);
 }
 
-function createListAndAddOptimisticUpdate(
-	localStore: any,
-	args: {
-		name: string;
-		color?: string;
-		visibility?: string;
-		listType?: string;
-		tmdbId: number;
-		mediaType: "movie" | "tv";
-		title?: string;
-		image?: string;
-		backdrop?: string;
-		rating?: number;
-		release_date?: string;
-		overview?: string;
-	},
+type CreateListAndAddArgs = CreateListArgs & {
+	tmdbId: number;
+	mediaType: "movie" | "tv";
+	title?: string;
+	image?: string;
+	backdrop?: string;
+	rating?: number;
+	release_date?: string;
+	overview?: string;
+};
+
+async function createListAndAddOptimistic(
+	queryClient: QueryClient,
+	args: CreateListAndAddArgs,
 ) {
-	const current = localStore.getQuery(api.watchlist.getCustomLists, {}) ?? [];
 	const now = Date.now();
 	const optimisticId = `optimistic_${now}`;
+	return beginOptimistic(
+		queryClient,
+		[
+			queryKeys.lists.all(),
+			queryKeys.lists.items(optimisticId),
+			queryKeys.lists.itemLists(args.tmdbId, args.mediaType),
+		],
+		() => {
+			const current =
+				(queryClient.getQueryData<CustomListRow[]>(queryKeys.lists.all()) as
+					| CustomListRow[]
+					| undefined) ?? [];
+			queryClient.setQueryData<CustomListRow[]>(queryKeys.lists.all(), [
+				...current,
+				{
+					id: optimisticId,
+					userId: "optimistic",
+					name: args.name,
+					color: args.color ?? null,
+					visibility: args.visibility ?? null,
+					listType: args.listType ?? null,
+					sortOrder: current.length,
+					createdAt: now,
+					updatedAt: now,
+					previews: [args.backdrop ?? args.image].filter(Boolean) as string[],
+					itemCount: 1,
+				},
+			]);
 
-	localStore.setQuery(api.watchlist.getCustomLists, {}, [
-		...current,
-		{
-			_id: optimisticId,
-			name: args.name,
-			color: args.color,
-			visibility: args.visibility,
-			listType: args.listType,
-			sortOrder: current.length,
-			createdAt: now,
-			updatedAt: now,
-			previews: [args.backdrop ?? args.image].filter(Boolean),
-			itemCount: 1,
+			const itemListsKey = queryKeys.lists.itemLists(
+				args.tmdbId,
+				args.mediaType,
+			);
+			const currentItemLists =
+				(queryClient.getQueryData<string[]>(itemListsKey) as
+					| string[]
+					| undefined) ?? [];
+			queryClient.setQueryData<string[]>(itemListsKey, [
+				...currentItemLists,
+				optimisticId,
+			]);
 		},
-	]);
-
-	// Optimistically add item to the list items query
-	const listItemsKey = { listId: optimisticId };
-	const currentListItems =
-		localStore.getQuery(api.watchlist.getListItems, listItemsKey) ?? [];
-	localStore.setQuery(api.watchlist.getListItems, listItemsKey, [
-		...currentListItems,
-		{
-			_id: `optimistic_item_${now}`,
-			listId: optimisticId,
-			tmdbId: args.tmdbId,
-			mediaType: args.mediaType,
-			addedAt: now,
-			title: args.title,
-			image: args.image,
-			backdrop: args.backdrop,
-			rating: args.rating,
-			release_date: args.release_date,
-			overview: args.overview,
-		},
-	]);
-
-	// Optimistically add list to itemLists query for this media
-	const itemListsKey = { tmdbId: args.tmdbId, mediaType: args.mediaType };
-	const currentItemLists =
-		localStore.getQuery(api.watchlist.getItemLists, itemListsKey) ?? [];
-	localStore.setQuery(api.watchlist.getItemLists, itemListsKey, [
-		...currentItemLists,
-		optimisticId,
-	]);
+	);
 }
 
 export function useCreateCustomListAndAddItem() {
 	const { isSignedIn } = useUser();
+	const queryClient = useQueryClient();
 	const createListAndAddLocal = useLocalListsStore(
 		(state) => state.createListAndAddItem,
 	);
-	const createListAndAdd = useMutation(
-		api.watchlist.createCustomListAndAddItem,
-	).withOptimisticUpdate(createListAndAddOptimisticUpdate);
+
+	const mutation = useMutation({
+		mutationFn: (args: CreateListAndAddArgs) =>
+			unwrap(createCustomListAndAddItem({ data: args })),
+		onMutate: (args) => createListAndAddOptimistic(queryClient, args),
+		onError: (error, _args, rollback) => {
+			console.error("Failed to create list and add item", error);
+			rollback?.();
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({ queryKey: queryKeys.lists.all() });
+			void queryClient.invalidateQueries({ queryKey: ["lists", "items"] });
+			void queryClient.invalidateQueries({ queryKey: ["lists", "item-lists"] });
+		},
+	});
 
 	return useCallback(
-		async (args: {
-			name: string;
-			color?: string;
-			visibility?: string;
-			listType?: string;
-			tmdbId: number;
-			mediaType: "movie" | "tv";
-			title?: string;
-			image?: string;
-			backdrop?: string;
-			rating?: number;
-			release_date?: string;
-			overview?: string;
-		}) => {
+		async (args: CreateListAndAddArgs) => {
 			if (isSignedIn) {
-				return await createListAndAdd(args);
+				return await mutation.mutateAsync(args);
 			}
 			createListAndAddLocal(args);
 		},
-		[isSignedIn, createListAndAdd, createListAndAddLocal],
+		[isSignedIn, mutation, createListAndAddLocal],
 	);
 }
 
-function updateCustomListOptimisticUpdate(
-	localStore: any,
-	args: {
-		listId: string;
-		name?: string;
-		color?: string;
-		visibility?: string;
-		listType?: string;
-	},
+type UpdateListArgs = CreateListArgs & { listId: string };
+
+async function updateCustomListOptimistic(
+	queryClient: QueryClient,
+	args: UpdateListArgs,
 ) {
-	const current = localStore.getQuery(api.watchlist.getCustomLists, {}) ?? [];
-	localStore.setQuery(
-		api.watchlist.getCustomLists,
-		{},
-		current.map((l: any) =>
-			l._id === args.listId
-				? {
-						...l,
-						...(args.name !== undefined && { name: args.name }),
-						...(args.color !== undefined && { color: args.color }),
-						...(args.visibility !== undefined && {
-							visibility: args.visibility,
-						}),
-						...(args.listType !== undefined && { listType: args.listType }),
-						updatedAt: Date.now(),
-					}
-				: l,
-		),
-	);
+	return beginOptimistic(queryClient, [queryKeys.lists.all()], () => {
+		const current =
+			(queryClient.getQueryData<CustomListRow[]>(queryKeys.lists.all()) as
+				| CustomListRow[]
+				| undefined) ?? [];
+		queryClient.setQueryData<CustomListRow[]>(
+			queryKeys.lists.all(),
+			current.map((l) =>
+				l.id === args.listId
+					? {
+							...l,
+							...(args.name !== undefined && { name: args.name }),
+							...(args.color !== undefined && { color: args.color }),
+							...(args.visibility !== undefined && {
+								visibility: args.visibility,
+							}),
+							...(args.listType !== undefined && { listType: args.listType }),
+							updatedAt: Date.now(),
+						}
+					: l,
+			),
+		);
+	});
 }
 
 export function useUpdateCustomList() {
 	const { isSignedIn } = useUser();
+	const queryClient = useQueryClient();
 	const updateListLocal = useLocalListsStore((state) => state.updateList);
-	const updateList = useMutation(
-		api.watchlist.updateCustomList,
-	).withOptimisticUpdate(updateCustomListOptimisticUpdate);
+
+	const mutation = useMutation({
+		mutationFn: (args: UpdateListArgs) =>
+			unwrap(updateCustomList({ data: args })),
+		onMutate: (args) => updateCustomListOptimistic(queryClient, args),
+		onError: (error, _args, rollback) => {
+			console.error("Failed to update custom list", error);
+			rollback?.();
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({ queryKey: queryKeys.lists.all() });
+		},
+	});
 
 	return useCallback(
-		async (args: {
-			listId: string;
-			name: string;
-			color?: string;
-			visibility?: string;
-			listType?: string;
-		}) => {
+		async (args: UpdateListArgs) => {
 			if (isSignedIn) {
-				await updateList({
-					listId: toListId(args.listId),
-					name: args.name,
-					color: args.color,
-					visibility: args.visibility,
-					listType: args.listType,
-				});
+				await mutation.mutateAsync(args);
 			} else {
 				updateListLocal(
 					args.listId,
@@ -355,130 +408,133 @@ export function useUpdateCustomList() {
 				);
 			}
 		},
-		[isSignedIn, updateList, updateListLocal],
+		[isSignedIn, mutation, updateListLocal],
 	);
 }
 
-function toggleListItemOptimisticUpdate(
-	localStore: any,
-	args: {
-		listId: string;
-		tmdbId: number;
-		mediaType: "movie" | "tv";
-		title?: string;
-		image?: string;
-		backdrop?: string;
-		rating?: number;
-		release_date?: string;
-		overview?: string;
-	},
+type ToggleListItemArgs = {
+	listId: string;
+	tmdbId: number;
+	mediaType: "movie" | "tv";
+	title?: string;
+	image?: string;
+	backdrop?: string;
+	rating?: number;
+	release_date?: string;
+	overview?: string;
+};
+
+async function toggleListItemOptimistic(
+	queryClient: QueryClient,
+	args: ToggleListItemArgs,
 ) {
-	// Update itemLists query for this media
-	const itemListsKey = { tmdbId: args.tmdbId, mediaType: args.mediaType };
-	const currentItemLists =
-		localStore.getQuery(api.watchlist.getItemLists, itemListsKey) ?? [];
-	const exists = currentItemLists.includes(args.listId);
+	const itemListsKey = queryKeys.lists.itemLists(args.tmdbId, args.mediaType);
+	const itemsKey = queryKeys.lists.items(args.listId);
+	return beginOptimistic(
+		queryClient,
+		[itemListsKey, itemsKey, queryKeys.lists.all()],
+		() => {
+			const currentItemLists =
+				(queryClient.getQueryData<string[]>(itemListsKey) as
+					| string[]
+					| undefined) ?? [];
+			const exists = currentItemLists.includes(args.listId);
 
-	if (exists) {
-		localStore.setQuery(
-			api.watchlist.getItemLists,
-			itemListsKey,
-			currentItemLists.filter((id: string) => id !== args.listId),
-		);
-	} else {
-		localStore.setQuery(api.watchlist.getItemLists, itemListsKey, [
-			...currentItemLists,
-			args.listId,
-		]);
-	}
+			if (exists) {
+				queryClient.setQueryData<string[]>(
+					itemListsKey,
+					currentItemLists.filter((id) => id !== args.listId),
+				);
+			} else {
+				queryClient.setQueryData<string[]>(itemListsKey, [
+					...currentItemLists,
+					args.listId,
+				]);
+			}
 
-	// Update list items query for this list
-	const listItemsKey = { listId: args.listId };
-	const currentListItems =
-		localStore.getQuery(api.watchlist.getListItems, listItemsKey) ?? [];
+			const currentItems =
+				(queryClient.getQueryData<ListItemRow[]>(itemsKey) as
+					| ListItemRow[]
+					| undefined) ?? [];
+			if (exists) {
+				queryClient.setQueryData<ListItemRow[]>(
+					itemsKey,
+					currentItems.filter((i) => i.tmdbId !== args.tmdbId),
+				);
+			} else {
+				queryClient.setQueryData<ListItemRow[]>(itemsKey, [
+					...currentItems,
+					{
+						id: `optimistic_${Date.now()}`,
+						userId: "optimistic",
+						listId: args.listId,
+						tmdbId: args.tmdbId,
+						mediaType: args.mediaType,
+						addedAt: Date.now(),
+						title: args.title ?? null,
+						image: args.image ?? null,
+						backdrop: args.backdrop ?? null,
+						rating: args.rating ?? null,
+						releaseDate: args.release_date ?? null,
+						overview: args.overview ?? null,
+						progressStatus: null,
+						reaction: null,
+					} as ListItemRow,
+				]);
+			}
 
-	if (exists) {
-		localStore.setQuery(
-			api.watchlist.getListItems,
-			listItemsKey,
-			currentListItems.filter((i: any) => i.tmdbId !== args.tmdbId),
-		);
-	} else {
-		localStore.setQuery(api.watchlist.getListItems, listItemsKey, [
-			...currentListItems,
-			{
-				_id: `optimistic_${Date.now()}`,
-				listId: args.listId,
-				tmdbId: args.tmdbId,
-				mediaType: args.mediaType,
-				addedAt: Date.now(),
-				title: args.title,
-				image: args.image,
-				backdrop: args.backdrop,
-				rating: args.rating,
-				release_date: args.release_date,
-				overview: args.overview,
-			},
-		]);
-	}
-
-	// Bump itemCount on the parent list
-	const customLists =
-		localStore.getQuery(api.watchlist.getCustomLists, {}) ?? [];
-	localStore.setQuery(
-		api.watchlist.getCustomLists,
-		{},
-		customLists.map((l: any) =>
-			l._id === args.listId
-				? {
-						...l,
-						itemCount: exists
-							? Math.max(0, (l.itemCount ?? 1) - 1)
-							: (l.itemCount ?? 0) + 1,
-						updatedAt: Date.now(),
-					}
-				: l,
-		),
+			const lists =
+				(queryClient.getQueryData<CustomListRow[]>(queryKeys.lists.all()) as
+					| CustomListRow[]
+					| undefined) ?? [];
+			queryClient.setQueryData<CustomListRow[]>(
+				queryKeys.lists.all(),
+				lists.map((l) =>
+					l.id === args.listId
+						? {
+								...l,
+								itemCount: exists
+									? Math.max(0, (l.itemCount ?? 1) - 1)
+									: (l.itemCount ?? 0) + 1,
+								updatedAt: Date.now(),
+							}
+						: l,
+				),
+			);
+		},
 	);
 }
 
 export function useToggleListItem() {
 	const { isSignedIn } = useUser();
+	const queryClient = useQueryClient();
 	const toggleListItemLocal = useLocalListsStore(
 		(state) => state.toggleListItem,
 	);
-	const toggleListItem = useMutation(
-		api.watchlist.toggleListItem,
-	).withOptimisticUpdate(toggleListItemOptimisticUpdate);
+
+	const mutation = useMutation({
+		mutationFn: (args: ToggleListItemArgs) =>
+			unwrap(toggleListItem({ data: args })),
+		onMutate: (args) => toggleListItemOptimistic(queryClient, args),
+		onError: (error, _args, rollback) => {
+			console.error("Failed to toggle list item", error);
+			rollback?.();
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({ queryKey: queryKeys.lists.all() });
+			void queryClient.invalidateQueries({ queryKey: ["lists", "items"] });
+			void queryClient.invalidateQueries({ queryKey: ["lists", "item-lists"] });
+		},
+	});
 
 	return useCallback(
-		async (args: {
-			listId: string;
-			tmdbId: number;
-			mediaType: "movie" | "tv";
-			title?: string;
-			image?: string;
-			backdrop?: string;
-			rating?: number;
-			release_date?: string;
-			overview?: string;
-		}) => {
+		async (args: ToggleListItemArgs) => {
 			if (isSignedIn) {
-				await toggleListItem({
-					listId: toListId(args.listId),
-					tmdbId: args.tmdbId,
-					mediaType: args.mediaType,
-					title: args.title,
-					image: args.image,
-					backdrop: args.backdrop,
-					rating: args.rating,
-					release_date: args.release_date,
-					overview: args.overview,
-				});
+				await mutation.mutateAsync(args);
 			} else {
 				toggleListItemLocal(args);
 			}
 		},
-		[isSignedIn, toggleListItem, toggleListItemLocal],
+		[isSignedIn, mutation, toggleListItemLocal],
 	);
 }

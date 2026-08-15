@@ -1,9 +1,5 @@
 import { useUser } from "@clerk/react";
-import {
-	useAction,
-	useQuery as useConvexQuery,
-	useMutation,
-} from "convex/react";
+import { useQuery } from "@tanstack/react-query";
 import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
@@ -14,6 +10,7 @@ import {
 	useAllMediaStates,
 	useToggleWatchlistItem,
 } from "@/hooks/use-watchlist";
+import { queryKeys } from "@/lib/query/keys";
 import {
 	type AIRecommendation,
 	titlesMatch,
@@ -21,7 +18,14 @@ import {
 	useTmdbSearchFallback,
 } from "@/lib/recommendation-engine";
 import { cn } from "@/lib/utils";
-import { api } from "../../convex/_generated/api";
+import {
+	generateHomepageRecommendations,
+	getHomepageRecommendations,
+	getRecommendationFeedback,
+	removeRecommendationFeedback,
+	setRecommendationFeedback,
+} from "@/server/fns/recommendations";
+import { unwrap } from "@/server/schema/common";
 
 const getDismissKey = (rec: AIRecommendation) =>
 	`${rec.mediaType}:${rec.tmdbId ?? ""}:${rec.title}`;
@@ -180,23 +184,27 @@ export function HomepageRecommendations() {
 
 	const cachedRecommendationsRef = useRef<{
 		userId: string | null;
-		// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result
+		// biome-ignore lint/suspicious/noExplicitAny: Cached server query result
 		recommendationsData: any;
-		// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result
+		// biome-ignore lint/suspicious/noExplicitAny: Cached server query result
 		feedbackList: any;
 	} | null>(null);
 
 	const canAccessFeature = isSignedIn && hasFeature("ai-recommendations");
 
-	const recommendationsData = useConvexQuery(
-		api.recommendations.getHomepageRecommendations,
-		canAccessFeature ? {} : "skip",
-	);
+	const recommendationsQuery = useQuery({
+		queryKey: queryKeys.recommendations.homepage(),
+		queryFn: () => unwrap(getHomepageRecommendations({ data: {} })),
+		enabled: canAccessFeature,
+	});
+	const recommendationsData = recommendationsQuery.data;
 
-	const feedbackList = useConvexQuery(
-		api.recommendations.getRecommendationFeedback,
-		canAccessFeature ? {} : "skip",
-	);
+	const feedbackQuery = useQuery({
+		queryKey: ["recommendations", "feedback"],
+		queryFn: () => unwrap(getRecommendationFeedback()),
+		enabled: canAccessFeature,
+	});
+	const feedbackList = feedbackQuery.data;
 
 	// Update ref cache when fresh data is loaded
 	useEffect(() => {
@@ -225,18 +233,13 @@ export function HomepageRecommendations() {
 			? (cachedRecommendationsRef.current?.feedbackList as typeof feedbackList)
 			: null);
 
-	const generateRecs = useAction(
-		api.recommendations.generateHomepageRecommendations,
-	);
-	const setFeedback = useMutation(
-		api.recommendations.setRecommendationFeedback,
-	);
-	const removeFeedback = useMutation(
-		api.recommendations.removeRecommendationFeedback,
-	);
-
 	const [isGenerating, setIsGenerating] = useState(false);
 	const isGeneratingRef = useRef(false);
+
+	const refreshHomepage = useCallback(() => {
+		void recommendationsQuery.refetch();
+		void feedbackQuery.refetch();
+	}, [recommendationsQuery, feedbackQuery]);
 
 	useEffect(() => {
 		if (
@@ -246,7 +249,12 @@ export function HomepageRecommendations() {
 		) {
 			isGeneratingRef.current = true;
 			setIsGenerating(true);
-			generateRecs()
+			generateHomepageRecommendations()
+				.then((result) => {
+					if (result.ok && result.data.success) {
+						refreshHomepage();
+					}
+				})
 				.catch((err) => {
 					console.error("Failed to generate homepage recommendations:", err);
 				})
@@ -255,7 +263,7 @@ export function HomepageRecommendations() {
 					isGeneratingRef.current = false;
 				});
 		}
-	}, [canAccessFeature, resolvedRecsData?.needsRefresh, generateRecs]);
+	}, [canAccessFeature, resolvedRecsData?.needsRefresh, refreshHomepage]);
 
 	const toggleWatchlist = useToggleWatchlistItem();
 
@@ -365,22 +373,24 @@ export function HomepageRecommendations() {
 
 			try {
 				if (feedback === "unlike") {
-					await removeFeedback({
-						tmdbId: resolvedId,
-						mediaType: rec.mediaType,
+					await removeRecommendationFeedback({
+						data: { tmdbId: resolvedId, mediaType: rec.mediaType },
 					});
 				} else {
-					await setFeedback({
-						tmdbId: resolvedId,
-						mediaType: rec.mediaType,
-						title: rec.title,
-						feedback: feedback === "dislike" ? "not_interested" : "like",
-						image: metadata?.image,
-						rating: metadata?.rating,
-						release_date: metadata?.release_date,
-						overview: metadata?.overview,
+					await setRecommendationFeedback({
+						data: {
+							tmdbId: resolvedId,
+							mediaType: rec.mediaType,
+							title: rec.title,
+							feedback: feedback === "dislike" ? "not_interested" : "like",
+							image: metadata?.image,
+							rating: metadata?.rating,
+							release_date: metadata?.release_date,
+							overview: metadata?.overview,
+						},
 					});
 				}
+				refreshHomepage();
 			} catch (err) {
 				console.error("Failed to update recommendation feedback:", err);
 				if (feedback === "dislike") {
@@ -405,7 +415,7 @@ export function HomepageRecommendations() {
 				}
 			}
 		},
-		[setFeedback, removeFeedback, toggleWatchlist],
+		[refreshHomepage, toggleWatchlist],
 	);
 
 	if (!isLoaded || !canAccessFeature) {

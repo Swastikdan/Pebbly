@@ -68,10 +68,14 @@ export class ApiError extends Error {
 }
 
 /**
- * Unwrap a typed result on the client. Throws an `ApiError` on non-ok so
+ * Unwrap a typed result on the client. Accepts the result directly or the
+ * promise returned by a server fn, and throws an `ApiError` on non-ok so
  * TanStack Query's error path (and optimistic rollback) fires.
  */
-export function unwrap<T>(result: ApiResult<T>): T {
-	if (result.ok) return result.data;
-	throw new ApiError(result.code, result.message);
+export async function unwrap<T>(
+	result: ApiResult<T> | Promise<ApiResult<T>>,
+): Promise<T> {
+	const resolved = await result;
+	if (resolved.ok) return resolved.data;
+	throw new ApiError(resolved.code, resolved.message);
 }
