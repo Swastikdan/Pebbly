@@ -1,7 +1,7 @@
 export const SITE_CONFIG = {
 	name: "Pebbly",
 	description: "Explore a vast collection of movies and TV shows with Pebbly.",
-	url: "https://pebbly.vercel.app/",
+	url: "https://pebbly.swastik.workers.dev/",
 	defaultMetaImage:
 		"https://ik.imagekit.io/swastikdan/Film-Fanatic/public/ogimage.webp",
 	navItems: [
