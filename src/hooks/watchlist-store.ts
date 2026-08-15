@@ -36,7 +36,8 @@ export type WatchlistItem = {
 export type LocalWatchlistImportItem = MediaMetadata & {
 	id: string;
 	type: MediaType;
-	progressStatus: ProgressStatus;
+	progressStatus?: ProgressStatus | null;
+	inWatchlist?: boolean;
 	progress?: number;
 	reaction?: ReactionStatus | null;
 };
@@ -313,8 +314,13 @@ export const useWatchlistStore = create<WatchlistStore>()(
 							release_date:
 								imported.release_date ?? existing?.release_date ?? "",
 							overview: imported.overview ?? existing?.overview,
-							inWatchlist: true,
-							progressStatus: imported.progressStatus,
+							inWatchlist:
+								imported.inWatchlist !== undefined
+									? imported.inWatchlist
+									: (existing?.inWatchlist ?? true),
+							progressStatus:
+								imported.progressStatus ??
+								(imported.inWatchlist === false ? null : "watch-later"),
 							progress,
 							reaction: imported.reaction ?? existing?.reaction ?? null,
 							updated_at: now,

@@ -16,7 +16,7 @@ import {
 	type ImportItem as ServerImportItem,
 	type WatchedEpisode,
 } from "@/server/schema/import";
-import type { ReactionStatus } from "@/types";
+import type { ProgressStatus, ReactionStatus } from "@/types";
 
 type ImportError = {
 	message: string;
@@ -365,9 +365,10 @@ export const useWatchlistImportExport = () => {
 								rating: item.rating ?? 0,
 								release_date: item.release_date ?? "",
 								overview: item.overview ?? undefined,
-								progressStatus: item.progressStatus ?? undefined,
+								inWatchlist: item.inWatchlist ?? true,
+								progressStatus: (item.progressStatus as ProgressStatus) ?? null,
 								progress: item.progress ?? 0,
-								reaction: item.reaction ?? null,
+								reaction: item.reaction as ReactionStatus | null,
 							})),
 						);
 						for (const episode of watchedEpisodes) {

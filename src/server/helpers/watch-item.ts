@@ -40,11 +40,11 @@ export interface MediaIdentity {
 }
 
 export type WatchItemMetadata = {
-	title?: string;
-	image?: string;
-	rating?: number;
-	release_date?: string;
-	overview?: string;
+	title?: string | null;
+	image?: string | null;
+	rating?: number | null;
+	release_date?: string | null;
+	overview?: string | null;
 };
 
 type MetadataDbPatch = {
