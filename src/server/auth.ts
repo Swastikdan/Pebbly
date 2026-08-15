@@ -30,31 +30,42 @@ export interface ClerkSessionClaims {
 export function getSessionToken(): string | undefined {
 	const authHeader = getRequestHeader("authorization");
 	if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
-		return authHeader.slice(7);
+		const bearer = authHeader.slice(7).trim();
+		if (bearer.length > 0) return bearer;
 	}
-	return getCookie("__session") || getCookie("__clerk_db_jwt");
+	const cookieToken = getCookie("__session") || getCookie("__clerk_db_jwt");
+	if (typeof cookieToken === "string" && cookieToken.trim().length > 0) {
+		return cookieToken.trim();
+	}
+	return undefined;
 }
 
 /**
  * Verify the Clerk session token and return the JWT claims, or `null` when
- * there is no session / the token is invalid.
+ * there is no session / the token is invalid or expired.
  */
 export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
 	const token = getSessionToken();
 	if (!token) return null;
 
+	// A valid JWT consists of header.payload.signature (3 dot-separated segments)
+	if (token.split(".").length !== 3) return null;
+
 	const secretKey = getEnvVar("CLERK_SECRET_KEY");
 	if (!secretKey) return null;
+
+	const issuer = getEnvVar("CLERK_ISSUER_URL");
 
 	try {
 		const claims = await verifyToken(token, {
 			secretKey,
+			...(issuer ? { issuer } : {}),
 			// Tolerate clock drift / refresh races (Clerk dev JWTs are short-lived).
 			clockSkewInMs: 300_000,
 		});
 		return claims as ClerkSessionClaims;
-	} catch (error) {
-		console.error("Clerk token verification failed:", error);
+	} catch {
+		// Expired or transitioning token — treated safely as unauthenticated/guest
 		return null;
 	}
 }
