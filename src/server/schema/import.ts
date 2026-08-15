@@ -5,12 +5,13 @@ export const importItemSchema = v.object({
 	tmdbId: v.number(),
 	mediaType: mediaTypeSchema,
 	title: v.string(),
-	image: v.optional(v.string()),
-	rating: v.optional(v.number()),
-	release_date: v.optional(v.string()),
-	overview: v.optional(v.string()),
+	image: v.optional(v.nullable(v.string())),
+	rating: v.optional(v.nullable(v.number())),
+	release_date: v.optional(v.nullable(v.string())),
+	overview: v.optional(v.nullable(v.string())),
+	inWatchlist: v.optional(v.nullable(v.boolean())),
 	progressStatus: v.optional(v.nullable(v.string())),
-	progress: v.optional(v.number()),
+	progress: v.optional(v.nullable(v.number())),
 	reaction: v.optional(v.nullable(v.string())),
 });
 export type ImportItem = v.InferOutput<typeof importItemSchema>;

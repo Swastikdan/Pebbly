@@ -170,18 +170,6 @@ export async function upsertWatchItem(
 			updatedAt: now,
 			...metadataPatch,
 		})
-		.onConflictDoUpdate({
-			target: [watchItems.userId, watchItems.tmdbId, watchItems.mediaType],
-			set: {
-				...(finalUpdates.inWatchlist !== undefined && {
-					inWatchlist: finalUpdates.inWatchlist,
-				}),
-				...(progressStatus !== undefined && { progressStatus }),
-				...(typeof finalUpdates.progress === "number" && { progress }),
-				...(reaction !== undefined && { reaction }),
-				updatedAt: now,
-				...metadataPatch,
-			},
-		});
+		.onConflictDoNothing();
 	return undefined;
 }
