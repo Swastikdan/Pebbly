@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Eye, ThumbsDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -49,9 +49,16 @@ function getTodaySeedIndex(max: number): number {
 	return Math.abs(hash) % max;
 }
 
+function getPickKey(item: PickItem): string {
+	return `${item.media_type}:${item.id}`;
+}
+
 export function DailyPickButton() {
 	const [isOpen, setIsOpen] = useState(false);
-	const [customIndex, setCustomIndex] = useState<number | null>(null);
+	// Key of the currently shown pick ("movie:123"). Keeps the displayed tile
+	// stable when `candidateItems` reorders, e.g. adding the pick to the
+	// watchlist moves it from the discovery bucket into the watchlist bucket.
+	const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
 	const { hasFeature, loading: isPermissionsLoading } = usePermissions();
 	const isVideoPlaybackEnabled = hasFeature("video-player");
@@ -296,24 +303,43 @@ export function DailyPickButton() {
 
 	const selectedIndex = useMemo(() => {
 		if (itemsCount === 0) return 0;
-		if (customIndex !== null) {
-			return Math.abs(customIndex) % itemsCount;
+		// Prefer the tracked pick so list reorders (e.g. watchlist toggles)
+		// don't swap the currently displayed tile.
+		if (selectedKey) {
+			const stableIndex = candidateItems.findIndex(
+				(item) => getPickKey(item) === selectedKey,
+			);
+			if (stableIndex !== -1) return stableIndex;
 		}
 		return getTodaySeedIndex(itemsCount);
-	}, [customIndex, itemsCount]);
+	}, [candidateItems, itemsCount, selectedKey]);
 
 	const selectedItem: PickItem | null = useMemo(() => {
 		if (itemsCount === 0) return null;
 		return candidateItems[selectedIndex] ?? candidateItems[0];
 	}, [candidateItems, selectedIndex, itemsCount]);
 
+	// Sync the tracked key with whichever item is actually shown so the seed /
+	// shuffle selection stays stable across `candidateItems` reorders.
+	useEffect(() => {
+		if (!selectedItem) return;
+		const key = getPickKey(selectedItem);
+		if (key !== selectedKey) {
+			setSelectedKey(key);
+		}
+	}, [selectedItem, selectedKey]);
+
 	const handleShuffle = () => {
 		if (itemsCount <= 1) return;
+		const currentKey = selectedItem ? getPickKey(selectedItem) : null;
 		let nextIdx = Math.floor(Math.random() * itemsCount);
-		if (nextIdx === selectedIndex) {
-			nextIdx = (selectedIndex + 1) % itemsCount;
+		if (getPickKey(candidateItems[nextIdx]) === currentKey) {
+			nextIdx = (nextIdx + 1) % itemsCount;
 		}
-		setCustomIndex(nextIdx);
+		const next = candidateItems[nextIdx];
+		if (next) {
+			setSelectedKey(getPickKey(next));
+		}
 	};
 
 	const handleDislike = () => {
@@ -399,7 +425,7 @@ export function DailyPickButton() {
 			onOpenChange={(open) => {
 				setIsOpen(open);
 				if (!open) {
-					setCustomIndex(null);
+					setSelectedKey(null);
 				}
 			}}
 		>
