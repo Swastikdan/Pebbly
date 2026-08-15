@@ -1,0 +1,25 @@
+# Cloudflare Workers + D1 (free tier)
+name = "pebbly"
+main = ".output/server/index.mjs"
+compatibility_date = "2026-08-08"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# Frontend static assets served from the edge
+[assets]
+directory = ".output/public"
+binding = "ASSETS"
+
+# D1 database (free tier: 5 GB)
+[[d1_databases]]
+binding = "DB"
+database_name = "pebbly"
+database_id = "cf94e4ee-291d-499f-b463-ef61ee9d9e1d"
+migrations_dir = "drizzle"
+
+# Daily watchlist snapshot, 03:00 UTC
+[triggers]
+crons = ["0 3 * * *"]
+
+# Non-secret server vars only. Secrets: wrangler secret put <NAME>.
+# Client VITE_* vars are inlined at build time from .env — they do NOT go here.
