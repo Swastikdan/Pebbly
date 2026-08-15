@@ -111,8 +111,7 @@ export const getRecommendationHistory = createServerFn({
 			.from(aiRecommendations)
 			.where(eq(aiRecommendations.userId, user.id))
 			.orderBy(desc(aiRecommendations.createdAt))
-			.limit(20)
-			.$withCache({ config: { ex: 60 } });
+			.limit(20);
 
 		return ok(rows);
 	},
@@ -189,8 +188,7 @@ export const getRecommendationFeedback = createServerFn({
 			.select()
 			.from(recommendationFeedback)
 			.where(eq(recommendationFeedback.userId, user.id))
-			.limit(100)
-			.$withCache({ config: { ex: 60 } });
+			.limit(100);
 
 		return ok(rows);
 	},
@@ -395,8 +393,7 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
 				.select()
 				.from(homepageRecommendations)
 				.where(eq(homepageRecommendations.userId, user.id))
-				.limit(1)
-				.$withCache({ config: { ex: 60 } });
+				.limit(1);
 
 			const notInterestedFeedback = await db
 				.select()
@@ -406,8 +403,7 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
 						eq(recommendationFeedback.userId, user.id),
 						eq(recommendationFeedback.feedback, "not_interested"),
 					),
-				)
-				.$withCache({ config: { ex: 60 } });
+				);
 
 			const dislikeFeedback = await db
 				.select()
@@ -417,8 +413,7 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
 						eq(recommendationFeedback.userId, user.id),
 						eq(recommendationFeedback.feedback, "dislike"),
 					),
-				)
-				.$withCache({ config: { ex: 60 } });
+				);
 
 			const excludedFeedbackIds = new Set([
 				...notInterestedFeedback.map((f) => f.tmdbId),

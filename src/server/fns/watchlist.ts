@@ -63,8 +63,7 @@ export const getWatchlist = createServerFn({ method: "POST" })
 				.from(watchItems)
 				.where(and(...filters))
 				.orderBy(desc(watchItems.updatedAt))
-				.limit(boundedLimit)
-				.$withCache({ config: { ex: 15 } });
+				.limit(boundedLimit);
 
 			return ok(rows);
 		},
@@ -80,8 +79,7 @@ export const getTrackedTmdbIds = createServerFn({ method: "POST" }).handler(
 			.select({ tmdbId: watchItems.tmdbId })
 			.from(watchItems)
 			.where(eq(watchItems.userId, user.id))
-			.limit(500)
-			.$withCache({ config: { ex: 15 } });
+			.limit(500);
 
 		return ok(items.map((item) => item.tmdbId));
 	},
@@ -107,8 +105,7 @@ export const getMediaState = createServerFn({ method: "POST" })
 						eq(watchItems.mediaType, data.mediaType),
 					),
 				)
-				.limit(1)
-				.$withCache({ config: { ex: 15 } });
+				.limit(1);
 
 			return ok(rows[0] ?? null);
 		},
@@ -506,8 +503,7 @@ export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
 						eq(episodeProgress.userId, user.id),
 						eq(episodeProgress.tmdbId, data.tmdbId),
 					),
-				)
-				.$withCache({ config: { ex: 15 } });
+				);
 
 			return ok(rows);
 		},
@@ -522,8 +518,7 @@ export const getAllEpisodeProgress = createServerFn({ method: "POST" }).handler(
 		const rows = await db
 			.select()
 			.from(episodeProgress)
-			.where(eq(episodeProgress.userId, user.id))
-			.$withCache({ config: { ex: 15 } });
+			.where(eq(episodeProgress.userId, user.id));
 
 		return ok(rows);
 	},
