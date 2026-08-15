@@ -274,7 +274,8 @@ const watchlistMembershipBatcher = createBatcher<
 		}
 	},
 	{
-		delayMs: 60,
+		delayMs: 300,
+		maxWaitMs: 1200,
 		maxBatchSize: 100,
 		getKey: (task) => `${task.args.mediaType}:${task.args.tmdbId}`,
 	},

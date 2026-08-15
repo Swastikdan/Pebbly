@@ -3,6 +3,7 @@ import {
 	check,
 	index,
 	integer,
+	real,
 	sqliteTable,
 	text,
 	uniqueIndex,
@@ -38,7 +39,7 @@ export const watchItems = sqliteTable(
 		progress: integer("progress").default(0), // 0..100
 		title: text("title"),
 		image: text("image"),
-		rating: integer("rating"),
+		rating: real("rating"),
 		releaseDate: text("release_date"),
 		overview: text("overview"),
 		updatedAt: integer("updated_at").notNull(), // ms epoch
@@ -108,7 +109,7 @@ export const listItems = sqliteTable(
 		title: text("title"),
 		image: text("image"),
 		backdrop: text("backdrop"),
-		rating: integer("rating"),
+		rating: real("rating"),
 		releaseDate: text("release_date"),
 		overview: text("overview"),
 	},

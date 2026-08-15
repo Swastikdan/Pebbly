@@ -5,8 +5,10 @@
  */
 
 export type BatcherOptions<TItem> = {
-	/** Max time to wait (ms) before flushing the batch (default: 50ms) */
+	/** Debounce wait time (ms) after the last item is queued before flushing (default: 300ms) */
 	delayMs?: number;
+	/** Max wait time (ms) since the first queued item before forcing a flush (default: 1200ms) */
+	maxWaitMs?: number;
 	/** Max number of items before triggering an immediate flush (default: 100) */
 	maxBatchSize?: number;
 	/** Optional key function to deduplicate requests in the same batch window (latest state wins) */
@@ -20,8 +22,10 @@ export class RequestBatcher<TItem, TResult = unknown> {
 		reject: (err: unknown) => void;
 	}> = [];
 	private timer: ReturnType<typeof setTimeout> | null = null;
+	private firstItemTime: number | null = null;
 	private batchFn: (items: TItem[]) => Promise<TResult[] | TResult>;
 	private delayMs: number;
+	private maxWaitMs: number;
 	private maxBatchSize: number;
 	private getKey?: (item: TItem) => string;
 
@@ -30,7 +34,8 @@ export class RequestBatcher<TItem, TResult = unknown> {
 		options?: BatcherOptions<TItem>,
 	) {
 		this.batchFn = batchFn;
-		this.delayMs = options?.delayMs ?? 50;
+		this.delayMs = options?.delayMs ?? 300;
+		this.maxWaitMs = options?.maxWaitMs ?? 1200;
 		this.maxBatchSize = options?.maxBatchSize ?? 100;
 		this.getKey = options?.getKey;
 	}
@@ -61,6 +66,7 @@ export class RequestBatcher<TItem, TResult = unknown> {
 							reject(err);
 						},
 					};
+					this.scheduleTimer();
 					return;
 				}
 			}
@@ -69,12 +75,30 @@ export class RequestBatcher<TItem, TResult = unknown> {
 
 			if (this.queue.length >= this.maxBatchSize) {
 				void this.flush();
-			} else if (!this.timer) {
-				this.timer = setTimeout(() => {
-					void this.flush();
-				}, this.delayMs);
+			} else {
+				this.scheduleTimer();
 			}
 		});
+	}
+
+	private scheduleTimer(): void {
+		if (this.timer) {
+			clearTimeout(this.timer);
+			this.timer = null;
+		}
+
+		const now = Date.now();
+		if (!this.firstItemTime) {
+			this.firstItemTime = now;
+		}
+
+		const timeSinceFirst = now - this.firstItemTime;
+		const remainingMaxWait = Math.max(0, this.maxWaitMs - timeSinceFirst);
+		const waitTime = Math.min(this.delayMs, remainingMaxWait);
+
+		this.timer = setTimeout(() => {
+			void this.flush();
+		}, waitTime);
 	}
 
 	/**
@@ -85,6 +109,7 @@ export class RequestBatcher<TItem, TResult = unknown> {
 			clearTimeout(this.timer);
 			this.timer = null;
 		}
+		this.firstItemTime = null;
 
 		if (this.queue.length === 0) return;
 
@@ -119,6 +144,7 @@ export class RequestBatcher<TItem, TResult = unknown> {
 			clearTimeout(this.timer);
 			this.timer = null;
 		}
+		this.firstItemTime = null;
 		this.queue = [];
 	}
 }

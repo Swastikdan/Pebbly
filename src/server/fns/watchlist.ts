@@ -474,15 +474,29 @@ export async function syncEpisodeProgressRecord(
 		return;
 	}
 
-	await db.insert(episodeProgress).values({
-		id: crypto.randomUUID(),
-		userId,
-		tmdbId: args.tmdbId,
-		season: args.season,
-		episode: args.episode,
-		isWatched: args.isWatched,
-		updatedAt: now,
-	});
+	await db
+		.insert(episodeProgress)
+		.values({
+			id: crypto.randomUUID(),
+			userId,
+			tmdbId: args.tmdbId,
+			season: args.season,
+			episode: args.episode,
+			isWatched: args.isWatched,
+			updatedAt: now,
+		})
+		.onConflictDoUpdate({
+			target: [
+				episodeProgress.userId,
+				episodeProgress.tmdbId,
+				episodeProgress.season,
+				episodeProgress.episode,
+			],
+			set: {
+				isWatched: args.isWatched,
+				updatedAt: now,
+			},
+		});
 }
 
 export const markEpisodeWatched = createServerFn({ method: "POST" })
