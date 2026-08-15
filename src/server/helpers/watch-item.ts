@@ -19,6 +19,21 @@ export function normalizeProgressStatus(
 		| undefined;
 }
 
+const VALID_REACTIONS: ReadonlySet<string> = new Set([
+	"loved",
+	"liked",
+	"mixed",
+	"not-for-me",
+	"recommended",
+]);
+
+export function normalizeReaction(reaction?: string | null): Reaction | null {
+	if (!reaction || typeof reaction !== "string" || reaction.trim() === "") {
+		return null;
+	}
+	return (VALID_REACTIONS.has(reaction) ? reaction : null) as Reaction | null;
+}
+
 export interface MediaIdentity {
 	tmdbId: number;
 	mediaType: MediaType;
@@ -65,10 +80,15 @@ export function buildMetadataPatch(
 	metadata: WatchItemMetadata,
 	existing?: WatchItemRow | null,
 ): MetadataDbPatch {
+	const rating =
+		typeof metadata.rating === "number" && !Number.isNaN(metadata.rating)
+			? Math.min(Math.max(metadata.rating, 0), 10)
+			: (existing?.rating ?? undefined);
+
 	return {
 		title: metadata.title ?? existing?.title ?? undefined,
 		image: metadata.image ?? existing?.image ?? undefined,
-		rating: metadata.rating ?? existing?.rating ?? undefined,
+		rating,
 		releaseDate: metadata.release_date ?? existing?.releaseDate ?? undefined,
 		overview: metadata.overview ?? existing?.overview ?? undefined,
 	};
@@ -109,9 +129,16 @@ export async function upsertWatchItem(
 		if ("inWatchlist" in finalUpdates)
 			patch.inWatchlist = finalUpdates.inWatchlist;
 		if ("progressStatus" in finalUpdates)
-			patch.progressStatus = finalUpdates.progressStatus;
-		if ("progress" in finalUpdates) patch.progress = finalUpdates.progress;
-		if ("reaction" in finalUpdates) patch.reaction = finalUpdates.reaction;
+			patch.progressStatus =
+				normalizeProgressStatus(finalUpdates.progressStatus) ??
+				existing.progressStatus;
+		if ("progress" in finalUpdates)
+			patch.progress =
+				typeof finalUpdates.progress === "number"
+					? Math.min(Math.max(finalUpdates.progress, 0), 100)
+					: existing.progress;
+		if ("reaction" in finalUpdates)
+			patch.reaction = normalizeReaction(finalUpdates.reaction);
 
 		await db
 			.update(watchItems)
@@ -127,9 +154,13 @@ export async function upsertWatchItem(
 		tmdbId,
 		mediaType,
 		inWatchlist: finalUpdates.inWatchlist ?? false,
-		progressStatus: finalUpdates.progressStatus ?? undefined,
-		progress: finalUpdates.progress ?? 0,
-		reaction: (finalUpdates.reaction as Reaction | undefined) ?? undefined,
+		progressStatus:
+			normalizeProgressStatus(finalUpdates.progressStatus) ?? undefined,
+		progress:
+			typeof finalUpdates.progress === "number"
+				? Math.min(Math.max(finalUpdates.progress, 0), 100)
+				: 0,
+		reaction: normalizeReaction(finalUpdates.reaction) ?? undefined,
 		updatedAt: now,
 		...metadataPatch,
 	});
