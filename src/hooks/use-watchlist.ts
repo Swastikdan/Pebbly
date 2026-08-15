@@ -6,10 +6,12 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { createBatcher } from "@/lib/batcher";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import {
+	batchSetWatchlistMembership,
 	getWatchlist,
 	markShowEpisodesAndStatus,
 	setProgressStatus,
@@ -57,22 +59,12 @@ export function useWatchlist() {
 			if (!remote.data) return [];
 			return remote.data
 				.map((item) => mapWatchlistRowToItem(item))
-				.filter(
-					(item) =>
-						item.inWatchlist ||
-						item.progressStatus === "watching" ||
-						(item.progress ?? 0) > 0,
-				)
+				.filter((item) => item.inWatchlist)
 				.sort((a, b) => b.updated_at - a.updated_at);
 		}
 
 		return [...localMediaState]
-			.filter(
-				(item) =>
-					item.inWatchlist ||
-					item.progressStatus === "watching" ||
-					(item.progress ?? 0) > 0,
-			)
+			.filter((item) => item.inWatchlist)
 			.sort((a, b) => b.updated_at - a.updated_at);
 	}, [isLoaded, isSignedIn, remote.data, localMediaState]);
 
@@ -188,7 +180,12 @@ const updateWatchlistMembership = createOptimisticUpdater<
 		}
 		return current.map((i) =>
 			i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
-				? { ...i, inWatchlist: false }
+				? {
+						...i,
+						inWatchlist: false,
+						progressStatus:
+							i.progressStatus === "watch-later" ? null : i.progressStatus,
+					}
 				: i,
 		);
 	},
@@ -239,6 +236,50 @@ async function setWatchlistMembershipOptimistic(
 	);
 }
 
+type BatchedWatchlistMembershipTask = {
+	args: WatchlistMembershipArgs;
+	rollback?: () => void;
+	queryClient: QueryClient;
+};
+
+const watchlistMembershipBatcher = createBatcher<
+	BatchedWatchlistMembershipTask,
+	{ ok: true } | { count: number }
+>(
+	async (tasks) => {
+		const queryClient = tasks[0]?.queryClient;
+		const items = tasks.map((t) => t.args);
+
+		try {
+			let result: { ok: true } | { count: number };
+			if (items.length === 1) {
+				result = await unwrap(setWatchlistMembership({ data: items[0] }));
+			} else {
+				result = await unwrap(batchSetWatchlistMembership({ data: { items } }));
+			}
+
+			if (queryClient) {
+				void queryClient.invalidateQueries({
+					queryKey: queryKeys.watchlist.list(),
+				});
+			}
+
+			return result;
+		} catch (error) {
+			logWatchlistError("batch set watchlist membership", error);
+			for (const task of tasks) {
+				task.rollback?.();
+			}
+			throw error;
+		}
+	},
+	{
+		delayMs: 60,
+		maxBatchSize: 100,
+		getKey: (task) => `${task.args.mediaType}:${task.args.tmdbId}`,
+	},
+);
+
 export function useToggleWatchlistItem() {
 	const { isSignedIn } = useUser();
 	const queryClient = useQueryClient();
@@ -250,21 +291,6 @@ export function useToggleWatchlistItem() {
 
 	useEffect(() => {
 		watchlistRef.current = watchlist;
-	});
-
-	const mutation = useMutation({
-		mutationFn: (args: WatchlistMembershipArgs) =>
-			unwrap(setWatchlistMembership({ data: args })),
-		onMutate: (args) => setWatchlistMembershipOptimistic(queryClient, args),
-		onError: (error, _args, rollback) => {
-			logWatchlistError("set watchlist membership", error);
-			rollback?.();
-		},
-		onSettled: () => {
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.watchlist.list(),
-			});
-		},
 	});
 
 	return useCallback(
@@ -292,7 +318,7 @@ export function useToggleWatchlistItem() {
 			const inWatchlist = !currentlyInWatchlist;
 
 			if (isSignedIn) {
-				await mutation.mutateAsync({
+				const args: WatchlistMembershipArgs = {
 					tmdbId: Number(item.id),
 					mediaType: item.media_type,
 					inWatchlist,
@@ -301,8 +327,17 @@ export function useToggleWatchlistItem() {
 					rating: item.rating,
 					release_date: item.release_date || undefined,
 					overview: item.overview || undefined,
+				};
+
+				const rollback = await setWatchlistMembershipOptimistic(
+					queryClient,
+					args,
+				);
+				return await watchlistMembershipBatcher.schedule({
+					args,
+					rollback,
+					queryClient,
 				});
-				return;
 			}
 
 			setLocalWatchlistMembership(item.id, item.media_type, inWatchlist, {
@@ -313,7 +348,73 @@ export function useToggleWatchlistItem() {
 				overview: item.overview,
 			});
 		},
-		[isSignedIn, mutation, setLocalWatchlistMembership],
+		[isSignedIn, queryClient, setLocalWatchlistMembership],
+	);
+}
+
+export function useBatchToggleWatchlist() {
+	const { isSignedIn } = useUser();
+	const queryClient = useQueryClient();
+	const setLocalWatchlistMembership = useWatchlistStore(
+		(state) => state.setWatchlistMembershipLocal,
+	);
+
+	return useCallback(
+		async (
+			items: Array<{
+				id: string;
+				media_type: MediaType;
+				inWatchlist: boolean;
+				title?: string;
+				image?: string;
+				rating?: number;
+				release_date?: string;
+				overview?: string;
+			}>,
+		) => {
+			if (items.length === 0) return;
+
+			if (isSignedIn) {
+				const tasks: BatchedWatchlistMembershipTask[] = [];
+				for (const item of items) {
+					const args: WatchlistMembershipArgs = {
+						tmdbId: Number(item.id),
+						mediaType: item.media_type,
+						inWatchlist: item.inWatchlist,
+						title: item.title,
+						image: item.image,
+						rating: item.rating,
+						release_date: item.release_date || undefined,
+						overview: item.overview || undefined,
+					};
+					const rollback = await setWatchlistMembershipOptimistic(
+						queryClient,
+						args,
+					);
+					tasks.push({ args, rollback, queryClient });
+				}
+
+				return await Promise.all(
+					tasks.map((task) => watchlistMembershipBatcher.schedule(task)),
+				);
+			}
+
+			for (const item of items) {
+				setLocalWatchlistMembership(
+					item.id,
+					item.media_type,
+					item.inWatchlist,
+					{
+						title: item.title,
+						image: item.image,
+						rating: item.rating,
+						release_date: item.release_date,
+						overview: item.overview,
+					},
+				);
+			}
+		},
+		[isSignedIn, queryClient, setLocalWatchlistMembership],
 	);
 }
 

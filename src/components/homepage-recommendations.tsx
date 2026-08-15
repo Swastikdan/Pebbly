@@ -359,16 +359,32 @@ export function HomepageRecommendations() {
 			}
 
 			// Toggle watchlist item if liking or unliking
-			if (feedback === "like" || feedback === "unlike") {
-				toggleWatchlist({
-					id: String(resolvedId),
-					title: rec.title,
-					media_type: rec.mediaType,
-					rating: metadata?.rating ?? 0,
-					image: metadata?.image ?? "",
-					release_date: metadata?.release_date ?? "",
-					overview: metadata?.overview,
-				}).catch(console.error);
+			if (feedback === "like") {
+				toggleWatchlist(
+					{
+						id: String(resolvedId),
+						title: rec.title,
+						media_type: rec.mediaType,
+						rating: metadata?.rating ?? 0,
+						image: metadata?.image ?? "",
+						release_date: metadata?.release_date ?? "",
+						overview: metadata?.overview,
+					},
+					false,
+				).catch(console.error);
+			} else if (feedback === "unlike") {
+				toggleWatchlist(
+					{
+						id: String(resolvedId),
+						title: rec.title,
+						media_type: rec.mediaType,
+						rating: metadata?.rating ?? 0,
+						image: metadata?.image ?? "",
+						release_date: metadata?.release_date ?? "",
+						overview: metadata?.overview,
+					},
+					true,
+				).catch(console.error);
 			}
 
 			try {

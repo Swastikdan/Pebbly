@@ -258,15 +258,18 @@ function WatchlistTabContent() {
 
 	const handleRemoveFromWatchlist = useCallback(
 		(item: WatchlistItem) => {
-			toggleWatchlist({
-				title: item.title,
-				rating: item.rating,
-				image: item.image,
-				id: item.external_id,
-				media_type: item.type,
-				release_date: item.release_date ?? "",
-				overview: item.overview,
-			}).catch(console.error);
+			toggleWatchlist(
+				{
+					title: item.title,
+					rating: item.rating,
+					image: item.image,
+					id: item.external_id,
+					media_type: item.type,
+					release_date: item.release_date ?? "",
+					overview: item.overview,
+				},
+				true,
+			).catch(console.error);
 		},
 		[toggleWatchlist],
 	);

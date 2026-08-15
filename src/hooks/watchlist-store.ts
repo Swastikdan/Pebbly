@@ -194,9 +194,11 @@ export const useWatchlistStore = create<WatchlistStore>()(
 							(current) => ({
 								...current,
 								inWatchlist,
-								progressStatus:
-									current.progressStatus ??
-									(inWatchlist ? "watch-later" : null),
+								progressStatus: inWatchlist
+									? (current.progressStatus ?? "watch-later")
+									: current.progressStatus === "watch-later"
+										? null
+										: current.progressStatus,
 							}),
 						),
 					};
