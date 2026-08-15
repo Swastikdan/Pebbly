@@ -1,7 +1,9 @@
 {
   "name": "pebbly",
   "private": true,
-  "type": "module",	"scripts": {
+  "type": "module",
+  "packageManager": "pnpm@10.6.1",
+  "scripts": {
 		"dev": "vite dev --port 3000",
 		"dev:web": "vite dev --port 3000",
 		"dev:cf": "wrangler dev",
