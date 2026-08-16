@@ -110,12 +110,12 @@ const HomepageRecommendationCard = memo(
 				/>
 
 				{/* Top-right solid action buttons overlay */}
-				<div className="absolute right-2 top-2 z-20 flex gap-1.5 animate-fade-in opacity-0 group-hover/rec-card:opacity-100 transition-opacity duration-300 md:opacity-100">
+				<div className="absolute right-2 top-2 z-20 flex gap-1.5 opacity-0 group-hover/rec-card:opacity-100 transition-opacity duration-200 ease-out md:opacity-100">
 					<Button
 						variant="secondary"
 						size="icon"
 						className={cn(
-							"h-8 w-8 rounded-lg border shadow-md transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer pressable",
+							"h-8 w-8 rounded-lg border shadow-md transition-[color,background-color,border-color,transform] duration-150 [@media(hover:hover)]:hover:scale-105 active:scale-95 cursor-pointer pressable",
 							isLiked
 								? "bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700"
 								: "bg-neutral-900/90 text-white border-neutral-700 hover:bg-neutral-800",
@@ -147,7 +147,7 @@ const HomepageRecommendationCard = memo(
 					<Button
 						variant="secondary"
 						size="icon"
-						className="h-8 w-8 rounded-lg bg-neutral-900/90 text-white border border-neutral-700 shadow-md transition-all duration-200 hover:bg-red-900/90 hover:border-red-600 hover:text-red-200 hover:scale-105 active:scale-95 cursor-pointer pressable"
+						className="h-8 w-8 rounded-lg bg-neutral-900/90 text-white border border-neutral-700 shadow-md transition-[color,background-color,border-color,transform] duration-150 hover:bg-red-900/90 hover:border-red-600 hover:text-red-200 [@media(hover:hover)]:hover:scale-105 active:scale-95 cursor-pointer pressable"
 						onClick={(e) => {
 							e.stopPropagation();
 							e.preventDefault();
@@ -451,7 +451,7 @@ export function HomepageRecommendations() {
 		return (
 			<section className="w-full text-left py-4 px-4 border border-border/40 rounded-xl bg-card/40 my-6">
 				<div className="flex items-center gap-2 mb-2 text-muted-foreground">
-					<Sparkles size={16} className="text-primary animate-pulse" />
+					<Sparkles size={16} className="text-primary" />
 					<h3 className="font-semibold text-sm">
 						Personalized Recommendations
 					</h3>

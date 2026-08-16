@@ -25,7 +25,7 @@ export const Collections = (props: { id: number }) => {
 				<div className="bg-secondary relative h-48 w-full overflow-hidden rounded-2xl md:h-52 lg:h-60">
 					<div
 						aria-hidden="true"
-						className="absolute inset-0 bg-cover bg-center transition-opacity duration-500"
+						className="absolute inset-0 bg-cover bg-center"
 						style={{
 							backgroundImage: `linear-gradient(90deg, rgba(0,0,0,0.9036624649859944) 0%, rgba(0,0,0,0.7120098039215687) 55%, rgba(13,13,13,0.2111694677871149) 100%), url(https://image.tmdb.org/t/p/w1440_and_h320_multi_faces/${data?.backdrop_path})`,
 						}}

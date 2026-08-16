@@ -129,13 +129,14 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 					<Image
 						alt={title}
 						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:group-hover:scale-[1.03]"
+						className="h-full w-full object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
 						width={imageWidth}
 						height={imageHeight}
 						priority={priority}
 						sizes={imageSizes}
 					/>
-					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
+					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0" />
+					<div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
 					{isRecommended && (
 						<Badge className="absolute top-2 left-2 rounded-md bg-blue-600/90 px-2 py-0.5 text-[10px] font-bold text-white border-0 shadow-md">
@@ -176,7 +177,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 							e.stopPropagation();
 							removeFromContinueWatching(id, media_type);
 						}}
-						className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-all duration-200 hover:bg-red-600 hover:text-white hover:scale-105"
+						className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color,transform] duration-150 hover:bg-red-600 hover:text-white [@media(hover:hover)]:hover:scale-105"
 					>
 						<XIcon className="size-4" />
 					</button>
@@ -344,7 +345,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
 				<Image
 					alt={name}
 					src={imageUrl}
-					className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:group-hover:scale-[1.03]"
+					className="h-full w-full object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
 					width={200}
 					height={300}
 					priority={priority}

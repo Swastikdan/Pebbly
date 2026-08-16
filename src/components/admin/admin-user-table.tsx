@@ -182,7 +182,7 @@ export function AdminUserTable() {
 							role="tab"
 							aria-selected={filterTab === ft.id}
 							onClick={() => setFilterTab(ft.id)}
-							className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+							className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
 								filterTab === ft.id
 									? "bg-background text-foreground shadow-sm"
 									: "text-muted-foreground hover:text-foreground"
@@ -342,7 +342,7 @@ export function AdminUserTable() {
 																		? `Remove ${config.label}`
 																		: `Grant ${config.label}`
 																}
-																className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${
+																className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold border transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${
 																	isActive
 																		? "bg-secondary text-foreground border-border shadow-xs"
 																		: "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
@@ -426,7 +426,7 @@ export function AdminUserTable() {
 						return (
 							<div
 								key={user._id}
-								className={`rounded-2xl border p-4 transition-all ${
+								className={`rounded-2xl border p-4 transition-colors ${
 									isBanned
 										? "bg-destructive/5 border-destructive/20"
 										: "bg-card/90 border-border/60 shadow-xs"
@@ -519,7 +519,7 @@ export function AdminUserTable() {
 													type="button"
 													onClick={toggleRole}
 													disabled={isBanned || setUserRolesMutation.isPending}
-													className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold border transition-all duration-150 min-h-[36px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+													className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold border transition-colors duration-150 min-h-[36px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 														isActive
 															? "bg-secondary text-foreground border-border/80 shadow-xs"
 															: "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
