@@ -15,6 +15,11 @@ import type { QueryClient } from "@tanstack/react-query";
  *
  * Ops that touch the same rows supersede each other (latest intent wins),
  * mirroring the server's per-item deduplication semantics.
+ *
+ * The journal is scoped to the `QueryClient` instance it was created for
+ * (WeakMap keyed on the client, never module-level state). SSR renders a fresh
+ * QueryClient per request (see `lib/query/query-client.ts`), so one request's
+ * pending ops can never leak into another request's server-rendered HTML.
  */
 
 export type PendingOpEntry<T> = {
@@ -48,39 +53,63 @@ type RegisteredOp = {
 	entries: RegisteredEntry[];
 };
 
-const keyString = (key: readonly unknown[]) => JSON.stringify(key);
+type JournalState = {
+	/** Pending ops per key, in registration order (= seq order). */
+	pendingByKey: Map<string, RegisteredOp[]>;
+	/** Last known server truth per key; used to rebuild after a rollback. */
+	baseByKey: Map<string, unknown[]>;
+	/** Reverse lookup: keyString -> key array (for `setQueryData`). */
+	keyByString: Map<string, readonly unknown[]>;
+	seqCounter: number;
+	syncTimers: Map<string, ReturnType<typeof setTimeout>>;
+};
 
-/** Pending ops per key, in registration order (= seq order). */
-const pendingByKey = new Map<string, RegisteredOp[]>();
-/** Last known server truth per key; used to rebuild after a rollback. */
-const baseByKey = new Map<string, unknown[]>();
-/** Reverse lookup: keyString -> key array (for `setQueryData`). */
-const keyByString = new Map<string, readonly unknown[]>();
-let seqCounter = 0;
+const journals = new WeakMap<QueryClient, JournalState>();
+
+function journalFor(queryClient: QueryClient): JournalState {
+	let journal = journals.get(queryClient);
+	if (!journal) {
+		journal = {
+			pendingByKey: new Map(),
+			baseByKey: new Map(),
+			keyByString: new Map(),
+			seqCounter: 0,
+			syncTimers: new Map(),
+		};
+		journals.set(queryClient, journal);
+	}
+	return journal;
+}
+
+const keyString = (key: readonly unknown[]) => JSON.stringify(key);
 
 const defaultIdOf = (row: unknown) => {
 	const r = row as { mediaType?: unknown; tmdbId?: unknown };
 	return `${String(r.mediaType)}:${String(r.tmdbId)}`;
 };
 
-function dropOp(keyString_: string, op: RegisteredOp) {
-	const list = pendingByKey.get(keyString_);
+function dropOp(journal: JournalState, keyString_: string, op: RegisteredOp) {
+	const list = journal.pendingByKey.get(keyString_);
 	if (!list) return;
 	const next = list.filter((o) => o !== op);
-	if (next.length === 0) pendingByKey.delete(keyString_);
-	else pendingByKey.set(keyString_, next);
+	if (next.length === 0) journal.pendingByKey.delete(keyString_);
+	else journal.pendingByKey.set(keyString_, next);
 }
 
 /** True while `op` is still registered (i.e. not superseded by a newer op). */
-function isRegistered(op: RegisteredOp) {
+function isRegistered(journal: JournalState, op: RegisteredOp) {
 	return op.entries.some((entry) =>
-		(pendingByKey.get(entry.keyString) ?? []).includes(op),
+		(journal.pendingByKey.get(entry.keyString) ?? []).includes(op),
 	);
 }
 
-function replay(keyString_: string, base: unknown[]): unknown[] {
+function replay(
+	journal: JournalState,
+	keyString_: string,
+	base: unknown[],
+): unknown[] {
 	let rows = base;
-	for (const op of pendingByKey.get(keyString_) ?? []) {
+	for (const op of journal.pendingByKey.get(keyString_) ?? []) {
 		for (const entry of op.entries) {
 			if (entry.keyString === keyString_) rows = entry.apply(rows);
 		}
@@ -92,17 +121,27 @@ function replay(keyString_: string, base: unknown[]): unknown[] {
  * Register one or more optimistic patches and apply them to the cache
  * immediately. Returns a handle used to resolve (success) or remove (error)
  * the op later.
+ *
+ * Client-only by construction: mutations run in the browser, never during SSR.
+ * Throwing here (instead of silently writing to a request-scoped journal)
+ * catches any future code path that would register an op on the server.
  */
 export function beginOp<T>(
 	queryClient: QueryClient,
 	entries: PendingOpEntry<T>[],
 ): OpHandle {
-	const seq = ++seqCounter;
+	if (typeof window === "undefined") {
+		throw new Error(
+			"beginOp must not be called during SSR — optimistic ops are client-only",
+		);
+	}
+	const journal = journalFor(queryClient);
+	const seq = ++journal.seqCounter;
 	const op: RegisteredOp = {
 		seq,
 		entries: entries.map((entry) => {
 			const keyString_ = keyString(entry.key);
-			keyByString.set(keyString_, entry.key);
+			journal.keyByString.set(keyString_, entry.key);
 			return {
 				key: entry.key,
 				keyString: keyString_,
@@ -117,7 +156,7 @@ export function beginOp<T>(
 	for (const entry of op.entries) {
 		// Supersede older pending ops that touch any of the same rows — the
 		// latest user intent wins, matching the server batcher's dedupe.
-		const existing = pendingByKey.get(entry.keyString) ?? [];
+		const existing = journal.pendingByKey.get(entry.keyString) ?? [];
 		const touched = new Set(entry.touchedIds);
 		for (const candidate of [...existing]) {
 			const overlaps = candidate.entries.some(
@@ -127,20 +166,20 @@ export function beginOp<T>(
 			);
 			if (overlaps) {
 				for (const cEntry of candidate.entries)
-					dropOp(cEntry.keyString, candidate);
+					dropOp(journal, cEntry.keyString, candidate);
 			}
 		}
 
-		const list = pendingByKey.get(entry.keyString) ?? [];
+		const list = journal.pendingByKey.get(entry.keyString) ?? [];
 		list.push(op);
-		pendingByKey.set(entry.keyString, list);
+		journal.pendingByKey.set(entry.keyString, list);
 
 		// First op for a key: snapshot the current (server-loaded) cache as the
 		// base used to rebuild after a rollback.
-		if (!baseByKey.has(entry.keyString)) {
+		if (!journal.baseByKey.has(entry.keyString)) {
 			const current =
 				(queryClient.getQueryData(entry.key) as unknown[] | undefined) ?? [];
-			baseByKey.set(entry.keyString, current);
+			journal.baseByKey.set(entry.keyString, current);
 		}
 
 		const current =
@@ -149,18 +188,22 @@ export function beginOp<T>(
 	}
 
 	return {
-		resolve: () => resolveOp(queryClient, op),
-		remove: () => removeOp(queryClient, op),
+		resolve: () => resolveOp(queryClient, journal, op),
+		remove: () => removeOp(queryClient, journal, op),
 	};
 }
 
-function resolveOp(queryClient: QueryClient, op: RegisteredOp) {
-	if (!isRegistered(op)) return;
+function resolveOp(
+	queryClient: QueryClient,
+	journal: JournalState,
+	op: RegisteredOp,
+) {
+	if (!isRegistered(journal, op)) return;
 	for (const entry of op.entries) {
-		dropOp(entry.keyString, op);
+		dropOp(journal, entry.keyString, op);
 		// The optimistic state is now server-confirmed, so fold it into the
 		// base so a later rollback rebuild doesn't lose it.
-		const base = baseByKey.get(entry.keyString);
+		const base = journal.baseByKey.get(entry.keyString);
 		if (!base || entry.touchedIds.length === 0) continue;
 		const current =
 			(queryClient.getQueryData(entry.key) as unknown[] | undefined) ?? [];
@@ -169,22 +212,26 @@ function resolveOp(queryClient: QueryClient, op: RegisteredOp) {
 		for (const row of current) {
 			if (touched.has(entry.idOf(row))) nextBase.push(row);
 		}
-		baseByKey.set(entry.keyString, nextBase);
+		journal.baseByKey.set(entry.keyString, nextBase);
 	}
 }
 
-function removeOp(queryClient: QueryClient, op: RegisteredOp) {
-	if (!isRegistered(op)) return;
+function removeOp(
+	queryClient: QueryClient,
+	journal: JournalState,
+	op: RegisteredOp,
+) {
+	if (!isRegistered(journal, op)) return;
 	const affected = new Set<string>();
 	for (const entry of op.entries) {
-		dropOp(entry.keyString, op);
+		dropOp(journal, entry.keyString, op);
 		affected.add(entry.keyString);
 	}
 	for (const keyString_ of affected) {
-		const base = baseByKey.get(keyString_);
-		const key = keyByString.get(keyString_);
+		const base = journal.baseByKey.get(keyString_);
+		const key = journal.keyByString.get(keyString_);
 		if (!base || !key) continue;
-		queryClient.setQueryData(key, replay(keyString_, base));
+		queryClient.setQueryData(key, replay(journal, keyString_, base));
 	}
 }
 
@@ -194,13 +241,15 @@ function removeOp(queryClient: QueryClient, op: RegisteredOp) {
  * refetches safe even when a response was computed before a write committed.
  */
 export function reconcileListFetch<T>(
+	queryClient: QueryClient,
 	key: readonly unknown[],
 	fetchedRows: T[],
 ): T[] {
+	const journal = journalFor(queryClient);
 	const keyString_ = keyString(key);
-	keyByString.set(keyString_, key);
-	baseByKey.set(keyString_, fetchedRows as unknown[]);
-	return replay(keyString_, fetchedRows) as T[];
+	journal.keyByString.set(keyString_, key);
+	journal.baseByKey.set(keyString_, fetchedRows as unknown[]);
+	return replay(journal, keyString_, fetchedRows) as T[];
 }
 
 /**
@@ -216,8 +265,9 @@ export function applyServerState<T>(
 	touchedIds: string[],
 	idOf?: (row: T) => string,
 ) {
+	const journal = journalFor(queryClient);
 	const keyString_ = keyString(key);
-	keyByString.set(keyString_, key);
+	journal.keyByString.set(keyString_, key);
 	const current = (queryClient.getQueryData(key) as T[] | undefined) ?? [];
 	const id = idOf ?? (defaultIdOf as (row: T) => string);
 	const touched = new Set(touchedIds);
@@ -229,11 +279,9 @@ export function applyServerState<T>(
 		else truth[idx] = row;
 	}
 
-	baseByKey.set(keyString_, truth as unknown[]);
-	queryClient.setQueryData(key, replay(keyString_, truth) as T[]);
+	journal.baseByKey.set(keyString_, truth as unknown[]);
+	queryClient.setQueryData(key, replay(journal, keyString_, truth) as T[]);
 }
-
-const syncTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 /**
  * Debounce cache invalidations so N rapid mutations produce a single refetch
@@ -245,23 +293,25 @@ export function scheduleSync(
 	keys: readonly (readonly unknown[])[],
 	delayMs = 250,
 ) {
+	const journal = journalFor(queryClient);
 	for (const key of keys) {
 		const keyString_ = keyString(key);
-		const existing = syncTimers.get(keyString_);
+		const existing = journal.syncTimers.get(keyString_);
 		if (existing) clearTimeout(existing);
 		const timer = setTimeout(() => {
-			syncTimers.delete(keyString_);
+			journal.syncTimers.delete(keyString_);
 			queryClient.invalidateQueries({ queryKey: key, exact: false });
 		}, delayMs);
-		syncTimers.set(keyString_, timer);
+		journal.syncTimers.set(keyString_, timer);
 	}
 }
 
-/** Forget all journal state (used when a user signs out). */
-export function clearPendingOps() {
-	pendingByKey.clear();
-	baseByKey.clear();
-	keyByString.clear();
-	for (const timer of syncTimers.values()) clearTimeout(timer);
-	syncTimers.clear();
+/** Forget all journal state for the given client (used when a user signs out). */
+export function clearPendingOps(queryClient: QueryClient) {
+	const journal = journalFor(queryClient);
+	journal.pendingByKey.clear();
+	journal.baseByKey.clear();
+	journal.keyByString.clear();
+	for (const timer of journal.syncTimers.values()) clearTimeout(timer);
+	journal.syncTimers.clear();
 }

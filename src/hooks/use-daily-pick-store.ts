@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { MediaListResultsEntity } from "@/lib/tmdb-schemas";
 import { createLRUStorage, createMemoryStorage } from "@/lib/utils";
-import type { MediaListResultsEntity } from "@/types";
 
 /**
  * Offline cache for the "What to Watch Today" picker.

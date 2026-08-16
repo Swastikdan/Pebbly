@@ -1,6 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import * as v from "valibot";
+import {
+	buildCustomListPrompt,
+	buildGenrePrompt,
+	buildHomepageRecommendationsPrompt,
+	buildWatchlistPrompt,
+	type FeedbackSignals,
+	type WatchlistData,
+} from "@/lib/prompts";
 import { callGeminiAI, MODELS_TO_TRY, type Recommendation } from "../ai";
 import {
 	type AuthUser,
@@ -20,14 +28,6 @@ import {
 	watchItems,
 } from "../db/schema";
 import { getEnv } from "../env";
-import {
-	buildCustomListPrompt,
-	buildGenrePrompt,
-	buildHomepageRecommendationsPrompt,
-	buildWatchlistPrompt,
-	type FeedbackSignals,
-	type WatchlistData,
-} from "../prompts";
 import { hasFeature } from "../rbac";
 import { type ApiResult, fail, ok } from "../schema/common";
 import {

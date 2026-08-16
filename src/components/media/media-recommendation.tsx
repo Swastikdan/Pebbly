@@ -43,7 +43,11 @@ export const MediaRecommendations = (props: {
 					<ScrollContainer isButtonsVisible={false}>
 						<div className="flex gap-4 p-4 first:pl-0 last:pr-0">
 							{Array.from({ length: 6 }).map((_, index) => (
-								<MediaCardSkeleton key={index} card_type="vertical" />
+								<MediaCardSkeleton
+									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+									key={index}
+									card_type="vertical"
+								/>
 							))}
 						</div>
 					</ScrollContainer>

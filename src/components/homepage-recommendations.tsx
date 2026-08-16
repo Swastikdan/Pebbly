@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
@@ -182,20 +182,17 @@ export function HomepageRecommendations() {
 		() => Math.floor(Date.now() / (1000 * 60 * 60)) * (1000 * 60 * 60),
 	);
 
-	const cachedRecommendationsRef = useRef<{
-		userId: string | null;
-		// biome-ignore lint/suspicious/noExplicitAny: Cached server query result
-		recommendationsData: any;
-		// biome-ignore lint/suspicious/noExplicitAny: Cached server query result
-		feedbackList: any;
-	} | null>(null);
-
 	const canAccessFeature = isSignedIn && hasFeature("ai-recommendations");
 
+	// The query key is per-user so keepPreviousData can never surface another
+	// user's cached recommendations during sign-in/out transitions.
 	const recommendationsQuery = useQuery({
-		queryKey: queryKeys.recommendations.homepage(),
+		queryKey: queryKeys.recommendations.homepage(user?.id),
 		queryFn: () => unwrap(getHomepageRecommendations({ data: {} })),
 		enabled: canAccessFeature,
+		// Keep the previous data on screen while a refetch is in flight so
+		// navigation never flashes a skeleton (replaces the old ref cache).
+		placeholderData: keepPreviousData,
 	});
 	const recommendationsData = recommendationsQuery.data;
 
@@ -203,35 +200,9 @@ export function HomepageRecommendations() {
 		queryKey: queryKeys.recommendations.feedback(user?.id),
 		queryFn: () => unwrap(getRecommendationFeedback()),
 		enabled: canAccessFeature,
+		placeholderData: keepPreviousData,
 	});
 	const feedbackList = feedbackQuery.data;
-
-	// Update ref cache when fresh data is loaded
-	useEffect(() => {
-		if (recommendationsData && feedbackList) {
-			cachedRecommendationsRef.current = {
-				userId: user?.id ?? null,
-				recommendationsData,
-				feedbackList,
-			};
-		}
-	}, [recommendationsData, feedbackList, user?.id]);
-
-	// Use cached data as fallback to prevent skeleton flashes during page transitions
-	const hasCache =
-		cachedRecommendationsRef.current &&
-		cachedRecommendationsRef.current.userId === (user?.id ?? null);
-	const resolvedRecsData =
-		recommendationsData ||
-		(hasCache
-			? (cachedRecommendationsRef.current
-					?.recommendationsData as typeof recommendationsData)
-			: null);
-	const resolvedFeedbackList =
-		feedbackList ||
-		(hasCache
-			? (cachedRecommendationsRef.current?.feedbackList as typeof feedbackList)
-			: null);
 
 	const [isGenerating, setIsGenerating] = useState(false);
 	const isGeneratingRef = useRef(false);
@@ -244,7 +215,7 @@ export function HomepageRecommendations() {
 	useEffect(() => {
 		if (
 			canAccessFeature &&
-			resolvedRecsData?.needsRefresh &&
+			recommendationsData?.needsRefresh &&
 			!isGeneratingRef.current
 		) {
 			isGeneratingRef.current = true;
@@ -263,29 +234,29 @@ export function HomepageRecommendations() {
 					isGeneratingRef.current = false;
 				});
 		}
-	}, [canAccessFeature, resolvedRecsData?.needsRefresh, refreshHomepage]);
+	}, [canAccessFeature, recommendationsData?.needsRefresh, refreshHomepage]);
 
 	const toggleWatchlist = useToggleWatchlistItem();
 
 	const likedKeys = useMemo(() => {
 		const set = new Set<string>(localLikedKeys);
-		for (const f of resolvedFeedbackList ?? []) {
+		for (const f of feedbackList ?? []) {
 			if (f.feedback === "like") {
 				set.add(`${f.mediaType}:${f.tmdbId}`);
 			}
 		}
 		return set;
-	}, [resolvedFeedbackList, localLikedKeys]);
+	}, [feedbackList, localLikedKeys]);
 
 	const dislikedKeys = useMemo(() => {
 		const set = new Set<string>();
-		for (const f of resolvedFeedbackList ?? []) {
+		for (const f of feedbackList ?? []) {
 			if (f.feedback === "not_interested") {
 				set.add(`${f.mediaType}:${f.tmdbId}`);
 			}
 		}
 		return set;
-	}, [resolvedFeedbackList]);
+	}, [feedbackList]);
 
 	const { allMediaStates } = useAllMediaStates();
 	const watchlistKeys = useMemo(() => {
@@ -303,8 +274,8 @@ export function HomepageRecommendations() {
 	}, [allMediaStates]);
 
 	const recs = useMemo(() => {
-		if (!resolvedRecsData?.recommendations) return [];
-		return resolvedRecsData.recommendations.filter((r) => {
+		if (!recommendationsData?.recommendations) return [];
+		return recommendationsData.recommendations.filter((r) => {
 			if (localDismissedKeys.has(getDismissKey(r))) return false;
 			if (r.tmdbId !== null && r.tmdbId !== undefined) {
 				const key = `${r.mediaType}:${r.tmdbId}`;
@@ -314,7 +285,7 @@ export function HomepageRecommendations() {
 			return true;
 		});
 	}, [
-		resolvedRecsData?.recommendations,
+		recommendationsData?.recommendations,
 		localDismissedKeys,
 		watchlistKeys,
 		likedKeys,
@@ -443,9 +414,9 @@ export function HomepageRecommendations() {
 	}
 
 	const hasNoWatchHistory =
-		resolvedRecsData?.status === "failed" &&
-		(!resolvedRecsData.recommendations ||
-			resolvedRecsData.recommendations.length === 0);
+		recommendationsData?.status === "failed" &&
+		(!recommendationsData.recommendations ||
+			recommendationsData.recommendations.length === 0);
 
 	if (hasNoWatchHistory) {
 		return (
@@ -464,7 +435,7 @@ export function HomepageRecommendations() {
 		);
 	}
 
-	if (!resolvedRecsData) {
+	if (!recommendationsData) {
 		return (
 			<div className="my-6">
 				<RecommendationSectionHeader />

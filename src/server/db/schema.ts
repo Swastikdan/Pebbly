@@ -17,7 +17,10 @@ export const users = sqliteTable("users", {
 	image: text("image"),
 	email: text("email"),
 	roles: text("roles", { mode: "json" }).$type<string[]>().default([]),
-	isAdmin: integer("is_admin", { mode: "boolean" }).default(false),
+	// No `is_admin` column: admin status lives in Clerk's public metadata (the
+	// signed JWT claim or the live Clerk API). A stored flag goes stale the
+	// moment someone is demoted in Clerk, so it is never consulted for access
+	// decisions — keeping it in the DB only invited drift.
 	isBanned: integer("is_banned", { mode: "boolean" }).default(false),
 });
 

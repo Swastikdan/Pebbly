@@ -39,9 +39,9 @@ export const CastSection = (props: {
 				<div className="flex flex-col gap-3">
 					<ScrollContainer>
 						<div className="flex items-center gap-2">
-							{cast.map((cast, index) => (
+							{cast.map((cast) => (
 								<MediaCard
-									key={index}
+									key={cast.id}
 									id={cast.id}
 									known_for_department={cast.character}
 									name={cast.name}
@@ -49,9 +49,9 @@ export const CastSection = (props: {
 									card_type="person"
 								/>
 							))}
-							{crew.map((crew, index) => (
+							{crew.map((crew) => (
 								<MediaCard
-									key={index}
+									key={crew.id}
 									id={crew.id}
 									known_for_department={crew.job}
 									name={crew.name}

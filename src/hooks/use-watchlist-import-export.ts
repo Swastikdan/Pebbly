@@ -67,7 +67,7 @@ export const useWatchlistImportExport = () => {
 	const { isSignedIn } = useUser();
 	const allEpisodeProgress = useQuery({
 		queryKey: queryKeys.watchlist.allEpisodes(),
-		queryFn: fetchAllEpisodeProgress,
+		queryFn: () => fetchAllEpisodeProgress(queryClient),
 		enabled: !!isSignedIn,
 	});
 	const fileInputRef = useRef<HTMLInputElement | null>(null);

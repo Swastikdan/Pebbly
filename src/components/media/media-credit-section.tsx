@@ -7,7 +7,7 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getCredits } from "@/lib/queries";
 
-import type { CrewMember } from "@/types";
+import type { CrewMember } from "@/lib/tmdb-schemas";
 
 export const MediaCreditSection = (props: {
 	id: number;

@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getPersonDetails } from "@/lib/queries";
+import type { PersonDetails } from "@/lib/tmdb-schemas";
 import { parseAndValidateId } from "@/lib/utils";
-import type { PersonDetails } from "@/types";
 
 type KnownForCredit = {
 	id: number;
@@ -234,7 +234,11 @@ function PersonPage() {
 								<div className="flex flex-col">
 									{isBiographyExpanded ? (
 										biographyParagraphs.map((paragraph, index) => (
-											<p key={index} className="mb-4">
+											<p
+												// biome-ignore lint/suspicious/noArrayIndexKey: static paragraph list
+												key={index}
+												className="mb-4"
+											>
 												{paragraph}
 											</p>
 										))

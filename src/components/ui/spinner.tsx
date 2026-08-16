@@ -52,6 +52,7 @@ function Spinner({
 		>
 			{Array.from({ length: 8 }).map((_, i) => (
 				<span
+					// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
 					key={i}
 					className="absolute top-0 left-1/2 h-full w-[12.5%] animate-spinner-leaf-fade"
 					style={{

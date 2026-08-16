@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowRightLine, Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
 import {
 	getImageDialogKey,
 	type MediaDialogKey,
@@ -104,28 +103,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 					>
 						Media
 					</Link>
-					<TabsList className={SECTION_TAB_LIST_CLASS}>
-						{hasVideos && (
-							<TabsTrigger value="videos" className={SECTION_TAB_TRIGGER_CLASS}>
-								Videos
-							</TabsTrigger>
-						)}
+					<TabsList>
+						{hasVideos && <TabsTrigger value="videos">Videos</TabsTrigger>}
 						{hasBackdrops && (
-							<TabsTrigger
-								value="backdrops"
-								className={SECTION_TAB_TRIGGER_CLASS}
-							>
-								Backdrops
-							</TabsTrigger>
+							<TabsTrigger value="backdrops">Backdrops</TabsTrigger>
 						)}
-						{hasPosters && (
-							<TabsTrigger
-								value="posters"
-								className={SECTION_TAB_TRIGGER_CLASS}
-							>
-								Posters
-							</TabsTrigger>
-						)}
+						{hasPosters && <TabsTrigger value="posters">Posters</TabsTrigger>}
 					</TabsList>
 				</div>
 				{hasVideos && (
@@ -235,14 +218,14 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
-								{backdrops.map((image, index) => {
+								{backdrops.map((image) => {
 									const imagePathClean = getImageDialogKey(
 										image.backdrop_image,
 									);
 									return (
 										// biome-ignore lint/a11y/useSemanticElements: keeping div for consistent styling with other interactive containers
 										<div
-											key={`backdrop-${index}`}
+											key={`backdrop-${image.backdrop_image}`}
 											className="group relative cursor-pointer"
 											role="button"
 											tabIndex={0}
@@ -338,12 +321,12 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
-								{posters.map((image, index) => {
+								{posters.map((image) => {
 									const imagePathClean = getImageDialogKey(image.poster_image);
 									return (
 										// biome-ignore lint/a11y/useSemanticElements: keeping div for consistent styling with other interactive containers
 										<div
-											key={`poster-${index}`}
+											key={`poster-${image.poster_image}`}
 											className="group relative cursor-pointer"
 											role="button"
 											tabIndex={0}

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import {
 	type AuthUser,
+	getClerkAdminIds,
 	invalidateUserCache,
 	isAdminFromClerkApi,
 	requireUser,
@@ -13,7 +14,6 @@ import {
 	DYNAMIC_ROLES,
 	getUserFeatures,
 	isAdminByClaims,
-	isClerkAdmin,
 	syncRolePermissions,
 } from "../rbac";
 import {
@@ -32,12 +32,10 @@ async function requireAdmin(): Promise<
 
 	const { user, claims } = result;
 
-	// Admin status is decided by the signed JWT claim or the live Clerk API
-	// (60s-cached) — the same authoritative source `hasFeature` uses. The
-	// stored `users.isAdmin` flag is only written at account creation and never
-	// refreshed, so trusting it would let a user demoted in Clerk keep admin
-	// access indefinitely. The flag is still honored for display purposes via
-	// `isClerkAdmin` in listUsers, but never for access decisions.
+	// Admin status is decided by the signed JWT claim or the live Clerk API —
+	// the same authoritative source `hasFeature` uses. There is no stored
+	// `users.isAdmin` flag to consult (the column was removed): a stored copy
+	// would go stale the moment someone is demoted in Clerk.
 	const isAdmin =
 		isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub));
 	if (!isAdmin) {
@@ -45,18 +43,6 @@ async function requireAdmin(): Promise<
 			user: null,
 			error: fail("FORBIDDEN", "Forbidden: admin access required"),
 		};
-	}
-
-	// Self-heal the stored flag on promotion so listUsers / the admin UI stay
-	// consistent with the live source. Only ever writes `true` (the lookup
-	// succeeded), never downgrades — a transient Clerk API failure must not
-	// erase a stored admin flag.
-	if (user.isAdmin !== true) {
-		await getDb(getEnv())
-			.update(users)
-			.set({ isAdmin: true })
-			.where(eq(users.id, user.id));
-		invalidateUserCache(claims.sub);
 	}
 
 	return { user, error: null };
@@ -211,6 +197,14 @@ export const listUsers = createServerFn({ method: "POST" })
 				.from(users)
 				.limit(data.limit ?? 200);
 
+			// Admin status lives in Clerk's public metadata, not the DB (the
+			// `users.is_admin` column was removed — a stored copy goes stale).
+			// Resolve it with one paginated Clerk user-list call, then index by
+			// clerk sub id so the whole page maps in a single pass. On API
+			// failure this degrades to "no admins" for display only; it never
+			// gates access (that happens in requireAdmin / hasFeature).
+			const adminClerkIds = await getClerkAdminIds();
+
 			const results: Array<{
 				_id: string;
 				tokenIdentifier: string;
@@ -220,22 +214,19 @@ export const listUsers = createServerFn({ method: "POST" })
 				roles: string[];
 				isBanned: boolean;
 				isAdmin: boolean;
-			}> = [];
-			for (const u of rows) {
-				results.push({
-					_id: u.id,
-					tokenIdentifier: u.tokenIdentifier,
-					name: u.name ?? "Anonymous",
-					email: u.email ?? "No email",
-					image: u.image,
-					roles: (u.roles ?? []).filter((role) =>
-						DYNAMIC_ROLES.includes(role as (typeof DYNAMIC_ROLES)[number]),
-					),
-					isBanned: u.isBanned ?? false,
-					// Derive isAdmin from the stored row — no per-user Clerk API call.
-					isAdmin: isClerkAdmin(null, { isAdmin: u.isAdmin ?? false }),
-				});
-			}
+			}> = rows.map((u) => ({
+				_id: u.id,
+				tokenIdentifier: u.tokenIdentifier,
+				name: u.name ?? "Anonymous",
+				email: u.email ?? "No email",
+				image: u.image,
+				roles: (u.roles ?? []).filter((role) =>
+					DYNAMIC_ROLES.includes(role as (typeof DYNAMIC_ROLES)[number]),
+				),
+				isBanned: u.isBanned ?? false,
+				// tokenIdentifier is `clerk|<sub>` (or a legacy `*|<sub>` variant).
+				isAdmin: adminClerkIds.has(u.tokenIdentifier.split("|").pop() ?? ""),
+			}));
 
 			return ok(results);
 		},

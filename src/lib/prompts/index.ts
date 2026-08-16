@@ -1,4 +1,5 @@
-// Port of `convex/prompts.ts` — unchanged logic, types adapted to the D1 rows.
+// Pure prompt-building helpers for the recommendation engine. Kept dependency-free
+// (no server imports) so they are trivially testable and reusable anywhere.
 
 export interface WatchItemSummary {
 	tmdbId: number;

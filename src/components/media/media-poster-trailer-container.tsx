@@ -19,7 +19,7 @@ const VideoPlayerModal = lazy(() =>
 	})),
 );
 
-import { useWatchProgress } from "@/hooks/use-watch-progress";
+import { useWatchProgress } from "@/hooks/watch-progress/use-watch-progress";
 
 export function MediaPosterTrailerContainer(props: {
 	tmdbId: number;

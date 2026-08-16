@@ -295,10 +295,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				</a>
 				<UserSync />
 				<Navbar />
+				{/* The skip-to-content link targets #main-content — keep a visible
+				    focus ring so keyboard users can see where focus landed. */}
 				<main
 					id="main-content"
 					tabIndex={-1}
-					className="outline-none mobile-nav-spacer"
+					className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring mobile-nav-spacer"
 				>
 					{children}
 				</main>

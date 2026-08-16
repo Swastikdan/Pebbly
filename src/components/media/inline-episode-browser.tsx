@@ -23,10 +23,10 @@ import { IMAGE_PREFIX } from "@/constants";
 import {
 	useEpisodeProgress,
 	useEpisodeWatched,
-} from "@/hooks/use-watch-progress";
+} from "@/hooks/watch-progress/use-watch-progress";
 
 import { getTvSeasonDetails } from "@/lib/queries";
-import type { SeasonInfo, TvEpisodeDetail } from "@/types";
+import type { SeasonInfo, TvEpisodeDetail } from "@/lib/tmdb-schemas";
 
 interface InlineEpisodeBrowserProps {
 	tvId: number;
@@ -207,7 +207,11 @@ function SeasonEpisodeList({
 		return (
 			<div className="flex flex-col gap-0 divide-y divide-border/50">
 				{Array.from({ length: 4 }).map((_, i) => (
-					<div key={`ep-skel-${i}`} className="flex gap-3 px-4 py-3">
+					<div
+						// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+						key={`ep-skel-${i}`}
+						className="flex gap-3 px-4 py-3"
+					>
 						<Skeleton className="h-16 w-28 shrink-0 rounded-lg xs:h-20 xs:w-32 sm:h-24 sm:w-40 md:h-28 md:w-48" />
 						<div className="flex flex-1 flex-col gap-2 py-1">
 							<Skeleton className="h-2 w-10" />

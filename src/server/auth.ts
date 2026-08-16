@@ -140,27 +140,7 @@ function getClerkApiClient() {
 	return clerkApiClient;
 }
 
-const ADMIN_API_CACHE_TTL_MS = 60_000;
-const ADMIN_API_CACHE_MAX_SIZE = 1_000;
 const ADMIN_API_TIMEOUT_MS = 5_000;
-const adminApiCache = new Map<string, { value: boolean; expiresAt: number }>();
-
-/**
- * Bound the admin-status cache: purge expired entries and enforce a fixed
- * maximum size so a long-lived isolate cannot accumulate entries indefinitely.
- * Eviction is oldest-first (the Map preserves insertion order).
- */
-function pruneAdminApiCache() {
-	const now = Date.now();
-	for (const [key, entry] of adminApiCache) {
-		if (entry.expiresAt <= now) adminApiCache.delete(key);
-	}
-	while (adminApiCache.size > ADMIN_API_CACHE_MAX_SIZE) {
-		const oldest = adminApiCache.keys().next().value;
-		if (oldest === undefined) break;
-		adminApiCache.delete(oldest);
-	}
-}
 
 /**
  * Resolve `isAdmin` from Clerk's public metadata via the backend API.
@@ -168,38 +148,67 @@ function pruneAdminApiCache() {
  * The Clerk JWT does not carry public metadata unless a custom JWT template /
  * session claim adds it, while the client SDK (`useUser`) reads it straight
  * from the user resource. This keeps the server in agreement with the client:
- * Clerk's public metadata is the source of truth for admin status. Results are
- * cached briefly (60s) to avoid an API call on every request.
+ * Clerk's public metadata is the source of truth for admin status.
+ *
+ * Deliberately uncached: Workers isolates don't share memory, so an in-memory
+ * Map would be both fragmented across isolates and potentially stale. Callers
+ * should prefer the signed JWT claim (`isAdminByClaims` / `getAdminFromClaims`)
+ * and only fall back here when the claim is absent.
  */
 export async function isAdminFromClerkApi(sub: string): Promise<boolean> {
-	const now = Date.now();
-	const cached = adminApiCache.get(sub);
-	if (cached && cached.expiresAt > now) return cached.value;
-
 	const client = getClerkApiClient();
-	let isAdmin = false;
-	if (client) {
-		try {
-			// Bound the external call so a stalled Clerk API cannot hang the
-			// request. A timeout degrades to `false`, never `true`. The Clerk
-			// client does not accept a per-call signal, so use a deadline race.
-			const clerkUser = await withTimeout(
-				client.users.getUser(sub),
-				ADMIN_API_TIMEOUT_MS,
-				"Clerk admin lookup timed out",
-			);
-			isAdmin = clerkUser.publicMetadata?.isAdmin === true;
-		} catch (error) {
-			console.error("Failed to fetch Clerk user for admin check:", error);
-		}
+	if (!client) return false;
+	try {
+		// Bound the external call so a stalled Clerk API cannot hang the
+		// request. A timeout degrades to `false`, never `true`. The Clerk
+		// client does not accept a per-call signal, so use a deadline race.
+		const clerkUser = await withTimeout(
+			client.users.getUser(sub),
+			ADMIN_API_TIMEOUT_MS,
+			"Clerk admin lookup timed out",
+		);
+		return clerkUser.publicMetadata?.isAdmin === true;
+	} catch (error) {
+		console.error("Failed to fetch Clerk user for admin check:", error);
+		return false;
 	}
+}
 
-	adminApiCache.set(sub, {
-		value: isAdmin,
-		expiresAt: now + ADMIN_API_CACHE_TTL_MS,
-	});
-	pruneAdminApiCache();
-	return isAdmin;
+/**
+ * Fetch the Clerk user ids whose public metadata marks them admin, using one
+ * paginated API call per page (max page size). Used to render the admin user
+ * table without a per-row lookup. Returns an empty set on any failure — this
+ * is display-only data and must never be used for access decisions.
+ */
+export async function getClerkAdminIds(): Promise<Set<string>> {
+	const client = getClerkApiClient();
+	if (!client) return new Set();
+	const adminIds = new Set<string>();
+	try {
+		const PAGE_SIZE = 500;
+		for (let offset = 0; offset < 10_000; offset += PAGE_SIZE) {
+			const result = await withTimeout(
+				client.users.getUserList({ limit: PAGE_SIZE, offset }),
+				ADMIN_API_TIMEOUT_MS,
+				"Clerk user list lookup timed out",
+			);
+			const pageUsers = result.data ?? [];
+			for (const clerkUser of pageUsers) {
+				if (clerkUser.publicMetadata?.isAdmin === true && clerkUser.id) {
+					adminIds.add(clerkUser.id);
+				}
+			}
+			// Stop when we've seen every user or the API returned a short page
+			// (defensive — a hard cap above guards against an endless loop).
+			const totalCount = result.totalCount ?? 0;
+			if (pageUsers.length < PAGE_SIZE || offset + PAGE_SIZE >= totalCount) {
+				break;
+			}
+		}
+	} catch (error) {
+		console.error("Failed to fetch Clerk user list for admin display:", error);
+	}
+	return adminIds;
 }
 
 const USER_CACHE_TTL_MS = 15_000;
@@ -349,13 +358,13 @@ export async function requireUser(): Promise<RequireUserResult> {
 	let user = await pickBestUserMatch(userMatches, tokenIdentifier);
 
 	if (!user) {
-		const isAdmin =
-			getAdminFromClaims(claims) ?? (await isAdminFromClerkApi(claims.sub));
 		const id = crypto.randomUUID();
 		// onConflictDoNothing makes concurrent first sign-ins race-safe: when
 		// two requests for a brand-new user insert at once, one wins and the
 		// other no-ops instead of throwing on the unique token_identifier
 		// index (which would 500 a parallel request on first load).
+		// Admin status is intentionally NOT persisted here — it lives in Clerk's
+		// public metadata (JWT claim / live API) and a stored copy would go stale.
 		await db
 			.insert(users)
 			.values({
@@ -364,7 +373,6 @@ export async function requireUser(): Promise<RequireUserResult> {
 				name: claims.name ?? claims.nickname ?? "Anonymous",
 				email: claims.email ?? undefined,
 				image: claims.picture ?? claims.pictureUrl ?? undefined,
-				isAdmin: isAdmin ?? false,
 			})
 			.onConflictDoNothing();
 		// Re-read by the canonical tokenIdentifier — the winner of a concurrent

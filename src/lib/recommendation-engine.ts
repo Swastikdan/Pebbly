@@ -4,7 +4,8 @@ import {
 	getBasicTvDetails,
 	getSearchResult,
 } from "@/lib/queries";
-import type { AIRecommendation, BasicMovie, BasicTv } from "@/types";
+import type { BasicMovie, BasicTv } from "@/lib/tmdb-schemas";
+import type { AIRecommendation } from "@/types";
 
 export interface NormalizedTmdbData {
 	id: number;

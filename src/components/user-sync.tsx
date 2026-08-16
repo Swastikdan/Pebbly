@@ -1,4 +1,5 @@
 import { useClerk, useUser } from "@clerk/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { clearPendingOps } from "@/hooks/pending-ops";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -7,6 +8,7 @@ import { unwrap } from "@/server/schema/common";
 
 export const UserSync = () => {
 	const { user, isLoaded } = useUser();
+	const queryClient = useQueryClient();
 	const { signOut } = useClerk();
 	const { isBanned, isSignedIn, loading } = usePermissions();
 
@@ -19,7 +21,6 @@ export const UserSync = () => {
 						name: user.fullName ?? user.username ?? "Anonymous",
 						email: user.primaryEmailAddress?.emailAddress,
 						image: user.imageUrl,
-						isAdmin: user.publicMetadata?.isAdmin === true,
 					},
 				}),
 			).catch((error) => {
@@ -40,9 +41,9 @@ export const UserSync = () => {
 	// when the session ends so nothing leaks into the next signed-in user.
 	useEffect(() => {
 		if (isLoaded && !user) {
-			clearPendingOps();
+			clearPendingOps(queryClient);
 		}
-	}, [isLoaded, user]);
+	}, [isLoaded, user, queryClient]);
 
 	return null;
 };
