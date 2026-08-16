@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
-import { type AuthUser, isAdminFromClerkApi, requireUser } from "../auth";
+import {
+	type AuthUser,
+	invalidateUserCache,
+	isAdminFromClerkApi,
+	requireUser,
+} from "../auth";
 import { getDb } from "../db/client";
 import { rolePermissions, users } from "../db/schema";
 import { getEnv } from "../env";
@@ -51,6 +56,7 @@ async function requireAdmin(): Promise<
 			.update(users)
 			.set({ isAdmin: true })
 			.where(eq(users.id, user.id));
+		invalidateUserCache(claims.sub);
 	}
 
 	return { user, error: null };
@@ -145,6 +151,7 @@ export const setUserRoles = createServerFn({ method: "POST" })
 			})
 			.where(eq(users.id, target[0].id));
 
+		invalidateUserCache(target[0].tokenIdentifier);
 		return ok({ ok: true });
 	});
 
@@ -172,6 +179,7 @@ export const setUserBanned = createServerFn({ method: "POST" })
 			.set({ isBanned: data.banned })
 			.where(eq(users.id, target[0].id));
 
+		invalidateUserCache(target[0].tokenIdentifier);
 		return ok({ ok: true });
 	});
 
