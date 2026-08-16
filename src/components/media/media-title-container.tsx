@@ -176,10 +176,10 @@ export const MediaTitleContainer = (props: {
 				)}
 			</div>
 			<div className="flex flex-row items-center justify-between">
-				<span className="flex items-center gap-1.5 text-compact text-muted-foreground whitespace-nowrap">
+				<span className="flex items-center gap-1.5 text-meta text-muted-foreground whitespace-nowrap">
 					{releaseyear && releaseyear !== "null" && (
 						<>
-							<span className="tabular-nums">{releaseyear}</span>
+							<span>{releaseyear}</span>
 							<span className="text-border">·</span>
 						</>
 					)}
@@ -190,13 +190,13 @@ export const MediaTitleContainer = (props: {
 					{runtime && (
 						<>
 							<span className="text-border">·</span>
-							<span className="tabular-nums">{runtime}</span>
+							<span>{runtime}</span>
 						</>
 					)}
 					{tv_status && (
 						<>
 							<span className="text-border">·</span>
-							<span className="tabular-nums">{tv_status}</span>
+							<span>{tv_status}</span>
 						</>
 					)}
 				</span>

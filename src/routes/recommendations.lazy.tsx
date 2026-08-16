@@ -142,6 +142,12 @@ const ERA_PRESETS = [
 
 const COUNT_OPTIONS = [5, 10, 15, 20, 25, 30] as const;
 
+const GEN_STAGES = [
+	"Reading your library…",
+	"Filtering what you've already seen…",
+	"Drafting your picks…",
+] as const;
+
 function RecommendationsContent({
 	isSignedIn,
 	accessLoading,
@@ -225,6 +231,19 @@ function RecommendationsContent({
 	const [selectedEras, setSelectedEras] = useState<string[]>([]);
 	const [count, setCount] = useState(10);
 	const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+	const [genStage, setGenStage] = useState(0);
+
+	// Cycle through the generation narrative; reset whenever generation stops.
+	useEffect(() => {
+		if (!isGenerating) {
+			setGenStage(0);
+			return;
+		}
+		const timer = window.setInterval(() => {
+			setGenStage((stage) => Math.min(stage + 1, GEN_STAGES.length - 1));
+		}, 900);
+		return () => window.clearInterval(timer);
+	}, [isGenerating]);
 
 	const toggleGenre = (name: string) => {
 		setSelectedGenres((prev) =>
@@ -388,14 +407,14 @@ function RecommendationsContent({
 						<div className="w-full sm:w-auto flex items-center gap-2">
 							<div className="flex flex-1 sm:flex-none gap-1 rounded-xl bg-secondary/20 p-1 h-10 items-center border border-border">
 								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform,box-shadow] duration-150"
+									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform] duration-150"
 									variant={!mediaType ? "default" : "ghost"}
 									onClick={() => setMediaType(undefined)}
 								>
 									All
 								</Button>
 								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform,box-shadow] duration-150"
+									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform] duration-150"
 									variant={mediaType === "movie" ? "default" : "ghost"}
 									onClick={() =>
 										setMediaType(mediaType === "movie" ? undefined : "movie")
@@ -404,7 +423,7 @@ function RecommendationsContent({
 									Movies
 								</Button>
 								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform,box-shadow] duration-150"
+									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform] duration-150"
 									variant={mediaType === "tv" ? "default" : "ghost"}
 									onClick={() =>
 										setMediaType(mediaType === "tv" ? undefined : "tv")
@@ -434,7 +453,7 @@ function RecommendationsContent({
 									(genMode === "list" && !listId)
 								}
 								variant="secondary"
-								className="gap-2 h-10 w-full sm:w-auto rounded-xl px-5 border border-border hover:scale-[1.02] active:scale-[0.98] transition-[color,background-color,border-color,transform,box-shadow] duration-150 shadow-none"
+								className="gap-2 h-10 w-full sm:w-auto rounded-xl px-5 border border-border hover:scale-[1.02] active:scale-[0.98] transition-[color,background-color,border-color,transform] duration-150 shadow-none"
 							>
 								{isGenerating ? (
 									<RefreshCw className="size-4 animate-spin" />
@@ -460,7 +479,7 @@ function RecommendationsContent({
 											selectedEras.includes(era.label) ? "default" : "ghost"
 										}
 										className={cn(
-											"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform,box-shadow] duration-150 shrink-0",
+											"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 shrink-0",
 											selectedEras.includes(era.label)
 												? "bg-primary text-primary-foreground border-transparent hover:scale-105"
 												: "bg-secondary/40 text-muted-foreground border border-border hover:bg-secondary/60 hover:text-foreground",
@@ -525,7 +544,7 @@ function RecommendationsContent({
 										selectedGenres.includes(genre.name) ? "default" : "ghost"
 									}
 									className={cn(
-										"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform,box-shadow] duration-150",
+										"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150",
 										selectedGenres.includes(genre.name)
 											? "bg-primary text-primary-foreground border-transparent hover:scale-105"
 											: "bg-secondary/40 text-muted-foreground border border-border hover:bg-secondary/60 hover:text-foreground",
@@ -551,16 +570,26 @@ function RecommendationsContent({
 			{isGenerating && (
 				<div className="space-y-4 animate-in fade-in duration-300">
 					<div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm shadow-none">
-						<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
-							<BrainCircuit className="size-4" />
+						<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10">
+							<BrainCircuit className="size-4 text-blue-500" />
 						</div>
-						<div>
+						<div className="min-w-0 flex-1">
 							<p className="font-semibold">Building recommendations</p>
-							<p className="text-xs text-muted-foreground">
-								Checking your filters and avoiding titles already in your
-								library.
+							<p
+								key={genStage}
+								className="text-xs text-muted-foreground animate-fade-in"
+							>
+								{GEN_STAGES[genStage]}
 							</p>
 						</div>
+					</div>
+					{/* Indeterminate progress bar */}
+					<div
+						className="h-1 w-full overflow-hidden rounded-full bg-secondary"
+						role="progressbar"
+						aria-label="Generating recommendations"
+					>
+						<div className="progress-indeterminate h-full rounded-full bg-blue-600" />
 					</div>
 					<DefaultLoader />
 				</div>

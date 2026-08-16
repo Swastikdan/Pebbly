@@ -39,13 +39,9 @@ const DesktopNavMenuItem = ({
 }) => {
 	return (
 		<DropdownMenu>
+			{/* Radix manages aria-haspopup / aria-expanded / data-state on the trigger. */}
 			<DropdownMenuTrigger asChild className="cursor-pointer">
-				<Button
-					variant="secondary"
-					className="px-3 text-base"
-					aria-haspopup="true"
-					aria-expanded="false"
-				>
+				<Button variant="secondary" className="px-3 text-base">
 					{item.name}
 				</Button>
 			</DropdownMenuTrigger>

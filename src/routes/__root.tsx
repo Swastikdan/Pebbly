@@ -3,6 +3,7 @@ import {
 	createRootRouteWithContext,
 	HeadContent,
 	Scripts,
+	useRouter,
 } from "@tanstack/react-router";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { useEffect, useState } from "react";
@@ -13,6 +14,7 @@ import {
 import { Footer } from "@/components/footer";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { Navbar } from "@/components/navbar";
+import { Toaster } from "@/components/ui/toaster";
 import { UserSync } from "@/components/user-sync";
 import { SITE_CONFIG } from "@/constants";
 
@@ -174,6 +176,34 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
+	const router = useRouter();
+
+	// Global keyboard shortcuts: "/" focuses search (or navigates there).
+	useEffect(() => {
+		const handleGlobalKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const isTyping =
+				target &&
+				(target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable);
+			if (e.key !== "/" || isTyping || e.metaKey || e.ctrlKey || e.altKey) {
+				return;
+			}
+			e.preventDefault();
+			const searchInput = document.querySelector<HTMLInputElement>(
+				'input[name="query"]',
+			);
+			if (searchInput) {
+				searchInput.focus();
+				searchInput.select();
+			} else {
+				void router.navigate({ to: "/search" });
+			}
+		};
+		window.addEventListener("keydown", handleGlobalKeyDown);
+		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+	}, [router]);
 
 	useEffect(() => {
 		if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
@@ -274,6 +304,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				</main>
 				<Footer />
 				<MobileBottomNav />
+				<Toaster />
 				{devtoolsPlugin}
 				<SpeedInsights />
 				<Scripts />
