@@ -543,17 +543,29 @@
 				0 3px 7px rgb(0 0 0 / 18%),
 				0 16px 36px rgb(0 0 0 / 14%);
 		}
-	}
-	.interactive-raised:active {
-		transform: translateY(0) scale(0.985);
+		.interactive-raised:active {
+			transform: translateY(0) scale(0.985);
+		}
+		.pressable:active {
+			transform: scale(0.98);
+		}
 	}
 
 	.pressable {
-		@apply cursor-pointer select-none ease-out active:scale-[0.95];
+		@apply cursor-pointer select-none ease-out;
 		transition:
 			transform 120ms ease-out,
 			opacity 120ms ease-out;
 		touch-action: manipulation;
+	}
+	@media (hover: none) {
+		.pressable:active {
+			opacity: 0.88;
+		}
+	}
+	.pressable .interactive-raised:active,
+	.pressable:active .interactive-raised {
+		transform: none;
 	}
 	.pressable-small {
 		@apply active:opacity-70 dark:active:opacity-50 ease-out;
