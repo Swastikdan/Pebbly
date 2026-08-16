@@ -18,7 +18,8 @@ export const getRouter = () => {
 	const router = createRouter({
 		routeTree,
 		context: { ...rqContext },
-		defaultPreload: false,
+		defaultPreload: "intent",
+		defaultPreloadDelay: 0,
 		// Show the pending loader only when a navigation genuinely takes a
 		// while, and hide it as soon as it resolves. The previous config
 		// (pendingMs 0 + pendingMinMs 180) flashed a loader for a guaranteed
