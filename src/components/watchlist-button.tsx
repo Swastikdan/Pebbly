@@ -122,7 +122,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 					key={animKey}
 					className={cn(
 						"flex items-center justify-center",
-						isAnimating && "animate-bookmark-pop",
+						isAnimating && "bookmark-pop",
 					)}
 					style={{ display: "inline-flex" }}
 				>

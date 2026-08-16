@@ -37,7 +37,7 @@ export function AdminDashboard() {
 								key={t.id}
 								type="button"
 								onClick={() => setTab(t.id)}
-								className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+								className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
 									tab === t.id
 										? "bg-background text-foreground shadow-sm"
 										: "text-muted-foreground hover:text-foreground"

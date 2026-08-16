@@ -126,6 +126,12 @@
         transform: scale(1);
       }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      .error-container {
+        animation: none;
+      }
+    }
   </style>
 </head>
 <body>

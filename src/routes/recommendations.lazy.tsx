@@ -552,7 +552,7 @@ function RecommendationsContent({
 				<div className="space-y-4 animate-in fade-in duration-300">
 					<div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm shadow-none">
 						<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
-							<BrainCircuit className="size-4 animate-pulse" />
+							<BrainCircuit className="size-4" />
 						</div>
 						<div>
 							<p className="font-semibold">Building recommendations</p>

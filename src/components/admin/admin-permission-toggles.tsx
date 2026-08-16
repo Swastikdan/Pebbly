@@ -35,14 +35,14 @@ function ToggleSwitch({
 			onClick={() => {
 				onChange(!enabled);
 			}}
-			className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+			className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
 				enabled
 					? "bg-foreground shadow-sm"
 					: "bg-muted-foreground/20 ring-1 ring-border"
 			} cursor-pointer`}
 		>
 			<span
-				className={`inline-block size-4 transform rounded-full bg-background shadow-sm ring-1 ring-border/50 transition-transform duration-300 ${
+				className={`inline-block size-4 transform rounded-full bg-background shadow-sm ring-1 ring-border/50 transition-transform duration-150 ${
 					enabled ? "translate-x-6" : "translate-x-1"
 				}`}
 			/>

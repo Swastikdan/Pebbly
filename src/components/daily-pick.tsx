@@ -463,7 +463,7 @@ export function DailyPickButton() {
 				disabled
 				className="pressable opacity-70"
 			>
-				<FilmIcon className="mr-1.5 size-4 text-primary animate-pulse" />
+				<FilmIcon className="mr-1.5 size-4 text-primary" />
 				<span>What to Watch Today</span>
 			</Button>
 		);
@@ -559,13 +559,13 @@ export function DailyPickButton() {
 									<Link
 										to={targetPath}
 										onClick={() => setIsOpen(false)}
-										className="relative aspect-[2/3] w-20 sm:w-24 shrink-0 overflow-hidden rounded-xl border-2 border-background/60 shadow-xl bg-muted group/poster hover:opacity-90 transition-opacity"
+										className="relative aspect-[2/3] w-20 sm:w-24 shrink-0 overflow-hidden rounded-xl border-2 border-background/60 shadow-xl bg-muted group/poster [@media(hover:hover)]:hover:opacity-90 transition-opacity"
 										title={`View ${title}`}
 									>
 										<Image
 											alt={title}
 											src={posterUrl}
-											className="h-full w-full object-cover group-hover/poster:scale-105 transition-transform duration-300"
+											className="h-full w-full object-cover transition-transform duration-200 [@media(hover:hover)]:group-hover/poster:scale-105"
 											width={100}
 											height={150}
 										/>

@@ -269,7 +269,7 @@ export function VideoPlayerModal({
 						type="button"
 						variant="ghost"
 						className={cn(
-							"group/play absolute inset-0 z-10 size-full opacity-0 p-0 transition-opacity duration-300 hover:bg-transparent hover:opacity-100 focus-visible:opacity-100 rounded-none",
+							"group/play absolute inset-0 z-10 size-full opacity-0 p-0 transition-opacity duration-200 hover:bg-transparent hover:opacity-100 focus-visible:opacity-100 rounded-none",
 							className,
 						)}
 						aria-label={`Play ${title}`}

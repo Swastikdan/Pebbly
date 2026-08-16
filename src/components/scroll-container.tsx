@@ -86,7 +86,9 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 			const scrollAmount = clientWidth * scrollPercentage;
 			scrollRef.current.scrollBy({
 				left: direction === "left" ? -scrollAmount : scrollAmount,
-				behavior: "smooth",
+				behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+					? "auto"
+					: "smooth",
 			});
 			scheduleButtonStateUpdate();
 		},
