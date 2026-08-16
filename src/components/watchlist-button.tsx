@@ -22,6 +22,7 @@ interface WatchlistButtonProps {
 	is_on_watchlist_page?: boolean;
 	className?: string;
 	overview?: string;
+	showLabel?: boolean;
 }
 
 const WatchlistButton = (props: WatchlistButtonProps) => {
@@ -33,6 +34,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 		release_date,
 		is_on_watchlist_page,
 		overview,
+		showLabel,
 	} = props;
 	const itemId = String(props.id);
 	const toggle = useToggleWatchlistItem();
@@ -104,7 +106,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 			variant={null}
 			aria-label={isActive ? "Remove from watchlist" : "Add to watchlist"}
 			aria-pressed={isActive}
-			size="icon"
+			size={showLabel ? "default" : "icon"}
 			onClick={handleWatchList}
 			data-active={isActive ? "true" : "false"}
 			className={cn(
@@ -116,20 +118,36 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 			)}
 		>
 			{showTrash ? (
-				<TrashBin className="size-5" />
+				<>
+					<TrashBin
+						className={cn("size-5", showLabel && "mr-1.5 size-3.5 sm:size-4")}
+					/>
+					{showLabel && <span>Remove</span>}
+				</>
 			) : isActive ? (
-				<span
-					key={animKey}
-					className={cn(
-						"flex items-center justify-center",
-						isAnimating && "bookmark-pop",
-					)}
-					style={{ display: "inline-flex" }}
-				>
-					<BookMarkFilledIcon className="size-5" />
-				</span>
+				<>
+					<span
+						key={animKey}
+						className={cn(
+							"flex items-center justify-center",
+							isAnimating && "bookmark-pop",
+							showLabel && "mr-1.5",
+						)}
+						style={{ display: "inline-flex" }}
+					>
+						<BookMarkFilledIcon
+							className={cn("size-5", showLabel && "size-3.5 sm:size-4")}
+						/>
+					</span>
+					{showLabel && <span>Saved</span>}
+				</>
 			) : (
-				<BookMarkIcon className="size-5" />
+				<>
+					<BookMarkIcon
+						className={cn("size-5", showLabel && "mr-1.5 size-3.5 sm:size-4")}
+					/>
+					{showLabel && <span>Watchlist</span>}
+				</>
 			)}
 		</Button>
 	);
