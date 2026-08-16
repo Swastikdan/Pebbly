@@ -106,11 +106,13 @@ function TvSeasonsPage() {
 					>
 						<div className="flex items-start gap-5 rounded-3xl border-2 border-default bg-secondary/10 p-3 transition-[color,background-color,border-color,box-shadow] duration-150 hover:border-foreground/20 hover:bg-secondary/20 hover: md:p-5">
 							<div className="min-w-[7rem] md:min-w-[9rem]">
+								{/* Season posters render at ~144px wide, so w500 (SD) is plenty;
+							    w780 (HD) decodes to ~3.6 MB per poster for no visible gain. */}
 								<Image
 									alt={season.name}
 									className="h-40 w-28 shrink-0 rounded-xl object-cover md:h-52 md:w-36"
 									height={300}
-									src={IMAGE_PREFIX.HD_POSTER + season.poster_path}
+									src={IMAGE_PREFIX.SD_POSTER + season.poster_path}
 									width={200}
 									priority={index === 0}
 								/>

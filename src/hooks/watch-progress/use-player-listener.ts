@@ -20,22 +20,25 @@ import {
  * renders (the modal knows the exact iframe it mounts), falling back to a DOM
  * scan for `/embed/` iframes when no URL is supplied.
  */
-export function usePlayerProgressListener(activeContext?: {
-	tmdbId: number;
-	mediaType: "movie" | "tv";
-	season?: number;
-	episode?: number;
-	title?: string;
-	image?: string;
-	rating?: number;
-	release_date?: string;
-	overview?: string;
-	/**
-	 * Exact iframe URL the player renders. When provided, postMessage sources
-	 * are trusted by origin instead of scanning the DOM for /embed/ iframes.
-	 */
-	playerUrl?: string;
-}) {
+export function usePlayerProgressListener(
+	activeContext?: {
+		tmdbId: number;
+		mediaType: "movie" | "tv";
+		season?: number;
+		episode?: number;
+		title?: string;
+		image?: string;
+		rating?: number;
+		release_date?: string;
+		overview?: string;
+		/**
+		 * Exact iframe URL the player renders. When provided, postMessage sources
+		 * are trusted by origin instead of scanning the DOM for /embed/ iframes.
+		 */
+		playerUrl?: string;
+	},
+	enabled = true,
+) {
 	const { isSignedIn } = useUser();
 	const queryClient = useQueryClient();
 	const setLocalProgress = useWatchlistStore((state) => state.setProgressLocal);
@@ -72,7 +75,10 @@ export function usePlayerProgressListener(activeContext?: {
 	});
 
 	useEffect(() => {
-		if (typeof window === "undefined") return;
+		// Skip registering a window message listener while the player is closed.
+		// Season pages mount one modal per episode (plus an episode-row variant),
+		// so without this gate a 20-episode page holds ~40 listeners.
+		if (!enabled || typeof window === "undefined") return;
 
 		let lastSavedPercent = 0;
 		// Legacy fallback: scan for trusted /embed/ iframes (used when the
@@ -243,6 +249,7 @@ export function usePlayerProgressListener(activeContext?: {
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
 	}, [
+		enabled,
 		updateProgressMutation,
 		markEpisodeMutation,
 		isSignedIn,

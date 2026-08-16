@@ -1,13 +1,15 @@
 name: Deploy Cloudflare
 on:
+  # Deploy only when changes land on the `cloudflare` branch (i.e. a PR is
+  # merged into it). Feature-branch pushes and pull requests never deploy —
+  # they run checks in the separate `ci.yml` workflow instead.
   push:
     branches:
       - cloudflare
-      - feat/convex-to-traditional-backend
   workflow_dispatch: # Allows manual trigger from GitHub Actions UI
 
-# Serialize production jobs across both deployment branches so migrations and
-# deploys targeting the same D1 database / Worker never run concurrently.
+# Serialize production deploys so migrations and Worker deployments targeting
+# the same D1 database / Worker never run concurrently.
 concurrency:
   group: deploy-cloudflare-prod
   cancel-in-progress: false
@@ -26,6 +28,7 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+      - run: pnpm lint
 
       - name: Apply D1 migrations (prod)
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)

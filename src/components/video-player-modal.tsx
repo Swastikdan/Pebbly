@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Maximize2, Minimize } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -84,14 +84,23 @@ export function VideoPlayerModal({
 			})
 		: undefined;
 
-	usePlayerProgressListener({
-		tmdbId,
-		mediaType: type,
-		title,
-		season,
-		episode,
-		playerUrl,
-	});
+	// Stable context so the listener effect in usePlayerProgressListener
+	// doesn't tear down / re-register on every render. The listener is only
+	// active while the dialog is open (see `isOpen` below), so season pages
+	// with one modal per episode no longer accumulate window listeners.
+	const listenerContext = useMemo(
+		() => ({
+			tmdbId,
+			mediaType: type,
+			title,
+			season,
+			episode,
+			playerUrl,
+		}),
+		[tmdbId, type, title, season, episode, playerUrl],
+	);
+
+	usePlayerProgressListener(listenerContext, isOpen);
 
 	// Auto-open when ?play=true is in the URL
 	useEffect(() => {

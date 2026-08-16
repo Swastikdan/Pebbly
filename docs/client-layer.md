@@ -24,9 +24,12 @@ mutation goes to the server or to local storage.
 ## 2. Data fetching (TanStack Query)
 
 - `src/lib/query/query-client.ts` — `getContext()` creates a fresh QueryClient
-  per render/request with sane defaults (24 h staleTime/gcTime, retry 1, no
-  refetch on window focus). A fresh client per SSR request keeps journal state
-  (see pending-ops) from leaking between requests.
+  per render/request with sane defaults (24 h staleTime, 30 min gcTime, retry 1,
+  no refetch on window focus). TMDB data is treated as fresh for a day to avoid
+  refetch churn, but `gcTime` (how long *unused* queries stay resident) is kept
+  short so visited page payloads are evicted from memory instead of
+  accumulating to hundreds of MB over a session. A fresh client per SSR
+  request keeps journal state (see pending-ops) from leaking between requests.
 - `src/lib/query/root-provider.tsx` — React context provider for the client.
 - `src/lib/query/devtools.ts` — dev-only React Query devtools toggle.
 - `src/lib/query/keys.ts` — `queryKeys` factory: namespaced, user-scoped keys

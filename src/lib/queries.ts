@@ -180,7 +180,11 @@ export async function getMovieRecommendations({
 
 export async function getTvDetails({ id }: { id: number }): Promise<Tv> {
 	validateId(id);
-	const url = `/tv/${id}?language=en-US&append_to_response=images,videos,credits,external_ids,recommendations,keywords,content_ratings`;
+	// `recommendations` is deliberately NOT appended: the media pages fetch it
+	// separately via getTvRecommendations, and TMDB returns a full 20-item
+	// result set per title — dropping it shaves ~20 objects off every detail
+	// payload that is otherwise cached client-side.
+	const url = `/tv/${id}?language=en-US&append_to_response=images,videos,credits,external_ids,keywords,content_ratings`;
 
 	return await safeFetch<Tv>("getTvDetails", url, Schemas.TvSchema);
 }
@@ -352,7 +356,11 @@ export async function getPersonDetails({
 	id: number;
 }): Promise<PersonDetails> {
 	validateId(id);
-	const url = `/person/${id}?language=en-US&append_to_response=combined_credits,movie_credits,tv_credits,images,external_ids`;
+	// The person page only renders movie_credits + tv_credits (and external
+	// links). combined_credits is a third copy of the same cast/crew data and
+	// images is unused, so both are omitted to shrink a payload that can hold
+	// hundreds of credits for prolific actors.
+	const url = `/person/${id}?language=en-US&append_to_response=movie_credits,tv_credits,external_ids`;
 
 	return await safeFetch<PersonDetails>(
 		"getPersonDetails",

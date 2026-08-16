@@ -290,7 +290,7 @@ function EpisodeCard({
 					height={140}
 					src={
 						episode.still_path
-							? `${IMAGE_PREFIX.SD_BACKDROP}${episode.still_path}`
+							? `${IMAGE_PREFIX.LQ_BACKDROP}${episode.still_path}`
 							: "https://placehold.co/500x281?text=No+Image"
 					}
 					width={250}
