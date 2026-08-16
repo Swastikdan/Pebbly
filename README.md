@@ -4,6 +4,22 @@ Pebbly is a modern, full-stack movie and TV show discovery application built wit
 
 ---
 
+## Documentation
+
+In-depth architecture docs live in the [`docs/`](./docs/) folder:
+
+| Document | Covers |
+| :--- | :--- |
+| [Architecture](./docs/architecture.md) | Tech stack, layers, request flows, deployment & CI |
+| [Server Layer](./docs/server-layer.md) | Nitro, server functions, auth, RBAC, AI engine |
+| [Client Layer](./docs/client-layer.md) | Routing, data fetching, state, repository pattern, optimistic updates |
+| [Data Model](./docs/data-model.md) | Every D1 table, index, constraint & migration |
+| [Architecture Decisions](./docs/architecture-decisions.md) | ADRs — why the code is shaped the way it is |
+| [File Reference](./docs/file-reference.md) | A per-file map of the entire repository |
+| [Contributing](./docs/contributing.md) | How to keep the docs accurate as the code changes |
+
+---
+
 ## Key Features
 
 ### Media Discovery & Watchlist
