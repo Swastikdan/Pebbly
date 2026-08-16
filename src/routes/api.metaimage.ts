@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { IMAGE_PREFIX } from "@/constants";
 import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
+import type { BasicMovie, BasicTv } from "@/lib/tmdb-schemas";
 import { isValidId } from "@/lib/utils";
-import type { BasicMovie, BasicTv } from "@/types";
 
 const ERROR_HEADERS = { "Cache-Control": "no-cache" } as const;
 const DEFAULT_HEADERS = {

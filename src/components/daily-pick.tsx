@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Eye, ThumbsDown } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -12,395 +11,20 @@ import {
 } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { WatchlistButton } from "@/components/watchlist-button";
-import { IMAGE_PREFIX } from "@/constants";
+import { useDailyPick } from "@/hooks/use-daily-pick";
 import { usePermissions } from "@/hooks/use-permissions";
-import {
-	useAllMediaStates,
-	useSetReaction,
-	useWatchlist,
-} from "@/hooks/use-watchlist";
-import { getMedia, getMovieDetails, getTvDetails } from "@/lib/queries";
-import { cn, formatMediaTitle } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
-
-interface PickItem {
-	id: number;
-	title: string;
-	overview?: string;
-	vote_average: number;
-	poster_path?: string;
-	backdrop_path?: string;
-	media_type: "movie" | "tv";
-	release_date?: string;
-	first_air_date?: string;
-	isFromWatchlist?: boolean;
-	isCurrentlyWatching?: boolean;
-	watchProgress?: number;
-}
-
-function getTodaySeedIndex(max: number): number {
-	if (max <= 0) return 0;
-	const todayStr = new Date().toISOString().slice(0, 10);
-	let hash = 0;
-	for (let i = 0; i < todayStr.length; i++) {
-		hash = (hash << 5) - hash + (todayStr.charCodeAt(i) || 0);
-		hash |= 0;
-	}
-	return Math.abs(hash) % max;
-}
-
-function getPickKey(item: PickItem): string {
-	return `${item.media_type}:${item.id}`;
-}
-
 export function DailyPickButton() {
 	const [isOpen, setIsOpen] = useState(false);
-	// Key of the currently shown pick ("movie:123"). Keeps the displayed tile
-	// stable when `candidateItems` reorders, e.g. adding the pick to the
-	// watchlist moves it from the discovery bucket into the watchlist bucket.
-	const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
-	const { hasFeature, loading: isPermissionsLoading } = usePermissions();
+	const {
+		hasFeature,
+		loading: isPermissionsLoading,
+		isSignedIn,
+	} = usePermissions();
 	const isVideoPlaybackEnabled = hasFeature("video-player");
 
-	const { watchlist } = useWatchlist();
-	const { allMediaStates } = useAllMediaStates();
-	const setReaction = useSetReaction();
-
-	const mediaStateMap = useMemo(() => {
-		const map = new Map<
-			string,
-			{
-				progressStatus?: string | null;
-				reaction?: string | null;
-				progress?: number;
-			}
-		>();
-		for (const item of allMediaStates) {
-			const key = `${item.type}:${item.external_id}`;
-			map.set(key, {
-				progressStatus: item.progressStatus,
-				reaction: item.reaction,
-				progress: item.progress,
-			});
-		}
-		return map;
-	}, [allMediaStates]);
-
-	const { data: trendingMedia, isLoading: isLoadingTrending } = useQuery({
-		queryKey: ["daily-pick-trending"],
-		queryFn: async () => {
-			const items = await getMedia({ type: "trending_day", page: 1 });
-			return items;
-		},
-		staleTime: 1000 * 60 * 60, // 1 hour
-		enabled: isOpen,
-	});
-
-	const { data: popularTv, isLoading: isLoadingTv } = useQuery({
-		queryKey: ["daily-pick-popular-tv"],
-		queryFn: async () => {
-			const items = await getMedia({ type: "tv-shows_popular", page: 1 });
-			return items;
-		},
-		staleTime: 1000 * 60 * 60, // 1 hour
-		enabled: isOpen,
-	});
-
-	const tmdbInfoMap = useMemo(() => {
-		const map = new Map<
-			string,
-			{
-				title: string;
-				overview?: string;
-				poster_path?: string;
-				backdrop_path?: string;
-				vote_average: number;
-				release_date?: string;
-				first_air_date?: string;
-			}
-		>();
-		if (trendingMedia) {
-			for (const item of trendingMedia) {
-				const title = item.title ?? item.name;
-				const media_type =
-					(item.media_type as "movie" | "tv") ?? (item.name ? "tv" : "movie");
-				if (title && title !== "Unknown Title") {
-					map.set(`${media_type}:${item.id}`, {
-						title,
-						overview: item.overview,
-						poster_path: item.poster_path ?? undefined,
-						backdrop_path: item.backdrop_path ?? undefined,
-						vote_average: item.vote_average ?? 0,
-						release_date: item.release_date,
-						first_air_date: item.first_air_date,
-					});
-				}
-			}
-		}
-		if (popularTv) {
-			for (const item of popularTv) {
-				const title = item.name ?? item.title;
-				if (title && title !== "Unknown Title") {
-					map.set(`tv:${item.id}`, {
-						title,
-						overview: item.overview,
-						poster_path: item.poster_path ?? undefined,
-						backdrop_path: item.backdrop_path ?? undefined,
-						vote_average: item.vote_average ?? 0,
-						first_air_date: item.first_air_date,
-					});
-				}
-			}
-		}
-		return map;
-	}, [trendingMedia, popularTv]);
-
-	// Prevent flashing: wait for trending/popularTv queries to settle if modal is opened
-	const isDataLoading =
-		isOpen &&
-		(isLoadingTrending || isLoadingTv) &&
-		(!trendingMedia || !popularTv);
-
-	// Build combined candidate list giving 50/50 equal presentation to Watchlist & Discovery items
-	const candidateItems: PickItem[] = useMemo(() => {
-		const watchlistItems: PickItem[] = [];
-		const discoveryItems: PickItem[] = [];
-		const seenKeys = new Set<string>();
-
-		const checkFilter = (id: string | number, mediaType: "movie" | "tv") => {
-			const key = `${mediaType}:${id}`;
-			const state = mediaStateMap.get(key);
-			if (state?.progressStatus === "done") return { exclude: true };
-			if (state?.reaction === "not-for-me") return { exclude: true };
-			return {
-				exclude: false,
-				isCurrentlyWatching: state?.progressStatus === "watching",
-				watchProgress: state?.progress ?? 0,
-			};
-		};
-
-		// 1. Collect Watchlist items
-		if (watchlist && watchlist.length > 0) {
-			for (const item of watchlist) {
-				const key = `${item.type}:${item.external_id}`;
-				if (!seenKeys.has(key)) {
-					const filterResult = checkFilter(item.external_id, item.type);
-					if (filterResult.exclude) continue;
-
-					const tmdbInfo = tmdbInfoMap.get(key);
-					const rawTitle = item.title?.trim();
-					const validTitle =
-						rawTitle && rawTitle !== "Unknown Title"
-							? rawTitle
-							: tmdbInfo?.title;
-
-					seenKeys.add(key);
-					watchlistItems.push({
-						id: Number(item.external_id),
-						title: validTitle || "Saved Item",
-						overview: item.overview || tmdbInfo?.overview,
-						vote_average: item.rating || tmdbInfo?.vote_average || 0,
-						poster_path: item.image || tmdbInfo?.poster_path,
-						backdrop_path: tmdbInfo?.backdrop_path,
-						media_type: item.type,
-						release_date: item.release_date || tmdbInfo?.release_date,
-						first_air_date: tmdbInfo?.first_air_date,
-						isFromWatchlist: true,
-						isCurrentlyWatching: filterResult.isCurrentlyWatching,
-						watchProgress: filterResult.watchProgress,
-					});
-				}
-			}
-		}
-
-		// 2. Collect Discovery Media (Trending & Popular TV)
-		if (trendingMedia) {
-			for (const item of trendingMedia) {
-				const title = item.title ?? item.name;
-				const media_type =
-					(item.media_type as "movie" | "tv") ?? (item.name ? "tv" : "movie");
-				const key = `${media_type}:${item.id}`;
-				if (
-					!seenKeys.has(key) &&
-					title &&
-					title !== "Unknown Title" &&
-					item.overview &&
-					item.vote_average >= 6.0
-				) {
-					const filterResult = checkFilter(item.id, media_type);
-					if (filterResult.exclude) continue;
-
-					seenKeys.add(key);
-					discoveryItems.push({
-						id: item.id,
-						title,
-						overview: item.overview,
-						vote_average: item.vote_average,
-						poster_path: item.poster_path ?? undefined,
-						backdrop_path: item.backdrop_path ?? undefined,
-						media_type,
-						release_date: item.release_date,
-						first_air_date: item.first_air_date,
-						isFromWatchlist: false,
-						isCurrentlyWatching: filterResult.isCurrentlyWatching,
-						watchProgress: filterResult.watchProgress,
-					});
-				}
-			}
-		}
-
-		if (popularTv) {
-			for (const item of popularTv) {
-				const title = item.name ?? item.title;
-				const key = `tv:${item.id}`;
-				if (
-					!seenKeys.has(key) &&
-					title &&
-					title !== "Unknown Title" &&
-					item.overview &&
-					item.vote_average >= 6.0
-				) {
-					const filterResult = checkFilter(item.id, "tv");
-					if (filterResult.exclude) continue;
-
-					seenKeys.add(key);
-					discoveryItems.push({
-						id: item.id,
-						title,
-						overview: item.overview,
-						vote_average: item.vote_average,
-						poster_path: item.poster_path ?? undefined,
-						backdrop_path: item.backdrop_path ?? undefined,
-						media_type: "tv",
-						first_air_date: item.first_air_date,
-						isFromWatchlist: false,
-						isCurrentlyWatching: filterResult.isCurrentlyWatching,
-						watchProgress: filterResult.watchProgress,
-					});
-				}
-			}
-		}
-
-		// Interleave 1 Watchlist item for every 1 Discovery item (50/50 balance)
-		const blended: PickItem[] = [];
-		let wIdx = 0;
-		let dIdx = 0;
-
-		while (wIdx < watchlistItems.length || dIdx < discoveryItems.length) {
-			if (wIdx < watchlistItems.length) {
-				blended.push(watchlistItems[wIdx++]);
-			}
-			if (dIdx < discoveryItems.length) {
-				blended.push(discoveryItems[dIdx++]);
-			}
-		}
-
-		return blended;
-	}, [watchlist, trendingMedia, popularTv, mediaStateMap, tmdbInfoMap]);
-
-	const itemsCount = candidateItems.length;
-
-	const selectedIndex = useMemo(() => {
-		if (itemsCount === 0) return 0;
-		// Prefer the tracked pick so list reorders (e.g. watchlist toggles)
-		// don't swap the currently displayed tile.
-		if (selectedKey) {
-			const stableIndex = candidateItems.findIndex(
-				(item) => getPickKey(item) === selectedKey,
-			);
-			if (stableIndex !== -1) return stableIndex;
-		}
-		return getTodaySeedIndex(itemsCount);
-	}, [candidateItems, itemsCount, selectedKey]);
-
-	const selectedItem: PickItem | null = useMemo(() => {
-		if (itemsCount === 0) return null;
-		return candidateItems[selectedIndex] ?? candidateItems[0];
-	}, [candidateItems, selectedIndex, itemsCount]);
-
-	// Sync the tracked key with whichever item is actually shown so the seed /
-	// shuffle selection stays stable across `candidateItems` reorders.
-	useEffect(() => {
-		if (!selectedItem) return;
-		const key = getPickKey(selectedItem);
-		if (key !== selectedKey) {
-			setSelectedKey(key);
-		}
-	}, [selectedItem, selectedKey]);
-
-	const handleShuffle = () => {
-		if (itemsCount <= 1) return;
-		const currentKey = selectedItem ? getPickKey(selectedItem) : null;
-		let nextIdx = Math.floor(Math.random() * itemsCount);
-		if (getPickKey(candidateItems[nextIdx]) === currentKey) {
-			nextIdx = (nextIdx + 1) % itemsCount;
-		}
-		const next = candidateItems[nextIdx];
-		if (next) {
-			setSelectedKey(getPickKey(next));
-		}
-	};
-
-	const handleDislike = () => {
-		if (!selectedItem) return;
-		setReaction(
-			String(selectedItem.id),
-			selectedItem.media_type,
-			"not-for-me",
-			{
-				title: selectedItem.title,
-				image: selectedItem.poster_path,
-				rating: selectedItem.vote_average,
-				release_date: selectedItem.release_date ?? selectedItem.first_air_date,
-				overview: selectedItem.overview,
-			},
-		);
-		handleShuffle();
-	};
-
-	const { data: selectedDetails } = useQuery({
-		queryKey: [
-			"daily-pick-details",
-			selectedItem?.media_type,
-			selectedItem?.id,
-		],
-		queryFn: async () => {
-			if (!selectedItem) return null;
-			if (selectedItem.media_type === "movie") {
-				return getMovieDetails({ id: selectedItem.id });
-			}
-			return getTvDetails({ id: selectedItem.id });
-		},
-		enabled: !!selectedItem && !selectedItem.backdrop_path && isOpen,
-		staleTime: 1000 * 60 * 60,
-	});
-
-	const effectiveBackdropPath =
-		selectedItem?.backdrop_path || selectedDetails?.backdrop_path;
-	const effectivePosterPath =
-		selectedItem?.poster_path || selectedDetails?.poster_path;
-
-	const title = selectedItem?.title ?? "Daily Pick";
-	const mediaType = selectedItem?.media_type ?? "movie";
-	const formattedTitle =
-		title && title !== "Unknown Title" ? formatMediaTitle.encode(title) : "";
-	const year = selectedItem?.release_date
-		? new Date(selectedItem.release_date).getFullYear()
-		: selectedItem?.first_air_date
-			? new Date(selectedItem.first_air_date).getFullYear()
-			: "";
-	const rating = selectedItem?.vote_average ?? 0;
-	const backdropUrl = effectiveBackdropPath
-		? `${IMAGE_PREFIX.HD_BACKDROP}${effectiveBackdropPath}`
-		: "";
-	const posterUrl = effectivePosterPath
-		? `${IMAGE_PREFIX.SD_POSTER}${effectivePosterPath}`
-		: "";
-
-	const targetPath = formattedTitle
-		? `/${mediaType}/${selectedItem?.id}/${formattedTitle}`
-		: `/${mediaType}/${selectedItem?.id}`;
+	const pick = useDailyPick(isOpen);
 
 	// Render placeholder while permissions load to prevent homepage layout shift
 	if (isPermissionsLoading) {
@@ -411,13 +35,16 @@ export function DailyPickButton() {
 				disabled
 				className="pressable opacity-70"
 			>
-				<FilmIcon className="mr-1.5 size-4 text-primary animate-pulse" />
+				<FilmIcon className="mr-1.5 size-4 text-primary" />
 				<span>What to Watch Today</span>
 			</Button>
 		);
 	}
 
-	if (!isVideoPlaybackEnabled) return null;
+	// Signed-in users need the video-player feature. Signed-out users get no
+	// RBAC features at all, but the pick is still useful to them (browse,
+	// shuffle, save locally), so keep the button visible.
+	if (!isVideoPlaybackEnabled && isSignedIn) return null;
 
 	return (
 		<Dialog
@@ -425,7 +52,7 @@ export function DailyPickButton() {
 			onOpenChange={(open) => {
 				setIsOpen(open);
 				if (!open) {
-					setSelectedKey(null);
+					pick.setSelectedKey(null);
 				}
 			}}
 		>
@@ -433,16 +60,8 @@ export function DailyPickButton() {
 				<Button
 					variant="secondary"
 					size="default"
-					disabled={!isVideoPlaybackEnabled}
-					title={
-						!isVideoPlaybackEnabled
-							? "Video playback is disabled"
-							: "What to Watch Today"
-					}
-					className={cn(
-						"pressable",
-						!isVideoPlaybackEnabled && "opacity-50 cursor-not-allowed",
-					)}
+					title="What to Watch Today"
+					className="pressable"
 				>
 					<FilmIcon className="mr-1.5 size-4 text-primary" />
 					<span>What to Watch Today</span>
@@ -452,20 +71,20 @@ export function DailyPickButton() {
 				className="max-w-[92vw] overflow-hidden rounded-2xl border-white/10 bg-background/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-lg"
 				closeClassName="top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white dark:bg-black/60 dark:hover:bg-black/80 dark:text-white border border-white/20 backdrop-blur-md z-30"
 			>
-				{isDataLoading ? (
+				{pick.isDataLoading ? (
 					<div className="flex h-72 flex-col items-center justify-center gap-3 p-6 text-center">
 						<div className="grid size-12 place-items-center rounded-xl">
 							<Spinner size="md" className="bg-foreground/70" />
 						</div>
 					</div>
-				) : selectedItem ? (
+				) : pick.selectedItem ? (
 					<div className="relative">
 						{/* Backdrop banner */}
 						<div className="relative aspect-video w-full overflow-hidden bg-muted">
-							{backdropUrl ? (
+							{pick.backdropUrl ? (
 								<Image
-									alt={title}
-									src={backdropUrl}
+									alt={pick.title}
+									src={pick.backdropUrl}
 									className="h-full w-full object-cover"
 									width={600}
 									height={350}
@@ -477,22 +96,22 @@ export function DailyPickButton() {
 
 							{/* Header badges */}
 							<div className="absolute top-3 left-3 pr-12 flex flex-wrap items-center gap-1.5">
-								{selectedItem.isCurrentlyWatching ? (
+								{pick.selectedItem.isCurrentlyWatching ? (
 									<span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/90 text-black px-2.5 py-0.5 text-[11px] font-bold shadow-md backdrop-blur-md">
 										<Eye className="size-3" />
 										Watching
-										{selectedItem.watchProgress
-											? ` (${Math.round(selectedItem.watchProgress) + 1}%)`
+										{pick.selectedItem.watchProgress
+											? ` (${Math.round(pick.selectedItem.watchProgress) + 1}%)`
 											: ""}
 									</span>
-								) : selectedItem.isFromWatchlist ? (
+								) : pick.selectedItem.isFromWatchlist ? (
 									<span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md backdrop-blur-md">
 										<BookMarkIcon className="size-3 fill-white" />
 										From Your Watchlist
 									</span>
 								) : (
-									<span className="inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-amber-400 backdrop-blur-md border border-amber-400/20">
-										<SparklesIcon className="size-3 fill-amber-400" />
+									<span className="inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-blue-400 backdrop-blur-md border border-blue-500/25">
+										<SparklesIcon className="size-3 fill-blue-400" />
 										Today's Pick
 									</span>
 								)}
@@ -503,17 +122,17 @@ export function DailyPickButton() {
 						<div className="relative -mt-10 sm:-mt-12 px-4 pb-5 sm:px-6 sm:pb-6">
 							<div className="flex gap-3 sm:gap-4 items-end">
 								{/* Poster thumbnail - Clickable Link */}
-								{posterUrl && (
+								{pick.posterUrl && (
 									<Link
-										to={targetPath}
+										to={pick.targetPath}
 										onClick={() => setIsOpen(false)}
-										className="relative aspect-[2/3] w-20 sm:w-24 shrink-0 overflow-hidden rounded-xl border-2 border-background/60 shadow-xl bg-muted group/poster hover:opacity-90 transition-opacity"
-										title={`View ${title}`}
+										className="relative aspect-[2/3] w-20 sm:w-24 shrink-0 overflow-hidden rounded-xl border-2 border-background/60 shadow-xl bg-muted group/poster [@media(hover:hover)]:hover:opacity-90 transition-opacity"
+										title={`View ${pick.title}`}
 									>
 										<Image
-											alt={title}
-											src={posterUrl}
-											className="h-full w-full object-cover group-hover/poster:scale-105 transition-transform duration-300"
+											alt={pick.title}
+											src={pick.posterUrl}
+											className="h-full w-full object-cover transition-transform duration-200 [@media(hover:hover)]:group-hover/poster:scale-105"
 											width={100}
 											height={150}
 										/>
@@ -523,27 +142,27 @@ export function DailyPickButton() {
 								<div className="flex flex-col justify-end gap-1 min-w-0 flex-1 pb-0.5">
 									{/* Title Link */}
 									<Link
-										to={targetPath}
+										to={pick.targetPath}
 										onClick={() => setIsOpen(false)}
 										className="group/title inline-block"
 									>
 										<h3 className="text-lg sm:text-xl font-bold leading-tight text-foreground group-hover/title:text-primary transition-colors line-clamp-2">
-											{title}
+											{pick.title}
 										</h3>
 									</Link>
 
-									<div className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-muted-foreground">
-										{year && <span>{year}</span>}
-										{year && <span>•</span>}
-										<span className="uppercase font-semibold text-primary text-[11px]">
-											{mediaType === "tv" ? "TV Series" : "Movie"}
+									<div className="flex flex-wrap items-center gap-1.5 text-meta text-muted-foreground">
+										{pick.year && <span>{pick.year}</span>}
+										{pick.year && <span>•</span>}
+										<span className="uppercase font-semibold text-blue-500 text-[11px]">
+											{pick.mediaType === "tv" ? "TV Series" : "Movie"}
 										</span>
-										{rating > 0 && (
+										{pick.rating > 0 && (
 											<>
 												<span>•</span>
-												<span className="flex items-center gap-1 text-amber-400 font-bold">
-													<Star className="size-3.5 fill-amber-400" />
-													{rating.toFixed(1)}
+												<span className="flex items-center gap-1 font-bold">
+													<Star className="size-3.5 fill-yellow-400 text-yellow-400" />
+													{pick.rating.toFixed(1)}
 												</span>
 											</>
 										)}
@@ -552,72 +171,105 @@ export function DailyPickButton() {
 							</div>
 
 							<p className="mt-3 sm:mt-4 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
-								{selectedItem.overview}
+								{pick.selectedItem.overview}
 							</p>
 
 							{/* Action buttons */}
 							<div className="mt-5 flex flex-col gap-2">
-								{/* Main action row */}
-								<div className="flex items-center gap-2">
-									{isVideoPlaybackEnabled ? (
-										<Link
-											to={targetPath}
-											// biome-ignore lint/suspicious/noExplicitAny: dynamic route
-											search={{ play: true } as any}
-											onClick={() => setIsOpen(false)}
-											className="flex-1"
-										>
-											<Button className="w-full h-10 sm:h-11 rounded-xl bg-primary text-primary-foreground font-semibold shadow-md hover:bg-primary/90 text-xs sm:text-sm">
-												▶ Watch Now
+								{isVideoPlaybackEnabled ? (
+									<>
+										{/* Main action row */}
+										<div className="flex items-center gap-2">
+											<Link
+												to={pick.targetPath}
+												// biome-ignore lint/suspicious/noExplicitAny: dynamic route
+												search={{ play: true } as any}
+												onClick={() => setIsOpen(false)}
+												className="flex-1"
+											>
+												{" "}
+												<Button className="w-full h-10 sm:h-11 rounded-xl bg-foreground text-background font-semibold shadow-md hover:bg-foreground/90 text-xs sm:text-sm">
+													▶ Watch Now
+												</Button>
+											</Link>
+
+											<WatchlistButton
+												id={pick.selectedItem.id}
+												image={pick.selectedItem.poster_path ?? ""}
+												media_type={pick.mediaType}
+												rating={pick.rating}
+												release_date={
+													pick.selectedItem.release_date ??
+													pick.selectedItem.first_air_date ??
+													""
+												}
+												title={pick.title}
+												overview={pick.selectedItem.overview}
+												className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl shrink-0"
+											/>
+										</div>
+
+										{/* Secondary action grid */}
+										<div className="grid grid-cols-2 gap-2">
+											<Button
+												variant="outline"
+												onClick={pick.handleDislike}
+												title="Dislike / Not for me (Removes from picks)"
+												className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive transition-colors"
+											>
+												<ThumbsDown className="mr-1.5 size-3.5" />
+												<span>Dislike</span>
 											</Button>
-										</Link>
-									) : (
+
+											<Button
+												variant="outline"
+												onClick={pick.handleShuffle}
+												title="Pick Another"
+												className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs hover:bg-accent"
+											>
+												🎲 Another
+											</Button>
+										</div>
+									</>
+								) : (
+									/* 3 buttons inline when playback is disabled (e.g. signed out) */
+									<div className="grid grid-cols-3 gap-2">
+										<WatchlistButton
+											id={pick.selectedItem.id}
+											image={pick.selectedItem.poster_path ?? ""}
+											media_type={pick.mediaType}
+											rating={pick.rating}
+											release_date={
+												pick.selectedItem.release_date ??
+												pick.selectedItem.first_air_date ??
+												""
+											}
+											title={pick.title}
+											overview={pick.selectedItem.overview}
+											showLabel
+											className="w-full h-10 sm:h-11 rounded-xl text-xs sm:text-sm font-semibold"
+										/>
+
 										<Button
-											disabled
-											title="Video playback feature is disabled"
-											className="flex-1 h-10 sm:h-11 rounded-xl bg-muted text-muted-foreground font-semibold cursor-not-allowed opacity-60 text-xs sm:text-sm"
+											variant="outline"
+											onClick={pick.handleDislike}
+											title="Dislike / Not for me (Removes from picks)"
+											className="w-full h-10 sm:h-11 rounded-xl border-border px-2 text-xs sm:text-sm font-semibold text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive transition-colors"
 										>
-											▶ Playback Disabled
+											<ThumbsDown className="mr-1.5 size-3.5" />
+											<span>Dislike</span>
 										</Button>
-									)}
 
-									<WatchlistButton
-										id={selectedItem.id}
-										image={selectedItem.poster_path ?? ""}
-										media_type={mediaType}
-										rating={rating}
-										release_date={
-											selectedItem.release_date ??
-											selectedItem.first_air_date ??
-											""
-										}
-										title={title}
-										overview={selectedItem.overview}
-										className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl shrink-0"
-									/>
-								</div>
-
-								{/* Secondary action grid */}
-								<div className="grid grid-cols-2 gap-2">
-									<Button
-										variant="outline"
-										onClick={handleDislike}
-										title="Dislike / Not for me (Removes from picks)"
-										className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive transition-colors"
-									>
-										<ThumbsDown className="mr-1.5 size-3.5" />
-										<span>Dislike</span>
-									</Button>
-
-									<Button
-										variant="outline"
-										onClick={handleShuffle}
-										title="Pick Another"
-										className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs hover:bg-accent"
-									>
-										🎲 Another
-									</Button>
-								</div>
+										<Button
+											variant="outline"
+											onClick={pick.handleShuffle}
+											title="Pick Another"
+											className="w-full h-10 sm:h-11 rounded-xl border-border px-2 text-xs sm:text-sm font-semibold hover:bg-accent"
+										>
+											🎲 Another
+										</Button>
+									</div>
+								)}
 							</div>
 						</div>
 					</div>

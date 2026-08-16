@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Maximize2, Minimize } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -12,10 +12,8 @@ import {
 import { Play, XIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
-import {
-	buildPlayerUrl,
-	usePlayerProgressListener,
-} from "@/hooks/use-watch-progress";
+import { buildPlayerUrl } from "@/hooks/watch-progress/progress-helpers";
+import { usePlayerProgressListener } from "@/hooks/watch-progress/use-player-listener";
 import { cn } from "@/lib/utils";
 
 const INACTIVITY_HIDE_DELAY = 3000;
@@ -74,13 +72,35 @@ export function VideoPlayerModal({
 	const navigate = useNavigate();
 	const search = useSearch({ strict: false }) as Record<string, unknown>;
 
-	usePlayerProgressListener({
-		tmdbId,
-		mediaType: type,
-		title,
-		season,
-		episode,
-	});
+	// Pass the exact player URL so the listener trusts postMessage sources by
+	// origin instead of scanning the DOM for /embed/ iframes. The URL builder
+	// throws when VITE_PUBLIC_VIDEO_URL is unset, so guard with the raw env var.
+	const playerUrl = import.meta.env.VITE_PUBLIC_VIDEO_URL
+		? buildPlayerUrl({
+				type,
+				tmdbId,
+				season,
+				episode,
+			})
+		: undefined;
+
+	// Stable context so the listener effect in usePlayerProgressListener
+	// doesn't tear down / re-register on every render. The listener is only
+	// active while the dialog is open (see `isOpen` below), so season pages
+	// with one modal per episode no longer accumulate window listeners.
+	const listenerContext = useMemo(
+		() => ({
+			tmdbId,
+			mediaType: type,
+			title,
+			season,
+			episode,
+			playerUrl,
+		}),
+		[tmdbId, type, title, season, episode, playerUrl],
+	);
+
+	usePlayerProgressListener(listenerContext, isOpen);
 
 	// Auto-open when ?play=true is in the URL
 	useEffect(() => {
@@ -269,7 +289,7 @@ export function VideoPlayerModal({
 						type="button"
 						variant="ghost"
 						className={cn(
-							"group/play absolute inset-0 z-10 size-full opacity-0 p-0 transition-opacity duration-300 hover:bg-transparent hover:opacity-100 focus-visible:opacity-100 rounded-none",
+							"group/play absolute inset-0 z-10 size-full opacity-0 p-0 transition-opacity duration-200 hover:bg-transparent hover:opacity-100 focus-visible:opacity-100 rounded-none",
 							className,
 						)}
 						aria-label={`Play ${title}`}

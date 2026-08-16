@@ -3,6 +3,7 @@ import {
 	createRootRouteWithContext,
 	HeadContent,
 	Scripts,
+	useRouter,
 } from "@tanstack/react-router";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { useEffect, useState } from "react";
@@ -13,6 +14,7 @@ import {
 import { Footer } from "@/components/footer";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { Navbar } from "@/components/navbar";
+import { Toaster } from "@/components/ui/toaster";
 import { UserSync } from "@/components/user-sync";
 import { SITE_CONFIG } from "@/constants";
 
@@ -174,6 +176,34 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
+	const router = useRouter();
+
+	// Global keyboard shortcuts: "/" focuses search (or navigates there).
+	useEffect(() => {
+		const handleGlobalKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const isTyping =
+				target &&
+				(target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable);
+			if (e.key !== "/" || isTyping || e.metaKey || e.ctrlKey || e.altKey) {
+				return;
+			}
+			e.preventDefault();
+			const searchInput = document.querySelector<HTMLInputElement>(
+				'input[name="query"]',
+			);
+			if (searchInput) {
+				searchInput.focus();
+				searchInput.select();
+			} else {
+				void router.navigate({ to: "/search" });
+			}
+		};
+		window.addEventListener("keydown", handleGlobalKeyDown);
+		return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+	}, [router]);
 
 	useEffect(() => {
 		if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
@@ -181,11 +211,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		}
 
 		if (import.meta.env.DEV) {
+			// Unregister any SW left over from a production build/preview and purge
+			// its caches, so stale client JS (with old serverFn IDs) can't be served
+			// against the dev server.
 			navigator.serviceWorker.getRegistrations().then((registrations) => {
 				for (const registration of registrations) {
 					registration.unregister();
 				}
 			});
+			if (typeof caches !== "undefined") {
+				caches.keys().then((keys) => {
+					for (const key of keys) {
+						caches.delete(key);
+					}
+				});
+			}
 			return;
 		}
 
@@ -255,15 +295,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				</a>
 				<UserSync />
 				<Navbar />
+				{/* The skip-to-content link targets #main-content — keep a visible
+				    focus ring so keyboard users can see where focus landed. */}
 				<main
 					id="main-content"
 					tabIndex={-1}
-					className="outline-none mobile-nav-spacer"
+					className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring mobile-nav-spacer"
 				>
 					{children}
 				</main>
 				<Footer />
 				<MobileBottomNav />
+				<Toaster />
 				{devtoolsPlugin}
 				<SpeedInsights />
 				<Scripts />

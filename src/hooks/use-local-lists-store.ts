@@ -165,7 +165,6 @@ export const useLocalListsStore = create<LocalListsStore>()(
 					);
 
 					if (existingIndex !== -1) {
-						// Remove it
 						return {
 							listItems: state.listItems.filter(
 								(_, idx) => idx !== existingIndex,
@@ -173,7 +172,6 @@ export const useLocalListsStore = create<LocalListsStore>()(
 						};
 					}
 
-					// Add it
 					const newItem: LocalListItem = {
 						_id: `local_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
 						listId: args.listId,

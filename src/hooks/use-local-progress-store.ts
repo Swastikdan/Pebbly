@@ -7,6 +7,9 @@ import { createMemoryStorage } from "@/lib/utils";
 interface LocalProgressStore {
 	watchedEpisodes: Record<string, boolean>;
 
+	/** Last played episode per show id (`{tmdbId}` -> `{season, episode}`). */
+	lastPlayed: Record<string, { season: number; episode: number }>;
+
 	markEpisodeWatched: (
 		tmdbId: number,
 		season: number,
@@ -22,6 +25,8 @@ interface LocalProgressStore {
 	) => void;
 
 	clearShowProgress: (tmdbId: number) => void;
+
+	setLastPlayed: (id: string, season: number, episode: number) => void;
 }
 
 const memoryStorage = createMemoryStorage();
@@ -30,6 +35,12 @@ export const useLocalProgressStore = create<LocalProgressStore>()(
 	persist(
 		(set) => ({
 			watchedEpisodes: {},
+			lastPlayed: {},
+
+			setLastPlayed: (id, season, episode) =>
+				set((state) => ({
+					lastPlayed: { ...state.lastPlayed, [id]: { season, episode } },
+				})),
 
 			markEpisodeWatched: (tmdbId, season, episode, isWatched) =>
 				set((state) => {

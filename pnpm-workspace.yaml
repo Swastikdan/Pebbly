@@ -17,3 +17,4 @@ allowBuilds:
   esbuild: true
   protobufjs: true
   utf-8-validate: false
+  workerd: false

@@ -38,13 +38,9 @@ if (workbox) {
     self.clients.claim();
   });
 
-  // Skip Clerk auth and Convex sync / admin endpoints
+  // Skip Clerk auth and admin endpoints
   const shouldSkipRequest = (url) => {
-    return (
-      url.hostname.includes('clerk') ||
-      url.pathname.includes('/api/convex') ||
-      url.pathname.startsWith('/admin')
-    );
+    return url.hostname.includes('clerk') || url.pathname.startsWith('/admin');
   };
 
   // 1. Hashed app assets (JS, CSS, static local assets)

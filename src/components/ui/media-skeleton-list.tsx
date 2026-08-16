@@ -10,6 +10,7 @@ export const MediaSkeletonList = memo(
 				<div className="flex gap-2 p-4 first:pl-0 last:pr-0">
 					{Array.from({ length: cardCount }).map((_, index) => (
 						<MediaCardSkeleton
+							// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
 							key={index}
 							card_type={props.cardType ?? "horizontal"}
 						/>

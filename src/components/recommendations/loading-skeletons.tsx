@@ -1,5 +1,5 @@
 import { MediaCardSkeleton } from "@/components/media-card";
-import { HORIZONTAL_MEDIA_GRID_CLASS } from "@/constants";
+import { MediaGrid } from "@/components/ui/media-grid";
 
 interface LoadingSkeletonsProps {
 	count?: number;
@@ -20,11 +20,15 @@ export function LoadingSkeletons({
 					{message}
 				</div>
 			)}
-			<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
+			<MediaGrid stagger>
 				{Array.from({ length: count }).map((_, i) => (
-					<MediaCardSkeleton key={i} card_type="horizontal" />
+					<MediaCardSkeleton
+						// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+						key={i}
+						card_type="horizontal"
+					/>
 				))}
-			</div>
+			</MediaGrid>
 		</div>
 	);
 }

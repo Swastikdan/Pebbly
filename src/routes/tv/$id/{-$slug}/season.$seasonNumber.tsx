@@ -19,9 +19,8 @@ import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails, getTvSeasonDetails } from "@/lib/queries";
+import type { Tv } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
-
-import type { Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
 	loader: ({ params, context }) => {
@@ -153,7 +152,9 @@ function TvSeasonDetailPage() {
 									height={180}
 									src={
 										episode.still_path
-											? `${IMAGE_PREFIX.SD_BACKDROP}${episode.still_path}`
+											? // Episode stills render at ~224px wide, so w300 (LQ) is plenty;
+												// w780 decodes to ~1.4 MB per still across a whole season.
+												`${IMAGE_PREFIX.LQ_BACKDROP}${episode.still_path}`
 											: `https://placehold.co/500x281?text=No+Image`
 									}
 									width={320}

@@ -1,39 +1,18 @@
-import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery as useConvexQuery } from "convex/react";
-import {
-	ArrowUpRight,
-	BrainCircuit,
-	Clock,
-	Film,
-	Plus,
-	RefreshCw,
-	SlidersHorizontal,
-	Sparkles,
-	Trash2,
-	Tv,
-} from "lucide-react";
+import { useUser } from "@clerk/react";
+import { useQuery } from "@tanstack/react-query";
+import { createLazyFileRoute } from "@tanstack/react-router";
+import { BrainCircuit } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
-import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { GENRE_LIST, HORIZONTAL_MEDIA_GRID_CLASS } from "@/constants";
+	ERA_PRESETS,
+	RecommendationFilters,
+} from "@/components/recommendations/recommendation-filters";
+import { RecommendationHistory } from "@/components/recommendations/recommendation-history";
+import { RecommendationResults } from "@/components/recommendations/recommendation-results";
 import { usePermissions } from "@/hooks/use-permissions";
 import type {
 	GenerateOptions,
@@ -41,15 +20,14 @@ import type {
 } from "@/hooks/use-recommendations";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { queryKeys } from "@/lib/query/keys";
 import {
 	type AIRecommendation,
 	normalizeTitleKey,
-	titlesMatch,
-	useTmdbData,
-	useTmdbSearchFallback,
 } from "@/lib/recommendation-engine";
-import { cn } from "@/lib/utils";
-import { api } from "../../convex/_generated/api";
+import { getCustomLists } from "@/server/fns/lists";
+import { getTrackedTmdbIds } from "@/server/fns/watchlist";
+import { unwrap } from "@/server/schema/common";
 
 export const Route = createLazyFileRoute("/recommendations")({
 	component: RecommendationsPage,
@@ -72,15 +50,6 @@ function isTrackedRecommendation(
 	].map(normalizeTitleKey);
 
 	return candidateTitles.some((title) => title && trackedTitles.has(title));
-}
-
-function formatTimestamp(ts: number) {
-	return new Date(ts).toLocaleDateString(undefined, {
-		month: "short",
-		day: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
 }
 
 function RecommendationsPage() {
@@ -125,18 +94,11 @@ function PageShell({ children }: { children: ReactNode }) {
 	);
 }
 
-const POPULAR_GENRES = GENRE_LIST.slice(0, 14);
-
-const ERA_PRESETS = [
-	{ label: "Classics", from: 1900, to: 1979 },
-	{ label: "80s", from: 1980, to: 1989 },
-	{ label: "90s", from: 1990, to: 1999 },
-	{ label: "2000s", from: 2000, to: 2009 },
-	{ label: "2010s", from: 2010, to: 2019 },
-	{ label: "2020s", from: 2020, to: 2029 },
+const GEN_STAGES = [
+	"Reading your library…",
+	"Filtering what you've already seen…",
+	"Drafting your picks…",
 ] as const;
-
-const COUNT_OPTIONS = [5, 10, 15, 20, 25, 30] as const;
 
 function RecommendationsContent({
 	isSignedIn,
@@ -157,13 +119,15 @@ function RecommendationsContent({
 
 	const { watchlist, loading: watchlistLoading } = useWatchlist();
 
-	const trackedTmdbIds = useConvexQuery(
-		api.watchlist.getTrackedTmdbIds,
-		isSignedIn ? {} : "skip",
-	);
+	const { user } = useUser();
+	const trackedTmdbIdsQuery = useQuery({
+		queryKey: queryKeys.watchlist.trackedTmdbIds(user?.id),
+		queryFn: () => unwrap(getTrackedTmdbIds()),
+		enabled: !!isSignedIn,
+	});
 	const trackedIdSet = useMemo<Set<number>>(
-		() => new Set((trackedTmdbIds ?? []) as number[]),
-		[trackedTmdbIds],
+		() => new Set((trackedTmdbIdsQuery.data ?? []) as number[]),
+		[trackedTmdbIdsQuery.data],
 	);
 	const trackedTitleSet = useMemo(
 		() =>
@@ -206,7 +170,7 @@ function RecommendationsContent({
 
 	useEffect(() => {
 		if (!activeId && filteredHistory.length > 0) {
-			setActiveId(filteredHistory[0]._id);
+			setActiveId(filteredHistory[0].id);
 		}
 	}, [activeId, filteredHistory, setActiveId]);
 
@@ -219,6 +183,19 @@ function RecommendationsContent({
 	const [selectedEras, setSelectedEras] = useState<string[]>([]);
 	const [count, setCount] = useState(10);
 	const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+	const [genStage, setGenStage] = useState(0);
+
+	// Cycle through the generation narrative; reset whenever generation stops.
+	useEffect(() => {
+		if (!isGenerating) {
+			setGenStage(0);
+			return;
+		}
+		const timer = window.setInterval(() => {
+			setGenStage((stage) => Math.min(stage + 1, GEN_STAGES.length - 1));
+		}, 900);
+		return () => window.clearInterval(timer);
+	}, [isGenerating]);
 
 	const toggleGenre = (name: string) => {
 		setSelectedGenres((prev) =>
@@ -232,11 +209,12 @@ function RecommendationsContent({
 		);
 	};
 
-	const customListsResult = useConvexQuery(
-		api.watchlist.getCustomLists,
-		isSignedIn ? {} : "skip",
-	);
-	const customLists = customListsResult ?? [];
+	const customListsQuery = useQuery({
+		queryKey: queryKeys.lists.all(user?.id),
+		queryFn: () => unwrap(getCustomLists()),
+		enabled: !!isSignedIn,
+	});
+	const customLists = customListsQuery.data ?? [];
 
 	const handleGenerate = () => {
 		if (genMode === "watchlist" && watchlist.length === 0) return;
@@ -268,7 +246,10 @@ function RecommendationsContent({
 
 	const handleGenerateAgain = (entry: RecommendationHistoryEntry) => {
 		const options: GenerateOptions = {
-			generationType: entry.generationType || "watchlist",
+			generationType: (entry.generationType || "watchlist") as
+				| "watchlist"
+				| "list"
+				| "genre",
 		};
 		if (entry.mediaTypePreference)
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
@@ -283,7 +264,10 @@ function RecommendationsContent({
 
 	const handleGenerateMore = (entry: RecommendationHistoryEntry) => {
 		const options: GenerateOptions = {
-			generationType: entry.generationType || "watchlist",
+			generationType: (entry.generationType || "watchlist") as
+				| "watchlist"
+				| "list"
+				| "genre",
 		};
 		if (entry.mediaTypePreference)
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
@@ -309,7 +293,7 @@ function RecommendationsContent({
 	};
 
 	const activeEntry =
-		(activeId ? filteredHistory.find((h) => h._id === activeId) : null) ??
+		(activeId ? filteredHistory.find((h) => h.id === activeId) : null) ??
 		filteredHistory[0] ??
 		null;
 
@@ -328,204 +312,27 @@ function RecommendationsContent({
 
 	return (
 		<div className="space-y-8">
-			<div className="rounded-[calc(var(--radius-2xl)+4px)] border border-border bg-card p-3">
-				<div className="space-y-3">
-					<div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2">
-						<Select
-							value={genMode === "list" ? `list:${listId}` : genMode}
-							onValueChange={(val: string) => {
-								if (val.startsWith("list:")) {
-									setGenMode("list");
-									setListId(val.replace("list:", ""));
-								} else {
-									setGenMode(val as "watchlist" | "genre");
-									setListId("");
-								}
-							}}
-						>
-							<SelectTrigger className="h-10 w-auto px-4 text-xs font-semibold text-foreground bg-secondary/20 border border-border rounded-xl hover:bg-secondary/40 transition-colors shadow-none">
-								<SelectValue placeholder="From Watchlist" />
-							</SelectTrigger>
-							<SelectContent
-								position="popper"
-								align="start"
-								className="max-h-[300px] overflow-y-auto"
-							>
-								<SelectItem value="watchlist" className="text-xs">
-									From Watchlist
-								</SelectItem>
-								{customLists.map((list) => (
-									<SelectItem
-										key={list._id}
-										value={`list:${list._id}`}
-										className="text-xs"
-									>
-										From List: {list.name}
-									</SelectItem>
-								))}
-								<SelectItem
-									value="genre"
-									className="text-xs border-t mt-1 pt-1"
-								>
-									By Genre
-								</SelectItem>
-							</SelectContent>
-						</Select>
-
-						<div className="w-full sm:w-auto flex items-center gap-2">
-							<div className="flex flex-1 sm:flex-none gap-1 rounded-xl bg-secondary/20 p-1 h-10 items-center border border-border">
-								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform,box-shadow] duration-150"
-									variant={!mediaType ? "default" : "ghost"}
-									onClick={() => setMediaType(undefined)}
-								>
-									All
-								</Button>
-								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform,box-shadow] duration-150"
-									variant={mediaType === "movie" ? "default" : "ghost"}
-									onClick={() =>
-										setMediaType(mediaType === "movie" ? undefined : "movie")
-									}
-								>
-									Movies
-								</Button>
-								<Button
-									className="h-8 px-4 text-xs font-semibold rounded-lg flex-1 sm:flex-none transition-[color,background-color,border-color,transform,box-shadow] duration-150"
-									variant={mediaType === "tv" ? "default" : "ghost"}
-									onClick={() =>
-										setMediaType(mediaType === "tv" ? undefined : "tv")
-									}
-								>
-									TV Shows
-								</Button>
-							</div>
-
-							<Button
-								type="button"
-								variant={showAdvancedOptions ? "outline" : "ghost"}
-								className="gap-1.5 h-10 w-10 text-xs justify-center shrink-0 rounded-xl border border-border bg-card/40 hover:bg-secondary/40 transition-colors shadow-none"
-								onClick={() => setShowAdvancedOptions((prev) => !prev)}
-							>
-								<SlidersHorizontal className="size-3.5" />
-							</Button>
-						</div>
-						<div className="w-full sm:w-auto sm:ml-auto mt-1 sm:mt-0 flex">
-							<Button
-								onClick={handleGenerate}
-								disabled={
-									isGenerating ||
-									(genMode === "watchlist" &&
-										!watchlistLoading &&
-										watchlist.length === 0) ||
-									(genMode === "list" && !listId)
-								}
-								variant="secondary"
-								className="gap-2 h-10 w-full sm:w-auto rounded-xl px-5 border border-border hover:scale-[1.02] active:scale-[0.98] transition-[color,background-color,border-color,transform,box-shadow] duration-150 shadow-none"
-							>
-								{isGenerating ? (
-									<RefreshCw className="size-4 animate-spin" />
-								) : (
-									<Sparkles className="size-4" />
-								)}
-								{isGenerating ? "Generating..." : "Generate"}
-							</Button>
-						</div>
-					</div>
-
-					{showAdvancedOptions && (
-						<div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border/40 pt-4 mt-3">
-							<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hidden pb-0.5">
-								<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
-									Era
-								</span>
-								{ERA_PRESETS.map((era) => (
-									<Button
-										key={era.label}
-										type="button"
-										variant={
-											selectedEras.includes(era.label) ? "default" : "ghost"
-										}
-										className={cn(
-											"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform,box-shadow] duration-150 shrink-0",
-											selectedEras.includes(era.label)
-												? "bg-primary text-primary-foreground border-transparent hover:scale-105"
-												: "bg-secondary/40 text-muted-foreground border border-border hover:bg-secondary/60 hover:text-foreground",
-										)}
-										onClick={() => toggleEra(era.label)}
-									>
-										{era.label}
-									</Button>
-								))}
-							</div>
-
-							<div className="flex items-center gap-1.5 shrink-0">
-								<span className="text-xs text-muted-foreground font-medium shrink-0 mr-1">
-									Count
-								</span>
-								<Select
-									value={String(count)}
-									onValueChange={(v) => setCount(Number(v))}
-								>
-									<SelectTrigger
-										size="sm"
-										className="h-8 w-[70px] text-xs font-semibold px-2.5 bg-secondary/40 border border-border rounded-lg shrink-0 hover:bg-secondary/60 transition-colors shadow-none"
-									>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent position="popper" className="min-w-[4rem]">
-										{COUNT_OPTIONS.map((c) => (
-											<SelectItem key={c} value={String(c)} className="text-xs">
-												{c}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-						</div>
-					)}
-
-					{genMode === "watchlist" &&
-						!watchlistLoading &&
-						watchlist.length === 0 && (
-							<p className="text-[13px] text-muted-foreground animate-in fade-in slide-in-from-top-1">
-								Your watchlist is empty. Add some titles first or try generating{" "}
-								<Button
-									type="button"
-									variant="link"
-									onClick={() => setGenMode("genre")}
-									className="h-auto p-0 text-foreground underline underline-offset-2"
-								>
-									By Genre
-								</Button>
-								.
-							</p>
-						)}
-
-					{genMode === "genre" && (
-						<div className="flex flex-wrap gap-2 border-t border-border/40 pt-4 mt-3">
-							{POPULAR_GENRES.map((genre) => (
-								<Button
-									key={genre.id}
-									type="button"
-									variant={
-										selectedGenres.includes(genre.name) ? "default" : "ghost"
-									}
-									className={cn(
-										"h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform,box-shadow] duration-150",
-										selectedGenres.includes(genre.name)
-											? "bg-primary text-primary-foreground border-transparent hover:scale-105"
-											: "bg-secondary/40 text-muted-foreground border border-border hover:bg-secondary/60 hover:text-foreground",
-									)}
-									onClick={() => toggleGenre(genre.name)}
-								>
-									{genre.name}
-								</Button>
-							))}
-						</div>
-					)}
-				</div>
-			</div>
+			<RecommendationFilters
+				genMode={genMode}
+				setGenMode={setGenMode}
+				listId={listId}
+				setListId={setListId}
+				mediaType={mediaType}
+				setMediaType={setMediaType}
+				selectedGenres={selectedGenres}
+				toggleGenre={toggleGenre}
+				selectedEras={selectedEras}
+				toggleEra={toggleEra}
+				count={count}
+				setCount={setCount}
+				showAdvancedOptions={showAdvancedOptions}
+				setShowAdvancedOptions={setShowAdvancedOptions}
+				customLists={customLists}
+				watchlist={watchlist}
+				watchlistLoading={watchlistLoading}
+				isGenerating={isGenerating}
+				handleGenerate={handleGenerate}
+			/>
 
 			{error && (
 				<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-1">
@@ -538,56 +345,36 @@ function RecommendationsContent({
 			{isGenerating && (
 				<div className="space-y-4 animate-in fade-in duration-300">
 					<div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm shadow-none">
-						<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
-							<BrainCircuit className="size-4 animate-pulse" />
+						<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10">
+							<BrainCircuit className="size-4 text-blue-500" />
 						</div>
-						<div>
+						<div className="min-w-0 flex-1">
 							<p className="font-semibold">Building recommendations</p>
-							<p className="text-xs text-muted-foreground">
-								Checking your filters and avoiding titles already in your
-								library.
+							<p
+								key={genStage}
+								className="text-xs text-muted-foreground animate-fade-in"
+							>
+								{GEN_STAGES[genStage]}
 							</p>
 						</div>
+					</div>
+					{/* Indeterminate progress bar */}
+					<div
+						className="h-1 w-full overflow-hidden rounded-full bg-secondary"
+						role="progressbar"
+						aria-label="Generating recommendations"
+					>
+						<div className="progress-indeterminate h-full rounded-full bg-blue-600" />
 					</div>
 					<DefaultLoader />
 				</div>
 			)}
 
 			{!accessLoading && !historyLoading && !isGenerating && activeEntry && (
-				<div className="space-y-3">
-					<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-						<Badge
-							variant="outline"
-							className="text-[10px] font-medium capitalize"
-						>
-							{activeEntry.generationType === "genre"
-								? "By Genre"
-								: activeEntry.generationType === "list"
-									? "Custom List"
-									: "Watchlist"}
-						</Badge>
-						{activeEntry.genrePreference && (
-							<span>{activeEntry.genrePreference}</span>
-						)}
-						{activeEntry.mediaTypePreference && (
-							<span className="capitalize">
-								{activeEntry.mediaTypePreference === "movie"
-									? "Movies only"
-									: "TV only"}
-							</span>
-						)}
-						<span>
-							{activeEntry.inputStats.movieCount} movies,{" "}
-							{activeEntry.inputStats.tvCount} TV shows
-						</span>
-						<span>{formatTimestamp(activeEntry.createdAt)}</span>
-					</div>
-
-					<RecommendationCardGrid
-						entry={activeEntry}
-						updateVerified={updateVerified}
-					/>
-				</div>
+				<RecommendationResults
+					entry={activeEntry}
+					updateVerified={updateVerified}
+				/>
 			)}
 
 			{!accessLoading &&
@@ -604,484 +391,16 @@ function RecommendationsContent({
 				)}
 
 			{filteredHistory.length > 0 && (
-				<div className="space-y-3">
-					<h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-						<Clock className="size-4" />
-						History
-					</h2>
-					<Accordion type="single" collapsible className="space-y-2 mb-10">
-						{filteredHistory.map((entry) => (
-							<HistoryAccordionItem
-								key={entry._id}
-								entry={entry}
-								isActive={entry._id === activeEntry?._id}
-								onSelect={() => setActiveId(entry._id)}
-								onDelete={() => handleDelete(entry._id)}
-								onGenerateAgain={() => handleGenerateAgain(entry)}
-								onGenerateMore={() => handleGenerateMore(entry)}
-								isGenerating={isGenerating}
-							/>
-						))}
-					</Accordion>
-				</div>
-			)}
-		</div>
-	);
-}
-
-function HistoryAccordionItem({
-	entry,
-	isActive,
-	onSelect,
-	onDelete,
-	onGenerateAgain,
-	onGenerateMore,
-	isGenerating,
-}: {
-	entry: RecommendationHistoryEntry;
-	isActive: boolean;
-	onSelect: () => void;
-	onDelete: () => void;
-	onGenerateAgain: () => void;
-	onGenerateMore: () => void;
-	isGenerating: boolean;
-}) {
-	const movieCount = entry.recommendations.filter(
-		(r) => r.mediaType === "movie",
-	).length;
-	const tvCount = entry.recommendations.filter(
-		(r) => r.mediaType === "tv",
-	).length;
-	const avgScore = entry.recommendations.length
-		? Math.round(
-				entry.recommendations.reduce((s, r) => s + r.relevanceScore, 0) /
-					entry.recommendations.length,
-			)
-		: 0;
-
-	return (
-		<AccordionItem
-			value={entry._id}
-			className={cn(
-				"rounded-2xl border border-border bg-card overflow-hidden transition-colors shadow-none",
-				isActive && "ring-1 ring-border",
-			)}
-		>
-			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
-				<div className="flex flex-1 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pr-2">
-					<Badge
-						variant="outline"
-						className="text-[10px] font-medium capitalize shrink-0"
-					>
-						{entry.generationType === "genre"
-							? "Genre"
-							: entry.generationType === "list"
-								? "Custom List"
-								: "Watchlist"}
-					</Badge>
-
-					<span className="text-xs text-muted-foreground truncate min-w-0 flex-1">
-						{entry.genrePreference
-							? entry.genrePreference
-							: `${entry.inputStats.movieCount} movies, ${entry.inputStats.tvCount} TV`}
-						{entry.mediaTypePreference &&
-							` · ${entry.mediaTypePreference === "movie" ? "Movies" : "TV"}`}
-					</span>
-
-					<div className="hidden sm:flex items-center gap-2 shrink-0 ml-auto">
-						{movieCount > 0 && (
-							<span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60">
-								<Film className="size-3" />
-								{movieCount}
-							</span>
-						)}
-						{tvCount > 0 && (
-							<span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60">
-								<Tv className="size-3" />
-								{tvCount}
-							</span>
-						)}
-						<span
-							className={cn(
-								"text-[10px] font-semibold tabular-nums",
-								avgScore >= 80
-									? "text-emerald-600 dark:text-emerald-400"
-									: avgScore >= 60
-										? "text-amber-600 dark:text-amber-400"
-										: "text-muted-foreground",
-							)}
-						>
-							{avgScore}% Match
-						</span>
-					</div>
-
-					<div className="flex w-full items-center gap-2 text-[11px] text-muted-foreground/60 sm:hidden">
-						<span>{formatTimestamp(entry.createdAt)}</span>
-						<span className="text-muted-foreground/40">·</span>
-						<span>{entry.recommendations.length} results</span>
-					</div>
-
-					<span className="hidden text-[11px] text-muted-foreground/60 shrink-0 sm:inline">
-						{formatTimestamp(entry.createdAt)}
-					</span>
-
-					<span className="hidden text-[11px] text-muted-foreground/50 shrink-0 sm:inline">
-						{entry.recommendations.length} results
-					</span>
-				</div>
-			</AccordionTrigger>
-
-			<AccordionContent className="px-4 pb-4">
-				<div className="space-y-4 scrollbar-hidden">
-					<div className="flex items-center gap-2 pb-1 overflow-x-auto scrollbar-hidden">
-						<Button
-							size="sm"
-							variant="secondary"
-							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-[color,background-color,border-color,transform] shadow-none"
-							onClick={(e) => {
-								e.stopPropagation();
-								onSelect();
-								window.scrollTo({ top: 0, behavior: "smooth" });
-							}}
-						>
-							<ArrowUpRight className="size-3.5" />
-							View Cards
-						</Button>
-						<Button
-							size="sm"
-							variant="secondary"
-							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-[color,background-color,border-color,transform] shadow-none"
-							disabled={isGenerating}
-							onClick={(e) => {
-								e.stopPropagation();
-								onGenerateAgain();
-							}}
-						>
-							<RefreshCw
-								className={cn("size-3.5", isGenerating && "animate-spin")}
-							/>
-							Generate Again
-						</Button>
-						<Button
-							size="sm"
-							variant="secondary"
-							className="gap-1.5 text-xs h-8 shrink-0 rounded-lg border border-border hover:scale-[1.03] active:scale-[0.97] transition-[color,background-color,border-color,transform] shadow-none"
-							disabled={isGenerating}
-							onClick={(e) => {
-								e.stopPropagation();
-								onGenerateMore();
-							}}
-						>
-							<Plus className="size-3.5" />
-							Generate More
-						</Button>
-						<Button
-							size="sm"
-							variant="ghost"
-							className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-auto shrink-0 rounded-lg transition-colors"
-							onClick={(e) => {
-								e.stopPropagation();
-								onDelete();
-							}}
-						>
-							<Trash2 className="size-3.5" />
-							Delete
-						</Button>
-					</div>
-
-					<div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-						<span className="flex items-center gap-1">
-							<Film className="size-3.5" />
-							{movieCount} {movieCount === 1 ? "movie" : "movies"}
-						</span>
-						<span className="text-muted-foreground/30">·</span>
-						<span className="flex items-center gap-1">
-							<Tv className="size-3.5" />
-							{tvCount} TV {tvCount === 1 ? "show" : "shows"}
-						</span>
-						<span className="text-muted-foreground/30">·</span>
-						<span>
-							Avg match:{" "}
-							<span
-								className={cn(
-									"font-semibold",
-									avgScore >= 80
-										? "text-emerald-600 dark:text-emerald-400"
-										: avgScore >= 60
-											? "text-amber-600 dark:text-amber-400"
-											: "text-muted-foreground",
-								)}
-							>
-								{avgScore}%
-							</span>
-						</span>
-						{entry.inputStats.totalItems > 0 && (
-							<>
-								<span className="text-muted-foreground/30">·</span>
-								<span>
-									Based on {entry.inputStats.totalItems} watchlist{" "}
-									{entry.inputStats.totalItems === 1 ? "item" : "items"}
-								</span>
-							</>
-						)}
-						{entry.mediaTypePreference && (
-							<>
-								<span className="text-muted-foreground/30">·</span>
-								<span className="capitalize">
-									{entry.mediaTypePreference === "movie"
-										? "Movies only"
-										: "TV only"}
-								</span>
-							</>
-						)}
-					</div>
-
-					{entry.genrePreference && (
-						<div className="flex flex-wrap gap-1.5">
-							{entry.genrePreference.split(", ").map((g) => (
-								<Badge
-									key={g}
-									variant="secondary"
-									className="text-[10px] font-medium"
-								>
-									{g}
-								</Badge>
-							))}
-						</div>
-					)}
-				</div>
-			</AccordionContent>
-		</AccordionItem>
-	);
-}
-
-function RecommendationCardGrid({
-	entry,
-	updateVerified,
-}: {
-	entry: RecommendationHistoryEntry;
-	updateVerified: (id: string, recs: AIRecommendation[]) => Promise<void>;
-}) {
-	const verifiedMapRef = useRef<Map<number, AIRecommendation>>(new Map());
-	const totalCount = entry.recommendations.length;
-	const resolvedCountRef = useRef(0);
-	const hasPushedRef = useRef(false);
-
-	const entryId = entry._id;
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: entryId is intentionally used to reset refs when the entry changes
-	useEffect(() => {
-		verifiedMapRef.current = new Map();
-		resolvedCountRef.current = 0;
-		hasPushedRef.current = false;
-	}, [entryId]);
-
-	const onCardResolved = useCallback(
-		(index: number, verifiedRec: AIRecommendation) => {
-			verifiedMapRef.current.set(index, verifiedRec);
-			resolvedCountRef.current += 1;
-
-			if (
-				!hasPushedRef.current &&
-				!entry.verified &&
-				resolvedCountRef.current >= totalCount
-			) {
-				hasPushedRef.current = true;
-
-				const hasAnyVerified = Array.from(verifiedMapRef.current.values()).some(
-					(r) => !!r.verifiedTmdbId,
-				);
-
-				if (hasAnyVerified) {
-					const updatedRecs = entry.recommendations.map((rec, i) => {
-						const verified = verifiedMapRef.current.get(i);
-						if (verified?.verifiedTmdbId) return verified;
-						return rec;
-					});
-					updateVerified(entryId, updatedRecs);
-				}
-			}
-		},
-		[
-			entryId,
-			entry.verified,
-			entry.recommendations,
-			totalCount,
-			updateVerified,
-		],
-	);
-
-	return (
-		<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
-			{entry.recommendations.map((rec, i) => (
-				<RecommendationCard
-					key={`${rec.tmdbId ?? rec.title}-${i}`}
-					recommendation={rec}
-					isEntryVerified={!!entry.verified}
-					onResolved={(verifiedRec) => onCardResolved(i, verifiedRec)}
+				<RecommendationHistory
+					entries={filteredHistory}
+					activeEntryId={activeEntry?.id ?? null}
+					isGenerating={isGenerating}
+					onSelect={setActiveId}
+					onDelete={handleDelete}
+					onGenerateAgain={handleGenerateAgain}
+					onGenerateMore={handleGenerateMore}
 				/>
-			))}
-		</div>
-	);
-}
-
-function RecommendationCard({
-	recommendation,
-	isEntryVerified,
-	onResolved,
-}: {
-	recommendation: AIRecommendation;
-	isEntryVerified: boolean;
-	onResolved?: (verifiedRec: AIRecommendation) => void;
-}) {
-	const { title, tmdbId, mediaType, relevanceScore, reasoning } =
-		recommendation;
-	const navigate = useNavigate();
-	const hasReportedRef = useRef(false);
-
-	const usesCachedData = isEntryVerified && !!recommendation.verifiedTmdbId;
-
-	const {
-		data: tmdbData,
-		isLoading: idLoading,
-		exists: idExists,
-	} = useTmdbData(usesCachedData ? null : tmdbId, mediaType);
-
-	const idVerified =
-		!usesCachedData &&
-		tmdbData &&
-		idExists &&
-		titlesMatch(title, tmdbData.title) &&
-		tmdbData.rating > 0 &&
-		!!tmdbData.posterPath;
-	const idResolved = usesCachedData || !tmdbId || !idLoading;
-
-	const shouldSearch = !usesCachedData && idResolved && !idVerified;
-	const {
-		data: searchData,
-		isLoading: searchLoading,
-		exists: searchExists,
-	} = useTmdbSearchFallback(title, mediaType, shouldSearch);
-
-	const resolvedData = usesCachedData
-		? null
-		: idVerified
-			? tmdbData
-			: searchExists
-				? searchData
-				: null;
-
-	const isStillLoading =
-		!usesCachedData &&
-		((!!tmdbId && idLoading) || (shouldSearch && searchLoading));
-
-	useEffect(() => {
-		if (usesCachedData || hasReportedRef.current || isStillLoading) return;
-		hasReportedRef.current = true;
-
-		if (resolvedData && onResolved) {
-			onResolved({
-				...recommendation,
-				verifiedTmdbId: resolvedData.id,
-				verifiedTitle: resolvedData.title,
-				posterPath: resolvedData.posterPath,
-				rating: resolvedData.rating,
-				releaseDate: resolvedData.releaseDate,
-				overview: resolvedData.overview,
-			});
-		} else if (onResolved) {
-			// Keep unresolved cards in the batch so backend verification can finish.
-			onResolved(recommendation);
-		}
-	}, [
-		usesCachedData,
-		isStillLoading,
-		resolvedData,
-		recommendation,
-		onResolved,
-	]);
-
-	if (usesCachedData) {
-		return (
-			<MediaCard
-				card_type="horizontal"
-				id={recommendation.verifiedTmdbId as number}
-				title={recommendation.verifiedTitle ?? title}
-				rating={recommendation.rating ?? 0}
-				image={recommendation.posterPath ?? ""}
-				poster_path={recommendation.posterPath ?? ""}
-				media_type={mediaType}
-				release_date={recommendation.releaseDate ?? null}
-				overview={recommendation.overview ?? ""}
-				relevanceScore={relevanceScore}
-			/>
-		);
-	}
-
-	if (isStillLoading) {
-		return <MediaCardSkeleton card_type="horizontal" />;
-	}
-
-	if (resolvedData) {
-		return (
-			<MediaCard
-				card_type="horizontal"
-				id={resolvedData.id}
-				title={resolvedData.title}
-				rating={resolvedData.rating}
-				image={resolvedData.posterPath ?? ""}
-				poster_path={resolvedData.posterPath ?? ""}
-				media_type={mediaType}
-				release_date={resolvedData.releaseDate}
-				overview={resolvedData.overview}
-				relevanceScore={relevanceScore}
-			/>
-		);
-	}
-
-	return (
-		<div className="group/card w-40 md:w-44 lg:w-48">
-			<Button
-				type="button"
-				variant="ghost"
-				className="relative aspect-[2/3] h-auto w-full overflow-hidden rounded-xl bg-muted p-0 text-left ring-1 ring-border/40 transition-[box-shadow,border-color] duration-200 hover:bg-muted"
-				onClick={() => navigate({ to: "/search", search: { query: title } })}
-			>
-				<div className="absolute top-0 left-0 right-0 z-10 flex items-start justify-end p-2.5">
-					<span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-muted-foreground capitalize">
-						{mediaType === "movie" ? "Movie" : "TV"}
-					</span>
-				</div>
-
-				<div className="absolute bottom-0 left-0 right-0 z-10 flex flex-col gap-1.5 p-3">
-					<h3 className="text-[15px] font-bold leading-snug text-foreground line-clamp-2">
-						{title}
-					</h3>
-					<p className="text-[10.5px] leading-relaxed text-muted-foreground line-clamp-3">
-						{reasoning}
-					</p>
-					<div className="flex items-center justify-between mt-1 w-full">
-						<span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground/50 transition-colors duration-200 group-hover/card:text-foreground">
-							<ArrowUpRight size={11} />
-							Search
-						</span>
-						{relevanceScore && (
-							<span
-								className={cn(
-									"text-[10.5px] font-semibold",
-									relevanceScore >= 80
-										? "text-emerald-600 dark:text-emerald-400"
-										: relevanceScore >= 60
-											? "text-amber-600 dark:text-amber-400"
-											: "text-muted-foreground",
-								)}
-							>
-								{relevanceScore}% Match
-							</span>
-						)}
-					</div>
-				</div>
-			</Button>
+			)}
 		</div>
 	);
 }

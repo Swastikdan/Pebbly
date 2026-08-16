@@ -91,10 +91,7 @@ export function WatchlistStatusMenu({
 							variant="secondary"
 							className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/15 text-primary transition-[color,background-color,border-color] cursor-pointer flex items-center justify-center"
 						>
-							<StatusIcon
-								size={16}
-								className="text-primary animate-bookmark-pop"
-							/>
+							<StatusIcon size={16} className="text-primary" />
 							<span className="hidden sm:inline">{currentOption.label}</span>
 							<ChevronDown
 								size={14}
@@ -107,7 +104,7 @@ export function WatchlistStatusMenu({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-80 rounded-xl p-0 border border-border bg-popover shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
+						className="w-80 rounded-xl p-0 border border-border bg-popover shadow-xl"
 						onCloseAutoFocus={(e) => e.preventDefault()}
 					>
 						<div className="flex items-center justify-between border-b border-border px-4 py-3">
