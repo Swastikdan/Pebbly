@@ -601,23 +601,32 @@ export type MediaRecommendations = v.InferOutput<
 	typeof MediaRecommendationsSchema
 >;
 
-export const TvEpisodeDetailSchema = v.looseObject({
-	air_date: strNull(),
-	episode_number: num(),
-	episode_type: str(),
-	id: v.number(),
-	name: str(),
-	overview: str(),
-	production_code: str(),
-	runtime: numNull(),
-	season_number: num(),
-	show_id: num(),
-	still_path: strNull(),
-	vote_average: num(),
-	vote_count: num(),
-	crew: v.nullish(v.array(CrewMemberSchema), () => []),
-	guest_stars: v.nullish(v.array(CastMemberSchema), () => []),
-});
+export const TvEpisodeDetailSchema = v.pipe(
+	v.looseObject({
+		air_date: strNull(),
+		episode_number: num(),
+		episode_type: str(),
+		id: v.number(),
+		name: str(),
+		overview: str(),
+		production_code: str(),
+		runtime: numNull(),
+		season_number: num(),
+		show_id: num(),
+		still_path: strNull(),
+		vote_average: num(),
+		vote_count: num(),
+	}),
+	// TMDB inlines crew + guest_stars on EVERY episode of a season response;
+	// nothing in the app renders them, and for a 20+ episode season they can
+	// double the payload. Drop them at parse time so the cached object graph
+	// (and the dehydrated SSR payload) stays small.
+	v.transform((episode) => {
+		delete episode.crew;
+		delete episode.guest_stars;
+		return episode;
+	}),
+);
 export type TvEpisodeDetail = v.InferOutput<typeof TvEpisodeDetailSchema>;
 
 export const TvSeasonDetailSchema = v.looseObject({

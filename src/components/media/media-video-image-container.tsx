@@ -222,7 +222,7 @@ export const MediaVideoImageContainer = (props: {
 													alt={image.file_path}
 													className="aspect-video size-full rounded-2xl object-cover"
 													height={300}
-													src={IMAGE_PREFIX.ORIGINAL + image.file_path}
+													src={IMAGE_PREFIX.HD_BACKDROP + image.file_path}
 													width={450}
 												/>
 											</div>
@@ -311,7 +311,7 @@ export const MediaVideoImageContainer = (props: {
 													alt={image.file_path}
 													className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
 													height={300}
-													src={IMAGE_PREFIX.ORIGINAL + image.file_path}
+													src={IMAGE_PREFIX.HD_POSTER + image.file_path}
 													width={450}
 												/>
 											</div>

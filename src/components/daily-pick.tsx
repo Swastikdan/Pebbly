@@ -187,7 +187,8 @@ export function DailyPickButton() {
 												onClick={() => setIsOpen(false)}
 												className="flex-1"
 											>
-												<Button className="w-full h-10 sm:h-11 rounded-xl bg-blue-600 text-white font-semibold shadow-md hover:bg-blue-600/90 text-xs sm:text-sm">
+												{" "}
+												<Button className="w-full h-10 sm:h-11 rounded-xl bg-foreground text-background font-semibold shadow-md hover:bg-foreground/90 text-xs sm:text-sm">
 													▶ Watch Now
 												</Button>
 											</Link>

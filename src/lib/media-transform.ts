@@ -91,7 +91,9 @@ export const mapBackdrops = (backdrops?: MinimalImage[] | null) =>
 		.sort(sortByVoteAverage)
 		.map((image) => ({
 			backdrop_image: `${IMAGE_PREFIX.SD_BACKDROP}${image.file_path}`,
-			backdrop_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
+			// HD (w1280) instead of ORIGINAL: full-res TMDB files can be several
+			// MB and decode to 4K bitmaps — the lightbox never needs more.
+			backdrop_image_raw: `${IMAGE_PREFIX.HD_BACKDROP}${image.file_path}`,
 			aspect_ratio: image.aspect_ratio,
 		}))
 		.slice(0, FEATURED_ITEMS_LIMIT) ?? [];
@@ -102,7 +104,8 @@ export const mapPosters = (posters?: MinimalImage[] | null) =>
 		.sort(sortByVoteAverage)
 		.map((image) => ({
 			poster_image: `${IMAGE_PREFIX.SD_POSTER}${image.file_path}`,
-			poster_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
+			// HD (w780) instead of ORIGINAL for the same memory/bandwidth win.
+			poster_image_raw: `${IMAGE_PREFIX.HD_POSTER}${image.file_path}`,
 			aspect_ratio: image.aspect_ratio,
 		}))
 		.slice(0, FEATURED_ITEMS_LIMIT) ?? [];

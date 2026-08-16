@@ -220,6 +220,10 @@ pnpm deploy:cf
 
 ## License & Acknowledgments
 
+- Released under the [MIT License](./LICENSE).
 - Movie and TV metadata provided by [TMDB](https://www.themoviedb.org/).
 - AI Recommendations powered by [Google Gemini](https://ai.google.dev/).
 - Built with TanStack Start, Cloudflare Workers, D1, Drizzle ORM, Valibot, Clerk, and Tailwind CSS.
+
+Contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) and the
+[Code of Conduct](./CODE_OF_CONDUCT.md).

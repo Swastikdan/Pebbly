@@ -54,7 +54,9 @@ function SearchPage() {
 		queryFn: () => getSearchResult({ query, page }),
 		enabled: typeof window !== "undefined" && !!query,
 		staleTime: 1000 * 60 * 60 * 24,
-		gcTime: 1000 * 60 * 60 * 24,
+		// Keep search results bounded in memory; data is still considered
+		// fresh for a day (staleTime above), only unused copies are evicted.
+		gcTime: 1000 * 60 * 30,
 		retry: 2,
 		refetchOnWindowFocus: false,
 		placeholderData: keepPreviousData,
@@ -64,7 +66,7 @@ function SearchPage() {
 		queryKey: ["trending"],
 		queryFn: () => getMedia({ type: "trending_day", page: 1 }),
 		staleTime: 1000 * 60 * 60 * 24,
-		gcTime: 1000 * 60 * 60 * 24,
+		gcTime: 1000 * 60 * 30,
 		retry: 2,
 		refetchOnWindowFocus: false,
 		enabled: typeof window !== "undefined" && !query,
