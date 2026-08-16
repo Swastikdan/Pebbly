@@ -14,7 +14,7 @@ Pebbly is a modern, full-stack movie and TV show discovery application built wit
 - **Custom Lists & Management**: Create custom lists, export/import watchlists in JSON format, and sync seamlessly across devices via Cloudflare D1.
 
 ### AI Recommendation Engine
-- **Watchlist & Interaction-Aware AI**: Generates tailored movie and TV recommendations using Google Gemini models (`gemini-2.5-flash`, `gemini-3.1-flash-lite-preview`).
+- **Watchlist & Interaction-Aware AI**: Generates tailored movie and TV recommendations using Google Gemini models (`gemini-3.1-flash-lite`, `gemini-2.5-flash`).
 - **Homepage "Picks For You"**: Dedicated homepage widget providing twice-daily refreshed recommendations with real-time watchlist exclusion.
 - **Interaction Feedback Loop**: User interactions (thumbs up / thumbs down) train future recommendations. Liked recommendations are automatically added to your **Pebbly Picks** list, and disliked titles are excluded.
 - **Advanced Filtering**: Generate recommendations by Watchlist, Custom List, Genre preferences, or Era presets (Classics, 80s, 90s, 2000s, 2010s, 2020s).
@@ -31,7 +31,7 @@ Pebbly is a modern, full-stack movie and TV show discovery application built wit
 | **Database** | [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) via [Drizzle ORM](https://orm.drizzle.team/) |
 | **Validation** | [Valibot](https://valibot.dev/) (Lightweight, modular schema validation) |
 | **Authentication** | [Clerk](https://clerk.com/) (`@clerk/react` + `@clerk/backend` JWT verification) |
-| **AI Engine** | Google GenAI SDK (`@google/genai` - Gemini Flash models) |
+| **AI Engine** | Google Gemini REST API (`generativelanguage.googleapis.com` via `fetch` — `gemini-3.1-flash-lite` + `gemini-2.5-flash` fallback chain) |
 | **Styling** | Tailwind CSS 4, Radix UI, shadcn/ui |
 | **Data Fetching** | TanStack Query (React Query) |
 | **State Management** | Zustand |
@@ -41,7 +41,7 @@ Pebbly is a modern, full-stack movie and TV show discovery application built wit
 
 ## Project Structure
 
-```
+```text
 ├── drizzle/                         # Drizzle generated SQL migrations for Cloudflare D1
 ├── server/                          # Nitro server routes and scheduled tasks
 │   ├── routes/api/health.ts         # /api/health endpoint (D1 status check)

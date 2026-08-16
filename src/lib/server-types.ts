@@ -5,6 +5,7 @@ import type {
 	lists,
 	watchItems,
 } from "@/server/db/schema";
+import type { ProgressStatus, Reaction } from "@/server/schema/common";
 
 /** `watch_items` D1 row (same shape `getWatchlist`/`getMediaState` return). */
 export type WatchItemRow = typeof watchItems.$inferSelect;
@@ -25,12 +26,14 @@ export type ListItemRow = typeof listItems.$inferSelect & {
 	rating: number | null;
 	release_date: string | null;
 	overview: string | null;
-	progressStatus: string | null;
-	reaction: string | null;
+	progressStatus: ProgressStatus | null;
+	reaction: Reaction | null;
 };
 
-export type AllEpisodeProgressRow = typeof episodeProgress.$inferSelect;
+/** Alias of the raw `episode_progress` D1 row. */
+export type AllEpisodeProgressRow = EpisodeProgressRow;
 
 export type RecommendationHistoryRow = typeof aiRecommendations.$inferSelect;
 
-export type MediaStateRow = typeof watchItems.$inferSelect;
+/** Alias of the raw `watch_items` D1 row. */
+export type MediaStateRow = WatchItemRow;

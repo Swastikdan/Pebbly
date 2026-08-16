@@ -10,8 +10,10 @@ export function createOptimisticUpdater<T, A = Record<string, unknown>>(
 ) {
 	return (queryClient: QueryClient, args: A) => {
 		const key = getKey(args);
-		const current =
-			(queryClient.getQueryData<T[]>(key) as T[] | undefined) ?? [];
+		const current = queryClient.getQueryData<T[]>(key) as T[] | undefined;
+		// Only touch the cache when data is actually cached — writing an empty
+		// array into an unfetched key would poison the optimistic state.
+		if (current === undefined) return;
 		queryClient.setQueryData<T[]>(key, updateFn(current, args));
 	};
 }
@@ -43,11 +45,10 @@ export async function beginOptimistic(
 
 	return () => {
 		for (const { queryKey, previous } of snapshots) {
-			if (previous === undefined) {
-				queryClient.removeQueries({ queryKey: queryKey as never });
-			} else {
-				queryClient.setQueryData(queryKey as never, previous as never);
-			}
+			// Restore undefined with setQueryData so mounted observers stay
+			// subscribed instead of being removed and re-created (which would
+			// trigger a loading/refetch cycle).
+			queryClient.setQueryData(queryKey as never, previous as never);
 		}
 	};
 }

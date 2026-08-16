@@ -1,10 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { getCurrentUser, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { listItems, lists, watchItems } from "../db/schema";
 import { getEnv } from "../env";
-import { type ApiResult, fail, ok } from "../schema/common";
+import {
+	type ApiResult,
+	fail,
+	ok,
+	type ProgressStatus,
+	type Reaction,
+} from "../schema/common";
 import {
 	createCustomListAndAddItemArgsSchema,
 	createCustomListArgsSchema,
@@ -76,8 +82,8 @@ export type EnrichedListItem = typeof listItems.$inferSelect & {
 	rating: number | null;
 	release_date: string | null;
 	overview: string | null;
-	progressStatus: string | null;
-	reaction: string | null;
+	progressStatus: ProgressStatus | null;
+	reaction: Reaction | null;
 };
 
 export const getListItems = createServerFn({ method: "POST" })
@@ -102,27 +108,23 @@ export const getListItems = createServerFn({ method: "POST" })
 				and(eq(listItems.listId, data.listId), eq(listItems.userId, user.id)),
 			);
 
-		// Enrich with watch_item metadata (port of the N+1 loop — batch in one query).
-		const watchItemPromises = items.map((item) =>
-			db
-				.select()
-				.from(watchItems)
-				.where(
-					and(
-						eq(watchItems.userId, user.id),
-						eq(watchItems.tmdbId, item.tmdbId),
-						eq(watchItems.mediaType, item.mediaType),
-					),
-				)
-				.limit(1),
-		);
-		const watchItemRows = await Promise.all(watchItemPromises);
+		// Enrich with watch_item metadata — one inArray query instead of one
+		// query per item.
+		const tmdbIds = [...new Set(items.map((item) => item.tmdbId))];
+		const watchItemRows = await db
+			.select()
+			.from(watchItems)
+			.where(
+				and(
+					eq(watchItems.userId, user.id),
+					inArray(watchItems.tmdbId, tmdbIds),
+				),
+			)
+			.limit(500);
 
 		const watchItemMap = new Map<string, (typeof watchItems.$inferSelect)[]>();
 		for (const w of watchItemRows) {
-			if (w.length > 0) {
-				watchItemMap.set(`${w[0].tmdbId}_${w[0].mediaType}`, w);
-			}
+			watchItemMap.set(`${w.tmdbId}_${w.mediaType}`, [w]);
 		}
 
 		const enriched: EnrichedListItem[] = items.map((item) => {
@@ -176,8 +178,9 @@ export const createCustomList = createServerFn({ method: "POST" })
 		const { user, error } = await requireUser();
 		if (error) return error;
 
-		const id = await createCustomListInner(user.id, data);
-		return ok(id);
+		const result = await createCustomListInner(user.id, data);
+		if (!result.ok) return result;
+		return ok(result.data);
 	});
 
 export const createCustomListAndAddItem = createServerFn({ method: "POST" })
@@ -186,15 +189,54 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
 		const { user, error } = await requireUser();
 		if (error) return error;
 
-		const listId = await createCustomListInner(user.id, {
-			name: data.name,
-			color: data.color,
-			visibility: data.visibility,
-			listType: data.listType,
-		});
+		// Atomic-ish: create the list and insert the item, rolling back the
+		// list if the item insert fails so a failure cannot leave an empty
+		// orphaned list behind.
+		const db = getDb(getEnv());
 
-		await toggleListItemInner(user.id, {
-			listId,
+		const now = Date.now();
+		const id = crypto.randomUUID();
+
+		// Fetch the next sortOrder + check duplicate name inside the same helper;
+		// the unique (userId, name) index is the real guard against races.
+		const existing = await db
+			.select({ id: lists.id })
+			.from(lists)
+			.where(and(eq(lists.userId, user.id), eq(lists.name, data.name)))
+			.limit(1);
+		if (existing.length > 0)
+			return fail("CONFLICT", "A list with this name already exists");
+
+		const highestList = await db
+			.select({ sortOrder: lists.sortOrder })
+			.from(lists)
+			.where(eq(lists.userId, user.id))
+			.orderBy(desc(lists.sortOrder))
+			.limit(1);
+		const maxSort = highestList.length > 0 ? highestList[0].sortOrder : 0;
+
+		const listVerified = await db
+			.insert(lists)
+			.values({
+				id,
+				userId: user.id,
+				name: data.name,
+				color: data.color,
+				visibility: data.visibility,
+				listType: data.listType,
+				sortOrder: maxSort + 1,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.onConflictDoNothing()
+			.returning({ id: lists.id });
+
+		if (listVerified.length === 0) {
+			return fail("CONFLICT", "A list with this name already exists");
+		}
+
+		const itemResult = await toggleListItemInner(user.id, {
+			listId: id,
 			tmdbId: data.tmdbId,
 			mediaType: data.mediaType,
 			title: data.title,
@@ -205,7 +247,14 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
 			overview: data.overview,
 		});
 
-		return ok(listId);
+		if (!itemResult.ok) {
+			// Roll back the just-created list so a failure cannot leave an empty
+			// list behind.
+			await db.delete(lists).where(eq(lists.id, id));
+			return itemResult;
+		}
+
+		return ok(id);
 	});
 
 export const updateCustomList = createServerFn({ method: "POST" })
@@ -264,31 +313,20 @@ export const deleteCustomList = createServerFn({ method: "POST" })
 			.limit(1);
 		if (list.length === 0) return fail("NOT_FOUND", "List not found");
 
-		// Cascade via FK, but keep the explicit loop for parity with the Convex
-		// batched delete (also bounded for D1).
-		while (true) {
-			const items = await db
-				.select({ id: listItems.id })
-				.from(listItems)
-				.where(eq(listItems.listId, data.listId))
-				.limit(200);
-			if (items.length === 0) break;
-			for (const item of items) {
-				await db.delete(listItems).where(eq(listItems.id, item.id));
-			}
-		}
-
+		// Cascade via FK — the list_id FK deletes child items automatically, so a
+		// single delete replaces the old per-row loop.
 		await db.delete(lists).where(eq(lists.id, data.listId));
 		return ok({ ok: true });
 	});
-
 export const toggleListItem = createServerFn({ method: "POST" })
 	.validator(toggleListItemArgsSchema)
 	.handler(async ({ data }): Promise<ApiResult<boolean>> => {
 		const { user, error } = await requireUser();
 		if (error) return error;
 
-		return ok(await toggleListItemInner(user.id, data));
+		const result = await toggleListItemInner(user.id, data);
+		if (!result.ok) return result;
+		return ok(result.data);
 	});
 
 // ---------------------------------------------------------------------------
@@ -303,16 +341,14 @@ async function createCustomListInner(
 		visibility?: string;
 		listType?: string;
 	},
-): Promise<string> {
+): Promise<ApiResult<string>> {
 	const db = getDb(getEnv());
-	const existing = await db
-		.select({ id: lists.id })
-		.from(lists)
-		.where(and(eq(lists.userId, userId), eq(lists.name, args.name)))
-		.limit(1);
-	if (existing.length > 0)
-		throw new Error("A list with this name already exists");
+	const now = Date.now();
+	const id = crypto.randomUUID();
 
+	// Duplicate-name uniqueness is enforced by the (userId, name) unique index;
+	// onConflictDoNothing turns a concurrent race into a clean CONFLICT instead
+	// of a TOCTOU check-then-insert. sortOrder stays best-effort max+1.
 	const highestList = await db
 		.select({ sortOrder: lists.sortOrder })
 		.from(lists)
@@ -321,20 +357,26 @@ async function createCustomListInner(
 		.limit(1);
 	const maxSort = highestList.length > 0 ? highestList[0].sortOrder : 0;
 
-	const now = Date.now();
-	const id = crypto.randomUUID();
-	await db.insert(lists).values({
-		id,
-		userId,
-		name: args.name,
-		color: args.color,
-		visibility: args.visibility,
-		listType: args.listType,
-		sortOrder: maxSort + 1,
-		createdAt: now,
-		updatedAt: now,
-	});
-	return id;
+	const inserted = await db
+		.insert(lists)
+		.values({
+			id,
+			userId,
+			name: args.name,
+			color: args.color,
+			visibility: args.visibility,
+			listType: args.listType,
+			sortOrder: maxSort + 1,
+			createdAt: now,
+			updatedAt: now,
+		})
+		.onConflictDoNothing()
+		.returning({ id: lists.id });
+
+	if (inserted.length === 0) {
+		return fail("CONFLICT", "A list with this name already exists");
+	}
+	return ok(id);
 }
 
 async function toggleListItemInner(
@@ -350,14 +392,14 @@ async function toggleListItemInner(
 		release_date?: string;
 		overview?: string;
 	},
-): Promise<boolean> {
+): Promise<ApiResult<boolean>> {
 	const db = getDb(getEnv());
 	const list = await db
 		.select({ id: lists.id })
 		.from(lists)
 		.where(and(eq(lists.id, args.listId), eq(lists.userId, userId)))
 		.limit(1);
-	if (list.length === 0) throw new Error("List not found");
+	if (list.length === 0) return fail("NOT_FOUND", "List not found");
 
 	const existing = await db
 		.select()
@@ -373,7 +415,7 @@ async function toggleListItemInner(
 
 	if (existing.length > 0) {
 		await db.delete(listItems).where(eq(listItems.id, existing[0].id));
-		return false;
+		return ok(false);
 	}
 
 	await db.insert(listItems).values({
@@ -390,5 +432,5 @@ async function toggleListItemInner(
 		releaseDate: args.release_date,
 		overview: args.overview,
 	});
-	return true;
+	return ok(true);
 }

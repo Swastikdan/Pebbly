@@ -13,6 +13,12 @@ export type BatcherOptions<TItem> = {
 	maxBatchSize?: number;
 	/** Optional key function to deduplicate requests in the same batch window (latest state wins) */
 	getKey?: (item: TItem) => string;
+	/**
+	 * Flush pending items when the page is hidden or unloaded, so queued writes
+	 * are not lost inside the debounce window (default: false). Call `dispose()`
+	 * to remove the listeners.
+	 */
+	flushOnPageHide?: boolean;
 };
 
 export class RequestBatcher<TItem, TResult = unknown> {
@@ -23,14 +29,16 @@ export class RequestBatcher<TItem, TResult = unknown> {
 	}> = [];
 	private timer: ReturnType<typeof setTimeout> | null = null;
 	private firstItemTime: number | null = null;
-	private batchFn: (items: TItem[]) => Promise<TResult[] | TResult>;
+	private batchFn: (items: TItem[]) => Promise<TResult[]>;
 	private delayMs: number;
 	private maxWaitMs: number;
 	private maxBatchSize: number;
 	private getKey?: (item: TItem) => string;
+	private handlePageHide: (() => void) | null = null;
+	private handleVisibilityChange: (() => void) | null = null;
 
 	constructor(
-		batchFn: (items: TItem[]) => Promise<TResult[] | TResult>,
+		batchFn: (items: TItem[]) => Promise<TResult[]>,
 		options?: BatcherOptions<TItem>,
 	) {
 		this.batchFn = batchFn;
@@ -38,6 +46,22 @@ export class RequestBatcher<TItem, TResult = unknown> {
 		this.maxWaitMs = options?.maxWaitMs ?? 1200;
 		this.maxBatchSize = options?.maxBatchSize ?? 100;
 		this.getKey = options?.getKey;
+
+		if (options?.flushOnPageHide && typeof document !== "undefined") {
+			this.handlePageHide = () => {
+				void this.flush();
+			};
+			this.handleVisibilityChange = () => {
+				if (document.visibilityState === "hidden") {
+					void this.flush();
+				}
+			};
+			window.addEventListener("pagehide", this.handlePageHide);
+			document.addEventListener(
+				"visibilitychange",
+				this.handleVisibilityChange,
+			);
+		}
 	}
 
 	/**
@@ -119,15 +143,17 @@ export class RequestBatcher<TItem, TResult = unknown> {
 		const items = currentBatch.map((entry) => entry.item);
 
 		try {
+			// Explicit result contract: `batchFn` must return exactly one result
+			// per input item, resolved positionally. This avoids the ambiguous
+			// length-based heuristic when TResult itself is an array.
 			const result = await this.batchFn(items);
-			if (Array.isArray(result) && result.length === currentBatch.length) {
-				for (let i = 0; i < currentBatch.length; i++) {
-					currentBatch[i].resolve(result[i]);
-				}
-			} else {
-				for (const entry of currentBatch) {
-					entry.resolve(result as TResult);
-				}
+			if (result.length !== currentBatch.length) {
+				throw new Error(
+					`RequestBatcher: batchFn returned ${result.length} results for ${currentBatch.length} items`,
+				);
+			}
+			for (let i = 0; i < currentBatch.length; i++) {
+				currentBatch[i].resolve(result[i]);
 			}
 		} catch (error) {
 			for (const entry of currentBatch) {
@@ -147,10 +173,28 @@ export class RequestBatcher<TItem, TResult = unknown> {
 		this.firstItemTime = null;
 		this.queue = [];
 	}
+
+	/**
+	 * Remove the page-lifecycle listeners and drop any pending items.
+	 */
+	dispose(): void {
+		if (typeof window !== "undefined" && this.handlePageHide) {
+			window.removeEventListener("pagehide", this.handlePageHide);
+			this.handlePageHide = null;
+		}
+		if (typeof document !== "undefined" && this.handleVisibilityChange) {
+			document.removeEventListener(
+				"visibilitychange",
+				this.handleVisibilityChange,
+			);
+			this.handleVisibilityChange = null;
+		}
+		this.clear();
+	}
 }
 
 export function createBatcher<TItem, TResult = unknown>(
-	batchFn: (items: TItem[]) => Promise<TResult[] | TResult>,
+	batchFn: (items: TItem[]) => Promise<TResult[]>,
 	options?: BatcherOptions<TItem>,
 ): RequestBatcher<TItem, TResult> {
 	return new RequestBatcher(batchFn, options);

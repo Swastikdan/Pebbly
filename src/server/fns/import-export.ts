@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import { requireUser } from "../auth";
-import { getDb } from "../db/client";
+import { getDb, runBatch } from "../db/client";
 import { episodeProgress, watchItems } from "../db/schema";
 import { getEnv } from "../env";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
@@ -30,13 +30,15 @@ export const importWatchlist = createServerFn({ method: "POST" })
 		const userWatchItems = await db
 			.select()
 			.from(watchItems)
-			.where(eq(watchItems.userId, user.id));
+			.where(eq(watchItems.userId, user.id))
+			.limit(500);
 
 		const existingMap = new Map<string, typeof watchItems.$inferSelect>();
 		for (const item of userWatchItems) {
 			existingMap.set(`${item.mediaType}:${item.tmdbId}`, item);
 		}
 
+		const watchStatements: Parameters<typeof db.batch>[0][number][] = [];
 		for (const item of importedItems.values()) {
 			const existing = existingMap.get(`${item.mediaType}:${item.tmdbId}`);
 			const progressStatus =
@@ -61,35 +63,46 @@ export const importWatchlist = createServerFn({ method: "POST" })
 					: (existing?.inWatchlist ?? true);
 
 			if (existing) {
-				await db
-					.update(watchItems)
-					.set({
-						inWatchlist,
-						progressStatus,
-						progress,
-						reaction,
-						updatedAt: now,
-						...metadata,
-					})
-					.where(eq(watchItems.id, existing.id));
+				watchStatements.push(
+					db
+						.update(watchItems)
+						.set({
+							inWatchlist,
+							progressStatus,
+							progress,
+							reaction,
+							updatedAt: now,
+							...metadata,
+						})
+						.where(eq(watchItems.id, existing.id)),
+				);
 			} else {
-				await db
-					.insert(watchItems)
-					.values({
-						id: crypto.randomUUID(),
-						userId: user.id,
-						tmdbId: item.tmdbId,
-						mediaType: item.mediaType,
-						inWatchlist,
-						progressStatus,
-						progress,
-						reaction,
-						updatedAt: now,
-						...metadata,
-					})
-					.onConflictDoNothing();
+				watchStatements.push(
+					db
+						.insert(watchItems)
+						.values({
+							id: crypto.randomUUID(),
+							userId: user.id,
+							tmdbId: item.tmdbId,
+							mediaType: item.mediaType,
+							inWatchlist,
+							progressStatus,
+							progress,
+							reaction,
+							updatedAt: now,
+							...metadata,
+						})
+						.onConflictDoNothing(),
+				);
 			}
 		}
+
+		// Execute the whole watch-item import as one batched round trip.
+		await runBatch(db, watchStatements);
+
+		// Episode writes accumulate here so they run as a second batch after the
+		// watch-item batch.
+		const episodeStatements: Parameters<typeof db.batch>[0][number][] = [];
 
 		const importedTvIds = new Set(
 			[...importedItems.values()]
@@ -100,7 +113,8 @@ export const importWatchlist = createServerFn({ method: "POST" })
 		const userEpisodes = await db
 			.select()
 			.from(episodeProgress)
-			.where(eq(episodeProgress.userId, user.id));
+			.where(eq(episodeProgress.userId, user.id))
+			.limit(500);
 
 		const existingEpisodeMap = new Map<
 			string,
@@ -130,10 +144,12 @@ export const importWatchlist = createServerFn({ method: "POST" })
 			const existingEp = existingEpisodeMap.get(key);
 			if (existingEp) {
 				if (!existingEp.isWatched) {
-					await db
-						.update(episodeProgress)
-						.set({ isWatched: true, updatedAt: now })
-						.where(eq(episodeProgress.id, existingEp.id));
+					episodeStatements.push(
+						db
+							.update(episodeProgress)
+							.set({ isWatched: true, updatedAt: now })
+							.where(eq(episodeProgress.id, existingEp.id)),
+					);
 				}
 			} else {
 				episodesToInsert.push({
@@ -153,9 +169,13 @@ export const importWatchlist = createServerFn({ method: "POST" })
 		for (let i = 0; i < episodesToInsert.length; i += CHUNK_SIZE) {
 			const chunk = episodesToInsert.slice(i, i + CHUNK_SIZE);
 			if (chunk.length > 0) {
-				await db.insert(episodeProgress).values(chunk).onConflictDoNothing();
+				episodeStatements.push(
+					db.insert(episodeProgress).values(chunk).onConflictDoNothing(),
+				);
 			}
 		}
+
+		await runBatch(db, episodeStatements);
 
 		await createWatchlistSnapshot(db, user.id);
 		return ok({ imported: importedItems.size });

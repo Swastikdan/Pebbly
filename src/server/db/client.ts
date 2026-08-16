@@ -36,3 +36,18 @@ export function getDb(env: Env) {
 
 export type Db = ReturnType<typeof getDb>;
 export { schema };
+
+/**
+ * Execute a list of D1 statements as one transactional round trip.
+ *
+ * Drizzle's `db.batch` requires a non-empty tuple type at compile time, so a
+ * dynamically-built `BatchItem[]` (which may legitimately be empty) needs a
+ * guard plus a cast. The statements are genuine batch items at runtime.
+ */
+export async function runBatch(
+	db: Db,
+	statements: readonly unknown[],
+): Promise<void> {
+	if (statements.length === 0) return;
+	await db.batch(statements as unknown as Parameters<Db["batch"]>[0]);
+}

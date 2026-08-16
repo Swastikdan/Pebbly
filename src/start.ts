@@ -1,5 +1,9 @@
 import { getToken } from "@clerk/react";
-import { createStart } from "@tanstack/react-start";
+import { createCsrfMiddleware, createStart } from "@tanstack/react-start";
+
+// Bounded timeout for server-function RPCs so a stalled request terminates
+// instead of hanging the UI indefinitely.
+const RPC_TIMEOUT_MS = 30_000;
 
 /**
  * Client-side start instance.
@@ -14,6 +18,13 @@ import { createStart } from "@tanstack/react-start";
  * called directly in-process.
  */
 export const startInstance = createStart(() => ({
+	// Reject cross-site server-function requests. Scoped to server fns so
+	// ordinary page navigation/SSR is never affected. Browser same-origin
+	// calls carry Sec-Fetch-Site/Origin and pass; cookie-derived sessions
+	// can no longer be abused by a cross-site form/fetch from another origin.
+	requestMiddleware: [
+		createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" }),
+	],
 	serverFns: {
 		fetch: async (url, args = {}) => {
 			const headers = new Headers(args.headers);
@@ -22,10 +33,25 @@ export const startInstance = createStart(() => ({
 				if (token) {
 					headers.set("Authorization", `Bearer ${token}`);
 				}
-			} catch {
+			} catch (error) {
 				// Not signed in / Clerk not loaded — fall through to the cookie.
+				// Still log when a token was expected so failures are visible.
+				console.debug(
+					"[start] Failed to mint Clerk session token; falling back to cookie:",
+					error,
+				);
 			}
-			return fetch(url, { ...args, headers });
+			const controller = new AbortController();
+			const timeout = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
+			try {
+				return await fetch(url, {
+					...args,
+					headers,
+					signal: controller.signal,
+				});
+			} finally {
+				clearTimeout(timeout);
+			}
 		},
 	},
 }));

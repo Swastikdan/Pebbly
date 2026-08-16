@@ -1,5 +1,6 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, AlertTriangle, Zap } from "lucide-react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	type PermissionRole,
@@ -57,6 +58,21 @@ function featurePermissions(
 	return permissionsByRole[role]?.[feature] ?? false;
 }
 
+function FeatureError({ onRetry }: { onRetry: () => void }) {
+	return (
+		<div className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+			<span>Failed to load permission settings.</span>
+			<button
+				type="button"
+				onClick={onRetry}
+				className="rounded-lg bg-destructive/15 px-2.5 py-1 font-semibold hover:bg-destructive/25"
+			>
+				Retry
+			</button>
+		</div>
+	);
+}
+
 function FeatureRow({
 	feature,
 	featureLabel,
@@ -101,16 +117,34 @@ function FeatureRow({
 }
 
 export function AdminPermissionToggles() {
+	const queryClient = useQueryClient();
+	const [toggleError, setToggleError] = useState<string | null>(null);
 	const rawPermissions = useQuery({
 		queryKey: ["admin", "role-permissions"],
 		queryFn: () => unwrap(getRolePermissions()),
 	});
 	const setRolePermissionMutation = useMutation({
-		mutationFn: (args: { role: string; feature: string; enabled: boolean }) =>
+		mutationFn: (args: { feature: RbacFeature; enabled: boolean }) =>
 			unwrap(setRolePermission({ data: args })),
+		onSuccess: () => {
+			setToggleError(null);
+			// Keep the table in sync with the persisted permission state.
+			queryClient.invalidateQueries({
+				queryKey: ["admin", "role-permissions"],
+			});
+		},
+		onError: (error) => {
+			setToggleError(
+				error instanceof Error ? error.message : "Failed to update permission",
+			);
+		},
 	});
 
 	const rawPermissionsData = rawPermissions.data;
+
+	if (rawPermissions.isError) {
+		return <FeatureError onRetry={() => rawPermissions.refetch()} />;
+	}
 
 	if (rawPermissionsData === undefined) {
 		return (
@@ -128,6 +162,11 @@ export function AdminPermissionToggles() {
 
 	return (
 		<div className="space-y-4">
+			{toggleError && (
+				<div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+					{toggleError}
+				</div>
+			)}
 			<div className="space-y-3">
 				{Object.entries(RBAC_FEATURES).map(([feature, config]) => (
 					<FeatureRow
@@ -135,8 +174,11 @@ export function AdminPermissionToggles() {
 						feature={feature as RbacFeature}
 						featureLabel={config.label}
 						permissionsByRole={permissionsByRole}
-						onToggle={(role, enabled) =>
-							setRolePermissionMutation.mutate({ role, feature, enabled })
+						onToggle={(_role, enabled) =>
+							setRolePermissionMutation.mutate({
+								feature: feature as RbacFeature,
+								enabled,
+							})
 						}
 					/>
 				))}

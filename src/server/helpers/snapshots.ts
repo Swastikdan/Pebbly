@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, gt } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { getDb } from "../db/client";
 import { users, watchItems, watchlistSnapshots } from "../db/schema";
@@ -20,6 +20,9 @@ export async function createWatchlistSnapshot(
 		})
 		.from(watchItems)
 		.where(eq(watchItems.userId, userId))
+		// Deterministic order before limit so the same watchlist always yields
+		// the same snapshot content.
+		.orderBy(watchItems.tmdbId, watchItems.mediaType)
 		.limit(500);
 
 	const watchlistItems = items
@@ -49,41 +52,54 @@ export async function createWatchlistSnapshot(
 		return;
 	}
 
+	// The query already caps rows at 500, so no extra slice is needed.
 	await db.insert(watchlistSnapshots).values({
 		id: crypto.randomUUID(),
 		userId,
-		items: watchlistItems.slice(0, 8000),
+		items: watchlistItems,
 		createdAt: Date.now(),
 	});
 }
 
 /**
- * Port of `createDailySnapshots` — iterates users in batches of 50, creating a
- * snapshot for each. Runs from the Cloudflare cron (server/tasks/snapshots.ts).
+ * Port of `createDailySnapshots` — iterates users with keyset pagination,
+ * creating a snapshot for each. Runs from the Cloudflare cron
+ * (server/tasks/snapshots.ts).
+ *
+ * Each invocation is bounded by `maxUsers` (keyset over users.id > lastId),
+ * so a slow invocation cannot exceed the Worker's execution budget. Users are
+ * processed in id order; when the page ends we resume from the last processed
+ * id on the next cron run (the caller passes the persisted cursor).
  */
-export async function createDailySnapshots(): Promise<void> {
+export async function createDailySnapshots(
+	lastProcessedId = "",
+	maxUsers = 200,
+): Promise<{ lastProcessedId: string; processed: number }> {
 	const db = getDb(getEnv());
 
-	// D1 query limits: keep batches bounded (50 like Convex pagination).
-	let cursor = 0;
+	let cursor = lastProcessedId;
+	let processed = 0;
 	for (;;) {
 		const batch = await db
 			.select({ id: users.id })
 			.from(users)
+			.where(cursor ? gt(users.id, cursor) : undefined)
 			.orderBy(users.id)
-			.limit(50)
-			.offset(cursor);
+			.limit(50);
 
 		if (batch.length === 0) break;
 
 		for (const user of batch) {
+			if (processed >= maxUsers) return { lastProcessedId: cursor, processed };
 			try {
 				await createWatchlistSnapshot(db, user.id);
 			} catch (error) {
 				console.error(`Failed to create snapshot for user ${user.id}:`, error);
 			}
+			processed++;
+			cursor = user.id;
 		}
-
-		cursor += batch.length;
 	}
+
+	return { lastProcessedId: cursor, processed };
 }

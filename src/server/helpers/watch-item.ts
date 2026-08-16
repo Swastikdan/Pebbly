@@ -175,6 +175,35 @@ export async function upsertWatchItem(
 		updatedAt: now,
 	};
 
-	await db.insert(watchItems).values(row).onConflictDoNothing();
-	return row;
+	// If a concurrent request inserts the same (user, tmdb, media) row between
+	// our read and our insert, apply this request's state changes to the
+	// winner's row instead of silently discarding them (onConflictDoNothing
+	// would drop the callback's updates). Only fields the callback explicitly
+	// provided are written; `undefined` values are omitted by Drizzle, so the
+	// winner's metadata/state is preserved where this request had no opinion.
+	const conflictSet: Partial<Omit<WatchItemRow, "id">> = {};
+	if ("inWatchlist" in finalUpdates) conflictSet.inWatchlist = row.inWatchlist;
+	if ("progressStatus" in finalUpdates)
+		conflictSet.progressStatus = progressStatus ?? null;
+	if ("progress" in finalUpdates) conflictSet.progress = row.progress;
+	if ("reaction" in finalUpdates) conflictSet.reaction = reaction ?? null;
+	conflictSet.title = metadataPatch.title ?? undefined;
+	conflictSet.image = metadataPatch.image ?? undefined;
+	conflictSet.rating = metadataPatch.rating ?? undefined;
+	conflictSet.releaseDate = metadataPatch.releaseDate ?? undefined;
+	conflictSet.overview = metadataPatch.overview ?? undefined;
+	conflictSet.updatedAt = now;
+
+	await db
+		.insert(watchItems)
+		.values(row)
+		.onConflictDoUpdate({
+			target: [watchItems.userId, watchItems.tmdbId, watchItems.mediaType],
+			set: conflictSet,
+		});
+
+	// On conflict the update may have merged with the winner's metadata, so
+	// re-read the authoritative row rather than trusting our pre-insert value.
+	const refreshed = await getWatchItem(db, userId, { tmdbId, mediaType });
+	return refreshed ?? row;
 }

@@ -27,7 +27,7 @@ export function useRecommendationAccess() {
 }
 
 export interface GenerateOptions {
-	generationType?: string;
+	generationType?: "watchlist" | "list" | "genre";
 	listId?: string;
 	mediaTypePreference?: "movie" | "tv";
 	genrePreference?: string;
@@ -69,10 +69,10 @@ type GenerateResult =
 	| { error: string };
 
 export function useRecommendations() {
-	const { isSignedIn } = useUser();
+	const { isSignedIn, user } = useUser();
 	const queryClient = useQueryClient();
 	const historyQuery = useQuery({
-		queryKey: queryKeys.recommendations.history(),
+		queryKey: queryKeys.recommendations.history(user?.id),
 		queryFn: () => unwrap(getRecommendationHistory()),
 		enabled: !!isSignedIn,
 	});
@@ -111,7 +111,7 @@ export function useRecommendations() {
 		},
 		onSettled: () => {
 			void queryClient.invalidateQueries({
-				queryKey: queryKeys.recommendations.history(),
+				queryKey: queryKeys.recommendations.history(user?.id),
 			});
 		},
 	});
@@ -128,7 +128,7 @@ export function useRecommendations() {
 					setError(result.error);
 				} else {
 					void queryClient.invalidateQueries({
-						queryKey: queryKeys.recommendations.history(),
+						queryKey: queryKeys.recommendations.history(user?.id),
 					});
 				}
 			} catch (e) {
@@ -137,7 +137,7 @@ export function useRecommendations() {
 				setIsGenerating(false);
 			}
 		},
-		[queryClient],
+		[queryClient, user?.id],
 	);
 
 	const deleteEntry = useCallback(
@@ -159,13 +159,13 @@ export function useRecommendations() {
 					data: { id, recommendations: JSON.stringify(recommendations) },
 				});
 				void queryClient.invalidateQueries({
-					queryKey: queryKeys.recommendations.history(),
+					queryKey: queryKeys.recommendations.history(user?.id),
 				});
 			} catch (error) {
 				logRecommendationError("update verified recommendations", error);
 			}
 		},
-		[queryClient],
+		[queryClient, user?.id],
 	);
 
 	const loading = isSignedIn && historyQuery.isPending;

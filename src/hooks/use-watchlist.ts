@@ -201,6 +201,24 @@ function beginMembershipOp(
 	]);
 }
 
+/**
+ * Apply a whole batch of membership changes as a single optimistic op so the
+ * UI updates in one transaction and one rollback covers every item.
+ */
+function beginMembershipBatchOp(
+	queryClient: QueryClient,
+	argsList: WatchlistMembershipArgs[],
+): OpHandle {
+	return beginOp(
+		queryClient,
+		argsList.map((args) => ({
+			key: queryKeys.watchlist.list(),
+			touchedIds: [`${args.mediaType}:${args.tmdbId}`],
+			apply: (rows: WatchItemRow[]) => applyMembershipRows(rows, args),
+		})),
+	);
+}
+
 type BatchedWatchlistMembershipTask = {
 	args: WatchlistMembershipArgs;
 	handle?: OpHandle;
@@ -209,7 +227,7 @@ type BatchedWatchlistMembershipTask = {
 
 const watchlistMembershipBatcher = createBatcher<
 	BatchedWatchlistMembershipTask,
-	WatchItemRow[]
+	WatchItemRow
 >(
 	async (tasks) => {
 		const queryClient = tasks[0]?.queryClient;
@@ -248,6 +266,11 @@ const watchlistMembershipBatcher = createBatcher<
 			for (const task of tasks) {
 				task.handle?.remove();
 			}
+			// The server may have applied part of the batch before failing; a
+			// refresh reconciles the cache with the authoritative state.
+			if (queryClient) {
+				scheduleSync(queryClient, [queryKeys.watchlist.list()]);
+			}
 			throw error;
 		}
 	},
@@ -256,6 +279,8 @@ const watchlistMembershipBatcher = createBatcher<
 		maxWaitMs: 1200,
 		maxBatchSize: 100,
 		getKey: (task) => `${task.args.mediaType}:${task.args.tmdbId}`,
+		// Don't lose queued membership writes if the page unloads mid-debounce.
+		flushOnPageHide: true,
 	},
 );
 
@@ -351,21 +376,23 @@ export function useBatchToggleWatchlist() {
 			if (items.length === 0) return;
 
 			if (isSignedIn) {
-				const tasks: BatchedWatchlistMembershipTask[] = [];
-				for (const item of items) {
-					const args: WatchlistMembershipArgs = {
-						tmdbId: Number(item.id),
-						mediaType: item.media_type,
-						inWatchlist: item.inWatchlist,
-						title: item.title,
-						image: item.image,
-						rating: item.rating,
-						release_date: item.release_date || undefined,
-						overview: item.overview || undefined,
-					};
-					const handle = beginMembershipOp(queryClient, args);
-					tasks.push({ args, handle, queryClient });
-				}
+				const argsList: WatchlistMembershipArgs[] = items.map((item) => ({
+					tmdbId: Number(item.id),
+					mediaType: item.media_type,
+					inWatchlist: item.inWatchlist,
+					title: item.title,
+					image: item.image,
+					rating: item.rating,
+					release_date: item.release_date || undefined,
+					overview: item.overview || undefined,
+				}));
+				// One optimistic transaction for the whole batch: a single handle
+				// is shared by every task so a failure rolls everything back
+				// together instead of leaving per-item patches in flight.
+				const handle = beginMembershipBatchOp(queryClient, argsList);
+				const tasks: BatchedWatchlistMembershipTask[] = argsList.map(
+					(args) => ({ args, handle, queryClient }),
+				);
 
 				return await Promise.all(
 					tasks.map((task) => watchlistMembershipBatcher.schedule(task)),

@@ -1,7 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import * as v from "valibot";
 import { callGeminiAI, MODELS_TO_TRY, type Recommendation } from "../ai";
-import { getCurrentUser, requireUser } from "../auth";
+import {
+	type AuthUser,
+	type ClerkSessionClaims,
+	getCurrentUser,
+	requireUser,
+} from "../auth";
 import { getDb } from "../db/client";
 import {
 	aiRecommendations,
@@ -30,6 +36,7 @@ import {
 	generateRecommendationsArgsSchema,
 	getHomepageRecommendationsArgsSchema,
 	type HomepageRecommendationsResult,
+	recommendationsArraySchema,
 	removeRecommendationFeedbackArgsSchema,
 	setRecommendationFeedbackArgsSchema,
 	updateVerifiedRecommendationsArgsSchema,
@@ -37,24 +44,37 @@ import {
 
 const RATE_LIMIT_MS = 2 * 60 * 1000;
 
-async function getAuthUser() {
+const SYSTEM_INSTRUCTION =
+	"You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
+
+type AuthContext = {
+	user: AuthUser;
+	claims: ClerkSessionClaims;
+	error: null;
+};
+
+/** Resolve the user once per request (callers reuse the returned context). */
+async function getAuthContext(): Promise<AuthContext | null> {
 	const result = await requireUser();
 	if (result.error) return null;
-	return result.user;
+	return result;
 }
 
-async function ensureFeatureEnabled(): Promise<ApiResult<never> | null> {
-	const result = await requireUser();
-	if (result.error) return result.error;
+/** Resolve the user + feature gate from one requireUser call. */
+async function getAuthUserWithFeature(): Promise<
+	{ user: AuthUser; claims: ClerkSessionClaims } | { error: ApiResult<never> }
+> {
+	const context = await getAuthContext();
+	if (!context) return { error: fail("UNAUTHORIZED", "Unauthorized") };
 	const allowed = await hasFeature(
-		result.claims,
-		result.user,
+		context.claims,
+		context.user,
 		"ai-recommendations",
 	);
 	if (!allowed) {
-		return fail("FORBIDDEN", "Unauthorized: feature not enabled");
+		return { error: fail("FORBIDDEN", "Unauthorized: feature not enabled") };
 	}
-	return null;
+	return { user: context.user, claims: context.claims };
 }
 
 // ---------------------------------------------------------------------------
@@ -70,17 +90,13 @@ export const getUserRecommendationAccess = createServerFn({
 			| { hasAccess: false; reason: "not_authenticated" | "feature_disabled" }
 		>
 	> => {
-		const user = await getCurrentUser();
-		if (!user) {
-			return ok({ hasAccess: false, reason: "not_authenticated" });
-		}
-		const result = await requireUser();
-		if (result.error) {
+		const context = await getAuthContext();
+		if (!context) {
 			return ok({ hasAccess: false, reason: "not_authenticated" });
 		}
 		const allowed = await hasFeature(
-			result.claims,
-			result.user,
+			context.claims,
+			context.user,
 			"ai-recommendations",
 		);
 		if (!allowed) {
@@ -94,13 +110,11 @@ export const getRecommendationHistory = createServerFn({
 	method: "POST",
 }).handler(
 	async (): Promise<ApiResult<(typeof aiRecommendations.$inferSelect)[]>> => {
-		const user = await getCurrentUser();
-		if (!user) return ok([]);
-		const result = await requireUser();
-		if (result.error) return ok([]);
+		const context = await getAuthContext();
+		if (!context) return ok([]);
 		const allowed = await hasFeature(
-			result.claims,
-			result.user,
+			context.claims,
+			context.user,
 			"ai-recommendations",
 		);
 		if (!allowed) return ok([]);
@@ -109,7 +123,7 @@ export const getRecommendationHistory = createServerFn({
 		const rows = await db
 			.select()
 			.from(aiRecommendations)
-			.where(eq(aiRecommendations.userId, user.id))
+			.where(eq(aiRecommendations.userId, context.user.id))
 			.orderBy(desc(aiRecommendations.createdAt))
 			.limit(20);
 
@@ -127,14 +141,25 @@ export const deleteRecommendation = createServerFn({ method: "POST" })
 		const entry = await db
 			.select()
 			.from(aiRecommendations)
-			.where(eq(aiRecommendations.id, data.id))
+			// Scope the read to the authenticated user so ownership is enforced
+			// by the query itself, not a follow-up check.
+			.where(
+				and(
+					eq(aiRecommendations.id, data.id),
+					eq(aiRecommendations.userId, user.id),
+				),
+			)
 			.limit(1);
 		if (entry.length === 0) return fail("NOT_FOUND", "Not found");
-		if (entry[0].userId !== user.id) {
-			return fail("UNAUTHORIZED", "Unauthorized");
-		}
 
-		await db.delete(aiRecommendations).where(eq(aiRecommendations.id, data.id));
+		await db
+			.delete(aiRecommendations)
+			.where(
+				and(
+					eq(aiRecommendations.id, data.id),
+					eq(aiRecommendations.userId, user.id),
+				),
+			);
 		return ok({ ok: true });
 	});
 
@@ -144,19 +169,37 @@ export const updateVerifiedRecommendations = createServerFn({ method: "POST" })
 		const { user, error } = await requireUser();
 		if (error) return error;
 
+		// Validate the recommendations payload before constructing the patch;
+		// a malformed payload is a client error, not a server crash.
+		let parsedRecommendations: unknown;
+		try {
+			parsedRecommendations = JSON.parse(data.recommendations);
+		} catch {
+			return fail("BAD_REQUEST", "Invalid recommendations payload");
+		}
+		const validated = v.safeParse(
+			recommendationsArraySchema,
+			parsedRecommendations,
+		);
+		if (!validated.success) {
+			return fail("BAD_REQUEST", "Invalid recommendations payload");
+		}
+
 		const db = getDb(getEnv());
 		const entry = await db
 			.select()
 			.from(aiRecommendations)
-			.where(eq(aiRecommendations.id, data.id))
+			.where(
+				and(
+					eq(aiRecommendations.id, data.id),
+					eq(aiRecommendations.userId, user.id),
+				),
+			)
 			.limit(1);
 		if (entry.length === 0) return fail("NOT_FOUND", "Not found");
-		if (entry[0].userId !== user.id) {
-			return fail("UNAUTHORIZED", "Unauthorized");
-		}
 
 		const patch: Partial<typeof aiRecommendations.$inferSelect> = {
-			recommendations: JSON.parse(data.recommendations) as RecommendationRow[],
+			recommendations: validated.output,
 			verified: true,
 		};
 		if (!entry[0].originalRecommendations) {
@@ -166,7 +209,12 @@ export const updateVerifiedRecommendations = createServerFn({ method: "POST" })
 		await db
 			.update(aiRecommendations)
 			.set(patch)
-			.where(eq(aiRecommendations.id, data.id));
+			.where(
+				and(
+					eq(aiRecommendations.id, data.id),
+					eq(aiRecommendations.userId, user.id),
+				),
+			);
 		return ok({ ok: true });
 	});
 
@@ -274,30 +322,27 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
 				});
 			}
 
-			// Find or create the Pebbly Picks list
-			let pebblyList = await db
-				.select()
-				.from(lists)
-				.where(and(eq(lists.userId, user.id), eq(lists.name, "Pebbly Picks")))
-				.limit(1);
-
-			if (pebblyList.length === 0) {
-				const listId = crypto.randomUUID();
-				await db.insert(lists).values({
-					id: listId,
+			// Find or create the Pebbly Picks list — onConflictDoNothing makes
+			// the create race-safe against the (userId, name) unique index, then
+			// one lookup returns the authoritative row.
+			await db
+				.insert(lists)
+				.values({
+					id: crypto.randomUUID(),
 					userId: user.id,
 					name: "Pebbly Picks",
 					listType: "pebbly-picks",
 					sortOrder: 0,
 					createdAt: now,
 					updatedAt: now,
-				});
-				pebblyList = await db
-					.select()
-					.from(lists)
-					.where(eq(lists.id, listId))
-					.limit(1);
-			}
+				})
+				.onConflictDoNothing();
+
+			const pebblyList = await db
+				.select()
+				.from(lists)
+				.where(and(eq(lists.userId, user.id), eq(lists.name, "Pebbly Picks")))
+				.limit(1);
 
 			if (pebblyList.length > 0) {
 				const existingItem = await db
@@ -368,96 +413,89 @@ export const removeRecommendationFeedback = createServerFn({ method: "POST" })
 
 export const getHomepageRecommendations = createServerFn({ method: "POST" })
 	.validator(getHomepageRecommendationsArgsSchema)
-	.handler(
-		async ({ data }): Promise<ApiResult<HomepageRecommendationsResult>> => {
-			const user = await getCurrentUser();
-			if (!user) {
-				return ok({
-					recommendations: [],
-					lastUpdatedAt: 0,
-					lastAttemptedAt: 0,
-					status: "none",
-					needsRefresh: false,
-				});
-			}
-
-			// Only request a refresh when the user actually has the feature.
-			// Otherwise the client would keep firing generateHomepageRecommendations
-			// (which the server rejects with FORBIDDEN) on every refetch — a loop.
-			const { claims, user: dbUser, error: authError } = await requireUser();
-			const featureEnabled =
-				!authError && (await hasFeature(claims, dbUser, "ai-recommendations"));
-
-			const db = getDb(getEnv());
-			const entry = await db
-				.select()
-				.from(homepageRecommendations)
-				.where(eq(homepageRecommendations.userId, user.id))
-				.limit(1);
-
-			const notInterestedFeedback = await db
-				.select()
-				.from(recommendationFeedback)
-				.where(
-					and(
-						eq(recommendationFeedback.userId, user.id),
-						eq(recommendationFeedback.feedback, "not_interested"),
-					),
-				);
-
-			const dislikeFeedback = await db
-				.select()
-				.from(recommendationFeedback)
-				.where(
-					and(
-						eq(recommendationFeedback.userId, user.id),
-						eq(recommendationFeedback.feedback, "dislike"),
-					),
-				);
-
-			const excludedFeedbackIds = new Set([
-				...notInterestedFeedback.map((f) => f.tmdbId),
-				...dislikeFeedback.map((f) => f.tmdbId),
-			]);
-
-			let recs: Recommendation[] = [];
-			const row = entry[0];
-			if (row && row.recommendations) {
-				try {
-					const parsed = Array.isArray(row.recommendations)
-						? row.recommendations
-						: (JSON.parse(row.recommendations) as Recommendation[]);
-					recs = parsed.filter(
-						(r) => r.tmdbId === null || !excludedFeedbackIds.has(r.tmdbId),
-					);
-				} catch (e) {
-					console.error("Failed to parse homepage recommendations", e);
-				}
-			}
-
-			const lastAttemptedAt = row?.lastAttemptedAt ?? 0;
-			const lastUpdatedAt = row?.lastUpdatedAt ?? 0;
-			const status = row?.status ?? "none";
-
-			const currentTime = data.now ?? Date.now();
-			const isOlderThan24Hours =
-				currentTime > 0 && currentTime - lastAttemptedAt > 24 * 60 * 60 * 1000;
-			const hasFailedRecently =
-				status === "failed" &&
-				currentTime > 0 &&
-				currentTime - lastAttemptedAt < 1 * 60 * 60 * 1000;
-			const needsRefresh =
-				featureEnabled && (!row || (isOlderThan24Hours && !hasFailedRecently));
-
+	.handler(async (): Promise<ApiResult<HomepageRecommendationsResult>> => {
+		// Resolve the user once (without creating one on the read path).
+		const context = await getAuthContext();
+		if (!context) {
 			return ok({
-				recommendations: recs,
-				lastUpdatedAt,
-				lastAttemptedAt,
-				status,
-				needsRefresh,
+				recommendations: [],
+				lastUpdatedAt: 0,
+				lastAttemptedAt: 0,
+				status: "none",
+				needsRefresh: false,
 			});
-		},
-	);
+		}
+		const user = context.user;
+
+		// Only request a refresh when the user actually has the feature.
+		// Otherwise the client would keep firing generateHomepageRecommendations
+		// (which the server rejects with FORBIDDEN) on every refetch — a loop.
+		const featureEnabled = await hasFeature(
+			context.claims,
+			context.user,
+			"ai-recommendations",
+		);
+
+		const db = getDb(getEnv());
+		const entry = await db
+			.select()
+			.from(homepageRecommendations)
+			.where(eq(homepageRecommendations.userId, user.id))
+			.limit(1);
+
+		// One query covering both exclusion feedback values instead of two.
+		const excludedFeedback = await db
+			.select()
+			.from(recommendationFeedback)
+			.where(
+				and(
+					eq(recommendationFeedback.userId, user.id),
+					inArray(recommendationFeedback.feedback, [
+						"not_interested",
+						"dislike",
+					]),
+				),
+			);
+
+		const excludedFeedbackIds = new Set(excludedFeedback.map((f) => f.tmdbId));
+
+		let recs: Recommendation[] = [];
+		const row = entry[0];
+		if (row && row.recommendations) {
+			try {
+				const parsed = Array.isArray(row.recommendations)
+					? row.recommendations
+					: (JSON.parse(row.recommendations) as Recommendation[]);
+				recs = parsed.filter(
+					(r) => r.tmdbId === null || !excludedFeedbackIds.has(r.tmdbId),
+				);
+			} catch (e) {
+				console.error("Failed to parse homepage recommendations", e);
+			}
+		}
+
+		const lastAttemptedAt = row?.lastAttemptedAt ?? 0;
+		const lastUpdatedAt = row?.lastUpdatedAt ?? 0;
+		const status = row?.status ?? "none";
+
+		// Refresh gating uses server-derived time exclusively; the client-
+		// supplied `now` is only used for display-related behavior.
+		const currentTime = Date.now();
+		const isOlderThan24Hours =
+			currentTime - lastAttemptedAt > 24 * 60 * 60 * 1000;
+		const hasFailedRecently =
+			status === "failed" && currentTime - lastAttemptedAt < 1 * 60 * 60 * 1000;
+		const needsRefresh =
+			featureEnabled && (!row || (isOlderThan24Hours && !hasFailedRecently));
+
+		return ok({
+			recommendations: recs,
+			lastUpdatedAt,
+			lastAttemptedAt,
+			status,
+			needsRefresh,
+		});
+	});
 
 // ---------------------------------------------------------------------------
 // Generation helpers (private — no longer separate RPCs)
@@ -492,32 +530,28 @@ function normalizeTitleKey(title?: string | null): string {
 
 async function gatherWatchlistData(userId: string): Promise<WatchlistData> {
 	const db = getDb(getEnv());
-	const watchItemRows = await db
-		.select()
-		.from(watchItems)
-		.where(eq(watchItems.userId, userId))
-		.orderBy(desc(watchItems.updatedAt))
-		.limit(200);
-
-	const listRows = await db
-		.select()
-		.from(lists)
-		.where(eq(lists.userId, userId))
-		.limit(50);
-
-	const listItemRows = await db
-		.select()
-		.from(listItems)
-		.where(eq(listItems.userId, userId))
-		.orderBy(desc(listItems.addedAt))
-		.limit(200);
-
-	const episodeRows = await db
-		.select()
-		.from(episodeProgress)
-		.where(eq(episodeProgress.userId, userId))
-		.orderBy(desc(episodeProgress.updatedAt))
-		.limit(200);
+	// Execute the four independent reads in one batched round trip.
+	const [watchItemRows, listRows, listItemRows, episodeRows] = await db.batch([
+		db
+			.select()
+			.from(watchItems)
+			.where(eq(watchItems.userId, userId))
+			.orderBy(desc(watchItems.updatedAt))
+			.limit(200),
+		db.select().from(lists).where(eq(lists.userId, userId)).limit(50),
+		db
+			.select()
+			.from(listItems)
+			.where(eq(listItems.userId, userId))
+			.orderBy(desc(listItems.addedAt))
+			.limit(200),
+		db
+			.select()
+			.from(episodeProgress)
+			.where(eq(episodeProgress.userId, userId))
+			.orderBy(desc(episodeProgress.updatedAt))
+			.limit(200),
+	]);
 
 	const watchedEpisodes = episodeRows.filter((e) => e.isWatched).length;
 	const movieCount = watchItemRows.filter(
@@ -559,38 +593,75 @@ async function getRecommendationFeedbackInternal(userId: string) {
 		.limit(100);
 }
 
+/**
+ * Atomically reserve a generation slot: inserts a reserved row (the cooldown
+ * marker) and returns its id. The successful generation later updates this
+ * same row, so no separate placeholder pollutes the recommendation history;
+ * a failed AI call deletes it, releasing the cooldown. The insert itself is
+ * atomic so concurrent requests cannot both pass the check.
+ */
 async function checkAndSetRecommendationCooldown(
 	userId: string,
-): Promise<boolean> {
+): Promise<{ allowed: boolean; reservedId?: string }> {
 	const db = getDb(getEnv());
+	const now = Date.now();
+
+	const reservedId = crypto.randomUUID();
+	const inserted = await db
+		.insert(aiRecommendations)
+		.values({
+			id: reservedId,
+			userId,
+			recommendations: [],
+			watchlistHash: "",
+			inputStats: {
+				movieCount: 0,
+				tvCount: 0,
+				episodesWatched: 0,
+				totalItems: 0,
+			},
+			model: "pending",
+			createdAt: now,
+		})
+		.onConflictDoNothing()
+		.returning({ id: aiRecommendations.id });
+
+	// Rate limit: if the user already has a generation newer than RATE_LIMIT_MS
+	// (either a real one or a pending reservation), reject. The check runs
+	// after the reservation insert so a rapid second request sees the pending
+	// row and is rejected; the reservation row is then removed below.
 	const mostRecent = await db
 		.select()
 		.from(aiRecommendations)
 		.where(eq(aiRecommendations.userId, userId))
 		.orderBy(desc(aiRecommendations.createdAt))
-		.limit(1);
+		.limit(2);
 
-	const now = Date.now();
-	if (mostRecent.length > 0 && now - mostRecent[0].createdAt < RATE_LIMIT_MS) {
-		return false;
+	const freshRow = mostRecent.find((row) => row.id === reservedId);
+	if (!freshRow && inserted.length === 0) {
+		// Insert failed (unlikely) — treat as not allowed.
+		return { allowed: false };
 	}
 
-	await db.insert(aiRecommendations).values({
-		id: crypto.randomUUID(),
-		userId,
-		recommendations: [],
-		watchlistHash: "",
-		inputStats: {
-			movieCount: 0,
-			tvCount: 0,
-			episodesWatched: 0,
-			totalItems: 0,
-		},
-		model: "placeholder",
-		createdAt: now,
-	});
+	// The reservation is always the newest row we just inserted; if there is an
+	// older row within the window, reject and clean up the reservation.
+	const older = mostRecent.find((row) => row.id !== reservedId);
+	if (older && now - older.createdAt < RATE_LIMIT_MS) {
+		await db
+			.delete(aiRecommendations)
+			.where(eq(aiRecommendations.id, reservedId));
+		return { allowed: false };
+	}
 
-	return true;
+	return { allowed: true, reservedId };
+}
+
+/** Delete a reserved generation row (AI call failed — release the cooldown). */
+async function releaseRecommendationCooldown(reservedId: string) {
+	const db = getDb(getEnv());
+	await db
+		.delete(aiRecommendations)
+		.where(eq(aiRecommendations.id, reservedId));
 }
 
 async function getHomepageAttemptInfo(userId: string) {
@@ -615,9 +686,9 @@ async function getHomepageRecommendationEntryInternal(userId: string) {
 	return entry.length > 0 ? entry[0] : null;
 }
 
-async function saveRecommendations(args: {
+type SaveRecommendationsArgs = {
 	userId: string;
-	recommendations: string;
+	recommendations: RecommendationRow[];
 	watchlistHash: string;
 	inputStats: {
 		movieCount: number;
@@ -626,98 +697,115 @@ async function saveRecommendations(args: {
 		totalItems: number;
 	};
 	model: string;
-	mediaTypePreference?: string;
+	mediaTypePreference?: "movie" | "tv";
 	genrePreference?: string;
 	generationType?: string;
-}) {
+};
+
+/**
+ * Persist a generation. When `reservedId` is present the pending reservation
+ * row (created by checkAndSetRecommendationCooldown) is updated in place, so
+ * the history contains one row per generation — never a placeholder.
+ */
+async function saveRecommendations(
+	args: SaveRecommendationsArgs,
+	reservedId?: string,
+) {
 	const db = getDb(getEnv());
-	await db.insert(aiRecommendations).values({
-		id: crypto.randomUUID(),
-		userId: args.userId,
-		recommendations: JSON.parse(args.recommendations) as RecommendationRow[],
+	const now = Date.now();
+	const values = {
+		recommendations: args.recommendations,
 		watchlistHash: args.watchlistHash,
 		inputStats: args.inputStats,
 		model: args.model,
-		mediaTypePreference: args.mediaTypePreference as "movie" | "tv" | undefined,
+		mediaTypePreference: args.mediaTypePreference,
 		genrePreference: args.genrePreference,
 		generationType: args.generationType,
-		createdAt: Date.now(),
-	});
-}
+		createdAt: now,
+	};
 
-async function saveHomepageRecommendations(
-	userId: string,
-	recommendations: string,
-) {
-	const db = getDb(getEnv());
-	const existing = await db
-		.select()
-		.from(homepageRecommendations)
-		.where(eq(homepageRecommendations.userId, userId))
-		.limit(1);
-
-	if (existing.length > 0) {
+	if (reservedId) {
 		await db
-			.update(homepageRecommendations)
-			.set({
-				previousRecommendations: existing[0].recommendations,
-				recommendations: JSON.parse(recommendations) as RecommendationRow[],
-				lastAttemptedAt: Date.now(),
-				lastUpdatedAt: Date.now(),
-				status: "success",
-			})
-			.where(eq(homepageRecommendations.id, existing[0].id));
+			.update(aiRecommendations)
+			.set(values)
+			.where(eq(aiRecommendations.id, reservedId));
 	} else {
-		await db.insert(homepageRecommendations).values({
+		await db.insert(aiRecommendations).values({
 			id: crypto.randomUUID(),
-			userId,
-			recommendations: JSON.parse(recommendations) as RecommendationRow[],
-			lastAttemptedAt: Date.now(),
-			lastUpdatedAt: Date.now(),
-			status: "success",
+			userId: args.userId,
+			...values,
 		});
 	}
 }
 
+/** Upsert the homepage recommendations row keyed on the unique userId. */
+async function saveHomepageRecommendations(
+	userId: string,
+	recommendations: RecommendationRow[],
+) {
+	const db = getDb(getEnv());
+	const now = Date.now();
+	// userId-keyed upsert: the previous recommendations are preserved from the
+	// existing row (excluded from the conflict set).
+	await db
+		.insert(homepageRecommendations)
+		.values({
+			id: crypto.randomUUID(),
+			userId,
+			recommendations,
+			lastAttemptedAt: now,
+			lastUpdatedAt: now,
+			status: "success",
+		})
+		.onConflictDoUpdate({
+			target: homepageRecommendations.userId,
+			set: {
+				previousRecommendations: sql`${homepageRecommendations.recommendations}`,
+				recommendations,
+				lastAttemptedAt: now,
+				lastUpdatedAt: now,
+				status: "success",
+			},
+		});
+}
+
+/** Upsert the homepage failure state keyed on the unique userId. */
 async function saveHomepageFailure(userId: string) {
 	const db = getDb(getEnv());
-	const existing = await db
-		.select()
-		.from(homepageRecommendations)
-		.where(eq(homepageRecommendations.userId, userId))
-		.limit(1);
-
-	if (existing.length > 0) {
-		await db
-			.update(homepageRecommendations)
-			.set({ lastAttemptedAt: Date.now(), status: "failed" })
-			.where(eq(homepageRecommendations.id, existing[0].id));
-	} else {
-		await db.insert(homepageRecommendations).values({
+	const now = Date.now();
+	await db
+		.insert(homepageRecommendations)
+		.values({
 			id: crypto.randomUUID(),
 			userId,
 			recommendations: [],
-			lastAttemptedAt: Date.now(),
+			lastAttemptedAt: now,
 			lastUpdatedAt: 0,
 			status: "failed",
+		})
+		.onConflictDoUpdate({
+			target: homepageRecommendations.userId,
+			set: { lastAttemptedAt: now, status: "failed" },
 		});
-	}
 }
 
 // ---------------------------------------------------------------------------
 // generateRecommendations (action → server fn)
 // ---------------------------------------------------------------------------
-
 export const generateRecommendations = createServerFn({ method: "POST" })
 	.validator(generateRecommendationsArgsSchema)
 	.handler(async ({ data }): Promise<ApiResult<GenerateResult>> => {
 		const genType = data.generationType ?? "watchlist";
 
-		const user = await getAuthUser();
-		if (!user) return fail("UNAUTHORIZED", "Unauthorized");
+		// Resolve auth + feature once and reuse.
+		const auth = await getAuthUserWithFeature();
+		if ("error" in auth) return auth.error;
+		const user = auth.user;
 
-		const featureError = await ensureFeatureEnabled();
-		if (featureError) return featureError;
+		// A `list` generation without a listId is a client error.
+		if (genType === "list" && !data.listId) {
+			return fail("BAD_REQUEST", "listId is required for list generation");
+		}
 
 		const watchlistData = await gatherWatchlistData(user.id);
 
@@ -733,7 +821,9 @@ export const generateRecommendations = createServerFn({ method: "POST" })
 			}
 		}
 
-		const allowed = await checkAndSetRecommendationCooldown(user.id);
+		const { allowed, reservedId } = await checkAndSetRecommendationCooldown(
+			user.id,
+		);
 		if (!allowed) {
 			return ok({ error: "rate_limited" });
 		}
@@ -793,11 +883,10 @@ export const generateRecommendations = createServerFn({ method: "POST" })
 							feedbackSignals,
 						);
 
-		const systemInstruction =
-			"You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
-
-		const aiResult = await callGeminiAI(userPrompt, systemInstruction, 1);
+		const aiResult = await callGeminiAI(userPrompt, SYSTEM_INSTRUCTION, 1);
 		if (aiResult.error || !aiResult.result) {
+			// Release the cooldown so a failed AI call does not consume it.
+			if (reservedId) await releaseRecommendationCooldown(reservedId);
 			return ok({ error: aiResult.error ?? "api_unavailable" });
 		}
 		const parsed = aiResult.result;
@@ -821,16 +910,19 @@ export const generateRecommendations = createServerFn({ method: "POST" })
 			data.mediaTypePreference,
 			data.genrePreference,
 		);
-		await saveRecommendations({
-			userId: user.id,
-			recommendations: JSON.stringify(parsed.recommendations),
-			watchlistHash,
-			inputStats: watchlistData.inputStats,
-			model: usedModel,
-			mediaTypePreference: data.mediaTypePreference,
-			genrePreference: data.genrePreference,
-			generationType: genType,
-		});
+		await saveRecommendations(
+			{
+				userId: user.id,
+				recommendations: parsed.recommendations,
+				watchlistHash,
+				inputStats: watchlistData.inputStats,
+				model: usedModel,
+				mediaTypePreference: data.mediaTypePreference,
+				genrePreference: data.genrePreference,
+				generationType: genType,
+			},
+			reservedId,
+		);
 
 		return ok({
 			recommendations: parsed.recommendations,
@@ -848,11 +940,10 @@ export const generateHomepageRecommendations = createServerFn({
 	method: "POST",
 }).handler(
 	async (): Promise<ApiResult<{ success: boolean; error?: string }>> => {
-		const user = await getAuthUser();
-		if (!user) return fail("UNAUTHORIZED", "Unauthorized");
-
-		const featureError = await ensureFeatureEnabled();
-		if (featureError) return featureError;
+		// Resolve auth + feature once and reuse.
+		const auth = await getAuthUserWithFeature();
+		if ("error" in auth) return auth.error;
+		const user = auth.user;
 
 		const watchlistData = await gatherWatchlistData(user.id);
 
@@ -900,9 +991,6 @@ export const generateHomepageRecommendations = createServerFn({
 			}
 		}
 
-		const systemInstruction =
-			"You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
-
 		const prompt = buildHomepageRecommendationsPrompt(
 			watchlistData,
 			likedFeedback,
@@ -911,7 +999,7 @@ export const generateHomepageRecommendations = createServerFn({
 			previousTitles,
 		);
 
-		const aiResult = await callGeminiAI(prompt, systemInstruction, 2);
+		const aiResult = await callGeminiAI(prompt, SYSTEM_INSTRUCTION, 2);
 		if (aiResult.error || !aiResult.result) {
 			await saveHomepageFailure(user.id);
 			return ok({ success: false, error: aiResult.error ?? "api_unavailable" });
@@ -932,10 +1020,14 @@ export const generateHomepageRecommendations = createServerFn({
 				!existingTitles.has(normalizeTitleKey(r.title)),
 		);
 
-		await saveHomepageRecommendations(
-			user.id,
-			JSON.stringify(parsed.recommendations),
-		);
+		// An empty result after filtering is a failed generation — record the
+		// failure so refresh logic can retry instead of saving "success".
+		if (parsed.recommendations.length === 0) {
+			await saveHomepageFailure(user.id);
+			return ok({ success: false, error: "empty_result" });
+		}
+
+		await saveHomepageRecommendations(user.id, parsed.recommendations);
 
 		return ok({ success: true });
 	},

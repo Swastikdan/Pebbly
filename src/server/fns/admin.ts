@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, eq } from "drizzle-orm";
-import { type AuthUser, isAdminFromClerkApi, requireUser } from "../auth";
+import { eq } from "drizzle-orm";
+import { type AuthUser, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { rolePermissions, users } from "../db/schema";
 import { getEnv } from "../env";
@@ -24,11 +24,11 @@ async function requireAdmin(): Promise<
 	const result = await requireUser();
 	if (result.error) return { user: null, error: result.error };
 
+	// Rely on the users.isAdmin state already validated by requireUser instead
+	// of an external Clerk API call on every admin request. The JWT claim is
+	// still honored via isClerkAdmin when present.
 	const { user, claims } = result;
-	if (
-		!isClerkAdmin(claims as unknown as Record<string, unknown>, user) &&
-		!(await isAdminFromClerkApi(claims.sub))
-	) {
+	if (!isClerkAdmin(claims as unknown as Record<string, unknown>, user)) {
 		return {
 			user: null,
 			error: fail("FORBIDDEN", "Forbidden: admin access required"),
@@ -83,44 +83,23 @@ export const setRolePermission = createServerFn({ method: "POST" })
 		const admin = await requireAdmin();
 		if (admin.error) return admin.error;
 
-		if (
-			data.feature !== "video-player" &&
-			data.feature !== "ai-recommendations"
-		) {
-			return fail("BAD_REQUEST", "Invalid feature");
-		}
-
+		// feature is already validated to a known RbacFeature by the schema.
 		const db = getDb(getEnv());
 		await syncRolePermissions(db, true);
 
-		const existing = await db
-			.select()
-			.from(rolePermissions)
-			.where(
-				and(
-					eq(rolePermissions.role, "global"),
-					eq(rolePermissions.feature, data.feature),
-				),
-			)
-			.limit(1);
-
-		if (existing.length > 0) {
-			await db
-				.update(rolePermissions)
-				.set({ enabled: data.enabled })
-				.where(
-					and(
-						eq(rolePermissions.role, "global"),
-						eq(rolePermissions.feature, data.feature),
-					),
-				);
-		} else {
-			await db.insert(rolePermissions).values({
+		// Atomic upsert keyed on the (role, feature) primary key — replaces the
+		// old select-then-insert. Role is always the global feature flag.
+		await db
+			.insert(rolePermissions)
+			.values({
 				role: "global",
 				feature: data.feature,
 				enabled: data.enabled,
+			})
+			.onConflictDoUpdate({
+				target: [rolePermissions.role, rolePermissions.feature],
+				set: { enabled: data.enabled },
 			});
-		}
 
 		return ok({ ok: true });
 	});
@@ -216,7 +195,6 @@ export const listUsers = createServerFn({ method: "POST" })
 				isAdmin: boolean;
 			}> = [];
 			for (const u of rows) {
-				const sub = u.tokenIdentifier.replace(/^clerk\|/, "");
 				results.push({
 					_id: u.id,
 					tokenIdentifier: u.tokenIdentifier,
@@ -227,9 +205,8 @@ export const listUsers = createServerFn({ method: "POST" })
 						DYNAMIC_ROLES.includes(role as (typeof DYNAMIC_ROLES)[number]),
 					),
 					isBanned: u.isBanned ?? false,
-					isAdmin:
-						isClerkAdmin(null, { isAdmin: u.isAdmin ?? false }) ||
-						(await isAdminFromClerkApi(sub)),
+					// Derive isAdmin from the stored row — no per-user Clerk API call.
+					isAdmin: isClerkAdmin(null, { isAdmin: u.isAdmin ?? false }),
 				});
 			}
 
