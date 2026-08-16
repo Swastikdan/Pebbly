@@ -1,5 +1,6 @@
 import { useClerk, useUser } from "@clerk/react";
 import { useEffect } from "react";
+import { clearPendingOps } from "@/hooks/pending-ops";
 import { usePermissions } from "@/hooks/use-permissions";
 import { storeUser } from "@/server/fns/users";
 
@@ -31,6 +32,14 @@ export const UserSync = () => {
 			signOut();
 		}
 	}, [isBanned, isSignedIn, loading, signOut]);
+
+	// Drop journal state (pending optimistic ops, server bases, sync timers)
+	// when the session ends so nothing leaks into the next signed-in user.
+	useEffect(() => {
+		if (isLoaded && !user) {
+			clearPendingOps();
+		}
+	}, [isLoaded, user]);
 
 	return null;
 };

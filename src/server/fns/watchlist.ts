@@ -204,162 +204,202 @@ export const removeFromContinueWatching = createServerFn({ method: "POST" })
 
 export const setWatchlistMembership = createServerFn({ method: "POST" })
 	.validator(setWatchlistMembershipArgsSchema)
-	.handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-		const { user, error } = await requireUser();
-		if (error) return error;
+	.handler(
+		async ({
+			data,
+		}): Promise<ApiResult<typeof watchItems.$inferSelect | null>> => {
+			const { user, error } = await requireUser();
+			if (error) return error;
 
-		const db = getDb(getEnv());
-		const existing = await getWatchItem(db, user.id, {
-			tmdbId: data.tmdbId,
-			mediaType: data.mediaType,
-		});
+			const db = getDb(getEnv());
+			const existing = await getWatchItem(db, user.id, {
+				tmdbId: data.tmdbId,
+				mediaType: data.mediaType,
+			});
 
-		if (!data.inWatchlist) {
-			if (!existing) return ok({ ok: true });
+			if (!data.inWatchlist) {
+				if (!existing) return ok(null);
 
-			// If the user has a reaction or non-default progress, keep row with inWatchlist: false
-			if (
-				existing.reaction ||
-				(existing.progress &&
-					existing.progress > 0 &&
-					existing.progressStatus !== "watch-later")
-			) {
-				await db
-					.update(watchItems)
-					.set({
-						inWatchlist: false,
-						progressStatus:
-							existing.progressStatus === "watch-later"
-								? null
-								: existing.progressStatus,
-						updatedAt: Date.now(),
-					})
-					.where(eq(watchItems.id, existing.id));
-			} else {
-				// Otherwise, delete the row entirely
-				await db.delete(watchItems).where(eq(watchItems.id, existing.id));
-			}
-			return ok({ ok: true });
-		}
-
-		await upsertWatchItem(db, user.id, data.tmdbId, data.mediaType, (curr) => {
-			const normalizedExisting = curr
-				? normalizeProgressStatus(curr.progressStatus)
-				: undefined;
-			const progressStatus = curr
-				? (normalizedExisting ?? "watch-later")
-				: "watch-later";
-
-			return {
-				inWatchlist: true,
-				progressStatus,
-				...(curr ? {} : { progress: 0 }),
-				title: data.title,
-				image: data.image,
-				rating: data.rating,
-				release_date: data.release_date,
-				overview: data.overview,
-			};
-		});
-
-		return ok({ ok: true });
-	});
-
-export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
-	.validator(batchSetWatchlistMembershipArgsSchema)
-	.handler(async ({ data }): Promise<ApiResult<{ count: number }>> => {
-		const { user, error } = await requireUser();
-		if (error) return error;
-
-		if (!data.items || data.items.length === 0) {
-			return ok({ count: 0 });
-		}
-
-		const db = getDb(getEnv());
-		const now = Date.now();
-
-		// Fetch existing watch items for this user in 1 fast query
-		const userWatchItems = await db
-			.select()
-			.from(watchItems)
-			.where(eq(watchItems.userId, user.id));
-
-		const existingMap = new Map<string, typeof watchItems.$inferSelect>();
-		for (const item of userWatchItems) {
-			existingMap.set(`${item.mediaType}:${item.tmdbId}`, item);
-		}
-
-		// Deduplicate items in the incoming batch taking the latest state
-		const batchMap = new Map<string, (typeof data.items)[number]>();
-		for (const item of data.items) {
-			batchMap.set(`${item.mediaType}:${item.tmdbId}`, item);
-		}
-
-		for (const item of batchMap.values()) {
-			const existing = existingMap.get(`${item.mediaType}:${item.tmdbId}`);
-
-			if (!item.inWatchlist) {
-				if (!existing) continue;
-
+				// If the user has a reaction or non-default progress, keep row with inWatchlist: false
 				if (
 					existing.reaction ||
 					(existing.progress &&
 						existing.progress > 0 &&
 						existing.progressStatus !== "watch-later")
 				) {
+					const next = {
+						...existing,
+						inWatchlist: false,
+						progressStatus:
+							existing.progressStatus === "watch-later"
+								? null
+								: existing.progressStatus,
+						updatedAt: Date.now(),
+					};
 					await db
 						.update(watchItems)
 						.set({
+							inWatchlist: false,
+							progressStatus: next.progressStatus,
+							updatedAt: next.updatedAt,
+						})
+						.where(eq(watchItems.id, existing.id));
+					return ok(next);
+				}
+				// Otherwise, delete the row entirely
+				await db.delete(watchItems).where(eq(watchItems.id, existing.id));
+				return ok(null);
+			}
+
+			const row = await upsertWatchItem(
+				db,
+				user.id,
+				data.tmdbId,
+				data.mediaType,
+				(curr) => {
+					const normalizedExisting = curr
+						? normalizeProgressStatus(curr.progressStatus)
+						: undefined;
+					const progressStatus = curr
+						? (normalizedExisting ?? "watch-later")
+						: "watch-later";
+
+					return {
+						inWatchlist: true,
+						progressStatus,
+						...(curr ? {} : { progress: 0 }),
+						title: data.title,
+						image: data.image,
+						rating: data.rating,
+						release_date: data.release_date,
+						overview: data.overview,
+					};
+				},
+			);
+
+			return ok(row ?? null);
+		},
+	);
+
+export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
+	.validator(batchSetWatchlistMembershipArgsSchema)
+	.handler(
+		async ({
+			data,
+		}): Promise<ApiResult<(typeof watchItems.$inferSelect)[]>> => {
+			const { user, error } = await requireUser();
+			if (error) return error;
+
+			if (!data.items || data.items.length === 0) {
+				return ok([]);
+			}
+
+			const db = getDb(getEnv());
+			const now = Date.now();
+
+			// Fetch existing watch items for this user in 1 fast query
+			const userWatchItems = await db
+				.select()
+				.from(watchItems)
+				.where(eq(watchItems.userId, user.id));
+
+			const existingMap = new Map<string, typeof watchItems.$inferSelect>();
+			for (const item of userWatchItems) {
+				existingMap.set(`${item.mediaType}:${item.tmdbId}`, item);
+			}
+
+			// Deduplicate items in the incoming batch taking the latest state
+			const batchMap = new Map<string, (typeof data.items)[number]>();
+			for (const item of data.items) {
+				batchMap.set(`${item.mediaType}:${item.tmdbId}`, item);
+			}
+
+			// Rows that still exist after the write — the client merges these
+			// directly into its cache (missing identities were deleted).
+			const resultRows: (typeof watchItems.$inferSelect)[] = [];
+
+			for (const item of batchMap.values()) {
+				const existing = existingMap.get(`${item.mediaType}:${item.tmdbId}`);
+
+				if (!item.inWatchlist) {
+					if (!existing) continue;
+
+					if (
+						existing.reaction ||
+						(existing.progress &&
+							existing.progress > 0 &&
+							existing.progressStatus !== "watch-later")
+					) {
+						const next = {
+							...existing,
 							inWatchlist: false,
 							progressStatus:
 								existing.progressStatus === "watch-later"
 									? null
 									: existing.progressStatus,
 							updatedAt: now,
-						})
-						.where(eq(watchItems.id, existing.id));
-				} else {
-					await db.delete(watchItems).where(eq(watchItems.id, existing.id));
+						};
+						await db
+							.update(watchItems)
+							.set({
+								inWatchlist: false,
+								progressStatus: next.progressStatus,
+								updatedAt: now,
+							})
+							.where(eq(watchItems.id, existing.id));
+						resultRows.push(next);
+					} else {
+						await db.delete(watchItems).where(eq(watchItems.id, existing.id));
+					}
+					continue;
 				}
-				continue;
-			}
 
-			const normalizedExisting = existing
-				? normalizeProgressStatus(existing.progressStatus)
-				: undefined;
-			const progressStatus = existing
-				? (normalizedExisting ?? "watch-later")
-				: "watch-later";
-			const metadataPatch = buildMetadataPatch(item, existing ?? undefined);
+				const normalizedExisting = existing
+					? normalizeProgressStatus(existing.progressStatus)
+					: undefined;
+				const progressStatus = existing
+					? (normalizedExisting ?? "watch-later")
+					: "watch-later";
+				const metadataPatch = buildMetadataPatch(item, existing ?? undefined);
 
-			if (existing) {
-				await db
-					.update(watchItems)
-					.set({
+				if (existing) {
+					const patch = {
 						inWatchlist: true,
 						progressStatus,
 						updatedAt: now,
 						...metadataPatch,
-					})
-					.where(eq(watchItems.id, existing.id));
-			} else {
-				await db.insert(watchItems).values({
-					id: crypto.randomUUID(),
-					userId: user.id,
-					tmdbId: item.tmdbId,
-					mediaType: item.mediaType,
-					inWatchlist: true,
-					progressStatus,
-					progress: 0,
-					updatedAt: now,
-					...metadataPatch,
-				});
+					};
+					await db
+						.update(watchItems)
+						.set(patch)
+						.where(eq(watchItems.id, existing.id));
+					resultRows.push({ ...existing, ...patch });
+				} else {
+					const row: typeof watchItems.$inferSelect = {
+						id: crypto.randomUUID(),
+						userId: user.id,
+						tmdbId: item.tmdbId,
+						mediaType: item.mediaType,
+						inWatchlist: true,
+						progressStatus: progressStatus ?? null,
+						progress: 0,
+						reaction: null,
+						title: metadataPatch.title ?? null,
+						image: metadataPatch.image ?? null,
+						rating: metadataPatch.rating ?? null,
+						releaseDate: metadataPatch.releaseDate ?? null,
+						overview: metadataPatch.overview ?? null,
+						updatedAt: now,
+					};
+					await db.insert(watchItems).values(row).onConflictDoNothing();
+					resultRows.push(row);
+				}
 			}
-		}
 
-		await createWatchlistSnapshot(db, user.id);
-		return ok({ count: batchMap.size });
-	});
+			await createWatchlistSnapshot(db, user.id);
+			return ok(resultRows);
+		},
+	);
 
 export const setProgressStatus = createServerFn({ method: "POST" })
 	.validator(setProgressStatusArgsSchema)

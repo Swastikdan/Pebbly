@@ -5,12 +5,11 @@ import { useCallback, useRef, useState } from "react";
 import * as v from "valibot";
 import { useLocalProgressStore } from "@/hooks/use-local-progress-store";
 import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
+import { fetchAllEpisodeProgress } from "@/hooks/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
 import type { AllEpisodeProgressRow } from "@/lib/server-types";
 import { normalizeProgressStatus } from "@/lib/utils";
 import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
-import { getAllEpisodeProgress } from "@/server/fns/watchlist";
-import { unwrap } from "@/server/schema/common";
 import {
 	importWatchlistArgsSchema,
 	type ImportItem as ServerImportItem,
@@ -67,7 +66,7 @@ export const useWatchlistImportExport = () => {
 	const { isSignedIn } = useUser();
 	const allEpisodeProgress = useQuery({
 		queryKey: queryKeys.watchlist.allEpisodes(),
-		queryFn: () => unwrap(getAllEpisodeProgress()),
+		queryFn: fetchAllEpisodeProgress,
 		enabled: !!isSignedIn,
 	});
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -354,6 +353,11 @@ export const useWatchlistImportExport = () => {
 						});
 						await queryClient.invalidateQueries({
 							queryKey: queryKeys.watchlist.allEpisodes(),
+						});
+						// Imported shows also write episode progress — refresh any
+						// per-show episode caches.
+						await queryClient.invalidateQueries({
+							queryKey: ["watchlist", "episodes"],
 						});
 					} else {
 						importWatchlistLocal(

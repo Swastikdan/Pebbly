@@ -104,7 +104,9 @@ export type UpsertUpdate =
 
 /**
  * Port of `upsertWatchItem` — insert or patch the unique (user, tmdb, media)
- * watch item row. Timestamps are always set here (`updatedAt`).
+ * watch item row. Timestamps are always set here (`updatedAt`). Returns the
+ * final row so callers can echo the authoritative state back to the client
+ * without an extra read.
  */
 export async function upsertWatchItem(
 	db: Db,
@@ -112,11 +114,11 @@ export async function upsertWatchItem(
 	tmdbId: number,
 	mediaType: MediaType,
 	updates: UpsertUpdate,
-) {
+): Promise<WatchItemRow | undefined> {
 	const existing = await getWatchItem(db, userId, { tmdbId, mediaType });
 	const finalUpdates =
 		typeof updates === "function" ? updates(existing ?? null) : updates;
-	if (!finalUpdates) return;
+	if (!finalUpdates) return undefined;
 
 	const now = Date.now();
 	const metadataPatch = buildMetadataPatch(finalUpdates, existing);
@@ -144,7 +146,7 @@ export async function upsertWatchItem(
 			.update(watchItems)
 			.set(patch)
 			.where(eq(watchItems.id, existing.id));
-		return existing;
+		return { ...existing, ...patch };
 	}
 
 	const id = crypto.randomUUID();
@@ -156,20 +158,23 @@ export async function upsertWatchItem(
 			: 0;
 	const reaction = normalizeReaction(finalUpdates.reaction) ?? undefined;
 
-	await db
-		.insert(watchItems)
-		.values({
-			id,
-			userId,
-			tmdbId,
-			mediaType,
-			inWatchlist: finalUpdates.inWatchlist ?? false,
-			progressStatus,
-			progress,
-			reaction,
-			updatedAt: now,
-			...metadataPatch,
-		})
-		.onConflictDoNothing();
-	return undefined;
+	const row: WatchItemRow = {
+		id,
+		userId,
+		tmdbId,
+		mediaType,
+		inWatchlist: finalUpdates.inWatchlist ?? false,
+		progressStatus: progressStatus ?? null,
+		progress,
+		reaction: reaction ?? null,
+		title: metadataPatch.title ?? null,
+		image: metadataPatch.image ?? null,
+		rating: metadataPatch.rating ?? null,
+		releaseDate: metadataPatch.releaseDate ?? null,
+		overview: metadataPatch.overview ?? null,
+		updatedAt: now,
+	};
+
+	await db.insert(watchItems).values(row).onConflictDoNothing();
+	return row;
 }

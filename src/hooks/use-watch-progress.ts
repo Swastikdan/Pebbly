@@ -4,17 +4,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { queryKeys } from "@/lib/query/keys";
 import type { EpisodeProgressRow } from "@/lib/server-types";
 import {
-	getAllWatchedEpisodes,
-	getWatchlist,
 	markEpisodeWatched,
 	markSeasonEpisodesWatched,
 	setProgressStatus,
 	updateProgress,
 } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
-import { beginOptimistic } from "./optimistic-helpers";
+import { beginOp, scheduleSync } from "./pending-ops";
 import { useLocalProgressStore } from "./use-local-progress-store";
 import { useMediaState, useWatchlistStore } from "./use-watchlist";
+import {
+	fetchWatchedEpisodes,
+	fetchWatchlistListFiltered,
+} from "./watchlist-queries";
 
 export interface WatchProgressData {
 	id: string;
@@ -154,6 +156,67 @@ function createOptimisticEpisodeProgress(
 	};
 }
 
+const episodeRowIdOf = (row: EpisodeProgressRow) =>
+	`${row.tmdbId}:${row.season}:${row.episode}`;
+
+function toggleEpisodeRows(
+	rows: EpisodeProgressRow[],
+	args: { tmdbId: number; season: number; episode: number; isWatched: boolean },
+): EpisodeProgressRow[] {
+	if (!args.isWatched) {
+		return rows.filter(
+			(episode) =>
+				!(episode.season === args.season && episode.episode === args.episode),
+		);
+	}
+	const already = rows.some(
+		(episode) =>
+			episode.season === args.season && episode.episode === args.episode,
+	);
+	if (already) return rows;
+	const now = Date.now();
+	return [
+		...rows,
+		createOptimisticEpisodeProgress(
+			args.tmdbId,
+			args.season,
+			args.episode,
+			String(now),
+			now,
+		),
+	];
+}
+
+function toggleSeasonRows(
+	rows: EpisodeProgressRow[],
+	args: {
+		tmdbId: number;
+		season: number;
+		episodes: number[];
+		isWatched: boolean;
+	},
+): EpisodeProgressRow[] {
+	const filtered = rows.filter(
+		(episode) =>
+			!(
+				episode.season === args.season &&
+				args.episodes.includes(episode.episode)
+			),
+	);
+	if (!args.isWatched) return filtered;
+	const now = Date.now();
+	const newEpisodes = args.episodes.map((episode) =>
+		createOptimisticEpisodeProgress(
+			args.tmdbId,
+			args.season,
+			episode,
+			`${now}_${episode}`,
+			now,
+		),
+	);
+	return [...filtered, ...newEpisodes];
+}
+
 export function usePlayerProgressListener(activeContext?: {
 	tmdbId: number;
 	mediaType: "movie" | "tv";
@@ -166,6 +229,7 @@ export function usePlayerProgressListener(activeContext?: {
 	overview?: string;
 }) {
 	const { isSignedIn } = useUser();
+	const queryClient = useQueryClient();
 	const setLocalProgress = useWatchlistStore((state) => state.setProgressLocal);
 	const markLocalEpisode = useLocalProgressStore(
 		(state) => state.markEpisodeWatched,
@@ -182,6 +246,9 @@ export function usePlayerProgressListener(activeContext?: {
 			release_date?: string;
 			overview?: string;
 		}) => unwrap(updateProgress({ data: args })),
+		onSettled: () => {
+			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
+		},
 	});
 
 	const markEpisodeMutation = useMutation({
@@ -191,6 +258,9 @@ export function usePlayerProgressListener(activeContext?: {
 			episode: number;
 			isWatched: boolean;
 		}) => unwrap(markEpisodeWatched({ data: args })),
+		onSettled: (_data, _error, args) => {
+			scheduleSync(queryClient, [queryKeys.watchlist.episodes(args.tmdbId)]);
+		},
 	});
 
 	useEffect(() => {
@@ -370,7 +440,7 @@ export function useWatchProgress(
 
 	const watchedEpisodesQuery = useQuery({
 		queryKey: queryKeys.watchlist.episodes(tmdbId),
-		queryFn: () => unwrap(getAllWatchedEpisodes({ data: { tmdbId } })),
+		queryFn: () => fetchWatchedEpisodes(tmdbId),
 		enabled: !!isSignedIn && mediaType === "tv",
 	});
 	const watchedEpisodes = watchedEpisodesQuery.data ?? [];
@@ -503,11 +573,7 @@ export function useContinueWatching() {
 	const remote = useQuery({
 		queryKey: queryKeys.watchlist.list({ statusFilter: "watching", limit: 50 }),
 		queryFn: () =>
-			unwrap(
-				getWatchlist({
-					data: { statusFilter: "watching", limit: 50 },
-				}),
-			),
+			fetchWatchlistListFiltered({ statusFilter: "watching", limit: 50 }),
 		enabled: !!isSignedIn,
 	});
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
@@ -576,9 +642,7 @@ export function useRemoveFromContinueWatching() {
 				}),
 			),
 		onSettled: () => {
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.watchlist.list(),
-			});
+			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
 		},
 	});
 
@@ -611,7 +675,7 @@ export function useEpisodeWatched(
 	const mediaState = useMediaState(String(tvId), "tv");
 	const watchedEpisodesQuery = useQuery({
 		queryKey: queryKeys.watchlist.episodes(tmdbId),
-		queryFn: () => unwrap(getAllWatchedEpisodes({ data: { tmdbId } })),
+		queryFn: () => fetchWatchedEpisodes(tmdbId),
 		enabled: !!isSignedIn,
 	});
 	const watchedEpisodes = watchedEpisodesQuery.data ?? [];
@@ -672,50 +736,24 @@ export function useEpisodeWatched(
 			episode: number;
 			isWatched: boolean;
 		}) => unwrap(markEpisodeWatched({ data: args })),
-		onMutate: async (args) => {
+		onMutate: (args) => {
 			const key = queryKeys.watchlist.episodes(args.tmdbId);
-			return beginOptimistic(queryClient, [key], () => {
-				const current = (queryClient.getQueryData<EpisodeProgressRow[]>(key) ??
-					[]) as EpisodeProgressRow[];
-				if (!args.isWatched) {
-					queryClient.setQueryData<EpisodeProgressRow[]>(
-						key,
-						current.filter(
-							(episode) =>
-								!(
-									episode.season === args.season &&
-									episode.episode === args.episode
-								),
-						),
-					);
-					return;
-				}
-				const already = current.some(
-					(episode) =>
-						episode.season === args.season && episode.episode === args.episode,
-				);
-				if (already) return;
-				const now = Date.now();
-				queryClient.setQueryData<EpisodeProgressRow[]>(key, [
-					...current,
-					createOptimisticEpisodeProgress(
-						args.tmdbId,
-						args.season,
-						args.episode,
-						String(now),
-						now,
-					),
-				]);
-			});
+			return beginOp(queryClient, [
+				{
+					key,
+					touchedIds: [`${args.tmdbId}:${args.season}:${args.episode}`],
+					idOf: episodeRowIdOf,
+					apply: (rows: EpisodeProgressRow[]) => toggleEpisodeRows(rows, args),
+				},
+			]);
 		},
-		onError: (error, _args, rollback) => {
+		onSuccess: (_data, _args, handle) => handle?.resolve(),
+		onError: (error, _args, handle) => {
 			logWatchProgressError("toggle episode watched", error);
-			rollback?.();
+			handle?.remove();
 		},
-		onSettled: () => {
-			void queryClient.invalidateQueries({
-				queryKey: ["watchlist", "episodes"],
-			});
+		onSettled: (_data, _error, args) => {
+			scheduleSync(queryClient, [queryKeys.watchlist.episodes(args.tmdbId)]);
 		},
 	});
 
@@ -726,46 +764,26 @@ export function useEpisodeWatched(
 			episodes: number[];
 			isWatched: boolean;
 		}) => unwrap(markSeasonEpisodesWatched({ data: args })),
-		onMutate: async (args) => {
+		onMutate: (args) => {
 			const key = queryKeys.watchlist.episodes(args.tmdbId);
-			return beginOptimistic(queryClient, [key], () => {
-				const current = (queryClient.getQueryData<EpisodeProgressRow[]>(key) ??
-					[]) as EpisodeProgressRow[];
-				const filtered = current.filter(
-					(episode) =>
-						!(
-							episode.season === args.season &&
-							args.episodes.includes(episode.episode)
-						),
-				);
-				if (!args.isWatched) {
-					queryClient.setQueryData<EpisodeProgressRow[]>(key, filtered);
-					return;
-				}
-				const now = Date.now();
-				const newEpisodes = args.episodes.map((episode) =>
-					createOptimisticEpisodeProgress(
-						args.tmdbId,
-						args.season,
-						episode,
-						`${now}_${episode}`,
-						now,
+			return beginOp(queryClient, [
+				{
+					key,
+					touchedIds: args.episodes.map(
+						(episode) => `${args.tmdbId}:${args.season}:${episode}`,
 					),
-				);
-				queryClient.setQueryData<EpisodeProgressRow[]>(key, [
-					...filtered,
-					...newEpisodes,
-				]);
-			});
+					idOf: episodeRowIdOf,
+					apply: (rows: EpisodeProgressRow[]) => toggleSeasonRows(rows, args),
+				},
+			]);
 		},
-		onError: (error, _args, rollback) => {
+		onSuccess: (_data, _args, handle) => handle?.resolve(),
+		onError: (error, _args, handle) => {
 			logWatchProgressError("mark season episodes watched", error);
-			rollback?.();
+			handle?.remove();
 		},
-		onSettled: () => {
-			void queryClient.invalidateQueries({
-				queryKey: ["watchlist", "episodes"],
-			});
+		onSettled: (_data, _error, args) => {
+			scheduleSync(queryClient, [queryKeys.watchlist.episodes(args.tmdbId)]);
 		},
 	});
 
@@ -775,6 +793,9 @@ export function useEpisodeWatched(
 			mediaType: "movie" | "tv";
 			progress?: number;
 		}) => unwrap(updateProgress({ data: args })),
+		onSettled: () => {
+			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
+		},
 	});
 
 	const setProgressStatusMutation = useMutation({
@@ -790,9 +811,7 @@ export function useEpisodeWatched(
 			overview?: string;
 		}) => unwrap(setProgressStatus({ data: args })),
 		onSettled: () => {
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.watchlist.list(),
-			});
+			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
 		},
 	});
 
@@ -1068,8 +1087,7 @@ export function useEpisodeProgress(
 
 	const data = useQuery({
 		queryKey: queryKeys.watchlist.episodes(Number(tvId)),
-		queryFn: () =>
-			unwrap(getAllWatchedEpisodes({ data: { tmdbId: Number(tvId) } })),
+		queryFn: () => fetchWatchedEpisodes(Number(tvId)),
 		enabled: !!isSignedIn,
 	});
 
