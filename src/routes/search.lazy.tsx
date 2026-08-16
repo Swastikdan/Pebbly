@@ -10,6 +10,7 @@ import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { Button } from "@/components/ui/button";
 import { XCircleIcon } from "@/components/ui/icons";
+import { MediaGrid } from "@/components/ui/media-grid";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "@/components/ui/search-bar";
 import {
@@ -20,14 +21,15 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { HORIZONTAL_MEDIA_GRID_CLASS, MAX_PAGINATION_LIMIT } from "@/constants";
+import { MAX_PAGINATION_LIMIT } from "@/constants";
 import { getMedia, getSearchResult } from "@/lib/queries";
 import {
 	clearSearchHistory,
 	getSearchHistory,
 	removeFromSearchHistory,
 } from "@/lib/search-history";
-import type { MediaType, SearchResultsEntity } from "@/types";
+import type { SearchResultsEntity } from "@/lib/tmdb-schemas";
+import type { MediaType } from "@/types";
 
 type FilterType = MediaType | null;
 
@@ -52,7 +54,9 @@ function SearchPage() {
 		queryFn: () => getSearchResult({ query, page }),
 		enabled: typeof window !== "undefined" && !!query,
 		staleTime: 1000 * 60 * 60 * 24,
-		gcTime: 1000 * 60 * 60 * 24,
+		// Keep search results bounded in memory; data is still considered
+		// fresh for a day (staleTime above), only unused copies are evicted.
+		gcTime: 1000 * 60 * 30,
 		retry: 2,
 		refetchOnWindowFocus: false,
 		placeholderData: keepPreviousData,
@@ -62,7 +66,7 @@ function SearchPage() {
 		queryKey: ["trending"],
 		queryFn: () => getMedia({ type: "trending_day", page: 1 }),
 		staleTime: 1000 * 60 * 60 * 24,
-		gcTime: 1000 * 60 * 60 * 24,
+		gcTime: 1000 * 60 * 30,
 		retry: 2,
 		refetchOnWindowFocus: false,
 		enabled: typeof window !== "undefined" && !query,
@@ -151,13 +155,17 @@ function SearchPage() {
 				<div className="flex flex-col gap-5 py-6">
 					<h2 className="text-lg font-semibold">Trending Now</h2>
 					{isTrendingLoading ? (
-						<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
+						<MediaGrid>
 							{Array.from({ length: 12 }).map((_, index) => (
-								<MediaCardSkeleton key={index} card_type="horizontal" />
+								<MediaCardSkeleton
+									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+									key={index}
+									card_type="horizontal"
+								/>
 							))}
-						</div>
+						</MediaGrid>
 					) : (
-						<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
+						<MediaGrid stagger>
 							{trendingData?.map((item, index) => (
 								<MediaCard
 									key={item.id}
@@ -176,7 +184,7 @@ function SearchPage() {
 									priority={index < 7}
 								/>
 							))}
-						</div>
+						</MediaGrid>
 					)}
 				</div>
 			</>
@@ -196,11 +204,15 @@ function SearchPage() {
 					<Skeleton className="ml-auto h-3 w-[70px] rounded" />
 				</div>
 				<div className="flex min-h-96 w-full items-center justify-center">
-					<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
+					<MediaGrid>
 						{Array.from({ length: 12 }).map((_, index) => (
-							<MediaCardSkeleton key={index} card_type="horizontal" />
+							<MediaCardSkeleton
+								// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+								key={index}
+								card_type="horizontal"
+							/>
 						))}
-					</div>
+					</MediaGrid>
 				</div>
 			</div>
 		);
@@ -301,7 +313,7 @@ function SearchPage() {
 				</div>
 
 				<div className="flex min-h-96 w-full items-center justify-center">
-					<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
+					<MediaGrid stagger>
 						{filteredData.map((item, index) => (
 							<MediaCard
 								key={item.id}
@@ -318,7 +330,7 @@ function SearchPage() {
 								priority={index < 7}
 							/>
 						))}
-					</div>
+					</MediaGrid>
 				</div>
 				{showPagination && (
 					<Pagination

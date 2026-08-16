@@ -5,8 +5,13 @@ import { Star, TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
+import { toast } from "@/hooks/use-toast-store";
+import { useSetProgressStatus } from "@/hooks/use-watchlist";
 import type { WatchlistItem } from "@/hooks/watchlist-store";
 import { formatMediaTitle } from "@/lib/utils";
+import type { ProgressStatus } from "@/types";
+
+const STATUS_CYCLE: ProgressStatus[] = ["watch-later", "watching", "done"];
 
 function handleRemove(
 	e: React.MouseEvent,
@@ -36,15 +41,59 @@ export function WatchlistCard({
 	const ProgressIcon = progressOption.icon;
 	const formattedTitle = formatMediaTitle.encode(item.title);
 	const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${item.image}`;
+	const blurSrc = item.image
+		? `${IMAGE_PREFIX.PREVIEW}${item.image}`
+		: undefined;
 	const year = item.release_date
 		? new Date(item.release_date).getFullYear()
 		: null;
+
+	const setProgressStatus = useSetProgressStatus();
+
+	const metadata = {
+		title: item.title,
+		image: item.image,
+		rating: item.rating,
+		release_date: item.release_date ?? "",
+		overview: item.overview,
+	};
+
+	const cycleStatus = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const prev = progressStatus;
+		const idx = STATUS_CYCLE.indexOf(progressStatus);
+		const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+		if (next === prev) return;
+
+		setProgressStatus(
+			String(item.external_id),
+			item.type,
+			next,
+			metadata,
+			prev,
+		);
+		toast({
+			title: `Marked as ${getProgressOption(next).label}`,
+			action: {
+				label: "Undo",
+				onClick: () =>
+					setProgressStatus(
+						String(item.external_id),
+						item.type,
+						prev,
+						metadata,
+						next,
+					),
+			},
+		});
+	};
 
 	return (
 		<Link
 			// @ts-expect-error - correct link
 			to={`/${item.type}/${item.external_id}/${formattedTitle}`}
-			className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70"
+			className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 transition-[border-color,transform] duration-150 hover:border-border/70 [@media(hover:hover)]:hover:-translate-y-0.5"
 		>
 			<div className="relative shrink-0">
 				<Image
@@ -52,6 +101,7 @@ export function WatchlistCard({
 					className="h-[140px] w-[93px] rounded-xl bg-muted object-cover"
 					height={210}
 					src={imageUrl}
+					blurSrc={blurSrc}
 					width={140}
 					priority={priority}
 				/>
@@ -76,7 +126,7 @@ export function WatchlistCard({
 						</Button>
 					</div>
 
-					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+					<div className="mt-1 flex items-center gap-1.5 text-meta text-muted-foreground">
 						<span className="uppercase">{item.type}</span>
 						{year && (
 							<>
@@ -103,10 +153,18 @@ export function WatchlistCard({
 				</div>
 
 				<div className="flex items-center gap-1.5 pt-2 flex-wrap">
-					<span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground">
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						onClick={cycleStatus}
+						title={`Status: ${progressOption.label}. Tap to change.`}
+						aria-label={`Status: ${progressOption.label}. Tap to change.`}
+						className="inline-flex h-auto items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground hover:bg-secondary"
+					>
 						<ProgressIcon size={12} />
 						{progressOption.label}
-					</span>
+					</Button>
 					{isRecommended && (
 						<span className="inline-flex items-center gap-1 rounded-lg bg-blue-500/15 text-blue-500 border border-blue-500/30 px-2.5 py-1 text-[10px] font-semibold">
 							<Sparkles size={11} />
@@ -130,7 +188,7 @@ export function WatchlistCard({
 
 export function WatchlistCardSkeleton() {
 	return (
-		<div className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 animate-pulse">
+		<div className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 animate-pulse">
 			<div className="h-[140px] w-[93px] rounded-xl bg-muted shrink-0" />
 			<div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
 				<div>

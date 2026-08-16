@@ -108,14 +108,12 @@ export function CustomListDialog({
 					name: trimmed,
 					color: color || undefined,
 					visibility,
-					listType,
 				});
 			} else if (autoAddMedia) {
 				await createListAndAdd({
 					name: trimmed,
 					color: color || undefined,
 					visibility,
-					listType,
 					tmdbId: autoAddMedia.tmdbId,
 					mediaType: autoAddMedia.mediaType,
 					title: autoAddMedia.title,
@@ -130,7 +128,6 @@ export function CustomListDialog({
 					name: trimmed,
 					color: color || undefined,
 					visibility,
-					listType,
 				});
 			}
 			setName("");

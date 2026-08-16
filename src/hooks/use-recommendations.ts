@@ -1,34 +1,19 @@
 import { useUser } from "@clerk/react";
-import { useAction, useMutation, useQuery } from "convex/react";
-import { useCallback, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
 import { usePermissions } from "@/hooks/use-permissions";
+import { queryKeys } from "@/lib/query/keys";
+import {
+	deleteRecommendation,
+	generateRecommendations,
+	getRecommendationHistory,
+	updateVerifiedRecommendations,
+} from "@/server/fns/recommendations";
+import { unwrap } from "@/server/schema/common";
 import type { AIRecommendation } from "@/types";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
-
-const QUERY_SKIP = "skip" as const;
-
-function toRecommendationId(id: string) {
-	return id as Id<"ai_recommendations">;
-}
-
-function removeFromOptimisticSet(current: Set<string>, id: string) {
-	const next = new Set(current);
-	next.delete(id);
-	return next;
-}
 
 function logRecommendationError(action: string, error: unknown) {
 	console.error(`Failed to ${action}`, error);
-}
-
-function parseRecommendationPayload(payload: string): AIRecommendation[] {
-	try {
-		return JSON.parse(payload) as AIRecommendation[];
-	} catch (error) {
-		console.error("Failed to parse recommendations payload", error);
-		return [];
-	}
 }
 
 /** @deprecated Use `usePermissions()` from `@/hooks/usePermissions` instead. */
@@ -42,7 +27,7 @@ export function useRecommendationAccess() {
 }
 
 export interface GenerateOptions {
-	generationType?: string;
+	generationType?: "watchlist" | "list" | "genre";
 	listId?: string;
 	mediaTypePreference?: "movie" | "tv";
 	genrePreference?: string;
@@ -53,7 +38,7 @@ export interface GenerateOptions {
 }
 
 export interface RecommendationHistoryEntry {
-	_id: string;
+	id: string;
 	recommendations: AIRecommendation[];
 	inputStats: {
 		movieCount: number;
@@ -84,44 +69,67 @@ type GenerateResult =
 	| { error: string };
 
 export function useRecommendations() {
-	const { isSignedIn } = useUser();
-	const rawHistory = useQuery(
-		api.recommendations.getRecommendationHistory,
-		isSignedIn ? {} : QUERY_SKIP,
-	);
-
-	const generateAction = useAction(api.recommendations.generateRecommendations);
-	const deleteMutation = useMutation(api.recommendations.deleteRecommendation);
-	const updateVerifiedMutation = useMutation(
-		api.recommendations.updateVerifiedRecommendations,
-	);
+	const { isSignedIn, user } = useUser();
+	const queryClient = useQueryClient();
+	const historyQuery = useQuery({
+		queryKey: queryKeys.recommendations.history(user?.id),
+		queryFn: () => unwrap(getRecommendationHistory()),
+		enabled: !!isSignedIn,
+	});
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<Set<string>>(
 		new Set(),
 	);
 
-	const history: RecommendationHistoryEntry[] = (rawHistory ?? [])
-		.filter((entry) => !optimisticDeletedIds.has(entry._id))
-		.map((entry) => ({
-			_id: entry._id,
-			recommendations: parseRecommendationPayload(entry.recommendations),
-			inputStats: entry.inputStats,
-			createdAt: entry.createdAt,
-			generationType: entry.generationType ?? "watchlist",
-			mediaTypePreference: entry.mediaTypePreference,
-			genrePreference: entry.genrePreference,
-			verified: entry.verified ?? false,
-		}));
+	const history: RecommendationHistoryEntry[] = useMemo(
+		() =>
+			(historyQuery.data ?? [])
+				.filter((entry) => !optimisticDeletedIds.has(entry.id))
+				.map((entry) => ({
+					id: entry.id,
+					recommendations: entry.recommendations ?? [],
+					inputStats: entry.inputStats,
+					createdAt: entry.createdAt,
+					generationType: entry.generationType ?? "watchlist",
+					mediaTypePreference: entry.mediaTypePreference ?? undefined,
+					genrePreference: entry.genrePreference ?? undefined,
+					verified: entry.verified ?? false,
+				})),
+		[historyQuery.data, optimisticDeletedIds],
+	);
+
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => unwrap(deleteRecommendation({ data: { id } })),
+		onError: (err, id) => {
+			logRecommendationError("delete recommendation", err);
+			setOptimisticDeletedIds((prev) => {
+				const next = new Set(prev);
+				next.delete(id);
+				return next;
+			});
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.recommendations.history(user?.id),
+			});
+		},
+	});
 
 	const generate = useCallback(
 		async (options?: GenerateOptions) => {
 			setIsGenerating(true);
 			setError(null);
 			try {
-				const result: GenerateResult = await generateAction(options ?? {});
+				const result: GenerateResult = await unwrap(
+					generateRecommendations({ data: options ?? {} }),
+				);
 				if ("error" in result) {
 					setError(result.error);
+				} else {
+					void queryClient.invalidateQueries({
+						queryKey: queryKeys.recommendations.history(user?.id),
+					});
 				}
 			} catch (e) {
 				setError(e instanceof Error ? e.message : "Unknown error");
@@ -129,17 +137,16 @@ export function useRecommendations() {
 				setIsGenerating(false);
 			}
 		},
-		[generateAction],
+		[queryClient, user?.id],
 	);
 
 	const deleteEntry = useCallback(
 		async (id: string) => {
 			setOptimisticDeletedIds((prev) => new Set(prev).add(id));
 			try {
-				await deleteMutation({ id: toRecommendationId(id) });
+				await deleteMutation.mutateAsync(id);
 			} catch (error) {
 				logRecommendationError("delete recommendation", error);
-				setOptimisticDeletedIds((prev) => removeFromOptimisticSet(prev, id));
 			}
 		},
 		[deleteMutation],
@@ -148,18 +155,20 @@ export function useRecommendations() {
 	const updateVerified = useCallback(
 		async (id: string, recommendations: AIRecommendation[]) => {
 			try {
-				await updateVerifiedMutation({
-					id: toRecommendationId(id),
-					recommendations: JSON.stringify(recommendations),
+				await updateVerifiedRecommendations({
+					data: { id, recommendations: JSON.stringify(recommendations) },
+				});
+				void queryClient.invalidateQueries({
+					queryKey: queryKeys.recommendations.history(user?.id),
 				});
 			} catch (error) {
 				logRecommendationError("update verified recommendations", error);
 			}
 		},
-		[updateVerifiedMutation],
+		[queryClient, user?.id],
 	);
 
-	const loading = isSignedIn && rawHistory === undefined;
+	const loading = isSignedIn && historyQuery.isPending;
 
 	return {
 		history,

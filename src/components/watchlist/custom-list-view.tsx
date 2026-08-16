@@ -73,7 +73,7 @@ export function CustomListView({
 						<div className="flex items-center gap-2">
 							{list.color && (
 								<span
-									className="size-3 rounded-full shrink-0 animate-pulse"
+									className="size-3 rounded-full shrink-0"
 									style={{ backgroundColor: list.color }}
 								/>
 							)}

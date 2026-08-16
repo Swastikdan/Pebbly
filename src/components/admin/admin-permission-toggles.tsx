@@ -1,12 +1,14 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, AlertTriangle, Zap } from "lucide-react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	type PermissionRole,
 	RBAC_FEATURES,
 	type RbacFeature,
 } from "@/constants";
-import { api } from "../../../convex/_generated/api";
+import { getRolePermissions, setRolePermission } from "@/server/fns/admin";
+import { unwrap } from "@/server/schema/common";
 
 const FEATURE_ROLES: Record<RbacFeature, PermissionRole> = {
 	"video-player": "video-player",
@@ -33,14 +35,14 @@ function ToggleSwitch({
 			onClick={() => {
 				onChange(!enabled);
 			}}
-			className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+			className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
 				enabled
 					? "bg-foreground shadow-sm"
 					: "bg-muted-foreground/20 ring-1 ring-border"
 			} cursor-pointer`}
 		>
 			<span
-				className={`inline-block size-4 transform rounded-full bg-background shadow-sm ring-1 ring-border/50 transition-transform duration-300 ${
+				className={`inline-block size-4 transform rounded-full bg-background shadow-sm ring-1 ring-border/50 transition-transform duration-150 ${
 					enabled ? "translate-x-6" : "translate-x-1"
 				}`}
 			/>
@@ -54,6 +56,21 @@ function featurePermissions(
 ): boolean {
 	const role = FEATURE_ROLES[feature];
 	return permissionsByRole[role]?.[feature] ?? false;
+}
+
+function FeatureError({ onRetry }: { onRetry: () => void }) {
+	return (
+		<div className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+			<span>Failed to load permission settings.</span>
+			<button
+				type="button"
+				onClick={onRetry}
+				className="rounded-lg bg-destructive/15 px-2.5 py-1 font-semibold hover:bg-destructive/25"
+			>
+				Retry
+			</button>
+		</div>
+	);
 }
 
 function FeatureRow({
@@ -100,10 +117,36 @@ function FeatureRow({
 }
 
 export function AdminPermissionToggles() {
-	const rawPermissions = useQuery(api.admin.getRolePermissions, {});
-	const setRolePermission = useMutation(api.admin.setRolePermission);
+	const queryClient = useQueryClient();
+	const [toggleError, setToggleError] = useState<string | null>(null);
+	const rawPermissions = useQuery({
+		queryKey: ["admin", "role-permissions"],
+		queryFn: () => unwrap(getRolePermissions()),
+	});
+	const setRolePermissionMutation = useMutation({
+		mutationFn: (args: { feature: RbacFeature; enabled: boolean }) =>
+			unwrap(setRolePermission({ data: args })),
+		onSuccess: () => {
+			setToggleError(null);
+			// Keep the table in sync with the persisted permission state.
+			queryClient.invalidateQueries({
+				queryKey: ["admin", "role-permissions"],
+			});
+		},
+		onError: (error) => {
+			setToggleError(
+				error instanceof Error ? error.message : "Failed to update permission",
+			);
+		},
+	});
 
-	if (rawPermissions === undefined) {
+	const rawPermissionsData = rawPermissions.data;
+
+	if (rawPermissions.isError) {
+		return <FeatureError onRetry={() => rawPermissions.refetch()} />;
+	}
+
+	if (rawPermissionsData === undefined) {
 		return (
 			<div className="space-y-3">
 				<Skeleton className="h-20 w-full rounded-xl" />
@@ -112,13 +155,18 @@ export function AdminPermissionToggles() {
 		);
 	}
 
-	const permissionsByRole = rawPermissions as Record<
+	const permissionsByRole = rawPermissionsData as Record<
 		PermissionRole,
 		Record<RbacFeature, boolean>
 	>;
 
 	return (
 		<div className="space-y-4">
+			{toggleError && (
+				<div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+					{toggleError}
+				</div>
+			)}
 			<div className="space-y-3">
 				{Object.entries(RBAC_FEATURES).map(([feature, config]) => (
 					<FeatureRow
@@ -126,8 +174,11 @@ export function AdminPermissionToggles() {
 						feature={feature as RbacFeature}
 						featureLabel={config.label}
 						permissionsByRole={permissionsByRole}
-						onToggle={(role, enabled) =>
-							setRolePermission({ role, feature, enabled })
+						onToggle={(_role, enabled) =>
+							setRolePermissionMutation.mutate({
+								feature: feature as RbacFeature,
+								enabled,
+							})
 						}
 					/>
 				))}

@@ -1,9 +1,5 @@
 import { useUser } from "@clerk/react";
-import {
-	useAction,
-	useQuery as useConvexQuery,
-	useMutation,
-} from "convex/react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
@@ -14,6 +10,7 @@ import {
 	useAllMediaStates,
 	useToggleWatchlistItem,
 } from "@/hooks/use-watchlist";
+import { queryKeys } from "@/lib/query/keys";
 import {
 	type AIRecommendation,
 	titlesMatch,
@@ -21,7 +18,14 @@ import {
 	useTmdbSearchFallback,
 } from "@/lib/recommendation-engine";
 import { cn } from "@/lib/utils";
-import { api } from "../../convex/_generated/api";
+import {
+	generateHomepageRecommendations,
+	getHomepageRecommendations,
+	getRecommendationFeedback,
+	removeRecommendationFeedback,
+	setRecommendationFeedback,
+} from "@/server/fns/recommendations";
+import { unwrap } from "@/server/schema/common";
 
 const getDismissKey = (rec: AIRecommendation) =>
 	`${rec.mediaType}:${rec.tmdbId ?? ""}:${rec.title}`;
@@ -106,12 +110,12 @@ const HomepageRecommendationCard = memo(
 				/>
 
 				{/* Top-right solid action buttons overlay */}
-				<div className="absolute right-2 top-2 z-20 flex gap-1.5 animate-fade-in opacity-0 group-hover/rec-card:opacity-100 transition-opacity duration-300 md:opacity-100">
+				<div className="absolute right-2 top-2 z-20 flex gap-1.5 opacity-0 group-hover/rec-card:opacity-100 transition-opacity duration-200 ease-out md:opacity-100">
 					<Button
 						variant="secondary"
 						size="icon"
 						className={cn(
-							"h-8 w-8 rounded-lg border shadow-md transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer pressable",
+							"h-8 w-8 rounded-lg border shadow-md transition-[color,background-color,border-color,transform] duration-150 [@media(hover:hover)]:hover:scale-105 active:scale-95 cursor-pointer pressable",
 							isLiked
 								? "bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700"
 								: "bg-neutral-900/90 text-white border-neutral-700 hover:bg-neutral-800",
@@ -143,7 +147,7 @@ const HomepageRecommendationCard = memo(
 					<Button
 						variant="secondary"
 						size="icon"
-						className="h-8 w-8 rounded-lg bg-neutral-900/90 text-white border border-neutral-700 shadow-md transition-all duration-200 hover:bg-red-900/90 hover:border-red-600 hover:text-red-200 hover:scale-105 active:scale-95 cursor-pointer pressable"
+						className="h-8 w-8 rounded-lg bg-neutral-900/90 text-white border border-neutral-700 shadow-md transition-[color,background-color,border-color,transform] duration-150 hover:bg-red-900/90 hover:border-red-600 hover:text-red-200 [@media(hover:hover)]:hover:scale-105 active:scale-95 cursor-pointer pressable"
 						onClick={(e) => {
 							e.stopPropagation();
 							e.preventDefault();
@@ -178,75 +182,50 @@ export function HomepageRecommendations() {
 		() => Math.floor(Date.now() / (1000 * 60 * 60)) * (1000 * 60 * 60),
 	);
 
-	const cachedRecommendationsRef = useRef<{
-		userId: string | null;
-		// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result
-		recommendationsData: any;
-		// biome-ignore lint/suspicious/noExplicitAny: Cached Convex query result
-		feedbackList: any;
-	} | null>(null);
-
 	const canAccessFeature = isSignedIn && hasFeature("ai-recommendations");
 
-	const recommendationsData = useConvexQuery(
-		api.recommendations.getHomepageRecommendations,
-		canAccessFeature ? {} : "skip",
-	);
+	// The query key is per-user so keepPreviousData can never surface another
+	// user's cached recommendations during sign-in/out transitions.
+	const recommendationsQuery = useQuery({
+		queryKey: queryKeys.recommendations.homepage(user?.id),
+		queryFn: () => unwrap(getHomepageRecommendations({ data: {} })),
+		enabled: canAccessFeature,
+		// Keep the previous data on screen while a refetch is in flight so
+		// navigation never flashes a skeleton (replaces the old ref cache).
+		placeholderData: keepPreviousData,
+	});
+	const recommendationsData = recommendationsQuery.data;
 
-	const feedbackList = useConvexQuery(
-		api.recommendations.getRecommendationFeedback,
-		canAccessFeature ? {} : "skip",
-	);
-
-	// Update ref cache when fresh data is loaded
-	useEffect(() => {
-		if (recommendationsData && feedbackList) {
-			cachedRecommendationsRef.current = {
-				userId: user?.id ?? null,
-				recommendationsData,
-				feedbackList,
-			};
-		}
-	}, [recommendationsData, feedbackList, user?.id]);
-
-	// Use cached data as fallback to prevent skeleton flashes during page transitions
-	const hasCache =
-		cachedRecommendationsRef.current &&
-		cachedRecommendationsRef.current.userId === (user?.id ?? null);
-	const resolvedRecsData =
-		recommendationsData ||
-		(hasCache
-			? (cachedRecommendationsRef.current
-					?.recommendationsData as typeof recommendationsData)
-			: null);
-	const resolvedFeedbackList =
-		feedbackList ||
-		(hasCache
-			? (cachedRecommendationsRef.current?.feedbackList as typeof feedbackList)
-			: null);
-
-	const generateRecs = useAction(
-		api.recommendations.generateHomepageRecommendations,
-	);
-	const setFeedback = useMutation(
-		api.recommendations.setRecommendationFeedback,
-	);
-	const removeFeedback = useMutation(
-		api.recommendations.removeRecommendationFeedback,
-	);
+	const feedbackQuery = useQuery({
+		queryKey: queryKeys.recommendations.feedback(user?.id),
+		queryFn: () => unwrap(getRecommendationFeedback()),
+		enabled: canAccessFeature,
+		placeholderData: keepPreviousData,
+	});
+	const feedbackList = feedbackQuery.data;
 
 	const [isGenerating, setIsGenerating] = useState(false);
 	const isGeneratingRef = useRef(false);
 
+	const refreshHomepage = useCallback(() => {
+		void recommendationsQuery.refetch();
+		void feedbackQuery.refetch();
+	}, [recommendationsQuery, feedbackQuery]);
+
 	useEffect(() => {
 		if (
 			canAccessFeature &&
-			resolvedRecsData?.needsRefresh &&
+			recommendationsData?.needsRefresh &&
 			!isGeneratingRef.current
 		) {
 			isGeneratingRef.current = true;
 			setIsGenerating(true);
-			generateRecs()
+			generateHomepageRecommendations()
+				.then((result) => {
+					if (result.ok && result.data.success) {
+						refreshHomepage();
+					}
+				})
 				.catch((err) => {
 					console.error("Failed to generate homepage recommendations:", err);
 				})
@@ -255,29 +234,29 @@ export function HomepageRecommendations() {
 					isGeneratingRef.current = false;
 				});
 		}
-	}, [canAccessFeature, resolvedRecsData?.needsRefresh, generateRecs]);
+	}, [canAccessFeature, recommendationsData?.needsRefresh, refreshHomepage]);
 
 	const toggleWatchlist = useToggleWatchlistItem();
 
 	const likedKeys = useMemo(() => {
 		const set = new Set<string>(localLikedKeys);
-		for (const f of resolvedFeedbackList ?? []) {
+		for (const f of feedbackList ?? []) {
 			if (f.feedback === "like") {
 				set.add(`${f.mediaType}:${f.tmdbId}`);
 			}
 		}
 		return set;
-	}, [resolvedFeedbackList, localLikedKeys]);
+	}, [feedbackList, localLikedKeys]);
 
 	const dislikedKeys = useMemo(() => {
 		const set = new Set<string>();
-		for (const f of resolvedFeedbackList ?? []) {
+		for (const f of feedbackList ?? []) {
 			if (f.feedback === "not_interested") {
 				set.add(`${f.mediaType}:${f.tmdbId}`);
 			}
 		}
 		return set;
-	}, [resolvedFeedbackList]);
+	}, [feedbackList]);
 
 	const { allMediaStates } = useAllMediaStates();
 	const watchlistKeys = useMemo(() => {
@@ -295,8 +274,8 @@ export function HomepageRecommendations() {
 	}, [allMediaStates]);
 
 	const recs = useMemo(() => {
-		if (!resolvedRecsData?.recommendations) return [];
-		return resolvedRecsData.recommendations.filter((r) => {
+		if (!recommendationsData?.recommendations) return [];
+		return recommendationsData.recommendations.filter((r) => {
 			if (localDismissedKeys.has(getDismissKey(r))) return false;
 			if (r.tmdbId !== null && r.tmdbId !== undefined) {
 				const key = `${r.mediaType}:${r.tmdbId}`;
@@ -306,7 +285,7 @@ export function HomepageRecommendations() {
 			return true;
 		});
 	}, [
-		resolvedRecsData?.recommendations,
+		recommendationsData?.recommendations,
 		localDismissedKeys,
 		watchlistKeys,
 		likedKeys,
@@ -351,36 +330,58 @@ export function HomepageRecommendations() {
 			}
 
 			// Toggle watchlist item if liking or unliking
-			if (feedback === "like" || feedback === "unlike") {
-				toggleWatchlist({
-					id: String(resolvedId),
-					title: rec.title,
-					media_type: rec.mediaType,
-					rating: metadata?.rating ?? 0,
-					image: metadata?.image ?? "",
-					release_date: metadata?.release_date ?? "",
-					overview: metadata?.overview,
-				}).catch(console.error);
+			if (feedback === "like") {
+				toggleWatchlist(
+					{
+						id: String(resolvedId),
+						title: rec.title,
+						media_type: rec.mediaType,
+						rating: metadata?.rating ?? 0,
+						image: metadata?.image ?? "",
+						release_date: metadata?.release_date ?? "",
+						overview: metadata?.overview,
+					},
+					false,
+				).catch(console.error);
+			} else if (feedback === "unlike") {
+				toggleWatchlist(
+					{
+						id: String(resolvedId),
+						title: rec.title,
+						media_type: rec.mediaType,
+						rating: metadata?.rating ?? 0,
+						image: metadata?.image ?? "",
+						release_date: metadata?.release_date ?? "",
+						overview: metadata?.overview,
+					},
+					true,
+				).catch(console.error);
 			}
 
 			try {
 				if (feedback === "unlike") {
-					await removeFeedback({
-						tmdbId: resolvedId,
-						mediaType: rec.mediaType,
-					});
+					await unwrap(
+						removeRecommendationFeedback({
+							data: { tmdbId: resolvedId, mediaType: rec.mediaType },
+						}),
+					);
 				} else {
-					await setFeedback({
-						tmdbId: resolvedId,
-						mediaType: rec.mediaType,
-						title: rec.title,
-						feedback: feedback === "dislike" ? "not_interested" : "like",
-						image: metadata?.image,
-						rating: metadata?.rating,
-						release_date: metadata?.release_date,
-						overview: metadata?.overview,
-					});
+					await unwrap(
+						setRecommendationFeedback({
+							data: {
+								tmdbId: resolvedId,
+								mediaType: rec.mediaType,
+								title: rec.title,
+								feedback: feedback === "dislike" ? "not_interested" : "like",
+								image: metadata?.image,
+								rating: metadata?.rating,
+								release_date: metadata?.release_date,
+								overview: metadata?.overview,
+							},
+						}),
+					);
 				}
+				refreshHomepage();
 			} catch (err) {
 				console.error("Failed to update recommendation feedback:", err);
 				if (feedback === "dislike") {
@@ -405,7 +406,7 @@ export function HomepageRecommendations() {
 				}
 			}
 		},
-		[setFeedback, removeFeedback, toggleWatchlist],
+		[refreshHomepage, toggleWatchlist],
 	);
 
 	if (!isLoaded || !canAccessFeature) {
@@ -413,15 +414,15 @@ export function HomepageRecommendations() {
 	}
 
 	const hasNoWatchHistory =
-		resolvedRecsData?.status === "failed" &&
-		(!resolvedRecsData.recommendations ||
-			resolvedRecsData.recommendations.length === 0);
+		recommendationsData?.status === "failed" &&
+		(!recommendationsData.recommendations ||
+			recommendationsData.recommendations.length === 0);
 
 	if (hasNoWatchHistory) {
 		return (
 			<section className="w-full text-left py-4 px-4 border border-border/40 rounded-xl bg-card/40 my-6">
 				<div className="flex items-center gap-2 mb-2 text-muted-foreground">
-					<Sparkles size={16} className="text-primary animate-pulse" />
+					<Sparkles size={16} className="text-primary" />
 					<h3 className="font-semibold text-sm">
 						Personalized Recommendations
 					</h3>
@@ -434,7 +435,7 @@ export function HomepageRecommendations() {
 		);
 	}
 
-	if (!resolvedRecsData) {
+	if (!recommendationsData) {
 		return (
 			<div className="my-6">
 				<RecommendationSectionHeader />

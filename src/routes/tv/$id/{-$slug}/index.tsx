@@ -21,8 +21,8 @@ import { buildSharedMediaPageData } from "@/lib/media-page";
 import { getTvCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
+import type { Tv } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
-import type { Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/")({
 	loader: async ({ params, context }) => {

@@ -7,8 +7,8 @@ import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicTvDetails } from "@/lib/queries";
+import type { Tv } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
-import type { Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/cast-crew")({
 	loader: ({ params, context }) => {

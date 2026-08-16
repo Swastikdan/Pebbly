@@ -46,6 +46,10 @@ function TabsList({
 			data-slot="tabs-list"
 			className={cn(
 				"bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-1",
+				// Section tabs (home, media page, watchlist) override the default
+				// pill look with a compact bordered row — folded in here so every
+				// call site shares one source of truth.
+				"h-8 rounded-lg bg-transparent ring-1 ring-border px-0.5 m-1",
 				className,
 			)}
 			{...props}
@@ -62,6 +66,8 @@ function TabsTrigger({
 			data-slot="tabs-trigger"
 			className={cn(
 				"data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-7 items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				// Compact section-tab trigger (see TabsList) — same source of truth.
+				"h-7 px-3.5 text-xs font-semibold rounded-[calc(var(--radius)-2px)] data-[state=active]:bg-secondary data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-secondary dark:data-[state=active]:shadow-none",
 				className,
 			)}
 			{...props}

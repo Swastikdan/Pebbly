@@ -36,7 +36,8 @@ export type WatchlistItem = {
 export type LocalWatchlistImportItem = MediaMetadata & {
 	id: string;
 	type: MediaType;
-	progressStatus: ProgressStatus;
+	progressStatus?: ProgressStatus | null;
+	inWatchlist?: boolean;
 	progress?: number;
 	reaction?: ReactionStatus | null;
 };
@@ -100,21 +101,21 @@ function buildFallbackItem(
 	};
 }
 
-export function mapConvexItemToWatchlistItem(item: {
+export function mapWatchlistRowToItem(item: {
 	tmdbId: number;
 	mediaType: string;
-	title?: string;
-	image?: string;
-	rating?: number;
-	release_date?: string;
-	overview?: string;
+	title?: string | null;
+	image?: string | null;
+	rating?: number | null;
+	releaseDate?: string | null;
+	overview?: string | null;
 	updatedAt: number;
-	progress?: number;
-	inWatchlist?: boolean;
-	progressStatus?: string;
+	progress?: number | null;
+	inWatchlist?: boolean | null;
+	progressStatus?: string | null;
 	reaction?: string | null;
 }): WatchlistItem {
-	const normStatus = normalizeProgressStatus(item.progressStatus);
+	const normStatus = normalizeProgressStatus(item.progressStatus ?? undefined);
 
 	return {
 		title: item.title ?? "Unknown Title",
@@ -122,8 +123,8 @@ export function mapConvexItemToWatchlistItem(item: {
 		external_id: String(item.tmdbId),
 		image: item.image ?? "",
 		rating: item.rating ?? 0,
-		release_date: item.release_date ?? "",
-		overview: item.overview,
+		release_date: item.releaseDate ?? "",
+		overview: item.overview ?? undefined,
 		updated_at: item.updatedAt,
 		created_at: item.updatedAt,
 		inWatchlist: Boolean(item.inWatchlist),
@@ -194,9 +195,11 @@ export const useWatchlistStore = create<WatchlistStore>()(
 							(current) => ({
 								...current,
 								inWatchlist,
-								progressStatus:
-									current.progressStatus ??
-									(inWatchlist ? "watch-later" : null),
+								progressStatus: inWatchlist
+									? (current.progressStatus ?? "watch-later")
+									: current.progressStatus === "watch-later"
+										? null
+										: current.progressStatus,
 							}),
 						),
 					};
@@ -311,8 +314,13 @@ export const useWatchlistStore = create<WatchlistStore>()(
 							release_date:
 								imported.release_date ?? existing?.release_date ?? "",
 							overview: imported.overview ?? existing?.overview,
-							inWatchlist: true,
-							progressStatus: imported.progressStatus,
+							inWatchlist:
+								imported.inWatchlist !== undefined
+									? imported.inWatchlist
+									: (existing?.inWatchlist ?? true),
+							progressStatus:
+								imported.progressStatus ??
+								(imported.inWatchlist === false ? null : "watch-later"),
 							progress,
 							reaction: imported.reaction ?? existing?.reaction ?? null,
 							updated_at: now,

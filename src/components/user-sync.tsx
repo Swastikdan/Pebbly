@@ -1,28 +1,33 @@
 import { useClerk, useUser } from "@clerk/react";
-import { useMutation } from "convex/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { clearPendingOps } from "@/hooks/pending-ops";
 import { usePermissions } from "@/hooks/use-permissions";
-import { api } from "../../convex/_generated/api";
+import { storeUser } from "@/server/fns/users";
+import { unwrap } from "@/server/schema/common";
 
 export const UserSync = () => {
 	const { user, isLoaded } = useUser();
+	const queryClient = useQueryClient();
 	const { signOut } = useClerk();
-	const storeUser = useMutation(api.users.store);
 	const { isBanned, isSignedIn, loading } = usePermissions();
 
-	// Sync user profile data to Convex on mount / user change
+	// Sync user profile data to D1 on mount / user change
 	useEffect(() => {
 		if (isLoaded && user) {
-			storeUser({
-				name: user.fullName ?? user.username ?? "Anonymous",
-				email: user.primaryEmailAddress?.emailAddress,
-				image: user.imageUrl,
-				isAdmin: user.publicMetadata?.isAdmin === true,
-			}).catch((error) => {
-				console.error("Failed to sync user to Convex:", error);
+			unwrap(
+				storeUser({
+					data: {
+						name: user.fullName ?? user.username ?? "Anonymous",
+						email: user.primaryEmailAddress?.emailAddress,
+						image: user.imageUrl,
+					},
+				}),
+			).catch((error) => {
+				console.error("Failed to sync user to backend:", error);
 			});
 		}
-	}, [isLoaded, user, storeUser]);
+	}, [isLoaded, user]);
 
 	// Enforce ban: sign the user out immediately when banned status is confirmed.
 	// This clears their Clerk session so there is no client-side bypass.
@@ -31,6 +36,14 @@ export const UserSync = () => {
 			signOut();
 		}
 	}, [isBanned, isSignedIn, loading, signOut]);
+
+	// Drop journal state (pending optimistic ops, server bases, sync timers)
+	// when the session ends so nothing leaks into the next signed-in user.
+	useEffect(() => {
+		if (isLoaded && !user) {
+			clearPendingOps(queryClient);
+		}
+	}, [isLoaded, user, queryClient]);
 
 	return null;
 };

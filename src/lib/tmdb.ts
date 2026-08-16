@@ -21,9 +21,9 @@ export const tmdbFetch = createFetch({
 		type: "linear",
 		attempts: 2,
 		delay: 500,
-		shouldRetry(context: { response?: { status: number } }) {
-			if (!context?.response) return true;
-			const status = context.response.status;
+		shouldRetry(response: Response | null) {
+			if (!response) return true;
+			const status = response.status;
 			return status === 408 || status === 429 || status >= 500;
 		},
 	},

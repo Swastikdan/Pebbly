@@ -3,13 +3,17 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { memo } from "react";
 import { MediaCard } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
-import { useContinueWatching } from "@/hooks/use-watch-progress";
+import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
 import {
 	getBasicMovieDetails,
 	getBasicTvDetails,
 	getMedia,
 } from "@/lib/queries";
-import type { BasicMovie, BasicTv, MediaListResultsEntity } from "@/types";
+import type {
+	BasicMovie,
+	BasicTv,
+	MediaListResultsEntity,
+} from "@/lib/tmdb-schemas";
 
 interface MediaListProps extends MediaListResultsEntity {
 	is_on_watchlist_page?: boolean;

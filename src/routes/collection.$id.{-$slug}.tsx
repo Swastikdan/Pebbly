@@ -11,8 +11,8 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { getCollection } from "@/lib/queries";
+import type { Collection } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
-import type { Collection } from "@/types";
 
 export const Route = createFileRoute("/collection/$id/{-$slug}")({
 	loader: async ({ params, context }) => {

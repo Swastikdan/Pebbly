@@ -1,5 +1,24 @@
-import type * as Types from "@/types";
+import type { MediaListQuery, MediaQuery } from "@/types";
 import { tmdbFetch } from "./tmdb";
+import type {
+	BasicMovie,
+	BasicTv,
+	Collection,
+	Credits,
+	MediaImages,
+	MediaListResults,
+	MediaListResultsEntity,
+	MediaRecommendations,
+	MediaVideos,
+	Movie,
+	MovieRecommendations,
+	PersonDetails,
+	SearchResults,
+	Tv,
+	TvEpisodeDetail,
+	TvRecommendations,
+	TvSeasonDetail,
+} from "./tmdb-schemas";
 import * as Schemas from "./tmdb-schemas";
 import { validateId } from "./utils";
 
@@ -37,89 +56,54 @@ async function safeFetch<Output>(
  * TMDB Query Functions
  */
 
-export async function getMedia({
-	type,
-	page,
-}: Types.MediaQuery): Promise<Types.MediaListResultsEntity[]> {
-	const pageNumber = page ?? 1;
-	let url = "";
+type MediaListType = MediaQuery["type"] | MediaListQuery["type"];
 
-	switch (type) {
-		case "movies_popular":
-			url = `/movie/popular?language=en-US&page=${pageNumber}`;
-			break;
-		case "movies_top-rated":
-			url = `/movie/top_rated?language=en-US&page=${pageNumber}`;
-			break;
-		case "movies_upcoming":
-			url = `/movie/upcoming?language=en-US&page=${pageNumber}`;
-			break;
-		case "tv-shows_popular":
-			url = `/tv/popular?language=en-US&page=${pageNumber}`;
-			break;
-		case "tv-shows_top-rated":
-			url = `/tv/top_rated?language=en-US&page=${pageNumber}`;
-			break;
-		case "trending_day":
-			url = `/trending/all/day?language=en-US&page=${pageNumber}`;
-			break;
-		case "trending_week":
-			url = `/trending/all/week?language=en-US&page=${pageNumber}`;
-			break;
-		default:
-			throw new Error(`Unknown media type: ${type}`);
-	}
+/** Endpoint path for each media-list query type. */
+const MEDIA_LIST_PATHS: Record<MediaListType, string> = {
+	movies_popular: "/movie/popular",
+	"movies_now-playing": "/movie/now_playing",
+	"movies_top-rated": "/movie/top_rated",
+	movies_upcoming: "/movie/upcoming",
+	"tv-shows_airing-today": "/tv/airing_today",
+	"tv-shows_on-the-air": "/tv/on_the_air",
+	"tv-shows_popular": "/tv/popular",
+	"tv-shows_top-rated": "/tv/top_rated",
+	trending_day: "/trending/all/day",
+	trending_week: "/trending/all/week",
+};
 
-	const data = await safeFetch<Types.MediaListResults>(
-		"getMedia",
-		url,
-		Schemas.MediaListResultsSchema,
-	);
-
-	return data.results ?? [];
-}
-
+/**
+ * Fetch one page of a media list (popular, top-rated, trending, ...).
+ * Replaces the old getMedia/getMediaList switch duplicates: the type -> path
+ * mapping above is the single source of truth for these endpoints.
+ */
 export async function getMediaList({
 	type,
 	page,
-}: Types.MediaListQuery): Promise<Types.MediaListResults> {
+}: {
+	type: MediaListType;
+	page?: number;
+}): Promise<MediaListResults> {
 	const pageNumber = page ?? 1;
-	let url = "";
+	const url = `${MEDIA_LIST_PATHS[type]}?language=en-US&page=${pageNumber}`;
 
-	switch (type) {
-		case "movies_popular":
-			url = `/movie/popular?language=en-US&page=${pageNumber}`;
-			break;
-		case "movies_now-playing":
-			url = `/movie/now_playing?language=en-US&page=${pageNumber}`;
-			break;
-		case "movies_top-rated":
-			url = `/movie/top_rated?language=en-US&page=${pageNumber}`;
-			break;
-		case "movies_upcoming":
-			url = `/movie/upcoming?language=en-US&page=${pageNumber}`;
-			break;
-		case "tv-shows_airing-today":
-			url = `/tv/airing_today?language=en-US&page=${pageNumber}`;
-			break;
-		case "tv-shows_on-the-air":
-			url = `/tv/on_the_air?language=en-US&page=${pageNumber}`;
-			break;
-		case "tv-shows_popular":
-			url = `/tv/popular?language=en-US&page=${pageNumber}`;
-			break;
-		case "tv-shows_top-rated":
-			url = `/tv/top_rated?language=en-US&page=${pageNumber}`;
-			break;
-		default:
-			throw new Error(`Unknown media list type: ${type}`);
-	}
-
-	return await safeFetch<Types.MediaListResults>(
+	return await safeFetch<MediaListResults>(
 		"getMediaList",
 		url,
 		Schemas.MediaListResultsSchema,
 	);
+}
+
+/** Convenience wrapper returning only the results array. */
+export async function getMedia({
+	type,
+	page,
+}: {
+	type: MediaListType;
+	page?: number;
+}): Promise<MediaListResultsEntity[]> {
+	const data = await getMediaList({ type, page });
+	return data.results ?? [];
 }
 
 export async function getSearchResult({
@@ -128,11 +112,11 @@ export async function getSearchResult({
 }: {
 	query: string;
 	page?: number;
-}): Promise<Types.SearchResults> {
+}): Promise<SearchResults> {
 	const pageNumber = page ?? 1;
 	const url = `/search/multi?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=${pageNumber}`;
 
-	return await safeFetch<Types.SearchResults>(
+	return await safeFetch<SearchResults>(
 		"getSearchResult",
 		url,
 		Schemas.SearchResultsSchema,
@@ -143,41 +127,33 @@ export async function getCollection({
 	id,
 }: {
 	id: number;
-}): Promise<Types.Collection> {
+}): Promise<Collection> {
 	validateId(id);
 	const url = `/collection/${id}?language=en-US`;
 
-	return await safeFetch<Types.Collection>(
+	return await safeFetch<Collection>(
 		"getCollection",
 		url,
 		Schemas.CollectionSchema,
 	);
 }
 
-export async function getMovieDetails({
-	id,
-}: {
-	id: number;
-}): Promise<Types.Movie> {
+export async function getMovieDetails({ id }: { id: number }): Promise<Movie> {
 	validateId(id);
 	const url = `/movie/${id}?language=en-US&append_to_response=images,videos,credits,release_dates,external_ids,keywords`;
 
-	return await safeFetch<Types.Movie>(
-		"getMovieDetails",
-		url,
-		Schemas.MovieSchema,
-	);
+	return await safeFetch<Movie>("getMovieDetails", url, Schemas.MovieSchema);
 }
 
 export async function getBasicMovieDetails({
 	id,
 }: {
 	id: number;
-}): Promise<Types.BasicMovie> {
+}): Promise<BasicMovie> {
 	validateId(id);
 	const url = `/movie/${id}?language=en-US`;
 
-	return await safeFetch<Types.BasicMovie>(
+	return await safeFetch<BasicMovie>(
 		"getBasicMovieDetails",
 		url,
 		Schemas.BasicMovieSchema,
@@ -190,34 +166,38 @@ export async function getMovieRecommendations({
 }: {
 	id: number;
 	page?: number;
-}): Promise<Types.MovieRecommendations> {
+}): Promise<MovieRecommendations> {
 	validateId(id);
 	const pageNumber = page ?? 1;
 	const url = `/movie/${id}/recommendations?language=en-US&page=${pageNumber}`;
 
-	return await safeFetch<Types.MovieRecommendations>(
+	return await safeFetch<MovieRecommendations>(
 		"getMovieRecommendations",
 		url,
 		Schemas.MovieRecommendationsSchema,
 	);
 }
 
-export async function getTvDetails({ id }: { id: number }): Promise<Types.Tv> {
+export async function getTvDetails({ id }: { id: number }): Promise<Tv> {
 	validateId(id);
-	const url = `/tv/${id}?language=en-US&append_to_response=images,videos,credits,external_ids,recommendations,keywords,content_ratings`;
+	// `recommendations` is deliberately NOT appended: the media pages fetch it
+	// separately via getTvRecommendations, and TMDB returns a full 20-item
+	// result set per title — dropping it shaves ~20 objects off every detail
+	// payload that is otherwise cached client-side.
+	const url = `/tv/${id}?language=en-US&append_to_response=images,videos,credits,external_ids,keywords,content_ratings`;
 
-	return await safeFetch<Types.Tv>("getTvDetails", url, Schemas.TvSchema);
+	return await safeFetch<Tv>("getTvDetails", url, Schemas.TvSchema);
 }
 
 export async function getBasicTvDetails({
 	id,
 }: {
 	id: number;
-}): Promise<Types.BasicTv> {
+}): Promise<BasicTv> {
 	validateId(id);
 	const url = `/tv/${id}?language=en-US`;
 
-	return await safeFetch<Types.BasicTv>(
+	return await safeFetch<BasicTv>(
 		"getBasicTvDetails",
 		url,
 		Schemas.BasicTvSchema,
@@ -230,12 +210,12 @@ export async function getTvRecommendations({
 }: {
 	id: number;
 	page?: number;
-}): Promise<Types.TvRecommendations> {
+}): Promise<TvRecommendations> {
 	validateId(id);
 	const pageNumber = page ?? 1;
 	const url = `/tv/${id}/recommendations?language=en-US&page=${pageNumber}`;
 
-	return await safeFetch<Types.TvRecommendations>(
+	return await safeFetch<TvRecommendations>(
 		"getTvRecommendations",
 		url,
 		Schemas.TvRecommendationsSchema,
@@ -250,15 +230,11 @@ export async function getCredits({
 }: {
 	type: "movie" | "tv";
 	id: number;
-}): Promise<Types.Credits> {
+}): Promise<Credits> {
 	validateId(id);
 	const url = `/${type}/${id}/credits?language=en-US`;
 
-	return await safeFetch<Types.Credits>(
-		"getCredits",
-		url,
-		Schemas.CreditsSchema,
-	);
+	return await safeFetch<Credits>("getCredits", url, Schemas.CreditsSchema);
 }
 
 export async function getVideos({
@@ -267,11 +243,11 @@ export async function getVideos({
 }: {
 	type: "movie" | "tv";
 	id: number;
-}): Promise<Types.MediaVideos> {
+}): Promise<MediaVideos> {
 	validateId(id);
 	const url = `/${type}/${id}/videos?language=en-US`;
 
-	return await safeFetch<Types.MediaVideos>(
+	return await safeFetch<MediaVideos>(
 		"getVideos",
 		url,
 		Schemas.MediaVideosSchema,
@@ -284,11 +260,11 @@ export async function getImages({
 }: {
 	type: "movie" | "tv";
 	id: number;
-}): Promise<Types.MediaImages> {
+}): Promise<MediaImages> {
 	validateId(id);
 	const url = `/${type}/${id}/images`;
 
-	return await safeFetch<Types.MediaImages>(
+	return await safeFetch<MediaImages>(
 		"getImages",
 		url,
 		Schemas.MediaImagesSchema,
@@ -301,11 +277,11 @@ export async function getDiscoverMovies({
 }: {
 	with_keywords: number;
 	page?: number;
-}): Promise<Types.SearchResults> {
+}): Promise<SearchResults> {
 	const pageNumber = page ?? 1;
 	const url = `/discover/movie?with_keywords=${with_keywords}&language=en-US&page=${pageNumber}`;
 
-	return await safeFetch<Types.SearchResults>(
+	return await safeFetch<SearchResults>(
 		"getDiscoverMovies",
 		url,
 		Schemas.SearchResultsSchema,
@@ -320,12 +296,12 @@ export async function getTvSeasonDetails({
 	id?: number;
 	tvId?: number;
 	seasonNumber: number;
-}): Promise<Types.TvSeasonDetail> {
+}): Promise<TvSeasonDetail> {
 	const targetId = id ?? tvId ?? 0;
 	validateId(targetId);
 	const url = `/tv/${targetId}/season/${seasonNumber}?language=en-US`;
 
-	return await safeFetch<Types.TvSeasonDetail>(
+	return await safeFetch<TvSeasonDetail>(
 		"getTvSeasonDetails",
 		url,
 		Schemas.TvSeasonDetailSchema,
@@ -342,12 +318,12 @@ export async function getTvEpisodeDetails({
 	tvId?: number;
 	seasonNumber: number;
 	episodeNumber: number;
-}): Promise<Types.TvEpisodeDetail> {
+}): Promise<TvEpisodeDetail> {
 	const targetId = id ?? tvId ?? 0;
 	validateId(targetId);
 	const url = `/tv/${targetId}/season/${seasonNumber}/episode/${episodeNumber}?language=en-US`;
 
-	return await safeFetch<Types.TvEpisodeDetail>(
+	return await safeFetch<TvEpisodeDetail>(
 		"getTvEpisodeDetails",
 		url,
 		Schemas.TvEpisodeDetailSchema,
@@ -362,12 +338,12 @@ export async function getMediaRecommendations({
 	type: "movie" | "tv";
 	id: number;
 	page?: number;
-}): Promise<Types.MediaRecommendations> {
+}): Promise<MediaRecommendations> {
 	validateId(id);
 	const pageNumber = page ?? 1;
 	const url = `/${type}/${id}/recommendations?language=en-US&page=${pageNumber}`;
 
-	return await safeFetch<Types.MediaRecommendations>(
+	return await safeFetch<MediaRecommendations>(
 		"getMediaRecommendations",
 		url,
 		Schemas.MediaRecommendationsSchema,
@@ -378,11 +354,15 @@ export async function getPersonDetails({
 	id,
 }: {
 	id: number;
-}): Promise<Types.PersonDetails> {
+}): Promise<PersonDetails> {
 	validateId(id);
-	const url = `/person/${id}?language=en-US&append_to_response=combined_credits,movie_credits,tv_credits,images,external_ids`;
+	// The person page only renders movie_credits + tv_credits (and external
+	// links). combined_credits is a third copy of the same cast/crew data and
+	// images is unused, so both are omitted to shrink a payload that can hold
+	// hundreds of credits for prolific actors.
+	const url = `/person/${id}?language=en-US&append_to_response=movie_credits,tv_credits,external_ids`;
 
-	return await safeFetch<Types.PersonDetails>(
+	return await safeFetch<PersonDetails>(
 		"getPersonDetails",
 		url,
 		Schemas.PersonDetailsSchema,

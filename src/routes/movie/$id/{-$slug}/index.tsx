@@ -20,8 +20,8 @@ import { buildSharedMediaPageData } from "@/lib/media-page";
 import { formatRuntime, getMovieCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getMovieDetails } from "@/lib/queries";
+import type { Movie } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
-import type { Movie } from "@/types";
 
 export const Route = createFileRoute("/movie/$id/{-$slug}/")({
 	loader: async ({ params, context }) => {

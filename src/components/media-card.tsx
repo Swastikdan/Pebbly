@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { memo } from "react";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
@@ -8,11 +7,13 @@ import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
+import { useSeasonDetails } from "@/hooks/use-season-details";
+import { toast } from "@/hooks/use-toast-store";
+import { useSetProgressStatus } from "@/hooks/use-watchlist";
 import {
 	useRemoveFromContinueWatching,
 	useWatchProgress,
-} from "@/hooks/use-watch-progress";
-import { getTvSeasonDetails } from "@/lib/queries";
+} from "@/hooks/watch-progress/use-watch-progress";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
@@ -65,9 +66,9 @@ const MediaCard = memo((props: CardProps) => {
 		return <PersonCard {...props} />;
 	}
 });
-
 interface BaseMediaCardProps extends MediaCardSpecificProps {
 	imageUrl: string;
+	blurSrc?: string;
 	formattedTitle: string;
 	containerClassName: string;
 	imageContainerClassName: string;
@@ -94,6 +95,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 		overview,
 		priority,
 		imageUrl,
+		blurSrc,
 		formattedTitle,
 		containerClassName,
 		imageContainerClassName,
@@ -109,6 +111,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 	} = props;
 
 	const { removeFromContinueWatching } = useRemoveFromContinueWatching();
+	const setProgressStatus = useSetProgressStatus();
 
 	return (
 		<div className={cn("group relative", containerClassName)}>
@@ -122,20 +125,22 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 				<div
 					data-media-poster
 					className={cn(
-						"surface-raised interactive-raised relative w-full overflow-hidden rounded-xl bg-muted",
+						"surface-raised interactive-raised relative w-full overflow-hidden rounded-2xl bg-muted",
 						imageContainerClassName,
 					)}
 				>
 					<Image
 						alt={title}
 						src={imageUrl}
-						className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:group-hover:scale-[1.03]"
+						blurSrc={blurSrc}
+						className="h-full w-full object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
 						width={imageWidth}
 						height={imageHeight}
 						priority={priority}
 						sizes={imageSizes}
 					/>
-					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 transition-opacity duration-300 group-hover:from-black/80" />
+					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0" />
+					<div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
 					{isRecommended && (
 						<Badge className="absolute top-2 left-2 rounded-md bg-blue-600/90 px-2 py-0.5 text-[10px] font-bold text-white border-0 shadow-md">
@@ -144,15 +149,15 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 					)}
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-meta text-white flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
-							<span className="font-semibold tabular-nums text-white">
+							<span className="font-semibold text-white">
 								{rating.toFixed(1)}
 							</span>
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-label text-white border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-meta text-white border-0">
 						{mediaTypeLabel}
 					</Badge>
 				</div>
@@ -175,8 +180,30 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 							e.preventDefault();
 							e.stopPropagation();
 							removeFromContinueWatching(id, media_type);
+							toast({
+								title: "Removed from Continue Watching",
+								description: title,
+								action: {
+									label: "Undo",
+									onClick: () => {
+										setProgressStatus(
+											String(id),
+											media_type,
+											"watching",
+											{
+												title,
+												image: poster_path ?? props.image ?? "",
+												rating,
+												release_date: release_date ?? "",
+												overview,
+											},
+											"watch-later",
+										);
+									},
+								},
+							});
 						}}
-						className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-all duration-200 hover:bg-red-600 hover:text-white hover:scale-105"
+						className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color,transform] duration-150 hover:bg-red-600 hover:text-white [@media(hover:hover)]:hover:scale-105"
 					>
 						<XIcon className="size-4" />
 					</button>
@@ -199,18 +226,19 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 		</div>
 	);
 });
-
 const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 	const { title, image, media_type, release_date, relevanceScore } = props;
 
 	const formattedTitle = formatMediaTitle.encode(title);
 	const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
+	const blurSrc = image ? `${IMAGE_PREFIX.LQ_POSTER}${image}` : undefined;
 	const year = release_date ? new Date(release_date).getFullYear() : "";
 
 	return (
 		<BaseMediaCard
 			{...props}
 			imageUrl={imageUrl}
+			blurSrc={blurSrc}
 			formattedTitle={formattedTitle}
 			containerClassName="w-40 md:w-44 lg:w-48 scroll-snap-item"
 			imageContainerClassName="aspect-[2/3]"
@@ -218,7 +246,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 			imageHeight={450}
 			imageSizes="(max-width: 640px) 160px, (max-width: 768px) 176px, 192px"
 			mediaTypeLabel={media_type === "movie" ? "Movie" : "TV"}
-			linkClassName="block h-full w-full outline-none ring-offset-background transition-[color,background-color,box-shadow,transform] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
+			linkClassName="block h-full w-full outline-none ring-offset-background transition-[color,background-color,transform] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
 			actionsClassName="transition-[transform,opacity] duration-200 ease-out"
 		>
 			<div className="mt-2.5 flex flex-col gap-0.5 overflow-hidden">
@@ -226,15 +254,17 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 					text={title}
 					className="text-sm font-bold leading-tight tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary"
 				/>
-				<div className="flex items-center gap-1.5 text-compact text-muted-foreground/70 min-h-4">
-					{year && <span className="tabular-nums">{year}</span>}
+				<div className="flex items-center gap-1.5 min-h-4">
+					{year && (
+						<span className="text-meta text-muted-foreground/70">{year}</span>
+					)}
 					{year && relevanceScore && (
 						<span className="text-muted-foreground/30">•</span>
 					)}
 					{relevanceScore && (
 						<span
 							className={cn(
-								"font-semibold tabular-nums",
+								"font-mono text-[11px] font-semibold tabular-nums",
 								relevanceScore >= 80
 									? "text-emerald-600 dark:text-emerald-400"
 									: relevanceScore >= 60
@@ -267,28 +297,33 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 	const season = progress?.context?.season;
 	const episode = progress?.context?.episode;
 
-	const { data: seasonDetails } = useQuery({
-		queryKey: ["tv-season", id, season],
-		queryFn: () => getTvSeasonDetails({ tvId: id, seasonNumber: season ?? 1 }),
-		enabled: !!isTVContinueWatching && !!season,
-	});
+	// Season details are routed through the shared batcher (see
+	// use-season-details.ts) so the N cards in a continue-watching strip
+	// coalesce their requests instead of firing N parallel fetches.
+	const { data: seasonDetails } = useSeasonDetails(
+		id,
+		isTVContinueWatching ? season : undefined,
+	);
 
 	const episodeDetail = seasonDetails?.episodes?.find(
 		(ep) => ep.episode_number === episode,
 	);
-
 	let imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${image}`;
+	let blurSrc = image ? `${IMAGE_PREFIX.LQ_BACKDROP}${image}` : undefined;
 	if (isTVContinueWatching) {
 		if (episodeDetail?.still_path) {
 			imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${episodeDetail.still_path}`;
+			blurSrc = `${IMAGE_PREFIX.LQ_BACKDROP}${episodeDetail.still_path}`;
 		} else if (seasonDetails?.poster_path) {
 			imageUrl = `${IMAGE_PREFIX.SD_POSTER}${seasonDetails.poster_path}`;
+			blurSrc = `${IMAGE_PREFIX.LQ_POSTER}${seasonDetails.poster_path}`;
 		}
 	}
 	return (
 		<BaseMediaCard
 			{...props}
 			imageUrl={imageUrl}
+			blurSrc={blurSrc}
 			formattedTitle={formattedTitle}
 			containerClassName="w-64 md:w-72 lg:w-80 scroll-snap-item"
 			imageContainerClassName="aspect-video"
@@ -297,12 +332,12 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 			imageSizes="(max-width: 640px) 256px, (max-width: 768px) 288px, 320px"
 			mediaTypeLabel={media_type === "movie" ? "Movie" : "TV Series"}
 			linkClassName="block h-full w-full outline-none ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
-			actionsClassName="transition-[color,background-color,box-shadow,transform] duration-300 ease-out"
+			actionsClassName="transition-[color,background-color,transform] duration-300 ease-out"
 		>
 			<div className="mt-2.5 flex flex-col gap-1 overflow-hidden">
 				{isTVContinueWatching && season && episode && (
 					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-compact font-bold tabular-nums text-blue-500 dark:text-blue-400">
+						<span className="text-meta font-bold text-blue-500 dark:text-blue-400">
 							S{season} E{episode}
 						</span>
 						{episodeDetail?.name && (
@@ -321,7 +356,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 				/>
 
 				{!isTVContinueWatching && (
-					<span className="text-compact tabular-nums text-muted-foreground/70 capitalize">
+					<span className="text-meta text-muted-foreground/70 capitalize">
 						{year}
 					</span>
 				)}
@@ -329,10 +364,12 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 		</BaseMediaCard>
 	);
 });
-
 const PersonCard = memo((props: PersonCardSpecificProps) => {
 	const { id, name, profile_path, known_for_department, priority } = props;
 	const imageUrl = `${IMAGE_PREFIX.SD_PROFILE}${profile_path}`;
+	const blurSrc = profile_path
+		? `${IMAGE_PREFIX.LQ_PROFILE}${profile_path}`
+		: undefined;
 
 	return (
 		<Link
@@ -340,11 +377,12 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
 			params={{ id: String(id) }}
 			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable "
 		>
-			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border border-white/10 bg-muted shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color,box-shadow] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">
+			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-muted shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">
 				<Image
 					alt={name}
 					src={imageUrl}
-					className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] [@media(hover:hover)]:group-hover:scale-[1.03]"
+					blurSrc={blurSrc}
+					className="h-full w-full object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
 					width={200}
 					height={300}
 					priority={priority}
@@ -357,7 +395,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
 					text={name}
 					className="w-full truncate text-sm font-bold leading-tight text-foreground group-hover:text-primary transition-colors duration-200"
 				/>
-				<span className="w-full truncate text-label text-muted-foreground/70">
+				<span className="w-full truncate text-meta text-muted-foreground/70">
 					{known_for_department}
 				</span>
 			</div>

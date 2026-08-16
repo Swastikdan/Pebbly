@@ -49,10 +49,7 @@ const config = defineConfig(({ mode }) => ({
 					if (id.includes("/node_modules/@tanstack/")) {
 						return "vendor-tanstack";
 					}
-					if (
-						id.includes("/node_modules/@clerk/") ||
-						id.includes("/node_modules/convex/")
-					) {
+					if (id.includes("/node_modules/@clerk/")) {
 						return "vendor-auth-db";
 					}
 					if (
