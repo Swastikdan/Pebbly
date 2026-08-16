@@ -11,7 +11,6 @@ export interface Env {
 	CLERK_SECRET_KEY?: string;
 	CLERK_ISSUER_URL?: string;
 	GEMINI_API_KEY?: string;
-	CRON_SECRET?: string;
 	[key: string]: unknown;
 }
 

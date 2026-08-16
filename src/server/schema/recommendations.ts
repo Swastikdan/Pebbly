@@ -66,23 +66,27 @@ export type UpdateVerifiedRecommendationsArgs = v.InferOutput<
 	typeof updateVerifiedRecommendationsArgsSchema
 >;
 
+// `rating` must stay within the watch_items CHECK constraint (0..10): unlike
+// the other write paths, setRecommendationFeedback inserts the rating directly
+// into watch_items without buildMetadataPatch's clamp, so an out-of-range
+// value would violate the constraint and 500 the request.
 export const setRecommendationFeedbackArgsSchema = v.object({
-	tmdbId: v.number(),
+	tmdbId: v.pipe(v.number(), v.integer(), v.minValue(1)),
 	mediaType: mediaTypeSchema,
-	title: v.string(),
+	title: v.pipe(v.string(), v.maxLength(500)),
 	feedback: v.picklist(["not_interested", "like"]),
-	image: v.optional(v.string()),
-	backdrop: v.optional(v.string()),
-	rating: v.optional(v.number()),
-	release_date: v.optional(v.string()),
-	overview: v.optional(v.string()),
+	image: v.optional(v.pipe(v.string(), v.maxLength(500))),
+	backdrop: v.optional(v.pipe(v.string(), v.maxLength(500))),
+	rating: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(10))),
+	release_date: v.optional(v.pipe(v.string(), v.maxLength(500))),
+	overview: v.optional(v.pipe(v.string(), v.maxLength(500))),
 });
 export type SetRecommendationFeedbackArgs = v.InferOutput<
 	typeof setRecommendationFeedbackArgsSchema
 >;
 
 export const removeRecommendationFeedbackArgsSchema = v.object({
-	tmdbId: v.number(),
+	tmdbId: v.pipe(v.number(), v.integer(), v.minValue(1)),
 	mediaType: mediaTypeSchema,
 });
 export type RemoveRecommendationFeedbackArgs = v.InferOutput<

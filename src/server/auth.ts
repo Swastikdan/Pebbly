@@ -301,16 +301,31 @@ export async function requireUser(): Promise<RequireUserResult> {
 		const isAdmin =
 			getAdminFromClaims(claims) ?? (await isAdminFromClerkApi(claims.sub));
 		const id = crypto.randomUUID();
-		await db.insert(users).values({
-			id,
-			tokenIdentifier,
-			name: claims.name ?? claims.nickname ?? "Anonymous",
-			email: claims.email ?? undefined,
-			image: claims.picture ?? claims.pictureUrl ?? undefined,
-			isAdmin: isAdmin ?? false,
-		});
-		// Guard the post-insert lookup: never access `user.id` on a missing row.
-		user = (await db.select().from(users).where(eq(users.id, id)).limit(1))[0];
+		// onConflictDoNothing makes concurrent first sign-ins race-safe: when
+		// two requests for a brand-new user insert at once, one wins and the
+		// other no-ops instead of throwing on the unique token_identifier
+		// index (which would 500 a parallel request on first load).
+		await db
+			.insert(users)
+			.values({
+				id,
+				tokenIdentifier,
+				name: claims.name ?? claims.nickname ?? "Anonymous",
+				email: claims.email ?? undefined,
+				image: claims.picture ?? claims.pictureUrl ?? undefined,
+				isAdmin: isAdmin ?? false,
+			})
+			.onConflictDoNothing();
+		// Re-read by the canonical tokenIdentifier — the winner of a concurrent
+		// insert created the same identifier, so this always finds the
+		// authoritative row (a lookup by our discarded `id` would miss it).
+		user = (
+			await db
+				.select()
+				.from(users)
+				.where(eq(users.tokenIdentifier, tokenIdentifier))
+				.limit(1)
+		)[0];
 		if (!user) {
 			throw new Error("Failed to create user record after first sign-in");
 		}

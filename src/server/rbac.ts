@@ -75,6 +75,21 @@ export function isClerkAdmin(
 	return false;
 }
 
+/**
+ * True only when the (Clerk-signed) JWT itself carries an admin
+ * `public_meta.isAdmin` claim. Unlike `isClerkAdmin`, this deliberately does
+ * NOT consult the stored `users.isAdmin` flag — that flag is only written at
+ * account creation and is never refreshed, so it goes stale: a user demoted in
+ * Clerk keeps `isAdmin: true` in the DB forever. Access decisions must come
+ * from the live JWT/API, never the stale flag.
+ */
+export function isAdminByClaims(claims: ClerkSessionClaims | null): boolean {
+	return (
+		parseClerkPublicMeta(claims as unknown as Record<string, unknown> | null)
+			?.isAdmin === true
+	);
+}
+
 async function loadPermissions(db: Db) {
 	const rows = await db.select().from(rolePermissions);
 	// Filter to known roles/features before anything consumes them, so a stray
@@ -136,12 +151,14 @@ export async function hasFeature(
 	if (!claims) return false;
 
 	if (user?.isBanned === true) return false;
-	if (isClerkAdmin(claims as unknown as Record<string, unknown>, user)) {
+	// Admin status comes from the signed JWT claim or the live Clerk API — the
+	// same source the client `useUser()` reads. Never trust the stored
+	// `users.isAdmin` flag for access decisions: it is only written at account
+	// creation and never refreshed, so a user demoted in Clerk would otherwise
+	// keep admin privileges indefinitely.
+	if (isAdminByClaims(claims)) {
 		return true;
 	}
-	// The JWT doesn't carry public metadata (no custom session claim), so fall
-	// back to Clerk's API — the same source the client `useUser()` reads. This
-	// keeps the server in agreement with the client's admin/AI feature UI.
 	if (await isAdminFromClerkApi(claims.sub)) {
 		return true;
 	}
@@ -201,7 +218,9 @@ export async function getUserFeatures(
 			isBanned: true,
 		};
 	}
-	if (isClerkAdmin(claims as unknown as Record<string, unknown>, user)) {
+	// Same authoritative admin source as `hasFeature` — JWT claim or live Clerk
+	// API (60s-cached), never the stale DB flag.
+	if (isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub))) {
 		return {
 			roles: [] as string[],
 			features: { ...ADMIN_PERMISSIONS },

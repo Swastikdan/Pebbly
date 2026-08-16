@@ -152,6 +152,19 @@ export const deleteRecommendation = createServerFn({ method: "POST" })
 			.limit(1);
 		if (entry.length === 0) return fail("NOT_FOUND", "Not found");
 
+		// The most recent generation row doubles as the cooldown marker for the
+		// rate limiter (checkAndSetRecommendationCooldown). If a user could
+		// delete it, they'd erase the marker and regenerate immediately,
+		// bypassing the cooldown and burning Gemini API calls. Block deletion
+		// of rows still inside the rate window; they become deletable once the
+		// window elapses.
+		if (Date.now() - entry[0].createdAt < RATE_LIMIT_MS) {
+			return fail(
+				"RATE_LIMITED",
+				"Cannot delete a recommendation generated in the last few minutes",
+			);
+		}
+
 		await db
 			.delete(aiRecommendations)
 			.where(

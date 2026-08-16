@@ -21,6 +21,16 @@ export default defineNitroConfig({
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     },
+    // Baseline security headers for every response. The /assets/** rule above
+    // is more specific and still wins for static assets.
+    "/**": {
+      headers: {
+        "Strict-Transport-Security": "max-age=63072000",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+      },
+    },
   },
   // Cloudflare Workers is the deployment target for production builds only.
   // In dev (`vite dev`), the default nitro-dev preset is used so the Vite SSR

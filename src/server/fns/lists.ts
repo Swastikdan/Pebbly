@@ -108,19 +108,26 @@ export const getListItems = createServerFn({ method: "POST" })
 				and(eq(listItems.listId, data.listId), eq(listItems.userId, user.id)),
 			);
 
-		// Enrich with watch_item metadata — one inArray query instead of one
-		// query per item.
+		// Enrich with watch_item metadata. Lists have no size cap, but D1 caps
+		// bound parameters at 100 per query, so the IN list is chunked — a
+		// single inArray would fail for lists with >100 distinct TMDB ids.
 		const tmdbIds = [...new Set(items.map((item) => item.tmdbId))];
-		const watchItemRows = await db
-			.select()
-			.from(watchItems)
-			.where(
-				and(
-					eq(watchItems.userId, user.id),
-					inArray(watchItems.tmdbId, tmdbIds),
-				),
-			)
-			.limit(500);
+		const watchItemRows: (typeof watchItems.$inferSelect)[] = [];
+		const IDS_PER_QUERY = 90;
+		for (let i = 0; i < tmdbIds.length; i += IDS_PER_QUERY) {
+			const chunk = tmdbIds.slice(i, i + IDS_PER_QUERY);
+			const rows = await db
+				.select()
+				.from(watchItems)
+				.where(
+					and(
+						eq(watchItems.userId, user.id),
+						inArray(watchItems.tmdbId, chunk),
+					),
+				)
+				.limit(500);
+			watchItemRows.push(...rows);
+		}
 
 		const watchItemMap = new Map<string, (typeof watchItems.$inferSelect)[]>();
 		for (const w of watchItemRows) {
