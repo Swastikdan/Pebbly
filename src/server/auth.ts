@@ -202,11 +202,39 @@ export async function isAdminFromClerkApi(sub: string): Promise<boolean> {
 	return isAdmin;
 }
 
+const USER_CACHE_TTL_MS = 15_000;
+const USER_CACHE_MAX_SIZE = 500;
+const userCache = new Map<
+	string,
+	{ user: AuthUser | null; expiresAt: number }
+>();
+
+function pruneUserCache() {
+	const now = Date.now();
+	for (const [key, entry] of userCache) {
+		if (entry.expiresAt <= now) userCache.delete(key);
+	}
+	while (userCache.size > USER_CACHE_MAX_SIZE) {
+		const oldest = userCache.keys().next().value;
+		if (oldest === undefined) break;
+		userCache.delete(oldest);
+	}
+}
+
+export function invalidateUserCache(sub?: string) {
+	if (sub) {
+		userCache.delete(sub);
+		userCache.delete(toTokenIdentifier(sub));
+	} else {
+		userCache.clear();
+	}
+}
+
 /**
  * Multi-format tokenIdentifier matching so users created under any prior
  * format resolve (`clerk|<sub>`, bare `<sub>`, or any `*|<sub>` legacy prefix).
- * Returns every matching row so callers can consolidate duplicates without
- * re-issuing the identical query.
+ * Fast-paths the canonical format with a direct unique index seek before
+ * falling back to the legacy LIKE pattern.
  */
 async function findUserMatchesByClaims(
 	claims: ClerkSessionClaims,
@@ -216,17 +244,22 @@ async function findUserMatchesByClaims(
 	if (!subject) return [];
 	const tokenIdentifier = toTokenIdentifier(subject);
 
+	// Fast path: direct unique index seek on the canonical tokenIdentifier
+	const exactMatches = await db
+		.select()
+		.from(users)
+		.where(eq(users.tokenIdentifier, tokenIdentifier))
+		.limit(1);
+
+	if (exactMatches.length > 0) {
+		return exactMatches;
+	}
+
+	// Fallback for legacy user formats (bare sub or custom prefixes)
 	return db
 		.select()
 		.from(users)
-		.where(
-			or(
-				eq(users.tokenIdentifier, tokenIdentifier),
-				eq(users.tokenIdentifier, subject),
-				eq(users.tokenIdentifier, `clerk|${subject}`),
-				tokenIdentifierLike(subject),
-			),
-		)
+		.where(or(eq(users.tokenIdentifier, subject), tokenIdentifierLike(subject)))
 		.limit(10);
 }
 
@@ -259,12 +292,30 @@ async function pickBestUserMatch(
 /**
  * Port of `convex/helpers/watch_item.ts` `getCurrentUser` — multi-format
  * tokenIdentifier matching so users created under any prior format resolve.
+ * Uses a short-lived in-memory cache to eliminate duplicate database hits.
  */
 export async function findUserByClaims(
 	claims: ClerkSessionClaims,
 ): Promise<AuthUser | null> {
+	const sub = claims.sub;
+	if (!sub) return null;
+
+	const now = Date.now();
+	const cached = userCache.get(sub);
+	if (cached && cached.expiresAt > now) {
+		return cached.user;
+	}
+
 	const matches = await findUserMatchesByClaims(claims);
-	return pickBestUserMatch(matches, toTokenIdentifier(claims.sub));
+	const user = await pickBestUserMatch(matches, toTokenIdentifier(sub));
+
+	userCache.set(sub, {
+		user,
+		expiresAt: now + USER_CACHE_TTL_MS,
+	});
+	pruneUserCache();
+
+	return user;
 }
 
 export type RequireUserResult =

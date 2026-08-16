@@ -1,7 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
-import { getAdminFromClaims, getCurrentUser, requireUser } from "../auth";
+import {
+	getAdminFromClaims,
+	getCurrentUser,
+	invalidateUserCache,
+	requireUser,
+} from "../auth";
 import { getDb } from "../db/client";
 import { users } from "../db/schema";
 import { getEnv } from "../env";
@@ -43,6 +48,7 @@ export const storeUser = createServerFn({ method: "POST" })
 
 		if (Object.keys(update).length > 0) {
 			await db.update(users).set(update).where(eq(users.id, user.id));
+			invalidateUserCache(claims.sub);
 		}
 		return ok(user.id);
 	});

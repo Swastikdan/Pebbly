@@ -543,23 +543,44 @@ function normalizeTitleKey(title?: string | null): string {
 
 async function gatherWatchlistData(userId: string): Promise<WatchlistData> {
 	const db = getDb(getEnv());
-	// Execute the four independent reads in one batched round trip.
+	// Execute the four independent reads in one batched round trip with pruned projections.
 	const [watchItemRows, listRows, listItemRows, episodeRows] = await db.batch([
 		db
-			.select()
+			.select({
+				tmdbId: watchItems.tmdbId,
+				mediaType: watchItems.mediaType,
+				title: watchItems.title,
+				rating: watchItems.rating,
+				progressStatus: watchItems.progressStatus,
+				reaction: watchItems.reaction,
+				progress: watchItems.progress,
+			})
 			.from(watchItems)
 			.where(eq(watchItems.userId, userId))
 			.orderBy(desc(watchItems.updatedAt))
 			.limit(200),
-		db.select().from(lists).where(eq(lists.userId, userId)).limit(50),
 		db
-			.select()
+			.select({
+				id: lists.id,
+				name: lists.name,
+			})
+			.from(lists)
+			.where(eq(lists.userId, userId))
+			.limit(50),
+		db
+			.select({
+				listId: listItems.listId,
+				tmdbId: listItems.tmdbId,
+				mediaType: listItems.mediaType,
+			})
 			.from(listItems)
 			.where(eq(listItems.userId, userId))
 			.orderBy(desc(listItems.addedAt))
 			.limit(200),
 		db
-			.select()
+			.select({
+				isWatched: episodeProgress.isWatched,
+			})
 			.from(episodeProgress)
 			.where(eq(episodeProgress.userId, userId))
 			.orderBy(desc(episodeProgress.updatedAt))
