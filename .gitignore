@@ -14,7 +14,6 @@ todos.json
 .gemini/*
 .pnpm-store
 .commandcode/taste/taste.md
-docs
 implementation_plan.md
 .skills-lock.json
 .agents
