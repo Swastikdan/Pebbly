@@ -12,7 +12,6 @@ import { queryKeys } from "@/lib/query/keys";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import {
 	batchSetWatchlistMembership,
-	getWatchlist,
 	markShowEpisodesAndStatus,
 	setProgressStatus,
 	setReaction,
@@ -21,11 +20,14 @@ import {
 import { unwrap } from "@/server/schema/common";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 import {
-	beginOptimistic,
-	createOptimisticUpdater,
-	setCached,
-} from "./optimistic-helpers";
+	applyServerState,
+	beginOp,
+	type OpHandle,
+	type PendingOpEntry,
+	scheduleSync,
+} from "./pending-ops";
 import { useLocalProgressStore } from "./use-local-progress-store";
+import { fetchWatchlistList } from "./watchlist-queries";
 import {
 	type MediaMetadata,
 	type MediaType,
@@ -45,7 +47,7 @@ export function useWatchlist() {
 	const { isSignedIn, isLoaded } = useUser();
 	const remote = useQuery({
 		queryKey: queryKeys.watchlist.list(),
-		queryFn: () => unwrap(getWatchlist({ data: {} })),
+		queryFn: fetchWatchlistList,
 		enabled: !!isSignedIn,
 	});
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
@@ -77,7 +79,7 @@ export function useAllMediaStates() {
 	const { isSignedIn, isLoaded } = useUser();
 	const remote = useQuery({
 		queryKey: queryKeys.watchlist.list(),
-		queryFn: () => unwrap(getWatchlist({ data: {} })),
+		queryFn: fetchWatchlistList,
 		enabled: !!isSignedIn,
 	});
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
@@ -108,7 +110,7 @@ export function useMediaState(id: string, mediaType: MediaType) {
 	// the one `getWatchlist` fetch, so a 50-card grid is a single request.
 	const remote = useQuery({
 		queryKey: queryKeys.watchlist.list(),
-		queryFn: () => unwrap(getWatchlist({ data: {} })),
+		queryFn: fetchWatchlistList,
 		enabled: !!isSignedIn,
 	});
 
@@ -141,134 +143,110 @@ type WatchlistMembershipArgs = {
 	overview?: string;
 };
 
-const updateWatchlistMembership = createOptimisticUpdater<
-	WatchItemRow,
-	WatchlistMembershipArgs
->(
-	() => queryKeys.watchlist.list(),
-	(current, args) => {
-		if (args.inWatchlist) {
-			const existing = current.find(
-				(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
-			);
-			if (existing) {
-				return current.map((i) =>
-					i === existing
-						? { ...i, inWatchlist: true, updatedAt: Date.now() }
-						: i,
-				);
-			}
-			return [
-				...current,
-				{
-					id: `optimistic_${Date.now()}`,
-					userId: "optimistic",
-					tmdbId: args.tmdbId,
-					mediaType: args.mediaType,
-					title: args.title ?? null,
-					image: args.image ?? null,
-					rating: args.rating ?? null,
-					releaseDate: args.release_date ?? null,
-					overview: args.overview ?? null,
-					inWatchlist: true,
-					progressStatus: "watch-later",
-					reaction: null,
-					progress: 0,
-					updatedAt: Date.now(),
-				} as WatchItemRow,
-			];
-		}
-		return current.map((i) =>
-			i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
-				? {
-						...i,
-						inWatchlist: false,
-						progressStatus:
-							i.progressStatus === "watch-later" ? null : i.progressStatus,
-					}
-				: i,
+function applyMembershipRows(
+	rows: WatchItemRow[],
+	args: WatchlistMembershipArgs,
+): WatchItemRow[] {
+	if (args.inWatchlist) {
+		const existing = rows.find(
+			(i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
 		);
-	},
-);
+		if (existing) {
+			return rows.map((i) =>
+				i === existing ? { ...i, inWatchlist: true, updatedAt: Date.now() } : i,
+			);
+		}
+		return [
+			...rows,
+			{
+				id: `optimistic_${Date.now()}`,
+				userId: "optimistic",
+				tmdbId: args.tmdbId,
+				mediaType: args.mediaType,
+				title: args.title ?? null,
+				image: args.image ?? null,
+				rating: args.rating ?? null,
+				releaseDate: args.release_date ?? null,
+				overview: args.overview ?? null,
+				inWatchlist: true,
+				progressStatus: "watch-later",
+				reaction: null,
+				progress: 0,
+				updatedAt: Date.now(),
+			} as WatchItemRow,
+		];
+	}
+	return rows.map((i) =>
+		i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
+			? {
+					...i,
+					inWatchlist: false,
+					progressStatus:
+						i.progressStatus === "watch-later" ? null : i.progressStatus,
+				}
+			: i,
+	);
+}
 
-async function setWatchlistMembershipOptimistic(
+function beginMembershipOp(
 	queryClient: QueryClient,
 	args: WatchlistMembershipArgs,
-) {
-	const mediaKey = queryKeys.watchlist.mediaState(
-		args.tmdbId,
-		args.mediaType as MediaType,
-	);
-	return beginOptimistic(
-		queryClient,
-		[queryKeys.watchlist.list(), mediaKey],
-		() => {
-			updateWatchlistMembership(queryClient, args);
-			setCached<WatchItemRow>(queryClient, mediaKey, (current) => {
-				if (current) {
-					return {
-						...current,
-						inWatchlist: args.inWatchlist,
-						updatedAt: Date.now(),
-					};
-				}
-				if (args.inWatchlist) {
-					return {
-						id: `optimistic_${Date.now()}`,
-						userId: "optimistic",
-						tmdbId: args.tmdbId,
-						mediaType: args.mediaType as WatchItemRow["mediaType"],
-						title: args.title ?? null,
-						image: args.image ?? null,
-						rating: args.rating ?? null,
-						releaseDate: args.release_date ?? null,
-						overview: args.overview ?? null,
-						inWatchlist: true,
-						progressStatus: "watch-later",
-						reaction: null,
-						progress: 0,
-						updatedAt: Date.now(),
-					};
-				}
-				return undefined;
-			});
+): OpHandle {
+	return beginOp(queryClient, [
+		{
+			key: queryKeys.watchlist.list(),
+			touchedIds: [`${args.mediaType}:${args.tmdbId}`],
+			apply: (rows: WatchItemRow[]) => applyMembershipRows(rows, args),
 		},
-	);
+	]);
 }
 
 type BatchedWatchlistMembershipTask = {
 	args: WatchlistMembershipArgs;
-	rollback?: () => void;
+	handle?: OpHandle;
 	queryClient: QueryClient;
 };
 
 const watchlistMembershipBatcher = createBatcher<
 	BatchedWatchlistMembershipTask,
-	{ ok: true } | { count: number }
+	WatchItemRow[]
 >(
 	async (tasks) => {
 		const queryClient = tasks[0]?.queryClient;
 		const items = tasks.map((t) => t.args);
 
 		try {
-			let result: { ok: true } | { count: number };
+			let rows: WatchItemRow[];
 			if (items.length === 1) {
-				result = await unwrap(setWatchlistMembership({ data: items[0] }));
+				const row = await unwrap(setWatchlistMembership({ data: items[0] }));
+				rows = row ? [row] : [];
 			} else {
-				result = await unwrap(batchSetWatchlistMembership({ data: { items } }));
+				rows = await unwrap(batchSetWatchlistMembership({ data: { items } }));
 			}
 
+			// Merge the authoritative rows into the cache (no full refetch — the
+			// server response already reflects this batch). Touched items missing
+			// from the response were deleted.
 			if (queryClient) {
-				void queryClient.invalidateQueries({
-					queryKey: queryKeys.watchlist.list(),
-				});
+				applyServerState(
+					queryClient,
+					queryKeys.watchlist.list(),
+					rows,
+					items.map((i) => `${i.mediaType}:${i.tmdbId}`),
+				);
 			}
-
-			return result;
+			for (const task of tasks) {
+				task.handle?.resolve();
+			}
+			// The tracked-ids query derives from the watchlist, so keep it fresh.
+			if (queryClient) {
+				scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds()]);
+			}
+			return rows;
 		} catch (error) {
 			logWatchlistError("batch set watchlist membership", error);
 			for (const task of tasks) {
-				task.rollback?.();
+				task.handle?.remove();
 			}
 			throw error;
 		}
@@ -330,13 +308,10 @@ export function useToggleWatchlistItem() {
 					overview: item.overview || undefined,
 				};
 
-				const rollback = await setWatchlistMembershipOptimistic(
-					queryClient,
-					args,
-				);
+				const handle = beginMembershipOp(queryClient, args);
 				return await watchlistMembershipBatcher.schedule({
 					args,
-					rollback,
+					handle,
 					queryClient,
 				});
 			}
@@ -388,11 +363,8 @@ export function useBatchToggleWatchlist() {
 						release_date: item.release_date || undefined,
 						overview: item.overview || undefined,
 					};
-					const rollback = await setWatchlistMembershipOptimistic(
-						queryClient,
-						args,
-					);
-					tasks.push({ args, rollback, queryClient });
+					const handle = beginMembershipOp(queryClient, args);
+					tasks.push({ args, handle, queryClient });
 				}
 
 				return await Promise.all(
@@ -431,48 +403,34 @@ type ProgressStatusArgs = {
 	overview?: string;
 };
 
-const updateProgressStatus = createOptimisticUpdater<
-	WatchItemRow,
-	ProgressStatusArgs
->(
-	() => queryKeys.watchlist.list(),
-	(current, args) => {
-		return current.map((i) =>
-			i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
-				? {
-						...i,
-						inWatchlist: true,
-						progressStatus: args.progressStatus,
-						progress: args.progress ?? i.progress,
-						updatedAt: Date.now(),
-					}
-				: i,
-		);
-	},
-);
-
-async function setProgressStatusOptimistic(
-	queryClient: QueryClient,
+function applyProgressStatusRows(
+	rows: WatchItemRow[],
 	args: ProgressStatusArgs,
-) {
-	const mediaKey = queryKeys.watchlist.mediaState(args.tmdbId, args.mediaType);
-	return beginOptimistic(
-		queryClient,
-		[queryKeys.watchlist.list(), mediaKey],
-		() => {
-			updateProgressStatus(queryClient, args);
-			setCached<WatchItemRow>(queryClient, mediaKey, (current) => {
-				if (!current) return current;
-				return {
-					...current,
+): WatchItemRow[] {
+	return rows.map((i) =>
+		i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
+			? {
+					...i,
 					inWatchlist: true,
 					progressStatus: args.progressStatus,
-					progress: args.progress ?? current.progress,
+					progress: args.progress ?? i.progress,
 					updatedAt: Date.now(),
-				};
-			});
-		},
+				}
+			: i,
 	);
+}
+
+function beginProgressStatusOp(
+	queryClient: QueryClient,
+	args: ProgressStatusArgs,
+): OpHandle {
+	return beginOp(queryClient, [
+		{
+			key: queryKeys.watchlist.list(),
+			touchedIds: [`${args.mediaType}:${args.tmdbId}`],
+			apply: (rows: WatchItemRow[]) => applyProgressStatusRows(rows, args),
+		},
+	]);
 }
 
 type MarkShowEpisodesAndStatusArgs = {
@@ -490,46 +448,78 @@ type MarkShowEpisodesAndStatusArgs = {
 	overview?: string;
 };
 
-const updateShowEpisodes = createOptimisticUpdater<
-	EpisodeProgressRow,
-	MarkShowEpisodesAndStatusArgs
->(
-	(args) => queryKeys.watchlist.episodes(args.tmdbId),
-	(current, args) => {
-		if (args.isWatched) {
-			const now = Date.now();
-			const existingKeys = new Set(
-				current.map((e) => `${e.season}:${e.episode}`),
-			);
-			const newEpisodes: EpisodeProgressRow[] = [];
-			for (const s of args.seasons) {
-				for (const ep of s.episodes) {
-					if (!existingKeys.has(`${s.season}:${ep}`)) {
-						newEpisodes.push({
-							id: `optimistic_${now}_${s.season}_${ep}`,
-							userId: "optimistic",
-							tmdbId: args.tmdbId,
-							season: s.season,
-							episode: ep,
-							isWatched: true,
-							updatedAt: now,
-						});
-					}
+const episodeIdOf = (row: EpisodeProgressRow) =>
+	`${row.tmdbId}:${row.season}:${row.episode}`;
+
+function applyShowEpisodesRows(
+	rows: EpisodeProgressRow[],
+	args: MarkShowEpisodesAndStatusArgs,
+): EpisodeProgressRow[] {
+	if (args.isWatched) {
+		const now = Date.now();
+		const existingKeys = new Set(rows.map((e) => `${e.season}:${e.episode}`));
+		const newEpisodes: EpisodeProgressRow[] = [];
+		for (const s of args.seasons) {
+			for (const ep of s.episodes) {
+				if (!existingKeys.has(`${s.season}:${ep}`)) {
+					newEpisodes.push({
+						id: `optimistic_${now}_${s.season}_${ep}`,
+						userId: "optimistic",
+						tmdbId: args.tmdbId,
+						season: s.season,
+						episode: ep,
+						isWatched: true,
+						updatedAt: now,
+					});
 				}
 			}
-			return [...current, ...newEpisodes];
 		}
-		if (args.clearAllEpisodes || args.seasons.length > 0) {
-			return current.filter((e) => {
-				if (args.clearAllEpisodes) return false;
-				return !args.seasons.some(
-					(s) => s.season === e.season && s.episodes.includes(e.episode),
-				);
-			});
-		}
-		return current;
-	},
-);
+		return [...rows, ...newEpisodes];
+	}
+	if (args.clearAllEpisodes || args.seasons.length > 0) {
+		return rows.filter((e) => {
+			if (args.clearAllEpisodes) return false;
+			return !args.seasons.some(
+				(s) => s.season === e.season && s.episodes.includes(e.episode),
+			);
+		});
+	}
+	return rows;
+}
+
+function beginMarkShowOp(
+	queryClient: QueryClient,
+	args: MarkShowEpisodesAndStatusArgs,
+): OpHandle {
+	const entries: PendingOpEntry<WatchItemRow | EpisodeProgressRow>[] = [];
+	if (args.progressStatus !== undefined) {
+		entries.push({
+			key: queryKeys.watchlist.list(),
+			touchedIds: [`${args.mediaType}:${args.tmdbId}`],
+			apply: (rows) =>
+				applyProgressStatusRows(
+					rows as WatchItemRow[],
+					args as unknown as ProgressStatusArgs,
+				),
+		});
+	}
+	const episodeKey = queryKeys.watchlist.episodes(args.tmdbId);
+	const currentEpisodes = (queryClient.getQueryData<EpisodeProgressRow[]>(
+		episodeKey,
+	) ?? []) as EpisodeProgressRow[];
+	const episodeIds = args.clearAllEpisodes
+		? currentEpisodes.map(episodeIdOf)
+		: args.seasons.flatMap((s) =>
+				s.episodes.map((ep) => `${args.tmdbId}:${s.season}:${ep}`),
+			);
+	entries.push({
+		key: episodeKey,
+		touchedIds: episodeIds,
+		idOf: episodeIdOf as (row: WatchItemRow | EpisodeProgressRow) => string,
+		apply: (rows) => applyShowEpisodesRows(rows as EpisodeProgressRow[], args),
+	});
+	return beginOp(queryClient, entries);
+}
 
 export function useSetProgressStatus() {
 	const { isSignedIn } = useUser();
@@ -547,61 +537,31 @@ export function useSetProgressStatus() {
 	const progressMutation = useMutation({
 		mutationFn: (args: ProgressStatusArgs) =>
 			unwrap(setProgressStatus({ data: args })),
-		onMutate: (args) => setProgressStatusOptimistic(queryClient, args),
-		onError: (error, _args, rollback) => {
+		onMutate: (args) => beginProgressStatusOp(queryClient, args),
+		onSuccess: (_data, _args, handle) => handle?.resolve(),
+		onError: (error, _args, handle) => {
 			logWatchlistError("set progress status", error);
-			rollback?.();
+			handle?.remove();
 		},
 		onSettled: () => {
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.watchlist.list(),
-			});
+			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
 		},
 	});
 
 	const markShowMutation = useMutation({
 		mutationFn: (args: MarkShowEpisodesAndStatusArgs) =>
 			unwrap(markShowEpisodesAndStatus({ data: args })),
-		onMutate: async (args) => {
-			const mediaKey = queryKeys.watchlist.mediaState(
-				args.tmdbId,
-				args.mediaType,
-			);
-			const episodeKey = queryKeys.watchlist.episodes(args.tmdbId);
-			return beginOptimistic(
-				queryClient,
-				[queryKeys.watchlist.list(), mediaKey, episodeKey],
-				() => {
-					if (args.progressStatus !== undefined) {
-						updateProgressStatus(
-							queryClient,
-							args as unknown as ProgressStatusArgs,
-						);
-						setCached<WatchItemRow>(queryClient, mediaKey, (current) => {
-							if (!current) return current;
-							return {
-								...current,
-								progressStatus: args.progressStatus ?? null,
-								progress: args.progress ?? current.progress,
-								updatedAt: Date.now(),
-							};
-						});
-					}
-					updateShowEpisodes(queryClient, args);
-				},
-			);
-		},
-		onError: (error, _args, rollback) => {
+		onMutate: (args) => beginMarkShowOp(queryClient, args),
+		onSuccess: (_data, _args, handle) => handle?.resolve(),
+		onError: (error, _args, handle) => {
 			logWatchlistError("sync show episode status", error);
-			rollback?.();
+			handle?.remove();
 		},
-		onSettled: () => {
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.watchlist.list(),
-			});
-			void queryClient.invalidateQueries({
-				queryKey: ["watchlist", "episodes"],
-			});
+		onSettled: (_data, _error, args) => {
+			scheduleSync(queryClient, [
+				queryKeys.watchlist.list(),
+				queryKeys.watchlist.episodes(args.tmdbId),
+			]);
 		},
 	});
 
@@ -748,41 +708,32 @@ type SetReactionArgs = {
 	overview?: string;
 };
 
-const updateReaction = createOptimisticUpdater<WatchItemRow, SetReactionArgs>(
-	() => queryKeys.watchlist.list(),
-	(current, args) => {
-		return current.map((i) =>
-			i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
-				? {
-						...i,
-						reaction: args.clearReaction ? null : (args.reaction ?? null),
-						updatedAt: Date.now(),
-					}
-				: i,
-		);
-	},
-);
-
-async function setReactionOptimistic(
-	queryClient: QueryClient,
+function applyReactionRows(
+	rows: WatchItemRow[],
 	args: SetReactionArgs,
-) {
-	const mediaKey = queryKeys.watchlist.mediaState(args.tmdbId, args.mediaType);
-	return beginOptimistic(
-		queryClient,
-		[queryKeys.watchlist.list(), mediaKey],
-		() => {
-			updateReaction(queryClient, args);
-			setCached<WatchItemRow>(queryClient, mediaKey, (current) => {
-				if (!current) return current;
-				return {
-					...current,
+): WatchItemRow[] {
+	return rows.map((i) =>
+		i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
+			? {
+					...i,
 					reaction: args.clearReaction ? null : (args.reaction ?? null),
 					updatedAt: Date.now(),
-				};
-			});
-		},
+				}
+			: i,
 	);
+}
+
+function beginReactionOp(
+	queryClient: QueryClient,
+	args: SetReactionArgs,
+): OpHandle {
+	return beginOp(queryClient, [
+		{
+			key: queryKeys.watchlist.list(),
+			touchedIds: [`${args.mediaType}:${args.tmdbId}`],
+			apply: (rows: WatchItemRow[]) => applyReactionRows(rows, args),
+		},
+	]);
 }
 
 export function useSetReaction() {
@@ -792,15 +743,14 @@ export function useSetReaction() {
 
 	const mutation = useMutation({
 		mutationFn: (args: SetReactionArgs) => unwrap(setReaction({ data: args })),
-		onMutate: (args) => setReactionOptimistic(queryClient, args),
-		onError: (error, _args, rollback) => {
+		onMutate: (args) => beginReactionOp(queryClient, args),
+		onSuccess: (_data, _args, handle) => handle?.resolve(),
+		onError: (error, _args, handle) => {
 			logWatchlistError("set reaction", error);
-			rollback?.();
+			handle?.remove();
 		},
 		onSettled: () => {
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.watchlist.list(),
-			});
+			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
 		},
 	});
 
