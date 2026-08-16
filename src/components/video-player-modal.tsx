@@ -12,10 +12,8 @@ import {
 import { Play, XIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
-import {
-	buildPlayerUrl,
-	usePlayerProgressListener,
-} from "@/hooks/use-watch-progress";
+import { buildPlayerUrl } from "@/hooks/watch-progress/progress-helpers";
+import { usePlayerProgressListener } from "@/hooks/watch-progress/use-player-listener";
 import { cn } from "@/lib/utils";
 
 const INACTIVITY_HIDE_DELAY = 3000;
@@ -74,12 +72,25 @@ export function VideoPlayerModal({
 	const navigate = useNavigate();
 	const search = useSearch({ strict: false }) as Record<string, unknown>;
 
+	// Pass the exact player URL so the listener trusts postMessage sources by
+	// origin instead of scanning the DOM for /embed/ iframes. The URL builder
+	// throws when VITE_PUBLIC_VIDEO_URL is unset, so guard with the raw env var.
+	const playerUrl = import.meta.env.VITE_PUBLIC_VIDEO_URL
+		? buildPlayerUrl({
+				type,
+				tmdbId,
+				season,
+				episode,
+			})
+		: undefined;
+
 	usePlayerProgressListener({
 		tmdbId,
 		mediaType: type,
 		title,
 		season,
 		episode,
+		playerUrl,
 	});
 
 	// Auto-open when ?play=true is in the URL

@@ -1,21 +1,6 @@
-import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import {
-	Bookmark,
-	ListPlus,
-	Plus,
-	Search,
-	SlidersHorizontal,
-	X,
-} from "lucide-react";
-import {
-	lazy,
-	Suspense,
-	useCallback,
-	useDeferredValue,
-	useId,
-	useMemo,
-	useState,
-} from "react";
+import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
+import { Bookmark, ListPlus, Plus } from "lucide-react";
+import { lazy, Suspense, useCallback, useId, useMemo, useState } from "react";
 
 const CustomListDialog = lazy(() =>
 	import("@/components/custom-list-dialog").then((m) => ({
@@ -23,41 +8,31 @@ const CustomListDialog = lazy(() =>
 	})),
 );
 
-import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
-import {
-	BookMarkFilledIcon,
-	Download,
-	SearchFilledIcon,
-	Upload,
-} from "@/components/ui/icons";
+import { Download, Upload } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CustomListCard } from "@/components/watchlist/custom-list-card";
 import { CustomListView } from "@/components/watchlist/custom-list-view";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
-import {
-	WatchlistCard,
-	WatchlistCardSkeleton,
-} from "@/components/watchlist/watchlist-card";
-import { SECTION_TAB_LIST_CLASS, SECTION_TAB_TRIGGER_CLASS } from "@/constants";
-import { REACTION_OPTIONS } from "@/constants/watchlist";
+import { WatchlistFilters } from "@/components/watchlist/watchlist-filters";
+import { WatchlistGrid } from "@/components/watchlist/watchlist-grid";
 import {
 	useCreateCustomList,
 	useCustomLists,
 	useDeleteCustomList,
 } from "@/hooks/use-custom-lists";
+import {
+	useFilteredWatchlist,
+	type WatchlistFilter,
+	type WatchlistMediaFilter,
+	type WatchlistReactionFilter,
+	type WatchlistSort,
+} from "@/hooks/use-filtered-watchlist";
 import { toast } from "@/hooks/use-toast-store";
 import {
 	useToggleWatchlistItem,
@@ -65,17 +40,11 @@ import {
 	type WatchlistItem,
 } from "@/hooks/use-watchlist";
 import { useWatchlistImportExport } from "@/hooks/use-watchlist-import-export";
-import { cn } from "@/lib/utils";
-import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export const Route = createLazyFileRoute("/watchlist")({
 	component: WatchlistPage,
 });
 
-type FilterType = "all" | ProgressStatus;
-type MediaFilter = "all" | "movie" | "tv";
-type SortType = "recent" | "rating" | "title" | "year";
-type ReactionFilter = "all" | "none" | ReactionStatus;
 type PageTab = "watchlist" | "my-lists";
 
 function WatchlistPage() {
@@ -111,18 +80,12 @@ function WatchlistPage() {
 							className="w-full"
 						>
 							<div className="flex items-center justify-between gap-3">
-								<TabsList className={SECTION_TAB_LIST_CLASS}>
-									<TabsTrigger
-										value="watchlist"
-										className={SECTION_TAB_TRIGGER_CLASS}
-									>
+								<TabsList>
+									<TabsTrigger value="watchlist">
 										<Bookmark size={15} />
 										Watchlist
 									</TabsTrigger>
-									<TabsTrigger
-										value="my-lists"
-										className={SECTION_TAB_TRIGGER_CLASS}
-									>
+									<TabsTrigger value="my-lists">
 										<ListPlus size={15} />
 										My Collections
 									</TabsTrigger>
@@ -151,13 +114,14 @@ function WatchlistTabContent() {
 	const { watchlist: watchlistData, loading: watchlistLoading } =
 		useWatchlist();
 	const toggleWatchlist = useToggleWatchlistItem();
-	const [activeFilter, setActiveFilter] = useState<FilterType>("watch-later");
-	const [reactionFilter, setReactionFilter] = useState<ReactionFilter>("all");
-	const [mediaFilter, setMediaFilter] = useState<MediaFilter>("all");
-	const [sortBy, setSortBy] = useState<SortType>("recent");
+	const [activeFilter, setActiveFilter] =
+		useState<WatchlistFilter>("watch-later");
+	const [reactionFilter, setReactionFilter] =
+		useState<WatchlistReactionFilter>("all");
+	const [mediaFilter, setMediaFilter] = useState<WatchlistMediaFilter>("all");
+	const [sortBy, setSortBy] = useState<WatchlistSort>("recent");
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
-	const deferredSearchQuery = useDeferredValue(searchQuery);
 
 	const {
 		importLoading,
@@ -169,6 +133,14 @@ function WatchlistTabContent() {
 		importWatchlist,
 		handleImportClick,
 	} = useWatchlistImportExport();
+
+	const { filteredWatchlist, counts } = useFilteredWatchlist(watchlistData, {
+		searchQuery,
+		activeFilter,
+		reactionFilter,
+		mediaFilter,
+		sortBy,
+	});
 
 	const activeSecondaryCount = [
 		searchQuery.trim().length > 0,
@@ -183,83 +155,6 @@ function WatchlistTabContent() {
 		setReactionFilter("all");
 		setSortBy("recent");
 	}, []);
-
-	const filteredWatchlist = useMemo(() => {
-		let items = watchlistData;
-		const normalizedQuery = deferredSearchQuery.trim().toLocaleLowerCase();
-
-		if (normalizedQuery) {
-			items = items.filter((item) =>
-				[item.title, item.overview, item.release_date]
-					.filter(Boolean)
-					.some((value) =>
-						value?.toLocaleLowerCase().includes(normalizedQuery),
-					),
-			);
-		}
-
-		if (activeFilter !== "all") {
-			items = items.filter(
-				(item) => (item.progressStatus ?? "watch-later") === activeFilter,
-			);
-		} else {
-			items = items.filter((item) => item.progressStatus !== "dropped");
-		}
-		if (reactionFilter !== "all") {
-			items = items.filter((item) =>
-				reactionFilter === "none"
-					? item.reaction == null
-					: item.reaction === reactionFilter,
-			);
-		}
-		if (mediaFilter !== "all") {
-			items = items.filter((item) => item.type === mediaFilter);
-		}
-		return [...items].sort((a, b) => {
-			switch (sortBy) {
-				case "rating":
-					return (b.rating ?? 0) - (a.rating ?? 0);
-				case "title":
-					return a.title.localeCompare(b.title);
-				case "year":
-					return (
-						new Date(b.release_date || 0).getTime() -
-						new Date(a.release_date || 0).getTime()
-					);
-				default:
-					return (
-						(b.created_at ?? b.updated_at ?? 0) -
-						(a.created_at ?? a.updated_at ?? 0)
-					);
-			}
-		});
-	}, [
-		watchlistData,
-		deferredSearchQuery,
-		activeFilter,
-		reactionFilter,
-		mediaFilter,
-		sortBy,
-	]);
-
-	const counts = useMemo(() => {
-		const result = {
-			all: 0,
-			"watch-later": 0,
-			watching: 0,
-			done: 0,
-			dropped: 0,
-		};
-		for (const item of watchlistData) {
-			const status = item.progressStatus ?? "watch-later";
-			if (status === "watch-later") result["watch-later"]++;
-			else if (status === "watching") result.watching++;
-			else if (status === "done") result.done++;
-			else if (status === "dropped") result.dropped++;
-			if (status !== "dropped") result.all++;
-		}
-		return result;
-	}, [watchlistData]);
 
 	const handleRemoveFromWatchlist = useCallback(
 		(item: WatchlistItem) => {
@@ -299,15 +194,6 @@ function WatchlistTabContent() {
 		},
 		[toggleWatchlist],
 	);
-
-	const primaryTabs: Array<{ value: FilterType; label: string }> = [
-		{ value: "watch-later", label: "Watch Later" },
-		{ value: "watching", label: "Watching" },
-		{ value: "all", label: "All" },
-		{ value: "done", label: "Done" },
-	];
-
-	const showDroppedTab = counts.dropped > 0;
 
 	return (
 		<div className="pt-5">
@@ -383,259 +269,39 @@ function WatchlistTabContent() {
 			)}
 
 			{watchlistData.length > 0 && (
-				<div className="mb-6 space-y-3 rounded-2xl border border-border/60 bg-card/35 p-3 shadow-sm sm:p-4">
-					<div className="relative">
-						<Search
-							className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-							aria-hidden="true"
-						/>
-						<Input
-							value={searchQuery}
-							onChange={(event) => setSearchQuery(event.target.value)}
-							placeholder="Search saved titles, details, or release year"
-							aria-label="Search watchlist"
-							className="h-10 rounded-xl bg-background pl-9 pr-10 text-sm"
-						/>
-						{searchQuery && (
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								onClick={() => setSearchQuery("")}
-								className="absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-lg text-muted-foreground"
-								aria-label="Clear watchlist search"
-							>
-								<X size={14} />
-							</Button>
-						)}
-					</div>
-					<div className="flex items-center gap-2">
-						<div className="scrollbar-hidden flex flex-1 gap-1 overflow-x-auto">
-							{primaryTabs.map((tab) => {
-								const isActive = activeFilter === tab.value;
-								return (
-									<Button
-										key={tab.value}
-										type="button"
-										variant={isActive ? "default" : "ghost"}
-										onClick={() => setActiveFilter(tab.value)}
-										className={cn(
-											"h-auto items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
-											isActive
-												? "bg-foreground text-background"
-												: "text-muted-foreground hover:bg-secondary hover:text-foreground",
-										)}
-									>
-										{tab.label}
-										<span
-											className={cn(
-												"text-[10px] tabular-nums",
-												isActive ? "opacity-70" : "opacity-50",
-											)}
-										>
-											{counts[tab.value as keyof typeof counts] ?? 0}
-										</span>
-									</Button>
-								);
-							})}
-							{showDroppedTab && (
-								<Button
-									type="button"
-									variant={activeFilter === "dropped" ? "default" : "ghost"}
-									onClick={() => setActiveFilter("dropped")}
-									className={cn(
-										"h-auto items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
-										activeFilter === "dropped"
-											? "bg-foreground text-background"
-											: "text-muted-foreground/60 hover:bg-secondary hover:text-foreground",
-									)}
-								>
-									Dropped
-									<span className="text-[10px] tabular-nums opacity-50">
-										{counts.dropped}
-									</span>
-								</Button>
-							)}
-						</div>
-
-						<Button
-							onClick={() => setFiltersOpen((prev) => !prev)}
-							aria-expanded={filtersOpen}
-							variant={
-								filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"
-							}
-							size="sm"
-							className={cn(
-								"h-9 w-[132px] justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold ring-1 ring-border/40",
-								filtersOpen || activeSecondaryCount > 0
-									? "bg-foreground text-background hover:bg-foreground/90"
-									: "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
-							)}
-						>
-							<SlidersHorizontal size={13} />
-							<span className="relative inline-flex w-[72px] justify-center">
-								<span
-									className={cn(
-										"absolute inset-0 transition-opacity",
-										filtersOpen ? "opacity-100" : "opacity-0",
-									)}
-								>
-									Hide
-								</span>
-								<span
-									className={cn(
-										"absolute inset-0 transition-opacity",
-										filtersOpen ? "opacity-0" : "opacity-100",
-									)}
-								>
-									Filters
-								</span>
-								<span className="invisible">Filters</span>
-							</span>
-							{activeSecondaryCount > 0 && (
-								<span className="text-[10px] opacity-70">
-									{activeSecondaryCount}
-								</span>
-							)}
-						</Button>
-					</div>
-
-					<div
-						className={cn(
-							"flex-1 items-center gap-2 scrollbar-hidden overflow-x-auto",
-							filtersOpen ? "flex" : "hidden",
-						)}
-					>
-						<Select
-							value={mediaFilter}
-							onValueChange={(value) => setMediaFilter(value as MediaFilter)}
-						>
-							<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
-								<SelectValue placeholder="Type" />
-							</SelectTrigger>
-							<SelectContent className="rounded-xl">
-								<SelectItem value="all">All Types</SelectItem>
-								<SelectItem value="movie">Movies</SelectItem>
-								<SelectItem value="tv">Series</SelectItem>
-							</SelectContent>
-						</Select>
-
-						<Select
-							value={reactionFilter}
-							onValueChange={(value) =>
-								setReactionFilter(value as ReactionFilter)
-							}
-						>
-							<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
-								<SelectValue placeholder="Mood" />
-							</SelectTrigger>
-							<SelectContent className="rounded-xl">
-								<SelectItem value="all">All moods</SelectItem>
-								<SelectItem value="none">No mood</SelectItem>
-								{REACTION_OPTIONS.map((option) => (
-									<SelectItem key={option.value} value={option.value}>
-										<span className="flex items-center gap-2">
-											<option.icon size={14} /> {option.label}
-										</span>
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-
-						<Select
-							value={sortBy}
-							onValueChange={(value) => setSortBy(value as SortType)}
-						>
-							<SelectTrigger className="w-auto min-w-[120px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent className="rounded-xl">
-								<SelectItem value="recent">Recently Added</SelectItem>
-								<SelectItem value="rating">Highest Rated</SelectItem>
-								<SelectItem value="title">A → Z</SelectItem>
-								<SelectItem value="year">Newest Release</SelectItem>
-							</SelectContent>
-						</Select>
-
-						{activeSecondaryCount > 0 && (
-							<Button
-								type="button"
-								variant="ghost"
-								onClick={resetSecondaryFilters}
-								className="h-auto items-center gap-1 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-transparent hover:text-foreground"
-							>
-								<X size={12} />
-								Reset
-							</Button>
-						)}
-					</div>
-					<div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
-						<span>
-							Showing {filteredWatchlist.length} of {watchlistData.length} saved
-						</span>
-						{watchlistData.length >= 25 && (
-							<span className="hidden sm:inline">
-								Use Collections to group a big queue.
-							</span>
-						)}
-					</div>
-				</div>
+				<WatchlistFilters
+					searchQuery={searchQuery}
+					setSearchQuery={setSearchQuery}
+					activeFilter={activeFilter}
+					setActiveFilter={setActiveFilter}
+					reactionFilter={reactionFilter}
+					setReactionFilter={setReactionFilter}
+					mediaFilter={mediaFilter}
+					setMediaFilter={setMediaFilter}
+					sortBy={sortBy}
+					setSortBy={setSortBy}
+					filtersOpen={filtersOpen}
+					setFiltersOpen={setFiltersOpen}
+					activeSecondaryCount={activeSecondaryCount}
+					resetSecondaryFilters={resetSecondaryFilters}
+					counts={counts}
+					filteredCount={filteredWatchlist.length}
+					totalCount={watchlistData.length}
+				/>
 			)}
 
-			{watchlistLoading && watchlistData.length === 0 ? (
-				<div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					{Array.from({ length: 6 }).map((_, i) => (
-						<WatchlistCardSkeleton key={i} />
-					))}
-				</div>
-			) : error && filteredWatchlist.length === 0 ? (
-				<DefaultEmptyState message={error.message} description={false} />
-			) : filteredWatchlist?.length === 0 ? (
-				activeFilter === "all" &&
-				searchQuery.trim().length === 0 &&
-				mediaFilter === "all" &&
-				reactionFilter === "all" ? (
-					<div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center animate-fade-in-up">
-						<div className="flex size-16 items-center justify-center rounded-xl bg-secondary">
-							<BookMarkFilledIcon className="size-7 text-muted-foreground" />
-						</div>
-						<div>
-							<h3 className="mb-2 text-lg font-semibold">
-								Your watchlist is empty
-							</h3>
-							<p className="max-w-sm text-sm text-muted-foreground">
-								Start adding movies and TV shows to keep track of what you want
-								to watch.
-							</p>
-						</div>
-						<Link to="/search">
-							<Button variant="secondary" size="lg" className="gap-2">
-								<SearchFilledIcon className="size-4" />
-								Browse titles
-							</Button>
-						</Link>
-					</div>
-				) : (
-					<DefaultEmptyState
-						message="No items match your filters"
-						description={false}
-					/>
-				)
-			) : (
-				<div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					{filteredWatchlist.map(
-						(item, index) =>
-							item && (
-								<WatchlistCard
-									key={`${item.type}-${item.external_id}`}
-									item={item}
-									onRemoveFromWatchlist={handleRemoveFromWatchlist}
-									priority={index < 7}
-								/>
-							),
-					)}
-				</div>
-			)}
+			<WatchlistGrid
+				items={filteredWatchlist}
+				loading={watchlistLoading}
+				errorMessage={error ? error.message : null}
+				hasActiveFilters={
+					activeFilter !== "all" ||
+					searchQuery.trim().length > 0 ||
+					mediaFilter !== "all" ||
+					reactionFilter !== "all"
+				}
+				onRemoveFromWatchlist={handleRemoveFromWatchlist}
+			/>
 		</div>
 	);
 }

@@ -66,22 +66,23 @@ function parseClerkPublicMeta(
 	return null;
 }
 
+/**
+ * True only when the given identity carries an admin `public_meta.isAdmin`
+ * claim (from a signed JWT or a Clerk user resource). There is no DB fallback:
+ * a stored `users.is_admin` flag was removed because it went stale — a user
+ * demoted in Clerk kept `isAdmin: true` in the DB forever. Access decisions
+ * must come from the live JWT/API, never a stored flag.
+ */
 export function isClerkAdmin(
 	identity: Record<string, unknown> | null,
-	dbUser?: { isAdmin?: boolean | null } | null,
 ): boolean {
-	if (parseClerkPublicMeta(identity)?.isAdmin === true) return true;
-	if (dbUser?.isAdmin === true) return true;
-	return false;
+	return parseClerkPublicMeta(identity)?.isAdmin === true;
 }
 
 /**
  * True only when the (Clerk-signed) JWT itself carries an admin
- * `public_meta.isAdmin` claim. Unlike `isClerkAdmin`, this deliberately does
- * NOT consult the stored `users.isAdmin` flag — that flag is only written at
- * account creation and is never refreshed, so it goes stale: a user demoted in
- * Clerk keeps `isAdmin: true` in the DB forever. Access decisions must come
- * from the live JWT/API, never the stale flag.
+ * `public_meta.isAdmin` claim. Access decisions must come from the live
+ * JWT/API, never a stored flag.
  */
 export function isAdminByClaims(claims: ClerkSessionClaims | null): boolean {
 	return (
@@ -219,7 +220,7 @@ export async function getUserFeatures(
 		};
 	}
 	// Same authoritative admin source as `hasFeature` — JWT claim or live Clerk
-	// API (60s-cached), never the stale DB flag.
+	// API, never the stale DB flag.
 	if (isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub))) {
 		return {
 			roles: [] as string[],

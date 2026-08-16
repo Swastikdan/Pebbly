@@ -11,8 +11,8 @@ import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
+import type { SeasonInfo, Tv } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
-import type { SeasonInfo, Tv } from "@/types";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
 	loader: ({ params, context }) => {

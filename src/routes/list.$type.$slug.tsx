@@ -12,9 +12,9 @@ import { DefaultErrorComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ShareButton } from "@/components/share-button";
+import { MediaGrid } from "@/components/ui/media-grid";
 import { Pagination } from "@/components/ui/pagination";
 import {
-	HORIZONTAL_MEDIA_GRID_CLASS,
 	MAX_PAGINATION_LIMIT,
 	MEDIA_PAGE_SLUGS,
 	SITE_CONFIG,
@@ -153,11 +153,15 @@ function MediaListPage() {
 					<div className="flex min-h-96 w-full items-center justify-center">
 						{isLoading ? (
 							<section className="flex h-full flex-col w-full">
-								<div className={HORIZONTAL_MEDIA_GRID_CLASS}>
+								<MediaGrid>
 									{Array.from({ length: 12 }).map((_, index) => (
-										<MediaCardSkeleton key={index} card_type="horizontal" />
+										<MediaCardSkeleton
+											// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+											key={index}
+											card_type="horizontal"
+										/>
 									))}
-								</div>
+								</MediaGrid>
 							</section>
 						) : mediaListError ? (
 							<DefaultErrorComponent />
@@ -167,7 +171,7 @@ function MediaListPage() {
 								description={false}
 							/>
 						) : (
-							<div className={`stagger-grid ${HORIZONTAL_MEDIA_GRID_CLASS}`}>
+							<MediaGrid stagger>
 								{results?.map((item, index) => (
 									<MediaCard
 										card_type="horizontal"
@@ -186,7 +190,7 @@ function MediaListPage() {
 										priority={index < 7}
 									/>
 								))}
-							</div>
+							</MediaGrid>
 						)}
 					</div>
 

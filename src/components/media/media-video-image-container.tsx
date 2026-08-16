@@ -22,7 +22,7 @@ import {
 	updateDialogSearch,
 } from "@/lib/media-dialog-helpers";
 import { getImages, getVideos } from "@/lib/queries";
-import type { MediaImages, MediaVideosResultsEntity } from "@/types";
+import type { MediaImages, MediaVideosResultsEntity } from "@/lib/tmdb-schemas";
 
 const sortVideos = (videos: MediaVideosResultsEntity[] | undefined | null) => {
 	if (!videos) return [];
@@ -378,6 +378,7 @@ const GLobalMediaVideoImageContainerLoader = () => {
 					<div className="flex items-center justify-center gap-3">
 						{Array.from({ length: 6 }).map((_, index) => (
 							<Skeleton
+								// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
 								key={index}
 								className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
 							/>
@@ -395,6 +396,7 @@ const GLobalMediaVideoImageContainerLoader = () => {
 						<div className="flex items-center justify-center gap-3">
 							{Array.from({ length: 6 }).map((_, index) => (
 								<Skeleton
+									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
 									key={index}
 									className="bg-accent aspect-video h-44 w-auto rounded-xl md:h-52 lg:h-60"
 								/>
@@ -406,6 +408,7 @@ const GLobalMediaVideoImageContainerLoader = () => {
 						<div className="flex items-center justify-center gap-3">
 							{Array.from({ length: 12 }).map((_, index) => (
 								<Skeleton
+									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
 									key={index}
 									className="bg-accent aspect-video h-44 w-30 rounded-xl md:h-52 md:w-35.75 lg:h-60 lg:w-41.25"
 								/>

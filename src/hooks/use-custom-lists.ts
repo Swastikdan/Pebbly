@@ -1,27 +1,23 @@
 import { useUser } from "@clerk/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	type QueryClient,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { queryKeys } from "@/lib/query/keys";
+import { useRepository } from "@/lib/repository/use-repository";
 import type { CustomListRow, ListItemRow } from "@/lib/server-types";
-import {
-	createCustomList,
-	createCustomListAndAddItem,
-	deleteCustomList,
-	getCustomLists,
-	getItemLists,
-	getListItems,
-	toggleListItem,
-	updateCustomList,
-} from "@/server/fns/lists";
+import { getCustomLists, getItemLists, getListItems } from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
 import type { ProgressStatus, ReactionStatus } from "@/types";
-import {
-	beginOp,
-	type OpHandle,
-	type PendingOpEntry,
-	reconcileListFetch,
-	scheduleSync,
-} from "./pending-ops";
+import type {
+	CreateListAndAddArgs,
+	CreateListArgs,
+	ToggleListItemArgs,
+	UpdateListArgs,
+} from "./custom-lists/list-optimistic";
+import { reconcileListFetch } from "./pending-ops";
 import { useLocalListsStore } from "./use-local-lists-store";
 import { useWatchlistStore } from "./watchlist-store";
 
@@ -30,30 +26,36 @@ import { useWatchlistStore } from "./watchlist-store";
 // ---------------------------------------------------------------------------
 
 async function fetchCustomLists(
+	queryClient: QueryClient,
 	userId: string | undefined,
 ): Promise<CustomListRow[]> {
 	return reconcileListFetch(
+		queryClient,
 		queryKeys.lists.all(userId),
 		await unwrap(getCustomLists()),
 	);
 }
 
 async function fetchListItems(
+	queryClient: QueryClient,
 	listId: string,
 	userId: string | undefined,
 ): Promise<ListItemRow[]> {
 	return reconcileListFetch(
+		queryClient,
 		queryKeys.lists.items(listId, userId),
 		await unwrap(getListItems({ data: { listId } })),
 	);
 }
 
 async function fetchItemLists(
+	queryClient: QueryClient,
 	tmdbId: number,
 	mediaType: "movie" | "tv",
 	userId: string | undefined,
 ): Promise<string[]> {
 	return reconcileListFetch(
+		queryClient,
 		queryKeys.lists.itemLists(tmdbId, mediaType, userId),
 		await unwrap(getItemLists({ data: { tmdbId, mediaType } })),
 	);
@@ -61,11 +63,12 @@ async function fetchItemLists(
 
 export function useCustomLists() {
 	const { isSignedIn, user } = useUser();
+	const queryClient = useQueryClient();
 	const localLists = useLocalListsStore((state) => state.lists);
 	const localItems = useLocalListsStore((state) => state.listItems);
 	const remote = useQuery({
 		queryKey: queryKeys.lists.all(user?.id),
-		queryFn: () => fetchCustomLists(user?.id),
+		queryFn: () => fetchCustomLists(queryClient, user?.id),
 		enabled: !!isSignedIn,
 	});
 
@@ -106,11 +109,12 @@ export function useCustomLists() {
 
 export function useCustomListItems(listId: string | null) {
 	const { isSignedIn, user } = useUser();
+	const queryClient = useQueryClient();
 	const localItems = useLocalListsStore((state) => state.listItems);
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 	const remote = useQuery({
 		queryKey: queryKeys.lists.items(listId ?? "", user?.id),
-		queryFn: () => fetchListItems(listId!, user?.id),
+		queryFn: () => fetchListItems(queryClient, listId!, user?.id),
 		enabled: !!isSignedIn && !!listId,
 	});
 
@@ -154,10 +158,11 @@ export function useCustomListItems(listId: string | null) {
 
 export function useItemLists(tmdbId: number, mediaType: "movie" | "tv") {
 	const { isSignedIn, user } = useUser();
+	const queryClient = useQueryClient();
 	const localItems = useLocalListsStore((state) => state.listItems);
 	const remote = useQuery({
 		queryKey: queryKeys.lists.itemLists(tmdbId, mediaType, user?.id),
-		queryFn: () => fetchItemLists(tmdbId, mediaType, user?.id),
+		queryFn: () => fetchItemLists(queryClient, tmdbId, mediaType, user?.id),
 		enabled: !!isSignedIn,
 	});
 
@@ -168,592 +173,57 @@ export function useItemLists(tmdbId: number, mediaType: "movie" | "tv") {
 			.map((item) => item.listId);
 	}, [isSignedIn, remote.data, tmdbId, mediaType, localItems]);
 }
-
-// ---------------------------------------------------------------------------
-// Journal helpers
-// ---------------------------------------------------------------------------
-
-const listIdOf = (list: CustomListRow) => list.id;
-const stringIdOf = (id: string) => id;
-const itemTmdbIdOf = (item: ListItemRow) => String(item.tmdbId);
-
-type MixedListRow = CustomListRow | ListItemRow | string;
-
-/** Swap an optimistic list id for the server-assigned id across affected caches. */
-function swapListId(
-	queryClient: ReturnType<typeof useQueryClient>,
-	optimisticId: string,
-	realId: string,
-	userId: string | undefined,
-	itemListsKey?: readonly unknown[],
-) {
-	const key = queryKeys.lists.all(userId);
-	const rows = queryClient.getQueryData<CustomListRow[]>(key);
-	if (rows) {
-		queryClient.setQueryData<CustomListRow[]>(
-			key,
-			rows.map((l) => (l.id === optimisticId ? { ...l, id: realId } : l)),
-		);
-	}
-	if (itemListsKey) {
-		const itemLists = queryClient.getQueryData<string[]>(itemListsKey);
-		if (itemLists) {
-			queryClient.setQueryData<string[]>(
-				itemListsKey,
-				itemLists.map((id) => (id === optimisticId ? realId : id)),
-			);
-		}
-	}
-}
-
-// ---------------------------------------------------------------------------
-// Delete
-// ---------------------------------------------------------------------------
-
-function beginDeleteListOp(
-	queryClient: ReturnType<typeof useQueryClient>,
-	listId: string,
-	userId: string | undefined,
-): OpHandle {
-	return beginOp(queryClient, [
-		{
-			key: queryKeys.lists.all(userId),
-			touchedIds: [listId],
-			idOf: listIdOf,
-			apply: (rows: CustomListRow[]) => rows.filter((l) => l.id !== listId),
-		},
-	]);
-}
-
 export function useDeleteCustomList() {
-	const { isSignedIn, user } = useUser();
-	const queryClient = useQueryClient();
-	const deleteListLocal = useLocalListsStore((state) => state.deleteList);
-
-	const mutation = useMutation({
-		mutationFn: (listId: string) =>
-			unwrap(deleteCustomList({ data: { listId } })),
-		onMutate: (listId) => beginDeleteListOp(queryClient, listId, user?.id),
-		onSuccess: (_data, _listId, handle) => handle?.resolve(),
-		onError: (error, _listId, handle) => {
-			console.error("Failed to delete custom list", error);
-			handle?.remove();
-		},
-		onSettled: () => {
-			// Deleting a list orphans its items and their item-lists entries.
-			scheduleSync(queryClient, [
-				queryKeys.lists.all(),
-				queryKeys.lists.itemsPrefix(),
-				queryKeys.lists.itemListsPrefix(),
-			]);
-		},
-	});
+	const repository = useRepository();
 
 	return useCallback(
 		async (listId: string) => {
-			if (isSignedIn) {
-				await mutation.mutateAsync(listId);
-			} else {
-				deleteListLocal(listId);
-			}
+			await repository.deleteList(listId);
 		},
-		[isSignedIn, mutation, deleteListLocal],
+		[repository],
 	);
-}
-
-// ---------------------------------------------------------------------------
-// Create
-// ---------------------------------------------------------------------------
-
-type CreateListArgs = {
-	name: string;
-	color?: string;
-	visibility?: "public" | "private";
-	listType?: "custom" | "pebbly-picks";
-};
-
-function beginCreateListOp(
-	queryClient: ReturnType<typeof useQueryClient>,
-	args: CreateListArgs,
-	optimisticId: string,
-	userId: string | undefined,
-): OpHandle {
-	const now = Date.now();
-	return beginOp(queryClient, [
-		{
-			key: queryKeys.lists.all(userId),
-			touchedIds: [optimisticId],
-			idOf: listIdOf,
-			apply: (rows: CustomListRow[]) => [
-				...rows,
-				{
-					id: optimisticId,
-					userId: "optimistic",
-					name: args.name,
-					color: args.color ?? null,
-					visibility: args.visibility ?? null,
-					listType: args.listType ?? null,
-					sortOrder: rows.length,
-					createdAt: now,
-					updatedAt: now,
-					previews: [],
-					itemCount: 0,
-				},
-			],
-		},
-	]);
 }
 
 export function useCreateCustomList() {
-	const { isSignedIn, user } = useUser();
-	const queryClient = useQueryClient();
-	const createListLocal = useLocalListsStore((state) => state.createList);
-
-	const mutation = useMutation({
-		mutationFn: (args: CreateListArgs) =>
-			unwrap(createCustomList({ data: args })),
-		onMutate: (args) => {
-			const optimisticId = `optimistic_${Date.now()}`;
-			return {
-				handle: beginCreateListOp(queryClient, args, optimisticId, user?.id),
-				optimisticId,
-			};
-		},
-		onSuccess: (realId, _args, context) => {
-			if (context?.optimisticId) {
-				swapListId(queryClient, context.optimisticId, realId, user?.id);
-			}
-			context?.handle?.resolve();
-		},
-		onError: (error, _args, context) => {
-			console.error("Failed to create custom list", error);
-			context?.handle?.remove();
-		},
-		onSettled: () => {
-			scheduleSync(queryClient, [queryKeys.lists.all()]);
-		},
-	});
+	const repository = useRepository();
 
 	return useCallback(
 		async (args: CreateListArgs) => {
-			if (isSignedIn) {
-				return await mutation.mutateAsync(args);
-			}
-			return createListLocal(
-				args.name,
-				args.color,
-				args.visibility,
-				args.listType,
-			);
+			return await repository.createList(args);
 		},
-		[isSignedIn, mutation, createListLocal],
+		[repository],
 	);
-}
-
-// ---------------------------------------------------------------------------
-// Create + add item
-// ---------------------------------------------------------------------------
-
-type CreateListAndAddArgs = CreateListArgs & {
-	tmdbId: number;
-	mediaType: "movie" | "tv";
-	title?: string;
-	image?: string;
-	backdrop?: string;
-	rating?: number;
-	release_date?: string;
-	overview?: string;
-};
-
-function beginCreateListAndAddOp(
-	queryClient: ReturnType<typeof useQueryClient>,
-	args: CreateListAndAddArgs,
-	optimisticId: string,
-	userId: string | undefined,
-): OpHandle {
-	const now = Date.now();
-	const itemListsKey = queryKeys.lists.itemLists(
-		args.tmdbId,
-		args.mediaType,
-		userId,
-	);
-	const entries: PendingOpEntry<MixedListRow>[] = [
-		{
-			key: queryKeys.lists.all(userId),
-			touchedIds: [optimisticId],
-			idOf: listIdOf as (row: MixedListRow) => string,
-			apply: (rows) => [
-				...(rows as CustomListRow[]),
-				{
-					id: optimisticId,
-					userId: "optimistic",
-					name: args.name,
-					color: args.color ?? null,
-					visibility: args.visibility ?? null,
-					listType: args.listType ?? null,
-					sortOrder: (rows as CustomListRow[]).length,
-					createdAt: now,
-					updatedAt: now,
-					previews: [args.backdrop ?? args.image].filter(Boolean) as string[],
-					itemCount: 1,
-				},
-			],
-		},
-		{
-			key: itemListsKey,
-			touchedIds: [optimisticId],
-			idOf: stringIdOf as (row: MixedListRow) => string,
-			apply: (rows) => {
-				const current = rows as string[];
-				return current.includes(optimisticId)
-					? current
-					: [...current, optimisticId];
-			},
-		},
-	];
-	return beginOp(queryClient, entries);
 }
 
 export function useCreateCustomListAndAddItem() {
-	const { isSignedIn, user } = useUser();
-	const queryClient = useQueryClient();
-	const createListAndAddLocal = useLocalListsStore(
-		(state) => state.createListAndAddItem,
-	);
-
-	const mutation = useMutation({
-		mutationFn: (args: CreateListAndAddArgs) =>
-			unwrap(createCustomListAndAddItem({ data: args })),
-		onMutate: (args) => {
-			const optimisticId = `optimistic_${Date.now()}`;
-			return {
-				handle: beginCreateListAndAddOp(
-					queryClient,
-					args,
-					optimisticId,
-					user?.id,
-				),
-				optimisticId,
-			};
-		},
-		onSuccess: (realId, args, context) => {
-			if (context?.optimisticId) {
-				swapListId(
-					queryClient,
-					context.optimisticId,
-					realId,
-					user?.id,
-					queryKeys.lists.itemLists(args.tmdbId, args.mediaType, user?.id),
-				);
-			}
-			context?.handle?.resolve();
-		},
-		onError: (error, _args, context) => {
-			console.error("Failed to create list and add item", error);
-			context?.handle?.remove();
-		},
-		onSettled: () => {
-			scheduleSync(queryClient, [
-				queryKeys.lists.all(),
-				queryKeys.lists.itemsPrefix(),
-				queryKeys.lists.itemListsPrefix(),
-			]);
-		},
-	});
+	const repository = useRepository();
 
 	return useCallback(
 		async (args: CreateListAndAddArgs) => {
-			if (isSignedIn) {
-				return await mutation.mutateAsync(args);
-			}
-			createListAndAddLocal(args);
+			await repository.createListAndAddItem(args);
 		},
-		[isSignedIn, mutation, createListAndAddLocal],
+		[repository],
 	);
-}
-
-// ---------------------------------------------------------------------------
-// Update
-// ---------------------------------------------------------------------------
-
-type UpdateListArgs = CreateListArgs & { listId: string };
-
-function beginUpdateListOp(
-	queryClient: ReturnType<typeof useQueryClient>,
-	args: UpdateListArgs,
-	userId: string | undefined,
-): OpHandle {
-	return beginOp(queryClient, [
-		{
-			key: queryKeys.lists.all(userId),
-			touchedIds: [args.listId],
-			idOf: listIdOf,
-			apply: (rows: CustomListRow[]) =>
-				rows.map((l) =>
-					l.id === args.listId
-						? {
-								...l,
-								...(args.name !== undefined && { name: args.name }),
-								...(args.color !== undefined && { color: args.color }),
-								...(args.visibility !== undefined && {
-									visibility: args.visibility,
-								}),
-								...(args.listType !== undefined && {
-									listType: args.listType,
-								}),
-								updatedAt: Date.now(),
-							}
-						: l,
-				),
-		},
-	]);
 }
 
 export function useUpdateCustomList() {
-	const { isSignedIn, user } = useUser();
-	const queryClient = useQueryClient();
-	const updateListLocal = useLocalListsStore((state) => state.updateList);
-
-	const mutation = useMutation({
-		mutationFn: (args: UpdateListArgs) =>
-			unwrap(updateCustomList({ data: args })),
-		onMutate: (args) => beginUpdateListOp(queryClient, args, user?.id),
-		onSuccess: (_data, _args, handle) => handle?.resolve(),
-		onError: (error, _args, handle) => {
-			console.error("Failed to update custom list", error);
-			handle?.remove();
-		},
-		onSettled: () => {
-			scheduleSync(queryClient, [queryKeys.lists.all()]);
-		},
-	});
+	const repository = useRepository();
 
 	return useCallback(
 		async (args: UpdateListArgs) => {
-			if (isSignedIn) {
-				await mutation.mutateAsync(args);
-			} else {
-				updateListLocal(
-					args.listId,
-					args.name,
-					args.color,
-					args.visibility,
-					args.listType,
-				);
-			}
+			await repository.updateList(args);
 		},
-		[isSignedIn, mutation, updateListLocal],
+		[repository],
 	);
-}
-
-// ---------------------------------------------------------------------------
-// Toggle list item
-// ---------------------------------------------------------------------------
-
-type ToggleListItemArgs = {
-	listId: string;
-	tmdbId: number;
-	mediaType: "movie" | "tv";
-	title?: string;
-	image?: string;
-	backdrop?: string;
-	rating?: number;
-	release_date?: string;
-	overview?: string;
-};
-
-type ToggleMedia = {
-	listId: string;
-	tmdbId: number;
-	mediaType: "movie" | "tv";
-};
-
-function buildOptimisticListItem(args: ToggleListItemArgs): ListItemRow {
-	return {
-		id: `optimistic_${Date.now()}`,
-		userId: "optimistic",
-		listId: args.listId,
-		tmdbId: args.tmdbId,
-		mediaType: args.mediaType,
-		addedAt: Date.now(),
-		title: args.title ?? null,
-		image: args.image ?? null,
-		backdrop: args.backdrop ?? null,
-		rating: args.rating ?? null,
-		releaseDate: args.release_date ?? null,
-		overview: args.overview ?? null,
-		progressStatus: null,
-		reaction: null,
-	} as ListItemRow;
-}
-
-function applyItemListsToggle(
-	rows: string[],
-	args: ToggleMedia,
-	adding: boolean,
-): string[] {
-	return adding
-		? rows.includes(args.listId)
-			? rows
-			: [...rows, args.listId]
-		: rows.filter((id) => id !== args.listId);
-}
-
-function applyItemsToggle(
-	rows: ListItemRow[],
-	args: ToggleListItemArgs,
-	adding: boolean,
-): ListItemRow[] {
-	// Match on both tmdbId and mediaType so a movie and TV show sharing a TMDB
-	// id are never confused with one another.
-	if (!adding)
-		return rows.filter(
-			(i) => !(i.tmdbId === args.tmdbId && i.mediaType === args.mediaType),
-		);
-	if (
-		rows.some((i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType)
-	) {
-		return rows;
-	}
-	return [...rows, buildOptimisticListItem(args)];
-}
-
-function applyListCountToggle(
-	rows: CustomListRow[],
-	args: ToggleMedia,
-	adding: boolean,
-): CustomListRow[] {
-	return rows.map((l) =>
-		l.id === args.listId
-			? {
-					...l,
-					itemCount: adding
-						? (l.itemCount ?? 0) + 1
-						: Math.max(0, (l.itemCount ?? 1) - 1),
-					updatedAt: Date.now(),
-				}
-			: l,
-	);
-}
-
-function beginToggleListItemOp(
-	queryClient: ReturnType<typeof useQueryClient>,
-	args: ToggleListItemArgs,
-	userId: string | undefined,
-): { handle: OpHandle; adding: boolean } {
-	const itemListsKey = queryKeys.lists.itemLists(
-		args.tmdbId,
-		args.mediaType,
-		userId,
-	);
-	const itemsKey = queryKeys.lists.items(args.listId, userId);
-	const currentItemLists = (queryClient.getQueryData<string[]>(itemListsKey) ??
-		[]) as string[];
-	const adding = !currentItemLists.includes(args.listId);
-
-	const entries: PendingOpEntry<MixedListRow>[] = [
-		{
-			key: itemListsKey,
-			touchedIds: [args.listId],
-			idOf: stringIdOf as (row: MixedListRow) => string,
-			apply: (rows) => applyItemListsToggle(rows as string[], args, adding),
-		},
-		{
-			key: itemsKey,
-			touchedIds: [String(args.tmdbId)],
-			idOf: itemTmdbIdOf as (row: MixedListRow) => string,
-			apply: (rows) => applyItemsToggle(rows as ListItemRow[], args, adding),
-		},
-		{
-			key: queryKeys.lists.all(userId),
-			touchedIds: [args.listId],
-			idOf: listIdOf as (row: MixedListRow) => string,
-			apply: (rows) =>
-				applyListCountToggle(rows as CustomListRow[], args, adding),
-		},
-	];
-
-	return { handle: beginOp(queryClient, entries), adding };
-}
-
-/** The server returned the authoritative new state; flip the optimistic patch if it disagreed. */
-function applyToggleInverse(
-	queryClient: ReturnType<typeof useQueryClient>,
-	args: ToggleListItemArgs,
-	adding: boolean,
-	userId: string | undefined,
-) {
-	const inverse = !adding;
-	const itemListsKey = queryKeys.lists.itemLists(
-		args.tmdbId,
-		args.mediaType,
-		userId,
-	);
-	const itemsKey = queryKeys.lists.items(args.listId, userId);
-
-	const itemLists = (queryClient.getQueryData<string[]>(itemListsKey) ??
-		[]) as string[];
-	queryClient.setQueryData<string[]>(
-		itemListsKey,
-		applyItemListsToggle(itemLists, args, inverse),
-	);
-
-	const items = (queryClient.getQueryData<ListItemRow[]>(itemsKey) ??
-		[]) as ListItemRow[];
-	queryClient.setQueryData<ListItemRow[]>(
-		itemsKey,
-		applyItemsToggle(items, args, inverse),
-	);
-
-	const lists = (queryClient.getQueryData<CustomListRow[]>(
-		queryKeys.lists.all(userId),
-	) ?? []) as CustomListRow[] | undefined;
-	if (lists) {
-		queryClient.setQueryData<CustomListRow[]>(
-			queryKeys.lists.all(userId),
-			applyListCountToggle(lists, args, inverse),
-		);
-	}
 }
 
 export function useToggleListItem() {
-	const { isSignedIn, user } = useUser();
-	const queryClient = useQueryClient();
-	const toggleListItemLocal = useLocalListsStore(
-		(state) => state.toggleListItem,
-	);
-
-	const mutation = useMutation({
-		mutationFn: (args: ToggleListItemArgs) =>
-			unwrap(toggleListItem({ data: args })),
-		onMutate: (args) => beginToggleListItemOp(queryClient, args, user?.id),
-		onSuccess: (result, args, context) => {
-			if (context && result !== context.adding) {
-				applyToggleInverse(queryClient, args, context.adding, user?.id);
-			}
-			context?.handle?.resolve();
-		},
-		onError: (error, _args, context) => {
-			console.error("Failed to toggle list item", error);
-			context?.handle?.remove();
-		},
-		onSettled: () => {
-			scheduleSync(queryClient, [
-				queryKeys.lists.all(),
-				queryKeys.lists.itemsPrefix(),
-				queryKeys.lists.itemListsPrefix(),
-			]);
-		},
-	});
+	const repository = useRepository();
 
 	return useCallback(
 		async (args: ToggleListItemArgs) => {
-			if (isSignedIn) {
-				await mutation.mutateAsync(args);
-			} else {
-				toggleListItemLocal(args);
-			}
+			await repository.toggleListItem(args);
 		},
-		[isSignedIn, mutation, toggleListItemLocal],
+		[repository],
 	);
 }

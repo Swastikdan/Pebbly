@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { memo } from "react";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
@@ -8,13 +7,13 @@ import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
+import { useSeasonDetails } from "@/hooks/use-season-details";
 import { toast } from "@/hooks/use-toast-store";
+import { useSetProgressStatus } from "@/hooks/use-watchlist";
 import {
 	useRemoveFromContinueWatching,
 	useWatchProgress,
-} from "@/hooks/use-watch-progress";
-import { useSetProgressStatus } from "@/hooks/use-watchlist";
-import { getTvSeasonDetails } from "@/lib/queries";
+} from "@/hooks/watch-progress/use-watch-progress";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
@@ -298,11 +297,13 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 	const season = progress?.context?.season;
 	const episode = progress?.context?.episode;
 
-	const { data: seasonDetails } = useQuery({
-		queryKey: ["tv-season", id, season],
-		queryFn: () => getTvSeasonDetails({ tvId: id, seasonNumber: season ?? 1 }),
-		enabled: !!isTVContinueWatching && !!season,
-	});
+	// Season details are routed through the shared batcher (see
+	// use-season-details.ts) so the N cards in a continue-watching strip
+	// coalesce their requests instead of firing N parallel fetches.
+	const { data: seasonDetails } = useSeasonDetails(
+		id,
+		isTVContinueWatching ? season : undefined,
+	);
 
 	const episodeDetail = seasonDetails?.episodes?.find(
 		(ep) => ep.episode_number === episode,

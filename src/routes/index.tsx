@@ -18,12 +18,8 @@ import { HomepageRecommendations } from "@/components/homepage-recommendations";
 import { LazySection } from "@/components/ui/lazy-section";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	SECTION_TAB_LIST_CLASS,
-	SECTION_TAB_TRIGGER_CLASS,
-	SITE_CONFIG,
-} from "@/constants";
-import { useContinueWatching } from "@/hooks/use-watch-progress";
+import { SITE_CONFIG } from "@/constants";
+import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
 
 import { getMedia } from "@/lib/queries";
 
@@ -72,19 +68,9 @@ function HomePage() {
 					<Tabs defaultValue="trending_day">
 						<div className="flex items-center gap-4 mt-2">
 							<h2 className="text-h2">Trending</h2>
-							<TabsList className={SECTION_TAB_LIST_CLASS}>
-								<TabsTrigger
-									value="trending_day"
-									className={SECTION_TAB_TRIGGER_CLASS}
-								>
-									Today
-								</TabsTrigger>
-								<TabsTrigger
-									value="trending_week"
-									className={SECTION_TAB_TRIGGER_CLASS}
-								>
-									This Week
-								</TabsTrigger>
+							<TabsList>
+								<TabsTrigger value="trending_day">Today</TabsTrigger>
+								<TabsTrigger value="trending_week">This Week</TabsTrigger>
 							</TabsList>
 						</div>
 						<TabsContent value="trending_day">
@@ -125,19 +111,9 @@ function HomePage() {
 					>
 						<Tabs defaultValue="popular_movie">
 							<div className="flex items-center gap-4">
-								<TabsList className={SECTION_TAB_LIST_CLASS}>
-									<TabsTrigger
-										value="popular_movie"
-										className={SECTION_TAB_TRIGGER_CLASS}
-									>
-										Theaters
-									</TabsTrigger>
-									<TabsTrigger
-										value="popular_tv"
-										className={SECTION_TAB_TRIGGER_CLASS}
-									>
-										On TV
-									</TabsTrigger>
+								<TabsList>
+									<TabsTrigger value="popular_movie">Theaters</TabsTrigger>
+									<TabsTrigger value="popular_tv">On TV</TabsTrigger>
 								</TabsList>
 							</div>
 							<TabsContent value="popular_movie">
@@ -157,19 +133,9 @@ function HomePage() {
 					>
 						<Tabs defaultValue="top_rated_movies">
 							<div className="flex items-center gap-4">
-								<TabsList className={SECTION_TAB_LIST_CLASS}>
-									<TabsTrigger
-										value="top_rated_movies"
-										className={SECTION_TAB_TRIGGER_CLASS}
-									>
-										Movies
-									</TabsTrigger>
-									<TabsTrigger
-										value="top_rated_tv"
-										className={SECTION_TAB_TRIGGER_CLASS}
-									>
-										TV Shows
-									</TabsTrigger>
+								<TabsList>
+									<TabsTrigger value="top_rated_movies">Movies</TabsTrigger>
+									<TabsTrigger value="top_rated_tv">TV Shows</TabsTrigger>
 								</TabsList>
 							</div>
 							<TabsContent value="top_rated_movies">

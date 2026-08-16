@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
-import type { SeasonInfo } from "@/types";
+import type { SeasonInfo } from "@/lib/tmdb-schemas";
 
 export const CurrentSeason = (props: {
 	id: number;

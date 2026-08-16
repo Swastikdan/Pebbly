@@ -34,9 +34,7 @@
 			"a11y": {
 				"noSvgWithoutTitle": "off"
 			},
-			"suspicious": {
-				"noArrayIndexKey": "off"
-			},
+			"suspicious": {},
 			"nursery": {}
 		}
 	},
@@ -46,20 +44,6 @@
 		}
 	},
 	"overrides": [
-		{
-			"includes": [
-				"src/hooks/use-watchlist.ts",
-				"src/hooks/use-watch-progress.ts",
-				"src/hooks/use-custom-lists.ts"
-			],
-			"linter": {
-				"rules": {
-					"suspicious": {
-						"noExplicitAny": "off"
-					}
-				}
-			}
-		},
 		{
 			"includes": ["src/styles.css"],
 			"linter": {
