@@ -97,8 +97,11 @@ export const importWatchlist = createServerFn({ method: "POST" })
 			}
 		}
 
-		// Execute the whole watch-item import as one batched round trip.
-		await runBatch(db, watchStatements);
+		// Execute the watch-item import in bounded batches. D1 batches run
+		// atomically, but each call must finish within the platform's 30 s
+		// budget, so a very large import is split into ≤100-statement batches.
+		// Typical imports stay a single atomic round trip.
+		await runBoundedBatches(db, watchStatements);
 
 		// Episode writes accumulate here so they run as a second batch after the
 		// watch-item batch.
@@ -164,10 +167,13 @@ export const importWatchlist = createServerFn({ method: "POST" })
 			}
 		}
 
-		// Insert new episodes in chunks of 50 rows
-		const CHUNK_SIZE = 50;
-		for (let i = 0; i < episodesToInsert.length; i += CHUNK_SIZE) {
-			const chunk = episodesToInsert.slice(i, i + CHUNK_SIZE);
+		// Insert new episodes in chunks of 14 rows: each row binds 7 parameters
+		// (id, userId, tmdbId, season, episode, isWatched, updatedAt) and D1 caps
+		// bound parameters at 100 per query. A larger chunk would make the
+		// multi-row INSERT exceed that limit and fail the whole import.
+		const EPISODE_CHUNK_ROWS = 14;
+		for (let i = 0; i < episodesToInsert.length; i += EPISODE_CHUNK_ROWS) {
+			const chunk = episodesToInsert.slice(i, i + EPISODE_CHUNK_ROWS);
 			if (chunk.length > 0) {
 				episodeStatements.push(
 					db.insert(episodeProgress).values(chunk).onConflictDoNothing(),
@@ -175,8 +181,25 @@ export const importWatchlist = createServerFn({ method: "POST" })
 			}
 		}
 
-		await runBatch(db, episodeStatements);
+		await runBoundedBatches(db, episodeStatements);
 
 		await createWatchlistSnapshot(db, user.id);
 		return ok({ imported: importedItems.size });
 	});
+
+/**
+ * Run a statement list as one or more D1 `db.batch()` calls, capped at
+ * `MAX_STATEMENTS_PER_BATCH` per call so a huge import stays within D1's
+ * per-call execution budget (the platform requires the whole call to resolve
+ * in 30 s). No-op for an empty list.
+ */
+async function runBoundedBatches(
+	db: ReturnType<typeof getDb>,
+	statements: Parameters<typeof db.batch>[0][number][],
+) {
+	if (statements.length === 0) return;
+	const MAX_STATEMENTS_PER_BATCH = 100;
+	for (let i = 0; i < statements.length; i += MAX_STATEMENTS_PER_BATCH) {
+		await runBatch(db, statements.slice(i, i + MAX_STATEMENTS_PER_BATCH));
+	}
+}

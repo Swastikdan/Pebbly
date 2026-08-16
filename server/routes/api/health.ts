@@ -22,12 +22,11 @@ export default defineEventHandler(async (event) => {
 			const db = getDb(env);
 			await db.run(sql`select 1`);
 			checks.db = { ok: true };
-		} catch (error) {
+		} catch {
+			// Public endpoint — don't leak raw driver/DB error strings (they can
+			// expose internal details); a generic flag is enough for uptime checks.
 			ok = false;
-			checks.db = {
-				ok: false,
-				error: error instanceof Error ? error.message : String(error),
-			};
+			checks.db = { ok: false, error: "database unavailable" };
 		}
 	}
 

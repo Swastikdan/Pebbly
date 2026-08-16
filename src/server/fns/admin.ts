@@ -1,12 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
-import { type AuthUser, requireUser } from "../auth";
+import { type AuthUser, isAdminFromClerkApi, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { rolePermissions, users } from "../db/schema";
 import { getEnv } from "../env";
 import {
 	DYNAMIC_ROLES,
 	getUserFeatures,
+	isAdminByClaims,
 	isClerkAdmin,
 	syncRolePermissions,
 } from "../rbac";
@@ -24,16 +25,34 @@ async function requireAdmin(): Promise<
 	const result = await requireUser();
 	if (result.error) return { user: null, error: result.error };
 
-	// Rely on the users.isAdmin state already validated by requireUser instead
-	// of an external Clerk API call on every admin request. The JWT claim is
-	// still honored via isClerkAdmin when present.
 	const { user, claims } = result;
-	if (!isClerkAdmin(claims as unknown as Record<string, unknown>, user)) {
+
+	// Admin status is decided by the signed JWT claim or the live Clerk API
+	// (60s-cached) — the same authoritative source `hasFeature` uses. The
+	// stored `users.isAdmin` flag is only written at account creation and never
+	// refreshed, so trusting it would let a user demoted in Clerk keep admin
+	// access indefinitely. The flag is still honored for display purposes via
+	// `isClerkAdmin` in listUsers, but never for access decisions.
+	const isAdmin =
+		isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub));
+	if (!isAdmin) {
 		return {
 			user: null,
 			error: fail("FORBIDDEN", "Forbidden: admin access required"),
 		};
 	}
+
+	// Self-heal the stored flag on promotion so listUsers / the admin UI stay
+	// consistent with the live source. Only ever writes `true` (the lookup
+	// succeeded), never downgrades — a transient Clerk API failure must not
+	// erase a stored admin flag.
+	if (user.isAdmin !== true) {
+		await getDb(getEnv())
+			.update(users)
+			.set({ isAdmin: true })
+			.where(eq(users.id, user.id));
+	}
+
 	return { user, error: null };
 }
 
