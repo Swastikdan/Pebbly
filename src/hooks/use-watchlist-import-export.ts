@@ -10,6 +10,7 @@ import { queryKeys } from "@/lib/query/keys";
 import type { AllEpisodeProgressRow } from "@/lib/server-types";
 import { normalizeProgressStatus } from "@/lib/utils";
 import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
+import { unwrap } from "@/server/schema/common";
 import {
 	importWatchlistArgsSchema,
 	type ImportItem as ServerImportItem,
@@ -345,9 +346,11 @@ export const useWatchlistImportExport = () => {
 					setImportTotal(validItems.length);
 
 					if (isSignedIn) {
-						await importWatchlistFn({
-							data: validationResult.output,
-						});
+						await unwrap(
+							importWatchlistFn({
+								data: validationResult.output,
+							}),
+						);
 						await queryClient.invalidateQueries({
 							queryKey: queryKeys.watchlist.list(),
 						});

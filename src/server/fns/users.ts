@@ -5,7 +5,6 @@ import { getAdminFromClaims, getCurrentUser, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { users } from "../db/schema";
 import { getEnv } from "../env";
-import { syncRolePermissions } from "../rbac";
 import { type ApiResult, ok } from "../schema/common";
 
 const storeUserArgsSchema = v.object({
@@ -28,22 +27,23 @@ export const storeUser = createServerFn({ method: "POST" })
 
 		const { user, claims } = result;
 		const db = getDb(getEnv());
-		await syncRolePermissions(db);
 
 		const adminFromJwt = getAdminFromClaims(claims);
 
-		const update: Partial<typeof users.$inferSelect> = {
-			name: data.name,
-			image: data.image,
-			email: data.email,
-		};
+		// Only include defined fields so an empty request performs no update.
+		const update: Partial<typeof users.$inferSelect> = {};
+		if (data.name !== undefined) update.name = data.name;
+		if (data.image !== undefined) update.image = data.image;
+		if (data.email !== undefined) update.email = data.email;
 		if (adminFromJwt !== null) {
 			update.isAdmin = adminFromJwt;
 		} else if (data.isAdmin === false) {
 			update.isAdmin = false;
 		}
 
-		await db.update(users).set(update).where(eq(users.id, user.id));
+		if (Object.keys(update).length > 0) {
+			await db.update(users).set(update).where(eq(users.id, user.id));
+		}
 		return ok(user.id);
 	});
 

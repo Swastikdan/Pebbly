@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/react";
 import { useQuery } from "@tanstack/react-query";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import {
@@ -160,8 +161,9 @@ function RecommendationsContent({
 
 	const { watchlist, loading: watchlistLoading } = useWatchlist();
 
+	const { user } = useUser();
 	const trackedTmdbIdsQuery = useQuery({
-		queryKey: queryKeys.watchlist.trackedTmdbIds(),
+		queryKey: queryKeys.watchlist.trackedTmdbIds(user?.id),
 		queryFn: () => unwrap(getTrackedTmdbIds()),
 		enabled: !!isSignedIn,
 	});
@@ -237,7 +239,7 @@ function RecommendationsContent({
 	};
 
 	const customListsQuery = useQuery({
-		queryKey: queryKeys.lists.all(),
+		queryKey: queryKeys.lists.all(user?.id),
 		queryFn: () => unwrap(getCustomLists()),
 		enabled: !!isSignedIn,
 	});
@@ -273,7 +275,10 @@ function RecommendationsContent({
 
 	const handleGenerateAgain = (entry: RecommendationHistoryEntry) => {
 		const options: GenerateOptions = {
-			generationType: entry.generationType || "watchlist",
+			generationType: (entry.generationType || "watchlist") as
+				| "watchlist"
+				| "list"
+				| "genre",
 		};
 		if (entry.mediaTypePreference)
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
@@ -288,7 +293,10 @@ function RecommendationsContent({
 
 	const handleGenerateMore = (entry: RecommendationHistoryEntry) => {
 		const options: GenerateOptions = {
-			generationType: entry.generationType || "watchlist",
+			generationType: (entry.generationType || "watchlist") as
+				| "watchlist"
+				| "list"
+				| "genre",
 		};
 		if (entry.mediaTypePreference)
 			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";

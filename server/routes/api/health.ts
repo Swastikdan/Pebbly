@@ -1,12 +1,12 @@
 // GET /api/health — pings D1 (select 1)
 import { sql } from "drizzle-orm";
-import { defineEventHandler } from "h3";
+import { defineEventHandler, setResponseStatus } from "h3";
 import { getDb } from "../../../src/server/db/client";
 import { getEnv } from "../../../src/server/env";
 
 type CheckResult = { ok: boolean; [key: string]: unknown };
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
 	const env = getEnv();
 	const started = Date.now();
 
@@ -29,6 +29,10 @@ export default defineEventHandler(async () => {
 				error: error instanceof Error ? error.message : String(error),
 			};
 		}
+	}
+
+	if (!ok) {
+		setResponseStatus(event, 503);
 	}
 
 	return {

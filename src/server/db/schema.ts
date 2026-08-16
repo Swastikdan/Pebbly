@@ -3,6 +3,7 @@ import {
 	check,
 	index,
 	integer,
+	primaryKey,
 	real,
 	sqliteTable,
 	text,
@@ -214,6 +215,12 @@ export const recommendationFeedback = sqliteTable(
 	],
 );
 
+export const snapshotCursors = sqliteTable("snapshot_cursors", {
+	key: text("key").primaryKey(),
+	value: text("value"),
+	updatedAt: integer("updated_at").notNull(),
+});
+
 export const rolePermissions = sqliteTable(
 	"role_permissions",
 	{
@@ -221,7 +228,7 @@ export const rolePermissions = sqliteTable(
 		feature: text("feature").notNull(),
 		enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
 	},
-	(t) => [index("role_permissions_pk").on(t.role, t.feature)],
+	(t) => [primaryKey({ columns: [t.role, t.feature] })],
 );
 
 export type Recommendation = {

@@ -13,6 +13,7 @@ import {
 import { Image } from "@/components/ui/image";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
+import { useDailyPickStore } from "@/hooks/use-daily-pick-store";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
 	useAllMediaStates,
@@ -52,7 +53,6 @@ function getTodaySeedIndex(max: number): number {
 function getPickKey(item: PickItem): string {
 	return `${item.media_type}:${item.id}`;
 }
-
 export function DailyPickButton() {
 	const [isOpen, setIsOpen] = useState(false);
 	// Key of the currently shown pick ("movie:123"). Keeps the displayed tile
@@ -66,6 +66,17 @@ export function DailyPickButton() {
 	const { watchlist } = useWatchlist();
 	const { allMediaStates } = useAllMediaStates();
 	const setReaction = useSetReaction();
+
+	// Persisted offline cache — same Zustand persist pattern as the watchlist
+	// stores. Falls back to the last successful TMDB payload when offline.
+	// Individual selectors keep the setters/state references stable so the
+	// persist effects below don't re-fire in a loop.
+	const cachedTrending = useDailyPickStore((s) => s.trendingMedia);
+	const cachedPopularTv = useDailyPickStore((s) => s.popularTv);
+	const cachedDetails = useDailyPickStore((s) => s.details);
+	const setTrending = useDailyPickStore((s) => s.setTrending);
+	const setPopularTv = useDailyPickStore((s) => s.setPopularTv);
+	const setDetail = useDailyPickStore((s) => s.setDetail);
 
 	const mediaStateMap = useMemo(() => {
 		const map = new Map<
@@ -107,6 +118,22 @@ export function DailyPickButton() {
 		enabled: isOpen,
 	});
 
+	// Persist successful fetches so the last payload is available offline.
+	useEffect(() => {
+		if (trendingMedia && trendingMedia.length > 0) {
+			setTrending(trendingMedia);
+		}
+	}, [trendingMedia, setTrending]);
+	useEffect(() => {
+		if (popularTv && popularTv.length > 0) {
+			setPopularTv(popularTv);
+		}
+	}, [popularTv, setPopularTv]);
+
+	// Serve the persisted payload when the live fetch fails (offline / flaky).
+	const effectiveTrending = trendingMedia ?? cachedTrending;
+	const effectivePopularTv = popularTv ?? cachedPopularTv;
+
 	const tmdbInfoMap = useMemo(() => {
 		const map = new Map<
 			string,
@@ -120,8 +147,8 @@ export function DailyPickButton() {
 				first_air_date?: string;
 			}
 		>();
-		if (trendingMedia) {
-			for (const item of trendingMedia) {
+		if (effectiveTrending) {
+			for (const item of effectiveTrending) {
 				const title = item.title ?? item.name;
 				const media_type =
 					(item.media_type as "movie" | "tv") ?? (item.name ? "tv" : "movie");
@@ -138,8 +165,8 @@ export function DailyPickButton() {
 				}
 			}
 		}
-		if (popularTv) {
-			for (const item of popularTv) {
+		if (effectivePopularTv) {
+			for (const item of effectivePopularTv) {
 				const title = item.name ?? item.title;
 				if (title && title !== "Unknown Title") {
 					map.set(`tv:${item.id}`, {
@@ -154,13 +181,14 @@ export function DailyPickButton() {
 			}
 		}
 		return map;
-	}, [trendingMedia, popularTv]);
+	}, [effectiveTrending, effectivePopularTv]);
 
-	// Prevent flashing: wait for trending/popularTv queries to settle if modal is opened
+	// Prevent flashing: wait for trending/popularTv queries to settle if modal is
+	// opened and no cached payload is available to render immediately.
 	const isDataLoading =
 		isOpen &&
 		(isLoadingTrending || isLoadingTv) &&
-		(!trendingMedia || !popularTv);
+		(!effectiveTrending || !effectivePopularTv);
 
 	// Build combined candidate list giving 50/50 equal presentation to Watchlist & Discovery items
 	const candidateItems: PickItem[] = useMemo(() => {
@@ -215,8 +243,8 @@ export function DailyPickButton() {
 		}
 
 		// 2. Collect Discovery Media (Trending & Popular TV)
-		if (trendingMedia) {
-			for (const item of trendingMedia) {
+		if (effectiveTrending) {
+			for (const item of effectiveTrending) {
 				const title = item.title ?? item.name;
 				const media_type =
 					(item.media_type as "movie" | "tv") ?? (item.name ? "tv" : "movie");
@@ -250,8 +278,8 @@ export function DailyPickButton() {
 			}
 		}
 
-		if (popularTv) {
-			for (const item of popularTv) {
+		if (effectivePopularTv) {
+			for (const item of effectivePopularTv) {
 				const title = item.name ?? item.title;
 				const key = `tv:${item.id}`;
 				if (
@@ -297,7 +325,13 @@ export function DailyPickButton() {
 		}
 
 		return blended;
-	}, [watchlist, trendingMedia, popularTv, mediaStateMap, tmdbInfoMap]);
+	}, [
+		watchlist,
+		effectiveTrending,
+		effectivePopularTv,
+		mediaStateMap,
+		tmdbInfoMap,
+	]);
 
 	const itemsCount = candidateItems.length;
 
@@ -376,10 +410,28 @@ export function DailyPickButton() {
 		staleTime: 1000 * 60 * 60,
 	});
 
+	// Persist the resolved backdrop/poster so the tile renders offline.
+	useEffect(() => {
+		if (!selectedDetails || !selectedItem) return;
+		setDetail(selectedItem.media_type, selectedItem.id, {
+			backdrop_path: selectedDetails.backdrop_path,
+			poster_path: selectedDetails.poster_path,
+		});
+	}, [selectedDetails, selectedItem, setDetail]);
+
+	// Fall back to the persisted per-title detail when the details request
+	// fails offline.
+	const cachedDetail = selectedItem
+		? cachedDetails[`${selectedItem.media_type}:${selectedItem.id}`]
+		: undefined;
 	const effectiveBackdropPath =
-		selectedItem?.backdrop_path || selectedDetails?.backdrop_path;
+		selectedItem?.backdrop_path ||
+		selectedDetails?.backdrop_path ||
+		cachedDetail?.backdrop_path;
 	const effectivePosterPath =
-		selectedItem?.poster_path || selectedDetails?.poster_path;
+		selectedItem?.poster_path ||
+		selectedDetails?.poster_path ||
+		cachedDetail?.poster_path;
 
 	const title = selectedItem?.title ?? "Daily Pick";
 	const mediaType = selectedItem?.media_type ?? "movie";

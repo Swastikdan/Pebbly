@@ -65,6 +65,31 @@ export const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
   ]
 }`;
 
+/** Shared media label for prompt goals (movie / TV show / both). */
+export function mediaLabel(mediaTypePreference?: string): string {
+	return mediaTypePreference === "movie"
+		? "movies"
+		: mediaTypePreference === "tv"
+			? "TV shows"
+			: "movies and TV shows";
+}
+
+/** Clamp the requested title count to the 1..30 bound used by every prompt. */
+export function clampTitleCount(count?: number): number {
+	return Math.min(Math.max(count ?? 10, 1), 30);
+}
+
+/** Index watch items by the `tmdbId_mediaType` key used across prompt builders. */
+export function indexWatchItemsByMediaKey(
+	items: WatchItemSummary[],
+): Map<string, WatchItemSummary> {
+	const map = new Map<string, WatchItemSummary>();
+	for (const w of items) {
+		map.set(`${w.tmdbId}_${w.mediaType}`, w);
+	}
+	return map;
+}
+
 export function formatItem(i: WatchItemSummary): string {
 	const parts = [
 		`- ${i.title ?? "Unknown"} (TMDB ID: ${i.tmdbId}, ${i.mediaType})`,
@@ -104,10 +129,14 @@ export function buildWatchlistContext(
 			i.reaction !== "liked",
 	);
 
+	// Key by tmdbId + mediaType so a movie and TV show sharing a TMDB id never
+	// collide in the prioritized set (matches the lookup keys used elsewhere).
+	const mediaKey = (item: WatchItemSummary) =>
+		`${item.tmdbId}:${item.mediaType}`;
 	const prioritized = new Set(
 		[...loved, ...watching, ...done, ...watchLater, ...disliked]
 			.slice(0, 50)
-			.map((i) => i.tmdbId),
+			.map(mediaKey),
 	);
 	const existingIds = [
 		...new Set([...watchItems.map((i) => i.tmdbId), ...excludeTmdbIds]),
@@ -115,7 +144,7 @@ export function buildWatchlistContext(
 	const existingTitles = watchItems
 		.map((i) => i.title)
 		.filter((title): title is string => !!title);
-	const inScope = (item: WatchItemSummary) => prioritized.has(item.tmdbId);
+	const inScope = (item: WatchItemSummary) => prioritized.has(mediaKey(item));
 
 	let prompt = "";
 	const scopedLoved = loved.filter(inScope);
@@ -225,10 +254,7 @@ export function buildWatchlistPrompt(
 		items.push(li);
 	}
 
-	const watchItemByMediaKey = new Map<string, WatchItemSummary>();
-	for (const w of data.watchItems) {
-		watchItemByMediaKey.set(`${w.tmdbId}_${w.mediaType}`, w);
-	}
+	const watchItemByMediaKey = indexWatchItemsByMediaKey(data.watchItems);
 
 	if (lists.length > 0) {
 		prompt += `## My custom lists:\n`;
@@ -245,13 +271,7 @@ export function buildWatchlistPrompt(
 		prompt += "\n";
 	}
 
-	const mediaLabel =
-		mediaTypePreference === "movie"
-			? "movies"
-			: mediaTypePreference === "tv"
-				? "TV shows"
-				: "movies and TV shows";
-	const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
+	const titleCount = clampTitleCount(count);
 
 	prompt += buildBasePromptSections({
 		mediaTypePreference,
@@ -261,7 +281,7 @@ export function buildWatchlistPrompt(
 		existingTitles,
 		feedback,
 		watchlistText: " (already in my watchlist)",
-		recommendationGoal: `Based on this data, recommend exactly ${titleCount} ${mediaLabel} I would likely enjoy.\n`,
+		recommendationGoal: `Based on this data, recommend exactly ${titleCount} ${mediaLabel(mediaTypePreference)} I would likely enjoy.\n`,
 		statsText: `## Stats:\n- ${inputStats.movieCount} movies, ${inputStats.tvCount} TV shows tracked\n- ${inputStats.episodesWatched} episodes watched\n\n`,
 	});
 
@@ -285,15 +305,9 @@ export function buildGenrePrompt(
 		excludeTmdbIds,
 	);
 
-	const mediaLabel =
-		mediaTypePreference === "movie"
-			? "movies"
-			: mediaTypePreference === "tv"
-				? "TV shows"
-				: "movies and TV shows";
-	const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
+	const titleCount = clampTitleCount(count);
 
-	let prompt = `Recommend me exactly ${titleCount} popular and highly-rated ${mediaLabel}`;
+	let prompt = `Recommend me exactly ${titleCount} popular and highly-rated ${mediaLabel(mediaTypePreference)}`;
 
 	if (genrePreference) {
 		prompt += ` in these genres: ${genrePreference}`;
@@ -331,21 +345,12 @@ export function buildCustomListPrompt(
 		excludeTmdbIds,
 	);
 
-	const mediaLabel =
-		mediaTypePreference === "movie"
-			? "movies"
-			: mediaTypePreference === "tv"
-				? "TV shows"
-				: "movies and TV shows";
-	const titleCount = Math.min(Math.max(count ?? 10, 1), 30);
+	const titleCount = clampTitleCount(count);
 
 	const list = data.lists.find((l) => l._id === listId);
 	const listName = list?.name ?? "this custom list";
 
-	const watchItemByMediaKey = new Map<string, WatchItemSummary>();
-	for (const w of data.watchItems) {
-		watchItemByMediaKey.set(`${w.tmdbId}_${w.mediaType}`, w);
-	}
+	const watchItemByMediaKey = indexWatchItemsByMediaKey(data.watchItems);
 
 	const items = data.listItems.filter((li) => li.listId === listId);
 	const titles = items
@@ -367,7 +372,7 @@ export function buildCustomListPrompt(
 		existingTitles,
 		feedback,
 		watchlistText: " (already in my overall watchlist)",
-		recommendationGoal: `Based on these titles, recommend exactly ${titleCount} ${mediaLabel} I would likely enjoy.\nFind movies/shows that share similar themes, genres, directors, actors, or vibe as the ones in the list.\n\n`,
+		recommendationGoal: `Based on these titles, recommend exactly ${titleCount} ${mediaLabel(mediaTypePreference)} I would likely enjoy.\nFind movies/shows that share similar themes, genres, directors, actors, or vibe as the ones in the list.\n\n`,
 	});
 
 	prompt += RESPONSE_SCHEMA;

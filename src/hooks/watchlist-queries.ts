@@ -5,7 +5,7 @@ import {
 	getAllWatchedEpisodes,
 	getWatchlist,
 } from "@/server/fns/watchlist";
-import { unwrap } from "@/server/schema/common";
+import { type ProgressStatus, unwrap } from "@/server/schema/common";
 import { reconcileListFetch } from "./pending-ops";
 
 /**
@@ -22,7 +22,7 @@ export async function fetchWatchlistList(): Promise<WatchItemRow[]> {
 }
 
 export async function fetchWatchlistListFiltered(args: {
-	statusFilter?: string;
+	statusFilter?: ProgressStatus;
 	limit?: number;
 }): Promise<WatchItemRow[]> {
 	return reconcileListFetch(

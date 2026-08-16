@@ -21,7 +21,9 @@ export function usePermissions(): PermissionState & {
 } {
 	const { isSignedIn, isLoaded, user } = useUser();
 	const raw = useQuery({
-		queryKey: queryKeys.permissions(),
+		// Scope by the authenticated user so cached permissions can never leak
+		// across accounts.
+		queryKey: queryKeys.permissions(user?.id ?? "anonymous"),
 		queryFn: () => unwrap(getUserFeaturesFn()),
 		enabled: !!isSignedIn,
 	});

@@ -4,8 +4,7 @@ import {
 	type ClerkSessionClaims,
 	isAdminFromClerkApi,
 } from "./auth";
-import type { Db } from "./db/client";
-import { getDb } from "./db/client";
+import { type Db, getDb, runBatch } from "./db/client";
 import { rolePermissions } from "./db/schema";
 import { getEnv } from "./env";
 
@@ -77,7 +76,15 @@ export function isClerkAdmin(
 }
 
 async function loadPermissions(db: Db) {
-	return db.select().from(rolePermissions).limit(100);
+	const rows = await db.select().from(rolePermissions);
+	// Filter to known roles/features before anything consumes them, so a stray
+	// row can never leak into feature evaluation.
+	return rows.filter(
+		(p) =>
+			(p.role === "global" ||
+				DYNAMIC_ROLES.includes(p.role as DynamicRbacRole)) &&
+			VALID_FEATURES.includes(p.feature as RbacFeature),
+	);
 }
 
 async function computeRoleFeatures(
@@ -140,40 +147,28 @@ export async function hasFeature(
 	}
 	if (!user) return false;
 
+	// Single-query evaluation: load the full permission set once and resolve
+	// the global gate + per-role rows from the in-memory map (shared with
+	// computeRoleFeatures). Preserves the global override, dynamic-role
+	// filtering, enabled-row handling, and DEFAULT_PERMISSIONS fallback.
 	const db = getDb(getEnv());
-	const globalSetting = await db
-		.select()
-		.from(rolePermissions)
-		.where(
-			and(
-				eq(rolePermissions.role, "global"),
-				eq(rolePermissions.feature, feature),
-			),
-		)
-		.limit(1);
+	const allPermissions = await loadPermissions(db);
+	const permissionMap = new Map<string, boolean>();
+	for (const p of allPermissions) {
+		permissionMap.set(`${p.role}:${p.feature}`, p.enabled);
+	}
 
-	const isGloballyEnabled =
-		globalSetting.length > 0 ? globalSetting[0].enabled : true;
+	const globalEnabled = permissionMap.get(`global:${feature}`);
+	const isGloballyEnabled = globalEnabled !== undefined ? globalEnabled : true;
 	if (!isGloballyEnabled) return false;
 
 	for (const role of user.roles ?? []) {
 		if (!DYNAMIC_ROLES.includes(role as DynamicRbacRole)) continue;
-
-		const existing = await db
-			.select()
-			.from(rolePermissions)
-			.where(
-				and(
-					eq(rolePermissions.role, role),
-					eq(rolePermissions.feature, feature),
-				),
-			)
-			.limit(1);
-
-		if (existing.length > 0 && existing[0].enabled) return true;
-		if (
-			existing.length === 0 &&
-			DEFAULT_PERMISSIONS[role as DynamicRbacRole]?.[feature]
+		const existingEnabled = permissionMap.get(`${role}:${feature}`);
+		if (existingEnabled !== undefined) {
+			if (existingEnabled) return true;
+		} else if (
+			DEFAULT_PERMISSIONS[role as DynamicRbacRole]?.[feature] === true
 		) {
 			return true;
 		}
@@ -245,6 +240,11 @@ export async function syncRolePermissions(
 		return;
 	}
 
+	// Collect invalid-row deletes and missing-default inserts, then execute
+	// them in a single batched round trip instead of sequential writes.
+	const statements: unknown[] = [];
+	const deleteKeys = new Set<string>();
+
 	for (const permission of existingPermissions) {
 		const isValidRole =
 			DYNAMIC_ROLES.includes(permission.role as DynamicRbacRole) ||
@@ -259,29 +259,44 @@ export async function syncRolePermissions(
 				ROLE_FEATURES[permission.role as DynamicRbacRole] !==
 					permission.feature)
 		) {
-			await db
-				.delete(rolePermissions)
-				.where(
-					and(
-						eq(rolePermissions.role, permission.role),
-						eq(rolePermissions.feature, permission.feature),
-					),
+			const key = `${permission.role}:${permission.feature}`;
+			if (!deleteKeys.has(key)) {
+				deleteKeys.add(key);
+				statements.push(
+					db
+						.delete(rolePermissions)
+						.where(
+							and(
+								eq(rolePermissions.role, permission.role),
+								eq(rolePermissions.feature, permission.feature),
+							),
+						),
 				);
+			}
 		}
 	}
 
 	for (const role of DYNAMIC_ROLES) {
 		const feature = ROLE_FEATURES[role];
-		const existing = existingPermissions.find(
+		const existing = existingPermissions.some(
 			(permission) =>
 				permission.role === role && permission.feature === feature,
 		);
 		if (!existing) {
-			await db.insert(rolePermissions).values({
-				role,
-				feature,
-				enabled: DEFAULT_PERMISSIONS[role][feature],
-			});
+			// onConflictDoNothing + the (role, feature) primary key make this
+			// safe against concurrent syncs.
+			statements.push(
+				db
+					.insert(rolePermissions)
+					.values({
+						role,
+						feature,
+						enabled: DEFAULT_PERMISSIONS[role][feature],
+					})
+					.onConflictDoNothing(),
+			);
 		}
 	}
+
+	await runBatch(db, statements);
 }

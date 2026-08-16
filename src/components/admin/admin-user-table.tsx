@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	AlertCircle,
 	Ban,
@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RbacRole } from "@/constants";
+import { queryKeys } from "@/lib/query/keys";
 import { listUsers, setUserBanned, setUserRoles } from "@/server/fns/admin";
 import { unwrap } from "@/server/schema/common";
 
@@ -44,20 +45,27 @@ interface UserTarget {
 }
 
 type FilterTab = "all" | "active" | "banned";
-
 export function AdminUserTable() {
 	const { user: currentUser } = useUser();
+	const queryClient = useQueryClient();
 	const usersQuery = useQuery({
-		queryKey: ["admin", "users"],
+		queryKey: queryKeys.admin.users(currentUser?.id),
 		queryFn: () => unwrap(listUsers({ data: {} })),
 	});
+	const refreshUsers = () => {
+		void queryClient.invalidateQueries({
+			queryKey: queryKeys.admin.users(currentUser?.id),
+		});
+	};
 	const setUserRolesMutation = useMutation({
 		mutationFn: (args: { tokenIdentifier: string; roles: DynamicRbacRole[] }) =>
 			unwrap(setUserRoles({ data: args })),
+		onSuccess: refreshUsers,
 	});
 	const setUserBannedMutation = useMutation({
 		mutationFn: (args: { tokenIdentifier: string; banned: boolean }) =>
 			unwrap(setUserBanned({ data: args })),
+		onSuccess: refreshUsers,
 	});
 
 	const [selectedUser, setSelectedUser] = useState<UserTarget | null>(null);
@@ -321,13 +329,14 @@ export function AdminUserTable() {
 																	);
 																});
 														};
-
 														return (
 															<button
 																key={config.value}
 																type="button"
 																onClick={toggleRole}
-																disabled={isBanned}
+																disabled={
+																	isBanned || setUserRolesMutation.isPending
+																}
 																title={
 																	isActive
 																		? `Remove ${config.label}`
@@ -509,7 +518,7 @@ export function AdminUserTable() {
 													key={config.value}
 													type="button"
 													onClick={toggleRole}
-													disabled={isBanned}
+													disabled={isBanned || setUserRolesMutation.isPending}
 													className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold border transition-all duration-150 min-h-[36px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 														isActive
 															? "bg-secondary text-foreground border-border/80 shadow-xs"

@@ -8,6 +8,8 @@ export const recommendationSchema = v.object({
 	relevanceScore: v.number(),
 	reasoning: v.string(),
 });
+
+export const recommendationsArraySchema = v.array(recommendationSchema);
 export type Recommendation = v.InferOutput<typeof recommendationSchema>;
 
 export const inputStatsSchema = v.object({
@@ -18,15 +20,23 @@ export const inputStatsSchema = v.object({
 });
 export type InputStats = v.InferOutput<typeof inputStatsSchema>;
 
+export const generationTypeSchema = v.picklist(["watchlist", "list", "genre"]);
+
 export const generateRecommendationsArgsSchema = v.object({
-	generationType: v.optional(v.string()),
+	generationType: v.optional(generationTypeSchema),
 	listId: v.optional(v.string()),
 	mediaTypePreference: v.optional(mediaTypeSchema),
 	genrePreference: v.optional(v.string()),
-	excludeTmdbIds: v.optional(v.array(v.number())),
-	yearFrom: v.optional(v.number()),
-	yearTo: v.optional(v.number()),
-	count: v.optional(v.number()),
+	excludeTmdbIds: v.optional(v.pipe(v.array(v.number()), v.maxLength(100))),
+	yearFrom: v.optional(
+		v.pipe(v.number(), v.integer(), v.minValue(1900), v.maxValue(2100)),
+	),
+	yearTo: v.optional(
+		v.pipe(v.number(), v.integer(), v.minValue(1900), v.maxValue(2100)),
+	),
+	count: v.optional(
+		v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(30)),
+	),
 });
 export type GenerateRecommendationsArgs = v.InferOutput<
 	typeof generateRecommendationsArgsSchema

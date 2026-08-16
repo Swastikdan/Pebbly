@@ -6,7 +6,7 @@
   "scripts": {
 		"dev": "vite dev --port 3000",
 		"dev:web": "vite dev --port 3000",
-		"dev:cf": "wrangler dev",
+		"dev:cf": "pnpm build && wrangler dev",
 		"preview:cf": "pnpm build && wrangler dev",
 		"build": "vite build",
 		"start": "vite preview --port 5296",

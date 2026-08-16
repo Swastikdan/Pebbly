@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import {
@@ -24,14 +24,15 @@ export function CustomListPicker({
 	tmdbId: number;
 	mediaType: "movie" | "tv";
 }) {
-	const { isSignedIn } = useUser();
+	const { isSignedIn, user } = useUser();
+	const queryClient = useQueryClient();
 	const listsQuery = useQuery({
-		queryKey: queryKeys.lists.all(),
+		queryKey: queryKeys.lists.all(user?.id),
 		queryFn: () => unwrap(getCustomLists()),
 		enabled: !!isSignedIn,
 	});
 	const itemListsQuery = useQuery({
-		queryKey: queryKeys.lists.itemLists(tmdbId, mediaType),
+		queryKey: queryKeys.lists.itemLists(tmdbId, mediaType, user?.id),
 		queryFn: () => unwrap(getItemLists({ data: { tmdbId, mediaType } })),
 		enabled: !!isSignedIn,
 	});
@@ -47,6 +48,15 @@ export function CustomListPicker({
 			release_date?: string;
 			overview?: string;
 		}) => unwrap(toggleListItem({ data: args })),
+		onSuccess: () => {
+			// Refresh membership, itemCount, and previews with server state.
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.lists.itemLists(tmdbId, mediaType, user?.id),
+			});
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.lists.all(user?.id),
+			});
+		},
 	});
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 

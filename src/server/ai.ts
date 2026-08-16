@@ -1,3 +1,4 @@
+import * as v from "valibot";
 import { getEnvVar } from "./env";
 
 // Port of `convex/ai.ts` — same retry/fallback logic, but Gemini is called over
@@ -18,7 +19,7 @@ export interface GeminiResult {
 }
 
 export const MODELS_TO_TRY = [
-	"gemini-3.1-flash-lite-preview",
+	"gemini-3.1-flash-lite",
 	"gemini-2.5-flash",
 	"gemini-2.0-flash",
 	"gemini-1.5-flash",
@@ -51,24 +52,58 @@ export async function delay(ms: number) {
 	await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const GEMINI_TIMEOUT_MS = 30_000;
+
+/**
+ * Per-element schema for a Gemini recommendation. `tmdbId` is nullable, but
+ * when present must be numeric; mediaType is limited to movie/tv.
+ */
+const recommendationElementSchema = v.pipe(
+	v.object({
+		title: v.string(),
+		tmdbId: v.union([v.number(), v.null(), v.undefined()]),
+		mediaType: v.picklist(["movie", "tv"]),
+		relevanceScore: v.number(),
+		reasoning: v.string(),
+	}),
+	v.transform((value) => ({
+		title: value.title,
+		tmdbId: typeof value.tmdbId === "number" ? value.tmdbId : null,
+		mediaType: value.mediaType,
+		relevanceScore: value.relevanceScore,
+		reasoning: value.reasoning,
+	})),
+);
+
 async function generateContent(
 	apiKey: string,
 	model: string,
 	userPrompt: string,
 	systemInstruction: string,
 ): Promise<string> {
-	const response = await fetch(
-		`${GEMINI_REST_URL}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-		{
+	// Send the API key via the x-goog-api-key header (never in the URL), with
+	// a per-attempt timeout so a stalled Gemini call cannot hang the Worker.
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+
+	let response: Response;
+	try {
+		response = await fetch(`${GEMINI_REST_URL}/${model}:generateContent`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: {
+				"Content-Type": "application/json",
+				"x-goog-api-key": apiKey,
+			},
 			body: JSON.stringify({
 				contents: [{ parts: [{ text: userPrompt }] }],
 				systemInstruction: { parts: [{ text: systemInstruction }] },
 				generationConfig: { responseMimeType: "application/json" },
 			}),
-		},
-	);
+			signal: controller.signal,
+		});
+	} finally {
+		clearTimeout(timer);
+	}
 
 	if (!response.ok) {
 		let message = `Gemini HTTP ${response.status}`;
@@ -171,10 +206,31 @@ export async function callGeminiAI(
 
 	try {
 		const parsed = JSON.parse(responseText) as unknown;
-		if (!parsed || !Array.isArray((parsed as GeminiResult).recommendations)) {
+		if (
+			!parsed ||
+			typeof parsed !== "object" ||
+			!("recommendations" in parsed)
+		) {
 			return { error: "invalid_response" };
 		}
-		return { result: parsed as GeminiResult, usedModel };
+		const rawRecommendations = (parsed as { recommendations: unknown })
+			.recommendations;
+		if (!Array.isArray(rawRecommendations)) {
+			return { error: "invalid_response" };
+		}
+
+		// Validate each element with valibot (not a type cast): keep valid
+		// entries, filter out anything missing the required fields.
+		const validRecommendations: Recommendation[] = [];
+		for (const entry of rawRecommendations) {
+			const validated = v.safeParse(recommendationElementSchema, entry);
+			if (validated.success) validRecommendations.push(validated.output);
+		}
+
+		return {
+			result: { recommendations: validRecommendations },
+			usedModel,
+		};
 	} catch {
 		return { error: "invalid_response" };
 	}

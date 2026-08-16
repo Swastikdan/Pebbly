@@ -1,9 +1,12 @@
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { getCookie, getRequestHeader } from "@tanstack/react-start/server";
-import { and, eq, like, or } from "drizzle-orm";
-import { getDb } from "./db/client";
+import { eq, inArray, or, sql } from "drizzle-orm";
+import { getDb, runBatch } from "./db/client";
 import { users, watchItems } from "./db/schema";
 import { getEnv, getEnvVar } from "./env";
+
+/** Canonical `users` row shape (used before `findUserByClaims` is defined). */
+export type AuthUser = typeof users.$inferSelect;
 
 /**
  * Clerk JWT payload shape (subset we rely on). `sub` is the Clerk user id.
@@ -60,8 +63,9 @@ export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
 		const claims = await verifyToken(token, {
 			secretKey,
 			...(issuer ? { issuer } : {}),
-			// Tolerate clock drift / refresh races (Clerk dev JWTs are short-lived).
-			clockSkewInMs: 300_000,
+			// Tolerate modest clock drift / refresh races without accepting
+			// tokens that are five minutes stale.
+			clockSkewInMs: 10_000,
 		});
 		return claims as ClerkSessionClaims;
 	} catch {
@@ -73,6 +77,23 @@ export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
 /** Derive the canonical tokenIdentifier (Convex Clerk format: `clerk|<sub>`). */
 export function toTokenIdentifier(sub: string): string {
 	return sub.startsWith("clerk|") ? sub : `clerk|${sub}`;
+}
+
+/**
+ * Escape `%`, `_`, and `\` so a tokenIdentifier fallback LIKE pattern cannot
+ * interpret characters from the subject as wildcards. Used with an explicit
+ * `ESCAPE '\'` clause (see `tokenIdentifierLike`).
+ */
+function escapeLikePattern(value: string): string {
+	return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+/**
+ * LIKE predicate matching any tokenIdentifier that ends in `|{subject}`,
+ * treating `%` / `_` inside the subject as literals.
+ */
+function tokenIdentifierLike(subject: string) {
+	return sql`${users.tokenIdentifier} like ${`%|${escapeLikePattern(subject)}`} escape '\\'`;
 }
 
 /** Get admin flag from JWT public metadata (snake_case or camelCase claim). */
@@ -89,6 +110,25 @@ export function getAdminFromClaims(
 	return null;
 }
 
+/** Reject `promise` after `ms` if it has not settled. */
+async function withTimeout<T>(
+	promise: Promise<T>,
+	ms: number,
+	message: string,
+): Promise<T> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	try {
+		return await Promise.race([
+			promise,
+			new Promise<never>((_, reject) => {
+				timer = setTimeout(() => reject(new Error(message)), ms);
+			}),
+		]);
+	} finally {
+		if (timer) clearTimeout(timer);
+	}
+}
+
 let clerkApiClient: ReturnType<typeof createClerkClient> | null = null;
 
 function getClerkApiClient() {
@@ -101,7 +141,26 @@ function getClerkApiClient() {
 }
 
 const ADMIN_API_CACHE_TTL_MS = 60_000;
+const ADMIN_API_CACHE_MAX_SIZE = 1_000;
+const ADMIN_API_TIMEOUT_MS = 5_000;
 const adminApiCache = new Map<string, { value: boolean; expiresAt: number }>();
+
+/**
+ * Bound the admin-status cache: purge expired entries and enforce a fixed
+ * maximum size so a long-lived isolate cannot accumulate entries indefinitely.
+ * Eviction is oldest-first (the Map preserves insertion order).
+ */
+function pruneAdminApiCache() {
+	const now = Date.now();
+	for (const [key, entry] of adminApiCache) {
+		if (entry.expiresAt <= now) adminApiCache.delete(key);
+	}
+	while (adminApiCache.size > ADMIN_API_CACHE_MAX_SIZE) {
+		const oldest = adminApiCache.keys().next().value;
+		if (oldest === undefined) break;
+		adminApiCache.delete(oldest);
+	}
+}
 
 /**
  * Resolve `isAdmin` from Clerk's public metadata via the backend API.
@@ -113,14 +172,22 @@ const adminApiCache = new Map<string, { value: boolean; expiresAt: number }>();
  * cached briefly (60s) to avoid an API call on every request.
  */
 export async function isAdminFromClerkApi(sub: string): Promise<boolean> {
+	const now = Date.now();
 	const cached = adminApiCache.get(sub);
-	if (cached && cached.expiresAt > Date.now()) return cached.value;
+	if (cached && cached.expiresAt > now) return cached.value;
 
 	const client = getClerkApiClient();
 	let isAdmin = false;
 	if (client) {
 		try {
-			const clerkUser = await client.users.getUser(sub);
+			// Bound the external call so a stalled Clerk API cannot hang the
+			// request. A timeout degrades to `false`, never `true`. The Clerk
+			// client does not accept a per-call signal, so use a deadline race.
+			const clerkUser = await withTimeout(
+				client.users.getUser(sub),
+				ADMIN_API_TIMEOUT_MS,
+				"Clerk admin lookup timed out",
+			);
 			isAdmin = clerkUser.publicMetadata?.isAdmin === true;
 		} catch (error) {
 			console.error("Failed to fetch Clerk user for admin check:", error);
@@ -129,22 +196,27 @@ export async function isAdminFromClerkApi(sub: string): Promise<boolean> {
 
 	adminApiCache.set(sub, {
 		value: isAdmin,
-		expiresAt: Date.now() + ADMIN_API_CACHE_TTL_MS,
+		expiresAt: now + ADMIN_API_CACHE_TTL_MS,
 	});
+	pruneAdminApiCache();
 	return isAdmin;
 }
 
 /**
- * Port of `convex/helpers/watch_item.ts` `getCurrentUser` — multi-format
- * tokenIdentifier matching so users created under any prior format resolve.
+ * Multi-format tokenIdentifier matching so users created under any prior
+ * format resolve (`clerk|<sub>`, bare `<sub>`, or any `*|<sub>` legacy prefix).
+ * Returns every matching row so callers can consolidate duplicates without
+ * re-issuing the identical query.
  */
-export async function findUserByClaims(claims: ClerkSessionClaims) {
+async function findUserMatchesByClaims(
+	claims: ClerkSessionClaims,
+): Promise<AuthUser[]> {
 	const db = getDb(getEnv());
 	const subject = claims.sub;
-	if (!subject) return null;
+	if (!subject) return [];
 	const tokenIdentifier = toTokenIdentifier(subject);
 
-	const matches = await db
+	return db
 		.select()
 		.from(users)
 		.where(
@@ -152,15 +224,24 @@ export async function findUserByClaims(claims: ClerkSessionClaims) {
 				eq(users.tokenIdentifier, tokenIdentifier),
 				eq(users.tokenIdentifier, subject),
 				eq(users.tokenIdentifier, `clerk|${subject}`),
-				like(users.tokenIdentifier, `%|${subject}`),
+				tokenIdentifierLike(subject),
 			),
 		)
 		.limit(10);
+}
 
+/**
+ * Pick the canonical user from a set of duplicate matches: prefer the doc that
+ * already has watch items, then the exact `clerk|<sub>` tokenIdentifier.
+ */
+async function pickBestUserMatch(
+	matches: AuthUser[],
+	tokenIdentifier: string,
+): Promise<AuthUser | null> {
 	if (matches.length === 0) return null;
 	if (matches.length === 1) return matches[0];
 
-	// Prefer the doc that already has watch items, then the exact tokenIdentifier.
+	const db = getDb(getEnv());
 	for (const candidate of matches) {
 		const hasItems = await db
 			.select({ id: watchItems.id })
@@ -175,9 +256,16 @@ export async function findUserByClaims(claims: ClerkSessionClaims) {
 	);
 }
 
-export type AuthUser = NonNullable<
-	Awaited<ReturnType<typeof findUserByClaims>>
->;
+/**
+ * Port of `convex/helpers/watch_item.ts` `getCurrentUser` — multi-format
+ * tokenIdentifier matching so users created under any prior format resolve.
+ */
+export async function findUserByClaims(
+	claims: ClerkSessionClaims,
+): Promise<AuthUser | null> {
+	const matches = await findUserMatchesByClaims(claims);
+	return pickBestUserMatch(matches, toTokenIdentifier(claims.sub));
+}
 
 export type RequireUserResult =
 	| { user: AuthUser; claims: ClerkSessionClaims; error: null }
@@ -203,67 +291,70 @@ export async function requireUser(): Promise<RequireUserResult> {
 	}
 
 	const db = getDb(getEnv());
-	let user = await findUserByClaims(claims);
+	const tokenIdentifier = toTokenIdentifier(claims.sub);
+
+	// Resolve once and reuse the matches — no second identical query below.
+	const userMatches = await findUserMatchesByClaims(claims);
+	let user = await pickBestUserMatch(userMatches, tokenIdentifier);
+
 	if (!user) {
 		const isAdmin =
 			getAdminFromClaims(claims) ?? (await isAdminFromClerkApi(claims.sub));
 		const id = crypto.randomUUID();
 		await db.insert(users).values({
 			id,
-			tokenIdentifier: toTokenIdentifier(claims.sub),
+			tokenIdentifier,
 			name: claims.name ?? claims.nickname ?? "Anonymous",
 			email: claims.email ?? undefined,
 			image: claims.picture ?? claims.pictureUrl ?? undefined,
 			isAdmin: isAdmin ?? false,
 		});
+		// Guard the post-insert lookup: never access `user.id` on a missing row.
 		user = (await db.select().from(users).where(eq(users.id, id)).limit(1))[0];
+		if (!user) {
+			throw new Error("Failed to create user record after first sign-in");
+		}
 	}
 
 	// Auto-consolidate orphaned watch items from duplicate user documents (port
-	// of the Convex `requireCurrentUser` consolidation step).
-	const subject = claims.sub;
-	if (subject) {
-		const tokenIdentifier = toTokenIdentifier(subject);
-		const userMatches = await db
-			.select()
-			.from(users)
-			.where(
-				or(
-					eq(users.tokenIdentifier, tokenIdentifier),
-					eq(users.tokenIdentifier, subject),
-					eq(users.tokenIdentifier, `clerk|${subject}`),
-					like(users.tokenIdentifier, `%|${subject}`),
-				),
-			)
-			.limit(10);
+	// of the Convex `requireCurrentUser` consolidation step). Only runs when
+	// duplicate user rows were matched, and rewrites are batched so the path
+	// stays O(2-3 queries) instead of one query per duplicate item.
+	if (userMatches.length > 1) {
+		const dupUserIds = userMatches
+			.filter((dup) => dup.id !== user.id)
+			.map((dup) => dup.id);
 
-		if (userMatches.length > 1) {
-			for (const dup of userMatches) {
-				if (dup.id === user.id) continue;
-				const dupItems = await db
-					.select()
-					.from(watchItems)
-					.where(eq(watchItems.userId, dup.id))
-					.limit(500);
-				for (const item of dupItems) {
-					const existingInMain = await db
-						.select({ id: watchItems.id })
-						.from(watchItems)
-						.where(
-							and(
-								eq(watchItems.userId, user.id),
-								eq(watchItems.tmdbId, item.tmdbId),
-								eq(watchItems.mediaType, item.mediaType),
-							),
-						)
-						.limit(1);
-					if (existingInMain.length === 0) {
-						await db
+		if (dupUserIds.length > 0) {
+			const dupItems = await db
+				.select()
+				.from(watchItems)
+				.where(inArray(watchItems.userId, dupUserIds))
+				.limit(500);
+
+			const mainItems = await db
+				.select({ tmdbId: watchItems.tmdbId, mediaType: watchItems.mediaType })
+				.from(watchItems)
+				.where(eq(watchItems.userId, user.id))
+				.limit(500);
+			const mainKeys = new Set(
+				mainItems.map((i) => `${i.tmdbId}:${i.mediaType}`),
+			);
+
+			const orphanIds = dupItems
+				.filter((item) => !mainKeys.has(`${item.tmdbId}:${item.mediaType}`))
+				.map((item) => item.id);
+
+			if (orphanIds.length > 0) {
+				await runBatch(
+					db,
+					orphanIds.map((itemId) =>
+						db
 							.update(watchItems)
 							.set({ userId: user.id })
-							.where(eq(watchItems.id, item.id));
-					}
-				}
+							.where(eq(watchItems.id, itemId)),
+					),
+				);
 			}
 		}
 	}

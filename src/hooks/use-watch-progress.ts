@@ -729,6 +729,9 @@ export function useEpisodeWatched(
 
 	const watchedCount = Object.keys(watchedMap).length;
 
+	// Declared before the mutations below, which capture it in their callbacks.
+	const queryClient = useQueryClient();
+
 	const markEpisodeMutation = useMutation({
 		mutationFn: (args: {
 			tmdbId: number;
@@ -815,7 +818,6 @@ export function useEpisodeWatched(
 		},
 	});
 
-	const queryClient = useQueryClient();
 	const hasMediaState = !!mediaState;
 	const currentProgress = mediaState?.progress ?? 0;
 	const currentProgressStatus = mediaState?.progressStatus ?? null;

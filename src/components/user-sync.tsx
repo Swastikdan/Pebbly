@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { clearPendingOps } from "@/hooks/pending-ops";
 import { usePermissions } from "@/hooks/use-permissions";
 import { storeUser } from "@/server/fns/users";
+import { unwrap } from "@/server/schema/common";
 
 export const UserSync = () => {
 	const { user, isLoaded } = useUser();
@@ -12,14 +13,16 @@ export const UserSync = () => {
 	// Sync user profile data to D1 on mount / user change
 	useEffect(() => {
 		if (isLoaded && user) {
-			storeUser({
-				data: {
-					name: user.fullName ?? user.username ?? "Anonymous",
-					email: user.primaryEmailAddress?.emailAddress,
-					image: user.imageUrl,
-					isAdmin: user.publicMetadata?.isAdmin === true,
-				},
-			}).catch((error) => {
+			unwrap(
+				storeUser({
+					data: {
+						name: user.fullName ?? user.username ?? "Anonymous",
+						email: user.primaryEmailAddress?.emailAddress,
+						image: user.imageUrl,
+						isAdmin: user.publicMetadata?.isAdmin === true,
+					},
+				}),
+			).catch((error) => {
 				console.error("Failed to sync user to backend:", error);
 			});
 		}

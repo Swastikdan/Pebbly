@@ -200,7 +200,7 @@ export function HomepageRecommendations() {
 	const recommendationsData = recommendationsQuery.data;
 
 	const feedbackQuery = useQuery({
-		queryKey: ["recommendations", "feedback"],
+		queryKey: queryKeys.recommendations.feedback(user?.id),
 		queryFn: () => unwrap(getRecommendationFeedback()),
 		enabled: canAccessFeature,
 	});
@@ -389,22 +389,26 @@ export function HomepageRecommendations() {
 
 			try {
 				if (feedback === "unlike") {
-					await removeRecommendationFeedback({
-						data: { tmdbId: resolvedId, mediaType: rec.mediaType },
-					});
+					await unwrap(
+						removeRecommendationFeedback({
+							data: { tmdbId: resolvedId, mediaType: rec.mediaType },
+						}),
+					);
 				} else {
-					await setRecommendationFeedback({
-						data: {
-							tmdbId: resolvedId,
-							mediaType: rec.mediaType,
-							title: rec.title,
-							feedback: feedback === "dislike" ? "not_interested" : "like",
-							image: metadata?.image,
-							rating: metadata?.rating,
-							release_date: metadata?.release_date,
-							overview: metadata?.overview,
-						},
-					});
+					await unwrap(
+						setRecommendationFeedback({
+							data: {
+								tmdbId: resolvedId,
+								mediaType: rec.mediaType,
+								title: rec.title,
+								feedback: feedback === "dislike" ? "not_interested" : "like",
+								image: metadata?.image,
+								rating: metadata?.rating,
+								release_date: metadata?.release_date,
+								overview: metadata?.overview,
+							},
+						}),
+					);
 				}
 				refreshHomepage();
 			} catch (err) {
