@@ -41,6 +41,12 @@ export const queryKeys = {
 	},
 	permissions: (userId?: string) =>
 		["permissions", userId ?? "anonymous"] as const,
+	// Combined per-user revision counters (watchlist / lists / AI recs) polled
+	// to detect cross-device changes without re-fetching whole collections.
+	data: {
+		version: (userId?: string) =>
+			["data", "version", userId ?? "anonymous"] as const,
+	},
 	admin: {
 		users: (userId?: string) =>
 			["admin", "users", userId ?? "anonymous"] as const,

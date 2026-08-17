@@ -2,6 +2,7 @@ import { useUser } from "@clerk/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { queryKeys } from "@/lib/query/keys";
+import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { markEpisodeWatched, updateProgress } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
 import { scheduleSync } from "../pending-ops";
@@ -57,6 +58,7 @@ export function usePlayerProgressListener(
 			release_date?: string;
 			overview?: string;
 		}) => unwrap(updateProgress({ data: args })),
+		onSuccess: () => recordOwnMutation("watchlist"),
 		onSettled: () => {
 			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
 		},
@@ -69,6 +71,7 @@ export function usePlayerProgressListener(
 			episode: number;
 			isWatched: boolean;
 		}) => unwrap(markEpisodeWatched({ data: args })),
+		onSuccess: () => recordOwnMutation("watchlist"),
 		onSettled: (_data, _error, args) => {
 			scheduleSync(queryClient, [queryKeys.watchlist.episodes(args.tmdbId)]);
 		},

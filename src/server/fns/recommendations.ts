@@ -28,6 +28,11 @@ import {
 	watchItems,
 } from "../db/schema";
 import { getEnv } from "../env";
+import {
+	bumpAiRev,
+	bumpListsRev,
+	bumpWatchlistRev,
+} from "../helpers/watch-item";
 import { hasFeature } from "../rbac";
 import { type ApiResult, fail, ok } from "../schema/common";
 import {
@@ -173,6 +178,7 @@ export const deleteRecommendation = createServerFn({ method: "POST" })
 					eq(aiRecommendations.userId, user.id),
 				),
 			);
+		await bumpAiRev(db, user.id);
 		return ok({ ok: true });
 	});
 
@@ -228,6 +234,7 @@ export const updateVerifiedRecommendations = createServerFn({ method: "POST" })
 					eq(aiRecommendations.userId, user.id),
 				),
 			);
+		await bumpAiRev(db, user.id);
 		return ok({ ok: true });
 	});
 
@@ -335,6 +342,8 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
 				});
 			}
 
+			await bumpWatchlistRev(db, user.id);
+
 			// Find or create the Pebbly Picks list — onConflictDoNothing makes
 			// the create race-safe against the (userId, name) unique index, then
 			// one lookup returns the authoritative row.
@@ -387,11 +396,11 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
 					});
 				}
 			}
+			await bumpListsRev(db, user.id);
 		}
 
 		return ok({ ok: true });
 	});
-
 export const removeRecommendationFeedback = createServerFn({ method: "POST" })
 	.validator(removeRecommendationFeedbackArgsSchema)
 	.handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
@@ -474,7 +483,7 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
 
 		let recs: Recommendation[] = [];
 		const row = entry[0];
-		if (row && row.recommendations) {
+		if (row?.recommendations) {
 			try {
 				const parsed = Array.isArray(row.recommendations)
 					? row.recommendations
@@ -770,6 +779,7 @@ async function saveRecommendations(
 			...values,
 		});
 	}
+	await bumpAiRev(db, args.userId);
 }
 
 /** Upsert the homepage recommendations row keyed on the unique userId. */

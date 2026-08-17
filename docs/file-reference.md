@@ -98,6 +98,7 @@ counts are approximate (as of 2026-08-16). Entries are grouped by directory.
 | `tmdb-schemas.ts` | Valibot schemas for every TMDB response shape (742 lines). |
 | `queries.ts` | Typed TMDB query functions (`getMediaList`, `getMovieDetails`, `getTvDetails`, `getCredits`, `getSearchResult`, `getPersonDetails`, ...) with `MEDIA_LIST_PATHS` as the endpoint map and dev-only error logging. |
 | `batcher.ts` | Generic `RequestBatcher`: debounce/max-wait/max-batch-size/dedupe-by-key, optional flush-on-page-hide + dispose. |
+| `realtime-mutations.ts` | Per-domain own-mutation counters (`watchlist`/`lists`/`ai`) recorded on successful server writes — lets `user-sync.tsx` skip redundant refetches for the client's own changes (see ADR-015). |
 | `utils.ts` | `cn`, `normalizeProgressStatus`, `createLRUStorage`/`createMemoryStorage` (localStorage quota management), `validateId`/`parseAndValidateId`, `formatMediaTitle` (slug encode/decode). |
 | `media-transform.ts` | Pure TMDB→UI transforms: genre lookup, video split, cast/crew, backdrops/posters with size prefixes, certifications, runtime. |
 | `media-page.ts` | `buildSharedMediaPageData` — shared data shape for movie/TV detail pages. |
@@ -139,7 +140,8 @@ counts are approximate (as of 2026-08-16). Entries are grouped by directory.
 | `use-daily-pick.ts` | Daily-pick selection logic (seed generation, interleaving, scoring) — extracted from the component. |
 | `use-daily-pick-store.ts` | Zustand daily-pick bookkeeping store. |
 | `use-filtered-watchlist.ts` | Filter/sort logic for the watchlist page. |
-| `use-permissions.ts` | Client RBAC summary from `getUserFeaturesFn`. |
+| `use-permissions.ts` | Client RBAC summary from `getUserFeaturesFn`. Polls every 30 s (tab visible) so ban status/feature flags stay fresh — enables automatic sign-out of banned users via `user-sync.tsx`. |
+| `data-version.ts` | `fetchDataVersion` — client fetch for the combined per-user revision counters (watchlist/lists/AI), polled by `user-sync.tsx` for cross-device realtime. |
 | `use-season-details.ts` | Batched TV season-detail fetching via a shared `RequestBatcher` (fixes the N+1 in media cards). |
 | `use-toast-store.ts` | Toast notification store. |
 
@@ -176,7 +178,7 @@ shadcn-style, Radix-based primitives used across the app.
 ### `admin/`
 `admin-dashboard.tsx`, `admin-user-table.tsx` (orchestrator),
 `admin-user-row.tsx`, `admin-role-dialog.tsx`, `admin-permission-toggles.tsx`,
-`use-admin-users.ts` (data hook).
+`use-admin-users.ts` (data hook, 10 s polling while the admin page is open).
 
 ### Top-level widgets
 `navbar.tsx`, `footer.tsx`, `mobile-bottom-nav.tsx`, `desktop-nav-button.tsx`,
@@ -185,8 +187,10 @@ shadcn-style, Radix-based primitives used across the app.
 `daily-pick.tsx` (daily pick widget, thin UI over `useDailyPick`),
 `video-player-modal.tsx` (fullscreen player), `watchlist-button.tsx`,
 `custom-list-dialog.tsx`, `custom-list-picker.tsx`, `filter-bar.tsx`,
-`share-button.tsx`, `scroll-container.tsx`, `user-sync.tsx` (local→remote
-promotion), `banned-screen.tsx`, `go-back.tsx`, `default-loader.tsx`,
+`share-button.tsx`, `scroll-container.tsx`, `user-sync.tsx` (session sync +
+ban enforcement + cross-device realtime: polls `data.version` every 10 s and
+refetches query groups only when their revision changed beyond this client's
+own writes), `banned-screen.tsx`, `go-back.tsx`, `default-loader.tsx`,
 `default-not-found.tsx` (error + not-found), `default-empty-state.tsx`.
 
 ## `src/routes/` — file-based routes
@@ -218,7 +222,7 @@ promotion), `banned-screen.tsx`, `go-back.tsx`, `default-loader.tsx`,
 
 Icons/favicons (apple-touch, android-chrome, mstile sets), `logo.svg`,
 `favicon.svg`, `image_not_found.jpg`, `manifest.json`, `robots.txt`,
-`offline.html` and `sw.js` (service worker), plus Vite/PWA metadata.
+`sw.js` (minimal no-cache service worker, keeps the app installable), plus Vite/PWA metadata.
 
 ---
 
@@ -227,10 +231,7 @@ Icons/favicons (apple-touch, android-chrome, mstile sets), `logo.svg`,
 - **Generated files** (never hand-edit): `src/routeTree.gen.ts`,
   `.output/`, `.nitro/`, `.wrangler/`, `.tanstack/`, `pnpm-lock.yaml` (update
   via pnpm), `drizzle/meta/`.
-- **Legacy leftovers** to be aware of: `public/sw.js` + `offline.html`
-  (service worker assets). The stale `.vercel/` directory was removed
-  (2026-08-16); its preview env vars were preserved in the gitignored
-  `.env.vercel-preview.local` backup.
+- **Maintenance notes on the service worker:** `public/sw.js` is a minimal no-cache worker (caches nothing, purges all caches on activate) that exists only to keep the app installable as a PWA. `public/offline.html` was removed (2026-08-17). The stale `.vercel/` directory was removed (2026-08-16); its preview env vars were preserved in the gitignored `.env.vercel-preview.local` backup.
 - **Where new backend code goes:** a new server fn in `src/server/fns/` +
   a Valibot schema in `src/server/schema/`; wire the client through
   `src/lib/repository/` (remote + local) so both auth states stay consistent.

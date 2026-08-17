@@ -23,6 +23,10 @@ export function useWatchlist() {
 		queryKey: queryKeys.watchlist.list(),
 		queryFn: () => fetchWatchlistList(queryClient),
 		enabled: !!isSignedIn,
+		// Cross-device sync is driven by UserSync's watchlist-version poll
+		// (refetch only when the revision changes), so this query itself does
+		// not poll — re-fetching the full list on an interval is O(list size)
+		// in D1 rows read.
 	});
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
@@ -56,6 +60,10 @@ export function useAllMediaStates() {
 		queryKey: queryKeys.watchlist.list(),
 		queryFn: () => fetchWatchlistList(queryClient),
 		enabled: !!isSignedIn,
+		// Cross-device sync is driven by UserSync's watchlist-version poll
+		// (refetch only when the revision changes), so this query itself does
+		// not poll — re-fetching the full list on an interval is O(list size)
+		// in D1 rows read.
 	});
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
@@ -88,6 +96,10 @@ export function useMediaState(id: string, mediaType: MediaType) {
 		queryKey: queryKeys.watchlist.list(),
 		queryFn: () => fetchWatchlistList(queryClient),
 		enabled: !!isSignedIn,
+		// Cross-device sync is driven by UserSync's watchlist-version poll
+		// (refetch only when the revision changes), so this query itself does
+		// not poll — re-fetching the full list on an interval is O(list size)
+		// in D1 rows read.
 	});
 
 	return useMemo(() => {

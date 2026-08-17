@@ -2,6 +2,7 @@ import { useUser } from "@clerk/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo } from "react";
 import { queryKeys } from "@/lib/query/keys";
+import { recordOwnMutation } from "@/lib/realtime-mutations";
 import type { EpisodeProgressRow } from "@/lib/server-types";
 import {
 	markEpisodeWatched,
@@ -214,6 +215,7 @@ export function useRemoveFromContinueWatching() {
 					},
 				}),
 			),
+		onSuccess: () => recordOwnMutation("watchlist"),
 		onSettled: () => {
 			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
 		},
@@ -321,7 +323,10 @@ export function useEpisodeWatched(
 				},
 			]);
 		},
-		onSuccess: (_data, _args, handle) => handle?.resolve(),
+		onSuccess: (_data, _args, handle) => {
+			handle?.resolve();
+			recordOwnMutation("watchlist");
+		},
 		onError: (error, _args, handle) => {
 			logWatchProgressError("toggle episode watched", error);
 			handle?.remove();
@@ -351,7 +356,10 @@ export function useEpisodeWatched(
 				},
 			]);
 		},
-		onSuccess: (_data, _args, handle) => handle?.resolve(),
+		onSuccess: (_data, _args, handle) => {
+			handle?.resolve();
+			recordOwnMutation("watchlist");
+		},
 		onError: (error, _args, handle) => {
 			logWatchProgressError("mark season episodes watched", error);
 			handle?.remove();
@@ -367,6 +375,7 @@ export function useEpisodeWatched(
 			mediaType: "movie" | "tv";
 			progress?: number;
 		}) => unwrap(updateProgress({ data: args })),
+		onSuccess: () => recordOwnMutation("watchlist"),
 		onSettled: () => {
 			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
 		},
@@ -384,6 +393,7 @@ export function useEpisodeWatched(
 			release_date?: string;
 			overview?: string;
 		}) => unwrap(setProgressStatus({ data: args })),
+		onSuccess: () => recordOwnMutation("watchlist"),
 		onSettled: () => {
 			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
 		},

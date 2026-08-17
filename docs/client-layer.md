@@ -34,8 +34,9 @@ mutation goes to the server or to local storage.
 - `src/lib/query/devtools.ts` — dev-only React Query devtools toggle.
 - `src/lib/query/keys.ts` — `queryKeys` factory: namespaced, user-scoped keys
   (`watchlist.*`, `lists.*`, `permissions`, `admin.*`,
-  `recommendations.*`). User-scoping (`?? "anonymous"`) prevents cached data
-  from leaking across accounts.
+  `recommendations.*`, `data.version` for the combined revision poll).
+  User-scoping (`?? "anonymous"`) prevents cached data from leaking across
+  accounts.
 - `src/lib/queries.ts` — TMDB query functions used by routes/components
   (`getMediaList`, `getMovieDetails`, `getTvDetails`, `getCredits`,
   `getSearchResult`, `getPersonDetails`, ...). `MEDIA_LIST_PATHS` is the single
@@ -85,6 +86,9 @@ The mutation layer that eliminated the old `if (isSignedIn)` branches:
     selection (`buildSeasonEpisodeSelections`).
   - custom-list CRUD wraps each server fn with optimistic ops + id swapping
     (optimistic temp id → real id) + cache sync.
+  - Successful server writes call `recordOwnMutation` (see
+    `realtime-mutations.ts`) so the realtime poll can tell this client's own
+    changes apart from external ones.
 - `local-repository.ts` — the same interface against the Zustand stores
   (watchlist store + local lists/progress stores). TV progress uses the same
   `resolveProgressStatusAction` and `buildSeasonEpisodeSelections`.
@@ -135,11 +139,30 @@ Optimistic op builders live in:
   requests).
 - `use-filtered-watchlist.ts` — filter/sort state for the watchlist page.
 - `use-permissions.ts` — client-side RBAC summary (roles, features, admin,
-  banned) from `getUserFeaturesFn`.
+  banned) from `getUserFeaturesFn`. Polls every 30 s while the tab is visible
+  so ban status / feature flags stay fresh (this is what signs a banned user
+  out automatically via `user-sync.tsx`).
 - `use-watch-progress` (`src/hooks/watch-progress/`) — player progress
   tracking: `use-watch-progress.ts` (677 lines), `use-player-listener.ts`
   (postMessage listener that trusts sources by origin, with a DOM-scan
   fallback), `progress-helpers.ts` (pure progress math + types).
+
+## 7. Cross-device realtime (`src/hooks/data-version.ts` + `src/lib/realtime-mutations.ts`)
+
+Convex's realtime subscriptions are replaced by **version-gated polling**
+(see ADR-015):
+
+- `src/lib/realtime-mutations.ts` — per-domain counters (`watchlist` / `lists`
+  / `ai`) of this client's **successful** server writes, recorded by the
+  repository and the mutation hooks at every rev-bumping call site.
+- `src/hooks/data-version.ts` — `fetchDataVersion`, the client fetch for the
+  combined per-user revision counters.
+- `user-sync.tsx` — polls `data.version` every 10 s (pauses on hidden tabs)
+  and tracks the last-seen revisions per user. When a revision moves **beyond
+  what the client's own mutations can explain**, it invalidates the matching
+  query group (watchlist list / lists / AI history), so mounted queries
+  refetch. Own writes never trigger a redundant refetch; external changes
+  always do. Per-poll cost is 1 row read regardless of collection size.
 
 ## 7. Routing & pages (`src/routes/`)
 
@@ -179,7 +202,9 @@ Optimistic op builders live in:
   `recommendation-history.tsx`, `loading-skeletons.tsx`, `recommendation-utils.ts`.
 - `admin/` — `admin-dashboard.tsx`, `admin-user-table.tsx` (orchestrator),
   `admin-user-row.tsx`, `admin-role-dialog.tsx`, `admin-permission-toggles.tsx`,
-  `use-admin-users.ts` (data hook).
+  `use-admin-users.ts` (data hook; polls every 10 s while the admin page is
+  open — the page is admin-gated client- and server-side, so non-admins never
+  fetch it).
 - Top-level widgets: `navbar.tsx`, `footer.tsx`, `mobile-bottom-nav.tsx`,
   `desktop-nav-button.tsx`, `media-card.tsx`, `homepage-media.tsx`,
   `homepage-recommendations.tsx`, `daily-pick.tsx`, `video-player-modal.tsx`,
@@ -193,6 +218,9 @@ Optimistic op builders live in:
 - `src/lib/batcher.ts` — generic `RequestBatcher` (debounce / max-wait /
   max-batch-size / dedupe-by-key / flush-on-page-hide) used for watchlist
   membership writes and season-detail fetches.
+- `src/lib/realtime-mutations.ts` — per-domain own-mutation counters that let
+  `user-sync.tsx` skip redundant refetches for the client's own writes (see
+  section 7).
 - `src/lib/media-transform.ts` — pure TMDB→UI transforms (genre mapping,
   video splitting, cast/crew mapping, backdrop/poster URL building,
   certifications, runtime formatting).

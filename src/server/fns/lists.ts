@@ -4,6 +4,7 @@ import { getCurrentUser, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { listItems, lists, watchItems } from "../db/schema";
 import { getEnv } from "../env";
+import { bumpListsRev } from "../helpers/watch-item";
 import {
 	type ApiResult,
 	fail,
@@ -303,9 +304,9 @@ export const updateCustomList = createServerFn({ method: "POST" })
 			})
 			.where(eq(lists.id, existing.id));
 
+		await bumpListsRev(db, user.id);
 		return ok({ ok: true });
 	});
-
 export const deleteCustomList = createServerFn({ method: "POST" })
 	.validator(deleteCustomListArgsSchema)
 	.handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
@@ -323,6 +324,7 @@ export const deleteCustomList = createServerFn({ method: "POST" })
 		// Cascade via FK — the list_id FK deletes child items automatically, so a
 		// single delete replaces the old per-row loop.
 		await db.delete(lists).where(eq(lists.id, data.listId));
+		await bumpListsRev(db, user.id);
 		return ok({ ok: true });
 	});
 export const toggleListItem = createServerFn({ method: "POST" })
@@ -383,6 +385,7 @@ async function createCustomListInner(
 	if (inserted.length === 0) {
 		return fail("CONFLICT", "A list with this name already exists");
 	}
+	await bumpListsRev(db, userId);
 	return ok(id);
 }
 
@@ -422,6 +425,7 @@ async function toggleListItemInner(
 
 	if (existing.length > 0) {
 		await db.delete(listItems).where(eq(listItems.id, existing[0].id));
+		await bumpListsRev(db, userId);
 		return ok(false);
 	}
 
@@ -439,5 +443,6 @@ async function toggleListItemInner(
 		releaseDate: args.release_date,
 		overview: args.overview,
 	});
+	await bumpListsRev(db, userId);
 	return ok(true);
 }

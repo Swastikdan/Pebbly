@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
-import { watchItems } from "../db/schema";
+import { users, watchItems } from "../db/schema";
 import type { MediaType, ProgressStatus, Reaction } from "../schema/common";
 
 const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set([
@@ -56,6 +56,37 @@ type MetadataDbPatch = {
 };
 
 export type WatchItemRow = typeof watchItems.$inferSelect;
+
+export type UserRevColumn = "watchlistRev" | "listsRev" | "aiRev";
+
+/**
+ * Bump one of the user's data-domain revision counters. Clients poll this
+ * single small row (via `getDataVersion`) to detect cross-device changes
+ * instead of re-fetching whole collections on an interval — this keeps
+ * polling cost O(1) no matter how large the underlying data is.
+ */
+export async function bumpUserRev(
+	db: Db,
+	userId: string,
+	column: UserRevColumn,
+): Promise<void> {
+	const patch =
+		column === "watchlistRev"
+			? { watchlistRev: sql`${users.watchlistRev} + 1` }
+			: column === "listsRev"
+				? { listsRev: sql`${users.listsRev} + 1` }
+				: { aiRev: sql`${users.aiRev} + 1` };
+	await db.update(users).set(patch).where(eq(users.id, userId));
+}
+
+export const bumpWatchlistRev = (db: Db, userId: string) =>
+	bumpUserRev(db, userId, "watchlistRev");
+
+export const bumpListsRev = (db: Db, userId: string) =>
+	bumpUserRev(db, userId, "listsRev");
+
+export const bumpAiRev = (db: Db, userId: string) =>
+	bumpUserRev(db, userId, "aiRev");
 
 export async function getWatchItem(
 	db: Db,
@@ -146,6 +177,7 @@ export async function upsertWatchItem(
 			.update(watchItems)
 			.set(patch)
 			.where(eq(watchItems.id, existing.id));
+		await bumpWatchlistRev(db, userId);
 		return { ...existing, ...patch };
 	}
 
@@ -205,5 +237,6 @@ export async function upsertWatchItem(
 	// On conflict the update may have merged with the winner's metadata, so
 	// re-read the authoritative row rather than trusting our pre-insert value.
 	const refreshed = await getWatchItem(db, userId, { tmdbId, mediaType });
+	await bumpWatchlistRev(db, userId);
 	return refreshed ?? row;
 }
