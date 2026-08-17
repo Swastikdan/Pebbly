@@ -43,6 +43,13 @@
       "when": 1786932529346,
       "tag": "0005_yellow_rafael_vega",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786984577060,
+      "tag": "0006_smiling_sasquatch",
+      "breakpoints": true
     }
   ]
 }

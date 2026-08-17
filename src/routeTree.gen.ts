@@ -20,6 +20,7 @@ import { Route as KeywordIdRouteImport } from './routes/keyword.$id'
 import { Route as PersonIdRouteImport } from './routes/person.$id'
 import { Route as CollectionIdChar123SlugChar125RouteImport } from './routes/collection.$id.{-$slug}'
 import { Route as ListTypeSlugRouteImport } from './routes/list.$type.$slug'
+import { Route as SharedListListIdChar123SlugChar125RouteImport } from './routes/shared-list.$listId.{-$slug}'
 import { Route as MovieIdChar123SlugChar125IndexRouteImport } from './routes/movie/$id/{-$slug}/index'
 import { Route as MovieIdChar123SlugChar125CastCrewRouteImport } from './routes/movie/$id/{-$slug}/cast-crew'
 import { Route as MovieIdChar123SlugChar125MediaRouteImport } from './routes/movie/$id/{-$slug}/media'
@@ -87,6 +88,12 @@ const ListTypeSlugRoute = ListTypeSlugRouteImport.update({
   path: '/list/$type/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SharedListListIdChar123SlugChar125Route =
+  SharedListListIdChar123SlugChar125RouteImport.update({
+    id: '/shared-list/$listId/{-$slug}',
+    path: '/shared-list/$listId/{-$slug}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const MovieIdChar123SlugChar125IndexRoute =
   MovieIdChar123SlugChar125IndexRouteImport.update({
     id: '/movie/$id/{-$slug}/',
@@ -148,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/person/$id': typeof PersonIdRoute
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
   '/list/$type/$slug': typeof ListTypeSlugRoute
+  '/shared-list/$listId/{-$slug}': typeof SharedListListIdChar123SlugChar125Route
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
   '/movie/$id/{-$slug}/media': typeof MovieIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/cast-crew': typeof TvIdChar123SlugChar125CastCrewRoute
@@ -169,6 +177,7 @@ export interface FileRoutesByTo {
   '/person/$id': typeof PersonIdRoute
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
   '/list/$type/$slug': typeof ListTypeSlugRoute
+  '/shared-list/$listId/{-$slug}': typeof SharedListListIdChar123SlugChar125Route
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
   '/movie/$id/{-$slug}/media': typeof MovieIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/cast-crew': typeof TvIdChar123SlugChar125CastCrewRoute
@@ -191,6 +200,7 @@ export interface FileRoutesById {
   '/person/$id': typeof PersonIdRoute
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
   '/list/$type/$slug': typeof ListTypeSlugRoute
+  '/shared-list/$listId/{-$slug}': typeof SharedListListIdChar123SlugChar125Route
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
   '/movie/$id/{-$slug}/media': typeof MovieIdChar123SlugChar125MediaRoute
   '/tv/$id/{-$slug}/cast-crew': typeof TvIdChar123SlugChar125CastCrewRoute
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/person/$id'
     | '/collection/$id/{-$slug}'
     | '/list/$type/$slug'
+    | '/shared-list/$listId/{-$slug}'
     | '/movie/$id/{-$slug}/cast-crew'
     | '/movie/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/cast-crew'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | '/person/$id'
     | '/collection/$id/{-$slug}'
     | '/list/$type/$slug'
+    | '/shared-list/$listId/{-$slug}'
     | '/movie/$id/{-$slug}/cast-crew'
     | '/movie/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/cast-crew'
@@ -256,6 +268,7 @@ export interface FileRouteTypes {
     | '/person/$id'
     | '/collection/$id/{-$slug}'
     | '/list/$type/$slug'
+    | '/shared-list/$listId/{-$slug}'
     | '/movie/$id/{-$slug}/cast-crew'
     | '/movie/$id/{-$slug}/media'
     | '/tv/$id/{-$slug}/cast-crew'
@@ -278,6 +291,7 @@ export interface RootRouteChildren {
   PersonIdRoute: typeof PersonIdRoute
   CollectionIdChar123SlugChar125Route: typeof CollectionIdChar123SlugChar125Route
   ListTypeSlugRoute: typeof ListTypeSlugRoute
+  SharedListListIdChar123SlugChar125Route: typeof SharedListListIdChar123SlugChar125Route
   MovieIdChar123SlugChar125CastCrewRoute: typeof MovieIdChar123SlugChar125CastCrewRoute
   MovieIdChar123SlugChar125MediaRoute: typeof MovieIdChar123SlugChar125MediaRoute
   TvIdChar123SlugChar125CastCrewRoute: typeof TvIdChar123SlugChar125CastCrewRoute
@@ -367,6 +381,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListTypeSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shared-list/$listId/{-$slug}': {
+      id: '/shared-list/$listId/{-$slug}'
+      path: '/shared-list/$listId/{-$slug}'
+      fullPath: '/shared-list/$listId/{-$slug}'
+      preLoaderRoute: typeof SharedListListIdChar123SlugChar125RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/movie/$id/{-$slug}/': {
       id: '/movie/$id/{-$slug}/'
       path: '/movie/$id/{-$slug}'
@@ -438,6 +459,8 @@ const rootRouteChildren: RootRouteChildren = {
   PersonIdRoute: PersonIdRoute,
   CollectionIdChar123SlugChar125Route: CollectionIdChar123SlugChar125Route,
   ListTypeSlugRoute: ListTypeSlugRoute,
+  SharedListListIdChar123SlugChar125Route:
+    SharedListListIdChar123SlugChar125Route,
   MovieIdChar123SlugChar125CastCrewRoute:
     MovieIdChar123SlugChar125CastCrewRoute,
   MovieIdChar123SlugChar125MediaRoute: MovieIdChar123SlugChar125MediaRoute,
