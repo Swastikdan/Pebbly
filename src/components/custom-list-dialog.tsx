@@ -34,8 +34,9 @@ export function CustomListDialog({
 	onOpenChange,
 	initialName,
 	initialColor,
+	initialDescription,
 	initialVisibility,
-	initialListType,
+	initialSortType,
 	listId,
 	autoAddMedia,
 }: {
@@ -43,8 +44,9 @@ export function CustomListDialog({
 	onOpenChange: (open: boolean) => void;
 	initialName?: string;
 	initialColor?: string;
+	initialDescription?: string;
 	initialVisibility?: string;
-	initialListType?: string;
+	initialSortType?: string;
 	listId?: string;
 	autoAddMedia?: {
 		tmdbId: number;
@@ -58,10 +60,12 @@ export function CustomListDialog({
 	};
 }) {
 	const [name, setName] = useState(initialName ?? "");
-	const [description, setDescription] = useState("");
+	const [description, setDescription] = useState(initialDescription ?? "");
 	const [color, setColor] = useState(initialColor ?? "");
 	const [visibility, setVisibility] = useState<"private" | "public">("private");
-	const [listType, setListType] = useState<"unordered" | "ordered">(
+	// How items inside the list are ordered — distinct from the server's
+	// `listType` (custom | pebbly-picks), which marks the kind of list.
+	const [sortType, setSortType] = useState<"unordered" | "ordered">(
 		"unordered",
 	);
 	const [showColorPicker, setShowColorPicker] = useState(false);
@@ -79,15 +83,22 @@ export function CustomListDialog({
 	useEffect(() => {
 		if (open) {
 			setName(initialName ?? "");
-			setDescription("");
+			setDescription(initialDescription ?? "");
 			setColor(initialColor ?? "");
 			setVisibility((initialVisibility as "private" | "public") ?? "private");
-			setListType((initialListType as "unordered" | "ordered") ?? "unordered");
+			setSortType((initialSortType as "unordered" | "ordered") ?? "unordered");
 			setShowColorPicker(false);
 			setError("");
 			setSaving(false);
 		}
-	}, [open, initialName, initialColor, initialVisibility, initialListType]);
+	}, [
+		open,
+		initialName,
+		initialColor,
+		initialDescription,
+		initialVisibility,
+		initialSortType,
+	]);
 
 	const handleSubmit = async () => {
 		const trimmed = name.trim();
@@ -102,18 +113,23 @@ export function CustomListDialog({
 
 		setSaving(true);
 		try {
+			const trimmedDescription = description.trim() || undefined;
 			if (isEditing) {
 				await updateList({
 					listId: listId as string,
 					name: trimmed,
 					color: color || undefined,
+					description: trimmedDescription,
 					visibility,
+					sortType,
 				});
 			} else if (autoAddMedia) {
 				await createListAndAdd({
 					name: trimmed,
 					color: color || undefined,
+					description: trimmedDescription,
 					visibility,
+					sortType,
 					tmdbId: autoAddMedia.tmdbId,
 					mediaType: autoAddMedia.mediaType,
 					title: autoAddMedia.title,
@@ -127,7 +143,9 @@ export function CustomListDialog({
 				await createList({
 					name: trimmed,
 					color: color || undefined,
+					description: trimmedDescription,
 					visibility,
+					sortType,
 				});
 			}
 			setName("");
@@ -316,23 +334,23 @@ export function CustomListDialog({
 							<div className="flex p-1 rounded-xl bg-muted/70 border border-border/50">
 								<button
 									type="button"
-									onClick={() => setListType("unordered")}
+									onClick={() => setSortType("unordered")}
 									className={cn(
 										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
-										listType === "unordered"
+										sortType === "unordered"
 											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
 											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
 									)}
 								>
 									<List size={11} />
 									Unordered
-								</button>
+								</button>{" "}
 								<button
 									type="button"
-									onClick={() => setListType("ordered")}
+									onClick={() => setSortType("ordered")}
 									className={cn(
 										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
-										listType === "ordered"
+										sortType === "ordered"
 											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
 											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
 									)}
@@ -342,9 +360,9 @@ export function CustomListDialog({
 								</button>
 							</div>
 							<div className="text-[10px] text-muted-foreground/80 leading-snug min-h-[30px]">
-								{listType === "unordered"
+								{sortType === "unordered"
 									? "Items are in a simple list"
-									: "Items are numbered/ranked"}
+									: "Numbered/ranked — reorder titles after creating"}
 							</div>
 						</div>
 					</div>

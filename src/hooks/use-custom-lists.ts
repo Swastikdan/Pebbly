@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { queryKeys } from "@/lib/query/keys";
+import type { ReorderListItemInput } from "@/lib/repository/types";
 import { useRepository } from "@/lib/repository/use-repository";
 import type { CustomListRow, ListItemRow } from "@/lib/server-types";
 import { getCustomLists, getItemLists, getListItems } from "@/server/fns/lists";
@@ -80,8 +81,10 @@ export function useCustomLists() {
 				...list,
 				_id: list.id,
 				color: list.color ?? undefined,
+				description: list.description ?? undefined,
 				visibility: list.visibility ?? undefined,
 				listType: list.listType ?? undefined,
+				sortType: list.sortType ?? undefined,
 			}));
 		}
 
@@ -223,6 +226,17 @@ export function useToggleListItem() {
 	return useCallback(
 		async (args: ToggleListItemArgs) => {
 			await repository.toggleListItem(args);
+		},
+		[repository],
+	);
+}
+
+export function useReorderListItems() {
+	const repository = useRepository();
+
+	return useCallback(
+		async (input: ReorderListItemInput) => {
+			await repository.reorderListItem(input);
 		},
 		[repository],
 	);

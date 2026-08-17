@@ -92,8 +92,15 @@ export const lists = sqliteTable(
 			.references(() => users.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		color: text("color"),
+		description: text("description"),
 		visibility: text("visibility"),
 		listType: text("list_type"),
+		// How items inside the list are ordered: plain insertion order vs a
+		// user-ranked list (rank numbers + reorder UI). Distinct from
+		// `listType` (custom | pebbly-picks), which marks the kind of list.
+		sortType: text("sort_type", { enum: ["unordered", "ordered"] })
+			.notNull()
+			.default("unordered"),
 		sortOrder: integer("sort_order").notNull().default(0),
 		createdAt: integer("created_at").notNull(),
 		updatedAt: integer("updated_at").notNull(),
@@ -117,6 +124,9 @@ export const listItems = sqliteTable(
 		tmdbId: integer("tmdb_id").notNull(),
 		mediaType: text("media_type", { enum: ["movie", "tv"] }).notNull(),
 		addedAt: integer("added_at").notNull(),
+		// Position within the list; new items get max+1 so this doubles as
+		// insertion order for unordered lists and rank order for ordered ones.
+		position: integer("position").notNull().default(0),
 		title: text("title"),
 		image: text("image"),
 		backdrop: text("backdrop"),
