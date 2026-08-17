@@ -3,11 +3,12 @@ import { and, desc, eq } from "drizzle-orm";
 import * as v from "valibot";
 import { getCurrentUser, requireUser } from "../auth";
 import { getDb, runBatch } from "../db/client";
-import { episodeProgress, watchItems } from "../db/schema";
+import { episodeProgress, users, watchItems } from "../db/schema";
 import { getEnv } from "../env";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
 import {
 	buildMetadataPatch,
+	bumpWatchlistRev,
 	getWatchItem,
 	normalizeProgressStatus,
 	upsertWatchItem,
@@ -116,6 +117,38 @@ export const getMediaState = createServerFn({ method: "POST" })
 	);
 
 // ---------------------------------------------------------------------------
+// Realtime change detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Cheap (1-row) read clients poll to detect cross-device changes across all
+ * user-data domains. Each revision is bumped by the matching mutations
+ * (watchlist, custom lists, AI recommendations), so polling this single row
+ * is O(1) no matter how large the underlying collections are.
+ */
+export const getDataVersion = createServerFn({ method: "POST" }).handler(
+	async (): Promise<
+		ApiResult<{ watchlistRev: number; listsRev: number; aiRev: number }>
+	> => {
+		const user = await getCurrentUser();
+		if (!user) return ok({ watchlistRev: 0, listsRev: 0, aiRev: 0 });
+
+		const db = getDb(getEnv());
+		const rows = await db
+			.select({
+				watchlistRev: users.watchlistRev,
+				listsRev: users.listsRev,
+				aiRev: users.aiRev,
+			})
+			.from(users)
+			.where(eq(users.id, user.id))
+			.limit(1);
+
+		return ok(rows[0] ?? { watchlistRev: 0, listsRev: 0, aiRev: 0 });
+	},
+);
+
+// ---------------------------------------------------------------------------
 // Writes
 // ---------------------------------------------------------------------------
 
@@ -168,6 +201,7 @@ export const updateProgress = createServerFn({ method: "POST" })
 					...buildMetadataPatch(data, existing),
 				})
 				.where(eq(watchItems.id, existing.id));
+			await bumpWatchlistRev(db, user.id);
 			return ok({ ok: true });
 		}
 
@@ -182,6 +216,7 @@ export const updateProgress = createServerFn({ method: "POST" })
 			updatedAt: now,
 			...buildMetadataPatch(data),
 		});
+		await bumpWatchlistRev(db, user.id);
 		return ok({ ok: true });
 	});
 
@@ -206,6 +241,7 @@ export const removeFromContinueWatching = createServerFn({ method: "POST" })
 			})
 			.where(eq(watchItems.id, existing.id));
 
+		await bumpWatchlistRev(db, user.id);
 		return ok({ ok: true });
 	});
 
@@ -251,10 +287,12 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
 							updatedAt: next.updatedAt,
 						})
 						.where(eq(watchItems.id, existing.id));
+					await bumpWatchlistRev(db, user.id);
 					return ok(next);
 				}
 				// Otherwise, delete the row entirely
 				await db.delete(watchItems).where(eq(watchItems.id, existing.id));
+				await bumpWatchlistRev(db, user.id);
 				return ok(null);
 			}
 
@@ -417,6 +455,7 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
 			await runBatch(db, statements);
 
 			await createWatchlistSnapshot(db, user.id);
+			await bumpWatchlistRev(db, user.id);
 			return ok(resultRows);
 		},
 	);
@@ -588,6 +627,7 @@ export async function syncEpisodeProgressRecord(
 		existingByKey,
 	);
 	await runBatch(db, statements);
+	await bumpWatchlistRev(db, userId);
 }
 
 export const markEpisodeWatched = createServerFn({ method: "POST" })
@@ -628,6 +668,7 @@ export const markSeasonEpisodesWatched = createServerFn({ method: "POST" })
 			);
 		}
 		await runBatch(db, statements);
+		await bumpWatchlistRev(db, user.id);
 
 		return ok({ ok: true });
 	});
@@ -721,6 +762,7 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
 		}
 
 		await runBatch(db, statements);
+		await bumpWatchlistRev(db, user.id);
 
 		return ok({ ok: true });
 	});

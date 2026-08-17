@@ -23,6 +23,7 @@ import {
 import { createBatcher } from "@/lib/batcher";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
+import { recordOwnMutation } from "@/lib/realtime-mutations";
 import type { WatchItemRow } from "@/lib/server-types";
 import {
 	createCustomList,
@@ -72,7 +73,13 @@ function runJournaledMutation(
 ) {
 	const handle = begin();
 	run()
-		.then(() => handle?.resolve())
+		.then(() => {
+			handle?.resolve();
+			// A successful write here bumps the server-side watchlist revision
+			// once, so count it as an own mutation (lets UserSync skip the
+			// redundant refetch this would otherwise trigger).
+			recordOwnMutation("watchlist");
+		})
 		.catch((error) => {
 			logWatchlistError(errorMessage, error);
 			handle?.remove();
@@ -106,6 +113,9 @@ const watchlistMembershipBatcher = createBatcher<
 			// Merge the authoritative rows into the cache (no full refetch — the
 			// server response already reflects this batch). Touched items missing
 			// from the response were deleted.
+			// Each flush is one server write (single or batched), which bumps the
+			// watchlist revision once.
+			recordOwnMutation("watchlist");
 			if (queryClient) {
 				applyServerState(
 					queryClient,
@@ -355,6 +365,7 @@ export function createRemoteRepository(
 			const handle = beginCreateListOp(queryClient, args, optimisticId, userId);
 			try {
 				const realId = await unwrap(createCustomList({ data: args }));
+				recordOwnMutation("lists");
 				swapListId(queryClient, optimisticId, realId, userId);
 				handle?.resolve();
 				scheduleSync(queryClient, [queryKeys.lists.all(userId)]);
@@ -377,6 +388,7 @@ export function createRemoteRepository(
 			);
 			try {
 				const realId = await unwrap(createCustomListAndAddItem({ data: args }));
+				recordOwnMutation("lists");
 				swapListId(
 					queryClient,
 					optimisticId,
@@ -419,6 +431,7 @@ export function createRemoteRepository(
 			);
 			try {
 				const result = await unwrap(toggleListItem({ data: args }));
+				recordOwnMutation("lists");
 				if (result !== adding) {
 					applyToggleInverse(queryClient, args, adding, userId);
 				}
@@ -466,6 +479,8 @@ async function runMutationAsync(
 	try {
 		await run();
 		handle?.resolve();
+		// deleteList / updateList each bump the lists revision once server-side.
+		recordOwnMutation("lists");
 	} catch (error) {
 		logWatchlistError(errorMessage, error);
 		handle?.remove();

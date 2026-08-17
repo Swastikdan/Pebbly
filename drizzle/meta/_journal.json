@@ -29,6 +29,20 @@
       "when": 1786863787987,
       "tag": "0003_petite_sugar_man",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1786932208726,
+      "tag": "0004_wise_sabretooth",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786932529346,
+      "tag": "0005_yellow_rafael_vega",
+      "breakpoints": true
     }
   ]
 }

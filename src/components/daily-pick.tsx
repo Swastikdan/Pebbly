@@ -154,7 +154,7 @@ export function DailyPickButton() {
 									<div className="flex flex-wrap items-center gap-1.5 text-meta text-muted-foreground">
 										{pick.year && <span>{pick.year}</span>}
 										{pick.year && <span>•</span>}
-										<span className="uppercase font-semibold text-blue-500 text-[11px]">
+										<span className="uppercase font-semibold text-[11px]">
 											{pick.mediaType === "tv" ? "TV Series" : "Movie"}
 										</span>
 										{pick.rating > 0 && (

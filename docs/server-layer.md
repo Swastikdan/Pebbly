@@ -49,7 +49,10 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
   legacy values), `buildMetadataPatch` (clamps rating 0–10), and
   `upsertWatchItem` (insert-or-patch on the `(user, tmdb, mediaType)` unique
   key, with `onConflictDoUpdate` so a concurrent duplicate insert applies this
-  request's state to the winner's row instead of silently dropping it).
+  request's state to the winner's row instead of silently dropping it). Also
+  `bumpUserRev` + the `bumpWatchlistRev` / `bumpListsRev` / `bumpAiRev`
+  wrappers — atomic increments of the per-user revision counters that drive
+  cross-device change detection (see ADR-015).
 - `helpers/snapshots.ts` — `createWatchlistSnapshot` (records the current
   watchlist media ids unless identical to the latest snapshot; deterministic
   ordering before the 500-row limit) and `createDailySnapshots` (keyset
@@ -99,15 +102,19 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 ### watchlist.ts
 - Reads: `getWatchlist` (status-filtered, max 500), `getTrackedTmdbIds`,
   `getMediaState` (single row for a media id), `getAllWatchedEpisodes`,
-  `getAllEpisodeProgress`.
+  `getAllEpisodeProgress`, and `getDataVersion` (1-row read returning the
+  user's `watchlistRev` / `listsRev` / `aiRev` — polled by clients for
+  cross-device change detection, see ADR-015).
 - Writes: `setWatchlistMembership` / `batchSetWatchlistMembership` (removing
   from the watchlist keeps the row when it has a reaction or real progress,
   else deletes it; batch path does one read + one `db.batch`),
   `setProgressStatus`, `setReaction`, `updateProgress`, `removeFromContinueWatching`.
+  **Every write also bumps the user's `watchlist_rev`** so other devices pick
+  up the change via their version poll.
 - Episode progress: `markEpisodeWatched`, `markSeasonEpisodesWatched`,
   `markShowEpisodesAndStatus` — all build statements via
   `buildEpisodeSyncStatements` against a preloaded `existingByKey` map so a
-  whole show sync is one read + one batch.
+  whole show sync is one read + one batch. Each also bumps `watchlist_rev`.
 
 ### lists.ts
 - Reads: `getCustomLists` (with preview images + item counts),
@@ -116,14 +123,15 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 - Writes: `createCustomList`, `createCustomListAndAddItem` (rolls back the
   list if the item insert fails), `updateCustomList`, `deleteCustomList`
   (FK cascade removes children), `toggleListItem`. Duplicate names are guarded
-  by the `(user_id, name)` unique index via `onConflictDoNothing`.
+  by the `(user_id, name)` unique index via `onConflictDoNothing`. Every write
+  bumps the user's `lists_rev`.
 
 ### import-export.ts
 - `importWatchlist` — bulk import of `watch_items` + `episode_progress`.
   Dedupes by `(mediaType, tmdbId)`, normalizes statuses/reactions, and executes
   in bounded batches (≤100 statements per `db.batch`, episode INSERTs chunked
   at 14 rows to respect the 100-parameter limit). Ends with a watchlist
-  snapshot.
+  snapshot and a single `watchlist_rev` bump.
 
 ### recommendations.ts
 - Access/history: `getUserRecommendationAccess`, `getRecommendationHistory`,
@@ -131,7 +139,10 @@ All fns return `ApiResult<T>` and validate input with Valibot.
   can't erase the cooldown marker), `updateVerifiedRecommendations`.
 - Feedback: `getRecommendationFeedback`, `setRecommendationFeedback`
   (a `like` auto-adds the title to the watchlist with the `recommended`
-  reaction and to the "Pebbly Picks" list), `removeRecommendationFeedback`.
+  reaction and to the "Pebbly Picks" list — bumping `watchlist_rev` **and**
+  `lists_rev`), `removeRecommendationFeedback`.
+- History writes (`saveRecommendations`, `deleteRecommendation`,
+  `updateVerifiedRecommendations`) bump the user's `ai_rev`.
 - Homepage: `getHomepageRecommendations` (filters out disliked feedback,
   computes `needsRefresh` from server time — 24 h cadence, retry after 1 h on
   failure), `generateHomepageRecommendations`.

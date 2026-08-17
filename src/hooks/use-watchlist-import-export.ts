@@ -7,6 +7,7 @@ import { useLocalProgressStore } from "@/hooks/use-local-progress-store";
 import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
 import { fetchAllEpisodeProgress } from "@/hooks/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
+import { recordOwnMutation } from "@/lib/realtime-mutations";
 import type { AllEpisodeProgressRow } from "@/lib/server-types";
 import { normalizeProgressStatus } from "@/lib/utils";
 import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
@@ -351,6 +352,7 @@ export const useWatchlistImportExport = () => {
 								data: validationResult.output,
 							}),
 						);
+						recordOwnMutation("watchlist");
 						await queryClient.invalidateQueries({
 							queryKey: queryKeys.watchlist.list(),
 						});

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { queryKeys } from "@/lib/query/keys";
+import { recordOwnMutation } from "@/lib/realtime-mutations";
 import {
 	deleteRecommendation,
 	generateRecommendations,
@@ -75,6 +76,8 @@ export function useRecommendations() {
 		queryKey: queryKeys.recommendations.history(user?.id),
 		queryFn: () => unwrap(getRecommendationHistory()),
 		enabled: !!isSignedIn,
+		// Cross-device sync is driven by UserSync's data-version poll (refetch
+		// only when the ai_rev revision changes).
 	});
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -101,6 +104,7 @@ export function useRecommendations() {
 
 	const deleteMutation = useMutation({
 		mutationFn: (id: string) => unwrap(deleteRecommendation({ data: { id } })),
+		onSuccess: () => recordOwnMutation("ai"),
 		onError: (err, id) => {
 			logRecommendationError("delete recommendation", err);
 			setOptimisticDeletedIds((prev) => {
@@ -127,6 +131,7 @@ export function useRecommendations() {
 				if ("error" in result) {
 					setError(result.error);
 				} else {
+					recordOwnMutation("ai");
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.recommendations.history(user?.id),
 					});
@@ -158,6 +163,7 @@ export function useRecommendations() {
 				await updateVerifiedRecommendations({
 					data: { id, recommendations: JSON.stringify(recommendations) },
 				});
+				recordOwnMutation("ai");
 				void queryClient.invalidateQueries({
 					queryKey: queryKeys.recommendations.history(user?.id),
 				});

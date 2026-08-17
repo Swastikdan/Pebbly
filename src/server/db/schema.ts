@@ -22,6 +22,13 @@ export const users = sqliteTable("users", {
 	// moment someone is demoted in Clerk, so it is never consulted for access
 	// decisions — keeping it in the DB only invited drift.
 	isBanned: integer("is_banned", { mode: "boolean" }).default(false),
+	// Monotonic revision counters for the user's data domains. Bumped on every
+	// relevant mutation so clients can poll this single small row to detect
+	// cross-device changes instead of re-fetching whole collections (which is
+	// O(collection size) in D1 rows read).
+	watchlistRev: integer("watchlist_rev").default(0).notNull(),
+	listsRev: integer("lists_rev").default(0).notNull(),
+	aiRev: integer("ai_rev").default(0).notNull(),
 });
 
 export const watchItems = sqliteTable(

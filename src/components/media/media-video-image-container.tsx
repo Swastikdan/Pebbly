@@ -22,7 +22,11 @@ import {
 	updateDialogSearch,
 } from "@/lib/media-dialog-helpers";
 import { getImages, getVideos } from "@/lib/queries";
-import type { MediaImages, MediaVideosResultsEntity } from "@/lib/tmdb-schemas";
+import type {
+	MediaImages,
+	MediaVideos,
+	MediaVideosResultsEntity,
+} from "@/lib/tmdb-schemas";
 
 const sortVideos = (videos: MediaVideosResultsEntity[] | undefined | null) => {
 	if (!videos) return [];
@@ -69,7 +73,8 @@ export const MediaVideoImageContainer = (props: {
 
 	const queries = useQueries({ queries: queryConfigs });
 
-	const rawVideos = queries[0].data as unknown as MediaVideosResultsEntity[];
+	const rawVideos = (queries[0].data as unknown as MediaVideos | undefined)
+		?.results;
 	const mediaImages = queries[1].data as unknown as MediaImages;
 	const mediaVideos = useMemo(() => sortVideos(rawVideos), [rawVideos]);
 

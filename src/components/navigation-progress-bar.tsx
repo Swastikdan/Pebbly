@@ -2,43 +2,61 @@ import { useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export function NavigationProgressBar() {
+interface NavigationProgressBarProps {
+	/** Minimum loading duration (in ms) before the bar appears. Default is 200ms. */
+	delay?: number;
+}
+
+export function NavigationProgressBar({
+	delay = 200,
+}: NavigationProgressBarProps) {
 	const isLoading = useRouterState({
 		select: (s) => s.status === "pending",
 	});
 	const [visible, setVisible] = useState(false);
 	const [progress, setProgress] = useState(0);
+
+	const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	useEffect(() => {
 		if (isLoading) {
+			// Clear any lingering exit timer from a rapid re-navigation
 			if (finishTimerRef.current) {
 				clearTimeout(finishTimerRef.current);
 				finishTimerRef.current = null;
 			}
-			setVisible(true);
-			setProgress(20);
 
-			if (timerRef.current) {
-				clearInterval(timerRef.current);
+			// Wait for the delay threshold before rendering anything
+			delayTimerRef.current = setTimeout(() => {
+				setVisible(true);
+				setProgress(20);
+
+				if (timerRef.current) clearInterval(timerRef.current);
+
+				timerRef.current = setInterval(() => {
+					setProgress((prev) => {
+						if (prev < 60) return prev + 15;
+						if (prev < 80) return prev + 5;
+						if (prev < 92) return prev + 1.5;
+						return prev;
+					});
+				}, 150);
+			}, delay);
+		} else {
+			// Fast route: cancel pending start if route resolved within the delay window
+			if (delayTimerRef.current) {
+				clearTimeout(delayTimerRef.current);
+				delayTimerRef.current = null;
 			}
 
-			// Smooth progressive advance while loading
-			timerRef.current = setInterval(() => {
-				setProgress((prev) => {
-					if (prev < 60) return prev + 15;
-					if (prev < 80) return prev + 5;
-					if (prev < 92) return prev + 1.5;
-					return prev;
-				});
-			}, 150);
-		} else {
 			if (timerRef.current) {
 				clearInterval(timerRef.current);
 				timerRef.current = null;
 			}
 
+			// Only complete and fade out if the bar actually became visible
 			if (visible) {
 				setProgress(100);
 				finishTimerRef.current = setTimeout(() => {
@@ -49,10 +67,11 @@ export function NavigationProgressBar() {
 		}
 
 		return () => {
+			if (delayTimerRef.current) clearTimeout(delayTimerRef.current);
 			if (timerRef.current) clearInterval(timerRef.current);
 			if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
 		};
-	}, [isLoading, visible]);
+	}, [isLoading, visible, delay]);
 
 	if (!visible && progress === 0) {
 		return null;

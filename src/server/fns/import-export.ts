@@ -7,6 +7,7 @@ import { getEnv } from "../env";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
 import {
 	buildMetadataPatch,
+	bumpWatchlistRev,
 	normalizeProgressStatus,
 	normalizeReaction,
 } from "../helpers/watch-item";
@@ -184,6 +185,7 @@ export const importWatchlist = createServerFn({ method: "POST" })
 		await runBoundedBatches(db, episodeStatements);
 
 		await createWatchlistSnapshot(db, user.id);
+		await bumpWatchlistRev(db, user.id);
 		return ok({ imported: importedItems.size });
 	});
 

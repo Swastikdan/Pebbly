@@ -25,8 +25,9 @@ vars were dropped.
 **Consequences:**
 - One schema (`src/server/db/schema.ts`), one set of server fns — no more
   duplication.
-- Loses Convex's realtime/subscriptions and reactive queries; the app uses
-  explicit TanStack Query invalidation instead (acceptable for this workload).
+- Lost Convex's realtime/subscriptions initially; cross-device realtime was
+  restored with version-gated polling (see ADR-015), while in-session updates
+  stay on explicit TanStack Query invalidation.
 - D1 limits shape the code: bounded `db.batch` calls, 100-parameter cap,
   30 s execution budget (see ADR-010).
 - Ports were made carefully (comments say "port of convex/...") so behavior
@@ -352,3 +353,54 @@ workflow never exercises.
   Node 20 removal.
 - SHA pinning keeps supply-chain integrity (no mutable tags in CI).
 - Action updates now require a deliberate PR (as before).
+
+---
+
+## ADR-015 — Version-gated polling for cross-device realtime
+
+**Status:** Accepted
+
+**Context:** Convex provided realtime subscriptions out of the box; after the
+migration to Cloudflare Workers + D1 the app had none. Polling whole
+collections on a fixed interval is O(collection size) in D1 rows-read and
+would blow the free-tier read budget for large watchlists (10k–50k items ≈
+millions of rows/day/tab). Managed realtime services (Ably, Pusher, …) add a
+paid external dependency and were rejected. Durable Objects + WebSocket
+Hibernation is the true instant-push path but is real engineering on the
+current Nitro/`cloudflare_module` setup, so it was deferred as the upgrade
+path rather than the first step.
+
+**Decision:** Cross-device sync is implemented with **version-gated polling**
+(one 10 s poll, 1 row read, O(1) at any collection size):
+
+- Each `users` row carries three monotonic revision counters
+  (`watchlist_rev`, `lists_rev`, `ai_rev` — migrations `0004`/`0005`),
+  bumped atomically by every relevant write via
+  `bumpUserRev`/`bumpWatchlistRev`/`bumpListsRev`/`bumpAiRev`
+  (`src/server/helpers/watch-item.ts`).
+- `getDataVersion` (`src/server/fns/watchlist.ts`) reads all three counters
+  in one row.
+- `UserSync` (`src/components/user-sync.tsx`) polls `data.version` every 10 s
+  (pauses on hidden tabs) and invalidates a query group only when its
+  revision moved **beyond what this client's own mutations can explain** —
+  own successful writes are counted per domain in
+  `src/lib/realtime-mutations.ts`, instrumented at every rev-bumping call
+  site (repository, watch-progress, player listener, import, AI hooks).
+  Full-list fetches remain capped at 500 rows.
+- Ban enforcement is a separate 30 s poll of `getUserFeaturesFn`, which makes
+  a banned user get signed out within ~30 s instead of only on next load.
+
+**Consequences:**
+- Per-poll cost is O(1) regardless of watchlist/lists/history size; a 50k-item
+  user costs the same as a 10-item user.
+- Each client refetches at most once per external change; its own writes never
+  trigger a redundant refetch. Counters only increment on confirmed successful
+  writes, so an uninstrumented path degrades safely to a redundant refetch,
+  never a missed external sync.
+- Latency equals the poll interval (~10 s), not instant push. If instant push
+  becomes necessary, Durable Objects + WebSocket Hibernation (stays ~free at
+  this scale) is the upgrade path.
+- Revision counters grow forever but are single integers updated in place — no
+  storage accumulation, no realistic overflow.
+
+---

@@ -29,6 +29,7 @@ Identity for signed-in users, mirrored from Clerk.
 | `name` / `image` / `email` | text | profile snapshot from Clerk claims |
 | `roles` | text (json) | dynamic RBAC roles: `video-player`, `ai-integrations` |
 | `is_banned` | boolean | default `false` |
+| `watchlist_rev` / `lists_rev` / `ai_rev` | integer | monotonic per-domain revision counters for cross-device change detection — bumped atomically by every relevant mutation, polled via `getDataVersion` (see ADR-015) |
 
 > **No `is_admin` column.** Admin status lives in Clerk's public metadata
 > (JWT claim or live API). The column existed in the initial migration
@@ -204,6 +205,8 @@ Keyset-pagination cursor for the daily cron task.
 | `0001_slippery_cammi.sql` | Table rebuilds: `role_permissions` gets a real composite PK; `list_items.rating` and `watch_items.rating` switch from `integer` to `real` |
 | `0002_cute_bloodstrike.sql` | Adds `snapshot_cursors` |
 | `0003_petite_sugar_man.sql` | Drops `users.is_admin` (admin now read from Clerk only) |
+| `0004_wise_sabretooth.sql` | Adds `users.watchlist_rev` — watchlist change-detection counter |
+| `0005_yellow_rafael_vega.sql` | Adds `users.lists_rev` and `users.ai_rev` — lists + AI history counters |
 
 > `drizzle-kit generate` (via `drizzle.config.ts`) produces these from the
 > schema. They are applied to D1 with `wrangler d1 migrations apply`, so the
