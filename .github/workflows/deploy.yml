@@ -17,6 +17,9 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Only deploy when the push was made by the repo owner (Swastikdan).
+    # Pushes/commits from any other user skip the deploy entirely.
+    if: github.event.pusher.name == 'Swastikdan'
     permissions:
       contents: read
     steps:
