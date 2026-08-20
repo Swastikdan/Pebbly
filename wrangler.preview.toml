@@ -1,5 +1,5 @@
-# Cloudflare Workers + D1 (free tier)
-name = "pebbly"
+# Cloudflare Workers + D1 (preview environment for cf-* branches)
+name = "pebbly-preview"
 main = ".output/server/index.mjs"
 compatibility_date = "2026-08-08"
 compatibility_flags = ["nodejs_compat"]
@@ -10,16 +10,16 @@ workers_dev = true
 directory = ".output/public"
 binding = "ASSETS"
 
-# D1 database (free tier: 5 GB)
+[vars]
+# Non-secret flag so the app can detect it is running in preview at runtime.
+APP_ENV = "preview"
+
+# Preview D1 database (separate from production)
 [[d1_databases]]
 binding = "DB"
-database_name = "pebbly"
-database_id = "cf94e4ee-291d-499f-b463-ef61ee9d9e1d"
+database_name = "pebbly-preview"
+database_id = "5b4796fa-e49e-4802-a4bc-19c1596cf303"
 migrations_dir = "drizzle"
-
-# Daily watchlist snapshot, 03:00 UTC
-[triggers]
-crons = ["0 3 * * *"]
 
 [observability.logs]
 enabled = true
@@ -27,6 +27,3 @@ invocation_logs = true
 
 [observability.traces]
 enabled = true
-
-# Non-secret server vars only. Secrets: wrangler secret put <NAME>.
-# Client VITE_* vars are inlined at build time from .env — they do NOT go here.
