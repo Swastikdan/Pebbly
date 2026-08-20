@@ -13,6 +13,7 @@ import {
 	type Reaction,
 } from "../schema/common";
 import {
+	clonePublicListArgsSchema,
 	createCustomListAndAddItemArgsSchema,
 	createCustomListArgsSchema,
 	deleteCustomListArgsSchema,
@@ -473,6 +474,111 @@ export const getPublicList = createServerFn({ method: "POST" })
 					position: item.position,
 				})),
 			});
+		},
+	);
+
+/**
+ * Clone a public list to the authenticated user's account.
+ */
+export const clonePublicList = createServerFn({ method: "POST" })
+	.validator(clonePublicListArgsSchema)
+	.handler(
+		async ({ data }): Promise<ApiResult<{ id: string; name: string }>> => {
+			const { user, error } = await requireUser();
+			if (error) return error;
+
+			const db = getDb(getEnv());
+			const sourceList = await db
+				.select()
+				.from(lists)
+				.where(eq(lists.id, data.listId))
+				.limit(1);
+
+			if (
+				sourceList.length === 0 ||
+				(sourceList[0].visibility !== "public" &&
+					sourceList[0].userId !== user.id)
+			) {
+				return fail("NOT_FOUND", "List not found");
+			}
+
+			const src = sourceList[0];
+			const sourceItems = await db
+				.select()
+				.from(listItems)
+				.where(eq(listItems.listId, data.listId))
+				.orderBy(asc(listItems.position), asc(listItems.addedAt));
+
+			// Resolve a unique name for the user
+			let targetName = src.name;
+			const userLists = await db
+				.select({ name: lists.name })
+				.from(lists)
+				.where(eq(lists.userId, user.id));
+			const existingNames = new Set(userLists.map((l) => l.name.toLowerCase()));
+
+			if (existingNames.has(targetName.toLowerCase())) {
+				let suffix = 2;
+				while (existingNames.has(`${src.name} (${suffix})`.toLowerCase())) {
+					suffix += 1;
+				}
+				targetName = `${src.name} (${suffix})`.slice(0, 50);
+			}
+
+			const highestList = await db
+				.select({ sortOrder: lists.sortOrder })
+				.from(lists)
+				.where(eq(lists.userId, user.id))
+				.orderBy(desc(lists.sortOrder))
+				.limit(1);
+			const maxSort = highestList.length > 0 ? highestList[0].sortOrder : 0;
+
+			const newId = crypto.randomUUID();
+			const now = Date.now();
+
+			await db.insert(lists).values({
+				id: newId,
+				userId: user.id,
+				name: targetName,
+				color: src.color,
+				description: src.description,
+				visibility: "private",
+				listType: "custom",
+				sortType: src.sortType ?? "unordered",
+				sortOrder: maxSort + 1,
+				createdAt: now,
+				updatedAt: now,
+			});
+
+			if (sourceItems.length > 0) {
+				const CHUNK_SIZE = 45;
+				for (let i = 0; i < sourceItems.length; i += CHUNK_SIZE) {
+					const chunk = sourceItems.slice(i, i + CHUNK_SIZE);
+					await runBatch(
+						db,
+						chunk.map((item, idx) =>
+							db.insert(listItems).values({
+								id: crypto.randomUUID(),
+								userId: user.id,
+								listId: newId,
+								tmdbId: item.tmdbId,
+								mediaType: item.mediaType,
+								addedAt: now + (item.position ?? idx),
+								position: item.position ?? idx,
+								title: item.title,
+								image: item.image,
+								backdrop: item.backdrop,
+								rating: item.rating,
+								releaseDate: item.releaseDate,
+								overview: item.overview,
+							}),
+						),
+					);
+				}
+			}
+
+			await bumpListsRev(db, user.id);
+			return ok({ id: newId, name: targetName });
 		},
 	);
 
