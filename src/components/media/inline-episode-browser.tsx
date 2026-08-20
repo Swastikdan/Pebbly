@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-
 import { lazy, Suspense, useState } from "react";
 import {
 	Accordion,
@@ -20,6 +19,7 @@ const VideoPlayerModal = lazy(() =>
 );
 
 import { IMAGE_PREFIX } from "@/constants";
+import { useUpNextEpisode } from "@/hooks/watch-progress/use-up-next-episode";
 import {
 	useEpisodeProgress,
 	useEpisodeWatched,
@@ -80,12 +80,27 @@ export function InlineEpisodeBrowser({
 		}
 	};
 
+	const upNext = useUpNextEpisode(tvId);
+
 	return (
 		<div className="animate-fade-in-up pb-8">
 			<div className="mb-5 flex items-end justify-between gap-4">
 				<h2 className=" text-2xl font-bold tracking-tight md:text-3xl">
 					Episodes
 				</h2>
+				{upNext && (
+					<Suspense fallback={null}>
+						<VideoPlayerModal
+							tmdbId={tvId}
+							type="tv"
+							title={`${showName} - S${upNext.season}E${upNext.episode}`}
+							season={upNext.season}
+							episode={upNext.episode}
+							variant="episode"
+							className="pressable"
+						/>
+					</Suspense>
+				)}
 			</div>
 
 			<Accordion type="single" collapsible className="w-full space-y-2">
