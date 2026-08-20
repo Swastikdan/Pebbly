@@ -31,30 +31,8 @@ enabled = true
 # Non-secret server vars only. Secrets: wrangler secret put <NAME>.
 # Client VITE_* vars are inlined at build time from .env — they do NOT go here.
 
-# ---------------------------------------------------------------------------
-# Preview environment (cf-* branches)
-# ---------------------------------------------------------------------------
-# A separate Worker (pebbly-preview) + separate D1 database (pebbly-preview)
-# so branch deploys never touch production data. The D1 preview database_id
-# below is a placeholder — replace it with the real ID after running:
-#   wrangler d1 create pebbly-preview
-# (do NOT commit the real id if you want to keep it private, though D1 ids
-# are not secrets). The preview Worker also gets its own runtime secrets:
-#   wrangler secret put CLERK_SECRET_KEY --env preview
-#   wrangler secret put CLERK_ISSUER_URL --env preview
-#   wrangler secret put GEMINI_API_KEY --env preview
-# Cron triggers are omitted for preview so branch deploys don't run the daily
-# snapshot job against the preview D1 database.
-[env.preview]
-name = "pebbly-preview"
-workers_dev = true
-
-[env.preview.vars]
-# Non-secret flag so the app can detect it is running in preview at runtime.
-APP_ENV = "preview"
-
-[[env.preview.d1_databases]]
-binding = "DB"
-database_name = "pebbly-preview"
-database_id = "5b4796fa-e49e-4802-a4bc-19c1596cf303"
-migrations_dir = "drizzle"
+# Preview deploys (cf-* branches) use a separate, flattened config at
+# wrangler.preview.toml deployed with `wrangler deploy --config ...`.
+# Do NOT add an [env.preview] block here: Nitro copies it into the generated
+# .output/server/wrangler.json redirect, and Wrangler rejects --env against
+# redirected configs. See wrangler.preview.toml for details.
