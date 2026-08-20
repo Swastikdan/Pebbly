@@ -162,36 +162,44 @@ const HomepageRecommendationCard = memo(
 
 				{/* "Why this pick?" — expandable reasoning from the AI model */}
 				{recommendation.reasoning && (
-					<div className="absolute left-2 bottom-2 right-2 z-20">
+					<div className="absolute left-2 bottom-2 right-2 z-20 pointer-events-auto">
 						{showReason ? (
-							<div className="rounded-lg bg-neutral-900/95 text-white border border-neutral-700/80 backdrop-blur-sm px-2.5 py-2 shadow-lg">
-								<p className="text-[10.5px] leading-relaxed text-neutral-200">
+							<div className="rounded-xl bg-neutral-950/95 text-white border border-neutral-700/80 backdrop-blur-md p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+								<div className="flex items-center justify-between gap-2 mb-1.5 border-b border-neutral-800 pb-1.5">
+									<span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+										<Sparkles size={12} className="text-primary shrink-0" />
+										Why this pick
+									</span>
+									<button
+										type="button"
+										className="text-[11px] font-medium text-neutral-400 hover:text-white px-2 py-0.5 rounded-md hover:bg-neutral-800 transition-colors cursor-pointer"
+										onClick={(e) => {
+											e.stopPropagation();
+											e.preventDefault();
+											setShowReason(false);
+										}}
+									>
+										Close
+									</button>
+								</div>
+								<p className="text-xs leading-relaxed text-neutral-200 line-clamp-4 select-text">
 									{recommendation.reasoning}
 								</p>
-								<button
-									type="button"
-									className="mt-1 text-[10px] font-medium text-neutral-400 hover:text-white transition-colors cursor-pointer"
-									onClick={(e) => {
-										e.stopPropagation();
-										e.preventDefault();
-										setShowReason(false);
-									}}
-								>
-									Less
-								</button>
 							</div>
 						) : (
 							<button
 								type="button"
-								className="inline-flex items-center gap-1 rounded-full bg-neutral-900/80 text-white border border-neutral-700/60 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium shadow-md transition-[color,background-color,border-color,transform] duration-150 hover:bg-neutral-800 active:scale-95 cursor-pointer opacity-0 group-hover/rec-card:opacity-100 md:opacity-0"
+								aria-label={`Why ${resolvedData.title} was recommended`}
+								aria-expanded={false}
+								className="inline-flex items-center gap-1.5 rounded-full bg-neutral-950/85 hover:bg-neutral-900 text-white border border-neutral-700/70 backdrop-blur-md px-2.5 py-1 text-xs font-semibold shadow-lg transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer opacity-90 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
 								onClick={(e) => {
 									e.stopPropagation();
 									e.preventDefault();
 									setShowReason(true);
 								}}
 							>
-								<Sparkles size={10} className="text-primary" />
-								Why?
+								<Sparkles size={12} className="text-primary shrink-0" />
+								<span>Why?</span>
 							</button>
 						)}
 					</div>
