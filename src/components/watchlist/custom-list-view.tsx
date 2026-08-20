@@ -2,14 +2,17 @@ import {
 	ChevronDown,
 	ChevronUp,
 	EllipsisVertical,
+	Globe,
 	ListOrdered,
 	ListPlus,
 	Pencil,
+	Share2,
 	Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { DefaultLoader } from "@/components/default-loader";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -23,7 +26,8 @@ import {
 	useCustomListItems,
 	useReorderListItems,
 } from "@/hooks/use-custom-lists";
-import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast-store";
+import { cn, formatMediaTitle } from "@/lib/utils";
 
 export function CustomListView({
 	list,
@@ -82,6 +86,46 @@ export function CustomListView({
 			.finally(() => setReorderPending(false));
 	};
 
+	const isPublic = list.visibility === "public";
+
+	const handleShareList = async () => {
+		if (typeof window === "undefined") return;
+		if (!isPublic) {
+			toast({
+				title: "Collection is private",
+				description:
+					"Edit details and change visibility to Public to share it.",
+			});
+			return;
+		}
+		const slug = formatMediaTitle.encode(list.name);
+		const shareUrl = `${window.location.origin}/shared-list/${list._id}/${slug}`;
+		if (navigator.share) {
+			try {
+				await navigator.share({
+					title: list.name,
+					text: list.description || `Check out ${list.name} on Pebbly`,
+					url: shareUrl,
+				});
+			} catch {
+				// User cancelled share
+			}
+		} else {
+			try {
+				await navigator.clipboard.writeText(shareUrl);
+				toast({
+					title: "Link copied to clipboard",
+					description: "Anyone with this link can view this collection.",
+				});
+			} catch {
+				toast({
+					title: "Failed to copy link",
+					description: "Please copy the link from your browser.",
+				});
+			}
+		}
+	};
+
 	// Rank within the full list (correct even when a movie/TV filter is active).
 	const fullIndex = (item: (typeof items)[number]) =>
 		items?.findIndex(
@@ -109,7 +153,7 @@ export function CustomListView({
 						<ChevronDown className="size-5 rotate-90" />
 					</Button>
 					<div className="min-w-0">
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-2 min-w-0 flex-wrap">
 							{list.color && (
 								<span
 									className="size-3 rounded-full shrink-0"
@@ -119,6 +163,15 @@ export function CustomListView({
 							<h2 className="truncate text-xl font-extrabold tracking-tight sm:text-3xl leading-none">
 								{list.name}
 							</h2>
+							{isPublic && (
+								<Badge
+									variant="secondary"
+									className="gap-1 rounded-lg px-2 py-0.5 text-[10px] font-semibold shrink-0"
+								>
+									<Globe size={10} />
+									Public
+								</Badge>
+							)}
 						</div>
 						<div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground/85">
 							<span>{items ? `${items.length} titles` : "Loading..."}</span>
@@ -150,12 +203,24 @@ export function CustomListView({
 
 				{!isPebblyPicks && (
 					<div className="flex items-center gap-2 shrink-0 self-end md:self-center z-10">
+						{isPublic && (
+							<Button
+								variant="secondary"
+								size="sm"
+								onClick={handleShareList}
+								className="h-8 gap-1.5 rounded-lg px-3 text-xs font-semibold shadow-xs cursor-pointer border border-border/30 bg-background/60 hover:bg-background/90 backdrop-blur-sm"
+								title="Share public collection link"
+							>
+								<Share2 size={13} />
+								<span>Share</span>
+							</Button>
+						)}
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button
 									variant="ghost"
 									size="icon"
-									className="border border-border/20 bg-background/50 backdrop-blur-sm text-muted-foreground hover:bg-background/80 hover:text-foreground"
+									className="border border-border/20 bg-background/50 backdrop-blur-sm text-muted-foreground hover:bg-background/80 hover:text-foreground cursor-pointer"
 									aria-label={`Options for ${list.name}`}
 								>
 									<EllipsisVertical size={16} />
@@ -163,10 +228,17 @@ export function CustomListView({
 							</DropdownMenuTrigger>
 							<DropdownMenuContent
 								align="end"
-								className="w-36 rounded-xl shadow-xl"
+								className="w-40 rounded-xl shadow-xl"
 							>
 								<DropdownMenuItem
-									className="rounded-lg gap-2 text-xs py-2"
+									className="rounded-lg gap-2 text-xs py-2 cursor-pointer"
+									onSelect={handleShareList}
+								>
+									<Share2 size={14} />
+									{isPublic ? "Share Link" : "Share (Private)"}
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									className="rounded-lg gap-2 text-xs py-2 cursor-pointer"
 									onSelect={onEdit}
 								>
 									<Pencil size={14} />
@@ -174,7 +246,7 @@ export function CustomListView({
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									variant="destructive"
-									className="rounded-lg gap-2 text-xs py-2"
+									className="rounded-lg gap-2 text-xs py-2 cursor-pointer"
 									onSelect={onDelete}
 								>
 									<Trash2 size={14} />

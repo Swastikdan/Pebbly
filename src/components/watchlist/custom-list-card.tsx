@@ -3,6 +3,7 @@ import {
 	Globe,
 	ListOrdered,
 	Pencil,
+	Share2,
 	Sparkles,
 	Trash2,
 } from "lucide-react";
@@ -14,7 +15,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ListCollage } from "@/components/watchlist/list-collage";
-import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast-store";
+import { cn, formatMediaTitle } from "@/lib/utils";
 
 const PEBBLY_PICKS_TYPE = "pebbly-picks";
 
@@ -47,6 +49,45 @@ export function CustomListCard({
 	const isOrdered = list.sortType === "ordered";
 	const isPublic = list.visibility === "public";
 
+	const handleShareList = async (e?: Event | React.SyntheticEvent) => {
+		e?.stopPropagation();
+		if (typeof window === "undefined") return;
+		if (!isPublic) {
+			toast({
+				title: "Collection is private",
+				description:
+					"Edit details and change visibility to Public to share it.",
+			});
+			return;
+		}
+		const slug = formatMediaTitle.encode(list.name);
+		const shareUrl = `${window.location.origin}/shared-list/${list._id}/${slug}`;
+		if (navigator.share) {
+			try {
+				await navigator.share({
+					title: list.name,
+					text: list.description || `Check out ${list.name} on Pebbly`,
+					url: shareUrl,
+				});
+			} catch {
+				// User cancelled share
+			}
+		} else {
+			try {
+				await navigator.clipboard.writeText(shareUrl);
+				toast({
+					title: "Link copied to clipboard",
+					description: "Anyone with this link can view this collection.",
+				});
+			} catch {
+				toast({
+					title: "Failed to copy link",
+					description: "Please copy the link from your browser.",
+				});
+			}
+		}
+	};
+
 	return (
 		<div
 			className={cn(
@@ -59,7 +100,7 @@ export function CustomListCard({
 			<button
 				type="button"
 				onClick={onClick}
-				className="relative aspect-[16/10] w-full overflow-hidden text-left rounded-xl transition-transform duration-300"
+				className="relative aspect-[16/10] w-full overflow-hidden text-left rounded-xl transition-transform duration-300 cursor-pointer"
 			>
 				<ListCollage previews={previews} color={list.color} />
 
@@ -79,7 +120,7 @@ export function CustomListCard({
 				<button
 					type="button"
 					onClick={onClick}
-					className="min-w-0 flex-1 text-left"
+					className="min-w-0 flex-1 text-left cursor-pointer"
 				>
 					<h3 className="truncate text-sm font-bold tracking-tight text-foreground transition-colors duration-250 group-hover:text-primary">
 						{list.name}
@@ -123,7 +164,7 @@ export function CustomListCard({
 								type="button"
 								variant="ghost"
 								size="icon"
-								className="size-8 text-muted-foreground/60 transition-colors hover:bg-secondary hover:text-foreground focus-visible:opacity-100"
+								className="size-8 text-muted-foreground/60 transition-colors hover:bg-secondary hover:text-foreground focus-visible:opacity-100 cursor-pointer"
 								aria-label={`Options for ${list.name}`}
 							>
 								<EllipsisVertical size={14} />
@@ -131,18 +172,25 @@ export function CustomListCard({
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
 							align="end"
-							className="w-36 rounded-xl shadow-xl border-border/40 backdrop-blur-lg"
+							className="w-38 rounded-xl shadow-xl border-border/40 backdrop-blur-lg"
 						>
 							<DropdownMenuItem
-								className="rounded-lg gap-2 text-xs py-2"
+								className="rounded-lg gap-2 text-xs py-2 cursor-pointer"
+								onSelect={handleShareList}
+							>
+								<Share2 size={13} className="text-muted-foreground" />
+								{isPublic ? "Share Link" : "Share (Private)"}
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								className="rounded-lg gap-2 text-xs py-2 cursor-pointer"
 								onSelect={onEdit}
 							>
 								<Pencil size={13} className="text-muted-foreground" />
-								Edit
+								Edit Details
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								variant="destructive"
-								className="rounded-lg gap-2 text-xs py-2 text-destructive focus:bg-destructive/15 focus:text-destructive"
+								className="rounded-lg gap-2 text-xs py-2 text-destructive focus:bg-destructive/15 focus:text-destructive cursor-pointer"
 								onSelect={onDelete}
 							>
 								<Trash2 size={13} />
