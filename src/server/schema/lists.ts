@@ -95,3 +95,10 @@ export const getPublicListArgsSchema = v.object({
 	listId: v.string(),
 });
 export type GetPublicListArgs = v.InferOutput<typeof getPublicListArgsSchema>;
+
+export const clonePublicListArgsSchema = v.object({
+	listId: v.string(),
+});
+export type ClonePublicListArgs = v.InferOutput<
+	typeof clonePublicListArgsSchema
+>;
