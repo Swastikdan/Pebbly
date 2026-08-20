@@ -30,12 +30,15 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
 
+      - name: Use Preview Wrangler Config
+        run: cp wrangler.preview.toml wrangler.toml
+
       - name: Apply D1 migrations (preview)
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: d1 migrations apply pebbly-preview --remote --env preview
+          command: d1 migrations apply pebbly-preview --remote
 
       - name: Build (Nitro cloudflare preset)
         run: pnpm build
@@ -51,4 +54,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --env preview
+          command: deploy
