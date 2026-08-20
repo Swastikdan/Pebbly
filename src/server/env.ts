@@ -12,6 +12,8 @@ export interface Env {
 	CLERK_SECRET_KEY?: string;
 	CLERK_ISSUER_URL?: string;
 	GEMINI_API_KEY?: string;
+	/** Set to "preview" in wrangler.toml `[env.preview.vars]` for cf-* deploys. */
+	APP_ENV?: string;
 	[key: string]: unknown;
 }
 
@@ -24,6 +26,7 @@ const envSchema = v.object({
 	CLERK_SECRET_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
 	CLERK_ISSUER_URL: v.optional(v.pipe(v.string(), v.minLength(1))),
 	GEMINI_API_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
+	APP_ENV: v.optional(v.pipe(v.string(), v.minLength(1))),
 });
 
 type WorkerEnvHolder = { __env__?: Env };
@@ -79,4 +82,20 @@ export function getEnvVar(name: keyof Env): string | undefined {
 	const value = getEnv()[name];
 	if (typeof value === "string" && value.length > 0) return value;
 	return undefined;
+}
+
+/**
+ * True when the Worker is deployed under the wrangler `[env.preview]`
+ * environment (cf-* branch deploys), where `APP_ENV = "preview"` is set via
+ * `[env.preview.vars]` in wrangler.toml. Local dev (`vite dev`) and the
+ * production `cloudflare`-branch deployment both leave this unset, so they are
+ * not preview.
+ */
+export function isPreview(): boolean {
+	return getEnvVar("APP_ENV") === "preview";
+}
+
+/** True for the production `cloudflare`-branch deployment (and local dev). */
+export function isProduction(): boolean {
+	return !isPreview();
 }

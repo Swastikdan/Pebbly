@@ -1,25 +1,22 @@
-name: Deploy Cloudflare
+name: Deploy Cloudflare Preview
 on:
-  # Deploy only when changes land on the `cloudflare` branch (i.e. a PR is
-  # merged into it). Feature-branch pushes and pull requests never deploy —
-  # they run checks in the separate `ci.yml` workflow instead.
+  # Deploy a preview Worker whenever a `cf-*` branch is pushed. The `cloudflare`
+  # branch still deploys to production via deploy.yml; other branches run checks
+  # in ci.yml and never deploy.
   push:
     branches:
-      - cloudflare
+      - "cf-*"
   workflow_dispatch: # Allows manual trigger from GitHub Actions UI
 
-# Serialize production deploys so migrations and Worker deployments targeting
-# the same D1 database / Worker never run concurrently.
+# Serialize preview deploys targeting the same branch so migrations and Worker
+# deployments against the same preview D1 database never run concurrently.
 concurrency:
-  group: deploy-cloudflare-prod
+  group: deploy-cloudflare-preview-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Only deploy when the push was made by the repo owner (Swastikdan).
-    # Pushes/commits from any other user skip the deploy entirely.
-    if: github.event.pusher.name == 'Swastikdan'
     permissions:
       contents: read
     steps:
@@ -33,12 +30,12 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
 
-      - name: Apply D1 migrations (prod)
+      - name: Apply D1 migrations (preview)
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: d1 migrations apply pebbly --remote
+          command: d1 migrations apply pebbly-preview --remote --env preview
 
       - name: Build (Nitro cloudflare preset)
         run: pnpm build
@@ -49,9 +46,9 @@ jobs:
           VITE_PUBLIC_APP_URL: ${{ secrets.VITE_PUBLIC_APP_URL }}
           VITE_PUBLIC_VIDEO_URL: ${{ secrets.VITE_PUBLIC_VIDEO_URL }}
 
-      - name: Deploy Worker
+      - name: Deploy Worker (preview)
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+          command: deploy --env preview
