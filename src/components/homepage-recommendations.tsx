@@ -53,6 +53,7 @@ const HomepageRecommendationCard = memo(
 		) => void;
 	}) => {
 		const { title, tmdbId, mediaType } = recommendation;
+		const [showReason, setShowReason] = useState(false);
 		const {
 			data: tmdbData,
 			isLoading: idLoading,
@@ -158,6 +159,43 @@ const HomepageRecommendationCard = memo(
 						<ThumbsDown size={13} />
 					</Button>
 				</div>
+
+				{/* "Why this pick?" — expandable reasoning from the AI model */}
+				{recommendation.reasoning && (
+					<div className="absolute left-2 bottom-2 right-2 z-20">
+						{showReason ? (
+							<div className="rounded-lg bg-neutral-900/95 text-white border border-neutral-700/80 backdrop-blur-sm px-2.5 py-2 shadow-lg">
+								<p className="text-[10.5px] leading-relaxed text-neutral-200">
+									{recommendation.reasoning}
+								</p>
+								<button
+									type="button"
+									className="mt-1 text-[10px] font-medium text-neutral-400 hover:text-white transition-colors cursor-pointer"
+									onClick={(e) => {
+										e.stopPropagation();
+										e.preventDefault();
+										setShowReason(false);
+									}}
+								>
+									Less
+								</button>
+							</div>
+						) : (
+							<button
+								type="button"
+								className="inline-flex items-center gap-1 rounded-full bg-neutral-900/80 text-white border border-neutral-700/60 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium shadow-md transition-[color,background-color,border-color,transform] duration-150 hover:bg-neutral-800 active:scale-95 cursor-pointer opacity-0 group-hover/rec-card:opacity-100 md:opacity-0"
+								onClick={(e) => {
+									e.stopPropagation();
+									e.preventDefault();
+									setShowReason(true);
+								}}
+							>
+								<Sparkles size={10} className="text-primary" />
+								Why?
+							</button>
+						)}
+					</div>
+				)}
 			</div>
 		);
 	},
