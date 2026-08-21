@@ -41,18 +41,14 @@ function HomePage() {
 					className="hero-mesh pointer-events-none absolute inset-0"
 					aria-hidden="true"
 				/>
-				<div className="relative mx-auto max-w-5xl px-4 pt-10 pb-8 text-center sm:px-6 md:pt-16 md:pb-10 lg:px-8">
+				<div className="relative mx-auto max-w-5xl px-4 py-8 pt-8 pb-8 text-center sm:px-6 md:pt-14 md:pb-10 lg:px-8">
 					<div className="animate-fade-in-up">
-						<p className="eyebrow-label justify-center">
-							{SITE_CONFIG.name} · Film Fanatic
-						</p>
-						<h1 className="mx-auto mt-4 max-w-3xl text-display">
-							Lights up on your{" "}
-							<span className="text-gold-gradient italic">next favorite</span>
+						<h1 className="text-display">
+							Welcome to
+							<span className="px-2 text-primary">{SITE_CONFIG.name}</span>
 						</h1>
-						<p className="mx-auto mt-3 mb-6 max-w-xl text-body text-muted-foreground">
-							Millions of movies, TV shows, and people to discover — tracked,
-							curated, and recommended for you.
+						<p className="mx-auto mt-2 mb-6 max-w-xl text-body text-muted-foreground">
+							Millions of movies, TV shows, and people to discover.
 						</p>
 					</div>
 

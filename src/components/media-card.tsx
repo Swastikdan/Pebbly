@@ -150,7 +150,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 
 					{rating > 0 && (
 						<Badge className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md border-0 bg-black/85 px-2 py-1 text-meta text-white backdrop-blur-sm sm:bg-black/60">
-							<Star className="size-3 fill-primary text-primary" />
+							<Star className="size-3 fill-yellow-400 text-yellow-400" />
 							<span className="font-semibold text-white">
 								{rating.toFixed(1)}
 							</span>
