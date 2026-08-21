@@ -607,17 +607,29 @@ async function loadEpisodeRowsByKey(
 	tmdbId: number,
 ): Promise<Map<string, typeof episodeProgress.$inferSelect>> {
 	const db = getDb(getEnv());
-	const rows = await db
-		.select()
-		.from(episodeProgress)
-		.where(
-			and(
-				eq(episodeProgress.userId, userId),
-				eq(episodeProgress.tmdbId, tmdbId),
-			),
-		)
-		.limit(500);
-	return new Map(rows.map((row) => [`${row.season}:${row.episode}`, row]));
+	const rowsByKey = new Map<string, typeof episodeProgress.$inferSelect>();
+	// Offset-paginate instead of a hard cap: long-running shows can have
+	// >1000 watched rows, and missing any would corrupt the sync (rows past
+	// the cap would be re-inserted or never cleared).
+	const pageSize = 500;
+	for (let offset = 0; ; offset += pageSize) {
+		const page = await db
+			.select()
+			.from(episodeProgress)
+			.where(
+				and(
+					eq(episodeProgress.userId, userId),
+					eq(episodeProgress.tmdbId, tmdbId),
+				),
+			)
+			.limit(pageSize)
+			.offset(offset);
+		for (const row of page) {
+			rowsByKey.set(`${row.season}:${row.episode}`, row);
+		}
+		if (page.length < pageSize) break;
+	}
+	return rowsByKey;
 }
 
 export async function syncEpisodeProgressRecord(
