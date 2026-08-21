@@ -11,6 +11,7 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { getCollection } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { Collection } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/collection/$id/{-$slug}")({
 			throw notFound();
 		}
 		await context.queryClient.ensureQueryData({
-			queryKey: ["movie_details", parsed.data],
+			queryKey: queryKeys.tmdb.movieDetails(parsed.data),
 			queryFn: () => getCollection({ id: parsed.data }),
 		});
 		const title = slug ? formatMediaTitle.decode(slug) : "Collections";
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/collection/$id/{-$slug}")({
 function MovieCollnetionPage() {
 	const { id, slug } = Route.useLoaderData();
 	const { data, error, isLoading } = useQuery<Collection>({
-		queryKey: ["movie_details", id],
+		queryKey: queryKeys.tmdb.movieDetails(Number(id)),
 		queryFn: async () => await getCollection({ id: parseInt(id, 10) }),
 		enabled: typeof window !== "undefined",
 	});

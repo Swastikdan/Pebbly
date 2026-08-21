@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getPersonDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { PersonDetails } from "@/lib/tmdb-schemas";
 import { parseAndValidateId } from "@/lib/utils";
 
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/person/$id")({
 			throw notFound();
 		}
 		await context.queryClient.ensureQueryData({
-			queryKey: ["person_details", parsed.data],
+			queryKey: queryKeys.tmdb.personDetails(parsed.data),
 			queryFn: () => getPersonDetails({ id: parsed.data }),
 		});
 		return { id };
@@ -65,7 +66,7 @@ function PersonPage() {
 	}, [id]);
 
 	const { data, error, isLoading } = useQuery<PersonDetails>({
-		queryKey: ["person_details", personId],
+		queryKey: queryKeys.tmdb.personDetails(personId),
 		queryFn: async () => await getPersonDetails({ id: personId }),
 		enabled: typeof window !== "undefined",
 	});

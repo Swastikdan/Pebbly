@@ -35,6 +35,37 @@ export interface WatchlistBatchItem {
 	overview?: string;
 }
 
+export type MarkEpisodeArgs = {
+	tmdbId: number;
+	season: number;
+	episode: number;
+	isWatched: boolean;
+};
+
+export type MarkSeasonArgs = {
+	tmdbId: number;
+	season: number;
+	episodes: number[];
+	isWatched: boolean;
+};
+
+export type UpdateProgressArgs = {
+	tmdbId: number;
+	mediaType: MediaType;
+	progress?: number;
+	/**
+	 * When set, persists the status alongside progress without any of the
+	 * episode-row side effects of `setProgressStatus` (used by background
+	 * derivation, not explicit user actions).
+	 */
+	progressStatus?: ProgressStatus;
+	title?: string;
+	image?: string;
+	rating?: number;
+	release_date?: string;
+	overview?: string;
+};
+
 export interface WatchlistRepository {
 	/** Flip (or force) watchlist membership for a single title. */
 	toggleMembership(
@@ -58,6 +89,17 @@ export interface WatchlistRepository {
 		reaction: ReactionStatus | null,
 		metadata?: MediaMetadata,
 	): void;
+	/** Toggle one episode's watched state. */
+	markEpisode(args: MarkEpisodeArgs): Promise<void>;
+	/** Toggle a whole season's episodes' watched state. */
+	markSeason(args: MarkSeasonArgs): Promise<void>;
+	/** Persist playback progress (percent) for a title. */
+	updateProgress(args: UpdateProgressArgs): Promise<void>;
+	/** Clear watching state so a title leaves "continue watching". */
+	removeFromContinueWatching(
+		tmdbId: number,
+		mediaType: MediaType,
+	): Promise<void>;
 }
 
 export interface ListsRepository {

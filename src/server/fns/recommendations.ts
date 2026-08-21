@@ -299,6 +299,7 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
 				updatedAt: now,
 			});
 		}
+		await bumpAiRev(db, user.id);
 
 		// When user likes a recommendation, auto-add to watchlist with
 		// "recommended" reaction & Pebbly Picks list.
@@ -424,6 +425,7 @@ export const removeRecommendationFeedback = createServerFn({ method: "POST" })
 			await db
 				.delete(recommendationFeedback)
 				.where(eq(recommendationFeedback.id, existing[0].id));
+			await bumpAiRev(db, user.id);
 		}
 
 		return ok({ ok: true });
@@ -811,6 +813,7 @@ async function saveHomepageRecommendations(
 				status: "success",
 			},
 		});
+	await bumpAiRev(db, userId);
 }
 
 /** Upsert the homepage failure state keyed on the unique userId. */
@@ -831,6 +834,7 @@ async function saveHomepageFailure(userId: string) {
 			target: homepageRecommendations.userId,
 			set: { lastAttemptedAt: now, status: "failed" },
 		});
+	await bumpAiRev(db, userId);
 }
 
 // ---------------------------------------------------------------------------

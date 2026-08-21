@@ -15,12 +15,12 @@ import { MediaPosterTrailerContainer } from "@/components/media/media-poster-tra
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContainer } from "@/components/media/media-title-container";
 import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
-
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { buildSharedMediaPageData } from "@/lib/media-page";
 import { getTvCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { Tv } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
@@ -32,13 +32,12 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/")({
 			throw notFound();
 		}
 		await context.queryClient.ensureQueryData({
-			queryKey: ["tv_details", parsed.data],
+			queryKey: queryKeys.tmdb.tvDetails(parsed.data),
 			queryFn: () => getTvDetails({ id: parsed.data }),
 		});
-		const data = context.queryClient.getQueryData<Tv>([
-			"tv_details",
-			parsed.data,
-		]);
+		const data = context.queryClient.getQueryData<Tv>(
+			queryKeys.tmdb.tvDetails(parsed.data),
+		);
 		const title = slug ? formatMediaTitle.decode(slug) : "Tv Page";
 		return { id, slug, title, posterPath: data?.poster_path ?? null };
 	},
@@ -77,7 +76,7 @@ function TvHomePage() {
 	const { id: tv_id, slug: tv_slug } = Route.useLoaderData();
 	const tv_id_param = parseInt(tv_id, 10);
 	const { data, error, isLoading } = useQuery<Tv>({
-		queryKey: ["tv_details", tv_id_param],
+		queryKey: queryKeys.tmdb.tvDetails(tv_id_param),
 		queryFn: () => getTvDetails({ id: tv_id_param }),
 	});
 

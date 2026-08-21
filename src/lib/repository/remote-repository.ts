@@ -10,9 +10,15 @@ import {
 } from "@/hooks/custom-lists/list-optimistic";
 import {
 	applyServerState,
+	beginOp,
 	type OpHandle,
 	scheduleSync,
 } from "@/hooks/pending-ops";
+import {
+	episodeRowIdOf,
+	toggleEpisodeRows,
+	toggleSeasonRows,
+} from "@/hooks/watch-progress/progress-helpers";
 import {
 	type MarkShowEpisodesAndStatusArgs,
 	type ProgressStatusArgs,
@@ -20,11 +26,12 @@ import {
 	type WatchlistMembershipArgs,
 	watchlistOptimistic,
 } from "@/hooks/watchlist/watchlist-optimistic";
+
 import { createBatcher } from "@/lib/batcher";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
-import type { WatchItemRow } from "@/lib/server-types";
+import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import {
 	createCustomList,
 	createCustomListAndAddItem,
@@ -34,10 +41,14 @@ import {
 } from "@/server/fns/lists";
 import {
 	batchSetWatchlistMembership,
+	markEpisodeWatched,
+	markSeasonEpisodesWatched,
 	markShowEpisodesAndStatus,
+	removeFromContinueWatching as removeFromContinueWatchingFn,
 	setProgressStatus as setProgressStatusFn,
 	setReaction as setReactionFn,
 	setWatchlistMembership,
+	updateProgress as updateProgressFn,
 } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
 import {
@@ -55,7 +66,8 @@ function logWatchlistError(action: string, error: unknown) {
  * Run a server write through the optimistic journal: begin the op, resolve on
  * success, roll back on failure, and always schedule a background sync. This
  * replicates the `useMutation` lifecycle (onMutate/onSuccess/onError/onSettled)
- * imperatively so the repository does not depend on hooks.
+ * imperatively so the repository does not depend on hooks. Own-write revision
+ * counting is handled by the op's domain tag (see `beginOp`).
  */
 function runJournaledMutation(
 	queryClient: QueryClient,
@@ -75,10 +87,6 @@ function runJournaledMutation(
 	run()
 		.then(() => {
 			handle?.resolve();
-			// A successful write here bumps the server-side watchlist revision
-			// once, so count it as an own mutation (lets UserSync skip the
-			// redundant refetch this would otherwise trigger).
-			recordOwnMutation("watchlist");
 		})
 		.catch((error) => {
 			logWatchlistError(errorMessage, error);
@@ -254,7 +262,7 @@ export function createRemoteRepository(
 				} else if (action.needsEpisodeUpdate) {
 					queryClient
 						.ensureQueryData({
-							queryKey: ["tv", Number(id)],
+							queryKey: queryKeys.tmdb.tvDetails(Number(id)),
 							queryFn: () => getTvDetails({ id: Number(id) }),
 						})
 						.then((details) => {
@@ -344,6 +352,140 @@ export function createRemoteRepository(
 				errorMessage: "set reaction",
 			});
 		},
+
+		async markEpisode(args) {
+			const episodeKey = queryKeys.watchlist.episodes(args.tmdbId);
+			runJournaledMutation(queryClient, {
+				begin: () =>
+					beginOp(
+						queryClient,
+						[
+							{
+								key: episodeKey,
+								touchedIds: [`${args.tmdbId}:${args.season}:${args.episode}`],
+								idOf: episodeRowIdOf,
+								apply: (rows: EpisodeProgressRow[]) =>
+									toggleEpisodeRows(rows, args),
+							},
+						],
+						{ domain: "watchlist" },
+					),
+				run: () => unwrap(markEpisodeWatched({ data: args })),
+				syncKeys: [episodeKey],
+				errorMessage: "toggle episode watched",
+			});
+		},
+
+		async markSeason(args) {
+			const episodeKey = queryKeys.watchlist.episodes(args.tmdbId);
+			runJournaledMutation(queryClient, {
+				begin: () =>
+					beginOp(
+						queryClient,
+						[
+							{
+								key: episodeKey,
+								touchedIds: args.episodes.map(
+									(episode) => `${args.tmdbId}:${args.season}:${episode}`,
+								),
+								idOf: episodeRowIdOf,
+								apply: (rows: EpisodeProgressRow[]) =>
+									toggleSeasonRows(rows, args),
+							},
+						],
+						{ domain: "watchlist" },
+					),
+				run: () => unwrap(markSeasonEpisodesWatched({ data: args })),
+				syncKeys: [episodeKey],
+				errorMessage: "mark season episodes watched",
+			});
+		},
+
+		async updateProgress(args) {
+			const listKey = queryKeys.watchlist.list();
+			runJournaledMutation(queryClient, {
+				begin: () =>
+					beginOp(
+						queryClient,
+						[
+							{
+								key: listKey,
+								touchedIds: [`${args.mediaType}:${args.tmdbId}`],
+								apply: (rows: WatchItemRow[]) =>
+									rows.map((row) => {
+										if (
+											row.tmdbId !== args.tmdbId ||
+											row.mediaType !== args.mediaType
+										) {
+											return row;
+										}
+										const status =
+											args.progressStatus !== undefined
+												? { progressStatus: args.progressStatus }
+												: {};
+										return {
+											...row,
+											progress: args.progress ?? row.progress,
+											...status,
+											updatedAt: Date.now(),
+										};
+									}),
+							},
+						],
+						{ domain: "watchlist" },
+					),
+				run: () => {
+					if (args.progressStatus !== undefined) {
+						const statusArgs: ProgressStatusArgs = {
+							...args,
+							progressStatus: args.progressStatus,
+						};
+						return unwrap(setProgressStatusFn({ data: statusArgs }));
+					}
+					return unwrap(updateProgressFn({ data: args }));
+				},
+				syncKeys: [listKey],
+				errorMessage: "update progress",
+			});
+		},
+
+		async removeFromContinueWatching(tmdbId, mediaType) {
+			const listKey = queryKeys.watchlist.list();
+			runJournaledMutation(queryClient, {
+				begin: () =>
+					beginOp(
+						queryClient,
+						[
+							{
+								key: listKey,
+								touchedIds: [`${mediaType}:${tmdbId}`],
+								apply: (rows: WatchItemRow[]) =>
+									rows.map((row) =>
+										row.tmdbId === tmdbId && row.mediaType === mediaType
+											? {
+													...row,
+													progressStatus: row.inWatchlist
+														? ("watch-later" as const)
+														: null,
+													progress: 0,
+													updatedAt: Date.now(),
+												}
+											: row,
+									),
+							},
+						],
+						{ domain: "watchlist" },
+					),
+				run: () =>
+					unwrap(
+						removeFromContinueWatchingFn({
+							data: { tmdbId, mediaType },
+						}),
+					),
+				syncKeys: [listKey],
+				errorMessage: "remove from continue watching",
+			});
+		},
 	};
 
 	const lists: ListsRepository = {
@@ -365,7 +507,6 @@ export function createRemoteRepository(
 			const handle = beginCreateListOp(queryClient, args, optimisticId, userId);
 			try {
 				const realId = await unwrap(createCustomList({ data: args }));
-				recordOwnMutation("lists");
 				swapListId(queryClient, optimisticId, realId, userId);
 				handle?.resolve();
 				scheduleSync(queryClient, [queryKeys.lists.all(userId)]);
@@ -388,7 +529,6 @@ export function createRemoteRepository(
 			);
 			try {
 				const realId = await unwrap(createCustomListAndAddItem({ data: args }));
-				recordOwnMutation("lists");
 				swapListId(
 					queryClient,
 					optimisticId,
@@ -431,7 +571,6 @@ export function createRemoteRepository(
 			);
 			try {
 				const result = await unwrap(toggleListItem({ data: args }));
-				recordOwnMutation("lists");
 				if (result !== adding) {
 					applyToggleInverse(queryClient, args, adding, userId);
 				}
@@ -479,8 +618,6 @@ async function runMutationAsync(
 	try {
 		await run();
 		handle?.resolve();
-		// deleteList / updateList each bump the lists revision once server-side.
-		recordOwnMutation("lists");
 	} catch (error) {
 		logWatchlistError(errorMessage, error);
 		handle?.remove();

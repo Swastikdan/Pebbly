@@ -82,7 +82,9 @@ export const markSeasonEpisodesWatchedArgsSchema = v.object({
 	season: v.pipe(v.number(), v.integer(), v.minValue(0)),
 	episodes: v.pipe(
 		v.array(v.pipe(v.number(), v.integer(), v.minValue(1))),
-		v.maxLength(500),
+		// Long-running shows can exceed 1000 episodes in one season; the cap
+		// only guards against abuse-sized payloads, not real seasons.
+		v.maxLength(5000),
 	),
 	isWatched: v.boolean(),
 });
@@ -100,11 +102,11 @@ export const markShowEpisodesAndStatusArgsSchema = v.object({
 				season: v.pipe(v.number(), v.integer(), v.minValue(0)),
 				episodes: v.pipe(
 					v.array(v.pipe(v.number(), v.integer(), v.minValue(1))),
-					v.maxLength(500),
+					v.maxLength(5000),
 				),
 			}),
 		),
-		v.maxLength(50),
+		v.maxLength(100),
 	),
 	isWatched: v.boolean(),
 	clearAllEpisodes: v.optional(v.boolean()),

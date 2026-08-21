@@ -4,6 +4,7 @@ import {
 	getBasicTvDetails,
 	getSearchResult,
 } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { BasicMovie, BasicTv } from "@/lib/tmdb-schemas";
 import type { AIRecommendation } from "@/types";
 
@@ -60,7 +61,7 @@ export function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 		isLoading: movieLoading,
 		isError: movieError,
 	} = useQuery({
-		queryKey: ["basic_movie_details", tmdbId],
+		queryKey: queryKeys.tmdb.basicMovieDetails(tmdbId as number),
 		queryFn: () => getBasicMovieDetails({ id: tmdbId as number }),
 		enabled: !!tmdbId && mediaType === "movie",
 		staleTime: 1000 * 60 * 60 * 48,
@@ -73,7 +74,7 @@ export function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 		isLoading: tvLoading,
 		isError: tvError,
 	} = useQuery({
-		queryKey: ["basic_tv_details", tmdbId],
+		queryKey: queryKeys.tmdb.basicTvDetails(tmdbId as number),
 		queryFn: () => getBasicTvDetails({ id: tmdbId as number }),
 		enabled: !!tmdbId && mediaType === "tv",
 		staleTime: 1000 * 60 * 60 * 48,
@@ -100,7 +101,7 @@ export function useTmdbSearchFallback(
 	shouldSearch: boolean,
 ) {
 	const { data: searchData, isLoading: searchLoading } = useQuery({
-		queryKey: ["tmdb_search_fallback", title, mediaType],
+		queryKey: queryKeys.tmdb.searchFallback(title, mediaType),
 		queryFn: async () => {
 			const results = await getSearchResult({ query: title, page: 1 });
 			const filtered = (results.results ?? []).filter(
