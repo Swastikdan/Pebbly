@@ -116,8 +116,8 @@ export function MediaPosterTrailerContainer(props: {
 											{video.name}
 										</span>
 										<div className="absolute inset-0 flex items-center justify-center">
-											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
-												<Play className="size-6 fill-white text-white" />
+											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[background-color,transform] duration-300 ease-snappy [@media(hover:hover)]:group-hover:bg-primary [@media(hover:hover)]:group-hover:scale-110">
+												<Play className="size-6 fill-white text-white transition-colors duration-300 [@media(hover:hover)]:group-hover:fill-primary-foreground [@media(hover:hover)]:group-hover:text-primary-foreground" />
 											</div>
 										</div>
 									</Button>

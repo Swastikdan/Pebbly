@@ -125,7 +125,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 				<div
 					data-media-poster
 					className={cn(
-						"surface-raised interactive-raised relative w-full overflow-hidden rounded-2xl bg-muted",
+						"surface-raised interactive-raised relative w-full overflow-hidden rounded-2xl bg-muted transition-shadow duration-300 [@media(hover:hover)]:group-hover:[box-shadow:inset_0_1px_0_color-mix(in_oklab,var(--primary)_12%,transparent),0_3px_7px_rgb(0_0_0/0.2),0_16px_36px_rgb(0_0_0/0.18),0_0_24px_-6px_color-mix(in_oklab,var(--primary)_20%,transparent)]",
 						imageContainerClassName,
 					)}
 				>
@@ -133,7 +133,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 						alt={title}
 						src={imageUrl}
 						blurSrc={blurSrc}
-						className="h-full w-full object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
+						className="h-full w-full object-cover transition-transform duration-300 ease-snappy [@media(hover:hover)]:group-hover:scale-[1.04]"
 						width={imageWidth}
 						height={imageHeight}
 						priority={priority}
@@ -143,21 +143,21 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
 					{isRecommended && (
-						<Badge className="absolute top-2 left-2 rounded-md bg-blue-600/90 px-2 py-0.5 text-[10px] font-bold text-white border-0 shadow-md">
+						<Badge className="absolute top-2 left-2 rounded-md border-0 bg-primary/90 px-2 py-0.5 text-[10px] font-bold text-primary-foreground shadow-md">
 							Recommended
 						</Badge>
 					)}
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-meta text-white flex items-center gap-1 border-0">
-							<Star className="size-3 fill-yellow-400 text-yellow-400" />
+						<Badge className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md border-0 bg-black/85 px-2 py-1 text-meta text-white backdrop-blur-sm sm:bg-black/60">
+							<Star className="size-3 fill-primary text-primary" />
 							<span className="font-semibold text-white">
 								{rating.toFixed(1)}
 							</span>
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-meta text-white border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md border-0 bg-black/85 px-2 py-1 text-meta text-white backdrop-blur-sm sm:bg-black/60">
 						{mediaTypeLabel}
 					</Badge>
 				</div>
@@ -337,7 +337,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 			<div className="mt-2.5 flex flex-col gap-1 overflow-hidden">
 				{isTVContinueWatching && season && episode && (
 					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-meta font-bold text-blue-500 dark:text-blue-400">
+						<span className="text-meta font-bold text-primary">
 							S{season} E{episode}
 						</span>
 						{episodeDetail?.name && (
@@ -377,7 +377,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
 			params={{ id: String(id) }}
 			className="group relative block w-24 md:w-28 lg:w-32 outline-none ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable "
 		>
-			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-muted shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">
+			<div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-muted shadow-[0_1px_0_color-mix(in_oklab,var(--primary)_8%,transparent)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color,box-shadow] duration-300 group-hover:border-primary/30 group-hover:shadow-[0_1px_0_color-mix(in_oklab,var(--primary)_12%,transparent)_inset,0_10px_26px_rgb(0_0_0/0.24),0_0_20px_-6px_color-mix(in_oklab,var(--primary)_18%,transparent)]">
 				<Image
 					alt={name}
 					src={imageUrl}

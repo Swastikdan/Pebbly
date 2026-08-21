@@ -109,9 +109,12 @@ function KeywordPage() {
 					<GoBack title="Back" hideLabelOnMobile />
 					<ShareButton title={`${keyword.name} Movies`} hideLabelOnMobile />
 				</div>
-				<h1 className="text-start font-bold text-2xl md:text-3xl lg:text-4xl capitalize pb-5">
-					{keyword.name} Movies
-				</h1>
+				<div className="pb-5 animate-fade-in-up">
+					<p className="eyebrow-label">Keyword</p>
+					<h1 className="mt-1.5 text-start font-bold text-2xl md:text-3xl lg:text-4xl capitalize">
+						{keyword.name} Movies
+					</h1>
+				</div>
 
 				<section className="flex h-full flex-col">
 					<div className="flex min-h-96 w-full items-center justify-center">

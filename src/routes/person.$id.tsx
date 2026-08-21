@@ -194,6 +194,9 @@ function PersonPage() {
 					</div>
 
 					<div className="flex w-full flex-col gap-2">
+						<p className="eyebrow-label">
+							{data.known_for_department ?? "Cast & Crew"} · Profile
+						</p>
 						<h1 className="text-2xl font-bold tracking-tight md:text-3xl">
 							{name}
 						</h1>

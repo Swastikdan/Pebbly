@@ -7,9 +7,13 @@ const Footer = () => {
 	const { isSignedIn, isAdmin } = usePermissions();
 
 	return (
-		<footer className="mx-auto flex w-full items-center justify-center border-border/60 border-t">
-			<section className="flex w-full max-w-screen-xl flex-col items-center justify-between gap-2 px-5 py-4 text-sm text-muted-foreground md:flex-row md:px-10">
-				<p className="flex items-center gap-1">
+		<footer className="mx-auto flex w-full items-center justify-center border-border/50 border-t">
+			<section className="flex w-full max-w-screen-xl flex-col items-center justify-between gap-2 px-5 py-5 text-sm text-muted-foreground md:flex-row md:px-10">
+				<p className="text-meta flex items-center gap-1.5">
+					<span
+						className="inline-block size-1.5 rounded-full bg-primary/70"
+						aria-hidden="true"
+					/>
 					Made with{" "}
 					<span aria-label="love" role="img">
 						<svg
@@ -24,12 +28,12 @@ const Footer = () => {
 					</span>{" "}
 					By Swastik Dan
 				</p>
-				<div className="flex items-center gap-1">
+				<div className="text-meta flex items-center gap-1">
 					{isSignedIn && isAdmin && (
 						<>
 							<Link
 								to="/admin"
-								className="rounded-md px-2 py-1 transition-colors hover:text-foreground"
+								className="rounded-md px-2 py-1 transition-colors hover:text-primary"
 							>
 								Admin
 							</Link>
@@ -39,7 +43,7 @@ const Footer = () => {
 					<Link
 						aria-label="User disclaimer"
 						to={SITE_CONFIG.Footerlinks.disclaimer}
-						className="rounded-md px-2 py-1 transition-colors hover:text-foreground"
+						className="rounded-md px-2 py-1 transition-colors hover:text-primary"
 					>
 						Disclaimer
 					</Link>
@@ -49,7 +53,7 @@ const Footer = () => {
 						to={SITE_CONFIG.Footerlinks.github}
 						rel="noopener noreferrer"
 						target="_blank"
-						className="rounded-md px-2 py-1 transition-colors hover:text-foreground"
+						className="rounded-md px-2 py-1 transition-colors hover:text-primary"
 					>
 						Github
 					</Link>

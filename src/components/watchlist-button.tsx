@@ -113,7 +113,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 				"pressable relative shrink-0 transition-colors duration-150 rounded-xs shadow-md",
 				isActive && !is_on_watchlist_page
 					? "bg-primary text-primary-foreground border border-primary hover:bg-primary/90 dark:hover:bg-primary/90 hover:text-primary-foreground dark:hover:text-primary-foreground"
-					: "bg-neutral-900 text-white border border-neutral-700 hover:bg-neutral-800 dark:hover:bg-neutral-800 hover:text-white dark:hover:text-white",
+					: "bg-stone-900 text-white border border-stone-700 hover:bg-stone-800 dark:hover:bg-stone-800 hover:text-white dark:hover:text-white",
 				props.className,
 			)}
 		>

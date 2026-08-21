@@ -10,13 +10,13 @@ const buttonVariants = cva(
 		variants: {
 			variant: {
 				default:
-					"border-primary/80 bg-primary text-primary-foreground shadow-[0_1px_0_color-mix(in_oklab,var(--primary),white_18%)_inset,0_1px_2px_rgb(0_0_0/0.18)] hover:bg-primary/90 hover:shadow-[0_1px_0_color-mix(in_oklab,var(--primary),white_22%)_inset,0_3px_8px_rgb(0_0_0/0.16)]",
+					"border-primary/60 bg-primary text-primary-foreground shadow-[inset_0_1px_0_color-mix(in_oklab,var(--primary),white_28%),0_1px_2px_rgb(0_0_0/0.25),0_0_14px_color-mix(in_oklab,var(--primary)_16%,transparent)] hover:bg-primary/95 hover:shadow-[inset_0_1px_0_color-mix(in_oklab,var(--primary),white_32%),0_2px_6px_rgb(0_0_0/0.25),0_0_22px_color-mix(in_oklab,var(--primary)_26%,transparent)]",
 				destructive:
 					"border-destructive/80 bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/25",
 				outline:
-					"border-border/90 bg-background/80 shadow-xs hover:border-border hover:bg-accent hover:text-accent-foreground dark:bg-white/[0.035] dark:hover:bg-white/[0.07]",
+					"border-border/90 bg-background/80 shadow-xs hover:border-primary/35 hover:bg-accent hover:text-accent-foreground dark:bg-white/[0.035] dark:hover:bg-white/[0.07]",
 				secondary:
-					"border-border/70 bg-secondary text-secondary-foreground shadow-[0_1px_0_rgb(255_255_255/0.06)_inset,0_1px_2px_rgb(0_0_0/0.12)] hover:bg-secondary/80",
+					"border-border/70 bg-secondary text-secondary-foreground shadow-[0_1px_0_color-mix(in_oklab,var(--primary)_7%,transparent)_inset,0_1px_2px_rgb(0_0_0/0.14)] hover:bg-secondary/80",
 				ghost:
 					"text-muted-foreground hover:bg-accent hover:text-foreground dark:hover:bg-white/[0.06]",
 				link: "text-primary underline-offset-4 hover:underline",

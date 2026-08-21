@@ -48,7 +48,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 			{
 				name: "msapplication-TileColor",
-				content: "#0b0a08",
+				content: "#0a0806",
 			},
 			{
 				name: "msapplication-TileImage",
@@ -97,7 +97,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 			{
 				name: "theme-color",
-				content: "#0b0a08",
+				content: "#0a0806",
 			},
 			// Intentionally kept for older Chrome for Android compatibility.
 			// Modern PWA behavior is controlled via manifest.json display: "standalone".

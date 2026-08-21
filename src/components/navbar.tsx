@@ -19,7 +19,7 @@ const NavSubmenuItems = ({
 		<>
 			{items.map((subitem) => (
 				<Link key={subitem.slug} to={subitem.url} className="cursor-pointer ">
-					<DropdownMenuItem className="h-9 cursor-pointer rounded-lg px-3 text-base">
+					<DropdownMenuItem className="h-9 cursor-pointer rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-150 data-[highlighted]:bg-accent data-[highlighted]:text-foreground">
 						{subitem.name}
 					</DropdownMenuItem>
 				</Link>
@@ -41,14 +41,17 @@ const DesktopNavMenuItem = ({
 		<DropdownMenu>
 			{/* Radix manages aria-haspopup / aria-expanded / data-state on the trigger. */}
 			<DropdownMenuTrigger asChild className="cursor-pointer">
-				<Button variant="secondary" className="px-3 text-base">
+				<Button
+					variant="secondary"
+					className="px-3 text-sm font-semibold tracking-tight"
+				>
 					{item.name}
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				aria-label="Desktop Menu"
 				align="end"
-				className="mt-2 w-40 rounded-xl p-2 shadow-none"
+				className="surface-floating mt-2 w-44 rounded-xl p-1.5"
 			>
 				<NavSubmenuItems items={item.submenu} />
 			</DropdownMenuContent>
@@ -60,14 +63,14 @@ DesktopNavMenuItem.displayName = "DesktopNavMenuItem";
 
 const Navbar = () => {
 	return (
-		<header className="sticky top-0 z-50 mx-auto hidden w-full md:flex flex-col items-center border-border/60 border-b bg-background">
+		<header className="sticky top-0 z-50 mx-auto hidden w-full flex-col items-center border-b border-border/50 bg-background/70 backdrop-blur-xl md:flex">
 			<nav
 				className="flex w-full max-w-screen-xl items-center justify-between px-4 py-2.5 md:px-5"
 				aria-label="Main Navigation"
 			>
 				<Link
 					to="/"
-					className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+					className="group flex items-center gap-2.5 transition-opacity hover:opacity-90"
 					aria-label="Home"
 				>
 					<Image
@@ -75,10 +78,10 @@ const Navbar = () => {
 						alt={`${SITE_CONFIG.name} logo`}
 						width={100}
 						height={100}
-						className="size-9"
+						className="size-9 transition-transform duration-300 ease-snappy group-hover:scale-105"
 					/>
 
-					<h1 className="font-bold font-heading text-lg md:text-xl">
+					<h1 className="font-heading text-lg font-bold tracking-tight md:text-xl">
 						{SITE_CONFIG.name}
 					</h1>
 				</Link>

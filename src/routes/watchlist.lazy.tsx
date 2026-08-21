@@ -199,7 +199,8 @@ function WatchlistTabContent() {
 		<div className="pt-5">
 			<div className="mb-5 flex items-center justify-between gap-3">
 				<div>
-					<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+					<p className="eyebrow-label">Your library</p>
+					<h2 className="mt-1.5 text-xl font-bold tracking-tight sm:text-2xl">
 						Watchlist
 					</h2>
 					<p className="mt-0.5 text-sm text-muted-foreground">
@@ -411,7 +412,8 @@ function MyListsTabContent() {
 		<div className="pt-5 space-y-6">
 			<div className="flex items-center justify-between gap-3">
 				<div>
-					<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+					<p className="eyebrow-label">Curated by you</p>
+					<h2 className="mt-1.5 text-xl font-bold tracking-tight sm:text-2xl">
 						My Collections
 					</h2>
 					<p className="mt-0.5 text-sm text-muted-foreground animate-fade-in">
