@@ -14,6 +14,7 @@ import type { ProgressStatus, ReactionStatus } from "@/types";
 import type {
 	CreateListAndAddArgs,
 	CreateListArgs,
+	ReorderItemsArgs,
 	ToggleListItemArgs,
 	UpdateListArgs,
 } from "./custom-lists/list-optimistic";
@@ -80,8 +81,10 @@ export function useCustomLists() {
 				...list,
 				_id: list.id,
 				color: list.color ?? undefined,
+				description: list.description ?? undefined,
 				visibility: list.visibility ?? undefined,
 				listType: list.listType ?? undefined,
+				sortType: list.sortType,
 			}));
 		}
 
@@ -114,7 +117,10 @@ export function useCustomListItems(listId: string | null) {
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 	const remote = useQuery({
 		queryKey: queryKeys.lists.items(listId ?? "", user?.id),
-		queryFn: () => fetchListItems(queryClient, listId!, user?.id),
+		queryFn: () =>
+			listId
+				? fetchListItems(queryClient, listId, user?.id)
+				: Promise.resolve([]),
 		enabled: !!isSignedIn && !!listId,
 	});
 
@@ -129,6 +135,7 @@ export function useCustomListItems(listId: string | null) {
 				rating: item.rating ?? undefined,
 				release_date: item.releaseDate ?? undefined,
 				overview: item.overview ?? undefined,
+				position: item.position,
 				mediaType: item.mediaType as "movie" | "tv",
 				progressStatus: item.progressStatus as ProgressStatus | undefined,
 				reaction: item.reaction as ReactionStatus | undefined,
@@ -136,7 +143,12 @@ export function useCustomListItems(listId: string | null) {
 		}
 		if (!listId) return [];
 
-		const filtered = localItems.filter((item) => item.listId === listId);
+		const filtered = localItems
+			.filter((item) => item.listId === listId)
+			.sort(
+				(a, b) =>
+					(a.position ?? 0) - (b.position ?? 0) || a.addedAt - b.addedAt,
+			);
 		return filtered.map((item) => {
 			const watchItem = localMediaState.find(
 				(w) =>
@@ -222,7 +234,29 @@ export function useToggleListItem() {
 
 	return useCallback(
 		async (args: ToggleListItemArgs) => {
-			await repository.toggleListItem(args);
+			return await repository.toggleListItem(args);
+		},
+		[repository],
+	);
+}
+
+export function useReorderListItems() {
+	const repository = useRepository();
+
+	return useCallback(
+		async (args: ReorderItemsArgs) => {
+			await repository.reorderListItem(args);
+		},
+		[repository],
+	);
+}
+
+export function useCloneList() {
+	const repository = useRepository();
+
+	return useCallback(
+		async (sourceListId: string) => {
+			return await repository.cloneList(sourceListId);
 		},
 		[repository],
 	);
