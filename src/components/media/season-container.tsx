@@ -6,6 +6,7 @@ import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getTvDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 
 interface Season {
 	id: number;
@@ -21,7 +22,7 @@ interface Season {
 export const SeasonContainer = (props: { tv_id: number }) => {
 	const { tv_id } = props;
 	const { data, isLoading, error } = useQuery({
-		queryKey: ["tv_season_details", tv_id],
+		queryKey: queryKeys.tmdb.tvDetails(tv_id),
 		queryFn: async () => await getTvDetails({ id: tv_id }),
 	});
 	if (isLoading) {

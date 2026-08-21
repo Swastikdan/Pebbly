@@ -20,6 +20,7 @@ import {
 	SITE_CONFIG,
 } from "@/constants";
 import { getMediaList } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { MediaListQuery, MediaType } from "@/types";
 
 const NAV_ITEMS = SITE_CONFIG.navItems;
@@ -87,7 +88,7 @@ function MediaListPage() {
 		isFetching: isMediaListFetching,
 		isLoading: isMediaListLoading,
 	} = useQuery({
-		queryKey: ["media-list", query, page],
+		queryKey: queryKeys.tmdb.mediaList(query, page),
 		queryFn: () => getMediaList({ type: query, page }),
 		enabled: typeof window !== "undefined" && !!query,
 	});

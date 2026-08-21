@@ -8,6 +8,7 @@ import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
+import { queryKeys } from "@/lib/query/keys";
 
 const VideoPlayerModal = lazy(() =>
 	import("@/components/video-player-modal").then((m) => ({
@@ -16,9 +17,10 @@ const VideoPlayerModal = lazy(() =>
 );
 
 import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+import { fetchSeasonDetails } from "@/hooks/use-season-details";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
-import { getTvDetails, getTvSeasonDetails } from "@/lib/queries";
+import { getTvDetails } from "@/lib/queries";
 import type { Tv } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
@@ -31,10 +33,12 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
 			throw notFound();
 		}
 		context.queryClient.prefetchQuery({
-			queryKey: ["tv_details", id],
+			queryKey: queryKeys.tmdb.tvDetails(Number(id)),
 			queryFn: () => getTvDetails({ id: parsedId.data }),
 		});
-		const data = context.queryClient.getQueryData<Tv>(["tv_details", id]);
+		const data = context.queryClient.getQueryData<Tv>(
+			queryKeys.tmdb.tvDetails(Number(id)),
+		);
 		const title = formatMediaTitle.decode(slug ?? "");
 		return {
 			id,
@@ -71,14 +75,14 @@ function TvSeasonDetailPage() {
 	const tvId = parseInt(id, 10);
 
 	const { data: tvData, isLoading: tvLoading } = useQuery({
-		queryKey: ["tv_details", tvId],
+		queryKey: queryKeys.tmdb.tvDetails(tvId),
 		queryFn: async () => await getTvDetails({ id: tvId }),
 		enabled: !!tvId,
 	});
 
 	const { data: seasonData, isLoading: seasonLoading } = useQuery({
-		queryKey: ["tv_season_details", tvId, seasonNumber],
-		queryFn: async () => await getTvSeasonDetails({ tvId, seasonNumber }),
+		queryKey: queryKeys.tmdb.seasonDetails(tvId, seasonNumber),
+		queryFn: () => fetchSeasonDetails(tvId, seasonNumber),
 		enabled: !!tvId,
 	});
 

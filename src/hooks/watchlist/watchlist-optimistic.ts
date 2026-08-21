@@ -104,6 +104,8 @@ function beginMembershipOp(
 	queryClient: QueryClient,
 	args: WatchlistMembershipArgs,
 ): OpHandle {
+	// Untagged on purpose: membership writes go through the request batcher,
+	// whose flush counts one own mutation per server write (single or batched).
 	return beginOp(queryClient, [
 		{
 			key: queryKeys.watchlist.list(),
@@ -152,13 +154,17 @@ function beginProgressStatusOp(
 	queryClient: QueryClient,
 	args: ProgressStatusArgs,
 ): OpHandle {
-	return beginOp(queryClient, [
-		{
-			key: queryKeys.watchlist.list(),
-			touchedIds: [`${args.mediaType}:${args.tmdbId}`],
-			apply: (rows: WatchItemRow[]) => applyProgressStatusRows(rows, args),
-		},
-	]);
+	return beginOp(
+		queryClient,
+		[
+			{
+				key: queryKeys.watchlist.list(),
+				touchedIds: [`${args.mediaType}:${args.tmdbId}`],
+				apply: (rows: WatchItemRow[]) => applyProgressStatusRows(rows, args),
+			},
+		],
+		{ domain: "watchlist" },
+	);
 }
 
 const episodeIdOf = (row: EpisodeProgressRow) =>
@@ -231,7 +237,7 @@ function beginMarkShowOp(
 		idOf: episodeIdOf as (row: WatchItemRow | EpisodeProgressRow) => string,
 		apply: (rows) => applyShowEpisodesRows(rows as EpisodeProgressRow[], args),
 	});
-	return beginOp(queryClient, entries);
+	return beginOp(queryClient, entries, { domain: "watchlist" });
 }
 
 function applyReactionRows(
@@ -253,13 +259,17 @@ function beginReactionOp(
 	queryClient: QueryClient,
 	args: SetReactionArgs,
 ): OpHandle {
-	return beginOp(queryClient, [
-		{
-			key: queryKeys.watchlist.list(),
-			touchedIds: [`${args.mediaType}:${args.tmdbId}`],
-			apply: (rows: WatchItemRow[]) => applyReactionRows(rows, args),
-		},
-	]);
+	return beginOp(
+		queryClient,
+		[
+			{
+				key: queryKeys.watchlist.list(),
+				touchedIds: [`${args.mediaType}:${args.tmdbId}`],
+				apply: (rows: WatchItemRow[]) => applyReactionRows(rows, args),
+			},
+		],
+		{ domain: "watchlist" },
+	);
 }
 
 function getTrackableTvSeasons(details?: {

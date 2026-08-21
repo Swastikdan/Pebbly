@@ -362,7 +362,7 @@ export const useWatchlistImportExport = () => {
 						// Imported shows also write episode progress, refresh any
 						// per-show episode caches.
 						await queryClient.invalidateQueries({
-							queryKey: ["watchlist", "episodes"],
+							queryKey: queryKeys.watchlist.allEpisodes(),
 						});
 					} else {
 						importWatchlistLocal(
