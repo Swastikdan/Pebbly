@@ -43,11 +43,21 @@ export { schema };
  * Drizzle's `db.batch` requires a non-empty tuple type at compile time, so a
  * dynamically-built `BatchItem[]` (which may legitimately be empty) needs a
  * guard plus a cast. The statements are genuine batch items at runtime.
+ *
+ * Statements are sent in chunks: marking a whole season of a long-running
+ * show builds one statement per episode, and batches beyond ~100 statements
+ * exceed D1's per-request limits. Each chunk is individually atomic; callers
+ * needing all-or-nothing across chunks should keep totals under one chunk.
  */
+const MAX_STATEMENTS_PER_BATCH = 100;
+
 export async function runBatch(
 	db: Db,
 	statements: readonly unknown[],
 ): Promise<void> {
 	if (statements.length === 0) return;
-	await db.batch(statements as unknown as Parameters<Db["batch"]>[0]);
+	for (let i = 0; i < statements.length; i += MAX_STATEMENTS_PER_BATCH) {
+		const chunk = statements.slice(i, i + MAX_STATEMENTS_PER_BATCH);
+		await db.batch(chunk as unknown as Parameters<Db["batch"]>[0]);
+	}
 }
