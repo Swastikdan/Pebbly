@@ -22,6 +22,7 @@ import {
 	updateDialogSearch,
 } from "@/lib/media-dialog-helpers";
 import { getImages, getVideos } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type {
 	MediaImages,
 	MediaVideos,
@@ -60,11 +61,11 @@ export const MediaVideoImageContainer = (props: {
 	const queryConfigs = useMemo(
 		() => [
 			{
-				queryKey: ["media_videos", id, media_type],
+				queryKey: queryKeys.tmdb.videos(id, media_type),
 				queryFn: async () => getVideos({ id, type: media_type }),
 			},
 			{
-				queryKey: ["media_images", id, media_type],
+				queryKey: queryKeys.tmdb.images(id, media_type),
 				queryFn: async () => getImages({ id, type: media_type }),
 			},
 		],

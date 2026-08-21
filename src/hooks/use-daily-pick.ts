@@ -7,44 +7,18 @@ import {
 	useSetReaction,
 	useWatchlist,
 } from "@/hooks/use-watchlist";
+import {
+	buildDailyPickCandidates,
+	getPickKey,
+	getTodaySeedIndex,
+	type MediaStateInfo,
+	type PickItem,
+} from "@/lib/daily-pick-engine";
 import { getMedia, getMovieDetails, getTvDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import { formatMediaTitle } from "@/lib/utils";
 
-export interface PickItem {
-	id: number;
-	title: string;
-	overview?: string;
-	vote_average: number;
-	poster_path?: string;
-	backdrop_path?: string;
-	media_type: "movie" | "tv";
-	release_date?: string;
-	first_air_date?: string;
-	isFromWatchlist?: boolean;
-	isCurrentlyWatching?: boolean;
-	watchProgress?: number;
-}
-
-function getTodaySeedIndex(max: number): number {
-	if (max <= 0) return 0;
-	const todayStr = new Date().toISOString().slice(0, 10);
-	let hash = 0;
-	for (let i = 0; i < todayStr.length; i++) {
-		hash = (hash << 5) - hash + (todayStr.charCodeAt(i) || 0);
-		hash |= 0;
-	}
-	return Math.abs(hash) % max;
-}
-
-function getPickKey(item: PickItem): string {
-	return `${item.media_type}:${item.id}`;
-}
-
-interface MediaStateInfo {
-	progressStatus?: string | null;
-	reaction?: string | null;
-	progress?: number;
-}
+export type { PickItem };
 
 /**
  * Shared "Tonight's Pick" engine. Both the homepage hero and the dialog consume
@@ -86,7 +60,7 @@ export function useDailyPick(open: boolean) {
 	}, [allMediaStates]);
 
 	const { data: trendingMedia, isLoading: isLoadingTrending } = useQuery({
-		queryKey: ["daily-pick-trending"],
+		queryKey: queryKeys.tmdb.dailyPickTrending(),
 		queryFn: async () => {
 			const items = await getMedia({ type: "trending_day", page: 1 });
 			return items;
@@ -96,7 +70,7 @@ export function useDailyPick(open: boolean) {
 	});
 
 	const { data: popularTv, isLoading: isLoadingTv } = useQuery({
-		queryKey: ["daily-pick-popular-tv"],
+		queryKey: queryKeys.tmdb.dailyPickPopularTv(),
 		queryFn: async () => {
 			const items = await getMedia({ type: "tv-shows_popular", page: 1 });
 			return items;
@@ -121,55 +95,6 @@ export function useDailyPick(open: boolean) {
 	const effectiveTrending = trendingMedia ?? cachedTrending;
 	const effectivePopularTv = popularTv ?? cachedPopularTv;
 
-	const tmdbInfoMap = useMemo(() => {
-		const map = new Map<
-			string,
-			{
-				title: string;
-				overview?: string;
-				poster_path?: string;
-				backdrop_path?: string;
-				vote_average: number;
-				release_date?: string;
-				first_air_date?: string;
-			}
-		>();
-		if (effectiveTrending) {
-			for (const item of effectiveTrending) {
-				const title = item.title ?? item.name;
-				const media_type =
-					(item.media_type as "movie" | "tv") ?? (item.name ? "tv" : "movie");
-				if (title && title !== "Unknown Title") {
-					map.set(`${media_type}:${item.id}`, {
-						title,
-						overview: item.overview,
-						poster_path: item.poster_path ?? undefined,
-						backdrop_path: item.backdrop_path ?? undefined,
-						vote_average: item.vote_average ?? 0,
-						release_date: item.release_date,
-						first_air_date: item.first_air_date,
-					});
-				}
-			}
-		}
-		if (effectivePopularTv) {
-			for (const item of effectivePopularTv) {
-				const title = item.name ?? item.title;
-				if (title && title !== "Unknown Title") {
-					map.set(`tv:${item.id}`, {
-						title,
-						overview: item.overview,
-						poster_path: item.poster_path ?? undefined,
-						backdrop_path: item.backdrop_path ?? undefined,
-						vote_average: item.vote_average ?? 0,
-						first_air_date: item.first_air_date,
-					});
-				}
-			}
-		}
-		return map;
-	}, [effectiveTrending, effectivePopularTv]);
-
 	// Prevent flashing: wait for trending/popularTv queries to settle if no
 	// cached payload is available to render immediately.
 	const isDataLoading =
@@ -179,131 +104,16 @@ export function useDailyPick(open: boolean) {
 
 	// Build combined candidate list giving 50/50 equal presentation to
 	// Watchlist & Discovery items.
-	const candidateItems: PickItem[] = useMemo(() => {
-		const watchlistItems: PickItem[] = [];
-		const discoveryItems: PickItem[] = [];
-		const seenKeys = new Set<string>();
-
-		const checkFilter = (id: string | number, mediaType: "movie" | "tv") => {
-			const key = `${mediaType}:${id}`;
-			const state = mediaStateMap.get(key);
-			if (state?.progressStatus === "done") return { exclude: true };
-			if (state?.reaction === "not-for-me") return { exclude: true };
-			return {
-				exclude: false,
-				isCurrentlyWatching: state?.progressStatus === "watching",
-				watchProgress: state?.progress ?? 0,
-			};
-		};
-
-		// 1. Collect Watchlist items
-		if (watchlist && watchlist.length > 0) {
-			for (const item of watchlist) {
-				const key = `${item.type}:${item.external_id}`;
-				if (!seenKeys.has(key)) {
-					const filterResult = checkFilter(item.external_id, item.type);
-					if (filterResult.exclude) continue;
-
-					const tmdbInfo = tmdbInfoMap.get(key);
-					const rawTitle = item.title?.trim();
-					const validTitle =
-						rawTitle && rawTitle !== "Unknown Title"
-							? rawTitle
-							: tmdbInfo?.title;
-
-					seenKeys.add(key);
-					watchlistItems.push({
-						id: Number(item.external_id),
-						title: validTitle || "Saved Item",
-						overview: item.overview || tmdbInfo?.overview,
-						vote_average: item.rating || tmdbInfo?.vote_average || 0,
-						poster_path: item.image || tmdbInfo?.poster_path,
-						backdrop_path: tmdbInfo?.backdrop_path,
-						media_type: item.type,
-						release_date: item.release_date || tmdbInfo?.release_date,
-						first_air_date: tmdbInfo?.first_air_date,
-						isFromWatchlist: true,
-						isCurrentlyWatching: filterResult.isCurrentlyWatching,
-						watchProgress: filterResult.watchProgress,
-					});
-				}
-			}
-		}
-
-		// 2. Collect Discovery Media (Trending & Popular TV)
-		const addDiscovery = (item: {
-			id: number;
-			title?: string | null;
-			name?: string | null;
-			overview?: string | null;
-			vote_average?: number;
-			poster_path?: string | null;
-			backdrop_path?: string | null;
-			media_type?: string;
-			release_date?: string | null;
-			first_air_date?: string | null;
-		}) => {
-			const title = item.title ?? item.name;
-			const media_type =
-				(item.media_type as "movie" | "tv") ?? (item.name ? "tv" : "movie");
-			const key = `${media_type}:${item.id}`;
-			if (
-				!seenKeys.has(key) &&
-				title &&
-				title !== "Unknown Title" &&
-				item.overview &&
-				(item.vote_average ?? 0) >= 6.0
-			) {
-				const filterResult = checkFilter(item.id, media_type);
-				if (filterResult.exclude) return;
-
-				seenKeys.add(key);
-				discoveryItems.push({
-					id: item.id,
-					title,
-					overview: item.overview ?? undefined,
-					vote_average: item.vote_average ?? 0,
-					poster_path: item.poster_path ?? undefined,
-					backdrop_path: item.backdrop_path ?? undefined,
-					media_type,
-					release_date: item.release_date ?? undefined,
-					first_air_date: item.first_air_date ?? undefined,
-					isFromWatchlist: false,
-					isCurrentlyWatching: filterResult.isCurrentlyWatching,
-					watchProgress: filterResult.watchProgress,
-				});
-			}
-		};
-
-		if (effectiveTrending) {
-			for (const item of effectiveTrending) addDiscovery(item);
-		}
-		if (effectivePopularTv) {
-			for (const item of effectivePopularTv) addDiscovery(item);
-		}
-
-		// Interleave 1 Watchlist item for every 1 Discovery item (50/50 balance)
-		const blended: PickItem[] = [];
-		let wIdx = 0;
-		let dIdx = 0;
-
-		while (wIdx < watchlistItems.length || dIdx < discoveryItems.length) {
-			if (wIdx < watchlistItems.length) {
-				blended.push(watchlistItems[wIdx++]);
-			}
-			if (dIdx < discoveryItems.length) {
-				blended.push(discoveryItems[dIdx++]);
-			}
-		}
-
-		return blended;
-	}, [
-		watchlist,
-		effectiveTrending,
-		effectivePopularTv,
-		mediaStateMap,
-		tmdbInfoMap,
-	]);
+	const candidateItems: PickItem[] = useMemo(
+		() =>
+			buildDailyPickCandidates({
+				watchlist,
+				trending: effectiveTrending ?? undefined,
+				popularTv: effectivePopularTv ?? undefined,
+				mediaStateMap,
+			}),
+		[watchlist, effectiveTrending, effectivePopularTv, mediaStateMap],
+	);
 
 	const itemsCount = candidateItems.length;
 
@@ -366,11 +176,10 @@ export function useDailyPick(open: boolean) {
 	};
 
 	const { data: selectedDetails } = useQuery({
-		queryKey: [
-			"daily-pick-details",
-			selectedItem?.media_type,
-			selectedItem?.id,
-		],
+		queryKey: queryKeys.tmdb.dailyPickDetails(
+			selectedItem?.media_type ?? "movie",
+			selectedItem?.id ?? 0,
+		),
 		queryFn: async () => {
 			if (!selectedItem) return null;
 			if (selectedItem.media_type === "movie") {

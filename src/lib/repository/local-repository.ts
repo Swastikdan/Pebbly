@@ -4,6 +4,7 @@ import { useLocalProgressStore } from "@/hooks/use-local-progress-store";
 import { watchlistOptimistic } from "@/hooks/watchlist/watchlist-optimistic";
 import { useWatchlistStore } from "@/hooks/watchlist-store";
 import { getTvDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import {
 	type ListsRepository,
 	type Repository,
@@ -65,7 +66,7 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
 				} else if (action.needsEpisodeUpdate) {
 					queryClient
 						.ensureQueryData({
-							queryKey: ["tv", Number(id)],
+							queryKey: queryKeys.tmdb.tvDetails(Number(id)),
 							queryFn: () => getTvDetails({ id: Number(id) }),
 						})
 						.then((details) => {
@@ -95,6 +96,65 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
 			useWatchlistStore
 				.getState()
 				.setReactionLocal(id, mediaType, reaction, metadata);
+		},
+
+		async markEpisode(args) {
+			useLocalProgressStore
+				.getState()
+				.markEpisodeWatched(
+					args.tmdbId,
+					args.season,
+					args.episode,
+					args.isWatched,
+				);
+		},
+
+		async markSeason(args) {
+			useLocalProgressStore
+				.getState()
+				.markSeasonWatched(
+					args.tmdbId,
+					args.season,
+					args.episodes,
+					args.isWatched,
+				);
+		},
+
+		async updateProgress(args) {
+			const metadata = {
+				title: args.title,
+				image: args.image,
+				rating: args.rating,
+				release_date: args.release_date,
+				overview: args.overview,
+			};
+			if (args.progressStatus !== undefined) {
+				useWatchlistStore
+					.getState()
+					.setProgressStatusLocal(
+						String(args.tmdbId),
+						args.mediaType,
+						args.progressStatus,
+						args.progress ?? 0,
+						metadata,
+					);
+				return;
+			}
+			useWatchlistStore
+				.getState()
+				.setProgressLocal(
+					String(args.tmdbId),
+					args.mediaType,
+					args.progress ?? 0,
+					metadata,
+				);
+		},
+
+		async removeFromContinueWatching(tmdbId, mediaType) {
+			useWatchlistStore
+				.getState()
+				.setProgressStatusLocal(String(tmdbId), mediaType, "watch-later", 0);
+			useLocalProgressStore.getState().clearShowProgress(tmdbId);
 		},
 	};
 

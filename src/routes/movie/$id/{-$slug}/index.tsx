@@ -20,6 +20,7 @@ import { buildSharedMediaPageData } from "@/lib/media-page";
 import { formatRuntime, getMovieCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getMovieDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { Movie } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
@@ -31,13 +32,12 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/")({
 			throw notFound();
 		}
 		await context.queryClient.ensureQueryData({
-			queryKey: ["movie_details", parsed.data],
+			queryKey: queryKeys.tmdb.movieDetails(parsed.data),
 			queryFn: () => getMovieDetails({ id: parsed.data }),
 		});
-		const data = context.queryClient.getQueryData<Movie>([
-			"movie_details",
-			parsed.data,
-		]);
+		const data = context.queryClient.getQueryData<Movie>(
+			queryKeys.tmdb.movieDetails(parsed.data),
+		);
 		const title = slug ? formatMediaTitle.decode(slug) : "Movie Page";
 		return { id, slug, title, posterPath: data?.poster_path ?? null };
 	},
@@ -76,7 +76,7 @@ function MovieHomePage() {
 	const { id: movie_id, slug: movie_slug } = Route.useLoaderData();
 	const movie_id_param = parseInt(movie_id, 10);
 	const { data, error, isLoading } = useQuery<Movie>({
-		queryKey: ["movie_details", movie_id_param],
+		queryKey: queryKeys.tmdb.movieDetails(movie_id_param),
 		queryFn: () => getMovieDetails({ id: movie_id_param }),
 	});
 	useCanonicalSlugRedirect({

@@ -1,16 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { getCollection } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import { formatMediaTitle } from "@/lib/utils";
 
 export const Collections = (props: { id: number }) => {
 	const { id } = props;
 	const { data, isLoading } = useQuery({
-		queryKey: ["collection", id],
+		queryKey: queryKeys.tmdb.collection(id),
 		queryFn: async () => await getCollection({ id }),
 	});
 

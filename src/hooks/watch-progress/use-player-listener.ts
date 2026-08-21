@@ -1,13 +1,6 @@
-import { useUser } from "@clerk/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { queryKeys } from "@/lib/query/keys";
-import { recordOwnMutation } from "@/lib/realtime-mutations";
-import { markEpisodeWatched, updateProgress } from "@/server/fns/watchlist";
-import { unwrap } from "@/server/schema/common";
-import { scheduleSync } from "../pending-ops";
+import { useRepository } from "@/lib/repository/use-repository";
 import { useLocalProgressStore } from "../use-local-progress-store";
-import { useWatchlistStore } from "../watchlist-store";
 import {
 	logWatchProgressError,
 	parsePlayerEventPayload,
@@ -15,7 +8,8 @@ import {
 
 /**
  * Listens for postMessage progress events from the video-player iframe and
- * persists them (server mutation when signed in, Zustand store otherwise).
+ * persists them through the repository (server write with optimistic journal
+ * when signed in, Zustand store otherwise).
  *
  * Trusted sources are resolved by origin from the `playerUrl` the caller
  * renders (the modal knows the exact iframe it mounts), falling back to a DOM
@@ -40,42 +34,7 @@ export function usePlayerProgressListener(
 	},
 	enabled = true,
 ) {
-	const { isSignedIn } = useUser();
-	const queryClient = useQueryClient();
-	const setLocalProgress = useWatchlistStore((state) => state.setProgressLocal);
-	const markLocalEpisode = useLocalProgressStore(
-		(state) => state.markEpisodeWatched,
-	);
-
-	const updateProgressMutation = useMutation({
-		mutationFn: (args: {
-			tmdbId: number;
-			mediaType: "movie" | "tv";
-			progress?: number;
-			title?: string;
-			image?: string;
-			rating?: number;
-			release_date?: string;
-			overview?: string;
-		}) => unwrap(updateProgress({ data: args })),
-		onSuccess: () => recordOwnMutation("watchlist"),
-		onSettled: () => {
-			scheduleSync(queryClient, [queryKeys.watchlist.list()]);
-		},
-	});
-
-	const markEpisodeMutation = useMutation({
-		mutationFn: (args: {
-			tmdbId: number;
-			season: number;
-			episode: number;
-			isWatched: boolean;
-		}) => unwrap(markEpisodeWatched({ data: args })),
-		onSuccess: () => recordOwnMutation("watchlist"),
-		onSettled: (_data, _error, args) => {
-			scheduleSync(queryClient, [queryKeys.watchlist.episodes(args.tmdbId)]);
-		},
-	});
+	const repository = useRepository();
 
 	useEffect(() => {
 		// Skip registering a window message listener while the player is closed.
@@ -202,62 +161,41 @@ export function usePlayerProgressListener(
 					overview: activeContext?.overview,
 				};
 
-				if (isSignedIn) {
-					void updateProgressMutation
-						.mutateAsync({
+				void repository
+					.updateProgress({
+						tmdbId: Number(id),
+						mediaType,
+						progress: safeProgress,
+						...metadata,
+					})
+					.catch((error) =>
+						logWatchProgressError("persist playback progress", error),
+					);
+
+				if (
+					(playerEvent === "ended" || safeProgress >= 95) &&
+					mediaType === "tv" &&
+					season !== undefined &&
+					episode !== undefined
+				) {
+					void repository
+						.markEpisode({
 							tmdbId: Number(id),
-							mediaType,
-							progress: safeProgress,
-							...metadata,
+							season,
+							episode,
+							isWatched: true,
 						})
 						.catch((error) =>
-							logWatchProgressError("persist playback progress", error),
+							logWatchProgressError(
+								"mark an episode watched from player progress",
+								error,
+							),
 						);
-
-					if (
-						(playerEvent === "ended" || safeProgress >= 95) &&
-						mediaType === "tv" &&
-						season !== undefined &&
-						episode !== undefined
-					) {
-						void markEpisodeMutation
-							.mutateAsync({
-								tmdbId: Number(id),
-								season,
-								episode,
-								isWatched: true,
-							})
-							.catch((error) =>
-								logWatchProgressError(
-									"mark an episode watched from player progress",
-									error,
-								),
-							);
-					}
-				} else {
-					setLocalProgress(String(id), mediaType, safeProgress, metadata);
-
-					if (
-						(playerEvent === "ended" || safeProgress >= 95) &&
-						mediaType === "tv" &&
-						season !== undefined &&
-						episode !== undefined
-					) {
-						markLocalEpisode(Number(id), season, episode, true);
-					}
 				}
 			}
 		}
 
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, [
-		enabled,
-		updateProgressMutation,
-		markEpisodeMutation,
-		isSignedIn,
-		setLocalProgress,
-		markLocalEpisode,
-		activeContext,
-	]);
+	}, [enabled, repository, activeContext]);
 }

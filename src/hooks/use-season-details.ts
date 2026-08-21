@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createBatcher } from "@/lib/batcher";
 import { getTvSeasonDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { TvSeasonDetail } from "@/lib/tmdb-schemas";
 
 /**
@@ -31,14 +32,20 @@ const seasonDetailBatcher = createBatcher<
 );
 
 /**
- * Fetch a TV season's details through the shared batcher. `season` may be
- * undefined while the next-episode context is still resolving; the query stays
- * disabled until it arrives.
+ * Fetch a TV season's details through the shared batcher. Every consumer
+ * (per-card hook, season page, inline episode browser) uses this fetcher with
+ * the same `tmdb.seasonDetails` key so one cache entry is filled per
+ * (show, season), coalesced across whatever requested it first.
  */
+export function fetchSeasonDetails(tvId: number, season: number) {
+	return seasonDetailBatcher.schedule({ tvId, season });
+}
+
+/** Fetch a TV season's details through the shared batcher. */
 export function useSeasonDetails(tvId: number, season: number | undefined) {
 	return useQuery({
-		queryKey: ["tv-season", tvId, season],
-		queryFn: () => seasonDetailBatcher.schedule({ tvId, season: season ?? 1 }),
+		queryKey: queryKeys.tmdb.seasonDetails(tvId, season ?? 1),
+		queryFn: () => fetchSeasonDetails(tvId, season ?? 1),
 		enabled: !!season,
 	});
 }
