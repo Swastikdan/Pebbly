@@ -166,7 +166,14 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
 		async createList(args) {
 			return useLocalListsStore
 				.getState()
-				.createList(args.name, args.color, args.visibility, args.listType);
+				.createList(
+					args.name,
+					args.color,
+					args.visibility,
+					args.listType,
+					args.description,
+					args.sortType,
+				);
 		},
 
 		async createListAndAddItem(args) {
@@ -182,11 +189,23 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
 					args.color,
 					args.visibility,
 					args.listType,
+					args.description,
+					args.sortType,
 				);
 		},
 
 		async toggleListItem(args) {
-			useLocalListsStore.getState().toggleListItem(args);
+			return useLocalListsStore.getState().toggleListItem(args);
+		},
+
+		async reorderListItem(args) {
+			useLocalListsStore
+				.getState()
+				.reorderListItem(args.listId, args.orderedItems);
+		},
+
+		async cloneList(sourceListId) {
+			return useLocalListsStore.getState().cloneList(sourceListId);
 		},
 	};
 

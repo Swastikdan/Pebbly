@@ -1,11 +1,13 @@
 import { Link } from "@tanstack/react-router";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Star, TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
 import { useToggleListItem } from "@/hooks/use-custom-lists";
-import { formatMediaTitle } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast-store";
+import { cn, formatMediaTitle } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export function CustomListMediaCard({
@@ -13,9 +15,12 @@ export function CustomListMediaCard({
 	listId,
 	priority,
 	readOnly,
+	rank,
+	onMove,
+	canMoveUp,
+	canMoveDown,
 }: {
 	item: {
-		_id: string;
 		tmdbId: number;
 		mediaType: "movie" | "tv";
 		title?: string;
@@ -30,6 +35,10 @@ export function CustomListMediaCard({
 	listId: string;
 	priority?: boolean;
 	readOnly?: boolean;
+	rank?: number;
+	onMove?: (dir: -1 | 1) => void;
+	canMoveUp?: boolean;
+	canMoveDown?: boolean;
 }) {
 	const toggleListItem = useToggleListItem();
 	const hasMetadata = !!(item.title && (item.backdrop || item.image));
@@ -58,7 +67,37 @@ export function CustomListMediaCard({
 			listId: listId,
 			tmdbId: item.tmdbId,
 			mediaType: item.mediaType,
-		}).catch(console.error);
+		})
+			.then((added) => {
+				if (added) return;
+				toast({
+					title: "Removed from collection",
+					description: item.title,
+					action: {
+						label: "Undo",
+						onClick: () => {
+							toggleListItem({
+								listId,
+								tmdbId: item.tmdbId,
+								mediaType: item.mediaType,
+								title: item.title,
+								image: item.image,
+								backdrop: item.backdrop,
+								rating: item.rating,
+								release_date: item.release_date,
+								overview: item.overview,
+							}).catch(console.error);
+						},
+					},
+				});
+			})
+			.catch(console.error);
+	};
+
+	const handleMoveClick = (dir: -1 | 1) => (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onMove?.(dir);
 	};
 
 	return (
@@ -86,28 +125,68 @@ export function CustomListMediaCard({
 						{item.mediaType === "movie" ? "MOV" : "TV"}
 					</div>
 				)}
+				{rank !== undefined && (
+					<span className="absolute -left-1.5 -top-1.5 flex size-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 text-[11px] font-extrabold text-white shadow-md ring-2 ring-card tabular-nums">
+						{rank}
+					</span>
+				)}
 			</div>
 
 			<div className="flex min-w-0 flex-1 flex-col justify-between">
 				<div>
 					<div className="flex items-start justify-between gap-2">
-						<h3 className="line-clamp-2 text-sm font-semibold leading-snug hover:text-primary transition-colors">
+						<h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary transition-colors">
 							{item.title ??
 								`${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`}
 						</h3>
 
-						{!readOnly && (
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								className="shrink-0 p-1.5 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
-								aria-label={`Remove from collection`}
-								onClick={handleRemove}
-							>
-								<TrashBin size={14} />
-							</Button>
-						)}
+						<div className="flex shrink-0 items-start gap-0.5">
+							{!readOnly && onMove !== undefined && (
+								<div className="flex flex-col gap-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+									<button
+										type="button"
+										onClick={handleMoveClick(-1)}
+										disabled={!canMoveUp}
+										className={cn(
+											"flex size-5 items-center justify-center rounded-md text-muted-foreground/60 transition-colors",
+											canMoveUp
+												? "cursor-pointer hover:bg-secondary hover:text-foreground"
+												: "cursor-not-allowed opacity-30",
+										)}
+										aria-label="Move up one rank"
+									>
+										<ArrowUp size={12} />
+									</button>
+									<button
+										type="button"
+										onClick={handleMoveClick(1)}
+										disabled={!canMoveDown}
+										className={cn(
+											"flex size-5 items-center justify-center rounded-md text-muted-foreground/60 transition-colors",
+											canMoveDown
+												? "cursor-pointer hover:bg-secondary hover:text-foreground"
+												: "cursor-not-allowed opacity-30",
+										)}
+										aria-label="Move down one rank"
+									>
+										<ArrowDown size={12} />
+									</button>
+								</div>
+							)}
+
+							{!readOnly && (
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="shrink-0 p-1.5 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
+									aria-label={`Remove from collection`}
+									onClick={handleRemove}
+								>
+									<TrashBin size={14} />
+								</Button>
+							)}
+						</div>
 					</div>
 
 					<div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/90 dark:text-muted-foreground/75">

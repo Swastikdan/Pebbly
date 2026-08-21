@@ -96,8 +96,14 @@ export const lists = sqliteTable(
 			.references(() => users.id, { onDelete: "cascade" }),
 		name: text("name").notNull(),
 		color: text("color"),
+		description: text("description"),
 		visibility: text("visibility"),
 		listType: text("list_type"),
+		sortType: text("sort_type", {
+			enum: ["unordered", "ordered"],
+		})
+			.notNull()
+			.default("unordered"),
 		sortOrder: integer("sort_order").notNull().default(0),
 		createdAt: integer("created_at").notNull(),
 		updatedAt: integer("updated_at").notNull(),
@@ -120,6 +126,7 @@ export const listItems = sqliteTable(
 			.references(() => lists.id, { onDelete: "cascade" }),
 		tmdbId: integer("tmdb_id").notNull(),
 		mediaType: text("media_type", { enum: ["movie", "tv"] }).notNull(),
+		position: integer("position").notNull().default(0),
 		addedAt: integer("added_at").notNull(),
 		title: text("title"),
 		image: text("image"),

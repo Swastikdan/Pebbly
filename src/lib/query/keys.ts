@@ -38,6 +38,10 @@ export const queryKeys = {
 				mediaType,
 				userId ?? "anonymous",
 			] as const,
+		// Owner/visitor payload for the /c/$id collection page. Viewer-dependent
+		// on purpose: the server fn resolves owner vs public per request.
+		collectionPage: (listId: string) =>
+			["lists", "collection-page", listId] as const,
 	},
 	permissions: (userId?: string) =>
 		["permissions", userId ?? "anonymous"] as const,
