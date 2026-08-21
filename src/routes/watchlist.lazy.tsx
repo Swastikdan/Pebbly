@@ -17,11 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CustomListCard } from "@/components/watchlist/custom-list-card";
-import { CustomListView } from "@/components/watchlist/custom-list-view";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { WatchlistFilters } from "@/components/watchlist/watchlist-filters";
 import { WatchlistGrid } from "@/components/watchlist/watchlist-grid";
 import {
+	useCloneList,
 	useCreateCustomList,
 	useCustomLists,
 	useDeleteCustomList,
@@ -310,24 +310,20 @@ function MyListsTabContent() {
 	const { lists: customLists, loading } = useCustomLists();
 	const deleteCustomList = useDeleteCustomList();
 	const createCustomList = useCreateCustomList();
+	const cloneList = useCloneList();
 	const [showCreateList, setShowCreateList] = useState(false);
 	const [editingList, setEditingList] = useState<{
 		id: string;
 		name: string;
 		color?: string;
-		visibility?: string;
-		listType?: string;
+		description?: string;
+		visibility?: "public" | "private";
+		sortType?: "unordered" | "ordered";
 	} | null>(null);
-	const [selectedListId, setSelectedListId] = useState<string | null>(null);
 
 	const sortedLists = useMemo(
 		() => [...customLists].sort((a, b) => a.sortOrder - b.sortOrder),
 		[customLists],
-	);
-
-	const selectedList = useMemo(
-		() => sortedLists.find((l) => l._id === selectedListId) ?? null,
-		[sortedLists, selectedListId],
 	);
 
 	if (loading) {
@@ -338,8 +334,9 @@ function MyListsTabContent() {
 		_id: string;
 		name: string;
 		color?: string | null;
+		description?: string | null;
 		visibility?: string | null;
-		listType?: string | null;
+		sortType?: "unordered" | "ordered";
 	}) => {
 		deleteCustomList(list._id);
 		toast({
@@ -351,52 +348,25 @@ function MyListsTabContent() {
 					void createCustomList({
 						name: list.name,
 						color: list.color ?? undefined,
+						description: list.description ?? undefined,
 						visibility: (list.visibility as "public" | "private") ?? undefined,
-						listType: (list.listType as "custom" | "pebbly-picks") ?? undefined,
+						sortType: list.sortType,
 					});
 				},
 			},
 		});
 	};
 
-	if (selectedList) {
-		return (
-			<>
-				<CustomListView
-					list={selectedList}
-					onBack={() => setSelectedListId(null)}
-					onEdit={() =>
-						setEditingList({
-							id: selectedList._id,
-							name: selectedList.name,
-							color: selectedList.color,
-							visibility: selectedList.visibility,
-							listType: selectedList.listType,
-						})
-					}
-					onDelete={() => {
-						deleteListWithUndo(selectedList);
-						setSelectedListId(null);
-					}}
-				/>
-				{editingList && (
-					<Suspense fallback={null}>
-						<CustomListDialog
-							open={true}
-							onOpenChange={(open) => {
-								if (!open) setEditingList(null);
-							}}
-							listId={editingList.id}
-							initialName={editingList.name}
-							initialColor={editingList.color}
-							initialVisibility={editingList.visibility}
-							initialListType={editingList.listType}
-						/>
-					</Suspense>
-				)}
-			</>
-		);
-	}
+	const duplicateList = (list: { _id: string; name: string }) => {
+		cloneList(list._id)
+			.then(() =>
+				toast({
+					title: "Collection duplicated",
+					description: `"${list.name} (copy)" was added to your collections.`,
+				}),
+			)
+			.catch(console.error);
+	};
 
 	return (
 		<div className="pt-5 space-y-6">
@@ -455,17 +425,21 @@ function MyListsTabContent() {
 						<CustomListCard
 							key={list._id}
 							list={list}
-							onClick={() => setSelectedListId(list._id as string)}
 							onEdit={() =>
 								setEditingList({
 									id: list._id,
 									name: list.name,
 									color: list.color,
-									visibility: list.visibility,
-									listType: list.listType,
+									description: list.description,
+									visibility:
+										(list.visibility as "public" | "private") ?? undefined,
+									sortType: list.sortType,
 								})
 							}
-							onDelete={() => deleteListWithUndo(list)}
+							onDuplicate={() => duplicateList(list)}
+							onDelete={() => {
+								deleteListWithUndo(list);
+							}}
 						/>
 					))}
 				</div>
@@ -487,8 +461,9 @@ function MyListsTabContent() {
 						listId={editingList.id}
 						initialName={editingList.name}
 						initialColor={editingList.color}
+						initialDescription={editingList.description}
 						initialVisibility={editingList.visibility}
-						initialListType={editingList.listType}
+						initialSortType={editingList.sortType}
 					/>
 				</Suspense>
 			)}
