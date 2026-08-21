@@ -5,7 +5,7 @@ documentation never silently drifts from the code.
 
 ## Why this exists
 
-The docs exist so anyone — including a future AI agent — can answer "what is
+The docs exist so anyone, including a future AI agent, can answer "what is
 this code and why is it shaped this way?" without re-reading 30k lines. That
 only works if docs are updated **in the same changeset** as the code they
 describe. A stale doc is worse than no doc.
@@ -46,11 +46,11 @@ Add a new entry to `architecture-decisions.md`, keeping the numbering. Use the
 same four-part format as existing entries:
 
 ```markdown
-## ADR-0XX — <short imperative title>
+## ADR-0XX: <short imperative title>
 
 **Status:** Accepted | Superseded
 
-**Context:** What problem or tension motivated this? (2–4 sentences — include
+**Context:** What problem or tension motivated this? (2–4 sentences, include
 the option that was rejected and why.)
 
 **Decision:** What was decided, concretely. Name the files/modules involved.
@@ -68,7 +68,7 @@ Rules:
 ## Conventions
 
 - **Line counts are approximate** (as of a date). When a file's size changes
-  materially (a refactor, a split), update its figure — or drop the number if
+  materially (a refactor, a split), update its figure, or drop the number if
   it's churn-prone. Never treat them as authoritative.
 - **Mark generated files.** Anything produced by a tool
   (`src/routeTree.gen.ts`, `.output/`, `drizzle/meta/`, `pnpm-lock.yaml`) is
@@ -84,12 +84,12 @@ Rules:
 
 ## Verification
 
-- Docs-only changes don't need `pnpm typecheck` / `pnpm lint` — but if your
+- Docs-only changes don't need `pnpm typecheck` / `pnpm lint`, but if your
   changeset also touches code, run them as usual.
 - Before finishing, re-read the section of `file-reference.md` you touched and
   confirm it matches what you actually changed.
 - Confirm the docs folder is **not** gitignored (`.gitignore` must not contain
-  a `docs` entry) — if it is, the documentation will silently never ship.
+  a `docs` entry), if it is, the documentation will silently never ship.
 
 ## Process reminder
 

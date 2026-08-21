@@ -32,7 +32,7 @@ async function requireAdmin(): Promise<
 
 	const { user, claims } = result;
 
-	// Admin status is decided by the signed JWT claim or the live Clerk API —
+	// Admin status is decided by the signed JWT claim or the live Clerk API,
 	// the same authoritative source `hasFeature` uses. There is no stored
 	// `users.isAdmin` flag to consult (the column was removed): a stored copy
 	// would go stale the moment someone is demoted in Clerk.
@@ -98,7 +98,7 @@ export const setRolePermission = createServerFn({ method: "POST" })
 		const db = getDb(getEnv());
 		await syncRolePermissions(db, true);
 
-		// Atomic upsert keyed on the (role, feature) primary key — replaces the
+		// Atomic upsert keyed on the (role, feature) primary key, replaces the
 		// old select-then-insert. Role is always the global feature flag.
 		await db
 			.insert(rolePermissions)
@@ -198,7 +198,7 @@ export const listUsers = createServerFn({ method: "POST" })
 				.limit(data.limit ?? 200);
 
 			// Admin status lives in Clerk's public metadata, not the DB (the
-			// `users.is_admin` column was removed — a stored copy goes stale).
+			// `users.is_admin` column was removed, a stored copy goes stale).
 			// Resolve it with one paginated Clerk user-list call, then index by
 			// clerk sub id so the whole page maps in a single pass. On API
 			// failure this degrades to "no admins" for display only; it never

@@ -110,7 +110,7 @@ const watchlistMembershipBatcher = createBatcher<
 				rows = await unwrap(batchSetWatchlistMembership({ data: { items } }));
 			}
 
-			// Merge the authoritative rows into the cache (no full refetch — the
+			// Merge the authoritative rows into the cache (no full refetch, the
 			// server response already reflects this batch). Touched items missing
 			// from the response were deleted.
 			// Each flush is one server write (single or batched), which bumps the

@@ -15,7 +15,7 @@
 	--font-heading: "Bricolage Grotesque Variable", var(--font-sans);
 	--font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
-	/* Custom easing curves — stronger than the built-in CSS easings.
+	/* Custom easing curves, stronger than the built-in CSS easings.
 	   Available as `ease-standard`, `ease-emphatic`, `ease-snappy` utilities. */
 	--ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
 	--ease-emphatic: cubic-bezier(0.77, 0, 0.175, 1);
@@ -636,7 +636,7 @@
 		animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 
-	/* Staggered entrance is a desktop nicety — on phones it forces dozens of
+	/* Staggered entrance is a desktop nicety, on phones it forces dozens of
 	   simultaneous transform animations on every grid render, which is a
 	   primary source of scroll/tap jank. Small screens get a plain opacity
 	   fade with no stagger instead. */
@@ -671,7 +671,7 @@
 		.stagger-grid > *:nth-child(8) {
 			animation-delay: 105ms;
 		}
-		/* Cap the cascade — long delays read as broken, not dramatic. */
+		/* Cap the cascade, long delays read as broken, not dramatic. */
 		.stagger-grid > *:nth-child(n + 9) {
 			animation-delay: 120ms;
 		}
@@ -763,7 +763,7 @@
 			);
 	}
 
-	/* Watchlist button confirmation pop — transition + @starting-style so
+	/* Watchlist button confirmation pop, transition + @starting-style so
 	   rapid toggles retarget from the current state instead of restarting
 	   from zero (keyframes would not be interruptible). */
 	.bookmark-pop {

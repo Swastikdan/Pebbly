@@ -5,7 +5,7 @@ import type { TvSeasonDetail } from "@/lib/tmdb-schemas";
 
 /**
  * Coalesce per-card season-detail fetches. A continue-watching strip renders N
- * cards, each needing the season detail for its next episode — without
+ * cards, each needing the season detail for its next episode. Without
  * batching that is N parallel TMDB requests from the same render pass.
  *
  * The batcher flushes all cards' season requests in one window and dedupes the

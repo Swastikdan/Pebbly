@@ -1,6 +1,6 @@
 # Contributing to Pebbly
 
-First off, thanks for taking the time to contribute! 🎬
+First off, thanks for taking the time to contribute!
 
 Pebbly is a full-stack movie & TV discovery app built with TanStack Start,
 Cloudflare Workers, D1 (SQLite), Drizzle ORM, and TMDB metadata. This guide
@@ -92,7 +92,7 @@ A quick map of where things live:
 | `drizzle/` | Generated SQL migrations for Cloudflare D1 |
 | `server/` | Nitro server routes & scheduled tasks |
 
-See [docs/](docs/README.md) for in-depth architecture docs — especially
+See [docs/](docs/README.md) for in-depth architecture docs, especially
 [`docs/architecture.md`](docs/architecture.md) and
 [`docs/file-reference.md`](docs/file-reference.md).
 
@@ -109,7 +109,7 @@ See [docs/](docs/README.md) for in-depth architecture docs — especially
    Use a descriptive prefix: `feat/`, `fix/`, `refactor/`, `docs/`, `chore/`.
 3. **Make your changes**, keeping them focused and as small as possible.
 4. **Run the checks** below before pushing.
-5. **Open a pull request** — see [Opening a pull request](#opening-a-pull-request).
+5. **Open a pull request**, see [Opening a pull request](#opening-a-pull-request).
 
 ## Code style & checks
 
@@ -123,7 +123,7 @@ pnpm build       # Production build
 
 - The project uses **Biome** for linting and formatting. If your editor doesn't
   pick it up automatically, run `pnpm format` before committing.
-- Prefer **existing project conventions** over introducing new ones — match the
+- Prefer **existing project conventions** over introducing new ones. Match the
   style of the code around your change.
 - **Don't add new dependencies** unless they're clearly necessary. If you do,
   explain why in the PR description.
@@ -152,6 +152,6 @@ management, or the repository layer, verify manually:
 2. Fill out the [pull request template](.github/pull_request_template.md).
 3. Reference the issue(s) your PR closes (e.g. `Closes #123`).
 4. Keep the PR focused: one logical change per PR. Split large changes.
-5. CI runs typecheck, lint, and build on every PR — make sure they pass.
+5. CI runs typecheck, lint, and build on every PR, so make sure they pass.
 
-Thanks again for contributing! 🚀
+Thanks again for contributing!

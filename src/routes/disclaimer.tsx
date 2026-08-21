@@ -10,7 +10,7 @@ export const Route = createFileRoute("/disclaimer")({
 			{
 				name: "description",
 				content:
-					"Disclaimer and terms of use for Pebbly, a personal project showcasing movie and TV information.",
+					"Disclaimer and terms of use for Pebbly, a personal project for browsing movie and TV information.",
 			},
 		],
 	}),

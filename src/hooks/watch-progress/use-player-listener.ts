@@ -91,7 +91,7 @@ export function usePlayerProgressListener(
 		let lastQueryTime = 0;
 
 		// Preferred: the caller (VideoPlayerModal) knows the exact iframe URL it
-		// renders, so trust messages only from that origin — no DOM querying.
+		// renders, so trust messages only from that origin, no DOM querying.
 		const trustedOrigin = activeContext?.playerUrl
 			? (() => {
 					try {

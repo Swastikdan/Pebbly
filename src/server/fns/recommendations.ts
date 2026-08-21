@@ -344,7 +344,7 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
 
 			await bumpWatchlistRev(db, user.id);
 
-			// Find or create the Pebbly Picks list — onConflictDoNothing makes
+			// Find or create the Pebbly Picks list, onConflictDoNothing makes
 			// the create race-safe against the (userId, name) unique index, then
 			// one lookup returns the authoritative row.
 			await db
@@ -451,7 +451,7 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
 
 		// Only request a refresh when the user actually has the feature.
 		// Otherwise the client would keep firing generateHomepageRecommendations
-		// (which the server rejects with FORBIDDEN) on every refetch — a loop.
+		// (which the server rejects with FORBIDDEN) on every refetch, a loop.
 		const featureEnabled = await hasFeature(
 			context.claims,
 			context.user,
@@ -520,7 +520,7 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
 	});
 
 // ---------------------------------------------------------------------------
-// Generation helpers (private — no longer separate RPCs)
+// Generation helpers (private, no longer separate RPCs)
 // ---------------------------------------------------------------------------
 
 function computeHash(
@@ -682,7 +682,7 @@ async function checkAndSetRecommendationCooldown(
 
 	const freshRow = mostRecent.find((row) => row.id === reservedId);
 	if (!freshRow && inserted.length === 0) {
-		// Insert failed (unlikely) — treat as not allowed.
+		// Insert failed (unlikely), treat as not allowed.
 		return { allowed: false };
 	}
 
@@ -699,7 +699,7 @@ async function checkAndSetRecommendationCooldown(
 	return { allowed: true, reservedId };
 }
 
-/** Delete a reserved generation row (AI call failed — release the cooldown). */
+/** Delete a reserved generation row (AI call failed, release the cooldown). */
 async function releaseRecommendationCooldown(reservedId: string) {
 	const db = getDb(getEnv());
 	await db
@@ -748,7 +748,7 @@ type SaveRecommendationsArgs = {
 /**
  * Persist a generation. When `reservedId` is present the pending reservation
  * row (created by checkAndSetRecommendationCooldown) is updated in place, so
- * the history contains one row per generation — never a placeholder.
+ * the history contains one row per generation, never a placeholder.
  */
 async function saveRecommendations(
 	args: SaveRecommendationsArgs,
@@ -1064,7 +1064,7 @@ export const generateHomepageRecommendations = createServerFn({
 				!existingTitles.has(normalizeTitleKey(r.title)),
 		);
 
-		// An empty result after filtering is a failed generation — record the
+		// An empty result after filtering is a failed generation, record the
 		// failure so refresh logic can retry instead of saving "success".
 		if (parsed.recommendations.length === 0) {
 			await saveHomepageFailure(user.id);

@@ -10,7 +10,7 @@ const RPC_TIMEOUT_MS = 30_000;
  *
  * `serverFns.fetch` wraps every server-function RPC with a fresh Clerk session
  * token (`Authorization: Bearer`). The Clerk SDK mints/rotates short-lived JWTs
- * automatically, so the server never sees an expired token — this fixes the
+ * automatically, so the server never sees an expired token, this fixes the
  * "JWT is expired" failures in long-lived dev sessions. The server's
  * `getSessionToken()` already prefers the Authorization header over cookies.
  *
@@ -34,7 +34,7 @@ export const startInstance = createStart(() => ({
 					headers.set("Authorization", `Bearer ${token}`);
 				}
 			} catch (error) {
-				// Not signed in / Clerk not loaded — fall through to the cookie.
+				// Not signed in / Clerk not loaded, fall through to the cookie.
 				// Still log when a token was expected so failures are visible.
 				console.debug(
 					"[start] Failed to mint Clerk session token; falling back to cookie:",

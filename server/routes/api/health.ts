@@ -1,4 +1,4 @@
-// GET /api/health — pings D1 (select 1) with caching to prevent DB DoS
+// GET /api/health, pings D1 (select 1) with caching to prevent DB DoS
 import { sql } from "drizzle-orm";
 import { defineEventHandler, setResponseHeader, setResponseStatus } from "h3";
 import { getDb } from "../../../src/server/db/client";
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 	const checks: Record<string, CheckResult> = {};
 	let ok = true;
 
-	// D1 ping — skipped when there's no binding (plain Node `vite dev`); on the
+	// D1 ping, skipped when there's no binding (plain Node `vite dev`); on the
 	// Worker (`wrangler dev` / deployed) the DB binding is always present.
 	if (!env.DB) {
 		checks.db = { ok: true, skipped: "no D1 binding (vite dev)" };
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
 			checks.db = res;
 			cachedDbCheck = { result: res, ok: true, timestamp: now };
 		} catch {
-			// Public endpoint — don't leak raw driver/DB error strings (they can
+			// Public endpoint, don't leak raw driver/DB error strings (they can
 			// expose internal details); a generic flag is enough for uptime checks.
 			ok = false;
 			const res: CheckResult = { ok: false, error: "database unavailable" };

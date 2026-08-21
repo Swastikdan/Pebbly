@@ -1,7 +1,7 @@
 import * as v from "valibot";
 import { getEnvVar } from "./env";
 
-// Port of `convex/ai.ts` — same retry/fallback logic, but Gemini is called over
+// Port of `convex/ai.ts`, same retry/fallback logic, but Gemini is called over
 // REST `fetch` instead of the `@google/genai` SDK (per the Cloudflare plan §6.7:
 // the SDK may misbehave on the Workers runtime; the REST API is a drop-in
 // replacement behind the same `callGeminiAI` signature).

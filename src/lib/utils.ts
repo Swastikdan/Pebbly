@@ -37,7 +37,7 @@ export function cn(...inputs: ClassValue[]) {
  * Creates an LRU-aware localStorage wrapper that evicts the oldest store
  * when total usage approaches the ~5MB quota (threshold: 4MB).
  */
-const STORAGE_SIZE_LIMIT = 4 * 1024 * 1024; // 4MB — room for misc overhead
+const STORAGE_SIZE_LIMIT = 4 * 1024 * 1024; // 4MB, room for misc overhead
 
 function getStorageSize(storage: Storage): number {
 	let size = 0;

@@ -1,4 +1,4 @@
-# Data Model (Cloudflare D1)
+# Data model (Cloudflare D1)
 
 Defined in `src/server/db/schema.ts` (Drizzle SQLite) and applied to D1 via
 the SQL migrations in `drizzle/` (generated with `pnpm db:generate`, applied
@@ -6,12 +6,12 @@ with `wrangler d1 migrations apply pebbly [--local|--remote]`).
 
 Conventions:
 
-- **IDs**: `text` primary keys — `crypto.randomUUID()` at write time (or a
+- **IDs**: `text` primary keys, `crypto.randomUUID()` at write time (or a
   `clerk|<sub>` token identifier for users).
 - **Timestamps**: integer **milliseconds since epoch** (`Date.now()`).
 - **Enums**: `text` columns with a Drizzle `enum` type. The allowed values are
   defined once in `src/server/schema/common.ts` and shared client/server.
-- **Foreign keys**: `ON DELETE cascade` — child rows are removed with their
+- **Foreign keys**: `ON DELETE cascade`, child rows are removed with their
   parent.
 - **JSON-ish columns**: `text` with `{ mode: "json" }` (Drizzle serializes a
   typed array/object to JSON text and back).
@@ -29,11 +29,11 @@ Identity for signed-in users, mirrored from Clerk.
 | `name` / `image` / `email` | text | profile snapshot from Clerk claims |
 | `roles` | text (json) | dynamic RBAC roles: `video-player`, `ai-integrations` |
 | `is_banned` | boolean | default `false` |
-| `watchlist_rev` / `lists_rev` / `ai_rev` | integer | monotonic per-domain revision counters for cross-device change detection — bumped atomically by every relevant mutation, polled via `getDataVersion` (see ADR-015) |
+| `watchlist_rev` / `lists_rev` / `ai_rev` | integer | monotonic per-domain revision counters for cross-device change detection, bumped atomically by every relevant mutation, polled via `getDataVersion` (see ADR-015) |
 
 > **No `is_admin` column.** Admin status lives in Clerk's public metadata
 > (JWT claim or live API). The column existed in the initial migration
-> (`0000`) and was dropped in `0003` — see ADR-004.
+> (`0000`) and was dropped in `0003`, see ADR-004.
 
 ### watch_items
 
@@ -45,7 +45,7 @@ One row per (user, TMDB title). The heart of the watchlist.
 | `user_id` | text FK → users | cascade |
 | `tmdb_id` | integer | |
 | `media_type` | text enum | `movie` \| `tv` |
-| `in_watchlist` | boolean | default `false` — a row can survive removal to keep progress/reactions |
+| `in_watchlist` | boolean | default `false`, a row can survive removal to keep progress/reactions |
 | `progress_status` | text enum | `watch-later` \| `watching` \| `done` \| `dropped` |
 | `reaction` | text enum | `loved` \| `liked` \| `mixed` \| `not-for-me` \| `recommended` |
 | `progress` | integer 0–100 | check constraint |
@@ -70,13 +70,13 @@ Per-episode watched state for TV shows.
 | `is_watched` | boolean | default `false` |
 | `updated_at` | integer | |
 
-Index: `(user_id, tmdb_id, season, episode)` **unique** — covers (user),
+Index: `(user_id, tmdb_id, season, episode)` **unique**, covers (user),
 (user, show), and (user, show, season) lookups with leftmost-prefix rules
 (replacing four Convex indexes).
 
 ### watchlist_snapshots
 
-Immutable history of "what was in my watchlist" — the daily cron output and
+Immutable history of "what was in my watchlist", the daily cron output and
 the source of the "recently added" / account activity view.
 
 | Column | Type | Notes |
@@ -144,7 +144,7 @@ it is updated in place on success or deleted on failure.
 
 ### homepage_recommendations
 
-The "Picks For You" widget state — one row per user.
+The "Picks For You" widget state, one row per user.
 
 | Column | Type | Notes |
 | :--- | :--- | :--- |
@@ -160,7 +160,7 @@ The 24 h refresh + 1 h failure-retry logic is driven by
 
 ### recommendation_feedback
 
-Thumbs up/down on recommended titles — trains future generations.
+Thumbs up/down on recommended titles, trains future generations.
 
 | Column | Type | Notes |
 | :--- | :--- | :--- |
@@ -201,27 +201,27 @@ Keyset-pagination cursor for the daily cron task.
 
 | Migration | What changed |
 | :--- | :--- |
-| `0000_dear_warbound.sql` | Initial schema — all tables, indexes, checks. `users` still had `is_admin` |
+| `0000_dear_warbound.sql` | Initial schema, all tables, indexes, checks. `users` still had `is_admin` |
 | `0001_slippery_cammi.sql` | Table rebuilds: `role_permissions` gets a real composite PK; `list_items.rating` and `watch_items.rating` switch from `integer` to `real` |
 | `0002_cute_bloodstrike.sql` | Adds `snapshot_cursors` |
 | `0003_petite_sugar_man.sql` | Drops `users.is_admin` (admin now read from Clerk only) |
-| `0004_wise_sabretooth.sql` | Adds `users.watchlist_rev` — watchlist change-detection counter |
-| `0005_yellow_rafael_vega.sql` | Adds `users.lists_rev` and `users.ai_rev` — lists + AI history counters |
+| `0004_wise_sabretooth.sql` | Adds `users.watchlist_rev`, watchlist change-detection counter |
+| `0005_yellow_rafael_vega.sql` | Adds `users.lists_rev` and `users.ai_rev`, lists + AI history counters |
 
 > `drizzle-kit generate` (via `drizzle.config.ts`) produces these from the
 > schema. They are applied to D1 with `wrangler d1 migrations apply`, so the
 > config needs no live DB connection.
 
-## Data-integrity rules enforced in code (not just schema)
+## Data-integrity rules enforced in code, not in the schema
 
-- **Concurrent first sign-in** — `requireUser` inserts with
+- **Concurrent first sign-in**, `requireUser` inserts with
   `onConflictDoNothing` and re-reads the canonical row, so two parallel
   requests for a brand-new user can't 500 on the unique `token_identifier`.
-- **Concurrent watch-item upsert** — `upsertWatchItem` uses
+- **Concurrent watch-item upsert**, `upsertWatchItem` uses
   `onConflictDoUpdate` on `(user_id, tmdb_id, media_type)` so a write that
   loses the race still applies its state to the winner's row.
-- **Duplicate-name lists** — unique index + `onConflictDoNothing` turns a race
+- **Duplicate-name lists**, unique index + `onConflictDoNothing` turns a race
   into a clean `CONFLICT`.
-- **Bounded batches** — every multi-statement write uses `runBatch` (one D1
+- **Bounded batches**, every multi-statement write uses `runBatch` (one D1
   round trip) and chunks at ≤100 statements; episode INSERTs chunk at 14 rows
   (7 bound params each) to respect D1's 100-parameter cap.

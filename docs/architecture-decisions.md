@@ -6,15 +6,15 @@ Statuses: **Accepted** (implemented), **Superseded**.
 
 ---
 
-## ADR-001 — Convex backend replaced by Cloudflare D1 + Drizzle ORM
+## ADR-001: Convex backend replaced by Cloudflare D1 + Drizzle ORM
 
 **Status:** Accepted (completed 2026-08-16)
 
 **Context:** The app originally ran on Convex (real-time backend) while a
 parallel Drizzle/D1 layer was being built for Cloudflare. For a while the
 codebase maintained **two complete backends** with duplicated schemas,
-prompts, and AI logic — a split-brain risk: data written to one was invisible
-to the other, and every change had to be made twice.
+prompts, and AI logic. That was a split-brain risk: data written to one was
+invisible to the other, and every change had to be made twice.
 
 **Decision:** D1 (SQLite on Cloudflare) via Drizzle ORM is the **single**
 backend. The entire `convex/` directory was deleted, `convex` and
@@ -23,7 +23,7 @@ action/query was ported to a TanStack Start server function. All Convex env
 vars were dropped.
 
 **Consequences:**
-- One schema (`src/server/db/schema.ts`), one set of server fns — no more
+- One schema (`src/server/db/schema.ts`), one set of server fns, no more
   duplication.
 - Lost Convex's realtime/subscriptions initially; cross-device realtime was
   restored with version-gated polling (see ADR-015), while in-session updates
@@ -35,7 +35,7 @@ vars were dropped.
 
 ---
 
-## ADR-002 — Server functions (createServerFn) as the API layer
+## ADR-002: Server functions (createServerFn) as the API layer
 
 **Status:** Accepted
 
@@ -60,7 +60,7 @@ Client calls them through the generated RPC layer; `unwrap()` throws an
 
 ---
 
-## ADR-003 — Repository pattern unifies remote and local mutations
+## ADR-003: Repository pattern unifies remote and local mutations
 
 **Status:** Accepted
 
@@ -71,8 +71,8 @@ hard to test.
 
 **Decision:** Introduce `src/lib/repository/` with two implementations of a
 single `Repository` interface:
-- `remote-repository.ts` — server fns + optimistic journal + request batcher,
-- `local-repository.ts` — Zustand stores (guest/localStorage),
+- `remote-repository.ts`, server fns + optimistic journal + request batcher,
+- `local-repository.ts`, Zustand stores (guest/localStorage),
 selected by `useRepository()` based on Clerk auth state. The shared
 `resolveProgressStatusAction` keeps the TV-vs-movie progress semantics in one
 place.
@@ -86,12 +86,12 @@ place.
 
 ---
 
-## ADR-004 — Admin status comes from Clerk, never from the database
+## ADR-004: Admin status comes from Clerk, never from the database
 
 **Status:** Accepted
 
 **Context:** `users` originally had an `is_admin` boolean. It was written once
-at account creation and never refreshed — a user demoted in Clerk kept admin
+at account creation and never refreshed, so a user demoted in Clerk kept admin
 privileges in the DB **forever**. The code comments call this out as a
 privilege-escalation hazard.
 
@@ -106,20 +106,20 @@ admin badges from one paginated Clerk user-list call (display-only).
 **Consequences:**
 - A demotion in Clerk takes effect immediately.
 - Every admin-gated request pays one extra Clerk API call when the JWT claim
-  is absent — mitigated by preferring the signed claim.
+  is absent. Preferring the signed claim limits how often that happens.
 - The admin table display can briefly disagree with reality if the Clerk API
   call fails (accepted; it never gates access).
 
 ---
 
-## ADR-005 — Optimistic updates via a replayable journal scoped to the QueryClient
+## ADR-005: Optimistic updates via a replayable journal scoped to the QueryClient
 
 **Status:** Accepted
 
 **Context:** Naive optimistic updates had a "UI flicker" race: a full-list
 refetch computed *before* a write committed could clobber newer optimistic
 state. Rollbacks restored an all-or-nothing array snapshot, wiping concurrent
-ops. And the original journal lived in module-level globals — shared across
+ops. And the original journal lived in module-level globals, shared across
 all SSR requests (a cross-user data leak).
 
 **Decision:** `src/hooks/pending-ops.ts` implements a **replayable journal**:
@@ -129,8 +129,8 @@ all SSR requests (a cross-user data leak).
   still-pending ops **on top** of fresh server data.
 - Failure removes only the failed op and rebuilds from base + remaining ops.
 - Ops touching the same rows supersede each other (latest intent wins).
-- Journal state is stored in a `WeakMap<QueryClient, JournalState>` — never
-  module-level — and `beginOp` **throws during SSR**.
+- Journal state is stored in a `WeakMap<QueryClient, JournalState>`, never
+  module-level, and `beginOp` **throws during SSR**.
 
 **Consequences:**
 - No UI flicker, no lost concurrent writes, no cross-request leaks.
@@ -140,7 +140,7 @@ all SSR requests (a cross-user data leak).
 
 ---
 
-## ADR-006 — Coalesce writes with a generic request batcher
+## ADR-006: Coalesce writes with a generic request batcher
 
 **Status:** Accepted
 
@@ -163,7 +163,7 @@ It is used for:
 
 ---
 
-## ADR-007 — Valibot for every boundary; typed error contract everywhere
+## ADR-007: Valibot for every boundary; typed error contract everywhere
 
 **Status:** Accepted
 
@@ -177,7 +177,7 @@ boundary:
   (output) with a finite error-code set (`UNAUTHORIZED`, `FORBIDDEN`,
   `NOT_FOUND`, `RATE_LIMITED`, `CONFLICT`, `BAD_REQUEST`).
 - TMDB responses are validated against `src/lib/tmdb-schemas.ts` (742 lines).
-- Gemini output is validated **per element** — malformed entries are dropped,
+- Gemini output is validated **per element**, malformed entries are dropped,
   never trusted.
 - Domain enums (`progressStatus`, `reaction`, `feedback`, `mediaType`) are
   defined once in `src/server/schema/common.ts`.
@@ -189,7 +189,7 @@ boundary:
 
 ---
 
-## ADR-008 — Gemini over REST with a model fallback chain
+## ADR-008: Gemini over REST with a model fallback chain
 
 **Status:** Accepted
 
@@ -212,7 +212,7 @@ model can be unavailable or "high demand".
 
 ---
 
-## ADR-009 — Denormalized metadata snapshots on user rows
+## ADR-009: Denormalized metadata snapshots on user rows
 
 **Status:** Accepted
 
@@ -234,7 +234,7 @@ authoritative source; the snapshots are display copies refreshed on touch.
 
 ---
 
-## ADR-010 — Work within D1's hard constraints (batching, parameters, budget)
+## ADR-010: Work within D1's hard constraints (batching, parameters, budget)
 
 **Status:** Accepted
 
@@ -259,7 +259,7 @@ or a >100-statement batch).
 
 ---
 
-## ADR-011 — Guest data is local-first, promoted on sign-in
+## ADR-011: Guest data is local-first, promoted on sign-in
 
 **Status:** Accepted
 
@@ -281,12 +281,12 @@ switches the repository back to local.
 
 ---
 
-## ADR-012 — Env validation and fail-fast with actionable messages
+## ADR-012: Env validation and fail-fast with actionable messages
 
 **Status:** Accepted
 
 **Context:** Missing env vars used to fail deep inside call stacks with
-cryptic errors (or silently degrade — a missing `CLERK_SECRET_KEY` turned
+cryptic errors, or silently degrade (a missing `CLERK_SECRET_KEY` turned
 everyone into a guest with no warning).
 
 **Decision:** `src/server/env.ts` validates the Worker env once per
@@ -303,7 +303,7 @@ isolate/process with a Valibot schema:
 
 ---
 
-## ADR-013 — Client-side TMDB verification of AI-suggested titles
+## ADR-013: Client-side TMDB verification of AI-suggested titles
 
 **Status:** Accepted
 
@@ -319,19 +319,19 @@ titles render as text-only or are dropped.
 
 **Consequences:**
 - The UI never fabricates media that doesn't exist.
-- Extra TMDB calls on the recs pages — mitigated by 48 h caching and the fact
+- Extra TMDB calls on the recs pages, mitigated by 48 h caching and the fact
   that only recs results (≤30 titles) are checked.
 
 ---
 
-## ADR-014 — GitHub Actions: immutable SHA pins + Node 24 runtimes
+## ADR-014: GitHub Actions: immutable SHA pins + Node 24 runtimes
 
 **Status:** Accepted (updated 2026-08-16)
 
 **Context:** The deploy workflow pinned old action versions
 (checkout v4, setup-node v4, pnpm/action-setup v4, wrangler-action v3) that
 target the **Node 20** runner runtime. GitHub deprecated Node 20 on hosted
-runners and now forces those actions onto Node 24 — producing deprecation
+runners and now forces those actions onto Node 24, producing deprecation
 warnings and, eventually, breakage.
 
 **Decision:** Bump every action to the current major that runs on **node24**
@@ -339,7 +339,7 @@ and keep the repository's immutable-SHA pinning convention (full commit SHA +
 `# vN` comment):
 - `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7`
 - `actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7`
-  (keeps `node-version: 22` — the project runtime — with `cache: pnpm`)
+  (keeps `node-version: 22`, the project runtime, with `cache: pnpm`)
 - `pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6`
 - `cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4`
   (default wrangler version is now v4, matching the repo's wrangler v4)
@@ -356,7 +356,7 @@ workflow never exercises.
 
 ---
 
-## ADR-015 — Version-gated polling for cross-device realtime
+## ADR-015: Version-gated polling for cross-device realtime
 
 **Status:** Accepted
 
@@ -374,7 +374,7 @@ path rather than the first step.
 (one 10 s poll, 1 row read, O(1) at any collection size):
 
 - Each `users` row carries three monotonic revision counters
-  (`watchlist_rev`, `lists_rev`, `ai_rev` — migrations `0004`/`0005`),
+  (`watchlist_rev`, `lists_rev`, `ai_rev`, migrations `0004`/`0005`),
   bumped atomically by every relevant write via
   `bumpUserRev`/`bumpWatchlistRev`/`bumpListsRev`/`bumpAiRev`
   (`src/server/helpers/watch-item.ts`).
@@ -382,8 +382,8 @@ path rather than the first step.
   in one row.
 - `UserSync` (`src/components/user-sync.tsx`) polls `data.version` every 10 s
   (pauses on hidden tabs) and invalidates a query group only when its
-  revision moved **beyond what this client's own mutations can explain** —
-  own successful writes are counted per domain in
+   revision moved **beyond what this client's own mutations can explain**.
+   Own successful writes are counted per domain in
   `src/lib/realtime-mutations.ts`, instrumented at every rev-bumping call
   site (repository, watch-progress, player listener, import, AI hooks).
   Full-list fetches remain capped at 500 rows.
@@ -400,7 +400,7 @@ path rather than the first step.
 - Latency equals the poll interval (~10 s), not instant push. If instant push
   becomes necessary, Durable Objects + WebSocket Hibernation (stays ~free at
   this scale) is the upgrade path.
-- Revision counters grow forever but are single integers updated in place — no
+- Revision counters grow forever but are single integers updated in place: no
   storage accumulation, no realistic overflow.
 
 ---

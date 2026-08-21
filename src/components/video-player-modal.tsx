@@ -106,7 +106,7 @@ export function VideoPlayerModal({
 	useEffect(() => {
 		const shouldPlay = search.play === true || search.play === "true";
 		if (!shouldPlay) {
-			// play param has been removed — safe to reset the guard
+			// play param has been removed, safe to reset the guard
 			closedByUserRef.current = false;
 		}
 		if (shouldPlay && !isOpen && !closedByUserRef.current) {

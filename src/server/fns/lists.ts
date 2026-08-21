@@ -110,7 +110,7 @@ export const getListItems = createServerFn({ method: "POST" })
 			);
 
 		// Enrich with watch_item metadata. Lists have no size cap, but D1 caps
-		// bound parameters at 100 per query, so the IN list is chunked — a
+		// bound parameters at 100 per query, so the IN list is chunked. A
 		// single inArray would fail for lists with >100 distinct TMDB ids.
 		const tmdbIds = [...new Set(items.map((item) => item.tmdbId))];
 		const watchItemRows: (typeof watchItems.$inferSelect)[] = [];
@@ -321,7 +321,7 @@ export const deleteCustomList = createServerFn({ method: "POST" })
 			.limit(1);
 		if (list.length === 0) return fail("NOT_FOUND", "List not found");
 
-		// Cascade via FK — the list_id FK deletes child items automatically, so a
+		// Cascade via FK, the list_id FK deletes child items automatically, so a
 		// single delete replaces the old per-row loop.
 		await db.delete(lists).where(eq(lists.id, data.listId));
 		await bumpListsRev(db, user.id);

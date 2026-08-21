@@ -182,7 +182,7 @@ export async function getTvDetails({ id }: { id: number }): Promise<Tv> {
 	validateId(id);
 	// `recommendations` is deliberately NOT appended: the media pages fetch it
 	// separately via getTvRecommendations, and TMDB returns a full 20-item
-	// result set per title — dropping it shaves ~20 objects off every detail
+	// result set per title, dropping it shaves ~20 objects off every detail
 	// payload that is otherwise cached client-side.
 	const url = `/tv/${id}?language=en-US&append_to_response=images,videos,credits,external_ids,keywords,content_ratings`;
 

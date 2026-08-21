@@ -25,7 +25,7 @@ export function useWatchlist() {
 		enabled: !!isSignedIn,
 		// Cross-device sync is driven by UserSync's watchlist-version poll
 		// (refetch only when the revision changes), so this query itself does
-		// not poll — re-fetching the full list on an interval is O(list size)
+		// not poll. Re-fetching the full list on an interval is O(list size)
 		// in D1 rows read.
 	});
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
@@ -62,7 +62,7 @@ export function useAllMediaStates() {
 		enabled: !!isSignedIn,
 		// Cross-device sync is driven by UserSync's watchlist-version poll
 		// (refetch only when the revision changes), so this query itself does
-		// not poll — re-fetching the full list on an interval is O(list size)
+		// not poll. Re-fetching the full list on an interval is O(list size)
 		// in D1 rows read.
 	});
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
@@ -98,7 +98,7 @@ export function useMediaState(id: string, mediaType: MediaType) {
 		enabled: !!isSignedIn,
 		// Cross-device sync is driven by UserSync's watchlist-version poll
 		// (refetch only when the revision changes), so this query itself does
-		// not poll — re-fetching the full list on an interval is O(list size)
+		// not poll. Re-fetching the full list on an interval is O(list size)
 		// in D1 rows read.
 	});
 

@@ -54,7 +54,7 @@ interface MediaStateInfo {
  * @param open Whether the surrounding surface is visible (gates the TMDB fetches).
  */
 export function useDailyPick(open: boolean) {
-	// Persisted offline cache — same Zustand persist pattern as the watchlist
+	// Persisted offline cache, same Zustand persist pattern as the watchlist
 	// stores. Falls back to the last successful TMDB payload when offline.
 	const cachedTrending = useDailyPickStore((s) => s.trendingMedia);
 	const cachedPopularTv = useDailyPickStore((s) => s.popularTv);
