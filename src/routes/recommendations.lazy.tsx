@@ -85,9 +85,12 @@ function PageShell({ children }: { children: ReactNode }) {
 				<div className="mb-6 flex items-center justify-between gap-3">
 					<GoBack title="Back" hideLabelOnMobile />
 				</div>
-				<h1 className="text-start font-bold text-2xl tracking-tight md:text-3xl animate-fade-in-up mb-6">
-					AI Recommendations
-				</h1>
+				<div className="mb-2">
+					<p className="eyebrow-label">Powered by Gemini</p>
+					<h1 className="mt-1.5 text-start font-bold text-2xl tracking-tight md:text-3xl animate-fade-in-up mb-6">
+						AI Recommendations
+					</h1>
+				</div>
 				{children}
 			</div>
 		</section>
@@ -345,8 +348,8 @@ function RecommendationsContent({
 			{isGenerating && (
 				<div className="space-y-4 animate-in fade-in duration-300">
 					<div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm shadow-none">
-						<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10">
-							<BrainCircuit className="size-4 text-blue-500" />
+						<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12">
+							<BrainCircuit className="size-4 text-primary" />
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold">Building recommendations</p>
@@ -364,7 +367,7 @@ function RecommendationsContent({
 						role="progressbar"
 						aria-label="Generating recommendations"
 					>
-						<div className="progress-indeterminate h-full rounded-full bg-blue-600" />
+						<div className="progress-indeterminate h-full rounded-full bg-primary" />
 					</div>
 					<DefaultLoader />
 				</div>

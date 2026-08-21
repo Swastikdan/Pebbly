@@ -86,7 +86,7 @@ export function NavigationProgressBar({
 			)}
 		>
 			<div
-				className="h-full bg-gradient-to-r from-blue-500 via-primary to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.7)] transition-all duration-200 ease-out"
+				className="h-full bg-gradient-to-r from-primary/70 via-primary to-primary/80 shadow-[0_0_10px_color-mix(in_oklab,var(--primary)_70%,transparent)] transition-all duration-200 ease-out"
 				style={{
 					width: `${progress}%`,
 				}}

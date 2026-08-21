@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { formatMediaTitle } from "./utils";
 
-export type RedirectEntityType = "movie" | "tv" | "collection";
+export type RedirectEntityType = "movie" | "tv" | "collection" | "shared-list";
 export type SubPageEntityType =
 	| "home"
 	| "media"

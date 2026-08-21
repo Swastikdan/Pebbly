@@ -13,6 +13,7 @@ export function CustomListMediaCard({
 	listId,
 	priority,
 	readOnly,
+	rank,
 }: {
 	item: {
 		_id: string;
@@ -30,6 +31,8 @@ export function CustomListMediaCard({
 	listId: string;
 	priority?: boolean;
 	readOnly?: boolean;
+	/** Rank badge shown for ordered (ranked) lists, e.g. 1 for #1. */
+	rank?: number;
 }) {
 	const toggleListItem = useToggleListItem();
 	const hasMetadata = !!(item.title && (item.backdrop || item.image));
@@ -86,6 +89,11 @@ export function CustomListMediaCard({
 						{item.mediaType === "movie" ? "MOV" : "TV"}
 					</div>
 				)}
+				{rank !== undefined && (
+					<div className="absolute -left-1.5 -top-1.5 z-10 flex size-7 items-center justify-center rounded-full bg-foreground text-background text-xs font-extrabold shadow-md ring-2 ring-background">
+						{rank}
+					</div>
+				)}
 			</div>
 
 			<div className="flex min-w-0 flex-1 flex-col justify-between">
@@ -138,7 +146,7 @@ export function CustomListMediaCard({
 					)}
 				</div>
 
-				{(item.progressStatus || item.reaction) && (
+				{!readOnly && (item.progressStatus || item.reaction) && (
 					<div className="flex items-center gap-1.5 pt-2">
 						{item.progressStatus && (
 							<span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground">

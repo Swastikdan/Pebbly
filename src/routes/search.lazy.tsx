@@ -153,7 +153,10 @@ function SearchPage() {
 			<>
 				<SearchHistory navigate={navigate} />
 				<div className="flex flex-col gap-5 py-6">
-					<h2 className="text-lg font-semibold">Trending Now</h2>
+					<div>
+						<p className="eyebrow-label">Popular right now</p>
+						<h2 className="mt-1.5 text-lg font-semibold">Trending Now</h2>
+					</div>
 					{isTrendingLoading ? (
 						<MediaGrid>
 							{Array.from({ length: 12 }).map((_, index) => (
@@ -351,7 +354,8 @@ function SearchPage() {
 				</div>
 				{!query && (
 					<div className="mb-6 flex flex-col gap-1">
-						<h1 className="text-2xl font-bold tracking-tight md:text-3xl animate-fade-in">
+						<p className="eyebrow-label">Find something great</p>
+						<h1 className="mt-1.5 text-2xl font-bold tracking-tight md:text-3xl animate-fade-in">
 							Search
 						</h1>
 						<p className="text-sm text-muted-foreground">

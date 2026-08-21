@@ -199,7 +199,8 @@ function WatchlistTabContent() {
 		<div className="pt-5">
 			<div className="mb-5 flex items-center justify-between gap-3">
 				<div>
-					<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+					<p className="eyebrow-label">Your library</p>
+					<h2 className="mt-1.5 text-xl font-bold tracking-tight sm:text-2xl">
 						Watchlist
 					</h2>
 					<p className="mt-0.5 text-sm text-muted-foreground">
@@ -315,8 +316,10 @@ function MyListsTabContent() {
 		id: string;
 		name: string;
 		color?: string;
+		description?: string;
 		visibility?: string;
 		listType?: string;
+		sortType?: string;
 	} | null>(null);
 	const [selectedListId, setSelectedListId] = useState<string | null>(null);
 
@@ -338,8 +341,10 @@ function MyListsTabContent() {
 		_id: string;
 		name: string;
 		color?: string | null;
+		description?: string | null;
 		visibility?: string | null;
 		listType?: string | null;
+		sortType?: string | null;
 	}) => {
 		deleteCustomList(list._id);
 		toast({
@@ -351,8 +356,10 @@ function MyListsTabContent() {
 					void createCustomList({
 						name: list.name,
 						color: list.color ?? undefined,
+						description: list.description ?? undefined,
 						visibility: (list.visibility as "public" | "private") ?? undefined,
 						listType: (list.listType as "custom" | "pebbly-picks") ?? undefined,
+						sortType: (list.sortType as "unordered" | "ordered") ?? undefined,
 					});
 				},
 			},
@@ -370,8 +377,10 @@ function MyListsTabContent() {
 							id: selectedList._id,
 							name: selectedList.name,
 							color: selectedList.color,
+							description: selectedList.description,
 							visibility: selectedList.visibility,
 							listType: selectedList.listType,
+							sortType: selectedList.sortType,
 						})
 					}
 					onDelete={() => {
@@ -389,8 +398,9 @@ function MyListsTabContent() {
 							listId={editingList.id}
 							initialName={editingList.name}
 							initialColor={editingList.color}
+							initialDescription={editingList.description}
 							initialVisibility={editingList.visibility}
-							initialListType={editingList.listType}
+							initialSortType={editingList.sortType}
 						/>
 					</Suspense>
 				)}
@@ -402,7 +412,8 @@ function MyListsTabContent() {
 		<div className="pt-5 space-y-6">
 			<div className="flex items-center justify-between gap-3">
 				<div>
-					<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+					<p className="eyebrow-label">Curated by you</p>
+					<h2 className="mt-1.5 text-xl font-bold tracking-tight sm:text-2xl">
 						My Collections
 					</h2>
 					<p className="mt-0.5 text-sm text-muted-foreground animate-fade-in">
@@ -461,8 +472,10 @@ function MyListsTabContent() {
 									id: list._id,
 									name: list.name,
 									color: list.color,
+									description: list.description,
 									visibility: list.visibility,
 									listType: list.listType,
+									sortType: list.sortType,
 								})
 							}
 							onDelete={() => deleteListWithUndo(list)}
@@ -487,8 +500,9 @@ function MyListsTabContent() {
 						listId={editingList.id}
 						initialName={editingList.name}
 						initialColor={editingList.color}
+						initialDescription={editingList.description}
 						initialVisibility={editingList.visibility}
-						initialListType={editingList.listType}
+						initialSortType={editingList.sortType}
 					/>
 				</Suspense>
 			)}

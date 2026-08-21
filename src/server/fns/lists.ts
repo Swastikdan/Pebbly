@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { getCurrentUser, requireUser } from "../auth";
-import { getDb } from "../db/client";
+import { getDb, runBatch } from "../db/client";
 import { listItems, lists, watchItems } from "../db/schema";
 import { getEnv } from "../env";
 import { bumpListsRev } from "../helpers/watch-item";
@@ -13,11 +13,14 @@ import {
 	type Reaction,
 } from "../schema/common";
 import {
+	clonePublicListArgsSchema,
 	createCustomListAndAddItemArgsSchema,
 	createCustomListArgsSchema,
 	deleteCustomListArgsSchema,
 	getItemListsArgsSchema,
 	getListItemsArgsSchema,
+	getPublicListArgsSchema,
+	reorderListItemsArgsSchema,
 	toggleListItemArgsSchema,
 	updateCustomListArgsSchema,
 } from "../schema/lists";
@@ -107,7 +110,8 @@ export const getListItems = createServerFn({ method: "POST" })
 			.from(listItems)
 			.where(
 				and(eq(listItems.listId, data.listId), eq(listItems.userId, user.id)),
-			);
+			)
+			.orderBy(asc(listItems.position), asc(listItems.addedAt));
 
 		// Enrich with watch_item metadata. Lists have no size cap, but D1 caps
 		// bound parameters at 100 per query, so the IN list is chunked — a
@@ -230,8 +234,10 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
 				userId: user.id,
 				name: data.name,
 				color: data.color,
+				description: data.description,
 				visibility: data.visibility,
 				listType: data.listType,
+				sortType: data.sortType,
 				sortOrder: maxSort + 1,
 				createdAt: now,
 				updatedAt: now,
@@ -296,10 +302,14 @@ export const updateCustomList = createServerFn({ method: "POST" })
 			.set({
 				...(data.name !== undefined ? { name: data.name } : {}),
 				...(data.color !== undefined ? { color: data.color } : {}),
+				...(data.description !== undefined
+					? { description: data.description }
+					: {}),
 				...(data.visibility !== undefined
 					? { visibility: data.visibility }
 					: {}),
 				...(data.listType !== undefined ? { listType: data.listType } : {}),
+				...(data.sortType !== undefined ? { sortType: data.sortType } : {}),
 				updatedAt: Date.now(),
 			})
 			.where(eq(lists.id, existing.id));
@@ -338,6 +348,240 @@ export const toggleListItem = createServerFn({ method: "POST" })
 		return ok(result.data);
 	});
 
+export const reorderListItems = createServerFn({ method: "POST" })
+	.validator(reorderListItemsArgsSchema)
+	.handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
+		const { user, error } = await requireUser();
+		if (error) return error;
+
+		const db = getDb(getEnv());
+		const list = await db
+			.select({ id: lists.id })
+			.from(lists)
+			.where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
+			.limit(1);
+		if (list.length === 0) return fail("NOT_FOUND", "List not found");
+
+		// Resolve the submitted (tmdbId, mediaType) order to item ids in one
+		// read, then rewrite positions. Items missing from the payload keep
+		// their old positions (they were filtered out of the view).
+		const existing = await db
+			.select({
+				id: listItems.id,
+				tmdbId: listItems.tmdbId,
+				mediaType: listItems.mediaType,
+			})
+			.from(listItems)
+			.where(eq(listItems.listId, data.listId));
+		const idByMediaKey = new Map(
+			existing.map((row) => [`${row.tmdbId}_${row.mediaType}`, row.id]),
+		);
+
+		const updates: { id: string; position: number }[] = [];
+		for (let i = 0; i < data.orderedItems.length; i++) {
+			const item = data.orderedItems[i];
+			const id = idByMediaKey.get(`${item.tmdbId}_${item.mediaType}`);
+			if (id) updates.push({ id, position: i });
+		}
+
+		// Each update binds 2 parameters, so chunk well under D1's 100
+		// bound-parameter / 100-statement batch limits.
+		const UPDATES_PER_BATCH = 45;
+		for (let i = 0; i < updates.length; i += UPDATES_PER_BATCH) {
+			const chunk = updates.slice(i, i + UPDATES_PER_BATCH);
+			await runBatch(
+				db,
+				chunk.map((u) =>
+					db
+						.update(listItems)
+						.set({ position: u.position })
+						.where(eq(listItems.id, u.id)),
+				),
+			);
+		}
+
+		await bumpListsRev(db, user.id);
+		return ok({ ok: true });
+	});
+
+/**
+ * Public (unauthenticated) read of a single list. Only lists marked `public`
+ * are visible; private lists 404 so their existence is not leaked. The payload
+ * is limited to metadata stored on `list_items` — watch progress/reactions
+ * live on the owner's private `watch_items` and are never joined here.
+ */
+export const getPublicList = createServerFn({ method: "POST" })
+	.validator(getPublicListArgsSchema)
+	.handler(
+		async ({
+			data,
+		}): Promise<
+			ApiResult<{
+				id: string;
+				name: string;
+				color: string | null;
+				description: string | null;
+				sortType: string | null;
+				createdAt: number;
+				itemCount: number;
+				items: Array<{
+					tmdbId: number;
+					mediaType: "movie" | "tv";
+					title: string | null;
+					image: string | null;
+					backdrop: string | null;
+					rating: number | null;
+					releaseDate: string | null;
+					overview: string | null;
+					position: number;
+				}>;
+			}>
+		> => {
+			const db = getDb(getEnv());
+			const list = await db
+				.select()
+				.from(lists)
+				.where(eq(lists.id, data.listId))
+				.limit(1);
+
+			if (list.length === 0 || list[0].visibility !== "public") {
+				return fail("NOT_FOUND", "List not found");
+			}
+
+			const items = await db
+				.select()
+				.from(listItems)
+				.where(eq(listItems.listId, data.listId))
+				.orderBy(asc(listItems.position), asc(listItems.addedAt));
+
+			return ok({
+				id: list[0].id,
+				name: list[0].name,
+				color: list[0].color,
+				description: list[0].description,
+				sortType: list[0].sortType,
+				createdAt: list[0].createdAt,
+				itemCount: items.length,
+				items: items.map((item) => ({
+					tmdbId: item.tmdbId,
+					mediaType: item.mediaType,
+					title: item.title,
+					image: item.image,
+					backdrop: item.backdrop,
+					rating: item.rating,
+					releaseDate: item.releaseDate,
+					overview: item.overview,
+					position: item.position,
+				})),
+			});
+		},
+	);
+
+/**
+ * Clone a public list to the authenticated user's account.
+ */
+export const clonePublicList = createServerFn({ method: "POST" })
+	.validator(clonePublicListArgsSchema)
+	.handler(
+		async ({ data }): Promise<ApiResult<{ id: string; name: string }>> => {
+			const { user, error } = await requireUser();
+			if (error) return error;
+
+			const db = getDb(getEnv());
+			const sourceList = await db
+				.select()
+				.from(lists)
+				.where(eq(lists.id, data.listId))
+				.limit(1);
+
+			if (
+				sourceList.length === 0 ||
+				(sourceList[0].visibility !== "public" &&
+					sourceList[0].userId !== user.id)
+			) {
+				return fail("NOT_FOUND", "List not found");
+			}
+
+			const src = sourceList[0];
+			const sourceItems = await db
+				.select()
+				.from(listItems)
+				.where(eq(listItems.listId, data.listId))
+				.orderBy(asc(listItems.position), asc(listItems.addedAt));
+
+			// Resolve a unique name for the user
+			let targetName = src.name;
+			const userLists = await db
+				.select({ name: lists.name })
+				.from(lists)
+				.where(eq(lists.userId, user.id));
+			const existingNames = new Set(userLists.map((l) => l.name.toLowerCase()));
+
+			if (existingNames.has(targetName.toLowerCase())) {
+				let suffix = 2;
+				while (existingNames.has(`${src.name} (${suffix})`.toLowerCase())) {
+					suffix += 1;
+				}
+				targetName = `${src.name} (${suffix})`.slice(0, 50);
+			}
+
+			const highestList = await db
+				.select({ sortOrder: lists.sortOrder })
+				.from(lists)
+				.where(eq(lists.userId, user.id))
+				.orderBy(desc(lists.sortOrder))
+				.limit(1);
+			const maxSort = highestList.length > 0 ? highestList[0].sortOrder : 0;
+
+			const newId = crypto.randomUUID();
+			const now = Date.now();
+
+			await db.insert(lists).values({
+				id: newId,
+				userId: user.id,
+				name: targetName,
+				color: src.color,
+				description: src.description,
+				visibility: "private",
+				listType: "custom",
+				sortType: src.sortType ?? "unordered",
+				sortOrder: maxSort + 1,
+				createdAt: now,
+				updatedAt: now,
+			});
+
+			if (sourceItems.length > 0) {
+				const CHUNK_SIZE = 45;
+				for (let i = 0; i < sourceItems.length; i += CHUNK_SIZE) {
+					const chunk = sourceItems.slice(i, i + CHUNK_SIZE);
+					await runBatch(
+						db,
+						chunk.map((item, idx) =>
+							db.insert(listItems).values({
+								id: crypto.randomUUID(),
+								userId: user.id,
+								listId: newId,
+								tmdbId: item.tmdbId,
+								mediaType: item.mediaType,
+								addedAt: now + (item.position ?? idx),
+								position: item.position ?? idx,
+								title: item.title,
+								image: item.image,
+								backdrop: item.backdrop,
+								rating: item.rating,
+								releaseDate: item.releaseDate,
+								overview: item.overview,
+							}),
+						),
+					);
+				}
+			}
+
+			await bumpListsRev(db, user.id);
+			return ok({ id: newId, name: targetName });
+		},
+	);
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -347,8 +591,10 @@ async function createCustomListInner(
 	args: {
 		name: string;
 		color?: string;
+		description?: string;
 		visibility?: string;
 		listType?: string;
+		sortType?: "unordered" | "ordered";
 	},
 ): Promise<ApiResult<string>> {
 	const db = getDb(getEnv());
@@ -373,8 +619,10 @@ async function createCustomListInner(
 			userId,
 			name: args.name,
 			color: args.color,
+			description: args.description,
 			visibility: args.visibility,
 			listType: args.listType,
+			sortType: args.sortType,
 			sortOrder: maxSort + 1,
 			createdAt: now,
 			updatedAt: now,
@@ -429,6 +677,17 @@ async function toggleListItemInner(
 		return ok(false);
 	}
 
+	// New items go to the end of the list: position = max + 1. This doubles as
+	// insertion order for unordered lists and rank order for ordered ones.
+	const highestPosition = await db
+		.select({ position: listItems.position })
+		.from(listItems)
+		.where(eq(listItems.listId, args.listId))
+		.orderBy(desc(listItems.position))
+		.limit(1);
+	const position =
+		highestPosition.length > 0 ? highestPosition[0].position + 1 : 0;
+
 	await db.insert(listItems).values({
 		id: crypto.randomUUID(),
 		userId,
@@ -436,6 +695,7 @@ async function toggleListItemInner(
 		tmdbId: args.tmdbId,
 		mediaType: args.mediaType,
 		addedAt: Date.now(),
+		position,
 		title: args.title,
 		image: args.image,
 		backdrop: args.backdrop,

@@ -4,6 +4,7 @@ import {
 	beginCreateListAndAddOp,
 	beginCreateListOp,
 	beginDeleteListOp,
+	beginReorderListItemsOp,
 	beginToggleListItemOp,
 	beginUpdateListOp,
 	swapListId,
@@ -29,6 +30,7 @@ import {
 	createCustomList,
 	createCustomListAndAddItem,
 	deleteCustomList,
+	reorderListItems,
 	toggleListItem,
 	updateCustomList,
 } from "@/server/fns/lists";
@@ -451,6 +453,15 @@ export function createRemoteRepository(
 				]);
 				throw error;
 			}
+		},
+
+		async reorderListItem(input) {
+			await runMutationAsync(queryClient, {
+				begin: () => beginReorderListItemsOp(queryClient, input, userId),
+				run: () => unwrap(reorderListItems({ data: input })),
+				syncKeys: [queryKeys.lists.items(input.listId, userId)],
+				errorMessage: "reorder list items",
+			});
 		},
 	};
 

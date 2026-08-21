@@ -30,15 +30,15 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
 
+      - name: Use Preview Wrangler Config
+        run: cp wrangler.preview.toml wrangler.toml
+
       - name: Apply D1 migrations (preview)
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # Use --config (not --env) so Wrangler reads the flattened preview
-          # config directly. See wrangler.preview.toml header for why --env
-          # cannot be used with Nitro's generated config redirect.
-          command: d1 migrations apply pebbly-preview --remote --config wrangler.preview.toml
+          command: d1 migrations apply pebbly-preview --remote
 
       - name: Build (Nitro cloudflare preset)
         run: pnpm build
@@ -54,9 +54,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # --config bypasses the redirected config that Nitro writes to
-          # .output/server/wrangler.json + .wrangler/deploy/config.json.
-          # Wrangler reads wrangler.preview.toml directly (redirected: false),
-          # so the "redirected configs cannot include environments" error does
-          # not apply — there is no env indirection to resolve.
-          command: deploy --config wrangler.preview.toml
+          command: deploy

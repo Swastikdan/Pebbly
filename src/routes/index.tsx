@@ -37,13 +37,17 @@ function HomePage() {
 	return (
 		<section className="flex flex-col items-center justify-center">
 			<div className="relative w-full overflow-hidden">
-				<div className="mx-auto max-w-5xl px-4 py-8 pt-6 pb-6 text-center sm:px-6 md:pt-12 md:pb-8 lg:px-8">
-					<div className="py-4 animate-fade-in-up">
-						<h1 className="items-center justify-center text-display">
+				<div
+					className="hero-mesh pointer-events-none absolute inset-0"
+					aria-hidden="true"
+				/>
+				<div className="relative mx-auto max-w-5xl px-4 py-8 pt-8 pb-8 text-center sm:px-6 md:pt-14 md:pb-10 lg:px-8">
+					<div className="animate-fade-in-up">
+						<h1 className="text-display">
 							Welcome to
-							<span className="px-2 text-blue-500">{SITE_CONFIG.name}</span>
+							<span className="px-2 text-primary">{SITE_CONFIG.name}</span>
 						</h1>
-						<p className="mt-2 mb-4 text-body text-muted-foreground">
+						<p className="mx-auto mt-2 mb-6 max-w-xl text-body text-muted-foreground">
 							Millions of movies, TV shows, and people to discover.
 						</p>
 					</div>
@@ -64,10 +68,13 @@ function HomePage() {
 			</div>
 
 			<div className="mx-auto flex w-full max-w-screen-xl px-5 py-6 md:pt-10 md:pb-8">
-				<div className="flex w-full flex-col gap-10">
+				<div className="flex w-full flex-col gap-12">
 					<Tabs defaultValue="trending_day">
-						<div className="flex items-center gap-4 mt-2">
-							<h2 className="text-h2">Trending</h2>
+						<div className="flex flex-wrap items-end justify-between gap-3 mt-2">
+							<div>
+								<p className="eyebrow-label">On the marquee</p>
+								<h2 className="text-h2 mt-1.5">Trending</h2>
+							</div>
 							<TabsList>
 								<TabsTrigger value="trending_day">Today</TabsTrigger>
 								<TabsTrigger value="trending_week">This Week</TabsTrigger>
@@ -90,8 +97,9 @@ function HomePage() {
 						<HomepageRecommendations />
 					</LazySection>
 
-					<div className="flex items-center gap-4 mt-2">
-						<h2 className="text-h2">Upcoming Movies</h2>
+					<div>
+						<p className="eyebrow-label">Coming soon</p>
+						<h2 className="text-h2 mt-1.5">Upcoming Movies</h2>
 					</div>
 					<LazySection
 						minHeight="280px"
@@ -103,7 +111,10 @@ function HomePage() {
 						</div>
 					</LazySection>
 
-					<h2 className="text-h2 mt-2">{`What's Popular`}</h2>
+					<div>
+						<p className="eyebrow-label">In the spotlight</p>
+						<h2 className="text-h2 mt-1.5">{`What's Popular`}</h2>
+					</div>
 					<LazySection
 						minHeight="360px"
 						className="content-visibility-auto"
@@ -125,7 +136,10 @@ function HomePage() {
 						</Tabs>
 					</LazySection>
 
-					<h2 className="text-h2 mt-2">Top Rated</h2>
+					<div>
+						<p className="eyebrow-label">Hall of fame</p>
+						<h2 className="text-h2 mt-1.5">Top Rated</h2>
+					</div>
 					<LazySection
 						minHeight="360px"
 						className="content-visibility-auto"
@@ -161,7 +175,10 @@ function ContinueWatchingSection() {
 	return (
 		<section>
 			<div className="flex items-center gap-4 mt-2">
-				<h2 className="text-h2">Continue Watching</h2>
+				<div>
+					<p className="eyebrow-label">Pick up where you left off</p>
+					<h2 className="text-h2 mt-1.5">Continue Watching</h2>
+				</div>
 			</div>
 			<div>
 				<LazySection

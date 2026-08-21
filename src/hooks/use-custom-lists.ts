@@ -6,9 +6,15 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { queryKeys } from "@/lib/query/keys";
+import type { ReorderListItemInput } from "@/lib/repository/types";
 import { useRepository } from "@/lib/repository/use-repository";
 import type { CustomListRow, ListItemRow } from "@/lib/server-types";
-import { getCustomLists, getItemLists, getListItems } from "@/server/fns/lists";
+import {
+	clonePublicList,
+	getCustomLists,
+	getItemLists,
+	getListItems,
+} from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 import type {
@@ -80,8 +86,10 @@ export function useCustomLists() {
 				...list,
 				_id: list.id,
 				color: list.color ?? undefined,
+				description: list.description ?? undefined,
 				visibility: list.visibility ?? undefined,
 				listType: list.listType ?? undefined,
+				sortType: list.sortType ?? undefined,
 			}));
 		}
 
@@ -225,5 +233,100 @@ export function useToggleListItem() {
 			await repository.toggleListItem(args);
 		},
 		[repository],
+	);
+}
+
+export function useReorderListItems() {
+	const repository = useRepository();
+
+	return useCallback(
+		async (input: ReorderListItemInput) => {
+			await repository.reorderListItem(input);
+		},
+		[repository],
+	);
+}
+
+export function useClonePublicList() {
+	const { isSignedIn, user } = useUser();
+	const queryClient = useQueryClient();
+
+	return useCallback(
+		async (list: {
+			id: string;
+			name: string;
+			color?: string | null;
+			description?: string | null;
+			sortType?: string | null;
+			items: Array<{
+				tmdbId: number;
+				mediaType: "movie" | "tv";
+				title?: string | null;
+				image?: string | null;
+				backdrop?: string | null;
+				rating?: number | null;
+				releaseDate?: string | null;
+				overview?: string | null;
+				position?: number;
+			}>;
+		}) => {
+			if (isSignedIn) {
+				const res = await unwrap(
+					clonePublicList({ data: { listId: list.id } }),
+				);
+				await queryClient.invalidateQueries({
+					queryKey: queryKeys.lists.all(user?.id),
+				});
+				return res;
+			}
+
+			// Local store fallback
+			const state = useLocalListsStore.getState();
+			let targetName = list.name;
+			const existingNames = new Set(
+				state.lists.map((l) => l.name.toLowerCase()),
+			);
+			if (existingNames.has(targetName.toLowerCase())) {
+				let suffix = 2;
+				while (existingNames.has(`${list.name} (${suffix})`.toLowerCase())) {
+					suffix += 1;
+				}
+				targetName = `${list.name} (${suffix})`.slice(0, 50);
+			}
+
+			const newId = state.createList(
+				targetName,
+				list.color ?? undefined,
+				list.description ?? undefined,
+				"private",
+				"custom",
+				list.sortType ?? "unordered",
+			);
+
+			for (const item of list.items) {
+				useLocalListsStore.setState((s) => ({
+					listItems: [
+						...s.listItems,
+						{
+							_id: `local_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+							listId: newId,
+							tmdbId: item.tmdbId,
+							mediaType: item.mediaType,
+							addedAt: Date.now(),
+							position: item.position ?? 0,
+							title: item.title ?? undefined,
+							image: item.image ?? undefined,
+							backdrop: item.backdrop ?? undefined,
+							rating: item.rating ?? undefined,
+							release_date: item.releaseDate ?? undefined,
+							overview: item.overview ?? undefined,
+						},
+					],
+				}));
+			}
+
+			return { id: newId, name: targetName };
+		},
+		[isSignedIn, user?.id, queryClient],
 	);
 }

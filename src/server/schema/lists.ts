@@ -3,6 +3,7 @@ import { mediaTypeSchema, metadataSchema } from "./common";
 
 export const listVisibilitySchema = v.picklist(["public", "private"]);
 export const listTypeSchema = v.picklist(["custom", "pebbly-picks"]);
+export const listSortTypeSchema = v.picklist(["unordered", "ordered"]);
 
 const listNameSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(50));
 const listColorSchema = v.pipe(
@@ -10,12 +11,15 @@ const listColorSchema = v.pipe(
 	v.maxLength(20),
 	v.regex(/^#[0-9a-fA-F]{3,8}$|^$/),
 );
+const listDescriptionSchema = v.pipe(v.string(), v.maxLength(150));
 
 const listFields = {
 	name: listNameSchema,
 	color: v.optional(listColorSchema),
+	description: v.optional(listDescriptionSchema),
 	visibility: v.optional(listVisibilitySchema),
 	listType: v.optional(listTypeSchema),
+	sortType: v.optional(listSortTypeSchema),
 };
 
 export const createCustomListArgsSchema = v.object(listFields);
@@ -27,8 +31,10 @@ export const updateCustomListArgsSchema = v.object({
 	listId: v.string(),
 	name: v.optional(listNameSchema),
 	color: v.optional(listColorSchema),
+	description: v.optional(listDescriptionSchema),
 	visibility: v.optional(listVisibilitySchema),
 	listType: v.optional(listTypeSchema),
+	sortType: v.optional(listSortTypeSchema),
 });
 export type UpdateCustomListArgs = v.InferOutput<
 	typeof updateCustomListArgsSchema
@@ -70,4 +76,29 @@ export const createCustomListAndAddItemArgsSchema = v.object({
 });
 export type CreateCustomListAndAddItemArgs = v.InferOutput<
 	typeof createCustomListAndAddItemArgsSchema
+>;
+
+export const reorderListItemsArgsSchema = v.object({
+	listId: v.string(),
+	orderedItems: v.array(
+		v.object({
+			tmdbId: v.number(),
+			mediaType: mediaTypeSchema,
+		}),
+	),
+});
+export type ReorderListItemsArgs = v.InferOutput<
+	typeof reorderListItemsArgsSchema
+>;
+
+export const getPublicListArgsSchema = v.object({
+	listId: v.string(),
+});
+export type GetPublicListArgs = v.InferOutput<typeof getPublicListArgsSchema>;
+
+export const clonePublicListArgsSchema = v.object({
+	listId: v.string(),
+});
+export type ClonePublicListArgs = v.InferOutput<
+	typeof clonePublicListArgsSchema
 >;

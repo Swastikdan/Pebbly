@@ -57,8 +57,10 @@ export function beginDeleteListOp(
 export type CreateListArgs = {
 	name: string;
 	color?: string;
+	description?: string;
 	visibility?: "public" | "private";
 	listType?: "custom" | "pebbly-picks";
+	sortType?: "unordered" | "ordered";
 };
 
 export function beginCreateListOp(
@@ -80,8 +82,10 @@ export function beginCreateListOp(
 					userId: "optimistic",
 					name: args.name,
 					color: args.color ?? null,
+					description: args.description ?? null,
 					visibility: args.visibility ?? null,
 					listType: args.listType ?? null,
+					sortType: args.sortType ?? "unordered",
 					sortOrder: rows.length,
 					createdAt: now,
 					updatedAt: now,
@@ -128,8 +132,10 @@ export function beginCreateListAndAddOp(
 					userId: "optimistic",
 					name: args.name,
 					color: args.color ?? null,
+					description: args.description ?? null,
 					visibility: args.visibility ?? null,
 					listType: args.listType ?? null,
+					sortType: args.sortType ?? "unordered",
 					sortOrder: (rows as CustomListRow[]).length,
 					createdAt: now,
 					updatedAt: now,
@@ -172,11 +178,17 @@ export function beginUpdateListOp(
 								...l,
 								...(args.name !== undefined && { name: args.name }),
 								...(args.color !== undefined && { color: args.color }),
+								...(args.description !== undefined && {
+									description: args.description,
+								}),
 								...(args.visibility !== undefined && {
 									visibility: args.visibility,
 								}),
 								...(args.listType !== undefined && {
 									listType: args.listType,
+								}),
+								...(args.sortType !== undefined && {
+									sortType: args.sortType,
 								}),
 								updatedAt: Date.now(),
 							}
@@ -310,6 +322,54 @@ export function beginToggleListItemOp(
 	];
 
 	return { handle: beginOp(queryClient, entries), adding };
+}
+
+export type ReorderListItemsArgs = {
+	listId: string;
+	orderedItems: Array<{ tmdbId: number; mediaType: "movie" | "tv" }>;
+};
+
+/**
+ * Optimistically reorder the cached items of a list to match the submitted
+ * order. Items not present in the payload keep their relative order at the end
+ * (they were filtered out of the current view).
+ */
+export function beginReorderListItemsOp(
+	queryClient: QueryClient,
+	args: ReorderListItemsArgs,
+	userId: string | undefined,
+): OpHandle {
+	const itemsKey = queryKeys.lists.items(args.listId, userId);
+	return beginOp(queryClient, [
+		{
+			key: itemsKey,
+			touchedIds: args.orderedItems.map((i) => String(i.tmdbId)),
+			idOf: itemTmdbIdOf,
+			apply: (rows: ListItemRow[]) => {
+				const byKey = new Map(
+					rows.map((row) => [`${row.tmdbId}_${row.mediaType}`, row]),
+				);
+				const reordered: ListItemRow[] = [];
+				const seen = new Set<string>();
+				for (const item of args.orderedItems) {
+					const key = `${item.tmdbId}_${item.mediaType}`;
+					const row = byKey.get(key);
+					if (row && !seen.has(key)) {
+						reordered.push(row);
+						seen.add(key);
+					}
+				}
+				for (const row of rows) {
+					const key = `${row.tmdbId}_${row.mediaType}`;
+					if (!seen.has(key)) {
+						reordered.push(row);
+						seen.add(key);
+					}
+				}
+				return reordered;
+			},
+		},
+	]);
 }
 
 /**

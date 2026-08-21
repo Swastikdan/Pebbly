@@ -145,9 +145,12 @@ function MediaListPage() {
 						hideLabelOnMobile
 					/>
 				</div>
-				<h1 className="text-start font-bold text-2xl tracking-tight md:text-3xl animate-fade-in-up">
-					{subNavItem.name} {navItem.name}
-				</h1>
+				<div className="mb-2 animate-fade-in-up">
+					<p className="eyebrow-label">Browse the collection</p>
+					<h1 className="mt-1.5 text-start font-bold text-2xl tracking-tight md:text-3xl">
+						{subNavItem.name} {navItem.name}
+					</h1>
+				</div>
 
 				<section className="flex h-full flex-col">
 					<div className="flex min-h-96 w-full items-center justify-center">

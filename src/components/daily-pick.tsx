@@ -105,13 +105,13 @@ export function DailyPickButton() {
 											: ""}
 									</span>
 								) : pick.selectedItem.isFromWatchlist ? (
-									<span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md backdrop-blur-md">
-										<BookMarkIcon className="size-3 fill-white" />
+									<span className="inline-flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-0.5 text-[11px] font-bold text-primary-foreground shadow-md backdrop-blur-md">
+										<BookMarkIcon className="size-3 fill-primary-foreground" />
 										From Your Watchlist
 									</span>
 								) : (
-									<span className="inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-blue-400 backdrop-blur-md border border-blue-500/25">
-										<SparklesIcon className="size-3 fill-blue-400" />
+									<span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-primary backdrop-blur-md">
+										<SparklesIcon className="size-3 fill-primary" />
 										Today's Pick
 									</span>
 								)}
@@ -188,7 +188,7 @@ export function DailyPickButton() {
 												className="flex-1"
 											>
 												{" "}
-												<Button className="w-full h-10 sm:h-11 rounded-xl bg-foreground text-background font-semibold shadow-md hover:bg-foreground/90 text-xs sm:text-sm">
+												<Button className="h-10 w-full rounded-xl text-xs font-semibold sm:h-11 sm:text-sm">
 													▶ Watch Now
 												</Button>
 											</Link>

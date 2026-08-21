@@ -60,6 +60,11 @@ export interface WatchlistRepository {
 	): void;
 }
 
+export interface ReorderListItemInput {
+	listId: string;
+	orderedItems: Array<{ tmdbId: number; mediaType: "movie" | "tv" }>;
+}
+
 export interface ListsRepository {
 	deleteList(listId: string): Promise<void>;
 	/** Create a list; resolves with the created list's id. */
@@ -67,6 +72,8 @@ export interface ListsRepository {
 	createListAndAddItem(args: CreateListAndAddArgs): Promise<void>;
 	updateList(args: UpdateListArgs): Promise<void>;
 	toggleListItem(args: ToggleListItemArgs): Promise<void>;
+	/** Rewrite item positions to the submitted order (ranked lists). */
+	reorderListItem(input: ReorderListItemInput): Promise<void>;
 }
 
 export type Repository = WatchlistRepository & ListsRepository;

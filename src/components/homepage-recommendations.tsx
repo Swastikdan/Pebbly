@@ -53,6 +53,7 @@ const HomepageRecommendationCard = memo(
 		) => void;
 	}) => {
 		const { title, tmdbId, mediaType } = recommendation;
+		const [showReason, setShowReason] = useState(false);
 		const {
 			data: tmdbData,
 			isLoading: idLoading,
@@ -118,7 +119,7 @@ const HomepageRecommendationCard = memo(
 							"h-8 w-8 rounded-lg border shadow-md transition-[color,background-color,border-color,transform] duration-150 [@media(hover:hover)]:hover:scale-105 active:scale-95 cursor-pointer pressable",
 							isLiked
 								? "bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-700"
-								: "bg-neutral-900/90 text-white border-neutral-700 hover:bg-neutral-800",
+								: "bg-stone-900/90 text-white border-stone-700 hover:bg-stone-800",
 						)}
 						onClick={(e) => {
 							e.stopPropagation();
@@ -147,7 +148,7 @@ const HomepageRecommendationCard = memo(
 					<Button
 						variant="secondary"
 						size="icon"
-						className="h-8 w-8 rounded-lg bg-neutral-900/90 text-white border border-neutral-700 shadow-md transition-[color,background-color,border-color,transform] duration-150 hover:bg-red-900/90 hover:border-red-600 hover:text-red-200 [@media(hover:hover)]:hover:scale-105 active:scale-95 cursor-pointer pressable"
+						className="h-8 w-8 rounded-lg bg-stone-900/90 text-white border border-stone-700 shadow-md transition-[color,background-color,border-color,transform] duration-150 hover:bg-red-900/90 hover:border-red-600 hover:text-red-200 [@media(hover:hover)]:hover:scale-105 active:scale-95 cursor-pointer pressable"
 						onClick={(e) => {
 							e.stopPropagation();
 							e.preventDefault();
@@ -158,6 +159,51 @@ const HomepageRecommendationCard = memo(
 						<ThumbsDown size={13} />
 					</Button>
 				</div>
+
+				{/* "Why this pick?" — expandable reasoning from the AI model */}
+				{recommendation.reasoning && (
+					<div className="absolute left-2 bottom-2 right-2 z-20 pointer-events-auto">
+						{showReason ? (
+							<div className="rounded-xl bg-stone-950/95 text-white border border-stone-700/80 backdrop-blur-md p-3 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+								<div className="flex items-center justify-between gap-2 mb-1.5 border-b border-stone-800 pb-1.5">
+									<span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+										<Sparkles size={12} className="text-primary shrink-0" />
+										Why this pick
+									</span>
+									<button
+										type="button"
+										className="text-[11px] font-medium text-stone-400 hover:text-white px-2 py-0.5 rounded-md hover:bg-stone-800 transition-colors cursor-pointer"
+										onClick={(e) => {
+											e.stopPropagation();
+											e.preventDefault();
+											setShowReason(false);
+										}}
+									>
+										Close
+									</button>
+								</div>
+								<p className="text-xs leading-relaxed text-stone-200 line-clamp-4 select-text">
+									{recommendation.reasoning}
+								</p>
+							</div>
+						) : (
+							<button
+								type="button"
+								aria-label={`Why ${resolvedData.title} was recommended`}
+								aria-expanded={false}
+								className="inline-flex items-center gap-1.5 rounded-full bg-stone-950/85 hover:bg-stone-900 text-white border border-stone-700/70 backdrop-blur-md px-2.5 py-1 text-xs font-semibold shadow-lg transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer opacity-90 hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+								onClick={(e) => {
+									e.stopPropagation();
+									e.preventDefault();
+									setShowReason(true);
+								}}
+							>
+								<Sparkles size={12} className="text-primary shrink-0" />
+								<span>Why?</span>
+							</button>
+						)}
+					</div>
+				)}
 			</div>
 		);
 	},
@@ -166,7 +212,10 @@ const HomepageRecommendationCard = memo(
 function RecommendationSectionHeader() {
 	return (
 		<div className="flex items-center justify-between px-4 md:px-0 mb-1">
-			<h2 className="font-semibold text-lg md:text-xl">Picks For You</h2>
+			<div>
+				<p className="eyebrow-label">Curated for you</p>
+				<h2 className="text-h2 mt-1.5">Picks For You</h2>
+			</div>
 		</div>
 	);
 }
