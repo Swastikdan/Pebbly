@@ -56,7 +56,7 @@ function ToastItem({
 			)}
 		>
 			<span
-				className="size-2 shrink-0 self-center rounded-full bg-blue-500 shadow-[0_0_10px_rgb(59_130_246/0.6)]"
+				className="size-2 shrink-0 self-center rounded-full bg-primary shadow-[0_0_10px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
 				aria-hidden="true"
 			/>
 			<div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
@@ -77,7 +77,7 @@ function ToastItem({
 						toast.action?.onClick();
 						onDismiss(toast.id);
 					}}
-					className="h-7 shrink-0 self-center rounded-full px-3 text-xs font-bold text-blue-500 hover:bg-white/5 hover:text-blue-400"
+					className="h-7 shrink-0 self-center rounded-full px-3 text-xs font-bold text-primary hover:bg-white/5 hover:text-primary/80"
 				>
 					{toast.action.label}
 				</Button>

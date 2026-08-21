@@ -192,7 +192,7 @@ const SearchBar = memo(
 						disabled={disabled}
 						autoFocus={autoFocus}
 						className={cn(
-							"peer h-11 w-full rounded-xl bg-background/95 ps-11 pr-11 text-[16px] md:text-[15px] border border-border transition-[color,background-color,border-color,box-shadow] duration-150 placeholder:text-muted-foreground/70 focus:bg-background focus:border-ring/40 focus:ring-2 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background shadow-none",
+							"peer h-11 w-full rounded-full border border-border bg-background/90 ps-11 pr-11 text-[16px] transition-[color,border-color,box-shadow] duration-200 md:text-[15px] placeholder:text-muted-foreground/60 focus:border-primary/45 focus:bg-background focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--primary)_12%,transparent),0_8px_24px_-8px_rgb(0_0_0/0.35)] focus:outline-none dark:bg-input/30 dark:focus:bg-background",
 							disabled && "cursor-not-allowed opacity-50",
 						)}
 						aria-label="Search Input"
@@ -220,7 +220,7 @@ const SearchBar = memo(
 SearchBar.displayName = "SearchBar";
 
 const SearchBarSkeleton = memo(function SearchBarSkeleton() {
-	return <Skeleton className="h-11 w-full rounded-xl" />;
+	return <Skeleton className="h-11 w-full rounded-full" />;
 });
 
 SearchBarSkeleton.displayName = "SearchBarSkeleton";

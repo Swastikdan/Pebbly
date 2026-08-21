@@ -166,7 +166,7 @@ export function WatchlistCard({
 						{progressOption.label}
 					</Button>
 					{isRecommended && (
-						<span className="inline-flex items-center gap-1 rounded-lg bg-blue-500/15 text-blue-500 border border-blue-500/30 px-2.5 py-1 text-[10px] font-semibold">
+						<span className="inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/12 px-2.5 py-1 text-[10px] font-semibold text-primary">
 							<Sparkles size={11} />
 							Recommended
 						</span>
