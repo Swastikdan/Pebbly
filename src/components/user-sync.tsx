@@ -79,6 +79,14 @@ export const UserSync = () => {
 				void queryClient.invalidateQueries({
 					queryKey: queryKeys.recommendations.history(user?.id),
 				});
+				// Feedback writes and homepage regeneration also live in the AI
+				// revision domain, so other devices pick them up on the same poll.
+				void queryClient.invalidateQueries({
+					queryKey: queryKeys.recommendations.homepage(user?.id),
+				});
+				void queryClient.invalidateQueries({
+					queryKey: queryKeys.recommendations.feedback(user?.id),
+				});
 			}
 		},
 		[queryClient, user?.id],

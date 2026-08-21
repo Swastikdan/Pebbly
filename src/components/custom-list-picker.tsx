@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import {
@@ -9,11 +9,8 @@ import {
 	DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { queryKeys } from "@/lib/query/keys";
-import {
-	getCustomLists,
-	getItemLists,
-	toggleListItem,
-} from "@/server/fns/lists";
+import { useRepository } from "@/lib/repository/use-repository";
+import { getCustomLists, getItemLists } from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
 import { CustomListDialog } from "./custom-list-dialog";
 
@@ -25,7 +22,7 @@ export function CustomListPicker({
 	mediaType: "movie" | "tv";
 }) {
 	const { isSignedIn, user } = useUser();
-	const queryClient = useQueryClient();
+	const repository = useRepository();
 	const listsQuery = useQuery({
 		queryKey: queryKeys.lists.all(user?.id),
 		queryFn: () => unwrap(getCustomLists()),
@@ -35,28 +32,6 @@ export function CustomListPicker({
 		queryKey: queryKeys.lists.itemLists(tmdbId, mediaType, user?.id),
 		queryFn: () => unwrap(getItemLists({ data: { tmdbId, mediaType } })),
 		enabled: !!isSignedIn,
-	});
-	const toggleListItemMutation = useMutation({
-		mutationFn: (args: {
-			listId: string;
-			tmdbId: number;
-			mediaType: "movie" | "tv";
-			title?: string;
-			image?: string;
-			backdrop?: string;
-			rating?: number;
-			release_date?: string;
-			overview?: string;
-		}) => unwrap(toggleListItem({ data: args })),
-		onSuccess: () => {
-			// Refresh membership, itemCount, and previews with server state.
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.lists.itemLists(tmdbId, mediaType, user?.id),
-			});
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.lists.all(user?.id),
-			});
-		},
 	});
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 
@@ -81,11 +56,15 @@ export function CustomListPicker({
 								className="rounded-lg"
 								onSelect={(e) => e.preventDefault()}
 								onCheckedChange={() => {
-									toggleListItemMutation.mutate({
-										listId: list.id,
-										tmdbId,
-										mediaType,
-									});
+									void repository
+										.toggleListItem({
+											listId: list.id,
+											tmdbId,
+											mediaType,
+										})
+										.catch((error) =>
+											console.error("Failed to toggle list item", error),
+										);
 								}}
 							>
 								{list.color && (

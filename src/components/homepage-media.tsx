@@ -9,6 +9,7 @@ import {
 	getBasicTvDetails,
 	getMedia,
 } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type {
 	BasicMovie,
 	BasicTv,
@@ -82,7 +83,7 @@ const useMediaQuery = (
 	},
 ) => {
 	const { data, isFetching, error } = useQuery({
-		queryKey: [type],
+		queryKey: queryKeys.tmdb.homepageMedia(type),
 		queryFn: () => getMedia({ type }),
 	});
 
@@ -191,7 +192,7 @@ function ContinueWatchingContent({
 	}[];
 }) {
 	const queries = items.map((item) => ({
-		queryKey: ["continue-watching", item.id, item.type],
+		queryKey: queryKeys.tmdb.continueWatching(item.id, item.type),
 		queryFn: () =>
 			item.type === "movie"
 				? getBasicMovieDetails({ id: Number(item.id) })

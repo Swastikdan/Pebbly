@@ -6,6 +6,7 @@ import { ShareButton } from "@/components/share-button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getCredits } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 
 import type { CrewMember } from "@/lib/tmdb-schemas";
 
@@ -17,7 +18,7 @@ export const MediaCreditSection = (props: {
 }) => {
 	const { id, slug, title, type } = props;
 	const { data, isFetching, error } = useQuery({
-		queryKey: ["media-credits", id, type],
+		queryKey: queryKeys.tmdb.credits(id, type),
 		queryFn: async () => getCredits({ id, type }),
 	});
 

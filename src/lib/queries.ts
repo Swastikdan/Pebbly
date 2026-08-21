@@ -1,5 +1,5 @@
 import type { MediaListQuery, MediaQuery } from "@/types";
-import { tmdbFetch } from "./tmdb";
+import { getTmdbFetch } from "./tmdb";
 import type {
 	BasicMovie,
 	BasicTv,
@@ -32,7 +32,7 @@ async function safeFetch<Output>(
 ): Promise<Output> {
 	try {
 		return (await (
-			tmdbFetch as (url: string, opts: unknown) => Promise<Output>
+			getTmdbFetch() as (url: string, opts: unknown) => Promise<Output>
 		)(url, { output: schema })) as Output;
 	} catch (error: unknown) {
 		if (import.meta.env.DEV) {

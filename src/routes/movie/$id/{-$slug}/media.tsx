@@ -9,6 +9,7 @@ import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicMovieDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { Movie } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
@@ -20,13 +21,12 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/media")({
 			throw notFound();
 		}
 		context.queryClient.prefetchQuery({
-			queryKey: ["basic_movie-details", id],
+			queryKey: queryKeys.tmdb.basicMovieDetails(Number(id)),
 			queryFn: () => getBasicMovieDetails({ id: parsed.data }),
 		});
-		const data = context.queryClient.getQueryData<Movie>([
-			"basic_movie-details",
-			id,
-		]);
+		const data = context.queryClient.getQueryData<Movie>(
+			queryKeys.tmdb.basicMovieDetails(Number(id)),
+		);
 		const title = formatMediaTitle.decode(slug ?? "");
 		return { id, slug, title, posterPath: data?.poster_path ?? null };
 	},
@@ -62,7 +62,7 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/media")({
 function MovieMediaPage() {
 	const { id, slug, title } = Route.useLoaderData();
 	const { data, isLoading } = useQuery({
-		queryKey: ["basic_movie-details", id],
+		queryKey: queryKeys.tmdb.basicMovieDetails(Number(id)),
 		queryFn: async () => await getBasicMovieDetails({ id: parseInt(id, 10) }),
 		enabled: !!id,
 	});

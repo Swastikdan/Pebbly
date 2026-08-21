@@ -44,14 +44,18 @@ export function beginDeleteListOp(
 	listId: string,
 	userId: string | undefined,
 ): OpHandle {
-	return beginOp(queryClient, [
-		{
-			key: queryKeys.lists.all(userId),
-			touchedIds: [listId],
-			idOf: listIdOf,
-			apply: (rows: CustomListRow[]) => rows.filter((l) => l.id !== listId),
-		},
-	]);
+	return beginOp(
+		queryClient,
+		[
+			{
+				key: queryKeys.lists.all(userId),
+				touchedIds: [listId],
+				idOf: listIdOf,
+				apply: (rows: CustomListRow[]) => rows.filter((l) => l.id !== listId),
+			},
+		],
+		{ domain: "lists" },
+	);
 }
 
 export type CreateListArgs = {
@@ -68,29 +72,33 @@ export function beginCreateListOp(
 	userId: string | undefined,
 ): OpHandle {
 	const now = Date.now();
-	return beginOp(queryClient, [
-		{
-			key: queryKeys.lists.all(userId),
-			touchedIds: [optimisticId],
-			idOf: listIdOf,
-			apply: (rows: CustomListRow[]) => [
-				...rows,
-				{
-					id: optimisticId,
-					userId: "optimistic",
-					name: args.name,
-					color: args.color ?? null,
-					visibility: args.visibility ?? null,
-					listType: args.listType ?? null,
-					sortOrder: rows.length,
-					createdAt: now,
-					updatedAt: now,
-					previews: [],
-					itemCount: 0,
-				},
-			],
-		},
-	]);
+	return beginOp(
+		queryClient,
+		[
+			{
+				key: queryKeys.lists.all(userId),
+				touchedIds: [optimisticId],
+				idOf: listIdOf,
+				apply: (rows: CustomListRow[]) => [
+					...rows,
+					{
+						id: optimisticId,
+						userId: "optimistic",
+						name: args.name,
+						color: args.color ?? null,
+						visibility: args.visibility ?? null,
+						listType: args.listType ?? null,
+						sortOrder: rows.length,
+						createdAt: now,
+						updatedAt: now,
+						previews: [],
+						itemCount: 0,
+					},
+				],
+			},
+		],
+		{ domain: "lists" },
+	);
 }
 
 export type CreateListAndAddArgs = CreateListArgs & {
@@ -150,7 +158,7 @@ export function beginCreateListAndAddOp(
 			},
 		},
 	];
-	return beginOp(queryClient, entries);
+	return beginOp(queryClient, entries, { domain: "lists" });
 }
 
 export type UpdateListArgs = CreateListArgs & { listId: string };
@@ -160,30 +168,34 @@ export function beginUpdateListOp(
 	args: UpdateListArgs,
 	userId: string | undefined,
 ): OpHandle {
-	return beginOp(queryClient, [
-		{
-			key: queryKeys.lists.all(userId),
-			touchedIds: [args.listId],
-			idOf: listIdOf,
-			apply: (rows: CustomListRow[]) =>
-				rows.map((l) =>
-					l.id === args.listId
-						? {
-								...l,
-								...(args.name !== undefined && { name: args.name }),
-								...(args.color !== undefined && { color: args.color }),
-								...(args.visibility !== undefined && {
-									visibility: args.visibility,
-								}),
-								...(args.listType !== undefined && {
-									listType: args.listType,
-								}),
-								updatedAt: Date.now(),
-							}
-						: l,
-				),
-		},
-	]);
+	return beginOp(
+		queryClient,
+		[
+			{
+				key: queryKeys.lists.all(userId),
+				touchedIds: [args.listId],
+				idOf: listIdOf,
+				apply: (rows: CustomListRow[]) =>
+					rows.map((l) =>
+						l.id === args.listId
+							? {
+									...l,
+									...(args.name !== undefined && { name: args.name }),
+									...(args.color !== undefined && { color: args.color }),
+									...(args.visibility !== undefined && {
+										visibility: args.visibility,
+									}),
+									...(args.listType !== undefined && {
+										listType: args.listType,
+									}),
+									updatedAt: Date.now(),
+								}
+							: l,
+					),
+			},
+		],
+		{ domain: "lists" },
+	);
 }
 
 export type ToggleListItemArgs = {
@@ -309,7 +321,7 @@ export function beginToggleListItemOp(
 		},
 	];
 
-	return { handle: beginOp(queryClient, entries), adding };
+	return { handle: beginOp(queryClient, entries, { domain: "lists" }), adding };
 }
 
 /**

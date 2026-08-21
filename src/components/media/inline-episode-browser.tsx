@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-
 import { lazy, Suspense, useState } from "react";
 import {
 	Accordion,
@@ -12,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { queryKeys } from "@/lib/query/keys";
 
 const VideoPlayerModal = lazy(() =>
 	import("@/components/video-player-modal").then((m) => ({
@@ -20,12 +20,11 @@ const VideoPlayerModal = lazy(() =>
 );
 
 import { IMAGE_PREFIX } from "@/constants";
+import { fetchSeasonDetails } from "@/hooks/use-season-details";
 import {
 	useEpisodeProgress,
 	useEpisodeWatched,
 } from "@/hooks/watch-progress/use-watch-progress";
-
-import { getTvSeasonDetails } from "@/lib/queries";
 import type { SeasonInfo, TvEpisodeDetail } from "@/lib/tmdb-schemas";
 
 interface InlineEpisodeBrowserProps {
@@ -196,8 +195,8 @@ function SeasonEpisodeList({
 	episodeTracker: ReturnType<typeof useEpisodeWatched>;
 }) {
 	const { data: seasonData, isLoading } = useQuery({
-		queryKey: ["tv_season_details", tvId, seasonNumber],
-		queryFn: () => getTvSeasonDetails({ tvId, seasonNumber }),
+		queryKey: queryKeys.tmdb.seasonDetails(tvId, seasonNumber),
+		queryFn: () => fetchSeasonDetails(tvId, seasonNumber),
 		enabled: !!tvId && seasonNumber >= 0,
 	});
 
