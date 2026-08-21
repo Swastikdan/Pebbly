@@ -1,11 +1,16 @@
 import { useClerk, useUser } from "@clerk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { type DataVersion, fetchDataVersion } from "@/hooks/data-version";
 import { clearPendingOps } from "@/hooks/pending-ops";
 import { usePermissions } from "@/hooks/use-permissions";
+import { subscribeToCrossTabMutations } from "@/lib/cross-tab-sync";
 import { queryKeys } from "@/lib/query/keys";
-import { takeOwnMutationCounts } from "@/lib/realtime-mutations";
+import {
+	hasRecentOwnMutation,
+	type MutationDomain,
+	takeOwnMutationCounts,
+} from "@/lib/realtime-mutations";
 import { storeUser } from "@/server/fns/users";
 import { unwrap } from "@/server/schema/common";
 
@@ -14,6 +19,9 @@ export const UserSync = () => {
 	const queryClient = useQueryClient();
 	const { signOut } = useClerk();
 	const { isBanned, isSignedIn, loading } = usePermissions();
+
+	// Per-user revision baselines for change detection.
+	const lastRevsRef = useRef<Record<string, DataVersion>>({});
 
 	// Sync user profile data to D1 on mount / user change
 	useEffect(() => {
@@ -45,21 +53,65 @@ export const UserSync = () => {
 	useEffect(() => {
 		if (isLoaded && !user) {
 			clearPendingOps(queryClient);
+			// Also drop per-user revision baselines; keeping them keyed by user
+			// id would leak entries across sign-out/sign-in of other accounts.
+			lastRevsRef.current = {};
 		}
 	}, [isLoaded, user, queryClient]);
+
+	const invalidateDomain = useCallback(
+		(domain: MutationDomain) => {
+			if (domain === "watchlist") {
+				void queryClient.invalidateQueries({
+					queryKey: queryKeys.watchlist.list(),
+				});
+			} else if (domain === "lists") {
+				void queryClient.invalidateQueries({
+					queryKey: queryKeys.lists.all(user?.id),
+				});
+				void queryClient.invalidateQueries({
+					queryKey: queryKeys.lists.itemsPrefix(),
+				});
+				void queryClient.invalidateQueries({
+					queryKey: queryKeys.lists.itemListsPrefix(),
+				});
+			} else if (domain === "ai") {
+				void queryClient.invalidateQueries({
+					queryKey: queryKeys.recommendations.history(user?.id),
+				});
+			}
+		},
+		[queryClient, user?.id],
+	);
+
+	// Same-browser sibling tabs learn about this tab's mutations instantly via
+	// BroadcastChannel instead of waiting for the next version poll.
+	useEffect(() => {
+		return subscribeToCrossTabMutations(invalidateDomain);
+	}, [invalidateDomain]);
 
 	// Realtime change detection: poll the tiny per-user revision counters (1
 	// row read) instead of re-fetching whole collections on an interval. When a
 	// revision changes, e.g. another device/tab toggled an item, invalidate
 	// the matching query group so mounted queries refetch. Cost stays O(1) no
 	// matter how large the user's watchlist/lists are.
-	const lastRevsRef = useRef<Record<string, DataVersion>>({});
 	const versionQuery = useQuery({
 		queryKey: queryKeys.data.version(user?.id),
 		queryFn: fetchDataVersion,
 		enabled: !!isSignedIn,
-		// Pauses when the tab is hidden.
-		refetchInterval: 10_000,
+		// Instant convergence when the user returns to the tab (covers
+		// visibilitychange too via TanStack's focus manager) instead of
+		// waiting for the next tick of the interval.
+		refetchOnWindowFocus: true,
+		// Adaptive cadence: burst right after own mutations (external changes
+		// converge fast while the user is active), normal cadence during an
+		// active session, slow when quiet, and back off when the API is
+		// failing so a degraded backend isn't hammered. Pauses when hidden.
+		refetchInterval: (query) => {
+			if (query.state.fetchFailureCount >= 3) return 60_000;
+			if (hasRecentOwnMutation(20_000)) return 4_000;
+			return hasRecentOwnMutation(2 * 60_000) ? 10_000 : 30_000;
+		},
 	});
 
 	// Diagnostic: a failing version poll silently disables cross-device sync
@@ -81,7 +133,8 @@ export const UserSync = () => {
 		if (
 			typeof current.watchlistRev !== "number" ||
 			typeof current.listsRev !== "number" ||
-			typeof current.aiRev !== "number"
+			typeof current.aiRev !== "number" ||
+			typeof current.permsRev !== "number"
 		) {
 			console.warn("[user-sync] Unexpected data-version payload:", current);
 			return;
@@ -95,30 +148,25 @@ export const UserSync = () => {
 
 		if (prev) {
 			if (current.watchlistRev - prev.watchlistRev > own.watchlist) {
-				void queryClient.invalidateQueries({
-					queryKey: queryKeys.watchlist.list(),
-				});
+				invalidateDomain("watchlist");
 			}
 			if (current.listsRev - prev.listsRev > own.lists) {
-				void queryClient.invalidateQueries({
-					queryKey: queryKeys.lists.all(user.id),
-				});
-				void queryClient.invalidateQueries({
-					queryKey: queryKeys.lists.itemsPrefix(),
-				});
-				void queryClient.invalidateQueries({
-					queryKey: queryKeys.lists.itemListsPrefix(),
-				});
+				invalidateDomain("lists");
 			}
 			if (current.aiRev - prev.aiRev > own.ai) {
+				invalidateDomain("ai");
+			}
+			// Permission changes (roles, ban flag, global feature flags) are
+			// never this client's own writes, any delta means refetch perms.
+			if (current.permsRev !== prev.permsRev) {
 				void queryClient.invalidateQueries({
-					queryKey: queryKeys.recommendations.history(user.id),
+					queryKey: queryKeys.permissions(user.id),
 				});
 			}
 		}
 
 		lastRevsRef.current[user.id] = current;
-	}, [user?.id, versionQuery.data, queryClient]);
+	}, [user?.id, versionQuery.data, queryClient, invalidateDomain]);
 
 	return null;
 };

@@ -29,6 +29,10 @@ export const users = sqliteTable("users", {
 	watchlistRev: integer("watchlist_rev").default(0).notNull(),
 	listsRev: integer("lists_rev").default(0).notNull(),
 	aiRev: integer("ai_rev").default(0).notNull(),
+	// Revision for RBAC state (roles, ban flag, global feature flags) so the
+	// same single-row version poll can drive permission refreshes; a global
+	// feature-flag toggle bumps every user's counter.
+	permsRev: integer("perms_rev").default(0).notNull(),
 });
 
 export const watchItems = sqliteTable(

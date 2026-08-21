@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
 	type AuthUser,
 	getClerkAdminIds,
@@ -10,6 +10,7 @@ import {
 import { getDb } from "../db/client";
 import { rolePermissions, users } from "../db/schema";
 import { getEnv } from "../env";
+import { bumpPermsRev } from "../helpers/watch-item";
 import {
 	DYNAMIC_ROLES,
 	getUserFeatures,
@@ -112,6 +113,10 @@ export const setRolePermission = createServerFn({ method: "POST" })
 				set: { enabled: data.enabled },
 			});
 
+		// Global feature flags affect every user, so all permission revisions
+		// move together (cheap at this scale, keeps clients off a fixed poll).
+		await db.update(users).set({ permsRev: sql`${users.permsRev} + 1` });
+
 		return ok({ ok: true });
 	});
 
@@ -137,6 +142,7 @@ export const setUserRoles = createServerFn({ method: "POST" })
 			})
 			.where(eq(users.id, target[0].id));
 
+		await bumpPermsRev(db, target[0].id);
 		invalidateUserCache(target[0].tokenIdentifier);
 		return ok({ ok: true });
 	});
@@ -165,6 +171,7 @@ export const setUserBanned = createServerFn({ method: "POST" })
 			.set({ isBanned: data.banned })
 			.where(eq(users.id, target[0].id));
 
+		await bumpPermsRev(db, target[0].id);
 		invalidateUserCache(target[0].tokenIdentifier);
 		return ok({ ok: true });
 	});

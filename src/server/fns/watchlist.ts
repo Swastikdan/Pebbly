@@ -128,10 +128,17 @@ export const getMediaState = createServerFn({ method: "POST" })
  */
 export const getDataVersion = createServerFn({ method: "POST" }).handler(
 	async (): Promise<
-		ApiResult<{ watchlistRev: number; listsRev: number; aiRev: number }>
+		ApiResult<{
+			watchlistRev: number;
+			listsRev: number;
+			aiRev: number;
+			permsRev: number;
+		}>
 	> => {
 		const user = await getCurrentUser();
-		if (!user) return ok({ watchlistRev: 0, listsRev: 0, aiRev: 0 });
+		if (!user) {
+			return ok({ watchlistRev: 0, listsRev: 0, aiRev: 0, permsRev: 0 });
+		}
 
 		const db = getDb(getEnv());
 		const rows = await db
@@ -139,12 +146,15 @@ export const getDataVersion = createServerFn({ method: "POST" }).handler(
 				watchlistRev: users.watchlistRev,
 				listsRev: users.listsRev,
 				aiRev: users.aiRev,
+				permsRev: users.permsRev,
 			})
 			.from(users)
 			.where(eq(users.id, user.id))
 			.limit(1);
 
-		return ok(rows[0] ?? { watchlistRev: 0, listsRev: 0, aiRev: 0 });
+		return ok(
+			rows[0] ?? { watchlistRev: 0, listsRev: 0, aiRev: 0, permsRev: 0 },
+		);
 	},
 );
 

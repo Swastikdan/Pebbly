@@ -5,6 +5,7 @@ export interface DataVersion {
 	watchlistRev: number;
 	listsRev: number;
 	aiRev: number;
+	permsRev: number;
 }
 
 /** 1-row read polled by UserSync to detect cross-device changes. */

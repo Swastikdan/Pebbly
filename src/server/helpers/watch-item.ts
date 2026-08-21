@@ -57,7 +57,7 @@ type MetadataDbPatch = {
 
 export type WatchItemRow = typeof watchItems.$inferSelect;
 
-export type UserRevColumn = "watchlistRev" | "listsRev" | "aiRev";
+export type UserRevColumn = "watchlistRev" | "listsRev" | "aiRev" | "permsRev";
 
 /**
  * Bump one of the user's data-domain revision counters. Clients poll this
@@ -75,7 +75,9 @@ export async function bumpUserRev(
 			? { watchlistRev: sql`${users.watchlistRev} + 1` }
 			: column === "listsRev"
 				? { listsRev: sql`${users.listsRev} + 1` }
-				: { aiRev: sql`${users.aiRev} + 1` };
+				: column === "aiRev"
+					? { aiRev: sql`${users.aiRev} + 1` }
+					: { permsRev: sql`${users.permsRev} + 1` };
 	await db.update(users).set(patch).where(eq(users.id, userId));
 }
 
@@ -87,6 +89,9 @@ export const bumpListsRev = (db: Db, userId: string) =>
 
 export const bumpAiRev = (db: Db, userId: string) =>
 	bumpUserRev(db, userId, "aiRev");
+
+export const bumpPermsRev = (db: Db, userId: string) =>
+	bumpUserRev(db, userId, "permsRev");
 
 export async function getWatchItem(
 	db: Db,
