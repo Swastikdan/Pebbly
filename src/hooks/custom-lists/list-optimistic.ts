@@ -61,8 +61,10 @@ export function beginDeleteListOp(
 export type CreateListArgs = {
 	name: string;
 	color?: string;
+	description?: string;
 	visibility?: "public" | "private";
 	listType?: "custom" | "pebbly-picks";
+	sortType?: "unordered" | "ordered";
 };
 
 export function beginCreateListOp(
@@ -86,8 +88,10 @@ export function beginCreateListOp(
 						userId: "optimistic",
 						name: args.name,
 						color: args.color ?? null,
+						description: args.description ?? null,
 						visibility: args.visibility ?? null,
 						listType: args.listType ?? null,
+						sortType: args.sortType ?? "unordered",
 						sortOrder: rows.length,
 						createdAt: now,
 						updatedAt: now,
@@ -136,8 +140,10 @@ export function beginCreateListAndAddOp(
 					userId: "optimistic",
 					name: args.name,
 					color: args.color ?? null,
+					description: args.description ?? null,
 					visibility: args.visibility ?? null,
 					listType: args.listType ?? null,
+					sortType: args.sortType ?? "unordered",
 					sortOrder: (rows as CustomListRow[]).length,
 					createdAt: now,
 					updatedAt: now,
@@ -161,7 +167,7 @@ export function beginCreateListAndAddOp(
 	return beginOp(queryClient, entries, { domain: "lists" });
 }
 
-export type UpdateListArgs = CreateListArgs & { listId: string };
+export type UpdateListArgs = Partial<CreateListArgs> & { listId: string };
 
 export function beginUpdateListOp(
 	queryClient: QueryClient,
@@ -182,11 +188,17 @@ export function beginUpdateListOp(
 									...l,
 									...(args.name !== undefined && { name: args.name }),
 									...(args.color !== undefined && { color: args.color }),
+									...(args.description !== undefined && {
+										description: args.description,
+									}),
 									...(args.visibility !== undefined && {
 										visibility: args.visibility,
 									}),
 									...(args.listType !== undefined && {
 										listType: args.listType,
+									}),
+									...(args.sortType !== undefined && {
+										sortType: args.sortType,
 									}),
 									updatedAt: Date.now(),
 								}
@@ -223,6 +235,8 @@ function buildOptimisticListItem(args: ToggleListItemArgs): ListItemRow {
 		listId: args.listId,
 		tmdbId: args.tmdbId,
 		mediaType: args.mediaType,
+		// Sorts last under `position ASC` until the server sync lands.
+		position: Date.now(),
 		addedAt: Date.now(),
 		title: args.title ?? null,
 		image: args.image ?? null,
@@ -365,4 +379,57 @@ export function applyToggleInverse(
 			applyListCountToggle(lists, args, inverse),
 		);
 	}
+}
+
+export type ReorderItemsArgs = {
+	listId: string;
+	orderedItems: Array<{ tmdbId: number; mediaType: "movie" | "tv" }>;
+};
+
+/**
+ * Optimistically re-sort the cached items array into the submitted order and
+ * stamp matching 1-based positions, so the UI moves immediately while the
+ * server write is in flight.
+ */
+export function beginReorderListItemsOp(
+	queryClient: QueryClient,
+	args: ReorderItemsArgs,
+	userId: string | undefined,
+): OpHandle {
+	const itemsKey = queryKeys.lists.items(args.listId, userId);
+	return beginOp(
+		queryClient,
+		[
+			{
+				key: itemsKey,
+				touchedIds: args.orderedItems.map((entry) => String(entry.tmdbId)),
+				idOf: itemTmdbIdOf,
+				apply: (rows: ListItemRow[]) => {
+					const rank = new Map(
+						args.orderedItems.map((entry, index) => [
+							`${entry.tmdbId}_${entry.mediaType}`,
+							index,
+						]),
+					);
+					return rows
+						.map((row) => {
+							const nextRank = rank.get(`${row.tmdbId}_${row.mediaType}`);
+							return nextRank !== undefined
+								? { ...row, position: nextRank + 1 }
+								: row;
+						})
+						.sort((a, b) => {
+							const rankA =
+								rank.get(`${a.tmdbId}_${a.mediaType}`) ??
+								Number.MAX_SAFE_INTEGER;
+							const rankB =
+								rank.get(`${b.tmdbId}_${b.mediaType}`) ??
+								Number.MAX_SAFE_INTEGER;
+							return rankA - rankB;
+						});
+				},
+			},
+		],
+		{ domain: "lists" },
+	);
 }

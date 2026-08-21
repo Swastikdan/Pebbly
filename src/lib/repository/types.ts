@@ -102,13 +102,23 @@ export interface WatchlistRepository {
 	): Promise<void>;
 }
 
+export type ReorderListItemsRepoArgs = {
+	listId: string;
+	orderedItems: Array<{ tmdbId: number; mediaType: "movie" | "tv" }>;
+};
+
 export interface ListsRepository {
 	deleteList(listId: string): Promise<void>;
 	/** Create a list; resolves with the created list's id. */
 	createList(args: CreateListArgs): Promise<string>;
 	createListAndAddItem(args: CreateListAndAddArgs): Promise<void>;
 	updateList(args: UpdateListArgs): Promise<void>;
-	toggleListItem(args: ToggleListItemArgs): Promise<void>;
+	/** Toggle membership; resolves true when the item was added, false when removed. */
+	toggleListItem(args: ToggleListItemArgs): Promise<boolean>;
+	/** Persist a new order for a list's items (ranked lists). */
+	reorderListItem(args: ReorderListItemsRepoArgs): Promise<void>;
+	/** Clone a list (own or public); resolves with the clone's id. */
+	cloneList(sourceListId: string): Promise<string>;
 }
 
 export type Repository = WatchlistRepository & ListsRepository;

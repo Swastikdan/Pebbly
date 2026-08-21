@@ -4,6 +4,7 @@ import {
 	beginCreateListAndAddOp,
 	beginCreateListOp,
 	beginDeleteListOp,
+	beginReorderListItemsOp,
 	beginToggleListItemOp,
 	beginUpdateListOp,
 	swapListId,
@@ -33,9 +34,11 @@ import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import {
+	cloneCustomList,
 	createCustomList,
 	createCustomListAndAddItem,
 	deleteCustomList,
+	reorderListItems,
 	toggleListItem,
 	updateCustomList,
 } from "@/server/fns/lists";
@@ -580,6 +583,7 @@ export function createRemoteRepository(
 					queryKeys.lists.itemsPrefix(),
 					queryKeys.lists.itemListsPrefix(),
 				]);
+				return result;
 			} catch (error) {
 				console.error("Failed to toggle list item", error);
 				handle?.remove();
@@ -590,6 +594,22 @@ export function createRemoteRepository(
 				]);
 				throw error;
 			}
+		},
+
+		async reorderListItem(args) {
+			await runMutationAsync(queryClient, {
+				begin: () => beginReorderListItemsOp(queryClient, args, userId),
+				run: () => unwrap(reorderListItems({ data: args })),
+				syncKeys: [queryKeys.lists.items(args.listId, userId)],
+				errorMessage: "reorder list items",
+			});
+		},
+
+		async cloneList(sourceListId) {
+			const newId = await unwrap(cloneCustomList({ data: { sourceListId } }));
+			recordOwnMutation("lists");
+			scheduleSync(queryClient, [queryKeys.lists.all(userId)]);
+			return newId;
 		},
 	};
 

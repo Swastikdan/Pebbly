@@ -1,4 +1,4 @@
-import { Check, Globe, List, ListOrdered, Lock, Palette } from "lucide-react";
+import { Check, Copy, Globe, List, ListOrdered, Lock } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,7 @@ import {
 	useCreateCustomListAndAddItem,
 	useUpdateCustomList,
 } from "@/hooks/use-custom-lists";
-import { cn } from "@/lib/utils";
+import { cn, formatMediaTitle } from "@/lib/utils";
 
 const PRESET_COLORS = [
 	{ hex: "#ef4444", name: "Red" },
@@ -29,13 +29,43 @@ const PRESET_COLORS = [
 	{ hex: "#14b8a6", name: "Teal" },
 ];
 
+function SegmentedButton({
+	active,
+	onClick,
+	icon: Icon,
+	label,
+}: {
+	active: boolean;
+	onClick: () => void;
+	icon: typeof Globe;
+	label: string;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className={cn(
+				"flex flex-1 items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
+				active
+					? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
+					: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
+			)}
+			aria-pressed={active}
+		>
+			<Icon size={11} />
+			{label}
+		</button>
+	);
+}
+
 export function CustomListDialog({
 	open,
 	onOpenChange,
 	initialName,
 	initialColor,
+	initialDescription,
 	initialVisibility,
-	initialListType,
+	initialSortType,
 	listId,
 	autoAddMedia,
 }: {
@@ -43,8 +73,9 @@ export function CustomListDialog({
 	onOpenChange: (open: boolean) => void;
 	initialName?: string;
 	initialColor?: string;
-	initialVisibility?: string;
-	initialListType?: string;
+	initialDescription?: string;
+	initialVisibility?: "public" | "private";
+	initialSortType?: "unordered" | "ordered";
 	listId?: string;
 	autoAddMedia?: {
 		tmdbId: number;
@@ -58,13 +89,14 @@ export function CustomListDialog({
 	};
 }) {
 	const [name, setName] = useState(initialName ?? "");
-	const [description, setDescription] = useState("");
+	const [description, setDescription] = useState(initialDescription ?? "");
 	const [color, setColor] = useState(initialColor ?? "");
-	const [visibility, setVisibility] = useState<"private" | "public">("private");
-	const [listType, setListType] = useState<"unordered" | "ordered">(
-		"unordered",
+	const [visibility, setVisibility] = useState<"private" | "public">(
+		initialVisibility ?? "private",
 	);
-	const [showColorPicker, setShowColorPicker] = useState(false);
+	const [sortType, setSortType] = useState<"unordered" | "ordered">(
+		initialSortType ?? "unordered",
+	);
 	const [error, setError] = useState("");
 	const [saving, setSaving] = useState(false);
 
@@ -79,15 +111,21 @@ export function CustomListDialog({
 	useEffect(() => {
 		if (open) {
 			setName(initialName ?? "");
-			setDescription("");
+			setDescription(initialDescription ?? "");
 			setColor(initialColor ?? "");
-			setVisibility((initialVisibility as "private" | "public") ?? "private");
-			setListType((initialListType as "unordered" | "ordered") ?? "unordered");
-			setShowColorPicker(false);
+			setVisibility(initialVisibility ?? "private");
+			setSortType(initialSortType ?? "unordered");
 			setError("");
 			setSaving(false);
 		}
-	}, [open, initialName, initialColor, initialVisibility, initialListType]);
+	}, [
+		open,
+		initialName,
+		initialColor,
+		initialDescription,
+		initialVisibility,
+		initialSortType,
+	]);
 
 	const handleSubmit = async () => {
 		const trimmed = name.trim();
@@ -107,13 +145,17 @@ export function CustomListDialog({
 					listId: listId as string,
 					name: trimmed,
 					color: color || undefined,
+					description: description.trim() || undefined,
 					visibility,
+					sortType,
 				});
 			} else if (autoAddMedia) {
 				await createListAndAdd({
 					name: trimmed,
 					color: color || undefined,
+					description: description.trim() || undefined,
 					visibility,
+					sortType,
 					tmdbId: autoAddMedia.tmdbId,
 					mediaType: autoAddMedia.mediaType,
 					title: autoAddMedia.title,
@@ -127,13 +169,11 @@ export function CustomListDialog({
 				await createList({
 					name: trimmed,
 					color: color || undefined,
+					description: description.trim() || undefined,
 					visibility,
+					sortType,
 				});
 			}
-			setName("");
-			setDescription("");
-			setColor("");
-			setError("");
 			onOpenChange(false);
 		} catch (err) {
 			setError(
@@ -144,108 +184,54 @@ export function CustomListDialog({
 		}
 	};
 
+	const handleCopyLink = () => {
+		const slug = formatMediaTitle.encode(name.trim());
+		navigator.clipboard
+			.writeText(`${window.location.origin}/c/${listId}/${slug}`)
+			.then(() => {})
+			.catch(() => {});
+	};
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[420px] overflow-hidden rounded-xl p-0">
-				<div className="px-6 py-5 space-y-4">
+			<DialogContent className="sm:max-w-lg overflow-hidden rounded-xl p-0">
+				<div className="px-6 py-5 space-y-5">
 					<DialogHeader className="relative">
 						<DialogTitle className="text-lg font-semibold font-heading tracking-tight text-left pr-6">
-							{isEditing ? "Edit Collection" : "Create New Collection"}
+							{isEditing ? "Edit Collection" : "New Collection"}
 						</DialogTitle>
 					</DialogHeader>
 
-					{/* Collection Name Field */}
+					{/* Name */}
 					<div className="space-y-1.5">
 						<div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
-							<Label htmlFor={listNameId}>Collection Name</Label>
+							<Label htmlFor={listNameId}>Name</Label>
 							<span>{name.length}/50</span>
 						</div>
-						<div className="relative flex items-center">
-							<Input
-								id={listNameId}
-								type="text"
-								placeholder="Enter a name for your collection"
-								value={name}
-								onChange={(e) => {
-									setName(e.target.value);
-									setError("");
-								}}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") handleSubmit();
-								}}
-								maxLength={50}
-								autoFocus
-								className={cn(
-									"h-11 w-full rounded-xl border bg-muted/40 pl-4 pr-16 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
-									"placeholder:text-muted-foreground/40",
-									"focus-visible:border-border/80 focus-visible:bg-muted/65 focus-visible:ring-1 focus-visible:ring-foreground/10",
-									error ? "border-destructive/50" : "border-border/50",
-								)}
-							/>
-							{/* Inline Lock & Color Icons */}
-							<div className="absolute right-3 flex items-center gap-1.5">
-								<div className="text-muted-foreground/60 p-1 rounded-lg">
-									{visibility === "private" ? (
-										<Lock size={14} />
-									) : (
-										<Globe size={14} />
-									)}
-								</div>
-								<button
-									type="button"
-									onClick={() => setShowColorPicker(!showColorPicker)}
-									className={cn(
-										"size-5 rounded-full flex items-center justify-center cursor-pointer transition-[color,background-color,border-color,box-shadow] border border-border/40",
-										color
-											? "scale-105"
-											: "bg-gradient-to-tr from-violet-500 to-cyan-400 hover:scale-105",
-									)}
-									style={color ? { backgroundColor: color } : undefined}
-									title="Choose color"
-								>
-									{!color && <Palette size={10} className="text-white" />}
-								</button>
-							</div>
-						</div>
+						<Input
+							id={listNameId}
+							type="text"
+							placeholder='e.g. "Sci-Fi Favorites"'
+							value={name}
+							onChange={(e) => {
+								setName(e.target.value);
+								setError("");
+							}}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") handleSubmit();
+							}}
+							maxLength={50}
+							autoFocus
+							className={cn(
+								"h-10 w-full rounded-xl border bg-muted/40 px-3.5 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
+								"placeholder:text-muted-foreground/40",
+								"focus-visible:border-border/80 focus-visible:bg-muted/65 focus-visible:ring-1 focus-visible:ring-foreground/10",
+								error ? "border-destructive/50" : "border-border/50",
+							)}
+						/>
 					</div>
 
-					{/* Color Picker Drawer */}
-					{showColorPicker && (
-						<div className="p-3 bg-muted/50 rounded-xl border border-border/40 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-							<div className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
-								Select Color
-							</div>
-							<div className="flex flex-wrap gap-2">
-								{PRESET_COLORS.map((c) => {
-									const isSelected = color === c.hex;
-									return (
-										<button
-											key={c.hex}
-											type="button"
-											className={cn(
-												"relative size-6 rounded-full transition-[color,background-color,border-color,box-shadow] duration-200 hover:scale-110 cursor-pointer border border-border/20",
-												isSelected &&
-													"ring-2 ring-foreground ring-offset-2 ring-offset-background",
-											)}
-											style={{ backgroundColor: c.hex }}
-											onClick={() => setColor(color === c.hex ? "" : c.hex)}
-											aria-label={c.name}
-										>
-											{isSelected && (
-												<Check
-													size={12}
-													className="absolute inset-0 m-auto text-white drop-shadow-sm"
-													strokeWidth={3}
-												/>
-											)}
-										</button>
-									);
-								})}
-							</div>
-						</div>
-					)}
-
-					{/* Description Field */}
+					{/* Description */}
 					<div className="space-y-1.5">
 						<div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
 							<Label htmlFor={listDescId}>Description</Label>
@@ -253,12 +239,12 @@ export function CustomListDialog({
 						</div>
 						<textarea
 							id={listDescId}
-							placeholder="Add a description (optional)"
+							placeholder="What ties these titles together? (optional)"
 							value={description}
 							onChange={(e) => setDescription(e.target.value.substring(0, 150))}
 							maxLength={150}
 							className={cn(
-								"min-h-[70px] w-full rounded-xl border bg-muted/40 p-3 text-xs resize-none outline-none transition-[color,background-color,border-color,box-shadow] duration-200",
+								"min-h-[64px] w-full rounded-xl border bg-muted/40 p-3 text-xs resize-none outline-none transition-[color,background-color,border-color,box-shadow] duration-200",
 								"placeholder:text-muted-foreground/40",
 								"focus-visible:border-border/80 focus-visible:bg-muted/65 focus-visible:ring-1 focus-visible:ring-foreground/10",
 								"border-border/50",
@@ -266,86 +252,101 @@ export function CustomListDialog({
 						/>
 					</div>
 
-					{/* Visibility & List Type Section */}
-					<div className="grid grid-cols-2 gap-4">
-						{/* Visibility Selection */}
+					{/* Color */}
+					<div className="space-y-2">
+						<Label className="text-xs text-muted-foreground font-medium">
+							Color
+						</Label>
+						<div className="flex flex-wrap gap-1.5">
+							{PRESET_COLORS.map((c) => {
+								const isSelected = color === c.hex;
+								return (
+									<button
+										key={c.hex}
+										type="button"
+										className={cn(
+											"relative size-6 rounded-full transition-transform duration-150 hover:scale-110 cursor-pointer border border-black/10 dark:border-white/10",
+											isSelected &&
+												"ring-2 ring-foreground ring-offset-2 ring-offset-background scale-110",
+										)}
+										style={{ backgroundColor: c.hex }}
+										onClick={() => setColor(color === c.hex ? "" : c.hex)}
+										aria-label={c.name}
+										title={c.name}
+									>
+										{isSelected && (
+											<Check
+												size={12}
+												className="absolute inset-0 m-auto text-white drop-shadow-sm"
+												strokeWidth={3}
+											/>
+										)}
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
+					{/* Settings */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<div className="flex flex-col space-y-2">
 							<Label className="text-xs text-muted-foreground font-medium">
 								Visibility
 							</Label>
 							<div className="flex p-1 rounded-xl bg-muted/70 border border-border/50">
-								<button
-									type="button"
+								<SegmentedButton
+									active={visibility === "private"}
 									onClick={() => setVisibility("private")}
-									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
-										visibility === "private"
-											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
-											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
-									)}
-								>
-									<Lock size={11} />
-									Private
-								</button>
+									icon={Lock}
+									label="Private"
+								/>
+								<SegmentedButton
+									active={visibility === "public"}
+									onClick={() => setVisibility("public")}
+									icon={Globe}
+									label="Public"
+								/>
+							</div>
+							<p className="text-[10px] text-muted-foreground/80 leading-snug min-h-[28px]">
+								{visibility === "private"
+									? "Only you can see this collection."
+									: "Anyone with the link can view it."}
+							</p>
+							{isEditing && visibility === "public" && (
 								<button
 									type="button"
-									onClick={() => setVisibility("public")}
-									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
-										visibility === "public"
-											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
-											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
-									)}
+									onClick={handleCopyLink}
+									className="flex cursor-pointer items-center gap-1.5 self-start rounded-lg bg-secondary/70 px-2 py-1 text-[10px] font-semibold text-secondary-foreground transition-colors hover:bg-secondary"
 								>
-									<Globe size={11} />
-									Public
+									<Copy size={10} />
+									Copy public link
 								</button>
-							</div>
-							<div className="text-[10px] text-muted-foreground/80 leading-snug min-h-[30px]">
-								{visibility === "private"
-									? "Only you can see this watchlist"
-									: "Anyone with link can view"}
-							</div>
+							)}
 						</div>
 
-						{/* List Type Selection */}
 						<div className="flex flex-col space-y-2">
 							<Label className="text-xs text-muted-foreground font-medium">
-								List Type
+								Ordering
 							</Label>
 							<div className="flex p-1 rounded-xl bg-muted/70 border border-border/50">
-								<button
-									type="button"
-									onClick={() => setListType("unordered")}
-									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
-										listType === "unordered"
-											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
-											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
-									)}
-								>
-									<List size={11} />
-									Unordered
-								</button>
-								<button
-									type="button"
-									onClick={() => setListType("ordered")}
-									className={cn(
-										"flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
-										listType === "ordered"
-											? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
-											: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
-									)}
-								>
-									<ListOrdered size={11} />
-									Ordered
-								</button>
+								<SegmentedButton
+									active={sortType === "unordered"}
+									onClick={() => setSortType("unordered")}
+									icon={List}
+									label="Unordered"
+								/>
+								<SegmentedButton
+									active={sortType === "ordered"}
+									onClick={() => setSortType("ordered")}
+									icon={ListOrdered}
+									label="Ranked"
+								/>
 							</div>
-							<div className="text-[10px] text-muted-foreground/80 leading-snug min-h-[30px]">
-								{listType === "unordered"
-									? "Items are in a simple list"
-									: "Items are numbered/ranked"}
-							</div>
+							<p className="text-[10px] text-muted-foreground/80 leading-snug min-h-[28px]">
+								{sortType === "unordered"
+									? "A simple list of titles."
+									: "Titles are numbered #1, #2, … and can be reordered."}
+							</p>
 						</div>
 					</div>
 
@@ -355,17 +356,28 @@ export function CustomListDialog({
 						</p>
 					)}
 
-					<Button
-						onClick={handleSubmit}
-						disabled={saving || !name.trim()}
-						className="w-full h-11 text-xs font-bold transition-[color,background-color,border-color,box-shadow] cursor-pointer mt-1"
-					>
-						{saving
-							? "Saving..."
-							: isEditing
-								? "Save Changes"
-								: "Create Collection"}
-					</Button>
+					<div className="grid grid-cols-2 gap-2 pt-1">
+						<Button
+							type="button"
+							variant="secondary"
+							onClick={() => onOpenChange(false)}
+							disabled={saving}
+							className="h-10 text-xs font-semibold cursor-pointer"
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleSubmit}
+							disabled={saving || !name.trim()}
+							className="h-10 text-xs font-bold cursor-pointer"
+						>
+							{saving
+								? "Saving..."
+								: isEditing
+									? "Save Changes"
+									: "Create Collection"}
+						</Button>
+					</div>
 				</div>
 			</DialogContent>
 		</Dialog>
