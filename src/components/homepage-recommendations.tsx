@@ -11,6 +11,7 @@ import {
 	useToggleWatchlistItem,
 } from "@/hooks/use-watchlist";
 import { queryKeys } from "@/lib/query/keys";
+import { recordOwnMutation } from "@/lib/realtime-mutations";
 import {
 	type AIRecommendation,
 	titlesMatch,
@@ -223,6 +224,9 @@ export function HomepageRecommendations() {
 			generateHomepageRecommendations()
 				.then((result) => {
 					if (result.ok && result.data.success) {
+						// The generation wrote the homepage row and bumped the AI
+						// revision; count it so the poll doesn't refetch redundantly.
+						recordOwnMutation("ai");
 						refreshHomepage();
 					}
 				})
@@ -381,6 +385,9 @@ export function HomepageRecommendations() {
 						}),
 					);
 				}
+				// The write bumped the AI revision server-side; counting it keeps
+				// UserSync from treating our own write as an external change.
+				recordOwnMutation("ai");
 				refreshHomepage();
 			} catch (err) {
 				console.error("Failed to update recommendation feedback:", err);

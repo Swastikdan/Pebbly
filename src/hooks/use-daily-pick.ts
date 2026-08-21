@@ -8,6 +8,7 @@ import {
 	useWatchlist,
 } from "@/hooks/use-watchlist";
 import { getMedia, getMovieDetails, getTvDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import { formatMediaTitle } from "@/lib/utils";
 
 export interface PickItem {
@@ -86,7 +87,7 @@ export function useDailyPick(open: boolean) {
 	}, [allMediaStates]);
 
 	const { data: trendingMedia, isLoading: isLoadingTrending } = useQuery({
-		queryKey: ["daily-pick-trending"],
+		queryKey: queryKeys.tmdb.dailyPickTrending(),
 		queryFn: async () => {
 			const items = await getMedia({ type: "trending_day", page: 1 });
 			return items;
@@ -96,7 +97,7 @@ export function useDailyPick(open: boolean) {
 	});
 
 	const { data: popularTv, isLoading: isLoadingTv } = useQuery({
-		queryKey: ["daily-pick-popular-tv"],
+		queryKey: queryKeys.tmdb.dailyPickPopularTv(),
 		queryFn: async () => {
 			const items = await getMedia({ type: "tv-shows_popular", page: 1 });
 			return items;
@@ -366,11 +367,10 @@ export function useDailyPick(open: boolean) {
 	};
 
 	const { data: selectedDetails } = useQuery({
-		queryKey: [
-			"daily-pick-details",
-			selectedItem?.media_type,
-			selectedItem?.id,
-		],
+		queryKey: queryKeys.tmdb.dailyPickDetails(
+			selectedItem?.media_type ?? "movie",
+			selectedItem?.id ?? 0,
+		),
 		queryFn: async () => {
 			if (!selectedItem) return null;
 			if (selectedItem.media_type === "movie") {

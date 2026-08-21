@@ -11,6 +11,7 @@ import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { SeasonInfo, Tv } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
@@ -22,10 +23,12 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
 			throw notFound();
 		}
 		context.queryClient.prefetchQuery({
-			queryKey: ["tv_details", id],
+			queryKey: queryKeys.tmdb.tvDetails(Number(id)),
 			queryFn: () => getTvDetails({ id: parsed.data }),
 		});
-		const data = context.queryClient.getQueryData<Tv>(["tv_details", id]);
+		const data = context.queryClient.getQueryData<Tv>(
+			queryKeys.tmdb.tvDetails(Number(id)),
+		);
 		const title = formatMediaTitle.decode(slug ?? "");
 		return { id, slug, title, posterPath: data?.poster_path ?? null };
 	},
@@ -54,7 +57,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
 function TvSeasonsPage() {
 	const { id, slug, title } = Route.useLoaderData();
 	const { data, isLoading } = useQuery({
-		queryKey: ["tv_details", id],
+		queryKey: queryKeys.tmdb.tvDetails(Number(id)),
 		queryFn: async () => await getTvDetails({ id: parseInt(id, 10) }),
 		enabled: !!id,
 	});

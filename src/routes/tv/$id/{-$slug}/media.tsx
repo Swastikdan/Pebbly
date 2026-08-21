@@ -9,6 +9,7 @@ import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicTvDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { Tv } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
@@ -20,10 +21,12 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/media")({
 			throw notFound();
 		}
 		context.queryClient.prefetchQuery({
-			queryKey: ["basic_tv-details", id],
+			queryKey: queryKeys.tmdb.basicTvDetails(Number(id)),
 			queryFn: () => getBasicTvDetails({ id: parsed.data }),
 		});
-		const data = context.queryClient.getQueryData<Tv>(["basic_tv-details", id]);
+		const data = context.queryClient.getQueryData<Tv>(
+			queryKeys.tmdb.basicTvDetails(Number(id)),
+		);
 		const title = formatMediaTitle.decode(slug ?? "");
 		return { id, slug, title, posterPath: data?.poster_path ?? null };
 	},
@@ -59,7 +62,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/media")({
 function TvMediaPage() {
 	const { id, slug, title } = Route.useLoaderData();
 	const { data, isLoading } = useQuery({
-		queryKey: ["basic_tv-details", id],
+		queryKey: queryKeys.tmdb.basicTvDetails(Number(id)),
 		queryFn: async () => await getBasicTvDetails({ id: parseInt(id, 10) }),
 		enabled: !!id,
 	});

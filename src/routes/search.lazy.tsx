@@ -23,6 +23,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { MAX_PAGINATION_LIMIT } from "@/constants";
 import { getMedia, getSearchResult } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import {
 	clearSearchHistory,
 	getSearchHistory,
@@ -50,7 +51,7 @@ function SearchPage() {
 	const [minRating, setMinRating] = useState("0");
 
 	const { data, error, isFetching, isLoading } = useQuery({
-		queryKey: ["search", query, page],
+		queryKey: queryKeys.tmdb.search(query, page),
 		queryFn: () => getSearchResult({ query, page }),
 		enabled: typeof window !== "undefined" && !!query,
 		staleTime: 1000 * 60 * 60 * 24,
@@ -63,7 +64,7 @@ function SearchPage() {
 	});
 
 	const { data: trendingData, isLoading: isTrendingLoading } = useQuery({
-		queryKey: ["trending"],
+		queryKey: queryKeys.tmdb.trendingDay(),
 		queryFn: () => getMedia({ type: "trending_day", page: 1 }),
 		staleTime: 1000 * 60 * 60 * 24,
 		gcTime: 1000 * 60 * 30,

@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
-
 import {
 	getMovieRecommendations,
 	getTvSeriesRecommendations,
 } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 
 export const MediaRecommendations = (props: {
 	id: number;
@@ -18,7 +18,7 @@ export const MediaRecommendations = (props: {
 		isLoading: movie_is_loading,
 		isError: movie_is_error,
 	} = useQuery({
-		queryKey: ["movie_recommendations", id],
+		queryKey: queryKeys.tmdb.recommendations("movie", id),
 		queryFn: async () => await getMovieRecommendations({ id }),
 		enabled: type === "movie",
 	});
@@ -27,7 +27,7 @@ export const MediaRecommendations = (props: {
 		isLoading: tv_is_loading,
 		isError: tv_is_error,
 	} = useQuery({
-		queryKey: ["tv_recommendations", id],
+		queryKey: queryKeys.tmdb.recommendations("tv", id),
 		queryFn: async () => await getTvSeriesRecommendations({ id: id }),
 		enabled: type === "tv",
 	});

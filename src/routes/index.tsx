@@ -13,20 +13,19 @@ import {
 	TrendingWeekMovies,
 	UpcomingMovies,
 } from "@/components/homepage-media";
-
 import { HomepageRecommendations } from "@/components/homepage-recommendations";
 import { LazySection } from "@/components/ui/lazy-section";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SITE_CONFIG } from "@/constants";
 import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
-
 import { getMedia } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 
 export const Route = createFileRoute("/")({
 	loader: async ({ context }) => {
 		await context.queryClient.ensureQueryData({
-			queryKey: ["trending_day"],
+			queryKey: queryKeys.tmdb.trendingDay(),
 			queryFn: () => getMedia({ type: "trending_day" }),
 		});
 	},

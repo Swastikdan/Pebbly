@@ -7,6 +7,7 @@ import {
 	RBAC_FEATURES,
 	type RbacFeature,
 } from "@/constants";
+import { queryKeys } from "@/lib/query/keys";
 import { getRolePermissions, setRolePermission } from "@/server/fns/admin";
 import { unwrap } from "@/server/schema/common";
 
@@ -120,7 +121,7 @@ export function AdminPermissionToggles() {
 	const queryClient = useQueryClient();
 	const [toggleError, setToggleError] = useState<string | null>(null);
 	const rawPermissions = useQuery({
-		queryKey: ["admin", "role-permissions"],
+		queryKey: queryKeys.admin.rolePermissions(),
 		queryFn: () => unwrap(getRolePermissions()),
 	});
 	const setRolePermissionMutation = useMutation({
@@ -130,7 +131,7 @@ export function AdminPermissionToggles() {
 			setToggleError(null);
 			// Keep the table in sync with the persisted permission state.
 			queryClient.invalidateQueries({
-				queryKey: ["admin", "role-permissions"],
+				queryKey: queryKeys.admin.rolePermissions(),
 			});
 		},
 		onError: (error) => {
