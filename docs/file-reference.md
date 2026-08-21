@@ -1,4 +1,4 @@
-# File Reference
+# File reference
 
 A per-file map of the repository: what each file is and why it exists. Line
 counts are approximate (as of 2026-08-16). Entries are grouped by directory.
@@ -30,14 +30,14 @@ counts are approximate (as of 2026-08-16). Entries are grouped by directory.
 | `REFACTOR_PLAN.md` | The Convex→D1 refactoring plan with issue catalog, phased execution plan, and progress log (valuable historical context). |
 | `.cta.json`, `.commandcode/`, `.agents/` | Local agent/tooling metadata (not part of the app). |
 
-## `server/` — Nitro layer (framework-agnostic entry points)
+## `server/`: Nitro layer (framework-agnostic entry points)
 
 | File | What it is |
 | :--- | :--- |
-| `routes/api/health.ts` | `GET /api/health` — pings D1 (`select 1`), returns `{ ok, service, timestamp, checks, durationMs }`; `503` when the DB is unavailable; never leaks raw DB errors (public endpoint). Skips the DB check when there's no binding (plain `vite dev`). |
+| `routes/api/health.ts` | `GET /api/health`, pings D1 (`select 1`), returns `{ ok, service, timestamp, checks, durationMs }`; `503` when the DB is unavailable; never leaks raw DB errors (public endpoint). Skips the DB check when there's no binding (plain `vite dev`). |
 | `tasks/snapshots.ts` | Nitro task `snapshots` run by the `0 3 * * *` cron. Reads/persists the `watchlist_snapshot_cursor`, calls `createDailySnapshots` (≤200 users/run), returns a run summary. |
 
-## `drizzle/` — SQL migrations
+## `drizzle/`: SQL migrations
 
 | File | What it is |
 | :--- | :--- |
@@ -47,13 +47,13 @@ counts are approximate (as of 2026-08-16). Entries are grouped by directory.
 | `0003_petite_sugar_man.sql` | Drops `users.is_admin` (admin now resolved from Clerk only). |
 | `meta/` | Drizzle Kit journal metadata (which migrations are applied). |
 
-## `.github/workflows/` — CI/CD
+## `.github/workflows/`: CI/CD
 
 | File | What it is |
 | :--- | :--- |
-| `deploy.yml` | Deploy to Cloudflare on push to `cloudflare` / `feat/convex-to-traditional-backend` or manual dispatch. Steps: checkout → pnpm setup → Node 22 → `pnpm install --frozen-lockfile` → `pnpm typecheck` → D1 migrations (prod) → `pnpm build` with `VITE_*` secrets → `wrangler deploy`. `concurrency` serializes prod jobs. All actions pinned to node24 runtimes (checkout v7, setup-node v7, pnpm/action-setup v6, wrangler-action v4) — see ADR-014. |
+| `deploy.yml` | Deploy to Cloudflare on push to `cloudflare` / `feat/convex-to-traditional-backend` or manual dispatch. Steps: checkout → pnpm setup → Node 22 → `pnpm install --frozen-lockfile` → `pnpm typecheck` → D1 migrations (prod) → `pnpm build` with `VITE_*` secrets → `wrangler deploy`. `concurrency` serializes prod jobs. All actions pinned to node24 runtimes (checkout v7, setup-node v7, pnpm/action-setup v6, wrangler-action v4), see ADR-014. |
 
-## `src/` — application root
+## `src/`: application root
 
 | File | What it is |
 | :--- | :--- |
@@ -65,15 +65,15 @@ counts are approximate (as of 2026-08-16). Entries are grouped by directory.
 | `constants.ts` | `SITE_CONFIG` (name, URL, nav), `MEDIA_PAGE_SLUGS`, `GENRE_LIST`, `IMAGE_PREFIX` (TMDB image size URLs), `MAX_PAGINATION_LIMIT`, RBAC labels, placeholder image. |
 | `constants/watchlist.ts` | Watchlist-specific constants. |
 
-## `src/server/` — backend
+## `src/server/`: backend
 
 | File | What it is |
 | :--- | :--- |
 | `env.ts` | Worker env access: `getEnv()` reads `globalThis.__env__` (Nitro) with `process.env` fallback; `validateEnv()` (once per isolate) validates string vars with Valibot and logs actionable warnings (loud for missing `CLERK_SECRET_KEY`). |
 | `auth.ts` | Clerk session handling: `getSessionToken` (Bearer → cookie), `getSessionClaims` (JWT verify), `requireUser` (resolve-or-create user, race-safe, consolidates duplicates), `getCurrentUser`, `findUserByClaims` (multi-format tokenIdentifier + 15 s cache), admin helpers (`isAdminFromClerkApi`, `getClerkAdminIds`). |
 | `rbac.ts` | Feature-flag RBAC: `hasFeature`, `getUserFeatures`, `syncRolePermissions`; admin short-circuits from Clerk (never a stored flag); `global` kill switch + per-role permission rows + `DEFAULT_PERMISSIONS`. |
-| `ai.ts` | `callGeminiAI` — Gemini REST client: model fallback chain, per-attempt timeout, per-element Valibot validation, high-demand/503 detection, retries. |
-| `db/client.ts` | `getDb(env)` — cached Drizzle D1 instance per binding (WeakMap), fail-fast on a missing `DB` binding, `runBatch` for bounded transactional batches. |
+| `ai.ts` | `callGeminiAI`, Gemini REST client: model fallback chain, per-attempt timeout, per-element Valibot validation, high-demand/503 detection, retries. |
+| `db/client.ts` | `getDb(env)`, cached Drizzle D1 instance per binding (WeakMap), fail-fast on a missing `DB` binding, `runBatch` for bounded transactional batches. |
 | `db/schema.ts` | The Drizzle schema for all 10 tables (see [data-model.md](./data-model.md)). |
 | `helpers/watch-item.ts` | Shared watch-item logic: `getWatchItem`, `normalizeProgressStatus`/`normalizeReaction`, `buildMetadataPatch` (rating clamped 0–10), `upsertWatchItem` (race-safe upsert on `(user, tmdb, mediaType)`). |
 | `helpers/snapshots.ts` | `createWatchlistSnapshot` (dedupe against latest) and `createDailySnapshots` (keyset-paginated, bounded per run). |
@@ -90,35 +90,35 @@ counts are approximate (as of 2026-08-16). Entries are grouped by directory.
 | `schema/admin.ts` | Valibot schemas for admin server fns. |
 | `schema/import.ts` | Valibot schema for watchlist import payloads. |
 
-## `src/lib/` — client/shared utilities
+## `src/lib/`: client/shared utilities
 
 | File | What it is |
 | :--- | :--- |
-| `tmdb.ts` | `tmdbFetch` — `@better-fetch/fetch` client for TMDB (Bearer token, 15 s timeout, linear retry on 408/429/5xx). |
+| `tmdb.ts` | `tmdbFetch`, `@better-fetch/fetch` client for TMDB (Bearer token, 15 s timeout, linear retry on 408/429/5xx). |
 | `tmdb-schemas.ts` | Valibot schemas for every TMDB response shape (742 lines). |
 | `queries.ts` | Typed TMDB query functions (`getMediaList`, `getMovieDetails`, `getTvDetails`, `getCredits`, `getSearchResult`, `getPersonDetails`, ...) with `MEDIA_LIST_PATHS` as the endpoint map and dev-only error logging. |
 | `batcher.ts` | Generic `RequestBatcher`: debounce/max-wait/max-batch-size/dedupe-by-key, optional flush-on-page-hide + dispose. |
-| `realtime-mutations.ts` | Per-domain own-mutation counters (`watchlist`/`lists`/`ai`) recorded on successful server writes — lets `user-sync.tsx` skip redundant refetches for the client's own changes (see ADR-015). |
+| `realtime-mutations.ts` | Per-domain own-mutation counters (`watchlist`/`lists`/`ai`) recorded on successful server writes, lets `user-sync.tsx` skip redundant refetches for the client's own changes (see ADR-015). |
 | `utils.ts` | `cn`, `normalizeProgressStatus`, `createLRUStorage`/`createMemoryStorage` (localStorage quota management), `validateId`/`parseAndValidateId`, `formatMediaTitle` (slug encode/decode). |
 | `media-transform.ts` | Pure TMDB→UI transforms: genre lookup, video split, cast/crew, backdrops/posters with size prefixes, certifications, runtime. |
-| `media-page.ts` | `buildSharedMediaPageData` — shared data shape for movie/TV detail pages. |
+| `media-page.ts` | `buildSharedMediaPageData`, shared data shape for movie/TV detail pages. |
 | `media-dialog-helpers.ts` | Dialog state stored in URL search params (video/backdrop/poster lightbox). |
-| `canonical-slug-redirect.ts` | `useCanonicalSlugRedirect` — 301-style client redirect to the canonical `/{type}/{id}/{slug}` URL. |
-| `meta-image-tags.ts` | `MetaImageTagsGenerator` — OpenGraph/Twitter meta tags. |
+| `canonical-slug-redirect.ts` | `useCanonicalSlugRedirect`, 301-style client redirect to the canonical `/{type}/{id}/{slug}` URL. |
+| `meta-image-tags.ts` | `MetaImageTagsGenerator`, OpenGraph/Twitter meta tags. |
 | `search-history.ts` | localStorage search history (max 8 items). |
 | `server-types.ts` | Client-side aliases of D1 row types. |
 | `recommendation-engine.ts` | Client-side TMDB verification of AI titles: `normalizeTmdbData`, `titlesMatch`, `useTmdbData`, `useTmdbSearchFallback`. |
 | `repository/types.ts` | `WatchlistRepository` + `ListsRepository` interfaces + `resolveProgressStatusAction`. |
 | `repository/remote-repository.ts` | Server-backed repository: optimistic journal + membership batcher + journaled mutations + list ops with id swapping. |
 | `repository/local-repository.ts` | Zustand-backed repository for signed-out users. |
-| `repository/use-repository.ts` | `useRepository()` — picks remote vs local by auth state. |
+| `repository/use-repository.ts` | `useRepository()`, picks remote vs local by auth state. |
 | `prompts/index.ts` | Pure Gemini prompt builders (`buildWatchlistPrompt`, `buildGenrePrompt`, `buildCustomListPrompt`, `buildHomepageRecommendationsPrompt`) + shared context/feedback helpers. Dependency-free. |
-| `query/query-client.ts` | `getContext()` — fresh QueryClient per render/request with 24 h defaults. |
+| `query/query-client.ts` | `getContext()`, fresh QueryClient per render/request with 24 h defaults. |
 | `query/root-provider.tsx` | React context provider for the QueryClient. |
 | `query/devtools.ts` | Dev-only React Query devtools. |
-| `query/keys.ts` | `queryKeys` — centralized, user-scoped query-key factory. |
+| `query/keys.ts` | `queryKeys`, centralized, user-scoped query-key factory. |
 
-## `src/hooks/` — React hooks & state
+## `src/hooks/`: React hooks & state
 
 | File | What it is |
 | :--- | :--- |
@@ -137,26 +137,26 @@ counts are approximate (as of 2026-08-16). Entries are grouped by directory.
 | `watch-progress/progress-helpers.ts` | Pure progress math + types. |
 | `use-watchlist-import-export.ts` | Watchlist export/import (JSON) including guest→remote promotion. |
 | `use-recommendations.ts` | AI recommendation queries/mutations (history, generate, feedback, verified resolution). |
-| `use-daily-pick.ts` | Daily-pick selection logic (seed generation, interleaving, scoring) — extracted from the component. |
+| `use-daily-pick.ts` | Daily-pick selection logic (seed generation, interleaving, scoring), extracted from the component. |
 | `use-daily-pick-store.ts` | Zustand daily-pick bookkeeping store. |
 | `use-filtered-watchlist.ts` | Filter/sort logic for the watchlist page. |
-| `use-permissions.ts` | Client RBAC summary from `getUserFeaturesFn`. Polls every 30 s (tab visible) so ban status/feature flags stay fresh — enables automatic sign-out of banned users via `user-sync.tsx`. |
-| `data-version.ts` | `fetchDataVersion` — client fetch for the combined per-user revision counters (watchlist/lists/AI), polled by `user-sync.tsx` for cross-device realtime. |
+| `use-permissions.ts` | Client RBAC summary from `getUserFeaturesFn`. Polls every 30 s (tab visible) so ban status/feature flags stay fresh, enables automatic sign-out of banned users via `user-sync.tsx`. |
+| `data-version.ts` | `fetchDataVersion`, client fetch for the combined per-user revision counters (watchlist/lists/AI), polled by `user-sync.tsx` for cross-device realtime. |
 | `use-season-details.ts` | Batched TV season-detail fetching via a shared `RequestBatcher` (fixes the N+1 in media cards). |
 | `use-toast-store.ts` | Toast notification store. |
 
-## `src/components/` — UI
+## `src/components/`: UI
 
-### `ui/` — primitives
+### `ui/`: primitives
 `button.tsx`, `badge.tsx`, `card.tsx`, `input.tsx`, `label.tsx`, `dialog.tsx`,
 `sheet.tsx`, `dropdown-menu.tsx`, `select.tsx`, `tabs.tsx`, `accordion.tsx`,
 `navigation-menu.tsx`, `hover-card.tsx`, `aspect-ratio.tsx`, `skeleton.tsx`,
 `spinner.tsx`, `image.tsx`, `toaster.tsx`, `empty.tsx`, `pagination.tsx`,
 `media-grid.tsx`, `media-skeleton-list.tsx`, `lazy-section.tsx`,
-`auto-scroll-title.tsx`, `search-bar.tsx`, `icons.tsx` (lucide icon set) —
+`auto-scroll-title.tsx`, `search-bar.tsx`, `icons.tsx` (lucide icon set),
 shadcn-style, Radix-based primitives used across the app.
 
-### `media/` — detail-page blocks
+### `media/`: detail-page blocks
 `media-container.tsx` (page layout), `media-title-container.tsx`,
 `media-video-image-container.tsx`, `media-poster-trailer-container.tsx`,
 `watchlist-status-menu.tsx`, `reaction-selector.tsx`, `cast-section.tsx`,
@@ -193,7 +193,7 @@ refetches query groups only when their revision changed beyond this client's
 own writes), `banned-screen.tsx`, `go-back.tsx`, `default-loader.tsx`,
 `default-not-found.tsx` (error + not-found), `default-empty-state.tsx`.
 
-## `src/routes/` — file-based routes
+## `src/routes/`: file-based routes
 
 | File | What it is |
 | :--- | :--- |
@@ -218,7 +218,7 @@ own writes), `banned-screen.tsx`, `go-back.tsx`, `default-loader.tsx`,
 | `tv/$id/{-$slug}/media.tsx` | TV media gallery. |
 | `tv/$id/{-$slug}/cast-crew.tsx` | TV cast & crew page. |
 
-## `public/` — static assets
+## `public/`: static assets
 
 Icons/favicons (apple-touch, android-chrome, mstile sets), `logo.svg`,
 `favicon.svg`, `image_not_found.jpg`, `manifest.json`, `robots.txt`,

@@ -11,7 +11,7 @@ export function createOptimisticUpdater<T, A = Record<string, unknown>>(
 	return (queryClient: QueryClient, args: A) => {
 		const key = getKey(args);
 		const current = queryClient.getQueryData<T[]>(key) as T[] | undefined;
-		// Only touch the cache when data is actually cached — writing an empty
+		// Only touch the cache when data is actually cached, writing an empty
 		// array into an unfetched key would poison the optimistic state.
 		if (current === undefined) return;
 		queryClient.setQueryData<T[]>(key, updateFn(current, args));

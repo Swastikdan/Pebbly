@@ -1,6 +1,6 @@
-# Pebbly — Documentation
+# Pebbly documentation
 
-> **Pebbly (Film Fanatic)** is a full-stack movie & TV discovery app: TanStack
+> **Pebbly** is a full-stack movie & TV discovery app: TanStack
 > Start (React 19) + Cloudflare Workers + Cloudflare D1 (SQLite) + Drizzle ORM
 > + Valibot + Clerk + Google Gemini + TMDB.
 >
@@ -15,7 +15,7 @@
 | [server-layer.md](./server-layer.md) | Everything server-side: Nitro, server functions, auth, RBAC, Gemini AI, watchlist snapshots |
 | [client-layer.md](./client-layer.md) | Everything client-side: routing, TanStack Query, Zustand stores, the repository pattern, optimistic updates |
 | [data-model.md](./data-model.md) | The D1 database: every table, index, constraint, and migration |
-| [architecture-decisions.md](./architecture-decisions.md) | Architecture Decision Records (ADRs) — *why* the code is shaped this way |
+| [architecture-decisions.md](./architecture-decisions.md) | Architecture Decision Records (ADRs), *why* the code is shaped this way |
 | [file-reference.md](./file-reference.md) | A per-file map of the repository: what each file exists for |
 | [contributing.md](./contributing.md) | How to keep these docs accurate when code changes |
 
@@ -25,8 +25,8 @@
   former Convex backend was fully removed (see
   [ADR-001](./architecture-decisions.md)).
 - **Server functions, not REST endpoints.** All authenticated reads/writes go
-  through TanStack Start `createServerFn` RPCs in `src/server/fns/` — type-safe,
-  Valibot-validated, co-located with the client. Nitro only owns the
+  through TanStack Start `createServerFn` RPCs in `src/server/fns/`. They are
+  type-safe, Valibot-validated, and co-located with the client. Nitro only owns the
   `/api/health` endpoint and the cron task.
 - **A repository pattern hides remote-vs-local.** `useRepository()` picks a
   remote (server-fn + optimistic journal) or local (Zustand + localStorage)
@@ -36,7 +36,7 @@
   query cache immediately through `pending-ops.ts`, then reconciled against
   server snapshots so a stale refetch can never clobber in-flight state.
 - **Clerk owns identity; the DB never stores admin status.** Admin/ban/feature
-  decisions come from the signed JWT claim or the live Clerk API — never a
+  decisions come from the signed JWT claim or the live Clerk API, never a
   stored flag that could go stale.
 - **AI recommendations are gated and rate-limited.** Gemini is called over
   REST with a model fallback chain, and every generation is verified/cleaned
@@ -49,7 +49,7 @@
 
 ## Also see
 
-- [`REFACTOR_PLAN.md`](../REFACTOR_PLAN.md) — the original refactoring plan
+- [`REFACTOR_PLAN.md`](../REFACTOR_PLAN.md), the original refactoring plan
   (Convex → D1, god-hook decomposition) with its progress log.
-- [`README.md`](../README.md) — setup, env vars, scripts, and deployment
+- [`README.md`](../README.md), setup, env vars, scripts, and deployment
   instructions.

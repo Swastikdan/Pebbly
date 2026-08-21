@@ -435,7 +435,7 @@ function MyListsTabContent() {
 							Create your first collection
 						</h3>
 						<p className="max-w-sm text-xs leading-relaxed text-muted-foreground/80">
-							Organize movies and TV shows into custom lists — like "Sci-Fi
+							Organize movies and TV shows into custom lists, like "Sci-Fi
 							Favorites" or "Shows to Binge with Friends".
 						</p>
 					</div>

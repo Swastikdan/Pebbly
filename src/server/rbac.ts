@@ -69,7 +69,7 @@ function parseClerkPublicMeta(
 /**
  * True only when the given identity carries an admin `public_meta.isAdmin`
  * claim (from a signed JWT or a Clerk user resource). There is no DB fallback:
- * a stored `users.is_admin` flag was removed because it went stale — a user
+ * a stored `users.is_admin` flag was removed because it went stale, a user
  * demoted in Clerk kept `isAdmin: true` in the DB forever. Access decisions
  * must come from the live JWT/API, never a stored flag.
  */
@@ -141,7 +141,7 @@ async function computeRoleFeatures(
 }
 
 /**
- * `hasFeature` port — evaluates RBAC for the given feature.
+ * `hasFeature` port, evaluates RBAC for the given feature.
  * `user` may be null (unauthenticated); `claims` supplies the admin claim.
  */
 export async function hasFeature(
@@ -152,7 +152,7 @@ export async function hasFeature(
 	if (!claims) return false;
 
 	if (user?.isBanned === true) return false;
-	// Admin status comes from the signed JWT claim or the live Clerk API — the
+	// Admin status comes from the signed JWT claim or the live Clerk API, the
 	// same source the client `useUser()` reads. Never trust the stored
 	// `users.isAdmin` flag for access decisions: it is only written at account
 	// creation and never refreshed, so a user demoted in Clerk would otherwise
@@ -196,7 +196,7 @@ export async function hasFeature(
 }
 
 /**
- * `getUserFeatures` port — returns the RBAC summary for the request.
+ * `getUserFeatures` port, returns the RBAC summary for the request.
  */
 export async function getUserFeatures(
 	claims: ClerkSessionClaims | null,
@@ -219,7 +219,7 @@ export async function getUserFeatures(
 			isBanned: true,
 		};
 	}
-	// Same authoritative admin source as `hasFeature` — JWT claim or live Clerk
+	// Same authoritative admin source as `hasFeature`, JWT claim or live Clerk
 	// API, never the stale DB flag.
 	if (isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub))) {
 		return {
@@ -248,7 +248,7 @@ export async function getUserFeatures(
 }
 
 /**
- * `syncRolePermissions` port — prunes invalid rows and seeds defaults.
+ * `syncRolePermissions` port, prunes invalid rows and seeds defaults.
  */
 export async function syncRolePermissions(
 	db: Db,

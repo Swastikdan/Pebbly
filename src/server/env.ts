@@ -52,11 +52,11 @@ export function validateEnv(env: Env = getEnv()): void {
 		const name = issue.path?.map((p) => String(p.key)).join(".") ?? "unknown";
 		if (name === "CLERK_SECRET_KEY") {
 			console.error(
-				"[env] CLERK_SECRET_KEY is missing or empty — Clerk sessions will not verify and every user is treated as a guest. Set it in wrangler secrets (prod) or .dev.vars (local).",
+				"[env] CLERK_SECRET_KEY is missing or empty. Clerk sessions will not verify and every user is treated as a guest. Set it in wrangler secrets (prod) or .dev.vars (local).",
 			);
 		} else if (name === "GEMINI_API_KEY") {
 			console.warn(
-				"[env] GEMINI_API_KEY is missing — AI recommendation features will be unavailable.",
+				"[env] GEMINI_API_KEY is missing. AI recommendation features will be unavailable.",
 			);
 		} else {
 			console.warn(`[env] Invalid or missing value for ${name}.`);

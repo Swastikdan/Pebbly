@@ -1,6 +1,6 @@
-# Pebbly (Film Fanatic)
+# Pebbly
 
-Pebbly is a modern, full-stack movie and TV show discovery application built with **TanStack Start**, **Cloudflare Workers**, **Cloudflare D1 (SQLite)**, **Drizzle ORM**, **Valibot**, **Clerk**, **Google Gemini AI**, and **TMDB metadata**. It combines rich media browsing with persistent watchlists, granular episode progress tracking, custom user lists, and a personalized AI Recommendation Engine.
+Pebbly is a full-stack movie and TV show discovery app built with TanStack Start, Cloudflare Workers, D1 (SQLite), Drizzle ORM, Valibot, Clerk, Google Gemini, and TMDB metadata. It has media browsing, persistent watchlists, per-episode progress tracking, custom lists, and AI recommendations based on what you watch.
 
 ---
 
@@ -14,31 +14,31 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 | [Server Layer](./docs/server-layer.md) | Nitro, server functions, auth, RBAC, AI engine |
 | [Client Layer](./docs/client-layer.md) | Routing, data fetching, state, repository pattern, optimistic updates |
 | [Data Model](./docs/data-model.md) | Every D1 table, index, constraint & migration |
-| [Architecture Decisions](./docs/architecture-decisions.md) | ADRs — why the code is shaped the way it is |
+| [Architecture Decisions](./docs/architecture-decisions.md) | ADRs, why the code is shaped the way it is |
 | [File Reference](./docs/file-reference.md) | A per-file map of the entire repository |
 | [Contributing](./docs/contributing.md) | How to keep the docs accurate as the code changes |
 
 ---
 
-## Key Features
+## Key features
 
-### Media Discovery & Watchlist
-- **Comprehensive Browsing**: Explore trending, popular, top-rated, upcoming, and curated movie/TV collections.
-- **Advanced Search**: Instant cross-media search with genre, media type, and keyword filtering.
-- **Rich Details & Media Player**: Complete detail pages with cast/crew, trailers, season/episode browsers, and embedded video modal with responsive controls.
-- **Smart Watchlist & Progress**: Track progress (`watch-later`, `watching`, `done`, `dropped`), per-episode watching status, and reaction tags (`loved`, `liked`, `mixed`, `not-for-me`, `recommended`).
-- **Custom Lists & Management**: Create custom lists, export/import watchlists in JSON format, and sync seamlessly across devices via Cloudflare D1.
+### Media discovery and watchlist
+- Browse trending, popular, top-rated, upcoming, and curated movie/TV collections.
+- Cross-media search with genre, media type, and keyword filters.
+- Detail pages with cast/crew info, trailers, season/episode browsers, and an embedded video player.
+- Watchlist statuses (`watch-later`, `watching`, `done`, `dropped`), per-episode progress, and reaction tags (`loved`, `liked`, `mixed`, `not-for-me`, `recommended`).
+- Custom lists, JSON export/import for watchlists, and sync across devices via Cloudflare D1.
 
-### AI Recommendation Engine
-- **Watchlist & Interaction-Aware AI**: Generates tailored movie and TV recommendations using Google Gemini models (`gemini-3.1-flash-lite`, `gemini-2.5-flash`).
-- **Homepage "Picks For You"**: Dedicated homepage widget providing twice-daily refreshed recommendations with real-time watchlist exclusion.
-- **Interaction Feedback Loop**: User interactions (thumbs up / thumbs down) train future recommendations. Liked recommendations are automatically added to your **Pebbly Picks** list, and disliked titles are excluded.
-- **Advanced Filtering**: Generate recommendations by Watchlist, Custom List, Genre preferences, or Era presets (Classics, 80s, 90s, 2000s, 2010s, 2020s).
-- **History & Resolution Verification**: Automatically verifies AI-suggested titles against TMDB API data and caches verified matches.
+### AI recommendations
+- Recommendations from Google Gemini models (`gemini-3.1-flash-lite`, `gemini-2.5-flash`) based on your watchlist and interactions.
+- A "Picks For You" homepage row that refreshes twice daily and excludes titles already on your watchlist.
+- Feedback loop: liking a recommendation adds it to your **Pebbly Picks** list; disliking one excludes it from future runs.
+- Filter generation by watchlist, custom list, genre preferences, or era presets (Classics, 80s, 90s, 2000s, 2010s, 2020s).
+- AI-suggested titles are verified against the TMDB API before display, and verified matches are cached.
 
 ---
 
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 | :--- | :--- |
@@ -47,7 +47,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 | **Database** | [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) via [Drizzle ORM](https://orm.drizzle.team/) |
 | **Validation** | [Valibot](https://valibot.dev/) (Lightweight, modular schema validation) |
 | **Authentication** | [Clerk](https://clerk.com/) (`@clerk/react` + `@clerk/backend` JWT verification) |
-| **AI Engine** | Google Gemini REST API (`generativelanguage.googleapis.com` via `fetch` — `gemini-3.1-flash-lite` + `gemini-2.5-flash` fallback chain) |
+| **AI Engine** | Google Gemini REST API (`generativelanguage.googleapis.com` via `fetch`, `gemini-3.1-flash-lite` + `gemini-2.5-flash` fallback chain) |
 | **Styling** | Tailwind CSS 4, Radix UI, shadcn/ui |
 | **Data Fetching** | TanStack Query (React Query) |
 | **State Management** | Zustand |
@@ -55,7 +55,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 ---
 
-## Project Structure
+## Project structure
 
 ```text
 ├── drizzle/                         # Drizzle generated SQL migrations for Cloudflare D1
@@ -87,7 +87,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 ---
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
@@ -98,7 +98,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 - A Google Gemini API Key
 - A Cloudflare Account (with D1 database enabled)
 
-### Environment Setup
+### Environment setup
 
 1. **Clone the repository:**
    ```bash
@@ -114,7 +114,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 3. **Configure environment variables:**
    Create a `.env` or `.env.local` file in the project root:
    ```env
-   # TMDB API (read-only public API key — safe for client)
+   # TMDB API (read-only public API key, safe for client)
    VITE_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
    VITE_PUBLIC_TMDB_API_URL=https://api.themoviedb.org/3
 
@@ -142,7 +142,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 ---
 
-## Running Locally
+## Running locally
 
 - **Run frontend dev server (Vite + Node SSR):**
   ```bash
@@ -162,7 +162,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 ---
 
-## Database & Migrations
+## Database and migrations
 
 - **Generate new SQL migration after editing `src/server/db/schema.ts`:**
   ```bash
@@ -200,7 +200,7 @@ pnpm deploy:cf
 
 ---
 
-## Available Scripts
+## Available scripts
 
 | Script | Description |
 | :--- | :--- |
@@ -218,12 +218,12 @@ pnpm deploy:cf
 
 ---
 
-## License & Acknowledgments
+## License and acknowledgments
 
 - Released under the [MIT License](./LICENSE).
 - Movie and TV metadata provided by [TMDB](https://www.themoviedb.org/).
 - AI Recommendations powered by [Google Gemini](https://ai.google.dev/).
 - Built with TanStack Start, Cloudflare Workers, D1, Drizzle ORM, Valibot, Clerk, and Tailwind CSS.
 
-Contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) and the
+Contributions are welcome, see [CONTRIBUTING.md](./CONTRIBUTING.md) and the
 [Code of Conduct](./CODE_OF_CONDUCT.md).

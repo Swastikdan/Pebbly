@@ -27,7 +27,7 @@ export function usePermissions(): PermissionState & {
 		queryFn: () => unwrap(getUserFeaturesFn()),
 		enabled: !!isSignedIn,
 		// Poll while the tab is visible so ban status and feature flags stay
-		// fresh — this is what lets a banned user be signed out automatically
+		// fresh, this is what lets a banned user be signed out automatically
 		// (via user-sync) instead of only on next page load. Pauses when the
 		// tab is hidden.
 		refetchInterval: 30_000,

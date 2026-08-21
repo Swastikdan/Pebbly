@@ -20,7 +20,7 @@ export const users = sqliteTable("users", {
 	// No `is_admin` column: admin status lives in Clerk's public metadata (the
 	// signed JWT claim or the live Clerk API). A stored flag goes stale the
 	// moment someone is demoted in Clerk, so it is never consulted for access
-	// decisions — keeping it in the DB only invited drift.
+	// decisions, keeping it in the DB only invited drift.
 	isBanned: integer("is_banned", { mode: "boolean" }).default(false),
 	// Monotonic revision counters for the user's data domains. Bumped on every
 	// relevant mutation so clients can poll this single small row to detect
@@ -147,7 +147,7 @@ export const episodeProgress = sqliteTable(
 		updatedAt: integer("updated_at").notNull(),
 	},
 	(t) => [
-		// Covers (user), (user, show), and (user, show, season) — the 4 Convex indexes collapse here.
+		// Covers (user), (user, show), and (user, show, season), the 4 Convex indexes collapse here.
 		uniqueIndex("episode_user_season_ep_uq").on(
 			t.userId,
 			t.tmdbId,
@@ -220,7 +220,7 @@ export const recommendationFeedback = sqliteTable(
 	},
 	(t) => [
 		uniqueIndex("feedback_user_media_uq").on(t.userId, t.tmdbId, t.mediaType),
-		// (user, feedback) drives the homepage/generation feedback lookups — must not be dropped
+		// (user, feedback) drives the homepage/generation feedback lookups, must not be dropped
 		index("feedback_user_feedback_idx").on(t.userId, t.feedback),
 	],
 );

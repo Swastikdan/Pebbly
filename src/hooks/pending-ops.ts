@@ -9,8 +9,8 @@ import type { QueryClient } from "@tanstack/react-query";
  * still-pending ops are re-applied on top of fresh server data, so a snapshot
  * taken before a write committed can never clobber newer optimistic state (the
  * "UI flicker" race). Ops are dropped once their write succeeds (`resolve`),
- * and a failed write rolls back just its own op — rebuilding from the last
- * known server state + remaining ops — instead of restoring an all-or-nothing
+ * and a failed write rolls back just its own op, rebuilding from the last
+ * known server state + remaining ops, instead of restoring an all-or-nothing
  * whole-array snapshot (which used to wipe concurrent ops).
  *
  * Ops that touch the same rows supersede each other (latest intent wins),
@@ -132,7 +132,7 @@ export function beginOp<T>(
 ): OpHandle {
 	if (typeof window === "undefined") {
 		throw new Error(
-			"beginOp must not be called during SSR — optimistic ops are client-only",
+			"beginOp must not be called during SSR. Optimistic ops are client-only",
 		);
 	}
 	const journal = journalFor(queryClient);
@@ -154,7 +154,7 @@ export function beginOp<T>(
 	};
 
 	for (const entry of op.entries) {
-		// Supersede older pending ops that touch any of the same rows — the
+		// Supersede older pending ops that touch any of the same rows: the
 		// latest user intent wins, matching the server batcher's dedupe.
 		const existing = journal.pendingByKey.get(entry.keyString) ?? [];
 		const touched = new Set(entry.touchedIds);

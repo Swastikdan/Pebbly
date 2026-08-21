@@ -92,7 +92,7 @@ export const mapBackdrops = (backdrops?: MinimalImage[] | null) =>
 		.map((image) => ({
 			backdrop_image: `${IMAGE_PREFIX.SD_BACKDROP}${image.file_path}`,
 			// HD (w1280) instead of ORIGINAL: full-res TMDB files can be several
-			// MB and decode to 4K bitmaps — the lightbox never needs more.
+			// MB and decode to 4K bitmaps, the lightbox never needs more.
 			backdrop_image_raw: `${IMAGE_PREFIX.HD_BACKDROP}${image.file_path}`,
 			aspect_ratio: image.aspect_ratio,
 		}))

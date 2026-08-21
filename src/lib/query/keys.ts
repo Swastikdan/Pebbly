@@ -12,7 +12,7 @@ import type { MediaType } from "@/types";
  */
 export const queryKeys = {
 	watchlist: {
-		// Full watchlist (signed-in users) — optional status filter for
+		// Full watchlist (signed-in users), optional status filter for
 		// "continue watching".
 		list: (args?: { statusFilter?: string; limit?: number }) =>
 			["watchlist", "list", args ?? {}] as const,

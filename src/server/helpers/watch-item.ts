@@ -62,7 +62,7 @@ export type UserRevColumn = "watchlistRev" | "listsRev" | "aiRev";
 /**
  * Bump one of the user's data-domain revision counters. Clients poll this
  * single small row (via `getDataVersion`) to detect cross-device changes
- * instead of re-fetching whole collections on an interval — this keeps
+ * instead of re-fetching whole collections on an interval, this keeps
  * polling cost O(1) no matter how large the underlying data is.
  */
 export async function bumpUserRev(
@@ -134,7 +134,7 @@ export type UpsertUpdate =
 			| null);
 
 /**
- * Port of `upsertWatchItem` — insert or patch the unique (user, tmdb, media)
+ * Port of `upsertWatchItem`, insert or patch the unique (user, tmdb, media)
  * watch item row. Timestamps are always set here (`updatedAt`). Returns the
  * final row so callers can echo the authoritative state back to the client
  * without an extra read.

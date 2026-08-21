@@ -183,7 +183,7 @@ export const updateProgress = createServerFn({ method: "POST" })
 						? "watching"
 						: undefined;
 
-		// An explicit `isWatched: true` always means "done" — never let a stale
+		// An explicit `isWatched: true` always means "done", never let a stale
 		// stored status (e.g. "watch-later") shadow it.
 		const nextProgressStatus =
 			data.isWatched === true
@@ -359,7 +359,7 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
 				batchMap.set(`${item.mediaType}:${item.tmdbId}`, item);
 			}
 
-			// Rows that still exist after the write — the client merges these
+			// Rows that still exist after the write. The client merges these
 			// directly into its cache (missing identities were deleted).
 			const resultRows: (typeof watchItems.$inferSelect)[] = [];
 			const statements: Parameters<typeof db.batch>[0][number][] = [];
@@ -591,7 +591,7 @@ function buildEpisodeSyncStatements(
 	return statements;
 }
 
-/** Preload existing episode rows for (user, show) — used to batch syncs. */
+/** Preload existing episode rows for (user, show), used to batch syncs. */
 async function loadEpisodeRowsByKey(
 	userId: string,
 	tmdbId: number,

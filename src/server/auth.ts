@@ -69,7 +69,7 @@ export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
 		});
 		return claims as ClerkSessionClaims;
 	} catch {
-		// Expired or transitioning token — treated safely as unauthenticated/guest
+		// Expired or transitioning token, treated safely as unauthenticated/guest
 		return null;
 	}
 }
@@ -177,7 +177,7 @@ export async function isAdminFromClerkApi(sub: string): Promise<boolean> {
 /**
  * Fetch the Clerk user ids whose public metadata marks them admin, using one
  * paginated API call per page (max page size). Used to render the admin user
- * table without a per-row lookup. Returns an empty set on any failure — this
+ * table without a per-row lookup. Returns an empty set on any failure. This
  * is display-only data and must never be used for access decisions.
  */
 export async function getClerkAdminIds(): Promise<Set<string>> {
@@ -199,7 +199,7 @@ export async function getClerkAdminIds(): Promise<Set<string>> {
 				}
 			}
 			// Stop when we've seen every user or the API returned a short page
-			// (defensive — a hard cap above guards against an endless loop).
+			// (defensive, a hard cap above guards against an endless loop).
 			const totalCount = result.totalCount ?? 0;
 			if (pageUsers.length < PAGE_SIZE || offset + PAGE_SIZE >= totalCount) {
 				break;
@@ -299,7 +299,7 @@ async function pickBestUserMatch(
 }
 
 /**
- * Port of `convex/helpers/watch_item.ts` `getCurrentUser` — multi-format
+ * Port of `convex/helpers/watch_item.ts` `getCurrentUser`, multi-format
  * tokenIdentifier matching so users created under any prior format resolve.
  * Uses a short-lived in-memory cache to eliminate duplicate database hits.
  */
@@ -353,7 +353,7 @@ export async function requireUser(): Promise<RequireUserResult> {
 	const db = getDb(getEnv());
 	const tokenIdentifier = toTokenIdentifier(claims.sub);
 
-	// Resolve once and reuse the matches — no second identical query below.
+	// Resolve once and reuse the matches, no second identical query below.
 	const userMatches = await findUserMatchesByClaims(claims);
 	let user = await pickBestUserMatch(userMatches, tokenIdentifier);
 
@@ -363,7 +363,7 @@ export async function requireUser(): Promise<RequireUserResult> {
 		// two requests for a brand-new user insert at once, one wins and the
 		// other no-ops instead of throwing on the unique token_identifier
 		// index (which would 500 a parallel request on first load).
-		// Admin status is intentionally NOT persisted here — it lives in Clerk's
+		// Admin status is intentionally NOT persisted here, it lives in Clerk's
 		// public metadata (JWT claim / live API) and a stored copy would go stale.
 		await db
 			.insert(users)
@@ -375,7 +375,7 @@ export async function requireUser(): Promise<RequireUserResult> {
 				image: claims.picture ?? claims.pictureUrl ?? undefined,
 			})
 			.onConflictDoNothing();
-		// Re-read by the canonical tokenIdentifier — the winner of a concurrent
+		// Re-read by the canonical tokenIdentifier, the winner of a concurrent
 		// insert created the same identifier, so this always finds the
 		// authoritative row (a lookup by our discarded `id` would miss it).
 		user = (

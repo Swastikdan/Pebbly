@@ -5,7 +5,7 @@ import { users, watchItems, watchlistSnapshots } from "../db/schema";
 import { getEnv } from "../env";
 
 /**
- * Port of `createWatchlistSnapshot` — records the current watchlist media state
+ * Port of `createWatchlistSnapshot`, records the current watchlist media state
  * (TMDB IDs & media types) unless it is identical to the latest snapshot.
  */
 export async function createWatchlistSnapshot(
@@ -62,7 +62,7 @@ export async function createWatchlistSnapshot(
 }
 
 /**
- * Port of `createDailySnapshots` — iterates users with keyset pagination,
+ * Port of `createDailySnapshots`, iterates users with keyset pagination,
  * creating a snapshot for each. Runs from the Cloudflare cron
  * (server/tasks/snapshots.ts).
  *

@@ -192,8 +192,8 @@ export function AdminPermissionToggles() {
 					</p>
 					<p className="text-[11px] leading-relaxed text-muted-foreground">
 						These toggles enable or disable features globally. If disabled, a
-						feature will not work for users even if they have the required role
-						— but it will still work for administrators.
+						feature will not work for users even if they have the required role,
+						but it will still work for administrators.
 					</p>
 				</div>
 			</div>

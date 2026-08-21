@@ -11,7 +11,7 @@ export function DefaultNotFoundComponent() {
 				<div>
 					<h3 className="mb-2 font-semibold text-2xl">Page not found</h3>
 					<p className="text-sm text-muted-foreground max-w-md">
-						The page you’re looking for doesn’t exist or has been moved.
+						The page you're looking for doesn't exist or has been moved.
 					</p>
 				</div>
 				<Link to="/">

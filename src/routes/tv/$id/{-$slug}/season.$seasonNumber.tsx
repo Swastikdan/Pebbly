@@ -112,7 +112,7 @@ function TvSeasonDetailPage() {
 					<ShareButton />
 				</div>
 				<h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
-					{showName} — {seasonData.name}
+					{showName} · {seasonData.name}
 				</h1>
 				{seasonData.overview && (
 					<p className="max-w-3xl text-sm text-muted-foreground md:text-base">

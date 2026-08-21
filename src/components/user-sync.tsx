@@ -50,7 +50,7 @@ export const UserSync = () => {
 
 	// Realtime change detection: poll the tiny per-user revision counters (1
 	// row read) instead of re-fetching whole collections on an interval. When a
-	// revision changes — e.g. another device/tab toggled an item — invalidate
+	// revision changes, e.g. another device/tab toggled an item, invalidate
 	// the matching query group so mounted queries refetch. Cost stays O(1) no
 	// matter how large the user's watchlist/lists are.
 	const lastRevsRef = useRef<Record<string, DataVersion>>({});
@@ -67,7 +67,7 @@ export const UserSync = () => {
 	useEffect(() => {
 		if (versionQuery.error) {
 			console.warn(
-				"[user-sync] Data-version poll failed — cross-device sync is paused until this resolves:",
+				"[user-sync] Data-version poll failed, cross-device sync is paused until this resolves:",
 				versionQuery.error,
 			);
 		}
@@ -90,7 +90,7 @@ export const UserSync = () => {
 		// Own successful mutations since the last poll. A revision delta that is
 		// fully explained by the client's own writes is already reflected in its
 		// cache (optimistic update + server response), so refetching would be
-		// redundant — only refetch for deltas larger than our own writes.
+		// redundant, only refetch for deltas larger than our own writes.
 		const own = takeOwnMutationCounts();
 
 		if (prev) {

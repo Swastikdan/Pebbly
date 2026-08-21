@@ -40,7 +40,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 	const toggle = useToggleWatchlistItem();
 	const { isOnWatchList } = useWatchlistItem(itemId, media_type);
 
-	// Optimistic state — flips instantly, reverts on error
+	// Optimistic state, flips instantly, reverts on error
 	const [optimisticOn, setOptimisticOn] = useState<boolean | null>(null);
 	const [isAnimating, setIsAnimating] = useState(false);
 	const [animKey, setAnimKey] = useState(0);

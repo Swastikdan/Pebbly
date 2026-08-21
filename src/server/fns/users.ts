@@ -14,7 +14,7 @@ const storeUserArgsSchema = v.object({
 });
 
 /**
- * Port of `users.store` — upserts the user from the verified Clerk session.
+ * Port of `users.store`, upserts the user from the verified Clerk session.
  * Admin status is deliberately not part of this payload: it lives in Clerk's
  * public metadata (JWT claim / live API), and a stored copy would go stale.
  */
