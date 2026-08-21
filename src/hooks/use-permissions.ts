@@ -26,11 +26,10 @@ export function usePermissions(): PermissionState & {
 		queryKey: queryKeys.permissions(user?.id ?? "anonymous"),
 		queryFn: () => unwrap(getUserFeaturesFn()),
 		enabled: !!isSignedIn,
-		// Poll while the tab is visible so ban status and feature flags stay
-		// fresh, this is what lets a banned user be signed out automatically
-		// (via user-sync) instead of only on next page load. Pauses when the
-		// tab is hidden.
-		refetchInterval: 30_000,
+		// No fixed interval: UserSync invalidates this query whenever the
+		// per-user `permsRev` counter moves (role/ban/feature-flag changes),
+		// and it refetches on window focus. This replaces the old 30s poll.
+		refetchOnWindowFocus: true,
 	});
 
 	const clerkIsAdmin = user?.publicMetadata?.isAdmin === true;
