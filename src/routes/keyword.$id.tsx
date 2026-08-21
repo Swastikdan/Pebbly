@@ -14,6 +14,7 @@ import { MediaGrid } from "@/components/ui/media-grid";
 import { Pagination } from "@/components/ui/pagination";
 import { MAX_PAGINATION_LIMIT } from "@/constants";
 import { getDiscoverMovies, getKeywordDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 import type { MediaType } from "@/types";
 
 const keywordPageSearchSchema = object({
@@ -56,7 +57,7 @@ function KeywordPage() {
 		isFetching: isMediaListFetching,
 		isLoading: isMediaListLoading,
 	} = useQuery({
-		queryKey: ["discover-movies-keyword", id, page],
+		queryKey: queryKeys.tmdb.discoverKeyword(Number(id), page),
 		queryFn: () => getDiscoverMovies({ with_keywords: Number(id), page }),
 		enabled: typeof window !== "undefined" && !!id,
 	});

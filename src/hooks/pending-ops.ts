@@ -1,4 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query";
+import {
+	type MutationDomain,
+	recordOwnMutation,
+} from "@/lib/realtime-mutations";
 
 /**
  * Pending-op journal + reconcile for array-shaped query caches (watchlist,
@@ -51,6 +55,13 @@ type RegisteredEntry = {
 type RegisteredOp = {
 	seq: number;
 	entries: RegisteredEntry[];
+	/**
+	 * Revision domain this write bumps server-side. When set, a successful
+	 * resolve records the own-mutation count automatically, so call sites can
+	 * never forget to count (and rollbacks record nothing). Ops whose count is
+	 * taken once per batched server flush (watchlist membership) stay untagged.
+	 */
+	domain?: MutationDomain;
 };
 
 type JournalState = {
@@ -117,6 +128,11 @@ function replay(
 	return rows;
 }
 
+export type BeginOpOptions = {
+	/** Revision domain the server write bumps; counted automatically on resolve. */
+	domain?: MutationDomain;
+};
+
 /**
  * Register one or more optimistic patches and apply them to the cache
  * immediately. Returns a handle used to resolve (success) or remove (error)
@@ -129,6 +145,7 @@ function replay(
 export function beginOp<T>(
 	queryClient: QueryClient,
 	entries: PendingOpEntry<T>[],
+	options?: BeginOpOptions,
 ): OpHandle {
 	if (typeof window === "undefined") {
 		throw new Error(
@@ -139,6 +156,7 @@ export function beginOp<T>(
 	const seq = ++journal.seqCounter;
 	const op: RegisteredOp = {
 		seq,
+		domain: options?.domain,
 		entries: entries.map((entry) => {
 			const keyString_ = keyString(entry.key);
 			journal.keyByString.set(keyString_, entry.key);
@@ -213,6 +231,14 @@ function resolveOp(
 			if (touched.has(entry.idOf(row))) nextBase.push(row);
 		}
 		journal.baseByKey.set(entry.keyString, nextBase);
+	}
+	// The write succeeded and bumped the matching server-side revision once,
+	// so count it as an own mutation (lets UserSync skip the redundant refetch
+	// this would otherwise trigger). Untagged ops are counted by their caller
+	// (one count per batched server flush). Rollbacks (`removeOp`) record
+	// nothing: a failed write never bumps the revision.
+	if (op.domain) {
+		recordOwnMutation(op.domain);
 	}
 }
 
