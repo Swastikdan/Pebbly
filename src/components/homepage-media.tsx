@@ -223,6 +223,7 @@ function ContinueWatchingContent({
 					: undefined);
 			const overview = item.overview ?? data?.overview;
 
+			// Skip items missing required fields
 			if (!title || !overview) return null;
 
 			const raw = data as unknown as Record<string, unknown>;

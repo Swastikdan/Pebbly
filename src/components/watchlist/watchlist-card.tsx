@@ -91,15 +91,8 @@ export function WatchlistCard({
 
 	return (
 		<Link
-			to={item.type === "tv" ? "/tv/$id/{-$slug}" : "/movie/$id/{-$slug}"}
-			params={{ id: String(item.external_id), slug: formattedTitle }}
-			search={{
-				trailer: undefined,
-				play: undefined,
-				video: undefined,
-				backdrop: undefined,
-				poster: undefined,
-			}}
+			// @ts-expect-error - correct link
+			to={`/${item.type}/${item.external_id}/${formattedTitle}`}
 			className="relative flex gap-3.5 rounded-2xl border border-border/40 bg-card p-3.5 transition-[border-color,transform] duration-150 hover:border-border/70 [@media(hover:hover)]:hover:-translate-y-0.5"
 		>
 			<div className="relative shrink-0">

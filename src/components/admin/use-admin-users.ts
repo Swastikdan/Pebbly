@@ -43,6 +43,10 @@ export function useAdminUsers() {
 	const usersQuery = useQuery({
 		queryKey: queryKeys.admin.users(currentUser?.id),
 		queryFn: () => unwrap(listUsers({ data: {} })),
+		// Keep the admin list fresh while an admin has the page open. This hook
+		// only ever mounts inside the admin-gated route (and listUsers is
+		// requireAdmin-protected server-side), so non-admins never fetch or sync
+		// admin data. Pauses when the tab is hidden.
 		refetchInterval: 10_000,
 	});
 	const refreshUsers = () => {

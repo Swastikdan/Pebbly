@@ -9,6 +9,10 @@ export const itemTmdbIdOf = (item: ListItemRow) => String(item.tmdbId);
 
 export type MixedListRow = CustomListRow | ListItemRow | string;
 
+/**
+ * Swap an optimistic list id for the server-assigned id across affected
+ * caches.
+ */
 export function swapListId(
 	queryClient: QueryClient,
 	optimisticId: string,
@@ -231,6 +235,7 @@ function buildOptimisticListItem(args: ToggleListItemArgs): ListItemRow {
 		listId: args.listId,
 		tmdbId: args.tmdbId,
 		mediaType: args.mediaType,
+		// Sorts last under `position ASC` until the server sync lands.
 		position: Date.now(),
 		addedAt: Date.now(),
 		title: args.title ?? null,
@@ -261,6 +266,8 @@ function applyItemsToggle(
 	args: ToggleListItemArgs,
 	adding: boolean,
 ): ListItemRow[] {
+	// Match on both tmdbId and mediaType so a movie and TV show sharing a TMDB
+	// id are never confused with one another.
 	if (!adding)
 		return rows.filter(
 			(i) => !(i.tmdbId === args.tmdbId && i.mediaType === args.mediaType),
@@ -331,6 +338,10 @@ export function beginToggleListItemOp(
 	return { handle: beginOp(queryClient, entries, { domain: "lists" }), adding };
 }
 
+/**
+ * The server returned the authoritative new state; flip the optimistic patch
+ * if it disagreed.
+ */
 export function applyToggleInverse(
 	queryClient: QueryClient,
 	args: ToggleListItemArgs,
@@ -375,6 +386,11 @@ export type ReorderItemsArgs = {
 	orderedItems: Array<{ tmdbId: number; mediaType: "movie" | "tv" }>;
 };
 
+/**
+ * Optimistically re-sort the cached items array into the submitted order and
+ * stamp matching 1-based positions, so the UI moves immediately while the
+ * server write is in flight.
+ */
 export function beginReorderListItemsOp(
 	queryClient: QueryClient,
 	args: ReorderItemsArgs,

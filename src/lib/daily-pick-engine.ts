@@ -1,3 +1,10 @@
+/**
+ * Pure candidate-selection engine for "Tonight's Pick". No React, no clocks,
+ * no network: the hook (`use-daily-pick.ts`) feeds it data and renders the
+ * result; this module decides what today's pick is and in which order
+ * candidates appear.
+ */
+
 export interface PickItem {
 	id: number;
 	title: string;
@@ -42,7 +49,10 @@ export interface DiscoveryCandidate {
 	first_air_date?: string | null;
 }
 
-/** Deterministic per-day index: same day + same list length => same pick. */
+/**
+ * Deterministic per-day index into a candidate list. Same day + same list
+ * length => same pick; injectable date keeps it testable.
+ */
 export function getTodaySeedIndex(max: number, date = new Date()): number {
 	if (max <= 0) return 0;
 	const todayStr = date.toISOString().slice(0, 10);
@@ -112,6 +122,11 @@ function buildTmdbInfoMap(
 	return map;
 }
 
+/**
+ * Combine watchlist + discovery sources into one interleaved 50/50 candidate
+ * list. Titles already watched or reacted "not-for-me" are excluded; titles
+ * currently being watched surface with their progress attached.
+ */
 export function buildDailyPickCandidates({
 	watchlist,
 	trending,
@@ -141,6 +156,7 @@ export function buildDailyPickCandidates({
 		};
 	};
 
+	// 1. Collect Watchlist items
 	if (watchlist && watchlist.length > 0) {
 		for (const item of watchlist) {
 			const key = `${item.type}:${item.external_id}`;
@@ -172,6 +188,7 @@ export function buildDailyPickCandidates({
 		}
 	}
 
+	// 2. Collect Discovery Media (Trending & Popular TV)
 	const addDiscovery = (item: DiscoveryCandidate) => {
 		const title = item.title ?? item.name;
 		const media_type =
@@ -212,6 +229,7 @@ export function buildDailyPickCandidates({
 		for (const item of popularTv) addDiscovery(item);
 	}
 
+	// Interleave 1 Watchlist item for every 1 Discovery item (50/50 balance)
 	const blended: PickItem[] = [];
 	let wIdx = 0;
 	let dIdx = 0;

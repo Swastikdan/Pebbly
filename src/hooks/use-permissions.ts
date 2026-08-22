@@ -21,11 +21,14 @@ export function usePermissions(): PermissionState & {
 } {
 	const { isSignedIn, isLoaded, user } = useUser();
 	const raw = useQuery({
+		// Scope by the authenticated user so cached permissions can never leak
+		// across accounts.
 		queryKey: queryKeys.permissions(user?.id ?? "anonymous"),
 		queryFn: () => unwrap(getUserFeaturesFn()),
 		enabled: !!isSignedIn,
-		// No polling: UserSync invalidates this query whenever the per-user
-		// `permsRev` counter moves (role/ban/feature-flag changes).
+		// No fixed interval: UserSync invalidates this query whenever the
+		// per-user `permsRev` counter moves (role/ban/feature-flag changes),
+		// and it refetches on window focus. This replaces the old 30s poll.
 		refetchOnWindowFocus: true,
 	});
 

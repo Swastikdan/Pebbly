@@ -1,6 +1,11 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Responsive horizontal media-card grid used across home, search, list, and
+ * recommendation pages. `stagger` adds the staggered-entrance animation used
+ * on full-page grids.
+ */
 export function MediaGrid({
 	stagger = false,
 	className,

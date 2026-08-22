@@ -1,9 +1,16 @@
 import * as v from "valibot";
 
-// TMDB frequently returns null or omits fields (character, poster_path,
-// biography, ...), so response schemas fall back to safe defaults via
-// v.fallback instead of throwing at runtime.
+/*
+ * Valibot Schemas for TMDB API Responses
+ *
+ * Resilient schema validation for TMDB API endpoints.
+ * TMDB frequently returns null or omits fields (e.g. character, poster_path, biography).
+ * Using v.fallback guarantees that null, undefined, or missing fields gracefully
+ * fall back to clean default values (e.g. "", 0, false, null) without throwing
+ * runtime validation errors or breaking TypeScript types.
+ */
 
+// Resilient field primitives using v.fallback and v.transform
 const str = (fallback = "") => v.fallback(v.string(), fallback);
 const strNull = () => v.fallback(v.nullable(v.string()), null);
 const strOpt = () =>
@@ -611,8 +618,9 @@ export const TvEpisodeDetailSchema = v.pipe(
 		vote_count: num(),
 	}),
 	// TMDB inlines crew + guest_stars on EVERY episode of a season response;
-	// nothing renders them and they can double the payload, so drop them at
-	// parse time to keep the cached graph (and dehydrated SSR payload) small.
+	// nothing in the app renders them, and for a 20+ episode season they can
+	// double the payload. Drop them at parse time so the cached object graph
+	// (and the dehydrated SSR payload) stays small.
 	v.transform((episode) => {
 		delete episode.crew;
 		delete episode.guest_stars;

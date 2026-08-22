@@ -19,12 +19,8 @@ export const CurrentSeason = (props: {
 					Current Season
 				</span>
 				<Link
-					to="/tv/$id/{-$slug}/season/$seasonNumber"
-					params={{
-						id: String(id),
-						slug: urltitle,
-						seasonNumber: String(season_data.season_number),
-					}}
+					// @ts-expect-error - correct link
+					to={`/tv/${id}/${urltitle}/season/${season_data.season_number}`}
 					className="pressable-small block"
 				>
 					<div className="flex items-start gap-5 rounded-3xl border-2 border-default bg-secondary/10 p-3 transition-[color,background-color,border-color,box-shadow] duration-150 hover:border-foreground/20 hover:bg-secondary/20 hover: md:p-5">
@@ -71,8 +67,8 @@ export const CurrentSeason = (props: {
 				<Link
 					aria-label={`View all episodes of season`}
 					className="w-fit text-lg hover:opacity-70"
-					to="/tv/$id/{-$slug}/seasons"
-					params={{ id: String(id), slug: urltitle }}
+					// @ts-expect-error - correct link
+					to={`/tv/${id}/${urltitle}/seasons`}
 				>
 					View All Seasons
 				</Link>

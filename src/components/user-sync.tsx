@@ -20,8 +20,10 @@ export const UserSync = () => {
 	const { signOut } = useClerk();
 	const { isBanned, isSignedIn, loading } = usePermissions();
 
+	// Per-user revision baselines for change detection.
 	const lastRevsRef = useRef<Record<string, DataVersion>>({});
 
+	// Sync user profile data to D1 on mount / user change
 	useEffect(() => {
 		if (isLoaded && user) {
 			unwrap(
@@ -46,6 +48,8 @@ export const UserSync = () => {
 		}
 	}, [isBanned, isSignedIn, loading, signOut]);
 
+	// Drop journal state (pending optimistic ops, server bases, sync timers)
+	// when the session ends so nothing leaks into the next signed-in user.
 	useEffect(() => {
 		if (isLoaded && !user) {
 			clearPendingOps(queryClient);
@@ -88,14 +92,24 @@ export const UserSync = () => {
 		[queryClient, user?.id],
 	);
 
+	// Same-browser sibling tabs learn about this tab's mutations instantly via
+	// BroadcastChannel instead of waiting for the next version poll.
 	useEffect(() => {
 		return subscribeToCrossTabMutations(invalidateDomain);
 	}, [invalidateDomain]);
 
+	// Realtime change detection: poll the tiny per-user revision counters (1
+	// row read) instead of re-fetching whole collections on an interval. When a
+	// revision changes, e.g. another device/tab toggled an item, invalidate
+	// the matching query group so mounted queries refetch. Cost stays O(1) no
+	// matter how large the user's watchlist/lists are.
 	const versionQuery = useQuery({
 		queryKey: queryKeys.data.version(user?.id),
 		queryFn: fetchDataVersion,
 		enabled: !!isSignedIn,
+		// Instant convergence when the user returns to the tab (covers
+		// visibilitychange too via TanStack's focus manager) instead of
+		// waiting for the next tick of the interval.
 		refetchOnWindowFocus: true,
 		// Adaptive cadence: burst right after own mutations (external changes
 		// converge fast while the user is active), normal cadence during an
@@ -108,6 +122,8 @@ export const UserSync = () => {
 		},
 	});
 
+	// Diagnostic: a failing version poll silently disables cross-device sync
+	// (the effect below bails on undefined data), so surface it loudly instead.
 	useEffect(() => {
 		if (versionQuery.error) {
 			console.warn(

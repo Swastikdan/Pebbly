@@ -66,6 +66,7 @@ export const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
   ]
 }`;
 
+/** Shared media label for prompt goals (movie / TV show / both). */
 export function mediaLabel(mediaTypePreference?: string): string {
 	return mediaTypePreference === "movie"
 		? "movies"
@@ -74,6 +75,7 @@ export function mediaLabel(mediaTypePreference?: string): string {
 			: "movies and TV shows";
 }
 
+/** Clamp the requested title count to the 1..30 bound used by every prompt. */
 export function clampTitleCount(count?: number): number {
 	return Math.min(Math.max(count ?? 10, 1), 30);
 }
@@ -240,7 +242,7 @@ export function buildWatchlistPrompt(
 		excludeTmdbIds,
 	);
 
-	let prompt = `Here is my watchlist data:\n\n${contextPrompt}`;
+	let prompt = `Here is my watchlist data:\n\n` + contextPrompt;
 
 	const listItemsByListId = new Map<string, CustomListItemSummary[]>();
 	for (const li of listItems) {

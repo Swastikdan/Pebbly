@@ -15,9 +15,6 @@ import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IMAGE_PREFIX } from "@/constants";
-
-const SKELETON_KEYS = Array.from({ length: 12 }, (_, i) => `skeleton-${i}`);
-
 import {
 	getImageDialogKey,
 	type MediaDialogKey,
@@ -385,9 +382,10 @@ const GLobalMediaVideoImageContainerLoader = () => {
 				</span>
 				<ScrollContainer isButtonsVisible={false}>
 					<div className="flex items-center justify-center gap-3">
-						{SKELETON_KEYS.slice(0, 6).map((key) => (
+						{Array.from({ length: 6 }).map((_, index) => (
 							<Skeleton
-								key={key}
+								// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+								key={index}
 								className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
 							/>
 						))}
@@ -402,9 +400,10 @@ const GLobalMediaVideoImageContainerLoader = () => {
 					<span className="w-fit text-lg md:text-xl">Backdrops</span>
 					<ScrollContainer isButtonsVisible={false}>
 						<div className="flex items-center justify-center gap-3">
-							{SKELETON_KEYS.slice(0, 6).map((key) => (
+							{Array.from({ length: 6 }).map((_, index) => (
 								<Skeleton
-									key={key}
+									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+									key={index}
 									className="bg-accent aspect-video h-44 w-auto rounded-xl md:h-52 lg:h-60"
 								/>
 							))}
@@ -413,9 +412,10 @@ const GLobalMediaVideoImageContainerLoader = () => {
 					<span className="w-fit text-lg font-heading md:text-xl">Posters</span>
 					<ScrollContainer isButtonsVisible={false}>
 						<div className="flex items-center justify-center gap-3">
-							{SKELETON_KEYS.map((key) => (
+							{Array.from({ length: 12 }).map((_, index) => (
 								<Skeleton
-									key={key}
+									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+									key={index}
 									className="bg-accent aspect-video h-44 w-30 rounded-xl md:h-52 md:w-35.75 lg:h-60 lg:w-41.25"
 								/>
 							))}

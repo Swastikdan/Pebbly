@@ -98,8 +98,14 @@ export const importWatchlist = createServerFn({ method: "POST" })
 			}
 		}
 
+		// Execute the watch-item import in bounded batches. D1 batches run
+		// atomically, but each call must finish within the platform's 30 s
+		// budget, so a very large import is split into ≤100-statement batches.
+		// Typical imports stay a single atomic round trip.
 		await runBoundedBatches(db, watchStatements);
 
+		// Episode writes accumulate here so they run as a second batch after the
+		// watch-item batch.
 		const episodeStatements: Parameters<typeof db.batch>[0][number][] = [];
 
 		const importedTvIds = new Set(
@@ -162,8 +168,10 @@ export const importWatchlist = createServerFn({ method: "POST" })
 			}
 		}
 
-		// 7 bound params per row and D1 caps bound parameters at 100 per query,
-		// so multi-row INSERTs are chunked at 14 rows.
+		// Insert new episodes in chunks of 14 rows: each row binds 7 parameters
+		// (id, userId, tmdbId, season, episode, isWatched, updatedAt) and D1 caps
+		// bound parameters at 100 per query. A larger chunk would make the
+		// multi-row INSERT exceed that limit and fail the whole import.
 		const EPISODE_CHUNK_ROWS = 14;
 		for (let i = 0; i < episodesToInsert.length; i += EPISODE_CHUNK_ROWS) {
 			const chunk = episodesToInsert.slice(i, i + EPISODE_CHUNK_ROWS);
@@ -182,9 +190,10 @@ export const importWatchlist = createServerFn({ method: "POST" })
 	});
 
 /**
- * Run a statement list as one or more D1 `db.batch()` calls, capped at 100
- * statements per call so a huge import stays within the platform's 30 s
- * execution budget.
+ * Run a statement list as one or more D1 `db.batch()` calls, capped at
+ * `MAX_STATEMENTS_PER_BATCH` per call so a huge import stays within D1's
+ * per-call execution budget (the platform requires the whole call to resolve
+ * in 30 s). No-op for an empty list.
  */
 async function runBoundedBatches(
 	db: ReturnType<typeof getDb>,

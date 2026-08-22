@@ -33,6 +33,10 @@ async function requireAdmin(): Promise<
 
 	const { user, claims } = result;
 
+	// Admin status is decided by the signed JWT claim or the live Clerk API,
+	// the same authoritative source `hasFeature` uses. There is no stored
+	// `users.isAdmin` flag to consult (the column was removed): a stored copy
+	// would go stale the moment someone is demoted in Clerk.
 	const isAdmin =
 		isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub));
 	if (!isAdmin) {
@@ -91,9 +95,12 @@ export const setRolePermission = createServerFn({ method: "POST" })
 		const admin = await requireAdmin();
 		if (admin.error) return admin.error;
 
+		// feature is already validated to a known RbacFeature by the schema.
 		const db = getDb(getEnv());
 		await syncRolePermissions(db, true);
 
+		// Atomic upsert keyed on the (role, feature) primary key, replaces the
+		// old select-then-insert. Role is always the global feature flag.
 		await db
 			.insert(rolePermissions)
 			.values({
@@ -106,7 +113,8 @@ export const setRolePermission = createServerFn({ method: "POST" })
 				set: { enabled: data.enabled },
 			});
 
-		// Global feature flags affect every user, so bump every row's revision.
+		// Global feature flags affect every user, so all permission revisions
+		// move together (cheap at this scale, keeps clients off a fixed poll).
 		await db.update(users).set({ permsRev: sql`${users.permsRev} + 1` });
 
 		return ok({ ok: true });
@@ -196,10 +204,12 @@ export const listUsers = createServerFn({ method: "POST" })
 				.from(users)
 				.limit(data.limit ?? 200);
 
-			// Admin status lives in Clerk (see requireAdmin), resolved here via
-			// one paginated Clerk user-list call indexed by sub. On API failure
-			// this degrades to "no admins" for display only; it never gates
-			// access (that happens in requireAdmin / hasFeature).
+			// Admin status lives in Clerk's public metadata, not the DB (the
+			// `users.is_admin` column was removed, a stored copy goes stale).
+			// Resolve it with one paginated Clerk user-list call, then index by
+			// clerk sub id so the whole page maps in a single pass. On API
+			// failure this degrades to "no admins" for display only; it never
+			// gates access (that happens in requireAdmin / hasFeature).
 			const adminClerkIds = await getClerkAdminIds();
 
 			const results: Array<{

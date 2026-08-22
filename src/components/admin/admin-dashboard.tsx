@@ -20,6 +20,7 @@ export function AdminDashboard() {
 			</div>
 
 			<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6 pb-20 sm:pb-8 space-y-6">
+				{/* Admin Dashboard Title + Tab Navigation */}
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 					<div>
 						<h1 className="font-bold text-xl sm:text-2xl leading-tight tracking-tight">
@@ -49,6 +50,7 @@ export function AdminDashboard() {
 					</div>
 				</div>
 
+				{/* Tab Content */}
 				<div>
 					{tab === "users" && <AdminUserTable />}
 					{tab === "permissions" && <AdminPermissionToggles />}

@@ -1,8 +1,23 @@
+/**
+ * Generic request batching utility that collects multiple rapid calls within a
+ * configurable time window (debounce/microtask buffer) and executes them in a
+ * single batch request.
+ */
+
 export type BatcherOptions<TItem> = {
+	/** Debounce wait time (ms) after the last item is queued before flushing (default: 300ms) */
 	delayMs?: number;
+	/** Max wait time (ms) since the first queued item before forcing a flush (default: 1200ms) */
 	maxWaitMs?: number;
+	/** Max number of items before triggering an immediate flush (default: 100) */
 	maxBatchSize?: number;
+	/** Optional key function to deduplicate requests in the same batch window (latest state wins) */
 	getKey?: (item: TItem) => string;
+	/**
+	 * Flush pending items when the page is hidden or unloaded, so queued writes
+	 * are not lost inside the debounce window (default: false). Call `dispose()`
+	 * to remove the listeners.
+	 */
 	flushOnPageHide?: boolean;
 };
 
@@ -49,6 +64,10 @@ export class RequestBatcher<TItem, TResult = unknown> {
 		}
 	}
 
+	/**
+	 * Schedule an item to be processed in the next batch.
+	 * Returns a Promise that resolves when the entire batch completes.
+	 */
 	schedule(item: TItem): Promise<TResult> {
 		return new Promise<TResult>((resolve, reject) => {
 			if (this.getKey) {
@@ -58,6 +77,7 @@ export class RequestBatcher<TItem, TResult = unknown> {
 					(entry) => getKeyFn(entry.item) === key,
 				);
 				if (existingIndex !== -1) {
+					// Replace with latest payload, and chain resolvers
 					const prev = this.queue[existingIndex];
 					this.queue[existingIndex] = {
 						item,
@@ -105,6 +125,9 @@ export class RequestBatcher<TItem, TResult = unknown> {
 		}, waitTime);
 	}
 
+	/**
+	 * Immediately flush any currently queued items.
+	 */
 	async flush(): Promise<void> {
 		if (this.timer) {
 			clearTimeout(this.timer);
@@ -139,6 +162,9 @@ export class RequestBatcher<TItem, TResult = unknown> {
 		}
 	}
 
+	/**
+	 * Clear any pending items in the queue without processing them.
+	 */
 	clear(): void {
 		if (this.timer) {
 			clearTimeout(this.timer);
@@ -148,6 +174,9 @@ export class RequestBatcher<TItem, TResult = unknown> {
 		this.queue = [];
 	}
 
+	/**
+	 * Remove the page-lifecycle listeners and drop any pending items.
+	 */
 	dispose(): void {
 		if (typeof window !== "undefined" && this.handlePageHide) {
 			window.removeEventListener("pagehide", this.handlePageHide);

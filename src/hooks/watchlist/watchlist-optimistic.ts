@@ -115,6 +115,10 @@ function beginMembershipOp(
 	]);
 }
 
+/**
+ * Apply a whole batch of membership changes as a single optimistic op so the
+ * UI updates in one transaction and one rollback covers every item.
+ */
 function beginMembershipBatchOp(
 	queryClient: QueryClient,
 	argsList: WatchlistMembershipArgs[],

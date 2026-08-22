@@ -110,6 +110,7 @@ const HomepageRecommendationCard = memo(
 					hideWatchlistButton={true}
 				/>
 
+				{/* Top-right solid action buttons overlay */}
 				<div className="absolute right-2 top-2 z-20 flex gap-1.5 opacity-0 group-hover/rec-card:opacity-100 transition-opacity duration-200 ease-out md:opacity-100">
 					<Button
 						variant="secondary"
@@ -190,6 +191,8 @@ export function HomepageRecommendations() {
 		queryKey: queryKeys.recommendations.homepage(user?.id),
 		queryFn: () => unwrap(getHomepageRecommendations({ data: {} })),
 		enabled: canAccessFeature,
+		// Keep the previous data on screen while a refetch is in flight so
+		// navigation never flashes a skeleton (replaces the old ref cache).
 		placeholderData: keepPreviousData,
 	});
 	const recommendationsData = recommendationsQuery.data;
@@ -310,6 +313,7 @@ export function HomepageRecommendations() {
 			const mediaKey = `${rec.mediaType}:${resolvedId}`;
 
 			if (feedback === "dislike") {
+				// Hide card immediately on UI
 				setLocalDismissedKeys((prev) => {
 					const next = new Set(prev);
 					next.add(key);
@@ -329,6 +333,7 @@ export function HomepageRecommendations() {
 				});
 			}
 
+			// Toggle watchlist item if liking or unliking
 			if (feedback === "like") {
 				toggleWatchlist(
 					{
@@ -387,6 +392,7 @@ export function HomepageRecommendations() {
 			} catch (err) {
 				console.error("Failed to update recommendation feedback:", err);
 				if (feedback === "dislike") {
+					// Revert local dismiss on failure
 					setLocalDismissedKeys((prev) => {
 						const next = new Set(prev);
 						next.delete(key);

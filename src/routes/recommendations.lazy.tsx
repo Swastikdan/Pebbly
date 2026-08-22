@@ -358,6 +358,7 @@ function RecommendationsContent({
 							</p>
 						</div>
 					</div>
+					{/* Indeterminate progress bar */}
 					<div
 						className="h-1 w-full overflow-hidden rounded-full bg-secondary"
 						role="progressbar"

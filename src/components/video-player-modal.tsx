@@ -102,9 +102,11 @@ export function VideoPlayerModal({
 
 	usePlayerProgressListener(listenerContext, isOpen);
 
+	// Auto-open when ?play=true is in the URL
 	useEffect(() => {
 		const shouldPlay = search.play === true || search.play === "true";
 		if (!shouldPlay) {
+			// play param has been removed, safe to reset the guard
 			closedByUserRef.current = false;
 		}
 		if (shouldPlay && !isOpen && !closedByUserRef.current) {
@@ -112,6 +114,7 @@ export function VideoPlayerModal({
 		}
 	}, [search.play, isOpen]);
 
+	// Fullscreen listener
 	useEffect(() => {
 		const handleFullscreenChange = () => {
 			setIsFullscreen(!!document.fullscreenElement);
@@ -124,11 +127,15 @@ export function VideoPlayerModal({
 		};
 	}, []);
 
+	// Inactivity timer to hide close button
 	const resetInactivityTimer = useCallback(() => {
 		setCloseVisible(true);
 		if (inactivityTimerRef.current) {
 			clearTimeout(inactivityTimerRef.current);
 		}
+		// On mobile, tapping inside the cross-origin iframe often never blurs
+		// the window (especially in fullscreen), so the controls could never
+		// come back. Keep them always visible on touch devices instead.
 		inactivityTimerRef.current = setTimeout(() => {
 			setCloseVisible(false);
 		}, INACTIVITY_HIDE_DELAY);
@@ -207,21 +214,26 @@ export function VideoPlayerModal({
 
 	const handleOpenChange = (open: boolean) => {
 		if (!open) {
+			// Set guard BEFORE setIsOpen(false) so the auto-open effect
+			// doesn't re-open the modal while play param is still in the URL
 			closedByUserRef.current = true;
 		}
 		setIsOpen(open);
 		if (!open) {
 			setIsLoading(true);
+			// Exit browser fullscreen if active
 			if (document.fullscreenElement) {
 				try {
 					document.exitFullscreen();
-				} catch {}
+				} catch {
+					// ignore
+				}
 			}
 			if (search?.play) {
 				setTimeout(() => {
-					navigate({
-						to: ".",
-						search: (prev) => {
+					// biome-ignore lint/suspicious/noExplicitAny: TanStack Router search param workaround
+					(navigate as any)({
+						search: (prev: Record<string, unknown>) => {
 							const next = { ...prev };
 							delete next.play;
 							return next;
@@ -264,6 +276,9 @@ export function VideoPlayerModal({
 		}
 	};
 
+	// Controls are hidden after inactivity on desktop (mouse hover reveals
+	// them), but on mobile the auto-hide makes them impossible to bring back
+	// inside the cross-origin iframe, so keep them always visible there.
 	const controlsVisible = closeVisible;
 
 	return (

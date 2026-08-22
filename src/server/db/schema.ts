@@ -17,18 +17,21 @@ export const users = sqliteTable("users", {
 	image: text("image"),
 	email: text("email"),
 	roles: text("roles", { mode: "json" }).$type<string[]>().default([]),
-	// No `is_admin` column: admin status lives in Clerk's signed JWT claim /
-	// live API; a stored flag goes stale the moment someone is demoted.
+	// No `is_admin` column: admin status lives in Clerk's public metadata (the
+	// signed JWT claim or the live Clerk API). A stored flag goes stale the
+	// moment someone is demoted in Clerk, so it is never consulted for access
+	// decisions, keeping it in the DB only invited drift.
 	isBanned: integer("is_banned", { mode: "boolean" }).default(false),
-	// Monotonic per-domain revision counters, bumped on every relevant
-	// mutation so clients can poll this single small row to detect
-	// cross-device changes instead of re-fetching whole collections.
+	// Monotonic revision counters for the user's data domains. Bumped on every
+	// relevant mutation so clients can poll this single small row to detect
+	// cross-device changes instead of re-fetching whole collections (which is
+	// O(collection size) in D1 rows read).
 	watchlistRev: integer("watchlist_rev").default(0).notNull(),
 	listsRev: integer("lists_rev").default(0).notNull(),
 	aiRev: integer("ai_rev").default(0).notNull(),
-	// RBAC revision (roles, ban flag, global feature flags) so the same
-	// single-row poll drives permission refreshes; a global feature-flag
-	// toggle bumps every user's counter.
+	// Revision for RBAC state (roles, ban flag, global feature flags) so the
+	// same single-row version poll can drive permission refreshes; a global
+	// feature-flag toggle bumps every user's counter.
 	permsRev: integer("perms_rev").default(0).notNull(),
 });
 
@@ -48,7 +51,7 @@ export const watchItems = sqliteTable(
 		reaction: text("reaction", {
 			enum: ["loved", "liked", "mixed", "not-for-me", "recommended"],
 		}),
-		progress: integer("progress").default(0),
+		progress: integer("progress").default(0), // 0..100
 		title: text("title"),
 		image: text("image"),
 		rating: real("rating"),
@@ -134,7 +137,7 @@ export const listItems = sqliteTable(
 	},
 	(t) => [
 		uniqueIndex("list_items_list_media_uq").on(t.listId, t.tmdbId, t.mediaType),
-		// Covers (user, media) and user-only lookups via leftmost prefix.
+		// Covers both (user, media) and user-only lookups via leftmost prefix.
 		index("list_items_user_media_idx").on(t.userId, t.tmdbId, t.mediaType),
 	],
 );
@@ -155,7 +158,7 @@ export const episodeProgress = sqliteTable(
 		updatedAt: integer("updated_at").notNull(),
 	},
 	(t) => [
-		// Covers (user), (user, show), and (user, show, season) via leftmost prefix.
+		// Covers (user), (user, show), and (user, show, season), the 4 Convex indexes collapse here.
 		uniqueIndex("episode_user_season_ep_uq").on(
 			t.userId,
 			t.tmdbId,
@@ -228,7 +231,7 @@ export const recommendationFeedback = sqliteTable(
 	},
 	(t) => [
 		uniqueIndex("feedback_user_media_uq").on(t.userId, t.tmdbId, t.mediaType),
-		// (user, feedback) drives the homepage/generation feedback lookups.
+		// (user, feedback) drives the homepage/generation feedback lookups, must not be dropped
 		index("feedback_user_feedback_idx").on(t.userId, t.feedback),
 	],
 );

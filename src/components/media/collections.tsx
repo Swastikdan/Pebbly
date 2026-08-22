@@ -45,11 +45,8 @@ export const Collections = (props: { id: number }) => {
 							)}
 						</span>
 						<Link
-							to="/collection/$id/{-$slug}"
-							params={{
-								id: String(id),
-								slug: formatMediaTitle.encode(data?.name ?? ""),
-							}}
+							// @ts-expect-error - correct link
+							to={`/collection/${id}/${formatMediaTitle.encode(data?.name ?? "")}`}
 						>
 							<Button
 								className="mt-3 font-medium shadow pressable"

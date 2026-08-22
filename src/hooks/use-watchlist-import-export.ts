@@ -325,6 +325,7 @@ export const useWatchlistImportExport = () => {
 						);
 					}
 
+					// Pre-validate full payload on the client with Valibot schema
 					const payload = {
 						items: validItems,
 						watchedEpisodes,
@@ -355,6 +356,11 @@ export const useWatchlistImportExport = () => {
 						await queryClient.invalidateQueries({
 							queryKey: queryKeys.watchlist.list(),
 						});
+						await queryClient.invalidateQueries({
+							queryKey: queryKeys.watchlist.allEpisodes(),
+						});
+						// Imported shows also write episode progress, refresh any
+						// per-show episode caches.
 						await queryClient.invalidateQueries({
 							queryKey: queryKeys.watchlist.allEpisodes(),
 						});

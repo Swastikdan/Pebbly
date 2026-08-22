@@ -16,12 +16,6 @@ const spinnerVariants = cva("relative block opacity-[0.65]", {
 	},
 });
 
-const SPINNER_LEAVES = Array.from({ length: 8 }, (_, i) => ({
-	key: `leaf-${i}`,
-	rotation: i * 45,
-	delay: -(7 - i) * 100,
-}));
-
 export interface SpinnerProps
 	extends React.HTMLAttributes<HTMLSpanElement>,
 		VariantProps<typeof spinnerVariants> {
@@ -56,13 +50,14 @@ function Spinner({
 			ref={ref}
 			{...props}
 		>
-			{SPINNER_LEAVES.map((leaf) => (
+			{Array.from({ length: 8 }).map((_, i) => (
 				<span
-					key={leaf.key}
+					// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+					key={i}
 					className="absolute top-0 left-1/2 h-full w-[12.5%] animate-spinner-leaf-fade"
 					style={{
-						transform: `rotate(${leaf.rotation}deg)`,
-						animationDelay: `${leaf.delay}ms`,
+						transform: `rotate(${i * 45}deg)`,
+						animationDelay: `${-(7 - i) * 100}ms`,
 					}}
 				>
 					<span

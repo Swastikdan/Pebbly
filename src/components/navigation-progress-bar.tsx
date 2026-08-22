@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface NavigationProgressBarProps {
+	/** Minimum loading duration (in ms) before the bar appears. Default is 200ms. */
 	delay?: number;
 }
 
@@ -21,11 +22,13 @@ export function NavigationProgressBar({
 
 	useEffect(() => {
 		if (isLoading) {
+			// Clear any lingering exit timer from a rapid re-navigation
 			if (finishTimerRef.current) {
 				clearTimeout(finishTimerRef.current);
 				finishTimerRef.current = null;
 			}
 
+			// Wait for the delay threshold before rendering anything
 			delayTimerRef.current = setTimeout(() => {
 				setVisible(true);
 				setProgress(20);
@@ -42,6 +45,7 @@ export function NavigationProgressBar({
 				}, 150);
 			}, delay);
 		} else {
+			// Fast route: cancel pending start if route resolved within the delay window
 			if (delayTimerRef.current) {
 				clearTimeout(delayTimerRef.current);
 				delayTimerRef.current = null;
@@ -52,6 +56,7 @@ export function NavigationProgressBar({
 				timerRef.current = null;
 			}
 
+			// Only complete and fade out if the bar actually became visible
 			if (visible) {
 				setProgress(100);
 				finishTimerRef.current = setTimeout(() => {

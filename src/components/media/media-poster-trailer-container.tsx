@@ -83,8 +83,8 @@ export function MediaPosterTrailerContainer(props: {
 								open={search.trailer === video.key}
 								onOpenChange={(isOpen) =>
 									navigate({
-										to: ".",
-										search: (prev) => {
+										// biome-ignore lint/suspicious/noExplicitAny: navigate requires route-specific search type
+										search: (prev: any) => {
 											const next = { ...prev };
 											if (isOpen) {
 												next.trailer = video.key;
@@ -95,7 +95,8 @@ export function MediaPosterTrailerContainer(props: {
 										},
 										resetScroll: false,
 										replace: true,
-									})
+										// biome-ignore lint/suspicious/noExplicitAny: navigate options need route-specific type
+									} as any)
 								}
 							>
 								<DialogTrigger asChild>
@@ -146,14 +147,15 @@ export function MediaPosterTrailerContainer(props: {
 												onClick={(e) => {
 													e.stopPropagation();
 													navigate({
-														to: ".",
-														search: (prev) => ({
+														// biome-ignore lint/suspicious/noExplicitAny: navigate requires route-specific search type
+														search: (prev: any) => ({
 															...prev,
 															trailer: trailervideos[index - 1].key,
 														}),
 														resetScroll: false,
 														replace: true,
-													});
+														// biome-ignore lint/suspicious/noExplicitAny: navigate options need route-specific type
+													} as any);
 												}}
 											>
 												<ChevronLeft className="size-6" />
@@ -168,14 +170,15 @@ export function MediaPosterTrailerContainer(props: {
 												onClick={(e) => {
 													e.stopPropagation();
 													navigate({
-														to: ".",
-														search: (prev) => ({
+														// biome-ignore lint/suspicious/noExplicitAny: navigate requires route-specific search type
+														search: (prev: any) => ({
 															...prev,
 															trailer: trailervideos[index + 1].key,
 														}),
 														resetScroll: false,
 														replace: true,
-													});
+														// biome-ignore lint/suspicious/noExplicitAny: navigate options need route-specific type
+													} as any);
 												}}
 											>
 												<ChevronRight className="size-6" />

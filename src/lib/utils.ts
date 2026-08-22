@@ -34,17 +34,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * LRU-aware localStorage wrapper: evicts the oldest entries before the
- * browser's ~5MB localStorage quota is hit.
+ * Creates an LRU-aware localStorage wrapper that evicts the oldest store
+ * when total usage approaches the ~5MB quota (threshold: 4MB).
  */
-const STORAGE_SIZE_LIMIT = 4 * 1024 * 1024;
+const STORAGE_SIZE_LIMIT = 4 * 1024 * 1024; // 4MB, room for misc overhead
 
 function getStorageSize(storage: Storage): number {
 	let size = 0;
 	for (let i = 0; i < storage.length; i++) {
 		const key = storage.key(i);
 		if (!key) continue;
-		size += key.length * 2;
+		size += key.length * 2; // key characters as UTF-16
 		const val = storage.getItem(key);
 		if (val) size += val.length * 2;
 	}
@@ -68,7 +68,9 @@ function saveLruTimestamps(
 ) {
 	try {
 		storage.setItem(LRU_KEY, JSON.stringify(timestamps));
-	} catch {}
+	} catch {
+		// If we can't even save timestamps, just skip LRU tracking
+	}
 }
 
 export function createLRUStorage(): Storage {
@@ -85,16 +87,18 @@ export function createLRUStorage(): Storage {
 		const timestamps = getLruTimestamps(base);
 		const entries = Object.entries(timestamps)
 			.filter(([key]) => key !== LRU_KEY)
-			.sort(([, a], [, b]) => a - b);
+			.sort(([, a], [, b]) => a - b); // oldest first
 
 		for (const [key] of entries) {
-			if (size < STORAGE_SIZE_LIMIT * 0.6) break;
+			if (size < STORAGE_SIZE_LIMIT * 0.6) break; // evict down to ~60%
 			try {
 				const val = base.getItem(key);
 				base.removeItem(key);
 				delete timestamps[key];
 				if (val) size -= (key.length + val.length) * 2;
-			} catch {}
+			} catch {
+				// best-effort
+			}
 		}
 
 		saveLruTimestamps(base, timestamps);
@@ -177,6 +181,7 @@ export function validateId(id: number): asserts id is number {
 export function parseAndValidateId(
 	input: string | number,
 ): ValidationResult<number> {
+	// Strictly reject strings that aren't purely numeric (parseInt would silently ignore trailing garbage)
 	if (typeof input === "string" && !/^\d+$/.test(input)) {
 		return {
 			success: false,

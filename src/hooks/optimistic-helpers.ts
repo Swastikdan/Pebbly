@@ -1,5 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
 
+/**
+ * Optimistic updater port for TanStack Query. `getKey(args)` resolves the
+ * query key (from the keys factory), `updateFn` patches the cached array.
+ */
 export function createOptimisticUpdater<T, A = Record<string, unknown>>(
 	getKey: (args: A) => readonly unknown[],
 	updateFn: (items: T[], args: A) => T[],
@@ -16,6 +20,11 @@ export function createOptimisticUpdater<T, A = Record<string, unknown>>(
 
 type Snapshot = { queryKey: readonly unknown[]; previous: unknown };
 
+/**
+ * Begin an optimistic update across a set of query keys: cancels in-flight
+ * queries, snapshots current data, applies `apply()`, and returns a rollback
+ * function (to be invoked from `onError`).
+ */
 export async function beginOptimistic(
 	queryClient: QueryClient,
 	queryKeys: readonly (readonly unknown[])[],
@@ -44,6 +53,7 @@ export async function beginOptimistic(
 	};
 }
 
+/** Patch a single cached value (e.g. `getMediaState`). */
 export function setCached<T>(
 	queryClient: QueryClient,
 	queryKey: readonly unknown[],

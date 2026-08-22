@@ -34,8 +34,6 @@ import type { MediaType } from "@/types";
 
 type FilterType = MediaType | null;
 
-const SKELETON_KEYS = Array.from({ length: 12 }, (_, i) => `skeleton-${i}`);
-
 export const Route = createLazyFileRoute("/search")({
 	component: SearchPage,
 });
@@ -57,6 +55,8 @@ function SearchPage() {
 		queryFn: () => getSearchResult({ query, page }),
 		enabled: typeof window !== "undefined" && !!query,
 		staleTime: 1000 * 60 * 60 * 24,
+		// Keep search results bounded in memory; data is still considered
+		// fresh for a day (staleTime above), only unused copies are evicted.
 		gcTime: 1000 * 60 * 30,
 		retry: 2,
 		refetchOnWindowFocus: false,
@@ -157,8 +157,12 @@ function SearchPage() {
 					<h2 className="text-lg font-semibold">Trending Now</h2>
 					{isTrendingLoading ? (
 						<MediaGrid>
-							{SKELETON_KEYS.map((key) => (
-								<MediaCardSkeleton key={key} card_type="horizontal" />
+							{Array.from({ length: 12 }).map((_, index) => (
+								<MediaCardSkeleton
+									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+									key={index}
+									card_type="horizontal"
+								/>
 							))}
 						</MediaGrid>
 					) : (
@@ -202,8 +206,12 @@ function SearchPage() {
 				</div>
 				<div className="flex min-h-96 w-full items-center justify-center">
 					<MediaGrid>
-						{SKELETON_KEYS.map((key) => (
-							<MediaCardSkeleton key={key} card_type="horizontal" />
+						{Array.from({ length: 12 }).map((_, index) => (
+							<MediaCardSkeleton
+								// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+								key={index}
+								card_type="horizontal"
+							/>
 						))}
 					</MediaGrid>
 				</div>

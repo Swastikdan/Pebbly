@@ -9,6 +9,13 @@ import {
 import { type ProgressStatus, unwrap } from "@/server/schema/common";
 import { reconcileListFetch } from "./pending-ops";
 
+/**
+ * Query functions for watchlist caches. Each one routes its server response
+ * through the pending-op reconciler so a refetch can never clobber optimistic
+ * state that is still in flight. The `queryClient` param scopes the reconciler
+ * journal to the calling client (per-request during SSR).
+ */
+
 export async function fetchWatchlistList(
 	queryClient: QueryClient,
 ): Promise<WatchItemRow[]> {

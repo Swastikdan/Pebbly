@@ -7,8 +7,6 @@ import {
 } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 
-const SKELETON_KEYS = Array.from({ length: 6 }, (_, i) => `skeleton-${i}`);
-
 export const MediaRecommendations = (props: {
 	id: number;
 	urltitle: string;
@@ -44,8 +42,12 @@ export const MediaRecommendations = (props: {
 					</span>
 					<ScrollContainer isButtonsVisible={false}>
 						<div className="flex gap-4 p-4 first:pl-0 last:pr-0">
-							{SKELETON_KEYS.map((key) => (
-								<MediaCardSkeleton key={key} card_type="vertical" />
+							{Array.from({ length: 6 }).map((_, index) => (
+								<MediaCardSkeleton
+									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+									key={index}
+									card_type="vertical"
+								/>
 							))}
 						</div>
 					</ScrollContainer>

@@ -113,24 +113,13 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 	const { removeFromContinueWatching } = useRemoveFromContinueWatching();
 	const setProgressStatus = useSetProgressStatus();
 
-	const emptyDetailSearch = {
-		trailer: undefined,
-		play: undefined,
-		video: undefined,
-		backdrop: undefined,
-		poster: undefined,
-	};
-
 	return (
 		<div className={cn("group relative", containerClassName)}>
 			<Link
-				to={media_type === "tv" ? "/tv/$id/{-$slug}" : "/movie/$id/{-$slug}"}
-				params={{ id: String(id), slug: formattedTitle }}
-				search={
-					isContinueWatching
-						? { ...emptyDetailSearch, play: true }
-						: emptyDetailSearch
-				}
+				// @ts-expect-error - correct link
+				to={`/${media_type}/${id}/${formattedTitle}`}
+				// biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
+				search={(isContinueWatching ? { play: true } : undefined) as any}
 				className={linkClassName}
 			>
 				<div

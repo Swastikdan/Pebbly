@@ -234,8 +234,12 @@ function PersonPage() {
 							<div className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap sm:text-[15px]">
 								<div className="flex flex-col">
 									{isBiographyExpanded ? (
-										biographyParagraphs.map((paragraph) => (
-											<p key={paragraph} className="mb-4">
+										biographyParagraphs.map((paragraph, index) => (
+											<p
+												// biome-ignore lint/suspicious/noArrayIndexKey: static paragraph list
+												key={index}
+												className="mb-4"
+											>
 												{paragraph}
 											</p>
 										))

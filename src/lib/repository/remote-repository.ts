@@ -65,6 +65,13 @@ function logWatchlistError(action: string, error: unknown) {
 	console.error(`Failed to ${action}`, error);
 }
 
+/**
+ * Run a server write through the optimistic journal: begin the op, resolve on
+ * success, roll back on failure, and always schedule a background sync. This
+ * replicates the `useMutation` lifecycle (onMutate/onSuccess/onError/onSettled)
+ * imperatively so the repository does not depend on hooks. Own-write revision
+ * counting is handled by the op's domain tag (see `beginOp`).
+ */
 function runJournaledMutation(
 	queryClient: QueryClient,
 	{
@@ -114,6 +121,11 @@ const watchlistMembershipBatcher = createBatcher<
 				rows = await unwrap(batchSetWatchlistMembership({ data: { items } }));
 			}
 
+			// Merge the authoritative rows into the cache (no full refetch, the
+			// server response already reflects this batch). Touched items missing
+			// from the response were deleted.
+			// Each flush is one server write (single or batched), which bumps the
+			// watchlist revision once.
 			recordOwnMutation("watchlist");
 			if (queryClient) {
 				applyServerState(
@@ -126,6 +138,7 @@ const watchlistMembershipBatcher = createBatcher<
 			for (const task of tasks) {
 				task.handle?.resolve();
 			}
+			// The tracked-ids query derives from the watchlist, so keep it fresh.
 			if (queryClient) {
 				scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds()]);
 			}
@@ -148,6 +161,7 @@ const watchlistMembershipBatcher = createBatcher<
 		maxWaitMs: 1200,
 		maxBatchSize: 100,
 		getKey: (task) => `${task.args.mediaType}:${task.args.tmdbId}`,
+		// Don't lose queued membership writes if the page unloads mid-debounce.
 		flushOnPageHide: true,
 	},
 );
@@ -190,6 +204,9 @@ export function createRemoteRepository(
 				release_date: item.release_date || undefined,
 				overview: item.overview || undefined,
 			}));
+			// One optimistic transaction for the whole batch: a single handle
+			// is shared by every task so a failure rolls everything back
+			// together instead of leaving per-item patches in flight.
 			const handle = watchlistOptimistic.beginMembershipBatchOp(
 				queryClient,
 				argsList,
@@ -599,6 +616,10 @@ export function createRemoteRepository(
 	return { ...watchlist, ...lists };
 }
 
+/**
+ * Awaitable variant of `runJournaledMutation` for callers that need the write
+ * to settle (e.g. dialogs that disable their submit button until it resolves).
+ */
 async function runMutationAsync(
 	queryClient: QueryClient,
 	{

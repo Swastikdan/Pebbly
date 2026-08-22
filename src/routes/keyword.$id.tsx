@@ -13,9 +13,6 @@ import { ShareButton } from "@/components/share-button";
 import { MediaGrid } from "@/components/ui/media-grid";
 import { Pagination } from "@/components/ui/pagination";
 import { MAX_PAGINATION_LIMIT } from "@/constants";
-
-const SKELETON_KEYS = Array.from({ length: 12 }, (_, i) => `skeleton-${i}`);
-
 import { getDiscoverMovies, getKeywordDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import type { MediaType } from "@/types";
@@ -122,8 +119,12 @@ function KeywordPage() {
 						{isLoading ? (
 							<section className="flex h-full flex-col w-full">
 								<MediaGrid>
-									{SKELETON_KEYS.map((key) => (
-										<MediaCardSkeleton key={key} card_type="horizontal" />
+									{Array.from({ length: 12 }).map((_, index) => (
+										<MediaCardSkeleton
+											// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+											key={index}
+											card_type="horizontal"
+										/>
 									))}
 								</MediaGrid>
 							</section>

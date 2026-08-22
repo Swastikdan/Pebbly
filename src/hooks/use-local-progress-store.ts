@@ -7,6 +7,7 @@ import { createMemoryStorage } from "@/lib/utils";
 interface LocalProgressStore {
 	watchedEpisodes: Record<string, boolean>;
 
+	/** Last played episode per show id (`{tmdbId}` -> `{season, episode}`). */
 	lastPlayed: Record<string, { season: number; episode: number }>;
 
 	markEpisodeWatched: (

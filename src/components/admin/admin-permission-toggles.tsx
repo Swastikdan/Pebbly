@@ -129,6 +129,7 @@ export function AdminPermissionToggles() {
 			unwrap(setRolePermission({ data: args })),
 		onSuccess: () => {
 			setToggleError(null);
+			// Keep the table in sync with the persisted permission state.
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.admin.rolePermissions(),
 			});

@@ -41,6 +41,9 @@ export function useWatchProgress(
 
 	const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
+	// Resume position comes from the shared Zustand store (persisted to
+	// localStorage by the store's persist middleware), so the player listener
+	// and any consumer stay in sync without bespoke storage/custom events.
 	const lastPlayed = useLocalProgressStore(
 		(state) => state.lastPlayed[String(id)] ?? null,
 	);

@@ -41,6 +41,7 @@ export function fetchSeasonDetails(tvId: number, season: number) {
 	return seasonDetailBatcher.schedule({ tvId, season });
 }
 
+/** Fetch a TV season's details through the shared batcher. */
 export function useSeasonDetails(tvId: number, season: number | undefined) {
 	return useQuery({
 		queryKey: queryKeys.tmdb.seasonDetails(tvId, season ?? 1),

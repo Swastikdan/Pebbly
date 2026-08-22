@@ -35,6 +35,7 @@ export const useToastStore = create<ToastState>((set) => ({
 		return id;
 	},
 	dismiss: (id) => {
+		// Mark leaving immediately (exit animation), remove shortly after.
 		set((state) => ({
 			toasts: state.toasts.map((t) =>
 				t.id === id ? { ...t, leaving: true } : t,
@@ -49,6 +50,7 @@ export const useToastStore = create<ToastState>((set) => ({
 	},
 }));
 
+/** Fire-and-forget toast. No provider/context required, call from anywhere. */
 export function toast(toast: Omit<Toast, "id">) {
 	const id = useToastStore.getState().push(toast);
 	return {
