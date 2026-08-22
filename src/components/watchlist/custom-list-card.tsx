@@ -8,12 +8,6 @@ import {
 	Sparkles,
 	Trash2,
 } from "lucide-react";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ListCollage } from "@/components/watchlist/list-collage";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
@@ -129,30 +123,18 @@ export function CustomListCard({
 						>
 							<Copy size={13} />
 						</button>
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<button
-									type="button"
-									className="flex size-7 cursor-pointer items-center justify-center rounded-lg bg-background/80 text-muted-foreground shadow-sm ring-1 ring-border/30 backdrop-blur-md transition-colors hover:text-destructive hover:ring-destructive/40"
-									aria-label={`Delete ${list.name}`}
-								>
-									<Trash2 size={13} />
-								</button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								className="w-36 rounded-xl shadow-xl border-border/40 backdrop-blur-lg"
-							>
-								<DropdownMenuItem
-									variant="destructive"
-									className="rounded-lg gap-2 text-xs py-2 text-destructive focus:bg-destructive/15 focus:text-destructive"
-									onSelect={onDelete}
-								>
-									<Trash2 size={13} />
-									Delete Collection
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
+						<button
+							type="button"
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								onDelete();
+							}}
+							className="flex size-7 cursor-pointer items-center justify-center rounded-lg bg-background/80 text-muted-foreground shadow-sm ring-1 ring-border/30 backdrop-blur-md transition-colors hover:text-destructive hover:ring-destructive/40"
+							aria-label={`Delete ${list.name}`}
+						>
+							<Trash2 size={13} />
+						</button>
 					</div>
 				)}
 			</div>
