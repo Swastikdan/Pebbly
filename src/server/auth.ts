@@ -5,7 +5,6 @@ import { getDb, runBatch } from "./db/client";
 import { users, watchItems } from "./db/schema";
 import { getEnv, getEnvVar } from "./env";
 
-/** Canonical `users` row shape (used before `findUserByClaims` is defined). */
 export type AuthUser = typeof users.$inferSelect;
 
 /**
@@ -32,7 +31,7 @@ export interface ClerkSessionClaims {
  */
 export function getSessionToken(): string | undefined {
 	const authHeader = getRequestHeader("authorization");
-	if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+	if (authHeader?.toLowerCase().startsWith("bearer ")) {
 		const bearer = authHeader.slice(7).trim();
 		if (bearer.length > 0) return bearer;
 	}
@@ -51,7 +50,6 @@ export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
 	const token = getSessionToken();
 	if (!token) return null;
 
-	// A valid JWT consists of header.payload.signature (3 dot-separated segments)
 	if (token.split(".").length !== 3) return null;
 
 	const secretKey = getEnvVar("CLERK_SECRET_KEY");
@@ -96,7 +94,6 @@ function tokenIdentifierLike(subject: string) {
 	return sql`${users.tokenIdentifier} like ${`%|${escapeLikePattern(subject)}`} escape '\\'`;
 }
 
-/** Get admin flag from JWT public metadata (snake_case or camelCase claim). */
 export function getAdminFromClaims(
 	claims: ClerkSessionClaims | null,
 ): boolean | null {
@@ -110,7 +107,6 @@ export function getAdminFromClaims(
 	return null;
 }
 
-/** Reject `promise` after `ms` if it has not settled. */
 async function withTimeout<T>(
 	promise: Promise<T>,
 	ms: number,
@@ -253,7 +249,6 @@ async function findUserMatchesByClaims(
 	if (!subject) return [];
 	const tokenIdentifier = toTokenIdentifier(subject);
 
-	// Fast path: direct unique index seek on the canonical tokenIdentifier
 	const exactMatches = await db
 		.select()
 		.from(users)
@@ -264,7 +259,6 @@ async function findUserMatchesByClaims(
 		return exactMatches;
 	}
 
-	// Fallback for legacy user formats (bare sub or custom prefixes)
 	return db
 		.select()
 		.from(users)

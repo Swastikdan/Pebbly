@@ -22,10 +22,6 @@ import { reconcileListFetch } from "./pending-ops";
 import { useLocalListsStore } from "./use-local-lists-store";
 import { useWatchlistStore } from "./watchlist-store";
 
-// ---------------------------------------------------------------------------
-// Reads (routed through the reconciler so refetches can't clobber pending ops)
-// ---------------------------------------------------------------------------
-
 async function fetchCustomLists(
 	queryClient: QueryClient,
 	userId: string | undefined,
@@ -75,8 +71,6 @@ export function useCustomLists() {
 
 	const lists = useMemo(() => {
 		if (isSignedIn) {
-			// Normalize the server rows to the legacy client shape (`_id`,
-			// optional fields) so list consumers work unchanged.
 			return (remote.data ?? []).map((list) => ({
 				...list,
 				_id: list.id,

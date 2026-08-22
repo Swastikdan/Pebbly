@@ -12,6 +12,7 @@ export function LoadingSkeletons({
 	showMessage = true,
 	message = "Analyzing your watchlist...",
 }: LoadingSkeletonsProps = {}) {
+	const skeletonKeys = Array.from({ length: count }, (_, i) => `skeleton-${i}`);
 	return (
 		<div className="space-y-6 animate-fade-in">
 			{showMessage && (
@@ -21,12 +22,8 @@ export function LoadingSkeletons({
 				</div>
 			)}
 			<MediaGrid stagger>
-				{Array.from({ length: count }).map((_, i) => (
-					<MediaCardSkeleton
-						// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-						key={i}
-						card_type="horizontal"
-					/>
+				{skeletonKeys.map((key) => (
+					<MediaCardSkeleton key={key} card_type="horizontal" />
 				))}
 			</MediaGrid>
 		</div>

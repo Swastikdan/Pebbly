@@ -17,7 +17,7 @@ function logRecommendationError(action: string, error: unknown) {
 	console.error(`Failed to ${action}`, error);
 }
 
-/** @deprecated Use `usePermissions()` from `@/hooks/usePermissions` instead. */
+/** @deprecated Use `usePermissions()` from `@/hooks/use-permissions` instead. */
 export function useRecommendationAccess() {
 	const { hasFeature, loading, isSignedIn } = usePermissions();
 	return {
@@ -76,8 +76,7 @@ export function useRecommendations() {
 		queryKey: queryKeys.recommendations.history(user?.id),
 		queryFn: () => unwrap(getRecommendationHistory()),
 		enabled: !!isSignedIn,
-		// Cross-device sync is driven by UserSync's data-version poll (refetch
-		// only when the ai_rev revision changes).
+		// Cross-device sync: UserSync refetches when the ai_rev revision moves.
 	});
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);

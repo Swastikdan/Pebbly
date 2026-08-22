@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const SKELETON_KEYS = Array.from({ length: 5 }, (_, i) => `user-skeleton-${i}`);
+
 export function AdminUserTable() {
 	const {
 		users,
@@ -35,12 +37,8 @@ export function AdminUserTable() {
 	if (loading || users === undefined) {
 		return (
 			<div className="space-y-2">
-				{Array.from({ length: 5 }).map((_, i) => (
-					<Skeleton
-						// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-						key={`user-skeleton-${i}`}
-						className="h-20 w-full rounded-xl"
-					/>
+				{SKELETON_KEYS.map((key) => (
+					<Skeleton key={key} className="h-20 w-full rounded-xl" />
 				))}
 			</div>
 		);
@@ -65,7 +63,6 @@ export function AdminUserTable() {
 				</div>
 			)}
 
-			{/* Search + Filter */}
 			<div className="flex flex-col sm:flex-row gap-3">
 				<div className="relative flex-1">
 					<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -109,7 +106,6 @@ export function AdminUserTable() {
 				</div>
 			</div>
 
-			{/* Desktop Table */}
 			<div className="hidden md:block rounded-xl border overflow-hidden">
 				<div className="overflow-x-auto">
 					<table className="w-full text-sm">
@@ -161,7 +157,6 @@ export function AdminUserTable() {
 				</div>
 			</div>
 
-			{/* Mobile Cards */}
 			<div className="md:hidden space-y-3">
 				{filteredUsers.length === 0 ? (
 					<div className="rounded-xl border py-10 text-center text-muted-foreground text-sm">
@@ -190,7 +185,6 @@ export function AdminUserTable() {
 				</p>
 			)}
 
-			{/* Ban / Unban Confirmation Dialog */}
 			<AdminRoleDialog
 				selectedUser={selectedUser}
 				isSubmitting={isSubmitting}

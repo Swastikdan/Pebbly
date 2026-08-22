@@ -1,19 +1,7 @@
 import type { MediaType } from "@/types";
 
-/**
- * Centralized TanStack Query key factory. Every query key is namespaced so
- * `invalidateQueries` / `setQueryData` target exactly the right caches, and
- * mutations can optimistically patch related queries (watchlist list +
- * media-state, lists + list items, etc.).
- *
- * User-specific keys take an optional `userId` so cached data can never cross
- * accounts when the signed-in user changes; callers pass `user?.id` from
- * `useUser()`.
- */
 export const queryKeys = {
 	watchlist: {
-		// Full watchlist (signed-in users), optional status filter for
-		// "continue watching".
 		list: (args?: { statusFilter?: string; limit?: number }) =>
 			["watchlist", "list", args ?? {}] as const,
 		trackedTmdbIds: (userId?: string) =>
@@ -25,7 +13,6 @@ export const queryKeys = {
 	},
 	lists: {
 		all: (userId?: string) => ["lists", "all", userId ?? "anonymous"] as const,
-		// Prefix keys used to invalidate every list-items / item-lists query.
 		itemsPrefix: () => ["lists", "items"] as const,
 		itemListsPrefix: () => ["lists", "item-lists"] as const,
 		items: (listId: string, userId?: string) =>
@@ -38,15 +25,13 @@ export const queryKeys = {
 				mediaType,
 				userId ?? "anonymous",
 			] as const,
-		// Owner/visitor payload for the /c/$id collection page. Viewer-dependent
-		// on purpose: the server fn resolves owner vs public per request.
+		// Owner/visitor payload for /c/$id; viewer-dependent on purpose (the
+		// server fn resolves owner vs public per request), so no userId in key.
 		collectionPage: (listId: string) =>
 			["lists", "collection-page", listId] as const,
 	},
 	permissions: (userId?: string) =>
 		["permissions", userId ?? "anonymous"] as const,
-	// Combined per-user revision counters (watchlist / lists / AI recs) polled
-	// to detect cross-device changes without re-fetching whole collections.
 	data: {
 		version: (userId?: string) =>
 			["data", "version", userId ?? "anonymous"] as const,
@@ -64,20 +49,11 @@ export const queryKeys = {
 		feedback: (userId?: string) =>
 			["recommendations", "feedback", userId ?? "anonymous"] as const,
 	},
-	/**
-	 * TMDB content caches. Every raw-literal content key lives here so
-	 * loaders, components and repositories share exactly one cache entry per
-	 * payload (and a rename stays a one-place change).
-	 */
 	tmdb: {
 		movieDetails: (id: number) => ["movie_details", id] as const,
 		tvDetails: (id: number) => ["tv_details", id] as const,
-		// Canonical basic-details keys; the legacy `basic_movie-details`
-		// spelling was a second cache of the same payload.
 		basicMovieDetails: (id: number) => ["basic_movie_details", id] as const,
 		basicTvDetails: (id: number) => ["basic_tv_details", id] as const,
-		// One season-detail cache shared by the batched hook, season pages and
-		// the inline episode browser.
 		seasonDetails: (tvId: number, season: number) =>
 			["tv_season_details", tvId, season] as const,
 		personDetails: (id: number) => ["person_details", id] as const,

@@ -45,7 +45,11 @@ export function RecommendationResults({
 				<span>{formatTimestamp(entry.createdAt)}</span>
 			</div>
 
-			<RecommendationCardGrid entry={entry} updateVerified={updateVerified} />
+			<RecommendationCardGrid
+				key={entry.id}
+				entry={entry}
+				updateVerified={updateVerified}
+			/>
 		</div>
 	);
 }
@@ -63,13 +67,6 @@ function RecommendationCardGrid({
 	const hasPushedRef = useRef(false);
 
 	const entryId = entry.id;
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: entryId is intentionally used to reset refs when the entry changes
-	useEffect(() => {
-		verifiedMapRef.current = new Map();
-		resolvedCountRef.current = 0;
-		hasPushedRef.current = false;
-	}, [entryId]);
 
 	const onCardResolved = useCallback(
 		(index: number, verifiedRec: AIRecommendation) => {

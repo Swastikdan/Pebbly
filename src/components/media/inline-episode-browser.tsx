@@ -203,14 +203,11 @@ function SeasonEpisodeList({
 	const episodes = seasonData?.episodes ?? [];
 
 	if (isLoading) {
+		const skeletonKeys = Array.from({ length: 4 }, (_, i) => `ep-skel-${i}`);
 		return (
 			<div className="flex flex-col gap-0 divide-y divide-border/50">
-				{Array.from({ length: 4 }).map((_, i) => (
-					<div
-						// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-						key={`ep-skel-${i}`}
-						className="flex gap-3 px-4 py-3"
-					>
+				{skeletonKeys.map((key) => (
+					<div key={key} className="flex gap-3 px-4 py-3">
 						<Skeleton className="h-16 w-28 shrink-0 rounded-lg xs:h-20 xs:w-32 sm:h-24 sm:w-40 md:h-28 md:w-48" />
 						<div className="flex flex-1 flex-col gap-2 py-1">
 							<Skeleton className="h-2 w-10" />

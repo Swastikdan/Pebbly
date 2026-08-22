@@ -5,13 +5,16 @@ import { ScrollContainer } from "@/components/scroll-container";
 export const MediaSkeletonList = memo(
 	(props: { count?: number; cardType?: "horizontal" | "vertical" }) => {
 		const cardCount = props.count ?? 6;
+		const skeletonKeys = Array.from(
+			{ length: cardCount },
+			(_, i) => `skeleton-${i}`,
+		);
 		return (
 			<ScrollContainer isButtonsVisible={false}>
 				<div className="flex gap-2 p-4 first:pl-0 last:pr-0">
-					{Array.from({ length: cardCount }).map((_, index) => (
+					{skeletonKeys.map((key) => (
 						<MediaCardSkeleton
-							// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-							key={index}
+							key={key}
 							card_type={props.cardType ?? "horizontal"}
 						/>
 					))}

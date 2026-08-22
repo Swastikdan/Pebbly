@@ -202,7 +202,6 @@ export function CustomListDialog({
 						</DialogTitle>
 					</DialogHeader>
 
-					{/* Name */}
 					<div className="space-y-1.5">
 						<div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
 							<Label htmlFor={listNameId}>Name</Label>
@@ -231,7 +230,6 @@ export function CustomListDialog({
 						/>
 					</div>
 
-					{/* Description */}
 					<div className="space-y-1.5">
 						<div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
 							<Label htmlFor={listDescId}>Description</Label>
@@ -252,7 +250,6 @@ export function CustomListDialog({
 						/>
 					</div>
 
-					{/* Color */}
 					<div className="space-y-2">
 						<Label className="text-xs text-muted-foreground font-medium">
 							Color
@@ -287,7 +284,6 @@ export function CustomListDialog({
 						</div>
 					</div>
 
-					{/* Settings */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<div className="flex flex-col space-y-2">
 							<Label className="text-xs text-muted-foreground font-medium">

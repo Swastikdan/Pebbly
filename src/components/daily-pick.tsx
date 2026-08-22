@@ -26,7 +26,6 @@ export function DailyPickButton() {
 
 	const pick = useDailyPick(isOpen);
 
-	// Render placeholder while permissions load to prevent homepage layout shift
 	if (isPermissionsLoading) {
 		return (
 			<Button
@@ -79,7 +78,6 @@ export function DailyPickButton() {
 					</div>
 				) : pick.selectedItem ? (
 					<div className="relative">
-						{/* Backdrop banner */}
 						<div className="relative aspect-video w-full overflow-hidden bg-muted">
 							{pick.backdropUrl ? (
 								<Image
@@ -94,7 +92,6 @@ export function DailyPickButton() {
 							)}
 							<div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
-							{/* Header badges */}
 							<div className="absolute top-3 left-3 pr-12 flex flex-wrap items-center gap-1.5">
 								{pick.selectedItem.isCurrentlyWatching ? (
 									<span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/90 text-black px-2.5 py-0.5 text-[11px] font-bold shadow-md backdrop-blur-md">
@@ -118,13 +115,12 @@ export function DailyPickButton() {
 							</div>
 						</div>
 
-						{/* Content details */}
 						<div className="relative -mt-10 sm:-mt-12 px-4 pb-5 sm:px-6 sm:pb-6">
 							<div className="flex gap-3 sm:gap-4 items-end">
-								{/* Poster thumbnail - Clickable Link */}
 								{pick.posterUrl && (
 									<Link
-										to={pick.targetPath}
+										to={pick.detailTo}
+										params={pick.detailParams}
 										onClick={() => setIsOpen(false)}
 										className="relative aspect-[2/3] w-20 sm:w-24 shrink-0 overflow-hidden rounded-xl border-2 border-background/60 shadow-xl bg-muted group/poster [@media(hover:hover)]:hover:opacity-90 transition-opacity"
 										title={`View ${pick.title}`}
@@ -140,9 +136,9 @@ export function DailyPickButton() {
 								)}
 
 								<div className="flex flex-col justify-end gap-1 min-w-0 flex-1 pb-0.5">
-									{/* Title Link */}
 									<Link
-										to={pick.targetPath}
+										to={pick.detailTo}
+										params={pick.detailParams}
 										onClick={() => setIsOpen(false)}
 										className="group/title inline-block"
 									>
@@ -174,16 +170,20 @@ export function DailyPickButton() {
 								{pick.selectedItem.overview}
 							</p>
 
-							{/* Action buttons */}
 							<div className="mt-5 flex flex-col gap-2">
 								{isVideoPlaybackEnabled ? (
 									<>
-										{/* Main action row */}
 										<div className="flex items-center gap-2">
 											<Link
-												to={pick.targetPath}
-												// biome-ignore lint/suspicious/noExplicitAny: dynamic route
-												search={{ play: true } as any}
+												to={pick.detailTo}
+												params={pick.detailParams}
+												search={{
+													trailer: undefined,
+													play: true,
+													video: undefined,
+													backdrop: undefined,
+													poster: undefined,
+												}}
 												onClick={() => setIsOpen(false)}
 												className="flex-1"
 											>
@@ -209,7 +209,6 @@ export function DailyPickButton() {
 											/>
 										</div>
 
-										{/* Secondary action grid */}
 										<div className="grid grid-cols-2 gap-2">
 											<Button
 												variant="outline"
@@ -232,7 +231,6 @@ export function DailyPickButton() {
 										</div>
 									</>
 								) : (
-									/* 3 buttons inline when playback is disabled (e.g. signed out) */
 									<div className="grid grid-cols-3 gap-2">
 										<WatchlistButton
 											id={pick.selectedItem.id}

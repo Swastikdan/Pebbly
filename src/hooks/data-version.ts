@@ -8,7 +8,6 @@ export interface DataVersion {
 	permsRev: number;
 }
 
-/** 1-row read polled by UserSync to detect cross-device changes. */
 export async function fetchDataVersion(): Promise<DataVersion> {
 	return unwrap(getDataVersion());
 }

@@ -5,9 +5,6 @@ import { getCollectionPage } from "@/server/fns/lists";
 import { ApiError } from "@/server/schema/common";
 
 export const Route = createFileRoute("/c/$id/{-$slug}")({
-	// Resolves owner vs public per request: owners get their editable view,
-	// everyone else only ever sees public lists (private ones 404 without
-	// revealing existence).
 	loader: async ({ params, context }) => {
 		const payload = await context.queryClient
 			.ensureQueryData({

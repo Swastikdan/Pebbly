@@ -11,11 +11,10 @@ import {
  * Every optimistic update is registered as a *replayable* op. Server snapshots
  * (full-list refetches, write responses) are merged back through the journal:
  * still-pending ops are re-applied on top of fresh server data, so a snapshot
- * taken before a write committed can never clobber newer optimistic state (the
- * "UI flicker" race). Ops are dropped once their write succeeds (`resolve`),
- * and a failed write rolls back just its own op, rebuilding from the last
- * known server state + remaining ops, instead of restoring an all-or-nothing
- * whole-array snapshot (which used to wipe concurrent ops).
+ * taken before a write committed can never clobber newer optimistic state. Ops
+ * are dropped once their write succeeds (`resolve`), and a failed write rolls
+ * back just its own op, rebuilding from the last known server state +
+ * remaining ops.
  *
  * Ops that touch the same rows supersede each other (latest intent wins),
  * mirroring the server's per-item deduplication semantics.
@@ -27,13 +26,12 @@ import {
  */
 
 export type PendingOpEntry<T> = {
-	/** Query key the patch applies to (e.g. `["watchlist","list",{}]`). */
 	key: readonly unknown[];
 	/** Identity strings of the rows this op touches (e.g. `"movie:123"`). */
 	touchedIds: string[];
 	/** Extracts an identity string from a row; defaults to `mediaType:tmdbId`. */
 	idOf?: (row: T) => string;
-	/** Pure patch applied to the array cache. Must be safe to re-run. */
+	/** Pure patch; must be safe to re-run. */
 	apply: (rows: T[]) => T[];
 };
 
@@ -69,7 +67,6 @@ type JournalState = {
 	pendingByKey: Map<string, RegisteredOp[]>;
 	/** Last known server truth per key; used to rebuild after a rollback. */
 	baseByKey: Map<string, unknown[]>;
-	/** Reverse lookup: keyString -> key array (for `setQueryData`). */
 	keyByString: Map<string, readonly unknown[]>;
 	seqCounter: number;
 	syncTimers: Map<string, ReturnType<typeof setTimeout>>;
@@ -133,15 +130,6 @@ export type BeginOpOptions = {
 	domain?: MutationDomain;
 };
 
-/**
- * Register one or more optimistic patches and apply them to the cache
- * immediately. Returns a handle used to resolve (success) or remove (error)
- * the op later.
- *
- * Client-only by construction: mutations run in the browser, never during SSR.
- * Throwing here (instead of silently writing to a request-scoped journal)
- * catches any future code path that would register an op on the server.
- */
 export function beginOp<T>(
 	queryClient: QueryClient,
 	entries: PendingOpEntry<T>[],
@@ -172,8 +160,6 @@ export function beginOp<T>(
 	};
 
 	for (const entry of op.entries) {
-		// Supersede older pending ops that touch any of the same rows: the
-		// latest user intent wins, matching the server batcher's dedupe.
 		const existing = journal.pendingByKey.get(entry.keyString) ?? [];
 		const touched = new Set(entry.touchedIds);
 		for (const candidate of [...existing]) {
@@ -192,8 +178,6 @@ export function beginOp<T>(
 		list.push(op);
 		journal.pendingByKey.set(entry.keyString, list);
 
-		// First op for a key: snapshot the current (server-loaded) cache as the
-		// base used to rebuild after a rollback.
 		if (!journal.baseByKey.has(entry.keyString)) {
 			const current =
 				(queryClient.getQueryData(entry.key) as unknown[] | undefined) ?? [];
@@ -232,11 +216,6 @@ function resolveOp(
 		}
 		journal.baseByKey.set(entry.keyString, nextBase);
 	}
-	// The write succeeded and bumped the matching server-side revision once,
-	// so count it as an own mutation (lets UserSync skip the redundant refetch
-	// this would otherwise trigger). Untagged ops are counted by their caller
-	// (one count per batched server flush). Rollbacks (`removeOp`) record
-	// nothing: a failed write never bumps the revision.
 	if (op.domain) {
 		recordOwnMutation(op.domain);
 	}
@@ -261,11 +240,6 @@ function removeOp(
 	}
 }
 
-/**
- * Wrap a watchlist fetch: remember the server snapshot as the new base and
- * re-apply still-pending optimistic ops on top before returning. This makes
- * refetches safe even when a response was computed before a write committed.
- */
 export function reconcileListFetch<T>(
 	queryClient: QueryClient,
 	key: readonly unknown[],
@@ -279,10 +253,9 @@ export function reconcileListFetch<T>(
 }
 
 /**
- * Merge rows returned by a write (e.g. a batched membership mutation) into the
- * cache. Touched items come from the server; touched items missing from the
- * response were deleted. Pending ops for other items are re-applied on top, so
- * the UI never regresses behind in-flight optimistic updates.
+ * Merge rows returned by a write into the cache. Touched items come from the
+ * server; touched items missing from the response were deleted. Pending ops
+ * for other items are re-applied on top.
  */
 export function applyServerState<T>(
 	queryClient: QueryClient,
@@ -309,11 +282,6 @@ export function applyServerState<T>(
 	queryClient.setQueryData(key, replay(journal, keyString_, truth) as T[]);
 }
 
-/**
- * Debounce cache invalidations so N rapid mutations produce a single refetch
- * (which itself reconciles pending ops). Keys are matched as prefixes, so
- * `["watchlist","list"]` refreshes both the full list and filtered variants.
- */
 export function scheduleSync(
 	queryClient: QueryClient,
 	keys: readonly (readonly unknown[])[],
@@ -332,7 +300,6 @@ export function scheduleSync(
 	}
 }
 
-/** Forget all journal state for the given client (used when a user signs out). */
 export function clearPendingOps(queryClient: QueryClient) {
 	const journal = journalFor(queryClient);
 	journal.pendingByKey.clear();

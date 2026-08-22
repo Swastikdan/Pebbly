@@ -102,12 +102,18 @@ export function CustomListMediaCard({
 
 	return (
 		<Link
-			// @ts-expect-error - correct link
-			to={
-				formattedTitle
-					? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
-					: `/${item.mediaType}/${item.tmdbId}`
-			}
+			to={item.mediaType === "tv" ? "/tv/$id/{-$slug}" : "/movie/$id/{-$slug}"}
+			params={{
+				id: String(item.tmdbId),
+				slug: formattedTitle || undefined,
+			}}
+			search={{
+				trailer: undefined,
+				play: undefined,
+				video: undefined,
+				backdrop: undefined,
+				poster: undefined,
+			}}
 			className="relative flex gap-3.5 rounded-xl border border-border/40 bg-card p-3.5 transition-colors hover:border-border/70 group"
 		>
 			<div className="relative shrink-0">
