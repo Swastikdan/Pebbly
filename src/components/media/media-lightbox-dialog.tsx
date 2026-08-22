@@ -2,8 +2,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
-	DialogContent,
 	DialogHeader,
+	DialogPopup,
 	DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -39,7 +39,7 @@ export function MediaLightboxDialog({
 				if (!open) onClose();
 			}}
 		>
-			<DialogContent
+			<DialogPopup
 				overlayClassName={overlayClassName}
 				className={contentClassName}
 			>
@@ -77,7 +77,7 @@ export function MediaLightboxDialog({
 						<ChevronRight className="size-6" />
 					</Button>
 				)}
-			</DialogContent>
+			</DialogPopup>
 		</Dialog>
 	);
 }

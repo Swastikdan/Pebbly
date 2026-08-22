@@ -9,6 +9,7 @@ import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
+import type { MediaType } from "@/lib/media-types";
 import { getPersonDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import type { PersonDetails } from "@/lib/tmdb-schemas";
@@ -23,7 +24,7 @@ type KnownForCredit = {
 	name?: string;
 	release_date?: string;
 	first_air_date?: string;
-	media_type: "movie" | "tv";
+	media_type: MediaType;
 };
 
 export const Route = createFileRoute("/person/$id")({

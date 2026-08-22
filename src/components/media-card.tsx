@@ -14,6 +14,7 @@ import {
 	useRemoveFromContinueWatching,
 	useWatchProgress,
 } from "@/hooks/watch-progress/use-watch-progress";
+import type { MediaType } from "@/lib/media-types";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
@@ -27,7 +28,7 @@ interface MediaCardSpecificProps extends BaseCardProps {
 	rating: number;
 	image?: string;
 	poster_path?: string | null;
-	media_type: "movie" | "tv";
+	media_type: MediaType;
 	release_date: string | null;
 	known_for_department?: string;
 	is_on_watchlist_page?: boolean;
@@ -143,13 +144,13 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
 					{isRecommended && (
-						<Badge className="absolute top-2 left-2 rounded-md bg-blue-600/90 px-2 py-0.5 text-[10px] font-bold text-white border-0 shadow-md">
+						<Badge className="absolute top-2 left-2 rounded-md bg-blue-600/90 px-2 py-1 text-[10px] font-bold text-white border-0 shadow-md">
 							Recommended
 						</Badge>
 					)}
 
 					{rating > 0 && (
-						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-meta text-white flex items-center gap-1 border-0">
+						<Badge className="absolute bottom-2 left-2 rounded-md bg-black/90 sm:bg-black/60 p-2 text-meta text-white flex items-center gap-1 border-0">
 							<Star className="size-3 fill-yellow-400 text-yellow-400" />
 							<span className="font-semibold text-white">
 								{rating.toFixed(1)}
@@ -157,7 +158,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 						</Badge>
 					)}
 
-					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 px-2 py-1 text-meta text-white border-0">
+					<Badge className="absolute bottom-2 right-2 rounded-md bg-black/90 sm:bg-black/60 p-2 text-meta text-white border-0">
 						{mediaTypeLabel}
 					</Badge>
 				</div>

@@ -1,9 +1,10 @@
 import { useDeferredValue, useMemo } from "react";
 import type { WatchlistItem } from "@/hooks/use-watchlist";
+import type { MediaType } from "@/lib/media-types";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export type WatchlistFilter = "all" | ProgressStatus;
-export type WatchlistMediaFilter = "all" | "movie" | "tv";
+export type WatchlistMediaFilter = "all" | MediaType;
 export type WatchlistSort = "recent" | "rating" | "title" | "year";
 export type WatchlistReactionFilter = "all" | "none" | ReactionStatus;
 

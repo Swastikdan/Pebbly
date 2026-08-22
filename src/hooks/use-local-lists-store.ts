@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { MediaType } from "@/lib/media-types";
 import { createLRUStorage, createMemoryStorage } from "@/lib/utils";
 
 export type LocalList = {
@@ -19,7 +20,7 @@ export type LocalListItem = {
 	_id: string;
 	listId: string;
 	tmdbId: number;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	position?: number;
 	addedAt: number;
 	title?: string;
@@ -51,7 +52,7 @@ interface LocalListsStore {
 		listType?: string;
 		sortType?: "unordered" | "ordered";
 		tmdbId: number;
-		mediaType: "movie" | "tv";
+		mediaType: MediaType;
 		title?: string;
 		image?: string;
 		backdrop?: string;
@@ -76,7 +77,7 @@ interface LocalListsStore {
 	toggleListItem: (args: {
 		listId: string;
 		tmdbId: number;
-		mediaType: "movie" | "tv";
+		mediaType: MediaType;
 		title?: string;
 		image?: string;
 		backdrop?: string;
@@ -87,7 +88,7 @@ interface LocalListsStore {
 
 	reorderListItem: (
 		listId: string,
-		orderedItems: Array<{ tmdbId: number; mediaType: "movie" | "tv" }>,
+		orderedItems: Array<{ tmdbId: number; mediaType: MediaType }>,
 	) => void;
 
 	cloneList: (sourceListId: string) => string;

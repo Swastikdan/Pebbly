@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import type { MediaType } from "@/lib/media-types";
 import { getEnvVar } from "./env";
 
 // Port of `convex/ai.ts`, same retry/fallback logic, but Gemini is called over
@@ -9,7 +10,7 @@ import { getEnvVar } from "./env";
 export interface Recommendation {
 	title: string;
 	tmdbId: number | null;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	relevanceScore: number;
 	reasoning: string;
 }

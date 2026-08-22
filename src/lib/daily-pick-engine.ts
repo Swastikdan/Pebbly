@@ -5,6 +5,8 @@
  * candidates appear.
  */
 
+import type { MediaType } from "@/lib/media-types";
+
 export interface PickItem {
 	id: number;
 	title: string;
@@ -12,7 +14,7 @@ export interface PickItem {
 	vote_average: number;
 	poster_path?: string;
 	backdrop_path?: string;
-	media_type: "movie" | "tv";
+	media_type: MediaType;
 	release_date?: string;
 	first_air_date?: string;
 	isFromWatchlist?: boolean;
@@ -28,7 +30,7 @@ export interface MediaStateInfo {
 
 export interface WatchlistCandidate {
 	external_id: string | number;
-	type: "movie" | "tv";
+	type: MediaType;
 	title?: string | null;
 	overview?: string | null;
 	rating?: number | null;
@@ -90,7 +92,7 @@ function buildTmdbInfoMap(
 		for (const item of trending) {
 			const title = item.title ?? item.name;
 			const media_type =
-				(item.media_type as "movie" | "tv") ?? (item.name ? "tv" : "movie");
+				(item.media_type as MediaType) ?? (item.name ? "tv" : "movie");
 			if (title && title !== "Unknown Title") {
 				map.set(`${media_type}:${item.id}`, {
 					title,
@@ -144,7 +146,7 @@ export function buildDailyPickCandidates({
 	const discoveryItems: PickItem[] = [];
 	const seenKeys = new Set<string>();
 
-	const checkFilter = (id: string | number, mediaType: "movie" | "tv") => {
+	const checkFilter = (id: string | number, mediaType: MediaType) => {
 		const key = `${mediaType}:${id}`;
 		const state = mediaStateMap.get(key);
 		if (state?.progressStatus === "done") return { exclude: true };
@@ -192,7 +194,7 @@ export function buildDailyPickCandidates({
 	const addDiscovery = (item: DiscoveryCandidate) => {
 		const title = item.title ?? item.name;
 		const media_type =
-			(item.media_type as "movie" | "tv") ?? (item.name ? "tv" : "movie");
+			(item.media_type as MediaType) ?? (item.name ? "tv" : "movie");
 		const key = `${media_type}:${item.id}`;
 		if (
 			!seenKeys.has(key) &&

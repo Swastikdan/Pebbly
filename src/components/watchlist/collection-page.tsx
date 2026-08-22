@@ -18,22 +18,18 @@ import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import {
 	useCloneList,
-	useCreateCustomList,
 	useDeleteCustomList,
 	useReorderListItems,
 	useUpdateCustomList,
 } from "@/hooks/use-custom-lists";
+import { destructiveToast } from "@/hooks/use-destructive-toast";
 import { toast } from "@/hooks/use-toast-store";
+import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
 import { cn, formatMediaTitle } from "@/lib/utils";
 import { getCollectionPage } from "@/server/fns/lists";
@@ -50,7 +46,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 	const queryClient = useQueryClient();
 	const { isSignedIn } = useUser();
 
-	const [mediaFilter, setMediaFilter] = useState<"all" | "movie" | "tv">("all");
+	const [mediaFilter, setMediaFilter] = useState<"all" | MediaType>("all");
 	const [editing, setEditing] = useState(false);
 	const [cloning, setCloning] = useState(false);
 
@@ -61,7 +57,6 @@ export function CollectionPage({ listId }: { listId: string }) {
 
 	const updateList = useUpdateCustomList();
 	const deleteCustomList = useDeleteCustomList();
-	const createCustomList = useCreateCustomList();
 	const cloneList = useCloneList();
 	const reorderItems = useReorderListItems();
 
@@ -128,21 +123,11 @@ export function CollectionPage({ listId }: { listId: string }) {
 	};
 
 	const handleDelete = () => {
-		deleteCustomList(listId);
-		toast({
+		destructiveToast({
 			title: "Collection deleted",
 			description: list.name,
-			action: {
-				label: "Undo",
-				onClick: () => {
-					void createCustomList({
-						name: list.name,
-						color: list.color ?? undefined,
-						description: list.description ?? undefined,
-						visibility: (list.visibility as "public" | "private") ?? undefined,
-						sortType: list.sortType,
-					});
-				},
+			onConfirm: () => {
+				deleteCustomList(listId);
 			},
 		});
 		router.navigate({ to: "/watchlist", search: { tab: "collections" } });
@@ -188,13 +173,13 @@ export function CollectionPage({ listId }: { listId: string }) {
 								{list.name}
 							</h1>
 							{isPebblyPicks && (
-								<span className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500/15 to-cyan-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-500 dark:text-violet-300 ring-1 ring-violet-500/30">
+								<span className="inline-flex items-center gap-1 rounded-lg bg-foreground px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-background ring-1 ring-border">
 									<Sparkles size={11} />
 									AI Curated
 								</span>
 							)}
 							{isOrdered && (
-								<span className="inline-flex items-center gap-1 rounded-lg bg-secondary/80 px-2 py-0.5 text-[10px] font-bold text-secondary-foreground">
+								<span className="inline-flex items-center gap-1 rounded-lg bg-secondary/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-secondary-foreground ring-1 ring-border/50">
 									<ListOrdered size={11} />
 									Ranked
 								</span>
@@ -261,7 +246,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 							</button>
 						</div>
 
-						<ShareButton title={list.name} hideLabelOnMobile />
+						<ShareButton title={list.name} />
 
 						<Button
 							type="button"
@@ -274,31 +259,30 @@ export function CollectionPage({ listId }: { listId: string }) {
 							<Pencil size={15} />
 						</Button>
 
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="border border-border/20 bg-background/50 backdrop-blur-sm text-muted-foreground hover:bg-background/80 hover:text-foreground"
-									aria-label={`Options for ${list.name}`}
-								>
-									<Trash2 size={15} />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								className="w-36 rounded-xl shadow-xl"
+						<Menu>
+							<MenuTrigger
+								render={
+									<Button
+										variant="ghost"
+										size="icon"
+										className="border border-border/20 bg-background/50 backdrop-blur-sm text-muted-foreground hover:bg-background/80 hover:text-foreground"
+										aria-label={`Options for ${list.name}`}
+									/>
+								}
 							>
-								<DropdownMenuItem
+								<Trash2 size={15} />
+							</MenuTrigger>
+							<MenuPopup align="end" className="w-36 rounded-xl shadow-xl">
+								<MenuItem
 									variant="destructive"
-									className="rounded-lg gap-2 text-xs py-2 text-destructive focus:bg-destructive/15 focus:text-destructive"
-									onSelect={handleDelete}
+									className="rounded-lg gap-2 py-2 text-xs text-destructive focus:bg-destructive/15 focus:text-destructive"
+									onClick={handleDelete}
 								>
 									<Trash2 size={14} />
 									Delete Collection
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
+								</MenuItem>
+							</MenuPopup>
+						</Menu>
 					</div>
 				) : (
 					<div className="flex flex-wrap items-center gap-2 shrink-0 self-end md:self-center z-10">
@@ -327,7 +311,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 								</Button>
 							</SignInButton>
 						)}
-						<ShareButton title={list.name} hideLabelOnMobile />
+						<ShareButton title={list.name} />
 					</div>
 				)}
 			</div>

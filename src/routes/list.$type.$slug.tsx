@@ -19,6 +19,7 @@ import {
 	MEDIA_PAGE_SLUGS,
 	SITE_CONFIG,
 } from "@/constants";
+import { mediaTypeToSlug, slugToMediaType } from "@/lib/media-types";
 import { getMediaList } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import type { MediaListQuery, MediaType } from "@/types";
@@ -49,7 +50,7 @@ export const Route = createFileRoute("/list/$type/$slug")({
 			throw notFound();
 		}
 
-		const mediatype = type === "movies" ? "movie" : "tv";
+		const mediatype = slugToMediaType(type) ?? "tv";
 		const query = `${type}_${slug}` as MediaListQuery["type"];
 
 		return { navItem, subNavItem, mediatype, query };
@@ -109,7 +110,7 @@ function MediaListPage() {
 				window.scrollTo({ top: 0, behavior: "smooth" });
 			}
 			const querySlug = query.split("_")[1];
-			const typeSlug = mediatype === "movie" ? "movies" : "tv-shows";
+			const typeSlug = mediaTypeToSlug(mediatype);
 
 			navigate({
 				to: "/list/$type/$slug",

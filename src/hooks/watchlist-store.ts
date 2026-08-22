@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { MediaType } from "@/lib/media-types";
 import {
 	createLRUStorage,
 	createMemoryStorage,
@@ -7,7 +8,7 @@ import {
 } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
-export type MediaType = "tv" | "movie";
+export type { MediaType };
 
 export type MediaMetadata = {
 	title?: string;

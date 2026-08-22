@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import { FooterThemeSelect } from "@/components/footer-theme-select";
 import { SITE_CONFIG } from "@/constants";
 import { usePermissions } from "@/hooks/use-permissions";
 
@@ -36,6 +37,8 @@ const Footer = () => {
 							<span className="text-border">|</span>
 						</>
 					)}
+					<FooterThemeSelect />
+					<span className="text-border">|</span>
 					<Link
 						aria-label="User disclaimer"
 						to={SITE_CONFIG.Footerlinks.disclaimer}

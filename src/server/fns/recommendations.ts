@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import * as v from "valibot";
+import type { MediaType } from "@/lib/media-types";
 import {
 	buildCustomListPrompt,
 	buildGenrePrompt,
@@ -742,7 +743,7 @@ type SaveRecommendationsArgs = {
 		totalItems: number;
 	};
 	model: string;
-	mediaTypePreference?: "movie" | "tv";
+	mediaTypePreference?: MediaType;
 	genrePreference?: string;
 	generationType?: string;
 };

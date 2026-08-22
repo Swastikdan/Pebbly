@@ -9,6 +9,7 @@ import {
 	useToggleWatchlistItem,
 	useWatchlistItem,
 } from "@/hooks/use-watchlist";
+import type { MediaType } from "@/lib/media-types";
 import { cn } from "@/lib/utils";
 
 interface WatchlistButtonProps {
@@ -16,7 +17,7 @@ interface WatchlistButtonProps {
 	title: string;
 	rating: number;
 	image: string;
-	media_type: "movie" | "tv";
+	media_type: MediaType;
 	release_date: string | null;
 	is_on_homepage?: boolean;
 	is_on_watchlist_page?: boolean;

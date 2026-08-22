@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { MediaType } from "@/lib/media-types";
 import {
 	getBasicMovieDetails,
 	getBasicTvDetails,
@@ -19,7 +20,7 @@ export interface NormalizedTmdbData {
 
 export function normalizeTmdbData(
 	data: BasicMovie | BasicTv | null | undefined,
-	mediaType: "movie" | "tv",
+	mediaType: MediaType,
 ): NormalizedTmdbData | null {
 	if (!data) return null;
 	if (mediaType === "movie") {
@@ -55,7 +56,7 @@ export function normalizeTitleKey(title?: string | null): string {
 	return (title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-export function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
+export function useTmdbData(tmdbId: number | null, mediaType: MediaType) {
 	const {
 		data: movieData,
 		isLoading: movieLoading,
@@ -97,7 +98,7 @@ export function useTmdbData(tmdbId: number | null, mediaType: "movie" | "tv") {
 
 export function useTmdbSearchFallback(
 	title: string,
-	mediaType: "movie" | "tv",
+	mediaType: MediaType,
 	shouldSearch: boolean,
 ) {
 	const { data: searchData, isLoading: searchLoading } = useQuery({

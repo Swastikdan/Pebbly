@@ -3,11 +3,11 @@ import { Image } from "@unpic/react";
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
 import { Button } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+	Menu,
+	MenuLinkItem,
+	MenuPopup,
+	MenuTrigger,
+} from "@/components/ui/menu";
 import { NAV_ITEMS, SITE_CONFIG } from "@/constants";
 
 const NavSubmenuItems = ({
@@ -18,11 +18,13 @@ const NavSubmenuItems = ({
 	return (
 		<>
 			{items.map((subitem) => (
-				<Link key={subitem.slug} to={subitem.url} className="cursor-pointer ">
-					<DropdownMenuItem className="h-9 cursor-pointer rounded-lg px-3 text-base">
-						{subitem.name}
-					</DropdownMenuItem>
-				</Link>
+				<MenuLinkItem
+					key={subitem.slug}
+					render={<Link to={subitem.url} />}
+					className="h-9 cursor-pointer rounded-lg px-3 text-base"
+				>
+					{subitem.name}
+				</MenuLinkItem>
 			))}
 		</>
 	);
@@ -38,21 +40,25 @@ const DesktopNavMenuItem = ({
 	};
 }) => {
 	return (
-		<DropdownMenu>
-			{/* Radix manages aria-haspopup / aria-expanded / data-state on the trigger. */}
-			<DropdownMenuTrigger asChild className="cursor-pointer">
-				<Button variant="secondary" className="px-3 text-base">
-					{item.name}
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent
-				aria-label="Desktop Menu"
+		<Menu>
+			<MenuTrigger
+				render={
+					<Button
+						variant="secondary"
+						className="cursor-pointer px-3 text-base"
+					/>
+				}
+			>
+				{item.name}
+			</MenuTrigger>
+			<MenuPopup
 				align="end"
+				aria-label="Desktop Menu"
 				className="mt-2 w-40 rounded-xl p-2 shadow-none"
 			>
 				<NavSubmenuItems items={item.submenu} />
-			</DropdownMenuContent>
-		</DropdownMenu>
+			</MenuPopup>
+		</Menu>
 	);
 };
 

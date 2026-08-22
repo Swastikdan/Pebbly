@@ -5,14 +5,14 @@ import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
+import type { MediaType } from "@/lib/media-types";
 import { getCredits } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-
 import type { CrewMember } from "@/lib/tmdb-schemas";
 
 export const MediaCreditSection = (props: {
 	id: number;
-	type: "movie" | "tv";
+	type: MediaType;
 	slug: string;
 	title: string;
 }) => {

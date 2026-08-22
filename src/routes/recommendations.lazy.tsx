@@ -20,6 +20,7 @@ import type {
 } from "@/hooks/use-recommendations";
 import { useRecommendations } from "@/hooks/use-recommendations";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
 import {
 	type AIRecommendation,
@@ -178,7 +179,7 @@ function RecommendationsContent({
 		"watchlist",
 	);
 	const [listId, setListId] = useState<string>("");
-	const [mediaType, setMediaType] = useState<"movie" | "tv" | undefined>();
+	const [mediaType, setMediaType] = useState<MediaType | undefined>();
 	const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 	const [selectedEras, setSelectedEras] = useState<string[]>([]);
 	const [count, setCount] = useState(10);
@@ -252,7 +253,7 @@ function RecommendationsContent({
 				| "genre",
 		};
 		if (entry.mediaTypePreference)
-			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
+			options.mediaTypePreference = entry.mediaTypePreference as MediaType;
 		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
 		if (trackedIdSet.size > 0) {
 			options.excludeTmdbIds = Array.from(trackedIdSet);
@@ -270,7 +271,7 @@ function RecommendationsContent({
 				| "genre",
 		};
 		if (entry.mediaTypePreference)
-			options.mediaTypePreference = entry.mediaTypePreference as "movie" | "tv";
+			options.mediaTypePreference = entry.mediaTypePreference as MediaType;
 		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
 
 		options.excludeTmdbIds = [

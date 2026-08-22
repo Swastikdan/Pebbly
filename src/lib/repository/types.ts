@@ -104,7 +104,7 @@ export interface WatchlistRepository {
 
 export type ReorderListItemsRepoArgs = {
 	listId: string;
-	orderedItems: Array<{ tmdbId: number; mediaType: "movie" | "tv" }>;
+	orderedItems: Array<{ tmdbId: number; mediaType: MediaType }>;
 };
 
 export interface ListsRepository {

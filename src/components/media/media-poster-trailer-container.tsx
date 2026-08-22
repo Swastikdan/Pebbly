@@ -5,8 +5,8 @@ import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
-	DialogContent,
 	DialogHeader,
+	DialogPopup,
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
@@ -20,10 +20,11 @@ const VideoPlayerModal = lazy(() =>
 );
 
 import { useWatchProgress } from "@/hooks/watch-progress/use-watch-progress";
+import type { MediaType } from "@/lib/media-types";
 
 export function MediaPosterTrailerContainer(props: {
 	tmdbId: number;
-	type: "movie" | "tv";
+	type: MediaType;
 	image: string;
 	title: string;
 	trailervideos: Array<{ key: string; name: string }>;
@@ -99,30 +100,32 @@ export function MediaPosterTrailerContainer(props: {
 									} as any)
 								}
 							>
-								<DialogTrigger asChild>
-									<Button
-										type="button"
-										variant="ghost"
-										className="group relative h-auto cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start ring-offset-background hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-									>
-										<Image
-											alt={video.name}
-											className="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
-											height={450}
-											src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
-											width={300}
+								<DialogTrigger
+									render={
+										<Button
+											type="button"
+											variant="ghost"
+											className="group relative h-auto cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start ring-offset-background hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 										/>
-										<span className="absolute top-4 left-4 w-min max-w-[200px] truncate rounded-lg bg-background px-2 py-1 text-sm text-foreground sm:max-w-[250px] dark:bg-foreground dark:text-background">
-											{video.name}
-										</span>
-										<div className="absolute inset-0 flex items-center justify-center">
-											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
-												<Play className="size-6 fill-white text-white" />
-											</div>
+									}
+								>
+									<Image
+										alt={video.name}
+										className="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
+										height={450}
+										src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
+										width={300}
+									/>
+									<span className="absolute top-4 left-4 w-min max-w-[200px] truncate rounded-lg bg-background px-2 py-1 text-sm text-foreground sm:max-w-[250px] dark:bg-foreground dark:text-background">
+										{video.name}
+									</span>
+									<div className="absolute inset-0 flex items-center justify-center">
+										<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
+											<Play className="size-6 fill-white text-white" />
 										</div>
-									</Button>
+									</div>
 								</DialogTrigger>
-								<DialogContent
+								<DialogPopup
 									overlayClassName="bg-black/80 backdrop-blur-md"
 									className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0 gap-0 overflow-hidden"
 								>
@@ -185,7 +188,7 @@ export function MediaPosterTrailerContainer(props: {
 											</Button>
 										)}
 									</div>
-								</DialogContent>
+								</DialogPopup>
 							</Dialog>
 						))}
 					</div>

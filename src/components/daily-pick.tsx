@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Eye, ThumbsDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogPopup, DialogTrigger } from "@/components/ui/dialog";
 import {
 	BookMarkIcon,
 	FilmIcon,
@@ -56,25 +56,30 @@ export function DailyPickButton() {
 				}
 			}}
 		>
-			<DialogTrigger asChild>
-				<Button
-					variant="secondary"
-					size="default"
-					title="What to Watch Today"
-					className="pressable"
-				>
-					<FilmIcon className="mr-1.5 size-4 text-primary" />
-					<span>What to Watch Today</span>
-				</Button>
+			<DialogTrigger
+				render={
+					<Button
+						variant="secondary"
+						size="lg"
+						title="What to Watch Today"
+						className="pressable"
+					/>
+				}
+			>
+				<FilmIcon className="mr-1.5 size-4 text-primary" />
+				<span>What to Watch Today</span>
 			</DialogTrigger>
-			<DialogContent
+			<DialogPopup
 				className="max-w-[92vw] overflow-hidden rounded-2xl border-white/10 bg-background/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-lg"
-				closeClassName="top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white dark:bg-black/60 dark:hover:bg-black/80 dark:text-white border border-white/20 backdrop-blur-md z-30"
+				closeProps={{
+					className:
+						"top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white dark:bg-black/60 dark:hover:bg-black/80 dark:text-white border border-white/20 backdrop-blur-md z-30",
+				}}
 			>
 				{pick.isDataLoading ? (
 					<div className="flex h-72 flex-col items-center justify-center gap-3 p-6 text-center">
 						<div className="grid size-12 place-items-center rounded-xl">
-							<Spinner size="md" className="bg-foreground/70" />
+							<Spinner className="size-6 text-foreground/70" />
 						</div>
 					</div>
 				) : pick.selectedItem ? (
@@ -97,7 +102,7 @@ export function DailyPickButton() {
 							{/* Header badges */}
 							<div className="absolute top-3 left-3 pr-12 flex flex-wrap items-center gap-1.5">
 								{pick.selectedItem.isCurrentlyWatching ? (
-									<span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/90 text-black px-2.5 py-0.5 text-[11px] font-bold shadow-md backdrop-blur-md">
+									<span className="inline-flex items-center gap-1.5 rounded-lg bg-green-500/90 text-black px-2.5 py-0.5 text-[11px] font-bold shadow-md backdrop-blur-md">
 										<Eye className="size-3" />
 										Watching
 										{pick.selectedItem.watchProgress
@@ -105,12 +110,12 @@ export function DailyPickButton() {
 											: ""}
 									</span>
 								) : pick.selectedItem.isFromWatchlist ? (
-									<span className="inline-flex items-center gap-1 rounded-full bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md backdrop-blur-md">
+									<span className="inline-flex items-center gap-1 rounded-lg bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md backdrop-blur-md">
 										<BookMarkIcon className="size-3 fill-white" />
 										From Your Watchlist
 									</span>
 								) : (
-									<span className="inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-blue-400 backdrop-blur-md border border-blue-500/25">
+									<span className="inline-flex items-center gap-1 rounded-lg bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-blue-400 backdrop-blur-md border border-blue-500/25">
 										<SparklesIcon className="size-3 fill-blue-400" />
 										Today's Pick
 									</span>
@@ -285,7 +290,7 @@ export function DailyPickButton() {
 						</p>
 					</div>
 				)}
-			</DialogContent>
+			</DialogPopup>
 		</Dialog>
 	);
 }

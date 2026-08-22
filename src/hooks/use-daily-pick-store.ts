@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { MediaType } from "@/lib/media-types";
 import type { MediaListResultsEntity } from "@/lib/tmdb-schemas";
 import { createLRUStorage, createMemoryStorage } from "@/lib/utils";
 
@@ -29,7 +30,7 @@ interface DailyPickStore {
 	setTrending: (items: MediaListResultsEntity[]) => void;
 	setPopularTv: (items: MediaListResultsEntity[]) => void;
 	setDetail: (
-		mediaType: "movie" | "tv",
+		mediaType: MediaType,
 		id: number,
 		detail: DailyPickCachedDetail,
 	) => void;

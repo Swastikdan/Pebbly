@@ -1,3 +1,4 @@
+import type { MediaType } from "@/lib/media-types";
 import type { MediaListQuery, MediaQuery } from "@/types";
 import { getTmdbFetch } from "./tmdb";
 import type {
@@ -228,7 +229,7 @@ export async function getCredits({
 	type,
 	id,
 }: {
-	type: "movie" | "tv";
+	type: MediaType;
 	id: number;
 }): Promise<Credits> {
 	validateId(id);
@@ -241,7 +242,7 @@ export async function getVideos({
 	type,
 	id,
 }: {
-	type: "movie" | "tv";
+	type: MediaType;
 	id: number;
 }): Promise<MediaVideos> {
 	validateId(id);
@@ -258,7 +259,7 @@ export async function getImages({
 	type,
 	id,
 }: {
-	type: "movie" | "tv";
+	type: MediaType;
 	id: number;
 }): Promise<MediaImages> {
 	validateId(id);
@@ -335,7 +336,7 @@ export async function getMediaRecommendations({
 	id,
 	page,
 }: {
-	type: "movie" | "tv";
+	type: MediaType;
 	id: number;
 	page?: number;
 }): Promise<MediaRecommendations> {

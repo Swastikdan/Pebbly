@@ -6,8 +6,8 @@ import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
-	DialogContent,
 	DialogHeader,
+	DialogPopup,
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
@@ -21,6 +21,7 @@ import {
 	type MediaDialogSearch,
 	updateDialogSearch,
 } from "@/lib/media-dialog-helpers";
+import type { MediaType } from "@/lib/media-types";
 import { getImages, getVideos } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import type {
@@ -48,7 +49,7 @@ const sortVideos = (videos: MediaVideosResultsEntity[] | undefined | null) => {
 
 export const MediaVideoImageContainer = (props: {
 	id: number;
-	media_type: "movie" | "tv";
+	media_type: MediaType;
 }) => {
 	const { id, media_type } = props;
 	const navigate = useNavigate();
@@ -99,35 +100,37 @@ export const MediaVideoImageContainer = (props: {
 									onUpdateDialogSearch("video", isOpen ? video.key : undefined)
 								}
 							>
-								<DialogTrigger asChild>
-									<Button
-										type="button"
-										variant="ghost"
-										className="group relative h-auto cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start ring-offset-background hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-									>
-										<Image
-											alt={video.name}
-											className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
-											height={450}
-											src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
-											width={300}
+								<DialogTrigger
+									render={
+										<Button
+											type="button"
+											variant="ghost"
+											className="group relative h-auto cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start ring-offset-background hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 										/>
-										<div className="absolute top-3 left-3 flex items-center gap-1.5 max-w-[80%]">
-											<span className="truncate text-sm text-foreground px-2 py-0.5 rounded-lg bg-background/90 dark:bg-foreground/90 dark:text-background backdrop-blur-sm">
-												{video.name}
-											</span>
-											<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-white/90 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm">
-												{video.type}
-											</span>
+									}
+								>
+									<Image
+										alt={video.name}
+										className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+										height={450}
+										src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
+										width={300}
+									/>
+									<div className="absolute top-3 left-3 flex items-center gap-1.5 max-w-[80%]">
+										<span className="truncate text-sm text-foreground px-2 py-0.5 rounded-lg bg-background/90 dark:bg-foreground/90 dark:text-background backdrop-blur-sm">
+											{video.name}
+										</span>
+										<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-white/90 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm">
+											{video.type}
+										</span>
+									</div>
+									<div className="absolute inset-0 flex items-center justify-center">
+										<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
+											<Play className="size-6 fill-white text-white" />
 										</div>
-										<div className="absolute inset-0 flex items-center justify-center">
-											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
-												<Play className="size-6 fill-white text-white" />
-											</div>
-										</div>
-									</Button>
+									</div>
 								</DialogTrigger>
-								<DialogContent
+								<DialogPopup
 									overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
 									className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0 gap-0 overflow-hidden"
 								>
@@ -178,7 +181,7 @@ export const MediaVideoImageContainer = (props: {
 											<ChevronRight className="size-6" />
 										</Button>
 									)}
-								</DialogContent>
+								</DialogPopup>
 							</Dialog>
 						))}
 					</div>
@@ -205,16 +208,18 @@ export const MediaVideoImageContainer = (props: {
 											)
 										}
 									>
-										<DialogTrigger asChild>
-											<Image
-												alt={image.file_path}
-												className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-												height={450}
-												src={IMAGE_PREFIX.SD_BACKDROP + image.file_path}
-												width={300}
-											/>
-										</DialogTrigger>
-										<DialogContent
+										<DialogTrigger
+											render={
+												<Image
+													alt={image.file_path}
+													className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+													height={450}
+													src={IMAGE_PREFIX.SD_BACKDROP + image.file_path}
+													width={300}
+												/>
+											}
+										/>
+										<DialogPopup
 											overlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
 											className="aspect-video w-full max-w-[95vw] sm:max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
 										>
@@ -272,7 +277,7 @@ export const MediaVideoImageContainer = (props: {
 													<ChevronRight className="size-6" />
 												</Button>
 											)}
-										</DialogContent>
+										</DialogPopup>
 									</Dialog>
 								);
 							})}
@@ -294,16 +299,18 @@ export const MediaVideoImageContainer = (props: {
 											)
 										}
 									>
-										<DialogTrigger asChild>
-											<Image
-												alt={image.file_path}
-												className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-												height={300}
-												src={IMAGE_PREFIX.SD_POSTER + image.file_path}
-												width={450}
-											/>
-										</DialogTrigger>
-										<DialogContent
+										<DialogTrigger
+											render={
+												<Image
+													alt={image.file_path}
+													className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+													height={300}
+													src={IMAGE_PREFIX.SD_POSTER + image.file_path}
+													width={450}
+												/>
+											}
+										/>
+										<DialogPopup
 											overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
 											className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden sm:h-full sm:w-auto"
 										>
@@ -361,7 +368,7 @@ export const MediaVideoImageContainer = (props: {
 													<ChevronRight className="size-6" />
 												</Button>
 											)}
-										</DialogContent>
+										</DialogPopup>
 									</Dialog>
 								);
 							})}

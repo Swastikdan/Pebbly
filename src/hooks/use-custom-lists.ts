@@ -5,6 +5,7 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
+import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
 import type { CustomListRow, ListItemRow } from "@/lib/server-types";
@@ -52,7 +53,7 @@ async function fetchListItems(
 async function fetchItemLists(
 	queryClient: QueryClient,
 	tmdbId: number,
-	mediaType: "movie" | "tv",
+	mediaType: MediaType,
 	userId: string | undefined,
 ): Promise<string[]> {
 	return reconcileListFetch(
@@ -136,7 +137,7 @@ export function useCustomListItems(listId: string | null) {
 				release_date: item.releaseDate ?? undefined,
 				overview: item.overview ?? undefined,
 				position: item.position,
-				mediaType: item.mediaType as "movie" | "tv",
+				mediaType: item.mediaType as MediaType,
 				progressStatus: item.progressStatus as ProgressStatus | undefined,
 				reaction: item.reaction as ReactionStatus | undefined,
 			}));
@@ -168,7 +169,7 @@ export function useCustomListItems(listId: string | null) {
 	}, [isSignedIn, remote.data, listId, localItems, localMediaState]);
 }
 
-export function useItemLists(tmdbId: number, mediaType: "movie" | "tv") {
+export function useItemLists(tmdbId: number, mediaType: MediaType) {
 	const { isSignedIn, user } = useUser();
 	const queryClient = useQueryClient();
 	const localItems = useLocalListsStore((state) => state.listItems);

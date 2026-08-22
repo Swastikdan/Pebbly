@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
-	SelectContent,
 	SelectItem,
+	SelectPopup,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -22,6 +22,35 @@ const PRIMARY_TABS: Array<{ value: WatchlistFilter; label: string }> = [
 	{ value: "watching", label: "Watching" },
 	{ value: "all", label: "All" },
 	{ value: "done", label: "Done" },
+];
+
+const MEDIA_TYPE_FILTER_ITEMS: Array<{
+	value: WatchlistMediaFilter;
+	label: string;
+}> = [
+	{ value: "all", label: "All Types" },
+	{ value: "movie", label: "Movies" },
+	{ value: "tv", label: "Series" },
+];
+
+const REACTION_FILTER_ITEMS = [
+	{ value: "all" as WatchlistReactionFilter, label: "All moods" },
+	{ value: "none" as WatchlistReactionFilter, label: "No mood" },
+	...REACTION_OPTIONS.map((option) => ({
+		value: option.value as WatchlistReactionFilter,
+		label: (
+			<span className="flex items-center gap-2">
+				<option.icon size={14} /> {option.label}
+			</span>
+		),
+	})),
+];
+
+const SORT_ITEMS: Array<{ value: WatchlistSort; label: string }> = [
+	{ value: "recent", label: "Recently Added" },
+	{ value: "rating", label: "Highest Rated" },
+	{ value: "title", label: "A → Z" },
+	{ value: "year", label: "Newest Release" },
 ];
 
 export function WatchlistFilters({
@@ -70,32 +99,59 @@ export function WatchlistFilters({
 	const showDroppedTab = counts.dropped > 0;
 
 	return (
-		<div className="mb-6 space-y-3 rounded-2xl border border-border/60 bg-card/35 p-3 shadow-sm sm:p-4">
-			<div className="relative">
-				<Search
-					className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-					aria-hidden="true"
-				/>
-				<Input
-					value={searchQuery}
-					onChange={(event) => setSearchQuery(event.target.value)}
-					placeholder="Search saved titles, details, or release year"
-					aria-label="Search watchlist"
-					className="h-10 rounded-xl bg-background pl-9 pr-10 text-sm"
-				/>
-				{searchQuery && (
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						onClick={() => setSearchQuery("")}
-						className="absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-lg text-muted-foreground"
-						aria-label="Clear watchlist search"
-					>
-						<X size={14} />
-					</Button>
-				)}
+		<div className="mb-4 space-y-2">
+			{/* Row 1 — search + filters toggle */}
+			<div className="flex items-center gap-2">
+				<div className="relative flex-1">
+					<Search
+						className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground"
+						aria-hidden="true"
+					/>
+					<Input
+						value={searchQuery}
+						onChange={(event) => setSearchQuery(event.target.value)}
+						placeholder="Search saved titles"
+						aria-label="Search watchlist"
+						className="h-9 rounded-xl bg-card pl-9 pr-10 text-sm"
+					/>
+					{searchQuery && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							onClick={() => setSearchQuery("")}
+							className="absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-lg text-muted-foreground"
+							aria-label="Clear watchlist search"
+						>
+							<X size={14} />
+						</Button>
+					)}
+				</div>
+				<Button
+					onClick={() => setFiltersOpen((prev) => !prev)}
+					aria-expanded={filtersOpen}
+					variant={
+						filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"
+					}
+					size="sm"
+					className={cn(
+						"h-9 shrink-0 justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold ring-1 ring-border/40",
+						filtersOpen || activeSecondaryCount > 0
+							? "bg-foreground text-background hover:bg-foreground/90"
+							: "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+					)}
+				>
+					<SlidersHorizontal size={13} />
+					<span>{filtersOpen ? "Hide" : "Filters"}</span>
+					{activeSecondaryCount > 0 && (
+						<span className="text-[10px] opacity-70">
+							{activeSecondaryCount}
+						</span>
+					)}
+				</Button>
 			</div>
+
+			{/* Row 2 — status tabs + count */}
 			<div className="flex items-center gap-2">
 				<div className="scrollbar-hidden flex flex-1 gap-1 overflow-x-auto">
 					{PRIMARY_TABS.map((tab) => {
@@ -144,47 +200,9 @@ export function WatchlistFilters({
 						</Button>
 					)}
 				</div>
-
-				<Button
-					onClick={() => setFiltersOpen((prev) => !prev)}
-					aria-expanded={filtersOpen}
-					variant={
-						filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"
-					}
-					size="sm"
-					className={cn(
-						"h-9 w-[132px] justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold ring-1 ring-border/40",
-						filtersOpen || activeSecondaryCount > 0
-							? "bg-foreground text-background hover:bg-foreground/90"
-							: "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
-					)}
-				>
-					<SlidersHorizontal size={13} />
-					<span className="relative inline-flex w-[72px] justify-center">
-						<span
-							className={cn(
-								"absolute inset-0 transition-opacity",
-								filtersOpen ? "opacity-100" : "opacity-0",
-							)}
-						>
-							Hide
-						</span>
-						<span
-							className={cn(
-								"absolute inset-0 transition-opacity",
-								filtersOpen ? "opacity-0" : "opacity-100",
-							)}
-						>
-							Filters
-						</span>
-						<span className="invisible">Filters</span>
-					</span>
-					{activeSecondaryCount > 0 && (
-						<span className="text-[10px] opacity-70">
-							{activeSecondaryCount}
-						</span>
-					)}
-				</Button>
+				<span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+					{filteredCount}/{totalCount}
+				</span>
 			</div>
 
 			<div
@@ -194,56 +212,67 @@ export function WatchlistFilters({
 				)}
 			>
 				<Select
+					items={MEDIA_TYPE_FILTER_ITEMS}
 					value={mediaFilter}
 					onValueChange={(value) =>
 						setMediaFilter(value as WatchlistMediaFilter)
 					}
 				>
-					<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
+					<SelectTrigger
+						size="sm"
+						className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs"
+					>
 						<SelectValue placeholder="Type" />
 					</SelectTrigger>
-					<SelectContent className="rounded-xl">
-						<SelectItem value="all">All Types</SelectItem>
-						<SelectItem value="movie">Movies</SelectItem>
-						<SelectItem value="tv">Series</SelectItem>
-					</SelectContent>
+					<SelectPopup className="rounded-xl">
+						{MEDIA_TYPE_FILTER_ITEMS.map((item) => (
+							<SelectItem key={item.value} value={item.value}>
+								{item.label}
+							</SelectItem>
+						))}
+					</SelectPopup>
 				</Select>
 
 				<Select
+					items={REACTION_FILTER_ITEMS}
 					value={reactionFilter}
 					onValueChange={(value) =>
 						setReactionFilter(value as WatchlistReactionFilter)
 					}
 				>
-					<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
+					<SelectTrigger
+						size="sm"
+						className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs"
+					>
 						<SelectValue placeholder="Mood" />
 					</SelectTrigger>
-					<SelectContent className="rounded-xl">
-						<SelectItem value="all">All moods</SelectItem>
-						<SelectItem value="none">No mood</SelectItem>
-						{REACTION_OPTIONS.map((option) => (
+					<SelectPopup className="rounded-xl">
+						{REACTION_FILTER_ITEMS.map((option) => (
 							<SelectItem key={option.value} value={option.value}>
-								<span className="flex items-center gap-2">
-									<option.icon size={14} /> {option.label}
-								</span>
+								{option.label}
 							</SelectItem>
 						))}
-					</SelectContent>
+					</SelectPopup>
 				</Select>
 
 				<Select
+					items={SORT_ITEMS}
 					value={sortBy}
 					onValueChange={(value) => setSortBy(value as WatchlistSort)}
 				>
-					<SelectTrigger className="w-auto min-w-[120px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
+					<SelectTrigger
+						size="sm"
+						className="w-auto min-w-[120px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs"
+					>
 						<SelectValue />
 					</SelectTrigger>
-					<SelectContent className="rounded-xl">
-						<SelectItem value="recent">Recently Added</SelectItem>
-						<SelectItem value="rating">Highest Rated</SelectItem>
-						<SelectItem value="title">A → Z</SelectItem>
-						<SelectItem value="year">Newest Release</SelectItem>
-					</SelectContent>
+					<SelectPopup className="rounded-xl">
+						{SORT_ITEMS.map((item) => (
+							<SelectItem key={item.value} value={item.value}>
+								{item.label}
+							</SelectItem>
+						))}
+					</SelectPopup>
 				</Select>
 
 				{activeSecondaryCount > 0 && (
@@ -256,16 +285,6 @@ export function WatchlistFilters({
 						<X size={12} />
 						Reset
 					</Button>
-				)}
-			</div>
-			<div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
-				<span>
-					Showing {filteredCount} of {totalCount} saved
-				</span>
-				{totalCount >= 25 && (
-					<span className="hidden sm:inline">
-						Use Collections to group a big queue.
-					</span>
 				)}
 			</div>
 		</div>

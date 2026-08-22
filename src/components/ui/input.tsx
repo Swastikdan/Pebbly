@@ -1,21 +1,71 @@
-import type * as React from "react";
+"use client";
 
+import { Input as InputPrimitive } from "@base-ui/react/input";
+import type * as React from "react";
 import { cn } from "@/lib/utils";
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+export type InputProps = Omit<
+	InputPrimitive.Props & React.RefAttributes<HTMLInputElement>,
+	"size"
+> & {
+	size?: "sm" | "default" | "lg" | number;
+	unstyled?: boolean;
+	nativeInput?: boolean;
+};
+
+export function Input({
+	className,
+	size = "default",
+	unstyled = false,
+	nativeInput = false,
+	style,
+	...props
+}: InputProps): React.ReactElement {
+	const inputClassName = cn(
+		// min-h instead of h: call sites size the wrapper (h-10, h-11, …) and the
+		// native input must grow with it — a fixed height would top-align inside
+		// the taller wrapper. Browsers center single-line text vertically.
+		"min-h-8.5 w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] text-foreground leading-8.5 outline-none [transition:background-color_5000000s_ease-in-out_0s] placeholder:text-muted-foreground/72 sm:min-h-7.5 sm:leading-7.5 autofill:[-webkit-text-fill-color:var(--foreground)]",
+		size === "sm" &&
+			"min-h-7.5 px-[calc(--spacing(2.5)-1px)] leading-7.5 sm:min-h-6.5 sm:leading-6.5",
+		size === "lg" && "min-h-9.5 leading-9.5 sm:min-h-8.5 sm:leading-8.5",
+		props.type === "search" &&
+			"[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
+		props.type === "file" &&
+			"text-muted-foreground file:me-3 file:bg-transparent file:font-medium file:text-foreground file:text-sm",
+	);
+
 	return (
-		<input
-			type={type}
-			data-slot="input"
-			className={cn(
-				"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-white/[0.035] border-input h-9 w-full min-w-0 rounded-md border bg-background/80 px-3 py-1 text-base shadow-[inset_0_1px_0_rgb(255_255_255/0.04),0_1px_2px_rgb(0_0_0/0.1)] transition-[color,background-color,border-color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-				"aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-				className,
+		<span
+			className={
+				cn(
+					!unstyled &&
+						"relative inline-flex w-full items-center rounded-lg border border-input bg-card not-dark:bg-clip-padding text-base shadow-xs/5 ring-ring/24 transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] not-has-disabled:not-has-focus-visible:not-has-aria-invalid:before:shadow-[0_1px_--theme(--color-black/4%)] has-focus-visible:has-aria-invalid:border-destructive/64 has-focus-visible:has-aria-invalid:ring-destructive/16 has-aria-invalid:border-destructive/36 has-focus-visible:border-ring has-autofill:bg-foreground/4 has-disabled:opacity-64 has-[:disabled,:focus-visible,[aria-invalid]]:shadow-none has-focus-visible:ring-[3px] sm:text-sm dark:bg-input/32 dark:has-autofill:bg-foreground/8 dark:has-aria-invalid:ring-destructive/24 dark:not-has-disabled:not-has-focus-visible:not-has-aria-invalid:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+					className,
+				) || undefined
+			}
+			data-size={size}
+			data-slot="input-control"
+		>
+			{nativeInput ? (
+				<input
+					className={inputClassName}
+					data-slot="input"
+					size={typeof size === "number" ? size : undefined}
+					style={typeof style === "function" ? undefined : style}
+					{...props}
+				/>
+			) : (
+				<InputPrimitive
+					className={inputClassName}
+					data-slot="input"
+					size={typeof size === "number" ? size : undefined}
+					style={style}
+					{...props}
+				/>
 			)}
-			{...props}
-		/>
+		</span>
 	);
 }
 
-export { Input };
+export { InputPrimitive };

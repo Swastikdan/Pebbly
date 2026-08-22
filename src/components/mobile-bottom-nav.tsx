@@ -22,6 +22,7 @@ import {
 	Star,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FooterThemeSelect } from "@/components/footer-theme-select";
 import {
 	BookMarkFilledIcon,
 	BookMarkIcon,
@@ -34,9 +35,9 @@ import {
 import {
 	Sheet,
 	SheetClose,
-	SheetContent,
 	SheetDescription,
 	SheetHeader,
+	SheetPopup,
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
@@ -237,7 +238,7 @@ const NavCard = ({
 				</div>
 			</div>
 			{badge && (
-				<span className="rounded-full bg-muted px-2.5 py-0.5 font-semibold text-[10px] text-muted-foreground border border-border/50 shrink-0 ml-2">
+				<span className="rounded-md bg-muted px-2.5 py-0.5 font-semibold text-[10px] text-muted-foreground border border-border/50 shrink-0 ml-2">
 					{badge}
 				</span>
 			)}
@@ -264,14 +265,11 @@ const NavCard = ({
 	}
 
 	return (
-		<SheetClose asChild>
-			<Link
-				to={item.url}
-				search={search}
-				className={`${baseClasses} ${activeClasses}`}
-			>
-				{cardContent}
-			</Link>
+		<SheetClose
+			render={<Link to={item.url} search={search} />}
+			className={`${baseClasses} ${activeClasses}`}
+		>
+			{cardContent}
 		</SheetClose>
 	);
 };
@@ -388,21 +386,23 @@ const MobileBottomNav = () => {
 
 			{/* 5. More Sheet Trigger */}
 			<Sheet>
-				<SheetTrigger asChild>
-					<button
-						type="button"
-						className="mobile-bottom-nav-tab"
-						data-active="false"
-						aria-label="More Options"
-					>
-						<span className="mobile-bottom-nav-tab-icon">
-							<Grid className="size-[22px]" />
-						</span>
-						<span className="mobile-bottom-nav-tab-label">More</span>
-					</button>
+				<SheetTrigger
+					render={
+						<button
+							type="button"
+							className="mobile-bottom-nav-tab"
+							data-active="false"
+							aria-label="More Options"
+						/>
+					}
+				>
+					<span className="mobile-bottom-nav-tab-icon">
+						<Grid className="size-[22px]" />
+					</span>
+					<span className="mobile-bottom-nav-tab-label">More</span>
 				</SheetTrigger>
 
-				<SheetContent
+				<SheetPopup
 					side="bottom"
 					className="bg-background/95 backdrop-blur-2xl p-0 outline-none flex flex-col z-50"
 				>
@@ -420,6 +420,13 @@ const MobileBottomNav = () => {
 							Browse movies, TV shows, AI tools, and site pages
 						</SheetDescription>
 					</SheetHeader>
+
+					<div className="flex items-center justify-between px-5 py-1.5 border-b border-border/40 shrink-0">
+						<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Theme
+						</span>
+						<FooterThemeSelect />
+					</div>
 
 					<div className="scrollbar-none overflow-y-auto px-4 py-4 space-y-5 flex-1 min-h-0 pb-10">
 						{/* Featured & Admin */}
@@ -476,7 +483,7 @@ const MobileBottomNav = () => {
 							currentPath={location.pathname}
 						/>
 					</div>
-				</SheetContent>
+				</SheetPopup>
 			</Sheet>
 		</nav>
 	);

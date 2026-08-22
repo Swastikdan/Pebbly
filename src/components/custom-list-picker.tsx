@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import {
-	DropdownMenuCheckboxItem,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
+	MenuCheckboxItem,
+	MenuGroup,
+	MenuGroupLabel,
+	MenuItem,
+} from "@/components/ui/menu";
+import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
 import { getCustomLists, getItemLists } from "@/server/fns/lists";
@@ -19,7 +20,7 @@ export function CustomListPicker({
 	mediaType,
 }: {
 	tmdbId: number;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 }) {
 	const { isSignedIn, user } = useUser();
 	const repository = useRepository();
@@ -40,21 +41,20 @@ export function CustomListPicker({
 
 	return (
 		<>
-			<DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+			<MenuGroupLabel className="text-xs text-muted-foreground font-normal">
 				Collections
-			</DropdownMenuLabel>
-			<DropdownMenuGroup>
+			</MenuGroupLabel>
+			<MenuGroup>
 				{" "}
 				{safeList
 					.filter((list) => list.listType !== "pebbly-picks")
 					.map((list) => {
 						const isInList = safeItemLists.includes(list.id);
 						return (
-							<DropdownMenuCheckboxItem
+							<MenuCheckboxItem
 								key={list.id}
 								checked={isInList}
 								className="rounded-lg"
-								onSelect={(e) => e.preventDefault()}
 								onCheckedChange={() => {
 									void repository
 										.toggleListItem({
@@ -74,20 +74,19 @@ export function CustomListPicker({
 									/>
 								)}
 								{list.name}
-							</DropdownMenuCheckboxItem>
+							</MenuCheckboxItem>
 						);
 					})}
-				<DropdownMenuItem
+				<MenuItem
 					className="rounded-lg"
-					onSelect={(e) => {
-						e.preventDefault();
+					onClick={() => {
 						setShowCreateDialog(true);
 					}}
 				>
 					<Plus size={16} />
 					Create new collection
-				</DropdownMenuItem>
-			</DropdownMenuGroup>
+				</MenuItem>
+			</MenuGroup>
 
 			<CustomListDialog
 				open={showCreateDialog}

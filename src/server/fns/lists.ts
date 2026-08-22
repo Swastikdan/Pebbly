@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import type { MediaType } from "@/lib/media-types";
 import { getCurrentUser, requireUser } from "../auth";
 import { type Db, getDb, runBatch } from "../db/client";
 import { listItems, lists, watchItems } from "../db/schema";
@@ -104,7 +105,7 @@ export type PublicCollectionList = {
 
 export type CollectionPageItem = {
 	tmdbId: number;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	title: string | null;
 	image: string | null;
 	backdrop: string | null;
@@ -652,7 +653,7 @@ async function toggleListItemInner(
 	args: {
 		listId: string;
 		tmdbId: number;
-		mediaType: "movie" | "tv";
+		mediaType: MediaType;
 		title?: string;
 		image?: string;
 		backdrop?: string;
@@ -719,7 +720,7 @@ async function applyItemOrder(
 	db: Db,
 	listId: string,
 	userId: string,
-	orderedItems: Array<{ tmdbId: number; mediaType: "movie" | "tv" }>,
+	orderedItems: Array<{ tmdbId: number; mediaType: MediaType }>,
 ): Promise<void> {
 	if (orderedItems.length === 0) return;
 	// One UPDATE per item inside db.batch keeps per-statement bound params at

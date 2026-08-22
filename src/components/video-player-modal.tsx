@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
-	DialogContent,
 	DialogHeader,
+	DialogPopup,
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
@@ -14,13 +14,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
 import { buildPlayerUrl } from "@/hooks/watch-progress/progress-helpers";
 import { usePlayerProgressListener } from "@/hooks/watch-progress/use-player-listener";
+import type { MediaType } from "@/lib/media-types";
 import { cn } from "@/lib/utils";
 
 const INACTIVITY_HIDE_DELAY = 3000;
 
 interface VideoPlayerModalProps {
 	tmdbId: number;
-	type: "movie" | "tv";
+	type: MediaType;
 	title: string;
 	season?: number;
 	episode?: number;
@@ -283,61 +284,69 @@ export function VideoPlayerModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
-			<DialogTrigger asChild>
-				{variant === "card" ? (
-					<Button
-						type="button"
-						variant="ghost"
-						className={cn(
-							"group/play absolute inset-0 z-10 size-full opacity-0 p-0 transition-opacity duration-200 hover:bg-transparent hover:opacity-100 focus-visible:opacity-100 rounded-none",
-							className,
-						)}
-						aria-label={`Play ${title}`}
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-
-							setIsOpen(true);
-						}}
-					>
-						<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,border-color,transform,opacity] duration-200 group-hover/play:scale-110 group-hover/play:bg-black/80">
-							<Play className="size-6 fill-white text-white" />
-						</div>
-					</Button>
-				) : variant === "episode" ? (
-					<Button
-						type="button"
-						className={cn(
-							"pressable inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-foreground/90 hover:shadow-xl",
-							className,
-						)}
-						aria-label={`Play ${title}`}
-					>
-						<Play className="size-4 fill-current" />
-						{label}
-					</Button>
-				) : (
-					<Button
-						type="button"
-						className={cn(
-							"pressable inline-flex items-center gap-2.5 rounded-2xl bg-foreground px-7 py-3.5 text-base font-semibold text-background transition-[color,background-color,border-color,transform,opacity] duration-200 hover:bg-foreground/90 hover:shadow-xl",
-							className,
-						)}
-						aria-label={`Play ${title}`}
-					>
-						<Play className="size-5 fill-current" />
-						{label}
-					</Button>
-				)}
-			</DialogTrigger>
-			<DialogContent
+			{variant === "card" ? (
+				<DialogTrigger
+					render={
+						<Button
+							type="button"
+							variant="ghost"
+							className={cn(
+								"group/play absolute inset-0 z-10 size-full opacity-0 p-0 transition-opacity duration-200 hover:bg-transparent hover:opacity-100 focus-visible:opacity-100 rounded-none",
+								className,
+							)}
+							aria-label={`Play ${title}`}
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								setIsOpen(true);
+							}}
+						/>
+					}
+				>
+					<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,border-color,transform,opacity] duration-200 group-hover/play:scale-110 group-hover/play:bg-black/80">
+						<Play className="size-6 fill-white text-white" />
+					</div>
+				</DialogTrigger>
+			) : variant === "episode" ? (
+				<DialogTrigger
+					render={
+						<Button
+							type="button"
+							size="lg"
+							className={cn(
+								"pressable gap-2 rounded-xl px-5 text-sm font-semibold",
+								className,
+							)}
+							aria-label={`Play ${title}`}
+						/>
+					}
+				>
+					<Play className="size-4 fill-current" />
+					{label}
+				</DialogTrigger>
+			) : (
+				<DialogTrigger
+					render={
+						<Button
+							type="button"
+							size="lg"
+							className={cn(
+								"pressable gap-2.5 rounded-2xl px-7 text-base font-semibold",
+								className,
+							)}
+							aria-label={`Play ${title}`}
+						/>
+					}
+				>
+					<Play className="size-5 fill-current" />
+					{label}
+				</DialogTrigger>
+			)}
+			<DialogPopup
 				noOverlay
-				className="fixed inset-0 translate-x-0 translate-y-0 h-[100dvh] w-full max-h-[100dvh] max-w-none overflow-hidden rounded-none border-0 bg-black p-0 ring-0"
-				// The built-in close button is rendered by DialogContent, which is
-				// outside the fullscreen element, so it would be hidden behind the
-				// video in fullscreen. A matching close button lives inside the
-				// player container instead.
-				closeClassName="hidden"
+				showCloseButton={false}
+				bottomStickOnMobile={false}
+				className="fixed inset-0 h-[100dvh] w-full max-h-[100dvh] max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-0 bg-black p-0 ring-0"
 			>
 				<DialogHeader className="sr-only">
 					<DialogTitle>{title}</DialogTitle>
@@ -360,7 +369,7 @@ export function VideoPlayerModal({
 				>
 					{isLoading && (
 						<div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
-							<Spinner size="md" className="bg-white" />
+							<Spinner className="size-6 text-white" />
 						</div>
 					)}
 					<iframe
@@ -422,7 +431,7 @@ export function VideoPlayerModal({
 						)}
 					</button>
 				</div>
-			</DialogContent>
+			</DialogPopup>
 		</Dialog>
 	);
 }

@@ -103,7 +103,7 @@ export const queryKeys = {
 			["continue-watching", id, mediaType] as const,
 		dailyPickTrending: () => ["daily-pick-trending"] as const,
 		dailyPickPopularTv: () => ["daily-pick-popular-tv"] as const,
-		dailyPickDetails: (mediaType: "movie" | "tv", id: number) =>
+		dailyPickDetails: (mediaType: MediaType, id: number) =>
 			["daily-pick-details", mediaType, id] as const,
 	},
 } as const;

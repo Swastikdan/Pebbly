@@ -10,6 +10,7 @@ import {
 	useToggleWatchlistItem,
 	useWatchlistItem,
 } from "@/hooks/use-watchlist";
+import type { MediaType } from "@/lib/media-types";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export const MediaTitleContainer = (props: {
@@ -19,7 +20,7 @@ export const MediaTitleContainer = (props: {
 	poster_path?: string | null;
 	backdrop_path?: string;
 	id: number;
-	media_type: "movie" | "tv";
+	media_type: MediaType;
 	release_date: string | null;
 	description: string;
 	tagline: string | null;

@@ -68,7 +68,7 @@ export function AdminUserTable() {
 			{/* Search + Filter */}
 			<div className="flex flex-col sm:flex-row gap-3">
 				<div className="relative flex-1">
-					<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+					<Search className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 size-4 text-muted-foreground" />
 					<Input
 						placeholder="Search users..."
 						value={search}
@@ -96,7 +96,7 @@ export function AdminUserTable() {
 						>
 							{ft.label}
 							<span
-								className={`text-[10px] rounded-full px-1.5 py-0.5 ${
+								className={`text-[10px] rounded-md px-1.5 py-0.5 ${
 									filterTab === ft.id
 										? "bg-foreground/10 text-foreground"
 										: "bg-muted text-muted-foreground"

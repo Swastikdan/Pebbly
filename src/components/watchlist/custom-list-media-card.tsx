@@ -7,6 +7,7 @@ import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
 import { useToggleListItem } from "@/hooks/use-custom-lists";
 import { toast } from "@/hooks/use-toast-store";
+import type { MediaType } from "@/lib/media-types";
 import { cn, formatMediaTitle } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
@@ -22,7 +23,7 @@ export function CustomListMediaCard({
 }: {
 	item: {
 		tmdbId: number;
-		mediaType: "movie" | "tv";
+		mediaType: MediaType;
 		title?: string;
 		image?: string;
 		backdrop?: string;
@@ -126,7 +127,7 @@ export function CustomListMediaCard({
 					</div>
 				)}
 				{rank !== undefined && (
-					<span className="absolute -left-1.5 -top-1.5 flex size-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 text-[11px] font-extrabold text-white shadow-md ring-2 ring-card tabular-nums">
+					<span className="absolute -left-1.5 -top-1.5 flex size-6 items-center justify-center rounded-lg bg-foreground text-[11px] font-extrabold text-background shadow-md ring-2 ring-card tabular-nums">
 						{rank}
 					</span>
 				)}
@@ -220,14 +221,14 @@ export function CustomListMediaCard({
 				{(item.progressStatus || item.reaction) && (
 					<div className="flex items-center gap-1.5 pt-2">
 						{item.progressStatus && (
-							<span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground">
+							<span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1.5 sm:py-1 text-[10px] font-medium text-secondary-foreground">
 								<ProgressIcon size={12} />
 								{progressOption.label}
 							</span>
 						)}
 						{reactionOption && (
 							<span
-								className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground"
+								className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1.5 sm:py-1 text-[10px] font-medium text-secondary-foreground"
 								title={reactionOption.label}
 							>
 								<reactionOption.icon size={12} />
