@@ -23,7 +23,6 @@ const ImageComponent = ({
 	const [loaded, setLoaded] = useState(() => !blurSrc);
 	const [prevSrc, setPrevSrc] = useState(initialSrc);
 
-	// Reset state immediately if the initialSrc prop changes
 	if (initialSrc !== prevSrc) {
 		setPrevSrc(initialSrc);
 		setError(false);

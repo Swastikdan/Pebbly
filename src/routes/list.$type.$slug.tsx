@@ -23,6 +23,8 @@ import { getMediaList } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import type { MediaListQuery, MediaType } from "@/types";
 
+const SKELETON_KEYS = Array.from({ length: 12 }, (_, i) => `skeleton-${i}`);
+
 const NAV_ITEMS = SITE_CONFIG.navItems;
 
 const listPageSearchSchema = object({
@@ -155,12 +157,8 @@ function MediaListPage() {
 						{isLoading ? (
 							<section className="flex h-full flex-col w-full">
 								<MediaGrid>
-									{Array.from({ length: 12 }).map((_, index) => (
-										<MediaCardSkeleton
-											// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-											key={index}
-											card_type="horizontal"
-										/>
+									{SKELETON_KEYS.map((key) => (
+										<MediaCardSkeleton key={key} card_type="horizontal" />
 									))}
 								</MediaGrid>
 							</section>

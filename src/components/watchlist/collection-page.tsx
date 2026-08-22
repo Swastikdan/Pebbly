@@ -239,7 +239,6 @@ export function CollectionPage({ listId }: { listId: string }) {
 
 				{canManage ? (
 					<div className="flex flex-wrap items-center gap-2 shrink-0 self-end md:self-center z-10">
-						{/* Live visibility switch */}
 						<div className="flex p-1 rounded-xl bg-muted/70 border border-border/50">
 							<button
 								type="button"

@@ -17,7 +17,7 @@ function ToastItem({
 
 	useEffect(() => {
 		const schedule = () => {
-			if (document.hidden) return; // pause while the tab is hidden
+			if (document.hidden) return;
 			const elapsed = Date.now() - startedAtRef.current;
 			const left = TOAST_DURATION - elapsed;
 			if (left <= 0) {
@@ -28,7 +28,7 @@ function ToastItem({
 				window.clearTimeout(timeoutRef.current);
 			}
 			timeoutRef.current = window.setTimeout(() => {
-				if (document.hidden) return; // visibilitychange will reschedule
+				if (document.hidden) return;
 				onDismiss(toast.id);
 			}, left);
 		};

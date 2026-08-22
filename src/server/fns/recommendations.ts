@@ -58,14 +58,12 @@ type AuthContext = {
 	error: null;
 };
 
-/** Resolve the user once per request (callers reuse the returned context). */
 async function getAuthContext(): Promise<AuthContext | null> {
 	const result = await requireUser();
 	if (result.error) return null;
 	return result;
 }
 
-/** Resolve the user + feature gate from one requireUser call. */
 async function getAuthUserWithFeature(): Promise<
 	{ user: AuthUser; claims: ClerkSessionClaims } | { error: ApiResult<never> }
 > {

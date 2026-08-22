@@ -20,11 +20,9 @@ export const getRouter = () => {
 		context: { ...rqContext },
 		defaultPreload: "intent",
 		defaultPreloadDelay: 0,
-		// Show the pending loader only when a navigation genuinely takes a
-		// while, and hide it as soon as it resolves. The previous config
-		// (pendingMs 0 + pendingMinMs 180) flashed a loader for a guaranteed
-		// 180 ms on every tap, which read as a sluggish, unresponsive nav on
-		// mobile even when the destination was already cached.
+		// pendingMs 250 + pendingMinMs 0: only slow navigations show a loader;
+		// a guaranteed minimum (the old pendingMinMs 180) flashed one on every
+		// tap even for cached destinations.
 		defaultPendingMs: 250,
 		defaultPendingMinMs: 0,
 		Wrap: (props: { children: React.ReactNode }) => {

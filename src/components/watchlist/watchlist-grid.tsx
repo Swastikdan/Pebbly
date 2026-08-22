@@ -8,6 +8,8 @@ import {
 } from "@/components/watchlist/watchlist-card";
 import type { WatchlistItem } from "@/hooks/use-watchlist";
 
+const SKELETON_KEYS = Array.from({ length: 6 }, (_, i) => `skeleton-${i}`);
+
 export function WatchlistGrid({
 	items,
 	loading,
@@ -24,11 +26,8 @@ export function WatchlistGrid({
 	if (loading && items.length === 0) {
 		return (
 			<div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-				{Array.from({ length: 6 }).map((_, i) => (
-					<WatchlistCardSkeleton
-						// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-						key={i}
-					/>
+				{SKELETON_KEYS.map((key) => (
+					<WatchlistCardSkeleton key={key} />
 				))}
 			</div>
 		);
