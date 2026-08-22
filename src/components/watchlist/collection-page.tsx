@@ -127,18 +127,6 @@ export function CollectionPage({ listId }: { listId: string }) {
 			.catch(console.error);
 	};
 
-	const handleCopyLink = () => {
-		navigator.clipboard
-			.writeText(window.location.href)
-			.then(() =>
-				toast({
-					title: "Link copied",
-					description: "Anyone with this link can view your collection.",
-				}),
-			)
-			.catch(() => toast({ title: "Couldn't copy link" }));
-	};
-
 	const handleDelete = () => {
 		deleteCustomList(listId);
 		toast({
@@ -178,6 +166,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 
 	return (
 		<div className="animate-fade-in space-y-6">
+			<GoBack />
 			<div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-border/50 dark:border-border/20 px-5 py-4 overflow-hidden bg-gradient-to-r from-secondary/40 to-secondary/10 dark:from-zinc-900/60 dark:to-zinc-950/30 backdrop-blur-sm">
 				{list.color && (
 					<div
@@ -186,8 +175,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 					/>
 				)}
 
-				<div className="flex items-center gap-4 min-w-0 z-10">
-					<GoBack className="shrink-0 border border-border/20 bg-background/50 backdrop-blur-sm hover:bg-background/80" />
+				<div className="flex items-center min-w-0 z-10">
 					<div className="min-w-0">
 						<div className="flex flex-wrap items-center gap-2">
 							{list.color && (
@@ -224,7 +212,9 @@ export function CollectionPage({ listId }: { listId: string }) {
 							</p>
 						)}
 						<div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground/85">
-							<span>{items.length} titles</span>
+							<span>
+								{items.length} {items.length === 1 ? "title" : "titles"}
+							</span>
 							<span>•</span>
 							<span>
 								Created{" "}
@@ -271,19 +261,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 							</button>
 						</div>
 
-						{isPublic && (
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								onClick={handleCopyLink}
-								className="border border-border/20 bg-background/50 backdrop-blur-sm text-muted-foreground hover:bg-background/80 hover:text-foreground"
-								aria-label="Copy public link"
-								title="Copy public link"
-							>
-								<Copy size={15} />
-							</Button>
-						)}
+						<ShareButton title={list.name} hideLabelOnMobile />
 
 						<Button
 							type="button"
