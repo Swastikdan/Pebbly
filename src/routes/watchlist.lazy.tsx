@@ -14,6 +14,7 @@ import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
 import { Download, Upload } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CustomListCard } from "@/components/watchlist/custom-list-card";
@@ -46,6 +47,8 @@ export const Route = createLazyFileRoute("/watchlist")({
 });
 
 type PageTab = "watchlist" | "my-lists";
+
+const WATCHLIST_PAGE_SIZE = 30;
 
 function WatchlistPage() {
 	const search = Route.useSearch();
@@ -141,6 +144,35 @@ function WatchlistTabContent() {
 		mediaFilter,
 		sortBy,
 	});
+
+	const [page, setPage] = useState(1);
+	const filterKey = [
+		searchQuery,
+		activeFilter,
+		reactionFilter,
+		mediaFilter,
+		sortBy,
+	].join("|");
+	const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+	if (prevFilterKey !== filterKey) {
+		setPrevFilterKey(filterKey);
+		setPage(1);
+	}
+	const totalPages = Math.ceil(filteredWatchlist.length / WATCHLIST_PAGE_SIZE);
+	const safePage = Math.min(page, Math.max(totalPages, 1));
+	const paginatedWatchlist = useMemo(
+		() =>
+			filteredWatchlist.slice(
+				(safePage - 1) * WATCHLIST_PAGE_SIZE,
+				safePage * WATCHLIST_PAGE_SIZE,
+			),
+		[filteredWatchlist, safePage],
+	);
+
+	const handlePageChange = useCallback((newPage: number) => {
+		setPage(newPage);
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}, []);
 
 	const activeSecondaryCount = [
 		searchQuery.trim().length > 0,
@@ -291,7 +323,7 @@ function WatchlistTabContent() {
 			)}
 
 			<WatchlistGrid
-				items={filteredWatchlist}
+				items={paginatedWatchlist}
 				loading={watchlistLoading}
 				errorMessage={error ? error.message : null}
 				hasActiveFilters={
@@ -301,6 +333,12 @@ function WatchlistTabContent() {
 					reactionFilter !== "all"
 				}
 				onRemoveFromWatchlist={handleRemoveFromWatchlist}
+			/>
+
+			<Pagination
+				currentPage={safePage}
+				totalPages={totalPages}
+				onPageChange={handlePageChange}
 			/>
 		</div>
 	);
