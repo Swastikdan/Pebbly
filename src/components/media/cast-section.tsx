@@ -3,6 +3,7 @@ import { MediaCard } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLine } from "@/components/ui/icons";
+import type { MediaType } from "@/lib/media-types";
 
 export const CastSection = (props: {
 	id: number;
@@ -20,7 +21,7 @@ export const CastSection = (props: {
 		profile_path?: string;
 	}>;
 	is_more_cast_crew: boolean;
-	type: "movie" | "tv";
+	type: MediaType;
 }) => {
 	const { id, urltitle, cast, crew, is_more_cast_crew, type } = props;
 	const hasCastOrCrew = cast.length > 0 || crew.length > 0;

@@ -15,9 +15,10 @@ import { Footer } from "@/components/footer";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { Navbar } from "@/components/navbar";
 import { NavigationProgressBar } from "@/components/navigation-progress-bar";
-import { Toaster } from "@/components/ui/toaster";
+import { ToastProvider } from "@/components/ui/toast";
 import { UserSync } from "@/components/user-sync";
 import { SITE_CONFIG } from "@/constants";
+import { THEME_STORAGE_KEY, useTheme } from "@/hooks/use-theme";
 
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import appCss from "@/styles.css?url";
@@ -25,6 +26,21 @@ import appCss from "@/styles.css?url";
 interface RouterContext {
 	queryClient: QueryClient;
 }
+
+// Blocking, pre-paint theme resolution. Runs before any stylesheet renders so
+// light-mode users never flash the dark palette (or vice versa). Must stay in
+// sync with applyThemeToDom() in use-theme.ts.
+const themeInitScript = `(function () {
+  try {
+    var stored = localStorage.getItem("${THEME_STORAGE_KEY}");
+    var dark =
+      stored === "dark" ||
+      ((stored === null || stored === "system") &&
+        matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+  } catch (e) {}
+})();`;
 
 export const Route = createRootRouteWithContext<RouterContext>()({
 	head: () => ({
@@ -97,7 +113,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			},
 			{
 				name: "theme-color",
-				content: "#0b0a08",
+				media: "(prefers-color-scheme: light)",
+				content: "#f5f5f5",
+			},
+			{
+				name: "theme-color",
+				media: "(prefers-color-scheme: dark)",
+				content: "#161616",
 			},
 			// Intentionally kept for older Chrome for Android compatibility.
 			// Modern PWA behavior is controlled via manifest.json display: "standalone".
@@ -178,6 +200,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootDocument({ children }: { children: React.ReactNode }) {
 	const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
 	const router = useRouter();
+
+	// Keeps the OS-preference subscription alive for the whole app.
+	useTheme();
 
 	// Global keyboard shortcuts: "/" focuses search (or navigates there).
 	useEffect(() => {
@@ -279,8 +304,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	return (
-		<html lang="en" className="dark" suppressHydrationWarning>
+		<html lang="en" suppressHydrationWarning>
 			<head>
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: static inline script constant, required to resolve the theme before first paint */}
+				<script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
 				<meta
 					name="google-site-verification"
 					content="uHvrTYV7MI9jil_qDblV-QDi9qjXlpdb_8XJUtCLGLQ"
@@ -288,29 +315,30 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body className="min-h-screen antialiased">
-				<NavigationProgressBar />
-				<a
-					href="#main-content"
-					className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:inline-flex focus:items-center focus:justify-center focus:rounded-lg focus:border focus:border-border focus:bg-background focus:px-4 focus:py-2.5 focus:text-foreground focus:font-bold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
-				>
-					Skip to main content
-				</a>
-				<UserSync />
-				<Navbar />
-				{/* The skip-to-content link targets #main-content, keep a visible
-				    focus ring so keyboard users can see where focus landed. */}
-				<main
-					id="main-content"
-					tabIndex={-1}
-					className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring mobile-nav-spacer"
-				>
-					{children}
-				</main>
-				<Footer />
-				<MobileBottomNav />
-				<Toaster />
-				{devtoolsPlugin}
-				<SpeedInsights />
+				<ToastProvider position="bottom-right">
+					<NavigationProgressBar />
+					<a
+						href="#main-content"
+						className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:inline-flex focus:items-center focus:justify-center focus:rounded-lg focus:border focus:border-border focus:bg-background focus:px-4 focus:py-2.5 focus:text-foreground focus:font-bold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
+					>
+						Skip to main content
+					</a>
+					<UserSync />
+					<Navbar />
+					{/* The skip-to-content link targets #main-content, keep a visible
+					    focus ring so keyboard users can see where focus landed. */}
+					<main
+						id="main-content"
+						tabIndex={-1}
+						className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring mobile-nav-spacer"
+					>
+						{children}
+					</main>
+					<Footer />
+					<MobileBottomNav />
+					{devtoolsPlugin}
+					<SpeedInsights />
+				</ToastProvider>
 				<Scripts />
 			</body>
 		</html>

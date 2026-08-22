@@ -1,6 +1,7 @@
 import { useUser } from "@clerk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo } from "react";
+import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
 import type { ProgressStatus } from "@/types";
@@ -23,10 +24,7 @@ export type {
 	WatchProgressData,
 } from "./progress-helpers";
 
-export function useWatchProgress(
-	id: string | number,
-	mediaType: "movie" | "tv",
-) {
+export function useWatchProgress(id: string | number, mediaType: MediaType) {
 	const mediaState = useMediaState(String(id), mediaType);
 	const { isSignedIn } = useUser();
 	const queryClient = useQueryClient();
@@ -144,7 +142,7 @@ export function useContinueWatching() {
 				.filter((item) => item.progressStatus === "watching")
 				.map((item) => ({
 					id: String(item.tmdbId),
-					type: item.mediaType as "movie" | "tv",
+					type: item.mediaType as MediaType,
 					timestamp: 0,
 					percent: item.progress ?? 0,
 					duration: 0,
@@ -183,7 +181,7 @@ export function useRemoveFromContinueWatching() {
 	const repository = useRepository();
 
 	const removeFromContinueWatching = useCallback(
-		async (tmdbId: number, mediaType: "movie" | "tv") => {
+		async (tmdbId: number, mediaType: MediaType) => {
 			try {
 				await repository.removeFromContinueWatching(tmdbId, mediaType);
 			} catch (error) {

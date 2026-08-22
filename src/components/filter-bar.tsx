@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
-	SelectContent,
 	SelectItem,
+	SelectPopup,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -81,30 +81,40 @@ export function FilterBar({
 					!onToggleOpen || isOpen ? "flex" : "hidden",
 				)}
 			>
-				{filters.map((filter) => (
-					<Select
-						key={filter.id}
-						value={filter.value}
-						onValueChange={(val) => onFilterChange(filter.id, val)}
-					>
-						<SelectTrigger className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs data-[size=default]:h-8">
-							<SelectValue placeholder={filter.label} />
-						</SelectTrigger>
-						<SelectContent className="rounded-xl">
-							{filter.options.map((opt) => (
-								<SelectItem key={opt.value} value={opt.value}>
-									{opt.icon ? (
-										<span className="flex items-center gap-2">
-											{opt.icon} {opt.label}
-										</span>
-									) : (
-										opt.label
-									)}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				))}
+				{filters.map((filter) => {
+					const items = filter.options.map((opt) => ({
+						value: opt.value,
+						label: opt.label,
+					}));
+					return (
+						<Select
+							key={filter.id}
+							items={items}
+							value={filter.value}
+							onValueChange={(val) => onFilterChange(filter.id, val ?? "")}
+						>
+							<SelectTrigger
+								size="sm"
+								className="w-auto min-w-[100px] gap-1.5 rounded-xl border-none bg-secondary/50 px-3 text-xs"
+							>
+								<SelectValue placeholder={filter.label} />
+							</SelectTrigger>
+							<SelectPopup className="rounded-xl">
+								{filter.options.map((opt) => (
+									<SelectItem key={opt.value} value={opt.value}>
+										{opt.icon ? (
+											<span className="flex items-center gap-2">
+												{opt.icon} {opt.label}
+											</span>
+										) : (
+											opt.label
+										)}
+									</SelectItem>
+								))}
+							</SelectPopup>
+						</Select>
+					);
+				})}
 
 				{activeCount > 0 && onReset && (
 					<Button

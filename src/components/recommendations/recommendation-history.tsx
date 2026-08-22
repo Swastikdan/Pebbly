@@ -10,8 +10,8 @@ import {
 import { formatTimestamp } from "@/components/recommendations/recommendation-utils";
 import {
 	Accordion,
-	AccordionContent,
 	AccordionItem,
+	AccordionPanel,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,7 @@ export function RecommendationHistory({
 				<Clock className="size-4" />
 				History
 			</h2>
-			<Accordion type="single" collapsible className="space-y-2 mb-10">
+			<Accordion className="space-y-2 mb-10">
 				{entries.map((entry) => (
 					<HistoryAccordionItem
 						key={entry.id}
@@ -98,7 +98,7 @@ function HistoryAccordionItem({
 				isActive && "ring-1 ring-border",
 			)}
 		>
-			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
+			<AccordionTrigger className="px-4 py-3 text-sm font-medium hover:no-underline hover:bg-secondary/10 transition-colors [&[data-panel-open]]:bg-secondary/10">
 				<div className="flex flex-1 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pr-2">
 					<Badge
 						variant="outline"
@@ -162,7 +162,7 @@ function HistoryAccordionItem({
 				</div>
 			</AccordionTrigger>
 
-			<AccordionContent className="px-4 pb-4">
+			<AccordionPanel className="px-4 pb-4">
 				<div className="space-y-4 scrollbar-hidden">
 					<div className="flex items-center gap-2 pb-1 overflow-x-auto scrollbar-hidden">
 						<Button
@@ -281,7 +281,7 @@ function HistoryAccordionItem({
 						</div>
 					)}
 				</div>
-			</AccordionContent>
+			</AccordionPanel>
 		</AccordionItem>
 	);
 }

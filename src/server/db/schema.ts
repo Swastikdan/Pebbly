@@ -9,6 +9,7 @@ import {
 	text,
 	uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import { MEDIA_TYPES, type MediaType } from "@/lib/media-types";
 
 export const users = sqliteTable("users", {
 	id: text("id").primaryKey(), // Convex _id | uuid
@@ -43,7 +44,7 @@ export const watchItems = sqliteTable(
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
 		tmdbId: integer("tmdb_id").notNull(),
-		mediaType: text("media_type", { enum: ["movie", "tv"] }).notNull(),
+		mediaType: text("media_type", { enum: MEDIA_TYPES }).notNull(),
 		inWatchlist: integer("in_watchlist", { mode: "boolean" }).default(false),
 		progressStatus: text("progress_status", {
 			enum: ["watch-later", "watching", "done", "dropped"],
@@ -80,7 +81,7 @@ export const watchlistSnapshots = sqliteTable(
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
 		items: text("items", { mode: "json" }).$type<
-			Array<{ tmdbId: number; mediaType: string }>
+			Array<{ tmdbId: number; mediaType: MediaType }>
 		>(),
 		createdAt: integer("created_at").notNull(),
 	},
@@ -125,7 +126,7 @@ export const listItems = sqliteTable(
 			.notNull()
 			.references(() => lists.id, { onDelete: "cascade" }),
 		tmdbId: integer("tmdb_id").notNull(),
-		mediaType: text("media_type", { enum: ["movie", "tv"] }).notNull(),
+		mediaType: text("media_type", { enum: MEDIA_TYPES }).notNull(),
 		position: integer("position").notNull().default(0),
 		addedAt: integer("added_at").notNull(),
 		title: text("title"),
@@ -187,7 +188,7 @@ export const aiRecommendations = sqliteTable(
 			.notNull(),
 		model: text("model").notNull(),
 		mediaTypePreference: text("media_type_preference", {
-			enum: ["movie", "tv"],
+			enum: [...MEDIA_TYPES],
 		}),
 		genrePreference: text("genre_preference"),
 		generationType: text("generation_type"),
@@ -222,7 +223,7 @@ export const recommendationFeedback = sqliteTable(
 			.notNull()
 			.references(() => users.id, { onDelete: "cascade" }),
 		tmdbId: integer("tmdb_id").notNull(),
-		mediaType: text("media_type", { enum: ["movie", "tv"] }).notNull(),
+		mediaType: text("media_type", { enum: MEDIA_TYPES }).notNull(),
 		title: text("title").notNull(),
 		feedback: text("feedback", {
 			enum: ["like", "not_interested", "dislike"],
@@ -255,7 +256,7 @@ export const rolePermissions = sqliteTable(
 export type Recommendation = {
 	title: string;
 	tmdbId: number | null;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	relevanceScore: number;
 	reasoning: string;
 };

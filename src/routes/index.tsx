@@ -16,7 +16,7 @@ import {
 import { HomepageRecommendations } from "@/components/homepage-recommendations";
 import { LazySection } from "@/components/ui/lazy-section";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { SITE_CONFIG } from "@/constants";
 import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
 import { getMedia } from "@/lib/queries";
@@ -68,16 +68,16 @@ function HomePage() {
 						<div className="flex items-center gap-4 mt-2">
 							<h2 className="text-h2">Trending</h2>
 							<TabsList>
-								<TabsTrigger value="trending_day">Today</TabsTrigger>
-								<TabsTrigger value="trending_week">This Week</TabsTrigger>
+								<TabsTab value="trending_day">Today</TabsTab>
+								<TabsTab value="trending_week">This Week</TabsTab>
 							</TabsList>
 						</div>
-						<TabsContent value="trending_day">
+						<TabsPanel value="trending_day">
 							<TrendingDayMovies />
-						</TabsContent>
-						<TabsContent value="trending_week">
+						</TabsPanel>
+						<TabsPanel value="trending_week">
 							<TrendingWeekMovies />
-						</TabsContent>
+						</TabsPanel>
 					</Tabs>
 
 					<ContinueWatchingSection />
@@ -111,16 +111,16 @@ function HomePage() {
 						<Tabs defaultValue="popular_movie">
 							<div className="flex items-center gap-4">
 								<TabsList>
-									<TabsTrigger value="popular_movie">Theaters</TabsTrigger>
-									<TabsTrigger value="popular_tv">On TV</TabsTrigger>
+									<TabsTab value="popular_movie">Theaters</TabsTab>
+									<TabsTab value="popular_tv">On TV</TabsTab>
 								</TabsList>
 							</div>
-							<TabsContent value="popular_movie">
+							<TabsPanel value="popular_movie">
 								<PopularMovies />
-							</TabsContent>
-							<TabsContent value="popular_tv">
+							</TabsPanel>
+							<TabsPanel value="popular_tv">
 								<PopularTv />
-							</TabsContent>
+							</TabsPanel>
 						</Tabs>
 					</LazySection>
 
@@ -133,16 +133,16 @@ function HomePage() {
 						<Tabs defaultValue="top_rated_movies">
 							<div className="flex items-center gap-4">
 								<TabsList>
-									<TabsTrigger value="top_rated_movies">Movies</TabsTrigger>
-									<TabsTrigger value="top_rated_tv">TV Shows</TabsTrigger>
+									<TabsTab value="top_rated_movies">Movies</TabsTab>
+									<TabsTab value="top_rated_tv">TV Shows</TabsTab>
 								</TabsList>
 							</div>
-							<TabsContent value="top_rated_movies">
+							<TabsPanel value="top_rated_movies">
 								<TopRatedMovies />
-							</TabsContent>
-							<TabsContent value="top_rated_tv">
+							</TabsPanel>
+							<TabsPanel value="top_rated_tv">
 								<TopRatedTv />
-							</TabsContent>
+							</TabsPanel>
 						</Tabs>
 					</LazySection>
 				</div>

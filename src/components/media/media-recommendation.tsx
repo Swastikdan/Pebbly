@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
+import type { MediaType } from "@/lib/media-types";
 import {
 	getMovieRecommendations,
 	getTvSeriesRecommendations,
@@ -10,7 +11,7 @@ import { queryKeys } from "@/lib/query/keys";
 export const MediaRecommendations = (props: {
 	id: number;
 	urltitle: string;
-	type: "movie" | "tv";
+	type: MediaType;
 }) => {
 	const { id, type } = props;
 	const {

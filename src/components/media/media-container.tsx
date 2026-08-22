@@ -5,13 +5,14 @@ import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLine, Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import {
 	getImageDialogKey,
 	type MediaDialogKey,
 	type MediaDialogSearch,
 	updateDialogSearch,
 } from "@/lib/media-dialog-helpers";
+import type { MediaType } from "@/lib/media-types";
 
 interface VideoItem {
 	key: string;
@@ -35,7 +36,7 @@ interface MediaContainerProps {
 	is_more_posters_available: boolean;
 	is_more_backdrops_available: boolean;
 	is_more_clips_available: boolean;
-	type: "movie" | "tv";
+	type: MediaType;
 }
 
 export const MediaContainer = (props: MediaContainerProps) => {
@@ -104,15 +105,13 @@ export const MediaContainer = (props: MediaContainerProps) => {
 						Media
 					</Link>
 					<TabsList>
-						{hasVideos && <TabsTrigger value="videos">Videos</TabsTrigger>}
-						{hasBackdrops && (
-							<TabsTrigger value="backdrops">Backdrops</TabsTrigger>
-						)}
-						{hasPosters && <TabsTrigger value="posters">Posters</TabsTrigger>}
+						{hasVideos && <TabsTab value="videos">Videos</TabsTab>}
+						{hasBackdrops && <TabsTab value="backdrops">Backdrops</TabsTab>}
+						{hasPosters && <TabsTab value="posters">Posters</TabsTab>}
 					</TabsList>
 				</div>
 				{hasVideos && (
-					<TabsContent value="videos">
+					<TabsPanel value="videos">
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
@@ -211,10 +210,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 								)}
 							</div>
 						</ScrollContainer>
-					</TabsContent>
+					</TabsPanel>
 				)}
 				{hasBackdrops && (
-					<TabsContent value="backdrops">
+					<TabsPanel value="backdrops">
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
@@ -314,10 +313,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 								)}
 							</div>
 						</ScrollContainer>
-					</TabsContent>
+					</TabsPanel>
 				)}
 				{hasPosters && (
-					<TabsContent value="posters">
+					<TabsPanel value="posters">
 						{" "}
 						<ScrollContainer>
 							<div className="flex items-center justify-center gap-3">
@@ -412,7 +411,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 								)}
 							</div>
 						</ScrollContainer>
-					</TabsContent>
+					</TabsPanel>
 				)}
 			</Tabs>
 

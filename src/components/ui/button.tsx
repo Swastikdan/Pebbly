@@ -1,63 +1,101 @@
-import { Slot } from "@radix-ui/react-slot";
+"use client";
+
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
-
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
-const buttonVariants = cva(
-	"inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent font-semibold text-sm outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.98] active:shadow-none focus-visible:ring-[3px] focus-visible:ring-ring/25 disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive aria-invalid:ring-destructive/20 motion-reduce:transition-none motion-reduce:active:transform-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+export const buttonVariants = cva(
+	"relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg border font-medium text-sm outline-none transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-64 data-loading:select-none data-loading:text-transparent [&_svg:not([class*='opacity-'])]:opacity-80 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:-mx-0.5 [&_svg]:shrink-0",
 	{
+		defaultVariants: {
+			size: "default",
+			variant: "default",
+		},
 		variants: {
+			size: {
+				// Uniform heights across breakpoints (shadcn parity): responsive
+				// sm:h-* overrides here would leak through call sites that pass
+				// `h-auto` (twMerge only dedupes within the same modifier).
+				default: "h-9 px-[calc(--spacing(3)-1px)]",
+				icon: "size-9",
+				"icon-lg": "size-10",
+				"icon-sm": "size-8",
+				"icon-xl":
+					"size-11 [&_svg:not([class*='size-'])]:size-5 sm:[&_svg:not([class*='size-'])]:size-4.5",
+				"icon-xs":
+					"size-7 rounded-md before:rounded-[calc(var(--radius-md)-1px)] not-in-data-[slot=input-group]:[&_svg:not([class*='size-'])]:size-4 sm:not-in-data-[slot=input-group]:[&_svg:not([class*='size-'])]:size-3.5",
+				lg: "h-10 px-[calc(--spacing(3.5)-1px)]",
+				sm: "h-8 gap-1.5 px-[calc(--spacing(2.5)-1px)]",
+				xl: "h-11 px-[calc(--spacing(4)-1px)] text-lg [&_svg:not([class*='size-'])]:size-5 sm:[&_svg:not([class*='size-'])]:size-4.5",
+				xs: "h-7 gap-1 rounded-md px-[calc(--spacing(2)-1px)] text-xs before:rounded-[calc(var(--radius-md)-1px)] [&_svg:not([class*='size-'])]:size-4 sm:[&_svg:not([class*='size-'])]:size-3.5",
+			},
 			variant: {
 				default:
-					"border-primary/80 bg-primary text-primary-foreground shadow-[0_1px_0_color-mix(in_oklab,var(--primary),white_18%)_inset,0_1px_2px_rgb(0_0_0/0.18)] hover:bg-primary/90 hover:shadow-[0_1px_0_color-mix(in_oklab,var(--primary),white_22%)_inset,0_3px_8px_rgb(0_0_0/0.16)]",
+					"not-disabled:inset-shadow-[0_1px_--theme(--color-white/16%)] border-primary bg-primary text-primary-foreground shadow-primary/24 shadow-xs hover:bg-primary/90 data-pressed:bg-primary/90 *:data-[slot=button-loading-indicator]:text-primary-foreground [:active,[data-pressed]]:inset-shadow-[0_1px_--theme(--color-black/8%)] [:disabled,:active,[data-pressed]]:shadow-none",
 				destructive:
-					"border-destructive/80 bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/25",
-				outline:
-					"border-border/90 bg-background/80 shadow-xs hover:border-border hover:bg-accent hover:text-accent-foreground dark:bg-white/[0.035] dark:hover:bg-white/[0.07]",
-				secondary:
-					"border-border/70 bg-secondary text-secondary-foreground shadow-[0_1px_0_rgb(255_255_255/0.06)_inset,0_1px_2px_rgb(0_0_0/0.12)] hover:bg-secondary/80",
+					"not-disabled:inset-shadow-[0_1px_--theme(--color-white/16%)] border-destructive bg-destructive text-white shadow-destructive/24 shadow-xs hover:bg-destructive/90 data-pressed:bg-destructive/90 *:data-[slot=button-loading-indicator]:text-white [:active,[data-pressed]]:inset-shadow-[0_1px_--theme(--color-black/8%)] [:disabled,:active,[data-pressed]]:shadow-none",
+				"destructive-outline":
+					"border-input bg-popover not-dark:bg-clip-padding text-destructive-foreground shadow-xs/5 not-disabled:not-active:not-data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] hover:border-destructive/32 hover:bg-destructive/4 data-pressed:border-destructive/32 data-pressed:bg-destructive/4 *:data-[slot=button-loading-indicator]:text-foreground dark:bg-input/32 dark:not-disabled:before:shadow-[0_-1px_--theme(--color-white/2%)] dark:not-disabled:not-active:not-data-pressed:before:shadow-[0_-1px_--theme(--color-white/6%)] [:disabled,:active,[data-pressed]]:shadow-none",
 				ghost:
-					"text-muted-foreground hover:bg-accent hover:text-foreground dark:hover:bg-white/[0.06]",
-				link: "text-primary underline-offset-4 hover:underline",
+					"border-transparent text-foreground hover:bg-accent data-pressed:bg-accent *:data-[slot=button-loading-indicator]:text-foreground",
+				link: "border-transparent text-foreground underline-offset-4 hover:underline data-pressed:underline *:data-[slot=button-loading-indicator]:text-foreground",
+				outline:
+					"border-input bg-popover not-dark:bg-clip-padding text-foreground shadow-xs/5 not-disabled:not-active:not-data-pressed:before:shadow-[0_1px_--theme(--color-black/4%)] hover:bg-accent/50 data-pressed:bg-accent/50 *:data-[slot=button-loading-indicator]:text-foreground dark:bg-input/32 dark:data-pressed:bg-input/64 dark:hover:bg-input/64 dark:not-disabled:before:shadow-[0_-1px_--theme(--color-white/2%)] dark:not-disabled:not-active:not-data-pressed:before:shadow-[0_-1px_--theme(--color-white/6%)] [:disabled,:active,[data-pressed]]:shadow-none",
+				secondary:
+					"border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/90 data-pressed:bg-secondary/90 *:data-[slot=button-loading-indicator]:text-secondary-foreground [:active,[data-pressed]]:bg-secondary/80",
 				light:
-					"bg-primary-foreground text-primary hover:bg-primary-foreground/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 ",
+					"bg-primary-foreground text-primary hover:bg-primary-foreground/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90",
 			},
-			size: {
-				default: "h-9 px-4 py-2 has-[>svg]:px-3",
-				sm: "h-8 gap-1.5 px-3 has-[>svg]:px-2.5",
-				lg: "h-10 px-6 has-[>svg]:px-4",
-				icon: "size-9 rounded-lg",
-				"icon-sm": "size-8 rounded-lg",
-				"icon-lg": "size-10 rounded-lg",
-			},
-		},
-		defaultVariants: {
-			variant: "default",
-			size: "default",
 		},
 	},
 );
 
-function Button({
+export interface ButtonProps extends useRender.ComponentProps<"button"> {
+	variant?: VariantProps<typeof buttonVariants>["variant"];
+	size?: VariantProps<typeof buttonVariants>["size"];
+	loading?: boolean;
+}
+
+export function Button({
 	className,
 	variant,
 	size,
-	asChild = false,
+	render,
+	children,
+	loading = false,
+	disabled: disabledProp,
 	...props
-}: React.ComponentProps<"button"> &
-	VariantProps<typeof buttonVariants> & {
-		asChild?: boolean;
-	}) {
-	const Comp = asChild ? Slot : "button";
+}: ButtonProps): React.ReactElement {
+	const isDisabled: boolean = Boolean(loading || disabledProp);
+	const typeValue: React.ButtonHTMLAttributes<HTMLButtonElement>["type"] =
+		render ? undefined : "button";
 
-	return (
-		<Comp
-			data-slot="button"
-			className={cn(buttonVariants({ variant, size, className }))}
-			{...props}
-		/>
-	);
+	const defaultProps = {
+		children: (
+			<>
+				{children}
+				{loading && (
+					<Spinner
+						className="pointer-events-none absolute"
+						data-slot="button-loading-indicator"
+					/>
+				)}
+			</>
+		),
+		className: cn(buttonVariants({ className, size, variant })),
+		"aria-disabled": loading || undefined,
+		"data-loading": loading ? "" : undefined,
+		"data-slot": "button",
+		disabled: isDisabled,
+		type: typeValue,
+	};
+
+	return useRender({
+		defaultTagName: "button",
+		props: mergeProps<"button">(defaultProps, props),
+		render,
+	});
 }
-
-export { Button };

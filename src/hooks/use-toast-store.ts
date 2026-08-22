@@ -1,59 +1,42 @@
-import { create } from "zustand";
+import { toastManager } from "@/components/ui/toast";
 
 export interface ToastAction {
 	label: string;
 	onClick: () => void;
 }
 
-export interface Toast {
-	id: string;
+export interface ToastOptions {
 	title: string;
 	description?: string;
+	type?: "info" | "success" | "error" | "warning" | "loading";
 	action?: ToastAction;
-	leaving?: boolean;
 }
 
-interface ToastState {
-	toasts: Toast[];
-	push: (toast: Omit<Toast, "id">) => string;
-	dismiss: (id: string) => void;
-	remove: (id: string) => void;
-}
+const TOAST_DURATION = 5000;
 
-let toastCounter = 0;
+/**
+ * Fire-and-forget toast backed by the coss/Base UI toast manager.
+ * No provider/context required — call from anywhere.
+ */
+export function toast(options: ToastOptions) {
+	const { action, type = "info", ...rest } = options;
 
-function nextId() {
-	toastCounter += 1;
-	return `toast-${Date.now()}-${toastCounter}`;
-}
+	const id = toastManager.add({
+		...rest,
+		type,
+		timeout: TOAST_DURATION,
+		...(action
+			? {
+					actionProps: {
+						children: action.label,
+						onClick: () => {
+							action.onClick();
+							toastManager.close(id);
+						},
+					},
+				}
+			: {}),
+	});
 
-export const useToastStore = create<ToastState>((set) => ({
-	toasts: [],
-	push: (toast) => {
-		const id = nextId();
-		set((state) => ({ toasts: [...state.toasts, { ...toast, id }] }));
-		return id;
-	},
-	dismiss: (id) => {
-		// Mark leaving immediately (exit animation), remove shortly after.
-		set((state) => ({
-			toasts: state.toasts.map((t) =>
-				t.id === id ? { ...t, leaving: true } : t,
-			),
-		}));
-		window.setTimeout(() => {
-			useToastStore.getState().remove(id);
-		}, 180);
-	},
-	remove: (id) => {
-		set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
-	},
-}));
-
-/** Fire-and-forget toast. No provider/context required, call from anywhere. */
-export function toast(toast: Omit<Toast, "id">) {
-	const id = useToastStore.getState().push(toast);
-	return {
-		dismiss: () => useToastStore.getState().dismiss(id),
-	};
+	return { dismiss: () => toastManager.close(id) };
 }

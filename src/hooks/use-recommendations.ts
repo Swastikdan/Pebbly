@@ -2,6 +2,7 @@ import { useUser } from "@clerk/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { usePermissions } from "@/hooks/use-permissions";
+import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import {
@@ -30,7 +31,7 @@ export function useRecommendationAccess() {
 export interface GenerateOptions {
 	generationType?: "watchlist" | "list" | "genre";
 	listId?: string;
-	mediaTypePreference?: "movie" | "tv";
+	mediaTypePreference?: MediaType;
 	genrePreference?: string;
 	excludeTmdbIds?: number[];
 	yearFrom?: number;

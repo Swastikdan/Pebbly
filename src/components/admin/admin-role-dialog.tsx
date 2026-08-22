@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogClose,
-	DialogContent,
 	DialogDescription,
 	DialogFooter,
 	DialogHeader,
+	DialogPopup,
 	DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -26,7 +26,7 @@ export function AdminRoleDialog({
 }) {
 	return (
 		<Dialog open={selectedUser !== null} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[420px] p-6">
+			<DialogPopup className="sm:max-w-[420px] p-6">
 				<DialogHeader className="space-y-2">
 					<div className="flex items-center gap-3">
 						{selectedUser?.isBanned ? (
@@ -73,15 +73,17 @@ export function AdminRoleDialog({
 				)}
 
 				<DialogFooter className="mt-4 gap-2 sm:gap-2 flex-col sm:flex-row">
-					<DialogClose asChild>
-						<Button
-							variant="outline"
-							type="button"
-							disabled={isSubmitting}
-							className="flex-1"
-						>
-							Cancel
-						</Button>
+					<DialogClose
+						render={
+							<Button
+								variant="outline"
+								type="button"
+								disabled={isSubmitting}
+								className="flex-1"
+							/>
+						}
+					>
+						Cancel
 					</DialogClose>
 					<Button
 						variant={selectedUser?.isBanned ? "default" : "destructive"}
@@ -112,7 +114,7 @@ export function AdminRoleDialog({
 						)}
 					</Button>
 				</DialogFooter>
-			</DialogContent>
+			</DialogPopup>
 		</Dialog>
 	);
 }

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import type { MediaType } from "@/lib/media-types";
 import { useRepository } from "@/lib/repository/use-repository";
 import { useLocalProgressStore } from "../use-local-progress-store";
 import {
@@ -18,7 +19,7 @@ import {
 export function usePlayerProgressListener(
 	activeContext?: {
 		tmdbId: number;
-		mediaType: "movie" | "tv";
+		mediaType: MediaType;
 		season?: number;
 		episode?: number;
 		title?: string;

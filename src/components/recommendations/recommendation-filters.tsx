@@ -2,12 +2,13 @@ import { RefreshCw, SlidersHorizontal, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
-	SelectContent,
 	SelectItem,
+	SelectPopup,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
 import { GENRE_LIST } from "@/constants";
+import type { MediaType } from "@/lib/media-types";
 import { cn } from "@/lib/utils";
 
 export const POPULAR_GENRES = GENRE_LIST.slice(0, 14);
@@ -50,8 +51,8 @@ export function RecommendationFilters({
 	setGenMode: (mode: GenMode) => void;
 	listId: string;
 	setListId: (id: string) => void;
-	mediaType: "movie" | "tv" | undefined;
-	setMediaType: (mediaType: "movie" | "tv" | undefined) => void;
+	mediaType: MediaType | undefined;
+	setMediaType: (mediaType: MediaType | undefined) => void;
 	selectedGenres: string[];
 	toggleGenre: (name: string) => void;
 	selectedEras: string[];
@@ -68,13 +69,24 @@ export function RecommendationFilters({
 	isGenerating: boolean;
 	handleGenerate: () => void;
 }) {
+	const genModeItems = [
+		{ value: "watchlist", label: "From Watchlist" },
+		...customLists.map((list) => ({
+			value: `list:${list.id}`,
+			label: `From List: ${list.name}`,
+		})),
+		{ value: "genre", label: "By Genre" },
+	];
+
 	return (
 		<div className="rounded-[calc(var(--radius-2xl)+4px)] border border-border bg-card p-3">
 			<div className="space-y-3">
 				<div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2">
 					<Select
+						items={genModeItems}
 						value={genMode === "list" ? `list:${listId}` : genMode}
-						onValueChange={(val: string) => {
+						onValueChange={(val: string | null) => {
+							if (!val) return;
 							if (val.startsWith("list:")) {
 								setGenMode("list");
 								setListId(val.replace("list:", ""));
@@ -87,8 +99,7 @@ export function RecommendationFilters({
 						<SelectTrigger className="h-10 w-auto px-4 text-xs font-semibold text-foreground bg-secondary/20 border border-border rounded-xl hover:bg-secondary/40 transition-colors shadow-none">
 							<SelectValue placeholder="From Watchlist" />
 						</SelectTrigger>
-						<SelectContent
-							position="popper"
+						<SelectPopup
 							align="start"
 							className="max-h-[300px] overflow-y-auto"
 						>
@@ -107,7 +118,7 @@ export function RecommendationFilters({
 							<SelectItem value="genre" className="text-xs border-t mt-1 pt-1">
 								By Genre
 							</SelectItem>
-						</SelectContent>
+						</SelectPopup>
 					</Select>
 
 					<div className="w-full sm:w-auto flex items-center gap-2">
@@ -202,6 +213,10 @@ export function RecommendationFilters({
 								Count
 							</span>
 							<Select
+								items={COUNT_OPTIONS.map((c) => ({
+									value: String(c),
+									label: String(c),
+								}))}
 								value={String(count)}
 								onValueChange={(v) => setCount(Number(v))}
 							>
@@ -211,13 +226,13 @@ export function RecommendationFilters({
 								>
 									<SelectValue />
 								</SelectTrigger>
-								<SelectContent position="popper" className="min-w-[4rem]">
+								<SelectPopup className="min-w-[4rem]">
 									{COUNT_OPTIONS.map((c) => (
 										<SelectItem key={c} value={String(c)} className="text-xs">
 											{c}
 										</SelectItem>
 									))}
-								</SelectContent>
+								</SelectPopup>
 							</Select>
 						</div>
 					</div>

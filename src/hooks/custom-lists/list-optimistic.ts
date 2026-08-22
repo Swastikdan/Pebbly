@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
 import type { CustomListRow, ListItemRow } from "@/lib/server-types";
 import { beginOp, type OpHandle, type PendingOpEntry } from "../pending-ops";
@@ -107,7 +108,7 @@ export function beginCreateListOp(
 
 export type CreateListAndAddArgs = CreateListArgs & {
 	tmdbId: number;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	title?: string;
 	image?: string;
 	backdrop?: string;
@@ -213,7 +214,7 @@ export function beginUpdateListOp(
 export type ToggleListItemArgs = {
 	listId: string;
 	tmdbId: number;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	title?: string;
 	image?: string;
 	backdrop?: string;
@@ -225,7 +226,7 @@ export type ToggleListItemArgs = {
 export type ToggleMedia = {
 	listId: string;
 	tmdbId: number;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 };
 
 function buildOptimisticListItem(args: ToggleListItemArgs): ListItemRow {
@@ -383,7 +384,7 @@ export function applyToggleInverse(
 
 export type ReorderItemsArgs = {
 	listId: string;
-	orderedItems: Array<{ tmdbId: number; mediaType: "movie" | "tv" }>;
+	orderedItems: Array<{ tmdbId: number; mediaType: MediaType }>;
 };
 
 /**

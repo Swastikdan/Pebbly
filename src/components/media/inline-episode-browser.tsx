@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useState } from "react";
 import {
 	Accordion,
-	AccordionContent,
 	AccordionItem,
+	AccordionPanel,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
@@ -87,7 +87,7 @@ export function InlineEpisodeBrowser({
 				</h2>
 			</div>
 
-			<Accordion type="single" collapsible className="w-full space-y-2">
+			<Accordion className="w-full space-y-2">
 				{displayedSeasons.map((s) => {
 					const seenAll = episodeTracker.isSeasonFullyWatched(
 						s.season_number,
@@ -104,7 +104,7 @@ export function InlineEpisodeBrowser({
 							value={`season-${s.season_number}`}
 							className="mb-3 rounded-xl border border-default/40 bg-card overflow-hidden"
 						>
-							<AccordionTrigger className="px-4 py-3.5 text-sm font-semibold hover:no-underline hover:bg-secondary/10 transition-colors [&[data-state=open]]:bg-secondary/10">
+							<AccordionTrigger className="px-4 py-3.5 text-sm font-semibold hover:no-underline hover:bg-secondary/10 transition-colors [&[data-panel-open]]:bg-secondary/10">
 								<div className="flex flex-1 items-center justify-between pr-2">
 									<div className="flex items-center gap-3">
 										<span className="text-base font-bold">
@@ -137,7 +137,7 @@ export function InlineEpisodeBrowser({
 									</div>
 								</div>
 							</AccordionTrigger>
-							<AccordionContent className="px-0 pb-0 border-t border-default/50">
+							<AccordionPanel className="px-0 pb-0 border-t border-default/50">
 								<div className="h-full p-2 justify-end items-end flex">
 									<Button
 										variant="outline"
@@ -162,7 +162,7 @@ export function InlineEpisodeBrowser({
 									seasonNumber={s.season_number}
 									episodeTracker={episodeTracker}
 								/>
-							</AccordionContent>
+							</AccordionPanel>
 						</AccordionItem>
 					);
 				})}

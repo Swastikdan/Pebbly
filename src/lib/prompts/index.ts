@@ -1,9 +1,11 @@
 // Pure prompt-building helpers for the recommendation engine. Kept dependency-free
 // (no server imports) so they are trivially testable and reusable anywhere.
 
+import type { MediaType } from "@/lib/media-types";
+
 export interface WatchItemSummary {
 	tmdbId: number;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	title: string | null;
 	rating: number | null;
 	progressStatus: string | null;
@@ -242,7 +244,7 @@ export function buildWatchlistPrompt(
 		excludeTmdbIds,
 	);
 
-	let prompt = `Here is my watchlist data:\n\n` + contextPrompt;
+	let prompt = `Here is my watchlist data:\n\n${contextPrompt}`;
 
 	const listItemsByListId = new Map<string, CustomListItemSummary[]>();
 	for (const li of listItems) {

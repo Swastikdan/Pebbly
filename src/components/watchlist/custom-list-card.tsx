@@ -48,8 +48,6 @@ export function CustomListCard({
 		<div
 			className={cn(
 				"group/card relative flex flex-col rounded-xl border border-border/45 dark:border-border/20 bg-card/85 dark:bg-card/40 p-3 transition-[transform,border-color,box-shadow] duration-250 hover:-translate-y-0.5 hover:border-border/80 hover:shadow-lg hover:shadow-primary/5",
-				isPebblyPicks &&
-					"border-violet-500/30 dark:border-violet-400/25 hover:border-violet-500/50",
 			)}
 		>
 			<div className="relative">
@@ -62,7 +60,7 @@ export function CustomListCard({
 				</Link>
 
 				{isPebblyPicks && (
-					<span className="absolute left-2 top-2 z-10 flex size-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 text-white shadow-md">
+					<span className="absolute left-2 top-2 z-10 flex size-6 items-center justify-center rounded-lg bg-foreground text-background shadow-md">
 						<Sparkles size={12} />
 					</span>
 				)}
@@ -78,7 +76,7 @@ export function CustomListCard({
 					)}
 					{isOrdered && (
 						<span
-							className="flex size-[22px] items-center justify-center rounded-xl bg-background/95 text-muted-foreground shadow-md ring-1 ring-border/20 backdrop-blur-md"
+							className="flex size-[22px] items-center justify-center rounded-lg bg-foreground text-background shadow-md"
 							title="Ranked collection"
 						>
 							<ListOrdered size={11} />

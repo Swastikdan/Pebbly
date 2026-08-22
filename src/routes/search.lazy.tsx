@@ -15,8 +15,8 @@ import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "@/components/ui/search-bar";
 import {
 	Select,
-	SelectContent,
 	SelectItem,
+	SelectPopup,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -37,6 +37,14 @@ type FilterType = MediaType | null;
 export const Route = createLazyFileRoute("/search")({
 	component: SearchPage,
 });
+
+const MIN_RATING_ITEMS = [
+	{ value: "0", label: "Any Rating" },
+	{ value: "6", label: "6+ Rating" },
+	{ value: "7", label: "7+ Rating" },
+	{ value: "8", label: "8+ Rating" },
+	{ value: "9", label: "9+ Rating" },
+];
 
 function SearchPage() {
 	const navigate = useNavigate();
@@ -285,27 +293,28 @@ function SearchPage() {
 						</Button>
 					</div>
 
-					<Select value={minRating} onValueChange={setMinRating}>
-						<SelectTrigger className="h-8 gap-2 rounded-lg border-border/60 bg-secondary/30 px-3 text-xs font-medium">
+					<Select
+						items={MIN_RATING_ITEMS}
+						value={minRating}
+						onValueChange={(value) => setMinRating(value ?? "0")}
+					>
+						<SelectTrigger
+							size="sm"
+							className="w-auto gap-2 rounded-lg border-border/60 bg-secondary/30 px-3 text-xs font-medium"
+						>
 							<SelectValue />
 						</SelectTrigger>
-						<SelectContent className="rounded-xl">
-							<SelectItem className="rounded-lg" value="0">
-								Any Rating
-							</SelectItem>
-							<SelectItem className="rounded-lg" value="6">
-								6+ Rating
-							</SelectItem>
-							<SelectItem className="rounded-lg" value="7">
-								7+ Rating
-							</SelectItem>
-							<SelectItem className="rounded-lg" value="8">
-								8+ Rating
-							</SelectItem>
-							<SelectItem className="rounded-lg" value="9">
-								9+ Rating
-							</SelectItem>
-						</SelectContent>
+						<SelectPopup className="rounded-xl">
+							{MIN_RATING_ITEMS.map((item) => (
+								<SelectItem
+									key={item.value}
+									className="rounded-lg"
+									value={item.value}
+								>
+									{item.label}
+								</SelectItem>
+							))}
+						</SelectPopup>
 					</Select>
 
 					<span className="ml-auto text-[10px] tracking-wider text-muted-foreground">

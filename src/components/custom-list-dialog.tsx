@@ -3,8 +3,8 @@ import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
-	DialogContent,
 	DialogHeader,
+	DialogPopup,
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
 	useCreateCustomListAndAddItem,
 	useUpdateCustomList,
 } from "@/hooks/use-custom-lists";
+import type { MediaType } from "@/lib/media-types";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 const PRESET_COLORS = [
@@ -47,7 +48,7 @@ function SegmentedButton({
 			className={cn(
 				"flex flex-1 items-center justify-center gap-1.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
 				active
-					? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
+					? "bg-card text-foreground border-border shadow-sm dark:shadow-none font-semibold"
 					: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
 			)}
 			aria-pressed={active}
@@ -79,7 +80,7 @@ export function CustomListDialog({
 	listId?: string;
 	autoAddMedia?: {
 		tmdbId: number;
-		mediaType: "movie" | "tv";
+		mediaType: MediaType;
 		title?: string;
 		image?: string;
 		backdrop?: string;
@@ -194,7 +195,7 @@ export function CustomListDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-lg overflow-hidden rounded-xl p-0">
+			<DialogPopup className="sm:max-w-lg overflow-hidden rounded-xl p-0">
 				<div className="px-6 py-5 space-y-5">
 					<DialogHeader className="relative">
 						<DialogTitle className="text-lg font-semibold font-heading tracking-tight text-left pr-6">
@@ -223,10 +224,10 @@ export function CustomListDialog({
 							maxLength={50}
 							autoFocus
 							className={cn(
-								"h-10 w-full rounded-xl border bg-muted/40 px-3.5 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
-								"placeholder:text-muted-foreground/40",
-								"focus-visible:border-border/80 focus-visible:bg-muted/65 focus-visible:ring-1 focus-visible:ring-foreground/10",
-								error ? "border-destructive/50" : "border-border/50",
+								"h-10 w-full rounded-xl border bg-card px-3.5 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
+								"placeholder:text-muted-foreground/60",
+								"focus-visible:border-ring/60 focus-visible:bg-card focus-visible:ring-1 focus-visible:ring-ring/30",
+								error ? "border-destructive/50" : "border-border",
 							)}
 						/>
 					</div>
@@ -244,10 +245,10 @@ export function CustomListDialog({
 							onChange={(e) => setDescription(e.target.value.substring(0, 150))}
 							maxLength={150}
 							className={cn(
-								"min-h-[64px] w-full rounded-xl border bg-muted/40 p-3 text-xs resize-none outline-none transition-[color,background-color,border-color,box-shadow] duration-200",
-								"placeholder:text-muted-foreground/40",
-								"focus-visible:border-border/80 focus-visible:bg-muted/65 focus-visible:ring-1 focus-visible:ring-foreground/10",
-								"border-border/50",
+								"min-h-[64px] w-full rounded-xl border bg-card p-3 text-xs resize-none outline-none transition-[color,background-color,border-color,box-shadow] duration-200",
+								"placeholder:text-muted-foreground/60",
+								"focus-visible:border-ring/60 focus-visible:bg-card focus-visible:ring-1 focus-visible:ring-ring/30",
+								"border-border",
 							)}
 						/>
 					</div>
@@ -379,7 +380,7 @@ export function CustomListDialog({
 						</Button>
 					</div>
 				</div>
-			</DialogContent>
+			</DialogPopup>
 		</Dialog>
 	);
 }

@@ -16,17 +16,17 @@ import { Download, Upload } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { CustomListCard } from "@/components/watchlist/custom-list-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { WatchlistFilters } from "@/components/watchlist/watchlist-filters";
 import { WatchlistGrid } from "@/components/watchlist/watchlist-grid";
 import {
 	useCloneList,
-	useCreateCustomList,
 	useCustomLists,
 	useDeleteCustomList,
 } from "@/hooks/use-custom-lists";
+import { destructiveToast } from "@/hooks/use-destructive-toast";
 import {
 	useFilteredWatchlist,
 	type WatchlistFilter,
@@ -70,12 +70,12 @@ function WatchlistPage() {
 	return (
 		<section className="flex min-h-screen w-full justify-center">
 			<div className="w-full max-w-screen-xl p-5">
-				<div className="mb-6 flex items-center justify-between gap-3">
+				<div className="mb-4 flex items-center justify-between gap-3">
 					<GoBack title="Back" hideLabelOnMobile />
 					<ShareButton title="My Watchlist" hideLabelOnMobile />
 				</div>
 
-				<div className="mb-6">
+				<div className="mb-4">
 					<div className="flex items-center gap-4">
 						<Tabs
 							value={activeTab}
@@ -84,26 +84,26 @@ function WatchlistPage() {
 						>
 							<div className="flex items-center justify-between gap-3">
 								<TabsList>
-									<TabsTrigger value="watchlist">
+									<TabsTab value="watchlist">
 										<Bookmark size={15} />
 										Watchlist
-									</TabsTrigger>
-									<TabsTrigger value="my-lists">
+									</TabsTab>
+									<TabsTab value="my-lists">
 										<ListPlus size={15} />
 										My Collections
-									</TabsTrigger>
+									</TabsTab>
 								</TabsList>
 							</div>
 
-							<TabsContent value="watchlist" className="mt-0">
+							<TabsPanel value="watchlist" className="mt-0">
 								<WatchlistTabContent />
-							</TabsContent>
+							</TabsPanel>
 
-							<TabsContent value="my-lists" className="mt-0">
+							<TabsPanel value="my-lists" className="mt-0">
 								<SilentErrorBoundary>
 									<MyListsTabContent />
 								</SilentErrorBoundary>
-							</TabsContent>
+							</TabsPanel>
 						</Tabs>
 					</div>
 				</div>
@@ -228,13 +228,13 @@ function WatchlistTabContent() {
 	);
 
 	return (
-		<div className="pt-5">
-			<div className="mb-5 flex items-center justify-between gap-3">
+		<div className="pt-3">
+			<div className="mb-4 flex items-center justify-between gap-3">
 				<div>
-					<h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+					<h2 className="text-lg font-bold tracking-tight sm:text-xl">
 						Watchlist
 					</h2>
-					<p className="mt-0.5 text-sm text-muted-foreground">
+					<p className="mt-0.5 text-xs text-muted-foreground">
 						{watchlistData.length} title
 						{watchlistData.length !== 1 ? "s" : ""} saved
 					</p>
@@ -248,11 +248,7 @@ function WatchlistTabContent() {
 							onClick={exportWatchlist}
 							aria-label="Export watchlist"
 						>
-							{exportLoading ? (
-								<Spinner color="current" />
-							) : (
-								<Download size={14} />
-							)}
+							{exportLoading ? <Spinner /> : <Download size={14} />}
 							<span className="hidden sm:inline">Export</span>
 						</Button>
 					)}
@@ -272,7 +268,7 @@ function WatchlistTabContent() {
 							type="file"
 							onChange={importWatchlist}
 						/>
-						{importLoading ? <Spinner color="current" /> : <Upload size={14} />}
+						{importLoading ? <Spinner /> : <Upload size={14} />}
 						<span className="hidden sm:inline">Import</span>
 					</Button>
 				</div>
@@ -347,7 +343,6 @@ function WatchlistTabContent() {
 function MyListsTabContent() {
 	const { lists: customLists, loading } = useCustomLists();
 	const deleteCustomList = useDeleteCustomList();
-	const createCustomList = useCreateCustomList();
 	const cloneList = useCloneList();
 	const [showCreateList, setShowCreateList] = useState(false);
 	const [editingList, setEditingList] = useState<{
@@ -376,21 +371,11 @@ function MyListsTabContent() {
 		visibility?: string | null;
 		sortType?: "unordered" | "ordered";
 	}) => {
-		deleteCustomList(list._id);
-		toast({
+		destructiveToast({
 			title: "Collection deleted",
 			description: list.name,
-			action: {
-				label: "Undo",
-				onClick: () => {
-					void createCustomList({
-						name: list.name,
-						color: list.color ?? undefined,
-						description: list.description ?? undefined,
-						visibility: (list.visibility as "public" | "private") ?? undefined,
-						sortType: list.sortType,
-					});
-				},
+			onConfirm: () => {
+				deleteCustomList(list._id);
 			},
 		});
 	};

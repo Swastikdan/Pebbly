@@ -1,8 +1,9 @@
+import type { MediaType } from "@/lib/media-types";
 import type { EpisodeProgressRow } from "@/lib/server-types";
 
 export interface WatchProgressData {
 	id: string;
-	type: "movie" | "tv";
+	type: MediaType;
 	timestamp: number;
 	percent: number;
 	duration: number;
@@ -34,7 +35,7 @@ export interface PlayerEventPayload {
 		duration: number;
 		progress: number;
 		id: string;
-		mediaType: "movie" | "tv";
+		mediaType: MediaType;
 		season?: number;
 		episode?: number;
 	};
@@ -206,7 +207,7 @@ export function toggleSeasonRows(
 }
 
 export function buildPlayerUrl(opts: {
-	type: "movie" | "tv";
+	type: MediaType;
 	tmdbId: number;
 	season?: number;
 	episode?: number;

@@ -1,8 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import type { MediaType } from "@/lib/media-types";
 import { formatMediaTitle } from "./utils";
 
-export type RedirectEntityType = "movie" | "tv" | "collection";
+export type RedirectEntityType = MediaType | "collection";
 export type SubPageEntityType =
 	| "home"
 	| "media"

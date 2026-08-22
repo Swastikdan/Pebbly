@@ -1,4 +1,6 @@
-export type MediaType = "movie" | "tv";
+import type { MediaType } from "@/lib/media-types";
+
+export type { MediaType };
 
 export interface MediaQuery {
 	type:
@@ -38,7 +40,7 @@ export type ReactionStatus =
 export interface AIRecommendation {
 	title: string;
 	tmdbId: number | null;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	relevanceScore: number;
 	reasoning: string;
 	verifiedTmdbId?: number | null;

@@ -1,6 +1,7 @@
 import * as v from "valibot";
+import { mediaTypeSchema } from "@/lib/media-types";
 
-export const mediaTypeSchema = v.picklist(["movie", "tv"]);
+export { mediaTypeSchema };
 export type MediaType = v.InferOutput<typeof mediaTypeSchema>;
 
 export const progressStatusSchema = v.picklist([

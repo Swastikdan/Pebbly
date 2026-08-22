@@ -14,16 +14,12 @@ import { CustomListDialog } from "@/components/custom-list-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
-	DialogContent,
 	DialogDescription,
 	DialogHeader,
+	DialogPopup,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { getProgressOption, REACTION_OPTIONS } from "@/constants/watchlist";
 import {
@@ -31,6 +27,7 @@ import {
 	useItemLists,
 	useToggleListItem,
 } from "@/hooks/use-custom-lists";
+import type { MediaType } from "@/lib/media-types";
 import { cn } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
@@ -58,7 +55,7 @@ export function WatchlistStatusMenu({
 	isOnWatchlist: boolean;
 	progressStatus: ProgressStatus | null;
 	reaction: ReactionStatus | null;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	tmdbId: number;
 	onAdd: () => void;
 	onStatusChange: (status: ProgressStatus) => void;
@@ -85,27 +82,28 @@ export function WatchlistStatusMenu({
 					<span className="hidden sm:inline">Add to Watchlist</span>
 				</Button>
 			) : (
-				<DropdownMenu open={open} onOpenChange={setOpen}>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="secondary"
-							className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/15 text-primary transition-[color,background-color,border-color] cursor-pointer flex items-center justify-center"
-						>
-							<StatusIcon size={16} className="text-primary" />
-							<span className="hidden sm:inline">{currentOption.label}</span>
-							<ChevronDown
-								size={14}
-								className={cn(
-									"hidden sm:inline opacity-75 transition-transform duration-200",
-									open && "rotate-180",
-								)}
+				<Menu open={open} onOpenChange={setOpen}>
+					<MenuTrigger
+						render={
+							<Button
+								variant="secondary"
+								className="h-10 w-10 sm:w-auto sm:min-w-fit gap-0 sm:gap-2 px-0 sm:px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/15 text-primary transition-[color,background-color,border-color] cursor-pointer flex items-center justify-center"
 							/>
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent
+						}
+					>
+						<StatusIcon size={16} className="text-primary" />
+						<span className="hidden sm:inline">{currentOption.label}</span>
+						<ChevronDown
+							size={14}
+							className={cn(
+								"hidden sm:inline opacity-75 transition-transform duration-200",
+								open && "rotate-180",
+							)}
+						/>
+					</MenuTrigger>
+					<MenuPopup
 						align="end"
 						className="w-80 rounded-xl p-0 border border-border bg-popover shadow-xl"
-						onCloseAutoFocus={(e) => e.preventDefault()}
 					>
 						<div className="flex items-center justify-between border-b border-border px-4 py-3">
 							<span className="text-xs font-bold text-muted-foreground tracking-wider">
@@ -237,8 +235,8 @@ export function WatchlistStatusMenu({
 								<span>Delete from Watchlist</span>
 							</button>
 						</div>
-					</DropdownMenuContent>
-				</DropdownMenu>
+					</MenuPopup>
+				</Menu>
 			)}
 
 			<Button
@@ -302,7 +300,7 @@ function AddToListDialog({
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	tmdbId: number;
-	mediaType: "movie" | "tv";
+	mediaType: MediaType;
 	metadata?: MediaMetadataForList;
 }) {
 	const { lists } = useCustomLists();
@@ -316,7 +314,7 @@ function AddToListDialog({
 	return (
 		<>
 			<Dialog open={open} onOpenChange={onOpenChange}>
-				<DialogContent className="sm:max-w-[380px] overflow-hidden rounded-xl p-0">
+				<DialogPopup className="sm:max-w-[380px] overflow-hidden rounded-xl p-0">
 					<div className="px-6 pt-6 pb-2">
 						<DialogHeader className="space-y-1">
 							<DialogTitle className="text-base font-semibold tracking-tight">
@@ -400,7 +398,7 @@ function AddToListDialog({
 							Create New Collection
 						</Button>
 					</div>
-				</DialogContent>
+				</DialogPopup>
 			</Dialog>
 
 			<CustomListDialog

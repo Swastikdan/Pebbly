@@ -25,7 +25,7 @@ const MediaList = memo(
 	(props: {
 		data: MediaListProps[];
 		cardType?: "horizontal" | "vertical";
-		defaultMediatype?: "movie" | "tv";
+		defaultMediatype?: MediaType;
 		priorityCount?: number;
 	}) => {
 		return (
@@ -45,7 +45,7 @@ const MediaList = memo(
 							poster_path={item.poster_path}
 							media_type={
 								props.defaultMediatype ??
-								(item.media_type as unknown as "movie" | "tv")
+								(item.media_type as unknown as MediaType)
 							}
 							release_date={item.first_air_date ?? item.release_date ?? null}
 							is_on_watchlist_page={item.is_on_watchlist_page}
@@ -65,6 +65,7 @@ const MediaList = memo(
 );
 
 import { MediaSkeletonList } from "@/components/ui/media-skeleton-list";
+import type { MediaType } from "@/lib/media-types";
 
 export { MediaSkeletonList };
 
@@ -79,7 +80,7 @@ const useMediaQuery = (
 		| "tv-shows_top-rated",
 	options?: {
 		cardType?: "horizontal" | "vertical";
-		mediaType?: "movie" | "tv";
+		mediaType?: MediaType;
 	},
 ) => {
 	const { data, isFetching, error } = useQuery({
@@ -111,7 +112,7 @@ function MediaSection({
 		| "movies_top-rated"
 		| "tv-shows_top-rated";
 	cardTypeOverride?: "horizontal" | "vertical";
-	mediaType?: "movie" | "tv";
+	mediaType?: MediaType;
 	priorityCount?: number;
 }) {
 	const { data, error, cardType } = useMediaQuery(queryType, {
@@ -182,7 +183,7 @@ function ContinueWatchingContent({
 }: {
 	items: {
 		id: string;
-		type: "movie" | "tv";
+		type: MediaType;
 		percent: number;
 		title?: string;
 		image?: string;

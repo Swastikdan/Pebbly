@@ -160,20 +160,20 @@ export function WatchlistCard({
 						onClick={cycleStatus}
 						title={`Status: ${progressOption.label}. Tap to change.`}
 						aria-label={`Status: ${progressOption.label}. Tap to change.`}
-						className="inline-flex h-auto items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground hover:bg-secondary"
+						className="inline-flex h-auto items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1.5 sm:py-1 text-[10px] font-medium text-secondary-foreground hover:bg-secondary"
 					>
 						<ProgressIcon size={12} />
 						{progressOption.label}
 					</Button>
 					{isRecommended && (
-						<span className="inline-flex items-center gap-1 rounded-lg bg-blue-500/15 text-blue-500 border border-blue-500/30 px-2.5 py-1 text-[10px] font-semibold">
-							<Sparkles size={11} />
+						<span className="inline-flex items-center gap-1.5 rounded-lg border border-info/30 bg-info/15 px-2.5 py-1.5 sm:py-1 text-[10px] font-medium text-info">
+							<Sparkles size={12} />
 							Recommended
 						</span>
 					)}
 					{reactionOption && (
 						<span
-							className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1 text-[10px] font-medium text-secondary-foreground"
+							className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/80 px-2.5 py-1.5 sm:py-1 text-[10px] font-medium text-secondary-foreground"
 							title={reactionOption.label}
 						>
 							<reactionOption.icon size={12} />

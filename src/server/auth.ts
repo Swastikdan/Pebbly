@@ -32,7 +32,7 @@ export interface ClerkSessionClaims {
  */
 export function getSessionToken(): string | undefined {
 	const authHeader = getRequestHeader("authorization");
-	if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+	if (authHeader?.toLowerCase().startsWith("bearer ")) {
 		const bearer = authHeader.slice(7).trim();
 		if (bearer.length > 0) return bearer;
 	}
