@@ -177,7 +177,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 	};
 
 	return (
-		<div className="pt-5 animate-fade-in space-y-6">
+		<div className="animate-fade-in space-y-6">
 			<div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-border/50 dark:border-border/20 px-5 py-4 overflow-hidden bg-gradient-to-r from-secondary/40 to-secondary/10 dark:from-zinc-900/60 dark:to-zinc-950/30 backdrop-blur-sm">
 				{list.color && (
 					<div
