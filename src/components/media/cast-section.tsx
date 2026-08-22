@@ -31,8 +31,12 @@ export const CastSection = (props: {
 				<Link
 					aria-label="View full cast and crew"
 					className="w-fit text-lg font-semibold font-heading transition-opacity hover:opacity-70 md:text-xl"
-					// @ts-expect-error - correct link
-					to={`/${type}/${id}/${encodeURIComponent(urltitle)}/cast-crew`}
+					to={
+						type === "tv"
+							? "/tv/$id/{-$slug}/cast-crew"
+							: "/movie/$id/{-$slug}/cast-crew"
+					}
+					params={{ id: String(id), slug: encodeURIComponent(urltitle) }}
 				>
 					Cast / Crew
 				</Link>
@@ -60,8 +64,14 @@ export const CastSection = (props: {
 								/>
 							))}
 							{is_more_cast_crew && (
-								// @ts-expect-error - correct link
-								<Link to={`/${type}/${id}/${urltitle}/cast-crew`}>
+								<Link
+									to={
+										type === "tv"
+											? "/tv/$id/{-$slug}/cast-crew"
+											: "/movie/$id/{-$slug}/cast-crew"
+									}
+									params={{ id: String(id), slug: urltitle }}
+								>
 									<Button
 										className="mr-10 ml-5 flex items-center justify-center rounded-lg pressable"
 										size="lg"
@@ -76,8 +86,12 @@ export const CastSection = (props: {
 					</ScrollContainer>
 					<Link
 						className="group w-fit text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-						// @ts-expect-error - correct link
-						to={`/${type}/${id}/${urltitle}/cast-crew`}
+						to={
+							type === "tv"
+								? "/tv/$id/{-$slug}/cast-crew"
+								: "/movie/$id/{-$slug}/cast-crew"
+						}
+						params={{ id: String(id), slug: urltitle }}
 					>
 						View full cast & crew
 						<ArrowRightLine

@@ -40,29 +40,24 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 	const toggle = useToggleWatchlistItem();
 	const { isOnWatchList } = useWatchlistItem(itemId, media_type);
 
-	// Optimistic state, flips instantly, reverts on error
 	const [optimisticOn, setOptimisticOn] = useState<boolean | null>(null);
 	const [isAnimating, setIsAnimating] = useState(false);
 	const [animKey, setAnimKey] = useState(0);
 
-	// Clear optimistic override once server state matches optimistic state
 	useEffect(() => {
 		if (optimisticOn !== null && isOnWatchList === optimisticOn) {
 			setOptimisticOn(null);
 		}
 	}, [isOnWatchList, optimisticOn]);
 
-	// Derived active state: prefer optimistic if set, else server truth
 	const isActive = optimisticOn !== null ? optimisticOn : isOnWatchList;
 
 	const showTrash = isActive && is_on_watchlist_page;
 
 	const handleWatchList = useCallback(async () => {
-		// Immediately flip the UI
 		const nextActive = !isActive;
 		setOptimisticOn(nextActive);
 
-		// Trigger animation only when adding (not removing on watchlist page)
 		if (!is_on_watchlist_page && nextActive) {
 			setAnimKey((k) => k + 1);
 			setIsAnimating(true);
@@ -84,7 +79,6 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
 			);
 		} catch (error) {
 			console.error("Error toggling watchlist:", error);
-			// Revert on failure
 			setOptimisticOn(null);
 		}
 	}, [

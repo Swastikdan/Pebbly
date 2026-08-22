@@ -71,8 +71,6 @@ export const MediaContainer = (props: MediaContainerProps) => {
 				? "posters"
 				: "videos";
 
-	// Determine which tab should be active based on URL params
-	// so that dialogs can auto-open on page reload
 	const activeTabFromSearch = search.backdrop
 		? "backdrops"
 		: search.poster
@@ -223,21 +221,13 @@ export const MediaContainer = (props: MediaContainerProps) => {
 										image.backdrop_image,
 									);
 									return (
-										// biome-ignore lint/a11y/useSemanticElements: keeping div for consistent styling with other interactive containers
-										<div
+										<button
+											type="button"
 											key={`backdrop-${image.backdrop_image}`}
 											className="group relative cursor-pointer"
-											role="button"
-											tabIndex={0}
 											onClick={() =>
 												onUpdateDialogSearch("backdrop", imagePathClean)
 											}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" || e.key === " ") {
-													e.preventDefault();
-													onUpdateDialogSearch("backdrop", imagePathClean);
-												}
-											}}
 										>
 											<Image
 												alt={title}
@@ -246,7 +236,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 												src={image.backdrop_image ?? ""}
 												width={300}
 											/>
-										</div>
+										</button>
 									);
 								})}
 								{(() => {
@@ -324,21 +314,13 @@ export const MediaContainer = (props: MediaContainerProps) => {
 								{posters.map((image) => {
 									const imagePathClean = getImageDialogKey(image.poster_image);
 									return (
-										// biome-ignore lint/a11y/useSemanticElements: keeping div for consistent styling with other interactive containers
-										<div
+										<button
+											type="button"
 											key={`poster-${image.poster_image}`}
 											className="group relative cursor-pointer"
-											role="button"
-											tabIndex={0}
 											onClick={() =>
 												onUpdateDialogSearch("poster", imagePathClean)
 											}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" || e.key === " ") {
-													e.preventDefault();
-													onUpdateDialogSearch("poster", imagePathClean);
-												}
-											}}
 										>
 											<Image
 												alt={title}
@@ -347,7 +329,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 												src={image.poster_image ?? ""}
 												width={300}
 											/>
-										</div>
+										</button>
 									);
 								})}
 								{(() => {

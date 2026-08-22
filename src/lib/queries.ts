@@ -22,9 +22,6 @@ import type {
 import * as Schemas from "./tmdb-schemas";
 import { validateId } from "./utils";
 
-/*
- * Safe fetch helper with dev logging for URL, endpoint, and schema validation issues
- */
 async function safeFetch<Output>(
 	queryName: string,
 	url: string,
@@ -52,13 +49,8 @@ async function safeFetch<Output>(
 	}
 }
 
-/*
- * TMDB Query Functions
- */
-
 type MediaListType = MediaQuery["type"] | MediaListQuery["type"];
 
-/** Endpoint path for each media-list query type. */
 const MEDIA_LIST_PATHS: Record<MediaListType, string> = {
 	movies_popular: "/movie/popular",
 	"movies_now-playing": "/movie/now_playing",
@@ -72,11 +64,6 @@ const MEDIA_LIST_PATHS: Record<MediaListType, string> = {
 	trending_week: "/trending/all/week",
 };
 
-/**
- * Fetch one page of a media list (popular, top-rated, trending, ...).
- * Replaces the old getMedia/getMediaList switch duplicates: the type -> path
- * mapping above is the single source of truth for these endpoints.
- */
 export async function getMediaList({
 	type,
 	page,
@@ -94,7 +81,6 @@ export async function getMediaList({
 	);
 }
 
-/** Convenience wrapper returning only the results array. */
 export async function getMedia({
 	type,
 	page,
@@ -356,10 +342,9 @@ export async function getPersonDetails({
 	id: number;
 }): Promise<PersonDetails> {
 	validateId(id);
-	// The person page only renders movie_credits + tv_credits (and external
-	// links). combined_credits is a third copy of the same cast/crew data and
-	// images is unused, so both are omitted to shrink a payload that can hold
-	// hundreds of credits for prolific actors.
+	// The person page only renders movie_credits + tv_credits; combined_credits
+	// is a third copy of the same cast/crew data and images is unused, so both
+	// are omitted from a payload that can hold hundreds of credits.
 	const url = `/person/${id}?language=en-US&append_to_response=movie_credits,tv_credits,external_ids`;
 
 	return await safeFetch<PersonDetails>(

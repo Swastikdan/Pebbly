@@ -20,16 +20,7 @@ import { formatMediaTitle } from "@/lib/utils";
 
 export type { PickItem };
 
-/**
- * Shared "Tonight's Pick" engine. Both the homepage hero and the dialog consume
- * this so the selected title, shuffle, and dislike behavior stay in sync and
- * offline persistence (Zustand store) lives in exactly one place.
- *
- * @param open Whether the surrounding surface is visible (gates the TMDB fetches).
- */
 export function useDailyPick(open: boolean) {
-	// Persisted offline cache, same Zustand persist pattern as the watchlist
-	// stores. Falls back to the last successful TMDB payload when offline.
 	const cachedTrending = useDailyPickStore((s) => s.trendingMedia);
 	const cachedPopularTv = useDailyPickStore((s) => s.popularTv);
 	const cachedDetails = useDailyPickStore((s) => s.details);
@@ -65,7 +56,7 @@ export function useDailyPick(open: boolean) {
 			const items = await getMedia({ type: "trending_day", page: 1 });
 			return items;
 		},
-		staleTime: 1000 * 60 * 60, // 1 hour
+		staleTime: 1000 * 60 * 60,
 		enabled: open,
 	});
 
@@ -75,11 +66,10 @@ export function useDailyPick(open: boolean) {
 			const items = await getMedia({ type: "tv-shows_popular", page: 1 });
 			return items;
 		},
-		staleTime: 1000 * 60 * 60, // 1 hour
+		staleTime: 1000 * 60 * 60,
 		enabled: open,
 	});
 
-	// Persist successful fetches so the last payload is available offline.
 	useEffect(() => {
 		if (trendingMedia && trendingMedia.length > 0) {
 			setTrending(trendingMedia);
@@ -91,7 +81,6 @@ export function useDailyPick(open: boolean) {
 		}
 	}, [popularTv, setPopularTv]);
 
-	// Serve the persisted payload when the live fetch fails (offline / flaky).
 	const effectiveTrending = trendingMedia ?? cachedTrending;
 	const effectivePopularTv = popularTv ?? cachedPopularTv;
 
@@ -102,8 +91,6 @@ export function useDailyPick(open: boolean) {
 		(isLoadingTrending || isLoadingTv) &&
 		(!effectiveTrending || !effectivePopularTv);
 
-	// Build combined candidate list giving 50/50 equal presentation to
-	// Watchlist & Discovery items.
 	const candidateItems: PickItem[] = useMemo(
 		() =>
 			buildDailyPickCandidates({
@@ -119,8 +106,6 @@ export function useDailyPick(open: boolean) {
 
 	const selectedIndex = useMemo(() => {
 		if (itemsCount === 0) return 0;
-		// Prefer the tracked pick so list reorders (e.g. watchlist toggles)
-		// don't swap the currently displayed tile.
 		if (selectedKey) {
 			const stableIndex = candidateItems.findIndex(
 				(item) => getPickKey(item) === selectedKey,
@@ -135,8 +120,6 @@ export function useDailyPick(open: boolean) {
 		return candidateItems[selectedIndex] ?? candidateItems[0];
 	}, [candidateItems, selectedIndex, itemsCount]);
 
-	// Sync the tracked key with whichever item is actually shown so the seed /
-	// shuffle selection stays stable across `candidateItems` reorders.
 	useEffect(() => {
 		if (!selectedItem) return;
 		const key = getPickKey(selectedItem);
@@ -191,7 +174,6 @@ export function useDailyPick(open: boolean) {
 		staleTime: 1000 * 60 * 60,
 	});
 
-	// Persist the resolved backdrop/poster so the tile renders offline.
 	useEffect(() => {
 		if (!selectedDetails || !selectedItem) return;
 		setDetail(selectedItem.media_type, selectedItem.id, {
@@ -200,8 +182,6 @@ export function useDailyPick(open: boolean) {
 		});
 	}, [selectedDetails, selectedItem, setDetail]);
 
-	// Fall back to the persisted per-title detail when the details request
-	// fails offline.
 	const cachedDetail = selectedItem
 		? cachedDetails[`${selectedItem.media_type}:${selectedItem.id}`]
 		: undefined;
@@ -236,9 +216,12 @@ export function useDailyPick(open: boolean) {
 	const posterLqUrl = effectivePosterPath
 		? `${IMAGE_PREFIX.LQ_POSTER}${effectivePosterPath}`
 		: "";
-	const targetPath = formattedTitle
-		? `/${mediaType}/${selectedItem?.id}/${formattedTitle}`
-		: `/${mediaType}/${selectedItem?.id}`;
+	const detailTo =
+		mediaType === "tv" ? "/tv/$id/{-$slug}" : "/movie/$id/{-$slug}";
+	const detailParams = {
+		id: String(selectedItem?.id),
+		slug: formattedTitle || undefined,
+	};
 
 	return {
 		candidateItems,
@@ -255,7 +238,8 @@ export function useDailyPick(open: boolean) {
 		backdropLqUrl,
 		posterUrl,
 		posterLqUrl,
-		targetPath,
+		detailTo,
+		detailParams,
 		setSelectedKey,
 	};
 }
