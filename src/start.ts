@@ -1,4 +1,8 @@
 import { getToken } from "@clerk/react";
+import {
+	sentryGlobalFunctionMiddleware,
+	sentryGlobalRequestMiddleware,
+} from "@sentry/tanstackstart-react";
 import { createCsrfMiddleware, createStart } from "@tanstack/react-start";
 
 // Bounded timeout for server-function RPCs so a stalled request terminates
@@ -18,13 +22,20 @@ const RPC_TIMEOUT_MS = 30_000;
  * called directly in-process.
  */
 export const startInstance = createStart(() => ({
-	// Reject cross-site server-function requests. Scoped to server fns so
-	// ordinary page navigation/SSR is never affected. Browser same-origin
-	// calls carry Sec-Fetch-Site/Origin and pass; cookie-derived sessions
-	// can no longer be abused by a cross-site form/fetch from another origin.
+	// Sentry middlewares run first so errors thrown anywhere downstream are
+	// captured before CSRF filtering or the RPC fetch wrapper can swallow or
+	// rewrap them. They no-op when no DSN is configured. Note: SSR rendering
+	// exceptions are NOT captured here — those are covered by the Worker-level
+	// wrap plus server/plugins/sentry.ts.
 	requestMiddleware: [
+		sentryGlobalRequestMiddleware,
+		// Reject cross-site server-function requests. Scoped to server fns so
+		// ordinary page navigation/SSR is never affected. Browser same-origin
+		// calls carry Sec-Fetch-Site/Origin and pass; cookie-derived sessions
+		// can no longer be abused by a cross-site form/fetch from another origin.
 		createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" }),
 	],
+	functionMiddleware: [sentryGlobalFunctionMiddleware],
 	serverFns: {
 		fetch: async (url, args = {}) => {
 			const headers = new Headers(args.headers);

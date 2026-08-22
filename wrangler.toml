@@ -1,9 +1,16 @@
 # Cloudflare Workers + D1 (free tier)
 name = "pebbly"
-main = ".output/server/index.mjs"
+# Sentry-wrapped entry produced by scripts/sentry-postbuild.mjs after
+# `vite build`. At deploy time Nitro's redirected config wins anyway; this
+# keeps `wrangler dev` pointed at the same wrapped handler.
+main = ".output/server/index.sentry.mjs"
 compatibility_date = "2026-08-08"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
+
+# Lets Sentry auto-detect the release from the deployed Worker version.
+[version_metadata]
+binding = "CF_VERSION_METADATA"
 
 # Frontend static assets served from the edge
 [assets]
@@ -30,6 +37,9 @@ enabled = true
 
 # Non-secret server vars only. Secrets: wrangler secret put <NAME>.
 # Client VITE_* vars are inlined at build time from .env — they do NOT go here.
+# Observability secrets: SENTRY_DSN (server) via `wrangler secret put SENTRY_DSN`;
+# VITE_SENTRY_DSN (client) must exist in .env at build time. Without them the
+# Sentry wrapper and client init silently no-op.
 
 # Preview deploys (cf-* branches) use a separate, flattened config at
 # wrangler.preview.toml deployed with `wrangler deploy --config ...`.

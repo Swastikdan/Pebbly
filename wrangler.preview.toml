@@ -18,10 +18,15 @@
 #   wrangler secret put GEMINI_API_KEY --config wrangler.preview.toml
 
 name = "pebbly-preview"
-main = ".output/server/index.mjs"
+# Sentry-wrapped entry produced by scripts/sentry-postbuild.mjs after `vite build`.
+main = ".output/server/index.sentry.mjs"
 compatibility_date = "2026-08-08"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
+
+# Lets Sentry auto-detect the release from the deployed Worker version.
+[version_metadata]
+binding = "CF_VERSION_METADATA"
 
 # Nitro pre-bundles the entry; tell Wrangler not to re-bundle it. Production
 # gets these fields from the generated redirected config, but --config bypasses

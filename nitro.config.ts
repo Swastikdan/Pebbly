@@ -10,6 +10,11 @@ export default defineNitroConfig({
   experimental: {
     tasks: true,
   },
+  // Emit Nitro's diagnostics-channel events (h3 routes and middleware, srvx,
+  // unstorage) as custom spans for Cloudflare Workers Traces — free, no OTel
+  // SDK needed. Pairs with [observability.traces] in wrangler.toml; fetch
+  // calls, D1 queries and KV reads are instrumented by the runtime itself.
+  tracingChannel: true,
   // Daily watchlist snapshot at 03:00 UTC — matches the `[triggers]` cron in
   // wrangler.toml. The task itself lives in server/tasks/snapshots.ts.
   scheduledTasks: {

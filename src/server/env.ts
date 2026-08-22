@@ -12,6 +12,8 @@ export interface Env {
 	CLERK_SECRET_KEY?: string;
 	CLERK_ISSUER_URL?: string;
 	GEMINI_API_KEY?: string;
+	/** Sentry server DSN. Unset = SDK no-ops (local dev / DSN-less deploys). */
+	SENTRY_DSN?: string;
 	/** Set to "preview" in wrangler.toml `[env.preview.vars]` for cf-* deploys. */
 	APP_ENV?: string;
 	[key: string]: unknown;

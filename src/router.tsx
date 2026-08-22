@@ -1,5 +1,6 @@
 import { ClerkProvider } from "@clerk/react";
 import { shadcn } from "@clerk/ui/themes";
+import * as Sentry from "@sentry/tanstackstart-react";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { DefaultLoader } from "@/components/default-loader";
@@ -54,6 +55,26 @@ export const getRouter = () => {
 		handleRedirects: true,
 		wrapQueryClient: true,
 	});
+
+	// Client-side error tracking + tracing. Skipped during SSR and whenever
+	// no DSN is inlined at build time (local dev / DSN-less deploys) so the
+	// SDK fully no-ops instead of logging init warnings. Trace propagation
+	// headers are attached to same-origin fetches by default, which is what
+	// links browser spans to the Worker's server span for distributed traces.
+	const clientDsn = import.meta.env.VITE_SENTRY_DSN;
+	if (!router.isServer && clientDsn) {
+		Sentry.init({
+			dsn: clientDsn,
+			integrations: [
+				Sentry.tanstackRouterBrowserTracingIntegration(router),
+				Sentry.replayIntegration(),
+			],
+			enableLogs: true,
+			tracesSampleRate: 1,
+			replaysSessionSampleRate: 0.1,
+			replaysOnErrorSampleRate: 1,
+		});
+	}
 
 	return router;
 };
