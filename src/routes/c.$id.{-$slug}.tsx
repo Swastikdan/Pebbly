@@ -48,5 +48,11 @@ export const Route = createFileRoute("/c/$id/{-$slug}")({
 
 function CollectionPageRoute() {
 	const { listId } = Route.useLoaderData();
-	return <CollectionPage listId={listId} />;
+	return (
+		<section className="flex min-h-screen w-full justify-center">
+			<div className="w-full max-w-screen-xl p-5">
+				<CollectionPage listId={listId} />
+			</div>
+		</section>
+	);
 }
