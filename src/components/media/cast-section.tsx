@@ -27,14 +27,14 @@ export const CastSection = (props: {
   const { id, urltitle, cast, crew, is_more_cast_crew, type } = props;
   const hasCastOrCrew = cast.length > 0 || crew.length > 0;
   if (!hasCastOrCrew) return null;
+  const castCrewHref = `/${type}/${id}/${encodeURIComponent(urltitle)}/cast-crew`;
   return (
     <div className="pb-5">
       <div className="flex flex-col gap-3">
         <Link
           aria-label="View full cast and crew"
           className="font-heading w-fit text-lg font-semibold transition-opacity hover:opacity-70 md:text-xl"
-          // @ts-expect-error - correct link
-          to={`/${type}/${id}/${encodeURIComponent(urltitle)}/cast-crew`}
+          to={castCrewHref}
         >
           Cast / Crew
         </Link>
@@ -62,8 +62,7 @@ export const CastSection = (props: {
                 />
               ))}
               {is_more_cast_crew && (
-                // @ts-expect-error - correct link
-                <Link to={`/${type}/${id}/${urltitle}/cast-crew`}>
+                <Link to={castCrewHref}>
                   <Button
                     className="pressable mr-10 ml-5 flex items-center justify-center rounded-lg"
                     size="lg"
@@ -78,8 +77,7 @@ export const CastSection = (props: {
           </ScrollContainer>
           <Link
             className="group text-muted-foreground hover:text-foreground w-fit text-sm font-medium transition-colors"
-            // @ts-expect-error - correct link
-            to={`/${type}/${id}/${urltitle}/cast-crew`}
+            to={castCrewHref}
           >
             View full cast & crew
             <ArrowRightLine

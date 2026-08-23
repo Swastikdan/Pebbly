@@ -175,7 +175,7 @@ export function useContinueWatching() {
       .sort((a, b) => b.lastUpdated - a.lastUpdated);
   }, [isSignedIn, remote.data, localMediaState]);
 
-  return { items, allItems: items };
+  return { items };
 }
 
 export function useRemoveFromContinueWatching() {
@@ -411,21 +411,6 @@ export function useEpisodeWatched(
     [tmdbId, watchedMap],
   );
 
-  const markShowCompleted = useCallback(
-    (_totalEpisodesOverride: number) => {
-      void repository
-        .updateProgress({
-          tmdbId,
-          mediaType: "tv",
-          progressStatus: "done",
-          progress: 100,
-          ...showMetadata,
-        })
-        .catch((error) => logWatchProgressError("mark show completed", error));
-    },
-    [repository, showMetadata, tmdbId],
-  );
-
   return {
     isEpisodeWatched,
     toggleEpisodeWatched,
@@ -433,7 +418,6 @@ export function useEpisodeWatched(
     unmarkSeasonWatched,
     isSeasonFullyWatched,
     getSeasonWatchedCount,
-    markShowCompleted,
     watchedCount,
   };
 }

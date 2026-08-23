@@ -114,19 +114,6 @@ export function logWatchProgressError(action: string, error: unknown) {
   console.error(`Failed to ${action}`, error);
 }
 
-export function buildLocalShowMetadata(
-  tvId: number | string,
-  showMeta?: ShowMetadata,
-) {
-  return {
-    title: showMeta?.title ?? `TV Show ${tvId}`,
-    image: showMeta?.image ?? "",
-    rating: showMeta?.rating ?? 0,
-    release_date: showMeta?.release_date ?? "",
-    overview: showMeta?.overview,
-  };
-}
-
 export function createOptimisticEpisodeProgress(
   tmdbId: number,
   season: number,

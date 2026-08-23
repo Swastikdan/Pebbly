@@ -144,7 +144,6 @@ export function AdminUserRow({
   if (variant === "desktop") {
     return (
       <tr
-        key={user._id}
         className={`border-b transition-colors last:border-0 ${
           isBanned ? "bg-destructive/5" : "hover:bg-muted/20"
         }`}
@@ -214,7 +213,6 @@ export function AdminUserRow({
 
   return (
     <div
-      key={user._id}
       className={`rounded-2xl border p-4 transition-colors ${
         isBanned
           ? "bg-destructive/5 border-destructive/20"

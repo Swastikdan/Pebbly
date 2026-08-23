@@ -43,7 +43,7 @@ export interface FeedbackSignals {
   previousTitles?: string[];
 }
 
-export function formatStats(inputStats: {
+function formatStats(inputStats: {
   movieCount: number;
   tvCount: number;
   episodesWatched: number;
@@ -63,7 +63,7 @@ export interface BasePromptConfig {
   statsText?: string;
 }
 
-export const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
+const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
 {
   "recommendations": [
     {
@@ -77,7 +77,7 @@ export const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
 }`;
 
 /** Shared media label for prompt goals (movie / TV show / both). */
-export function mediaLabel(mediaTypePreference?: string): string {
+function mediaLabel(mediaTypePreference?: string): string {
   return mediaTypePreference === "movie"
     ? "movies"
     : mediaTypePreference === "tv"
@@ -86,12 +86,12 @@ export function mediaLabel(mediaTypePreference?: string): string {
 }
 
 /** Clamp the requested title count to the 1..30 bound used by every prompt. */
-export function clampTitleCount(count?: number): number {
+function clampTitleCount(count?: number): number {
   return Math.min(Math.max(count ?? 10, 1), 30);
 }
 
 /** Index watch items by the `tmdbId_mediaType` key used across prompt builders. */
-export function indexWatchItemsByMediaKey(
+function indexWatchItemsByMediaKey(
   items: WatchItemSummary[],
 ): Map<string, WatchItemSummary> {
   const map = new Map<string, WatchItemSummary>();
@@ -101,7 +101,7 @@ export function indexWatchItemsByMediaKey(
   return map;
 }
 
-export function formatItem(i: WatchItemSummary): string {
+function formatItem(i: WatchItemSummary): string {
   const parts = [
     `- ${i.title ?? "Unknown"} (TMDB ID: ${i.tmdbId}, ${i.mediaType})`,
   ];
@@ -110,7 +110,7 @@ export function formatItem(i: WatchItemSummary): string {
   return parts.join(" | ");
 }
 
-export function buildWatchlistContext(
+function buildWatchlistContext(
   data: WatchlistData,
   excludeTmdbIds: number[] = [],
 ): {
@@ -183,7 +183,7 @@ export function buildWatchlistContext(
   return { contextPrompt: prompt, existingIds, existingTitles };
 }
 
-export function appendFeedbackSignals(
+function appendFeedbackSignals(
   prompt: string,
   feedback?: FeedbackSignals,
 ): string {
@@ -200,7 +200,7 @@ export function appendFeedbackSignals(
   return result;
 }
 
-export function buildBasePromptSections(config: BasePromptConfig): string {
+function buildBasePromptSections(config: BasePromptConfig): string {
   let prompt = "";
 
   prompt = appendFeedbackSignals(prompt, config.feedback);

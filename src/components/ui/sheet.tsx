@@ -6,12 +6,9 @@ import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export const Sheet: typeof SheetPrimitive.Root = SheetPrimitive.Root;
-
-export const SheetPortal: typeof SheetPrimitive.Portal = SheetPrimitive.Portal;
 
 export function SheetTrigger(
   props: SheetPrimitive.Trigger.Props,
@@ -25,7 +22,7 @@ export function SheetClose(
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
-export function SheetBackdrop({
+function SheetBackdrop({
   className,
   ...props
 }: SheetPrimitive.Backdrop.Props): React.ReactElement {
@@ -89,7 +86,7 @@ export function SheetPopup({
   }: SheetPrimitive.Close.Props = closeProps ?? {};
 
   return (
-    <SheetPortal {...portalProps}>
+    <SheetPrimitive.Portal {...portalProps}>
       <SheetBackdrop />
       <SheetViewport side={side} variant={variant}>
         <SheetPrimitive.Popup
@@ -126,7 +123,7 @@ export function SheetPopup({
           )}
         </SheetPrimitive.Popup>
       </SheetViewport>
-    </SheetPortal>
+    </SheetPrimitive.Portal>
   );
 }
 
@@ -205,35 +202,4 @@ export function SheetDescription({
   );
 }
 
-export function SheetPanel({
-  className,
-  scrollFade = true,
-  render,
-  ...props
-}: useRender.ComponentProps<"div"> & {
-  scrollFade?: boolean;
-}): React.ReactElement {
-  const defaultProps = {
-    className: cn(
-      "p-6 in-[[data-slot=sheet-popup]:has([data-slot=sheet-footer]:not(.border-t))]:pb-1 in-[[data-slot=sheet-popup]:has([data-slot=sheet-header])]:pt-1",
-      className,
-    ),
-    "data-slot": "sheet-panel",
-  };
-
-  return (
-    <ScrollArea overscrollContain scrollFade={scrollFade}>
-      {useRender({
-        defaultTagName: "div",
-        props: mergeProps<"div">(defaultProps, props),
-        render,
-      })}
-    </ScrollArea>
-  );
-}
-
-export {
-  SheetBackdrop as SheetOverlay,
-  SheetPopup as SheetContent,
-  SheetPrimitive,
-};
+export { SheetPrimitive };

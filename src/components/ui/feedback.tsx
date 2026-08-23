@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 /** Row of loading placeholders for horizontal media rails/grids. */
 export function SkeletonGrid({
@@ -31,7 +32,10 @@ export function ErrorBanner({
 }) {
   return (
     <div
-      className={`border-destructive/30 bg-destructive/10 text-destructive rounded-xl border p-3 text-xs ${className}`}
+      className={cn(
+        "border-destructive/30 bg-destructive/10 text-destructive rounded-xl border p-3 text-xs",
+        className,
+      )}
     >
       {children}
     </div>

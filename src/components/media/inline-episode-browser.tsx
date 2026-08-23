@@ -31,7 +31,6 @@ interface InlineEpisodeBrowserProps {
   tvId: number;
   showName: string;
   seasons: SeasonInfo[];
-  initialSeasonNumber?: number;
   image?: string;
   release_date?: string;
   overview?: string;

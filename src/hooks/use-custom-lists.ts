@@ -3,15 +3,13 @@ import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { MediaType } from "@/lib/media-types";
-import type { CustomListRow, ListItemRow } from "@/lib/server-types";
-import type { ProgressStatus, ReactionStatus } from "@/types";
+import type { CustomListRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
-import { getCustomLists, getItemLists, getListItems } from "@/server/fns/lists";
+import { getCustomLists, getItemLists } from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
 import { reconcileListFetch } from "./pending-ops";
 import { useLocalListsStore } from "./use-local-lists-store";
-import { useWatchlistStore } from "./watchlist-store";
 
 // ---------------------------------------------------------------------------
 // Reads (routed through the reconciler so refetches can't clobber pending ops)
@@ -25,18 +23,6 @@ async function fetchCustomLists(
     queryClient,
     queryKeys.lists.all(userId),
     await unwrap(getCustomLists()),
-  );
-}
-
-async function fetchListItems(
-  queryClient: QueryClient,
-  listId: string,
-  userId: string | undefined,
-): Promise<ListItemRow[]> {
-  return reconcileListFetch(
-    queryClient,
-    queryKeys.lists.items(listId, userId),
-    await unwrap(getListItems({ data: { listId } })),
   );
 }
 
@@ -99,64 +85,6 @@ export function useCustomLists() {
     loading: isSignedIn && remote.isPending,
     isAvailable: true,
   };
-}
-
-export function useCustomListItems(listId: string | null) {
-  const { isSignedIn, user } = useUser();
-  const queryClient = useQueryClient();
-  const localItems = useLocalListsStore((state) => state.listItems);
-  const localMediaState = useWatchlistStore((state) => state.mediaState);
-  const remote = useQuery({
-    queryKey: queryKeys.lists.items(listId ?? "", user?.id),
-    queryFn: () =>
-      listId
-        ? fetchListItems(queryClient, listId, user?.id)
-        : Promise.resolve([]),
-    enabled: !!isSignedIn && !!listId,
-  });
-
-  return useMemo(() => {
-    if (isSignedIn) {
-      return (remote.data ?? []).map((item) => ({
-        ...item,
-        _id: item.id,
-        title: item.title ?? undefined,
-        image: item.image ?? undefined,
-        backdrop: item.backdrop ?? undefined,
-        rating: item.rating ?? undefined,
-        release_date: item.releaseDate ?? undefined,
-        overview: item.overview ?? undefined,
-        position: item.position,
-        mediaType: item.mediaType as MediaType,
-        progressStatus: item.progressStatus as ProgressStatus | undefined,
-        reaction: item.reaction as ReactionStatus | undefined,
-      }));
-    }
-    if (!listId) return [];
-
-    const filtered = localItems
-      .filter((item) => item.listId === listId)
-      .sort(
-        (a, b) =>
-          (a.position ?? 0) - (b.position ?? 0) || a.addedAt - b.addedAt,
-      );
-    return filtered.map((item) => {
-      const watchItem = localMediaState.find(
-        (w) =>
-          w.external_id === String(item.tmdbId) && w.type === item.mediaType,
-      );
-      return {
-        ...item,
-        title: item.title ?? watchItem?.title,
-        image: item.image ?? watchItem?.image,
-        rating: item.rating ?? watchItem?.rating,
-        release_date: item.release_date ?? watchItem?.release_date,
-        overview: item.overview ?? watchItem?.overview,
-        progressStatus: watchItem?.progressStatus || undefined,
-        reaction: watchItem?.reaction || undefined,
-      };
-    });
-  }, [isSignedIn, remote.data, listId, localItems, localMediaState]);
 }
 
 export function useItemLists(tmdbId: number, mediaType: MediaType) {

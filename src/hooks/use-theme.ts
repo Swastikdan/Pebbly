@@ -106,9 +106,3 @@ export function setThemeWithTransition(next: Theme) {
     apply();
   }
 }
-
-/** Toggles between light and dark, resolving "system" against the live DOM state. */
-export function toggleTheme() {
-  const dark = document.documentElement.classList.contains("dark");
-  setThemeWithTransition(dark ? "light" : "dark");
-}

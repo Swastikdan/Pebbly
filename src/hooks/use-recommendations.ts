@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { MediaType } from "@/lib/media-types";
 import type { AIRecommendation } from "@/types";
-import { usePermissions } from "@/hooks/use-permissions";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import {
@@ -17,16 +16,6 @@ import { unwrap } from "@/server/schema/common";
 
 function logRecommendationError(action: string, error: unknown) {
   console.error(`Failed to ${action}`, error);
-}
-
-/** @deprecated Use `usePermissions()` from `@/hooks/usePermissions` instead. */
-export function useRecommendationAccess() {
-  const { hasFeature, loading, isSignedIn } = usePermissions();
-  return {
-    hasAccess: hasFeature("ai-recommendations"),
-    loading,
-    isSignedIn,
-  };
 }
 
 export interface GenerateOptions {

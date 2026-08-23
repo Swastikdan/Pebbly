@@ -36,12 +36,6 @@ export function getTmdbFetch() {
           return status === 408 || status === 429 || status >= 500;
         },
       },
-      plugins: [
-        // logger({
-        // 	enabled: import.meta.env.DEV,
-        // 	verbose: true,
-        // }),
-      ],
     });
   }
   return client;

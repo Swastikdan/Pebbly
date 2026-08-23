@@ -66,4 +66,4 @@ export function AccordionPanel({
   );
 }
 
-export { AccordionPanel as AccordionContent, AccordionPrimitive };
+export { AccordionPrimitive };

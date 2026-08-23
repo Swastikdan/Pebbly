@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
 import type { ApiResult } from "../schema/common";
-import { getCurrentUser, invalidateUserCache, requireUser } from "../auth";
+import { invalidateUserCache, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { users } from "../db/schema";
 import { getEnv } from "../env";
@@ -41,10 +41,3 @@ export const storeUser = createServerFn({ method: "POST" })
     }
     return ok(user.id);
   });
-
-export const getStatus = createServerFn({ method: "POST" }).handler(
-  async (): Promise<ApiResult<typeof users.$inferSelect | null>> => {
-    const user = await getCurrentUser();
-    return ok(user);
-  },
-);

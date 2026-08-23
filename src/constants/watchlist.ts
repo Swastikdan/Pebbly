@@ -33,13 +33,6 @@ export const REACTION_OPTIONS: Array<{
   },
 ];
 
-export const PROGRESS_LABELS: Record<ProgressStatus, string> = {
-  "watch-later": "Watch Later",
-  watching: "Watching",
-  done: "Done",
-  dropped: "Dropped",
-};
-
 export function getProgressOption(status: ProgressStatus) {
   return (
     PROGRESS_OPTIONS.find((o) => o.value === status) ?? PROGRESS_OPTIONS[0]

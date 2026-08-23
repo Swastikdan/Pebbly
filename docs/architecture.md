@@ -81,7 +81,7 @@ Every mutating/authenticated operation is a TanStack Start server function:
 | `import-export.ts`   | Bulk JSON watchlist import (bounded D1 batches)                                                                       |
 | `recommendations.ts` | AI generation (watchlist/list/genre), homepage picks, history, feedback, rate limiting                                |
 | `admin.ts`           | Admin-only: user listing, roles, ban status, feature-flag permissions                                                 |
-| `users.ts`           | User upsert from Clerk identity + status                                                                              |
+| `users.ts`           | User upsert from Clerk identity                                                                                       |
 
 Server functions are:
 
@@ -188,15 +188,17 @@ Server functions are:
    HTML payload.
 3. On the client, TanStack Query hydrates the cache; `useQuery` returns the
    cached data with zero extra requests.
-4. The watchlist button queries `getMediaState` (a server fn) per media id.
-   It returns the user's `watch_items` row for that title, or `null`.
+4. The watchlist button derives per-item state from the shared
+   `watchlist.list` query (one server fetch for the whole watchlist): each
+   card reads its membership/progress/reaction out of that cached list
+   instead of issuing a per-media RPC.
 
 ### 4.2 Mutate (toggle watchlist membership, signed in)
 
 1. User clicks the watchlist button → `useWatchlistToggle` → `repository.toggleMembership()`.
 2. `createRemoteRepository` begins an optimistic op (`beginMembershipOp`),
-   which immediately patches `watchlist.list` and `watchlist.media-state` in
-   the query cache (instant UI).
+   which immediately patches `watchlist.list` in the query cache
+   (instant UI).
 3. The write is queued in `watchlistMembershipBatcher` (300 ms debounce /
    1.2 s max wait / dedupe by `mediaType:tmdbId`), then sent as
    `setWatchlistMembership` (single) or `batchSetWatchlistMembership` (many)
@@ -211,9 +213,11 @@ Server functions are:
 ### 4.3 Signed-out flow
 
 The same button calls the _local_ repository: `useWatchlistStore`
-(Zustand, persisted to localStorage with an LRU eviction wrapper). When the
-user later signs in, `UserSync` (`src/components/user-sync.tsx`) exports the
-local watchlist into the remote backend.
+(Zustand, persisted to localStorage with an LRU eviction wrapper). Guest data
+never leaves the browser: when the user later signs in, `UserSync`
+(`src/components/user-sync.tsx`) only upserts their Clerk profile via
+`storeUser`; on sign-out it clears pending optimistic ops so nothing leaks
+into the next session.
 
 ### 4.4 Open a shared collection page (`/c/$id`)
 
@@ -268,8 +272,8 @@ local watchlist into the remote backend.
    `reaction`, `feedback`) defined once in `src/server/schema/common.ts`.
 6. **D1 batches are bounded** (≤100 statements) and chunked for large imports
    so calls stay inside the Worker execution budget.
-7. **Guest data is local-only** (Zustand + localStorage) and promoted to D1 on
-   sign-in.
+7. **Guest data is local-only** (Zustand + localStorage) and stays local;
+   signing in switches writes to the remote repository but uploads nothing.
 8. **Theme is resolved before first paint** by an inline script; components
    must not branch on theme state during render (drive icon visibility via
    `dark:` CSS variants) so SSR markup and hydration always agree.

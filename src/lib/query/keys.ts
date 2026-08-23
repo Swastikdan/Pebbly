@@ -3,8 +3,8 @@ import type { MediaType } from "@/types";
 /**
  * Centralized TanStack Query key factory. Every query key is namespaced so
  * `invalidateQueries` / `setQueryData` target exactly the right caches, and
- * mutations can optimistically patch related queries (watchlist list +
- * media-state, lists + list items, etc.).
+ * mutations can optimistically patch related queries (watchlist list,
+ * lists + list items, etc.).
  *
  * User-specific keys take an optional `userId` so cached data can never cross
  * accounts when the signed-in user changes; callers pass `user?.id` from
@@ -18,8 +18,6 @@ export const queryKeys = {
       ["watchlist", "list", args ?? {}] as const,
     trackedTmdbIds: (userId?: string) =>
       ["watchlist", "tracked-ids", userId ?? "anonymous"] as const,
-    mediaState: (tmdbId: number, mediaType: MediaType) =>
-      ["watchlist", "media-state", tmdbId, mediaType] as const,
     episodes: (tmdbId: number) => ["watchlist", "episodes", tmdbId] as const,
     allEpisodes: () => ["watchlist", "all-episodes"] as const,
   },

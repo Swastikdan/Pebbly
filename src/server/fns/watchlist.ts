@@ -95,32 +95,6 @@ export const getTrackedTmdbIds = createServerFn({ method: "POST" }).handler(
   },
 );
 
-export const getMediaState = createServerFn({ method: "POST" })
-  .validator(mediaIdentityArgsSchema)
-  .handler(
-    async ({
-      data,
-    }): Promise<ApiResult<typeof watchItems.$inferSelect | null>> => {
-      const user = await getCurrentUser();
-      if (!user) return ok(null);
-
-      const db = getDb(getEnv());
-      const rows = await db
-        .select()
-        .from(watchItems)
-        .where(
-          and(
-            eq(watchItems.userId, user.id),
-            eq(watchItems.tmdbId, data.tmdbId),
-            eq(watchItems.mediaType, data.mediaType),
-          ),
-        )
-        .limit(1);
-
-      return ok(rows[0] ?? null);
-    },
-  );
-
 // ---------------------------------------------------------------------------
 // Realtime change detection
 // ---------------------------------------------------------------------------

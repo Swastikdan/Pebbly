@@ -202,13 +202,6 @@ export function VideoPlayerModal({
 
   if (!isSignedIn || loading || !hasFeature("video-player")) return null;
 
-  const videoUrl = buildPlayerUrl({
-    type,
-    tmdbId,
-    season,
-    episode,
-  });
-
   const label =
     type === "tv" && season && episode
       ? `Play S${season}E${episode}`
@@ -367,7 +360,7 @@ export function VideoPlayerModal({
             </div>
           )}
           <iframe
-            src={videoUrl}
+            src={playerUrl}
             title={title}
             className="size-full border-0"
             allowFullScreen

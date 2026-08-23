@@ -97,20 +97,6 @@ function tokenIdentifierLike(subject: string) {
   return sql`${users.tokenIdentifier} like ${`%|${escapeLikePattern(subject)}`} escape '\\'`;
 }
 
-/** Get admin flag from JWT public metadata (snake_case or camelCase claim). */
-export function getAdminFromClaims(
-  claims: ClerkSessionClaims | null,
-): boolean | null {
-  if (!claims) return null;
-  const meta =
-    (claims.public_meta as Record<string, unknown> | undefined) ??
-    (claims.publicMetadata as Record<string, unknown> | undefined);
-  if (meta && typeof meta === "object" && "isAdmin" in meta) {
-    return meta.isAdmin === true;
-  }
-  return null;
-}
-
 /** Reject `promise` after `ms` if it has not settled. */
 async function withTimeout<T>(
   promise: Promise<T>,

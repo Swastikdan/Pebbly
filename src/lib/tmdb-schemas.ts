@@ -43,20 +43,17 @@ export const ProductionCompanySchema = v.looseObject({
   name: str(),
   origin_country: str(),
 });
-export type ProductionCompany = v.InferOutput<typeof ProductionCompanySchema>;
 
 export const ProductionCountrySchema = v.looseObject({
   iso_3166_1: str(),
   name: str(),
 });
-export type ProductionCountry = v.InferOutput<typeof ProductionCountrySchema>;
 
 export const SpokenLanguageSchema = v.looseObject({
   english_name: str(),
   iso_639_1: str(),
   name: str(),
 });
-export type SpokenLanguage = v.InferOutput<typeof SpokenLanguageSchema>;
 
 export const CastMemberSchema = v.looseObject({
   adult: bool(),
@@ -72,7 +69,6 @@ export const CastMemberSchema = v.looseObject({
   credit_id: str(),
   order: num(),
 });
-export type CastMember = v.InferOutput<typeof CastMemberSchema>;
 
 export const CrewMemberSchema = v.looseObject({
   adult: bool(),
@@ -93,7 +89,6 @@ export const CreditsSchema = v.looseObject({
   cast: v.nullish(v.array(CastMemberSchema), () => []),
   crew: v.nullish(v.array(CrewMemberSchema), () => []),
 });
-export type Credits = v.InferOutput<typeof CreditsSchema>;
 
 export const ImageAssetSchema = v.looseObject({
   aspect_ratio: num(),
@@ -104,7 +99,6 @@ export const ImageAssetSchema = v.looseObject({
   vote_count: num(),
   width: num(),
 });
-export type ImageAsset = v.InferOutput<typeof ImageAssetSchema>;
 
 export const MediaImagesSchema = v.looseObject({
   id: numNull(),
@@ -126,7 +120,6 @@ export const VideoResultSchema = v.looseObject({
   published_at: str(),
   id: str(),
 });
-export type VideoResult = v.InferOutput<typeof VideoResultSchema>;
 
 export const MediaVideosResultsEntitySchema = VideoResultSchema;
 export type MediaVideosResultsEntity = v.InferOutput<
@@ -155,7 +148,6 @@ export const KeywordResultSchema = v.looseObject({
   id: v.number(),
   name: str(),
 });
-export type KeywordResult = v.InferOutput<typeof KeywordResultSchema>;
 
 export const CollectionInfoSchema = v.looseObject({
   id: v.number(),
@@ -163,7 +155,6 @@ export const CollectionInfoSchema = v.looseObject({
   poster_path: strNull(),
   backdrop_path: strNull(),
 });
-export type CollectionInfo = v.InferOutput<typeof CollectionInfoSchema>;
 
 export const PartsEntitySchema = v.looseObject({
   backdrop_path: strNull(),
@@ -182,7 +173,6 @@ export const PartsEntitySchema = v.looseObject({
   vote_average: num(),
   vote_count: num(),
 });
-export type PartsEntity = v.InferOutput<typeof PartsEntitySchema>;
 
 export const CollectionSchema = v.looseObject({
   id: v.number(),
@@ -266,7 +256,6 @@ export const MovieExternalIdsSchema = v.looseObject({
   instagram_id: strNull(),
   twitter_id: strNull(),
 });
-export type MovieExternalIds = v.InferOutput<typeof MovieExternalIdsSchema>;
 
 export const ReleaseInfoSchema = v.looseObject({
   certification: str(),
@@ -276,23 +265,19 @@ export const ReleaseInfoSchema = v.looseObject({
   release_date: str(),
   type: num(),
 });
-export type ReleaseInfo = v.InferOutput<typeof ReleaseInfoSchema>;
 
 export const ReleaseRegionSchema = v.looseObject({
   iso_3166_1: str(),
   release_dates: v.fallback(v.nullable(v.array(ReleaseInfoSchema)), []),
 });
-export type ReleaseRegion = v.InferOutput<typeof ReleaseRegionSchema>;
 
 export const MovieReleaseDatesSchema = v.looseObject({
   results: v.fallback(v.nullable(v.array(ReleaseRegionSchema)), []),
 });
-export type MovieReleaseDates = v.InferOutput<typeof MovieReleaseDatesSchema>;
 
 export const MovieKeywordsSchema = v.looseObject({
   keywords: v.fallback(v.nullable(v.array(KeywordResultSchema)), []),
 });
-export type MovieKeywords = v.InferOutput<typeof MovieKeywordsSchema>;
 
 export const BasicMovieSchema = v.looseObject({
   adult: bool(),
@@ -362,16 +347,10 @@ export const MovieRecommendationsResultsEntitySchema = v.looseObject({
   vote_average: num(),
   vote_count: num(),
 });
-export type MovieRecommendationsResultsEntity = v.InferOutput<
-  typeof MovieRecommendationsResultsEntitySchema
->;
 
 export const MovieRecommendationsSchema = paginated(
   MovieRecommendationsResultsEntitySchema,
 );
-export type MovieRecommendations = v.InferOutput<
-  typeof MovieRecommendationsSchema
->;
 
 export const CreatorSchema = v.looseObject({
   id: v.number(),
@@ -381,7 +360,6 @@ export const CreatorSchema = v.looseObject({
   gender: num(),
   profile_path: strNull(),
 });
-export type Creator = v.InferOutput<typeof CreatorSchema>;
 
 export const EpisodeInfoSchema = v.looseObject({
   id: v.number(),
@@ -398,7 +376,6 @@ export const EpisodeInfoSchema = v.looseObject({
   show_id: num(),
   still_path: strNull(),
 });
-export type EpisodeInfo = v.InferOutput<typeof EpisodeInfoSchema>;
 
 export const NetworkSchema = v.looseObject({
   id: v.number(),
@@ -406,7 +383,6 @@ export const NetworkSchema = v.looseObject({
   name: str(),
   origin_country: str(),
 });
-export type Network = v.InferOutput<typeof NetworkSchema>;
 
 export const SeasonInfoSchema = v.looseObject({
   air_date: strNull(),
@@ -467,7 +443,6 @@ export const TvExternalIdsSchema = v.looseObject({
   instagram_id: strNull(),
   twitter_id: strNull(),
 });
-export type TvExternalIds = v.InferOutput<typeof TvExternalIdsSchema>;
 
 export const RecommendationResultSchema = v.looseObject({
   backdrop_path: strNull(),
@@ -486,31 +461,22 @@ export const RecommendationResultSchema = v.looseObject({
   vote_count: num(),
   origin_country: v.nullish(v.array(v.string()), () => []),
 });
-export type RecommendationResult = v.InferOutput<
-  typeof RecommendationResultSchema
->;
 
 export const TvRecommendationsSchema = paginated(RecommendationResultSchema);
-export type TvRecommendations = v.InferOutput<typeof TvRecommendationsSchema>;
 
 export const TvKeywordsSchema = v.looseObject({
   results: v.nullish(v.array(KeywordResultSchema), () => []),
 });
-export type TvKeywords = v.InferOutput<typeof TvKeywordsSchema>;
 
 export const ContentRatingsResultsEntitySchema = v.looseObject({
   descriptors: v.nullish(v.array(v.unknown()), () => []),
   iso_3166_1: str(),
   rating: str(),
 });
-export type ContentRatingsResultsEntity = v.InferOutput<
-  typeof ContentRatingsResultsEntitySchema
->;
 
 export const ContentRatingsSchema = v.looseObject({
   results: v.nullish(v.array(ContentRatingsResultsEntitySchema), () => []),
 });
-export type ContentRatings = v.InferOutput<typeof ContentRatingsSchema>;
 
 export const TvSchema = v.looseObject({
   ...BasicTvSchema.entries,
@@ -564,9 +530,6 @@ export const MediaRecommendationsResultsEntitySchema = v.looseObject({
   vote_average: num(),
   vote_count: num(),
 });
-export type MediaRecommendationsResultsEntity = v.InferOutput<
-  typeof MediaRecommendationsResultsEntitySchema
->;
 
 export const MediaRecommendationsSchema = paginated(
   MediaRecommendationsResultsEntitySchema,
@@ -644,7 +607,6 @@ export const PersonCreditCastSchema = v.looseObject({
   media_type: str("movie"),
   episode_count: numOpt(),
 });
-export type PersonCreditCast = v.InferOutput<typeof PersonCreditCastSchema>;
 
 export const PersonCreditCrewSchema = v.looseObject({
   ...personCreditBase,
@@ -655,15 +617,11 @@ export const PersonCreditCrewSchema = v.looseObject({
   media_type: str("movie"),
   episode_count: numOpt(),
 });
-export type PersonCreditCrew = v.InferOutput<typeof PersonCreditCrewSchema>;
 
 export const PersonResultCreditsSchema = v.looseObject({
   cast: v.fallback(v.nullable(v.array(PersonCreditCastSchema)), []),
   crew: v.fallback(v.nullable(v.array(PersonCreditCrewSchema)), []),
 });
-export type PersonResultCredits = v.InferOutput<
-  typeof PersonResultCreditsSchema
->;
 
 export const PersonDetailsSchema = v.looseObject({
   adult: bool(),

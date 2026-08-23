@@ -179,9 +179,6 @@ export function HomepageRecommendations() {
     new Set(),
   );
   const [localLikedKeys, setLocalLikedKeys] = useState<Set<string>>(new Set());
-  const [_hourBucket] = useState(
-    () => Math.floor(Date.now() / (1000 * 60 * 60)) * (1000 * 60 * 60),
-  );
 
   const canAccessFeature = isSignedIn && hasFeature("ai-recommendations");
 

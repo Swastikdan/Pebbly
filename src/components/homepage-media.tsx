@@ -67,8 +67,6 @@ const MediaList = memo(
   },
 );
 
-export { MediaSkeletonList };
-
 const useMediaQuery = (
   type:
     | "trending_day"

@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as v from "valibot";
 
-import type { AllEpisodeProgressRow } from "@/lib/server-types";
+import type { EpisodeProgressRow } from "@/lib/server-types";
 import type {
   ImportItem as ServerImportItem,
   WatchedEpisode,
@@ -91,7 +91,7 @@ export const useWatchlistImportExport = () => {
           if (isSignedIn && allEpisodeProgress.data) {
             allEpisodeProgress.data
               .filter(
-                (ep: AllEpisodeProgressRow) =>
+                (ep: EpisodeProgressRow) =>
                   String(ep.tmdbId) === String(item.external_id) &&
                   ep.isWatched,
               )
@@ -356,9 +356,6 @@ export const useWatchlistImportExport = () => {
             recordOwnMutation("watchlist");
             await queryClient.invalidateQueries({
               queryKey: queryKeys.watchlist.list(),
-            });
-            await queryClient.invalidateQueries({
-              queryKey: queryKeys.watchlist.allEpisodes(),
             });
             // Imported shows also write episode progress, refresh any
             // per-show episode caches.

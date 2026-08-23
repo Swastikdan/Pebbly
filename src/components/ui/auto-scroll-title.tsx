@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { cn } from "@/lib/utils";
+
 interface AutoScrollTitleProps {
   text: string;
   className?: string;
@@ -40,9 +42,10 @@ export function AutoScrollTitle({
   return (
     <div
       ref={containerRef}
-      className={`group relative w-full overflow-hidden text-left whitespace-nowrap ${
-        className ?? ""
-      }`}
+      className={cn(
+        "group relative w-full overflow-hidden text-left whitespace-nowrap",
+        className,
+      )}
       style={
         {
           "--marquee-duration": duration,
@@ -57,9 +60,10 @@ export function AutoScrollTitle({
       </span>
 
       <span
-        className={`block truncate transition-opacity duration-300 ease-in-out ${
-          isOverflow ? "group-hover:opacity-0" : ""
-        }`}
+        className={cn(
+          "block truncate transition-opacity duration-300 ease-in-out",
+          isOverflow && "group-hover:opacity-0",
+        )}
       >
         {text}
       </span>
