@@ -105,3 +105,15 @@ export const queryKeys = {
       ["daily-pick-details", mediaType, id] as const,
   },
 } as const;
+
+/**
+ * The three query groups every lists write must keep fresh. Single source of
+ * truth shared by the repository's journal sync and UserSync's cross-device
+ * invalidation so the two can't drift.
+ */
+export const listsSyncKeys = (userId?: string) =>
+  [
+    queryKeys.lists.all(userId),
+    queryKeys.lists.itemsPrefix(),
+    queryKeys.lists.itemListsPrefix(),
+  ] as const;

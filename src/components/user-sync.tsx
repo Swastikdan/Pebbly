@@ -8,7 +8,7 @@ import { fetchDataVersion } from "@/hooks/data-version";
 import { usePermissions } from "@/hooks/use-permissions";
 import { subscribeToCrossTabMutations } from "@/lib/cross-tab-sync";
 import { clearPendingOps } from "@/lib/data/pending-ops";
-import { queryKeys } from "@/lib/query/keys";
+import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
 import {
   hasRecentOwnMutation,
   takeOwnMutationCounts,
@@ -68,15 +68,9 @@ export const UserSync = () => {
           queryKey: queryKeys.watchlist.list(),
         });
       } else if (domain === "lists") {
-        void queryClient.invalidateQueries({
-          queryKey: queryKeys.lists.all(user?.id),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: queryKeys.lists.itemsPrefix(),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: queryKeys.lists.itemListsPrefix(),
-        });
+        for (const key of listsSyncKeys(user?.id)) {
+          void queryClient.invalidateQueries({ queryKey: key });
+        }
       } else if (domain === "ai") {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.recommendations.history(user?.id),

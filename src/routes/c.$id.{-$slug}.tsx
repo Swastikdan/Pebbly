@@ -3,7 +3,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { CollectionPage } from "@/components/watchlist/collection-page";
 import { queryKeys } from "@/lib/query/keys";
 import { getCollectionPage } from "@/server/fns/lists";
-import { ApiError } from "@/server/schema/common";
+import { ApiError, unwrap } from "@/server/schema/common";
 
 export const Route = createFileRoute("/c/$id/{-$slug}")({
   // Resolves owner vs public per request: owners get their editable view,
@@ -13,11 +13,8 @@ export const Route = createFileRoute("/c/$id/{-$slug}")({
     const payload = await context.queryClient
       .ensureQueryData({
         queryKey: queryKeys.lists.collectionPage(params.id),
-        queryFn: async () => {
-          const res = await getCollectionPage({ data: { listId: params.id } });
-          if (!res.ok) throw new ApiError(res.code, res.message);
-          return res.data;
-        },
+        queryFn: () =>
+          unwrap(getCollectionPage({ data: { listId: params.id } })),
       })
       .catch((error: unknown) => {
         if (error instanceof ApiError && error.code === "NOT_FOUND") {

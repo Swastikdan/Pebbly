@@ -12,6 +12,7 @@ import {
 
 import type { MediaType } from "@/lib/media-types";
 import { MEDIA_TYPES } from "@/lib/media-types";
+import { PROGRESS_STATUSES, REACTIONS } from "@/server/schema/common";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(), // Convex _id | uuid
@@ -49,10 +50,10 @@ export const watchItems = sqliteTable(
     mediaType: text("media_type", { enum: MEDIA_TYPES }).notNull(),
     inWatchlist: integer("in_watchlist", { mode: "boolean" }).default(false),
     progressStatus: text("progress_status", {
-      enum: ["watch-later", "watching", "done", "dropped"],
+      enum: PROGRESS_STATUSES,
     }),
     reaction: text("reaction", {
-      enum: ["loved", "liked", "mixed", "not-for-me", "recommended"],
+      enum: REACTIONS,
     }),
     progress: integer("progress").default(0), // 0..100
     title: text("title"),

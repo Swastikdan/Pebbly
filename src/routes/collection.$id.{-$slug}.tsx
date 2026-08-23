@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import type { Collection } from "@/lib/tmdb-schemas";
 import { DefaultLoader } from "@/components/default-loader";
@@ -14,21 +14,20 @@ import { IMAGE_PREFIX } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { getCollection } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
+import { requireRouteId, slugTitle } from "@/lib/route-helpers";
 
 export const Route = createFileRoute("/collection/$id/{-$slug}")({
   loader: async ({ params, context }) => {
-    const { id, slug } = params;
-    const parsed = parseAndValidateId(id);
-    if (!parsed.success) {
-      throw notFound();
-    }
+    const collectionId = requireRouteId(params.id);
     await context.queryClient.ensureQueryData({
-      queryKey: queryKeys.tmdb.movieDetails(parsed.data),
-      queryFn: () => getCollection({ id: parsed.data }),
+      queryKey: queryKeys.tmdb.movieDetails(collectionId),
+      queryFn: () => getCollection({ id: collectionId }),
     });
-    const title = slug ? formatMediaTitle.decode(slug) : "Collections";
-    return { id, slug, title };
+    return {
+      id: params.id,
+      slug: params.slug,
+      title: slugTitle(params.slug, "Collections"),
+    };
   },
   head: ({ loaderData }) => ({
     meta: [

@@ -1,54 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
-import type { Movie } from "@/lib/tmdb-schemas";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { MediaVideoImageContainer } from "@/components/media/media-video-image-container";
 import { ShareButton } from "@/components/share-button";
-import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
-import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicMovieDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
+import { detailHead, loadMediaRouteData } from "@/lib/route-helpers";
 
 export const Route = createFileRoute("/movie/$id/{-$slug}/media")({
-  loader: ({ params, context }) => {
-    const { id, slug } = params;
-    const parsed = parseAndValidateId(id);
-    if (!parsed.success) {
-      throw notFound();
-    }
-    context.queryClient.prefetchQuery({
-      queryKey: queryKeys.tmdb.basicMovieDetails(Number(id)),
-      queryFn: () => getBasicMovieDetails({ id: parsed.data }),
-    });
-    const data = context.queryClient.getQueryData<Movie>(
-      queryKeys.tmdb.basicMovieDetails(Number(id)),
-    );
-    const title = formatMediaTitle.decode(slug ?? "");
-    return { id, slug, title, posterPath: data?.poster_path ?? null };
-  },
+  loader: ({ params, context }) =>
+    loadMediaRouteData(context, params, { mediaType: "movie" }),
   head: ({ loaderData }) => ({
-    meta: [
-      ...MetaImageTagsGenerator({
-        title: loaderData?.title
-          ? `${loaderData.title} - Media | Pebbly`
-          : "Page Not Found | Pebbly",
-        description: loaderData?.title
-          ? `Watch the latest videos and images of ${loaderData.title}.`
-          : "Explore the latest movie videos and images on Pebbly.",
-        ogImage: loaderData?.posterPath
-          ? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
-          : undefined,
-        url:
-          loaderData?.id &&
-          loaderData?.title &&
-          `${VITE_PUBLIC_APP_URL}/movie/${loaderData.id}/${encodeURIComponent(loaderData.title)}/media`,
-      }),
-    ],
+    meta: detailHead({
+      title: loaderData?.title
+        ? `${loaderData.title} - Media | Pebbly`
+        : "Page Not Found | Pebbly",
+      description: loaderData?.title
+        ? `Watch the latest videos and images of ${loaderData.title}.`
+        : "Explore the latest movie videos and images on Pebbly.",
+      posterPath: loaderData?.posterPath,
+      url:
+        loaderData?.id &&
+        loaderData?.title &&
+        `${VITE_PUBLIC_APP_URL}/movie/${loaderData.id}/${encodeURIComponent(loaderData.title)}/media`,
+    }),
   }),
   validateSearch: (search: Record<string, unknown>) => {
     return {

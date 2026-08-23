@@ -30,7 +30,7 @@ import {
   beginOp,
   scheduleSync,
 } from "@/lib/data/pending-ops";
-import { queryKeys } from "@/lib/query/keys";
+import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import {
   cloneCustomList,
@@ -58,13 +58,6 @@ import { resolveStatusPlan } from "./status-plan";
 function logWatchlistError(action: string, error: unknown) {
   console.error(`Failed to ${action}`, error);
 }
-
-/** The three query groups every lists write must keep fresh. */
-const listsSyncKeys = (userId: string | undefined) => [
-  queryKeys.lists.all(userId),
-  queryKeys.lists.itemsPrefix(),
-  queryKeys.lists.itemListsPrefix(),
-];
 
 /**
  * Run a server write through the optimistic journal: begin the op, resolve on

@@ -2,12 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
-import type { ApiResult } from "../schema/common";
-import { invalidateUserCache, requireUser } from "../auth";
-import { getDb } from "../db/client";
+import { invalidateUserCache } from "../auth";
 import { users } from "../db/schema";
-import { getEnv } from "../env";
 import { ok } from "../schema/common";
+import { authedFn } from "./rpc";
 
 const storeUserArgsSchema = v.object({
   email: v.optional(v.string()),
@@ -22,22 +20,18 @@ const storeUserArgsSchema = v.object({
  */
 export const storeUser = createServerFn({ method: "POST" })
   .validator(storeUserArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<string>> => {
-    const result = await requireUser();
-    if (result.error) return result.error;
+  .handler(({ data }) =>
+    authedFn({ mode: "require" }, data, async ({ claims, db, user }) => {
+      // Only include defined fields so an empty request performs no update.
+      const update: Partial<typeof users.$inferSelect> = {};
+      if (data.name !== undefined) update.name = data.name;
+      if (data.image !== undefined) update.image = data.image;
+      if (data.email !== undefined) update.email = data.email;
 
-    const { user, claims } = result;
-    const db = getDb(getEnv());
-
-    // Only include defined fields so an empty request performs no update.
-    const update: Partial<typeof users.$inferSelect> = {};
-    if (data.name !== undefined) update.name = data.name;
-    if (data.image !== undefined) update.image = data.image;
-    if (data.email !== undefined) update.email = data.email;
-
-    if (Object.keys(update).length > 0) {
-      await db.update(users).set(update).where(eq(users.id, user.id));
-      invalidateUserCache(claims.sub);
-    }
-    return ok(user.id);
-  });
+      if (Object.keys(update).length > 0) {
+        await db.update(users).set(update).where(eq(users.id, user.id));
+        invalidateUserCache(claims.sub);
+      }
+      return ok(user.id);
+    }),
+  );

@@ -4,7 +4,6 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { Db } from "../db/client";
 import type { ApiResult, ProgressStatus, Reaction } from "../schema/common";
 import type { MediaType } from "@/lib/media-types";
-import { getCurrentUser, requireUser } from "../auth";
 import { getDb, runBatch } from "../db/client";
 import { listItems, lists, watchItems } from "../db/schema";
 import { getEnv } from "../env";
@@ -22,60 +21,64 @@ import {
   toggleListItemArgsSchema,
   updateCustomListArgsSchema,
 } from "../schema/lists";
+import { authedFn } from "./rpc";
 
 // ---------------------------------------------------------------------------
 // Reads
 // ---------------------------------------------------------------------------
 
-export const getCustomLists = createServerFn({ method: "POST" }).handler(
-  async (): Promise<
-    ApiResult<
-      Array<
-        typeof lists.$inferSelect & { previews: string[]; itemCount: number }
+export const getCustomLists = createServerFn({ method: "POST" }).handler(() =>
+  authedFn(
+    { mode: "current", guest: () => ok([]) },
+    undefined,
+    async ({
+      db,
+      user,
+    }): Promise<
+      ApiResult<
+        Array<
+          typeof lists.$inferSelect & { previews: string[]; itemCount: number }
+        >
       >
-    >
-  > => {
-    const user = await getCurrentUser();
-    if (!user) return ok([]);
+    > => {
+      const userLists = await db
+        .select()
+        .from(lists)
+        .where(eq(lists.userId, user.id))
+        .orderBy(asc(lists.sortOrder));
 
-    const db = getDb(getEnv());
-    const userLists = await db
-      .select()
-      .from(lists)
-      .where(eq(lists.userId, user.id))
-      .orderBy(asc(lists.sortOrder));
+      const allUserListItems = await db
+        .select()
+        .from(listItems)
+        .where(eq(listItems.userId, user.id));
 
-    const allUserListItems = await db
-      .select()
-      .from(listItems)
-      .where(eq(listItems.userId, user.id));
-
-    const itemsByList = new Map<string, typeof allUserListItems>();
-    for (const item of allUserListItems) {
-      const existing = itemsByList.get(item.listId);
-      if (existing) {
-        existing.push(item);
-      } else {
-        itemsByList.set(item.listId, [item]);
+      const itemsByList = new Map<string, typeof allUserListItems>();
+      for (const item of allUserListItems) {
+        const existing = itemsByList.get(item.listId);
+        if (existing) {
+          existing.push(item);
+        } else {
+          itemsByList.set(item.listId, [item]);
+        }
       }
-    }
 
-    const listsWithPreviews = userLists.map((list) => {
-      const items = itemsByList.get(list.id) ?? [];
-      const previews = items
-        .map((item) => item.backdrop ?? item.image)
-        .filter((img): img is string => !!img)
-        .slice(0, 4);
+      const listsWithPreviews = userLists.map((list) => {
+        const items = itemsByList.get(list.id) ?? [];
+        const previews = items
+          .map((item) => item.backdrop ?? item.image)
+          .filter((img): img is string => !!img)
+          .slice(0, 4);
 
-      return {
-        ...list,
-        previews,
-        itemCount: items.length,
-      };
-    });
+        return {
+          ...list,
+          previews,
+          itemCount: items.length,
+        };
+      });
 
-    return ok(listsWithPreviews);
-  },
+      return ok(listsWithPreviews);
+    },
+  ),
 );
 
 export type EnrichedListItem = typeof listItems.$inferSelect & {
@@ -128,102 +131,111 @@ export type CollectionPagePayload =
 
 export const getListItems = createServerFn({ method: "POST" })
   .validator(getListItemsArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<EnrichedListItem[]>> => {
-    const user = await getCurrentUser();
-    if (!user) return ok([]);
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "current", guest: () => ok([]) },
+      data,
+      async ({ db, user }): Promise<ApiResult<EnrichedListItem[]>> => {
+        const list = await db
+          .select()
+          .from(lists)
+          .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
+          .limit(1);
 
-    const db = getDb(getEnv());
-    const list = await db
-      .select()
-      .from(lists)
-      .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
-      .limit(1);
+        if (list.length === 0) return ok([]);
 
-    if (list.length === 0) return ok([]);
+        const items = await db
+          .select()
+          .from(listItems)
+          .where(
+            and(
+              eq(listItems.listId, data.listId),
+              eq(listItems.userId, user.id),
+            ),
+          )
+          .orderBy(asc(listItems.position), asc(listItems.addedAt));
 
-    const items = await db
-      .select()
-      .from(listItems)
-      .where(
-        and(eq(listItems.listId, data.listId), eq(listItems.userId, user.id)),
-      )
-      .orderBy(asc(listItems.position), asc(listItems.addedAt));
-
-    return ok(await enrichItemsWithWatchState(db, user.id, items));
-  });
+        return ok(await enrichItemsWithWatchState(db, user.id, items));
+      },
+    ),
+  );
 
 export const getCollectionPage = createServerFn({ method: "POST" })
   .validator(getCollectionPageArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<CollectionPagePayload>> => {
-    const db = getDb(getEnv());
-    const user = await getCurrentUser();
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "anonymous" },
+      data,
+      async ({ db, user }): Promise<ApiResult<CollectionPagePayload>> => {
+        const listRows = await db
+          .select()
+          .from(lists)
+          .where(eq(lists.id, data.listId))
+          .limit(1);
+        if (listRows.length === 0)
+          return fail("NOT_FOUND", "Collection not found");
+        const list = listRows[0];
 
-    const listRows = await db
-      .select()
-      .from(lists)
-      .where(eq(lists.id, data.listId))
-      .limit(1);
-    if (listRows.length === 0) return fail("NOT_FOUND", "Collection not found");
-    const list = listRows[0];
+        if (user && user.id === list.userId) {
+          const items = await db
+            .select()
+            .from(listItems)
+            .where(eq(listItems.listId, data.listId))
+            .orderBy(asc(listItems.position), asc(listItems.addedAt));
+          return ok({
+            role: "owner",
+            list,
+            items: await enrichItemsWithWatchState(db, user.id, items),
+          });
+        }
 
-    if (user && user.id === list.userId) {
-      const items = await db
-        .select()
-        .from(listItems)
-        .where(eq(listItems.listId, data.listId))
-        .orderBy(asc(listItems.position), asc(listItems.addedAt));
-      return ok({
-        role: "owner",
-        list,
-        items: await enrichItemsWithWatchState(db, user.id, items),
-      });
-    }
+        // Visitors only ever see public lists, and never learn that private
+        // lists exist (same NOT_FOUND for missing and private).
+        if (list.visibility !== "public") {
+          return fail("NOT_FOUND", "Collection not found");
+        }
 
-    // Visitors only ever see public lists, and never learn that private
-    // lists exist (same NOT_FOUND for missing and private).
-    if (list.visibility !== "public") {
-      return fail("NOT_FOUND", "Collection not found");
-    }
+        // Privacy-critical: no watch_items join here — the owner's progress
+        // status and reactions must not leak to public viewers.
+        const items = await db
+          .select({
+            tmdbId: listItems.tmdbId,
+            mediaType: listItems.mediaType,
+            title: listItems.title,
+            image: listItems.image,
+            backdrop: listItems.backdrop,
+            rating: listItems.rating,
+            releaseDate: listItems.releaseDate,
+            overview: listItems.overview,
+            position: listItems.position,
+          })
+          .from(listItems)
+          .where(eq(listItems.listId, data.listId))
+          .orderBy(asc(listItems.position), asc(listItems.addedAt));
 
-    // Privacy-critical: no watch_items join here — the owner's progress
-    // status and reactions must not leak to public viewers.
-    const items = await db
-      .select({
-        tmdbId: listItems.tmdbId,
-        mediaType: listItems.mediaType,
-        title: listItems.title,
-        image: listItems.image,
-        backdrop: listItems.backdrop,
-        rating: listItems.rating,
-        releaseDate: listItems.releaseDate,
-        overview: listItems.overview,
-        position: listItems.position,
-      })
-      .from(listItems)
-      .where(eq(listItems.listId, data.listId))
-      .orderBy(asc(listItems.position), asc(listItems.addedAt));
-
-    return ok({
-      role: "visitor",
-      list: {
-        id: list.id,
-        name: list.name,
-        color: list.color,
-        description: list.description,
-        visibility: list.visibility,
-        listType: list.listType,
-        sortType: list.sortType,
-        createdAt: list.createdAt,
-        updatedAt: list.updatedAt,
+        return ok({
+          role: "visitor",
+          list: {
+            id: list.id,
+            name: list.name,
+            color: list.color,
+            description: list.description,
+            visibility: list.visibility,
+            listType: list.listType,
+            sortType: list.sortType,
+            createdAt: list.createdAt,
+            updatedAt: list.updatedAt,
+          },
+          items: items.map(({ releaseDate, ...item }) => ({
+            ...item,
+            release_date: releaseDate,
+            progressStatus: null,
+            reaction: null,
+          })),
+        });
       },
-      items: items.map(({ releaseDate, ...item }) => ({
-        ...item,
-        release_date: releaseDate,
-        progressStatus: null,
-        reaction: null,
-      })),
-    });
-  });
+    ),
+  );
 
 async function enrichItemsWithWatchState(
   db: Db,
@@ -271,24 +283,26 @@ async function enrichItemsWithWatchState(
 
 export const getItemLists = createServerFn({ method: "POST" })
   .validator(getItemListsArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<string[]>> => {
-    const user = await getCurrentUser();
-    if (!user) return ok([]);
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "current", guest: () => ok([]) },
+      data,
+      async ({ db, user }): Promise<ApiResult<string[]>> => {
+        const items = await db
+          .select({ listId: listItems.listId })
+          .from(listItems)
+          .where(
+            and(
+              eq(listItems.userId, user.id),
+              eq(listItems.tmdbId, data.tmdbId),
+              eq(listItems.mediaType, data.mediaType),
+            ),
+          );
 
-    const db = getDb(getEnv());
-    const items = await db
-      .select({ listId: listItems.listId })
-      .from(listItems)
-      .where(
-        and(
-          eq(listItems.userId, user.id),
-          eq(listItems.tmdbId, data.tmdbId),
-          eq(listItems.mediaType, data.mediaType),
-        ),
-      );
-
-    return ok(items.map((i) => i.listId));
-  });
+        return ok(items.map((i) => i.listId));
+      },
+    ),
+  );
 
 // ---------------------------------------------------------------------------
 // Writes
@@ -296,256 +310,243 @@ export const getItemLists = createServerFn({ method: "POST" })
 
 export const createCustomList = createServerFn({ method: "POST" })
   .validator(createCustomListArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<string>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
-
-    const result = await createCustomListInner(user.id, data);
-    if (!result.ok) return result;
-    return ok(result.data);
-  });
+  .handler(({ data }) =>
+    authedFn({ mode: "require" }, data, async ({ user }) => {
+      const result = await createCustomListInner(user.id, data);
+      if (!result.ok) return result;
+      return ok(result.data);
+    }),
+  );
 
 export const createCustomListAndAddItem = createServerFn({ method: "POST" })
   .validator(createCustomListAndAddItemArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<string>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
+  .handler(({ data }) =>
+    authedFn({ mode: "require" }, data, async ({ db, user }) => {
+      // Atomic-ish: create the list and insert the item, rolling back the
+      // list if the item insert fails so a failure cannot leave an empty
+      // orphaned list behind. The (userId, name) unique index is the real
+      // guard against duplicate-name races.
+      const created = await createCustomListInner(
+        user.id,
+        {
+          name: data.name,
+          color: data.color,
+          description: data.description,
+          visibility: data.visibility,
+          listType: data.listType,
+          sortType: data.sortType,
+        },
+        // The item toggle below bumps listsRev once for the whole
+        // operation, keeping the rev delta explainable to UserSync.
+        { skipRevBump: true },
+      );
+      if (!created.ok) return created;
+      const id = created.data;
 
-    // Atomic-ish: create the list and insert the item, rolling back the
-    // list if the item insert fails so a failure cannot leave an empty
-    // orphaned list behind. The (userId, name) unique index is the real
-    // guard against duplicate-name races.
-    const created = await createCustomListInner(
-      user.id,
-      {
-        name: data.name,
-        color: data.color,
-        description: data.description,
-        visibility: data.visibility,
-        listType: data.listType,
-        sortType: data.sortType,
-      },
-      // The item toggle below bumps listsRev once for the whole
-      // operation, keeping the rev delta explainable to UserSync.
-      { skipRevBump: true },
-    );
-    if (!created.ok) return created;
-    const id = created.data;
+      const itemResult = await toggleListItemInner(user.id, {
+        listId: id,
+        tmdbId: data.tmdbId,
+        mediaType: data.mediaType,
+        title: data.title,
+        image: data.image,
+        backdrop: data.backdrop,
+        rating: data.rating,
+        release_date: data.release_date,
+        overview: data.overview,
+      });
 
-    const itemResult = await toggleListItemInner(user.id, {
-      listId: id,
-      tmdbId: data.tmdbId,
-      mediaType: data.mediaType,
-      title: data.title,
-      image: data.image,
-      backdrop: data.backdrop,
-      rating: data.rating,
-      release_date: data.release_date,
-      overview: data.overview,
-    });
+      if (!itemResult.ok) {
+        await db.delete(lists).where(eq(lists.id, id));
+        return itemResult;
+      }
 
-    if (!itemResult.ok) {
-      const db = getDb(getEnv());
-      await db.delete(lists).where(eq(lists.id, id));
-      return itemResult;
-    }
-
-    return ok(id);
-  });
+      return ok(id);
+    }),
+  );
 
 export const updateCustomList = createServerFn({ method: "POST" })
   .validator(updateCustomListArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
-
-    const db = getDb(getEnv());
-    const list = await db
-      .select()
-      .from(lists)
-      .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
-      .limit(1);
-    if (list.length === 0) return fail("NOT_FOUND", "List not found");
-
-    const existing = list[0];
-
-    if (data.name !== undefined && data.name !== existing.name) {
-      const dup = await db
-        .select({ id: lists.id })
+  .handler(({ data }) =>
+    authedFn({ mode: "require" }, data, async ({ db, user }) => {
+      const list = await db
+        .select()
         .from(lists)
-        .where(and(eq(lists.userId, user.id), eq(lists.name, data.name)))
+        .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
         .limit(1);
-      if (dup.length > 0)
-        return fail("CONFLICT", "A list with this name already exists");
-    }
+      if (list.length === 0) return fail("NOT_FOUND", "List not found");
 
-    await db
-      .update(lists)
-      .set({
-        ...(data.name !== undefined ? { name: data.name } : {}),
-        ...(data.color !== undefined ? { color: data.color } : {}),
-        ...(data.description !== undefined
-          ? { description: data.description }
-          : {}),
-        ...(data.visibility !== undefined
-          ? { visibility: data.visibility }
-          : {}),
-        ...(data.listType !== undefined ? { listType: data.listType } : {}),
-        ...(data.sortType !== undefined ? { sortType: data.sortType } : {}),
-        updatedAt: Date.now(),
-      })
-      .where(eq(lists.id, existing.id));
+      const existing = list[0];
 
-    await bumpListsRev(db, user.id);
-    return ok({ ok: true });
-  });
+      if (data.name !== undefined && data.name !== existing.name) {
+        const dup = await db
+          .select({ id: lists.id })
+          .from(lists)
+          .where(and(eq(lists.userId, user.id), eq(lists.name, data.name)))
+          .limit(1);
+        if (dup.length > 0)
+          return fail("CONFLICT", "A list with this name already exists");
+      }
+
+      await db
+        .update(lists)
+        .set({
+          ...(data.name !== undefined ? { name: data.name } : {}),
+          ...(data.color !== undefined ? { color: data.color } : {}),
+          ...(data.description !== undefined
+            ? { description: data.description }
+            : {}),
+          ...(data.visibility !== undefined
+            ? { visibility: data.visibility }
+            : {}),
+          ...(data.listType !== undefined ? { listType: data.listType } : {}),
+          ...(data.sortType !== undefined ? { sortType: data.sortType } : {}),
+          updatedAt: Date.now(),
+        })
+        .where(eq(lists.id, existing.id));
+
+      await bumpListsRev(db, user.id);
+      return ok({ ok: true });
+    }),
+  );
 export const deleteCustomList = createServerFn({ method: "POST" })
   .validator(deleteCustomListArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
+  .handler(({ data }) =>
+    authedFn({ mode: "require" }, data, async ({ db, user }) => {
+      const list = await db
+        .select()
+        .from(lists)
+        .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
+        .limit(1);
+      if (list.length === 0) return fail("NOT_FOUND", "List not found");
 
-    const db = getDb(getEnv());
-    const list = await db
-      .select()
-      .from(lists)
-      .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
-      .limit(1);
-    if (list.length === 0) return fail("NOT_FOUND", "List not found");
-
-    // Cascade via FK, the list_id FK deletes child items automatically, so a
-    // single delete replaces the old per-row loop.
-    await db.delete(lists).where(eq(lists.id, data.listId));
-    await bumpListsRev(db, user.id);
-    return ok({ ok: true });
-  });
+      // Cascade via FK, the list_id FK deletes child items automatically, so a
+      // single delete replaces the old per-row loop.
+      await db.delete(lists).where(eq(lists.id, data.listId));
+      await bumpListsRev(db, user.id);
+      return ok({ ok: true });
+    }),
+  );
 export const toggleListItem = createServerFn({ method: "POST" })
   .validator(toggleListItemArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<boolean>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
-
-    const result = await toggleListItemInner(user.id, data);
-    if (!result.ok) return result;
-    return ok(result.data);
-  });
+  .handler(({ data }) =>
+    authedFn({ mode: "require" }, data, async ({ user }) => {
+      const result = await toggleListItemInner(user.id, data);
+      if (!result.ok) return result;
+      return ok(result.data);
+    }),
+  );
 
 export const reorderListItems = createServerFn({ method: "POST" })
   .validator(reorderListItemsArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
+  .handler(({ data }) =>
+    authedFn({ mode: "require" }, data, async ({ db, user }) => {
+      const list = await db
+        .select({ id: lists.id })
+        .from(lists)
+        .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
+        .limit(1);
+      if (list.length === 0) return fail("NOT_FOUND", "List not found");
 
-    const db = getDb(getEnv());
-    const list = await db
-      .select({ id: lists.id })
-      .from(lists)
-      .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
-      .limit(1);
-    if (list.length === 0) return fail("NOT_FOUND", "List not found");
-
-    await applyItemOrder(db, data.listId, user.id, data.orderedItems);
-    await bumpListsRev(db, user.id);
-    return ok({ ok: true });
-  });
+      await applyItemOrder(db, data.listId, user.id, data.orderedItems);
+      await bumpListsRev(db, user.id);
+      return ok({ ok: true });
+    }),
+  );
 
 export const cloneCustomList = createServerFn({ method: "POST" })
   .validator(cloneCustomListArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<string>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
-
-    const db = getDb(getEnv());
-
-    const sourceRows = await db
-      .select()
-      .from(lists)
-      .where(eq(lists.id, data.sourceListId))
-      .limit(1);
-    if (sourceRows.length === 0) {
-      return fail("NOT_FOUND", "Collection not found");
-    }
-    const source = sourceRows[0];
-
-    // Own lists can always be cloned; other people's only if public.
-    // Private foreign lists get NOT_FOUND so they don't reveal existence.
-    if (source.userId !== user.id && source.visibility !== "public") {
-      return fail("NOT_FOUND", "Collection not found");
-    }
-
-    const sourceItems = await db
-      .select()
-      .from(listItems)
-      .where(eq(listItems.listId, source.id))
-      .orderBy(asc(listItems.position), asc(listItems.addedAt));
-
-    // The (userId, name) unique index needs a fresh name; walk the
-    // "(copy)" suffix until one is free.
-    let name = `${source.name} (copy)`;
-    for (let n = 2; ; n++) {
-      const dup = await db
-        .select({ id: lists.id })
+  .handler(({ data }) =>
+    authedFn({ mode: "require" }, data, async ({ db, user }) => {
+      const sourceRows = await db
+        .select()
         .from(lists)
-        .where(and(eq(lists.userId, user.id), eq(lists.name, name)))
+        .where(eq(lists.id, data.sourceListId))
         .limit(1);
-      if (dup.length === 0) break;
-      name = `${source.name} (copy ${n})`;
-    }
+      if (sourceRows.length === 0) {
+        return fail("NOT_FOUND", "Collection not found");
+      }
+      const source = sourceRows[0];
 
-    const now = Date.now();
-    const id = crypto.randomUUID();
-    const maxSort = await nextSortOrder(db, user.id);
+      // Own lists can always be cloned; other people's only if public.
+      // Private foreign lists get NOT_FOUND so they don't reveal existence.
+      if (source.userId !== user.id && source.visibility !== "public") {
+        return fail("NOT_FOUND", "Collection not found");
+      }
 
-    // Clones always land as private custom lists regardless of the source.
-    const inserted = await db
-      .insert(lists)
-      .values({
-        id,
-        userId: user.id,
-        name,
-        color: source.color,
-        description: source.description,
-        visibility: "private",
-        listType: "custom",
-        sortType: source.sortType ?? "unordered",
-        sortOrder: maxSort,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .onConflictDoNothing()
-      .returning({ id: lists.id });
+      const sourceItems = await db
+        .select()
+        .from(listItems)
+        .where(eq(listItems.listId, source.id))
+        .orderBy(asc(listItems.position), asc(listItems.addedAt));
 
-    if (inserted.length === 0) {
-      return fail("CONFLICT", "Could not clone collection, try again");
-    }
+      // The (userId, name) unique index needs a fresh name; walk the
+      // "(copy)" suffix until one is free.
+      let name = `${source.name} (copy)`;
+      for (let n = 2; ; n++) {
+        const dup = await db
+          .select({ id: lists.id })
+          .from(lists)
+          .where(and(eq(lists.userId, user.id), eq(lists.name, name)))
+          .limit(1);
+        if (dup.length === 0) break;
+        name = `${source.name} (copy ${n})`;
+      }
 
-    if (sourceItems.length > 0) {
-      // Each row is its own statement inside db.batch, so per-statement
-      // bound params stay at 12 (D1 caps at 100); the chunk only limits
-      // statements per round trip.
-      const statements = sourceItems.map((item, index) =>
-        db.insert(listItems).values({
-          id: crypto.randomUUID(),
+      const now = Date.now();
+      const id = crypto.randomUUID();
+      const maxSort = await nextSortOrder(db, user.id);
+
+      // Clones always land as private custom lists regardless of the source.
+      const inserted = await db
+        .insert(lists)
+        .values({
+          id,
           userId: user.id,
-          listId: id,
-          tmdbId: item.tmdbId,
-          mediaType: item.mediaType,
-          position: item.position || index + 1,
-          addedAt: now,
-          title: item.title,
-          image: item.image,
-          backdrop: item.backdrop,
-          rating: item.rating,
-          releaseDate: item.releaseDate,
-          overview: item.overview,
-        }),
-      );
-      await runChunkedBatch(db, statements);
-    }
+          name,
+          color: source.color,
+          description: source.description,
+          visibility: "private",
+          listType: "custom",
+          sortType: source.sortType ?? "unordered",
+          sortOrder: maxSort,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoNothing()
+        .returning({ id: lists.id });
 
-    await bumpListsRev(db, user.id);
-    return ok(id);
-  });
+      if (inserted.length === 0) {
+        return fail("CONFLICT", "Could not clone collection, try again");
+      }
+
+      if (sourceItems.length > 0) {
+        // Each row is its own statement inside db.batch, so per-statement
+        // bound params stay at 12 (D1 caps at 100); the chunk only limits
+        // statements per round trip.
+        const statements = sourceItems.map((item, index) =>
+          db.insert(listItems).values({
+            id: crypto.randomUUID(),
+            userId: user.id,
+            listId: id,
+            tmdbId: item.tmdbId,
+            mediaType: item.mediaType,
+            position: item.position || index + 1,
+            addedAt: now,
+            title: item.title,
+            image: item.image,
+            backdrop: item.backdrop,
+            rating: item.rating,
+            releaseDate: item.releaseDate,
+            overview: item.overview,
+          }),
+        );
+        await runChunkedBatch(db, statements);
+      }
+
+      await bumpListsRev(db, user.id);
+      return ok(id);
+    }),
+  );
 
 // ---------------------------------------------------------------------------
 // Helpers

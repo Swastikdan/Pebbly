@@ -62,6 +62,9 @@ importers:
       h3:
         specifier: 2.0.1-rc.26
         version: 2.0.1-rc.26(crossws@0.4.10(srvx@0.11.22))
+      h3-rules:
+        specifier: 0.1.0
+        version: 0.1.0(h3@2.0.1-rc.26(crossws@0.4.10(srvx@0.11.22)))(ocache@0.2.0)
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.2.8)

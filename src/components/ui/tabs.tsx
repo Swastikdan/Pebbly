@@ -61,10 +61,10 @@ export function TabsList({
       </TabsListContext.Provider>
       <TabsPrimitive.Indicator
         className={cn(
-          "absolute bottom-0 left-0 h-(--active-tab-height) w-(--active-tab-width) translate-x-(--active-tab-left) -translate-y-(--active-tab-bottom) transition-[width,translate] duration-200 ease-in-out",
+          "absolute top-0 left-0 transition-[translate,width,height] duration-200 ease-in-out",
           variant === "underline"
-            ? "bg-primary z-10 data-[orientation=horizontal]:h-0.5 data-[orientation=horizontal]:translate-y-px data-[orientation=vertical]:w-0.5 data-[orientation=vertical]:-translate-x-px"
-            : "bg-background dark:bg-input -z-1 rounded-md shadow-sm/5",
+            ? "bg-primary z-10 data-[orientation=horizontal]:top-auto data-[orientation=horizontal]:bottom-0 data-[orientation=horizontal]:h-0.5 data-[orientation=horizontal]:w-[var(--active-tab-width)] data-[orientation=horizontal]:[translate:var(--active-tab-left)_0] data-[orientation=vertical]:h-[var(--active-tab-height)] data-[orientation=vertical]:w-0.5 data-[orientation=vertical]:[translate:0_var(--active-tab-top)]"
+            : "bg-background dark:bg-input -z-1 h-[var(--active-tab-height)] w-[var(--active-tab-width)] [translate:var(--active-tab-left)_var(--active-tab-top)] rounded-md shadow-sm/5",
         )}
         data-slot="tab-indicator"
       />

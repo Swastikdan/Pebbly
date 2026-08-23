@@ -1,8 +1,7 @@
 import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
-import type { Tv } from "@/lib/tmdb-schemas";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
@@ -13,10 +12,14 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { fetchSeasonDetails } from "@/hooks/use-season-details";
-import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
+import {
+  detailHead,
+  loadMediaRouteData,
+  requireRouteId,
+} from "@/lib/route-helpers";
+import { formatMediaTitle } from "@/lib/utils";
 
 const VideoPlayerModal = lazy(() =>
   import("@/components/video-player-modal").then((m) => ({
@@ -25,47 +28,30 @@ const VideoPlayerModal = lazy(() =>
 );
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
-  loader: ({ params, context }) => {
-    const { id, slug, seasonNumber } = params;
-    const parsedId = parseAndValidateId(id);
-    const parsedSeason = parseAndValidateId(seasonNumber);
-    if (!parsedId.success || !parsedSeason.success) {
-      throw notFound();
-    }
-    context.queryClient.prefetchQuery({
-      queryKey: queryKeys.tmdb.tvDetails(Number(id)),
-      queryFn: () => getTvDetails({ id: parsedId.data }),
-    });
-    const data = context.queryClient.getQueryData<Tv>(
-      queryKeys.tmdb.tvDetails(Number(id)),
-    );
-    const title = formatMediaTitle.decode(slug ?? "");
+  loader: async ({ params, context }) => {
+    const seasonNumber = requireRouteId(params.seasonNumber);
     return {
-      id,
-      slug,
-      title,
-      seasonNumber: parsedSeason.data,
-      posterPath: data?.poster_path ?? null,
+      ...(await loadMediaRouteData(context, params, {
+        mediaType: "tv",
+        level: "full",
+      })),
+      seasonNumber,
     };
   },
   head: ({ loaderData }) => ({
-    meta: [
-      ...MetaImageTagsGenerator({
-        title: loaderData?.title
-          ? `${loaderData.title} - Season ${loaderData.seasonNumber} | Pebbly`
-          : "Page Not Found | Pebbly",
-        description: loaderData?.title
-          ? `All episodes of ${loaderData.title} Season ${loaderData.seasonNumber}.`
-          : "Explore all episodes of your favorite shows on Pebbly.",
-        ogImage: loaderData?.posterPath
-          ? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
-          : undefined,
-        url:
-          loaderData?.id &&
-          loaderData.title &&
-          `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
-      }),
-    ],
+    meta: detailHead({
+      title: loaderData?.title
+        ? `${loaderData.title} - Season ${loaderData.seasonNumber} | Pebbly`
+        : "Page Not Found | Pebbly",
+      description: loaderData?.title
+        ? `All episodes of ${loaderData.title} Season ${loaderData.seasonNumber}.`
+        : "Explore all episodes of your favorite shows on Pebbly.",
+      posterPath: loaderData?.posterPath,
+      url:
+        loaderData?.id &&
+        loaderData.title &&
+        `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
+    }),
   }),
   component: TvSeasonDetailPage,
 });

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import type { MediaType } from "@/lib/media-types";
 import type { PersonDetails } from "@/lib/tmdb-schemas";
@@ -14,7 +14,7 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getPersonDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import { parseAndValidateId } from "@/lib/utils";
+import { requireRouteId } from "@/lib/route-helpers";
 
 type KnownForCredit = {
   id: number;
@@ -30,16 +30,12 @@ type KnownForCredit = {
 
 export const Route = createFileRoute("/person/$id")({
   loader: async ({ params, context }) => {
-    const { id } = params;
-    const parsed = parseAndValidateId(id);
-    if (!parsed.success) {
-      throw notFound();
-    }
+    const personId = requireRouteId(params.id);
     await context.queryClient.ensureQueryData({
-      queryKey: queryKeys.tmdb.personDetails(parsed.data),
-      queryFn: () => getPersonDetails({ id: parsed.data }),
+      queryKey: queryKeys.tmdb.personDetails(personId),
+      queryFn: () => getPersonDetails({ id: personId }),
     });
-    return { id };
+    return { id: params.id };
   },
   head: () => ({
     meta: [

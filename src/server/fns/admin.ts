@@ -1,24 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eq, sql } from "drizzle-orm";
 
-import type { AuthUser } from "../auth";
 import type { Db } from "../db/client";
 import type { ApiResult } from "../schema/common";
-import {
-  getClerkAdminIds,
-  invalidateUserCache,
-  isAdminFromClerkApi,
-  requireUser,
-} from "../auth";
-import { getDb } from "../db/client";
+import { getClerkAdminIds, invalidateUserCache } from "../auth";
 import { rolePermissions, users } from "../db/schema";
-import { getEnv } from "../env";
 import { bumpPermsRev } from "../helpers/watch-item";
 import {
   DYNAMIC_ROLES,
   getGlobalFeatureFlags,
   getUserFeatures,
-  isAdminByClaims,
   ROLE_FEATURES,
   syncRolePermissions,
 } from "../rbac";
@@ -29,30 +20,7 @@ import {
   setUserRolesArgsSchema,
 } from "../schema/admin";
 import { fail, ok } from "../schema/common";
-
-async function requireAdmin(): Promise<
-  { user: AuthUser; error: null } | { user: null; error: ApiResult<never> }
-> {
-  const result = await requireUser();
-  if (result.error) return { user: null, error: result.error };
-
-  const { user, claims } = result;
-
-  // Admin status is decided by the signed JWT claim or the live Clerk API,
-  // the same authoritative source `hasFeature` uses. There is no stored
-  // `users.isAdmin` flag to consult (the column was removed): a stored copy
-  // would go stale the moment someone is demoted in Clerk.
-  const isAdmin =
-    isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub));
-  if (!isAdmin) {
-    return {
-      user: null,
-      error: fail("FORBIDDEN", "Forbidden: admin access required"),
-    };
-  }
-
-  return { user, error: null };
-}
+import { authedFn } from "./rpc";
 
 async function findUserByTokenIdentifier(db: Db, tokenIdentifier: string) {
   const rows = await db
@@ -64,142 +32,120 @@ async function findUserByTokenIdentifier(db: Db, tokenIdentifier: string) {
 }
 
 export const getUserFeaturesFn = createServerFn({ method: "POST" }).handler(
-  async (): Promise<
-    ApiResult<{
-      roles: string[];
-      features: Record<string, boolean>;
-      isAdmin: boolean;
-      isBanned: boolean;
-    }>
-  > => {
-    const claims = await requireUser();
-    if (claims.error) {
-      return ok({ roles: [], features: {}, isAdmin: false, isBanned: false });
-    }
-    return ok(await getUserFeatures(claims.claims, claims.user));
-  },
+  () =>
+    authedFn(
+      {
+        mode: "require",
+        guest: () =>
+          ok({ roles: [], features: {}, isAdmin: false, isBanned: false }),
+      },
+      undefined,
+      async ({
+        claims,
+        user,
+      }): Promise<
+        ApiResult<{
+          roles: string[];
+          features: Record<string, boolean>;
+          isAdmin: boolean;
+          isBanned: boolean;
+        }>
+      > => ok(await getUserFeatures(claims, user)),
+    ),
 );
 
 export const getRolePermissions = createServerFn({ method: "POST" }).handler(
-  async (): Promise<ApiResult<Record<string, Record<string, boolean>>>> => {
-    const admin = await requireAdmin();
-    if (admin.error) return admin.error;
+  () =>
+    authedFn({ admin: true }, undefined, async ({ db }) => {
+      const flags = await getGlobalFeatureFlags(db);
 
-    const db = getDb(getEnv());
-    const flags = await getGlobalFeatureFlags(db);
+      const result: Record<string, Record<string, boolean>> = {};
+      for (const role of DYNAMIC_ROLES) {
+        const feature = ROLE_FEATURES[role];
+        result[role] = { [feature]: flags[feature] };
+      }
 
-    const result: Record<string, Record<string, boolean>> = {};
-    for (const role of DYNAMIC_ROLES) {
-      const feature = ROLE_FEATURES[role];
-      result[role] = { [feature]: flags[feature] };
-    }
-
-    return ok(result);
-  },
+      return ok(result);
+    }),
 );
 
 export const setRolePermission = createServerFn({ method: "POST" })
   .validator(setRolePermissionArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const admin = await requireAdmin();
-    if (admin.error) return admin.error;
+  .handler(({ data }) =>
+    authedFn({ admin: true }, data, async ({ db }) => {
+      // feature is already validated to a known RbacFeature by the schema.
+      await syncRolePermissions(db, true);
 
-    // feature is already validated to a known RbacFeature by the schema.
-    const db = getDb(getEnv());
-    await syncRolePermissions(db, true);
+      // Atomic upsert keyed on the (role, feature) primary key, replaces the
+      // old select-then-insert. Role is always the global feature flag.
+      await db
+        .insert(rolePermissions)
+        .values({
+          role: "global",
+          feature: data.feature,
+          enabled: data.enabled,
+        })
+        .onConflictDoUpdate({
+          target: [rolePermissions.role, rolePermissions.feature],
+          set: { enabled: data.enabled },
+        });
 
-    // Atomic upsert keyed on the (role, feature) primary key, replaces the
-    // old select-then-insert. Role is always the global feature flag.
-    await db
-      .insert(rolePermissions)
-      .values({
-        role: "global",
-        feature: data.feature,
-        enabled: data.enabled,
-      })
-      .onConflictDoUpdate({
-        target: [rolePermissions.role, rolePermissions.feature],
-        set: { enabled: data.enabled },
-      });
+      // Global feature flags affect every user, so all permission revisions
+      // move together (cheap at this scale, keeps clients off a fixed poll).
+      await db.update(users).set({ permsRev: sql`${users.permsRev} + 1` });
 
-    // Global feature flags affect every user, so all permission revisions
-    // move together (cheap at this scale, keeps clients off a fixed poll).
-    await db.update(users).set({ permsRev: sql`${users.permsRev} + 1` });
-
-    return ok({ ok: true });
-  });
+      return ok({ ok: true });
+    }),
+  );
 
 export const setUserRoles = createServerFn({ method: "POST" })
   .validator(setUserRolesArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const admin = await requireAdmin();
-    if (admin.error) return admin.error;
+  .handler(({ data }) =>
+    authedFn({ admin: true }, data, async ({ db }) => {
+      const target = await findUserByTokenIdentifier(db, data.tokenIdentifier);
 
-    const db = getDb(getEnv());
-    const target = await findUserByTokenIdentifier(db, data.tokenIdentifier);
+      if (!target) return fail("NOT_FOUND", "User not found");
 
-    if (!target) return fail("NOT_FOUND", "User not found");
+      await db
+        .update(users)
+        .set({
+          roles: data.roles.length > 0 ? data.roles : [],
+        })
+        .where(eq(users.id, target.id));
 
-    await db
-      .update(users)
-      .set({
-        roles: data.roles.length > 0 ? data.roles : [],
-      })
-      .where(eq(users.id, target.id));
-
-    await bumpPermsRev(db, target.id);
-    invalidateUserCache(target.tokenIdentifier);
-    return ok({ ok: true });
-  });
+      await bumpPermsRev(db, target.id);
+      invalidateUserCache(target.tokenIdentifier);
+      return ok({ ok: true });
+    }),
+  );
 
 export const setUserBanned = createServerFn({ method: "POST" })
   .validator(setUserBannedArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const admin = await requireAdmin();
-    if (admin.error) return admin.error;
+  .handler(({ data }) =>
+    authedFn({ admin: true }, data, async ({ db, user }) => {
+      const target = await findUserByTokenIdentifier(db, data.tokenIdentifier);
 
-    const db = getDb(getEnv());
-    const target = await findUserByTokenIdentifier(db, data.tokenIdentifier);
+      if (!target) return fail("NOT_FOUND", "User not found");
 
-    if (!target) return fail("NOT_FOUND", "User not found");
+      if (user.id === target.id) {
+        return fail("BAD_REQUEST", "Cannot ban yourself");
+      }
 
-    if (admin.user.id === target.id) {
-      return fail("BAD_REQUEST", "Cannot ban yourself");
-    }
+      await db
+        .update(users)
+        .set({ isBanned: data.banned })
+        .where(eq(users.id, target.id));
 
-    await db
-      .update(users)
-      .set({ isBanned: data.banned })
-      .where(eq(users.id, target.id));
-
-    await bumpPermsRev(db, target.id);
-    invalidateUserCache(target.tokenIdentifier);
-    return ok({ ok: true });
-  });
+      await bumpPermsRev(db, target.id);
+      invalidateUserCache(target.tokenIdentifier);
+      return ok({ ok: true });
+    }),
+  );
 
 export const listUsers = createServerFn({ method: "POST" })
   .validator(listUsersArgsSchema)
-  .handler(
-    async ({
-      data,
-    }): Promise<
-      ApiResult<
-        Array<{
-          _id: string;
-          tokenIdentifier: string;
-          name: string;
-          email: string;
-          image: string | null;
-          roles: string[];
-          isBanned: boolean;
-          isAdmin: boolean;
-        }>
-      >
-    > => {
-      const admin = await requireAdmin();
-      if (admin.error) return admin.error;
-
-      const db = getDb(getEnv());
+  .handler(({ data }) =>
+    authedFn({ admin: true }, data, async ({ db }) => {
       const rows = await db
         .select()
         .from(users)
@@ -237,5 +183,5 @@ export const listUsers = createServerFn({ method: "POST" })
       }));
 
       return ok(results);
-    },
+    }),
   );

@@ -48,6 +48,7 @@
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "h3": "2.0.1-rc.26",
+    "h3-rules": "0.1.0",
     "lucide-react": "^0.544.0",
     "nitro": "npm:nitro-nightly@latest",
     "react": "^19.2.8",

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import type { Tv } from "@/lib/tmdb-schemas";
 import { DefaultLoader } from "@/components/default-loader";
@@ -16,50 +16,35 @@ import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContainer } from "@/components/media/media-title-container";
-import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { buildSharedMediaPageData } from "@/lib/media-page";
 import { getTvCertification } from "@/lib/media-transform";
-import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
+import { detailHead, loadMediaRouteData } from "@/lib/route-helpers";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/")({
-  loader: async ({ params, context }) => {
-    const { id, slug } = params;
-    const parsed = parseAndValidateId(id);
-    if (!parsed.success) {
-      throw notFound();
-    }
-    await context.queryClient.ensureQueryData({
-      queryKey: queryKeys.tmdb.tvDetails(parsed.data),
-      queryFn: () => getTvDetails({ id: parsed.data }),
-    });
-    const data = context.queryClient.getQueryData<Tv>(
-      queryKeys.tmdb.tvDetails(parsed.data),
-    );
-    const title = slug ? formatMediaTitle.decode(slug) : "Tv Page";
-    return { id, slug, title, posterPath: data?.poster_path ?? null };
-  },
+  loader: ({ params, context }) =>
+    loadMediaRouteData(context, params, {
+      mediaType: "tv",
+      level: "full",
+      titleFallback: "Tv Page",
+    }),
   head: ({ loaderData }) => ({
-    meta: [
-      ...MetaImageTagsGenerator({
-        title: loaderData?.title
-          ? `${loaderData.title} | Pebbly`
-          : "Page Not Found | Pebbly",
-        description: loaderData?.title
-          ? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
-          : "Explore detailed information about movies and shows on Pebbly.",
-        ogImage: loaderData?.posterPath
-          ? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
-          : undefined,
-        url:
-          loaderData?.id &&
-          loaderData?.title &&
-          `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${encodeURIComponent(loaderData.title)}`,
-      }),
-    ],
+    meta: detailHead({
+      title: loaderData?.title
+        ? `${loaderData.title} | Pebbly`
+        : "Page Not Found | Pebbly",
+      description: loaderData?.title
+        ? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
+        : "Explore detailed information about movies and shows on Pebbly.",
+      posterPath: loaderData?.posterPath,
+      url:
+        loaderData?.id &&
+        loaderData?.title &&
+        `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${encodeURIComponent(loaderData.title)}`,
+    }),
   }),
   validateSearch: (search: Record<string, unknown>) => {
     return {

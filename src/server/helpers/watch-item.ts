@@ -3,13 +3,9 @@ import { and, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import type { MediaType, ProgressStatus, Reaction } from "../schema/common";
 import { users, watchItems } from "../db/schema";
+import { PROGRESS_STATUSES, REACTIONS } from "../schema/common";
 
-const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set([
-  "watch-later",
-  "watching",
-  "done",
-  "dropped",
-]);
+const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set(PROGRESS_STATUSES);
 
 export function normalizeProgressStatus(
   status?: string | null,
@@ -19,13 +15,7 @@ export function normalizeProgressStatus(
     ProgressStatus | undefined;
 }
 
-const VALID_REACTIONS: ReadonlySet<string> = new Set([
-  "loved",
-  "liked",
-  "mixed",
-  "not-for-me",
-  "recommended",
-]);
+const VALID_REACTIONS: ReadonlySet<string> = new Set(REACTIONS);
 
 export function normalizeReaction(reaction?: string | null): Reaction | null {
   if (!reaction || typeof reaction !== "string" || reaction.trim() === "") {

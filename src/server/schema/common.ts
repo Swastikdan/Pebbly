@@ -5,21 +5,27 @@ import { mediaTypeSchema } from "@/lib/media-types";
 export { mediaTypeSchema };
 export type MediaType = v.InferOutput<typeof mediaTypeSchema>;
 
-export const progressStatusSchema = v.picklist([
+// Canonical enum values; the valibot picklists, the runtime validation Sets
+// in server helpers and the drizzle column enums all derive from these.
+export const PROGRESS_STATUSES = [
   "watch-later",
   "watching",
   "done",
   "dropped",
-]);
+] as const;
+
+export const progressStatusSchema = v.picklist([...PROGRESS_STATUSES]);
 export type ProgressStatus = v.InferOutput<typeof progressStatusSchema>;
 
-export const reactionSchema = v.picklist([
+export const REACTIONS = [
   "loved",
   "liked",
   "mixed",
   "not-for-me",
   "recommended",
-]);
+] as const;
+
+export const reactionSchema = v.picklist([...REACTIONS]);
 export type Reaction = v.InferOutput<typeof reactionSchema>;
 
 export const feedbackSchema = v.picklist(["like", "not_interested", "dislike"]);

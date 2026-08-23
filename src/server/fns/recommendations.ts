@@ -3,7 +3,6 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import * as v from "valibot";
 
 import type { Recommendation } from "../ai";
-import type { AuthUser, ClerkSessionClaims } from "../auth";
 import type { Recommendation as RecommendationRow } from "../db/schema";
 import type { ApiResult } from "../schema/common";
 import type {
@@ -20,7 +19,6 @@ import {
   buildWatchlistPrompt,
 } from "@/server/prompts";
 import { callGeminiAI, MODELS_TO_TRY } from "../ai";
-import { getCurrentUser, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import {
   aiRecommendations,
@@ -48,41 +46,12 @@ import {
   setRecommendationFeedbackArgsSchema,
   updateVerifiedRecommendationsArgsSchema,
 } from "../schema/recommendations";
+import { authedFn } from "./rpc";
 
 const RATE_LIMIT_MS = 2 * 60 * 1000;
 
 const SYSTEM_INSTRUCTION =
   "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
-
-type AuthContext = {
-  user: AuthUser;
-  claims: ClerkSessionClaims;
-  error: null;
-};
-
-/** Resolve the user once per request (callers reuse the returned context). */
-async function getAuthContext(): Promise<AuthContext | null> {
-  const result = await requireUser();
-  if (result.error) return null;
-  return result;
-}
-
-/** Resolve the user + feature gate from one requireUser call. */
-async function getAuthUserWithFeature(): Promise<
-  { user: AuthUser; claims: ClerkSessionClaims } | { error: ApiResult<never> }
-> {
-  const context = await getAuthContext();
-  if (!context) return { error: fail("UNAUTHORIZED", "Unauthorized") };
-  const allowed = await hasFeature(
-    context.claims,
-    context.user,
-    "ai-recommendations",
-  );
-  if (!allowed) {
-    return { error: fail("FORBIDDEN", "Unauthorized: feature not enabled") };
-  }
-  return { user: context.user, claims: context.claims };
-}
 
 // ---------------------------------------------------------------------------
 // Access / history
@@ -90,155 +59,163 @@ async function getAuthUserWithFeature(): Promise<
 
 export const getUserRecommendationAccess = createServerFn({
   method: "POST",
-}).handler(
-  async (): Promise<
-    ApiResult<
-      | { hasAccess: true }
-      | { hasAccess: false; reason: "not_authenticated" | "feature_disabled" }
-    >
-  > => {
-    const context = await getAuthContext();
-    if (!context) {
-      return ok({ hasAccess: false, reason: "not_authenticated" });
-    }
-    const allowed = await hasFeature(
-      context.claims,
-      context.user,
-      "ai-recommendations",
-    );
-    if (!allowed) {
-      return ok({ hasAccess: false, reason: "feature_disabled" });
-    }
-    return ok({ hasAccess: true });
-  },
+}).handler(() =>
+  authedFn(
+    {
+      mode: "require",
+      guest: () => ok({ hasAccess: false, reason: "not_authenticated" }),
+    },
+    undefined,
+    async ({
+      claims,
+      user,
+    }): Promise<
+      ApiResult<
+        | { hasAccess: true }
+        | { hasAccess: false; reason: "not_authenticated" | "feature_disabled" }
+      >
+    > => {
+      const allowed = await hasFeature(claims, user, "ai-recommendations");
+      if (!allowed) {
+        return ok({ hasAccess: false, reason: "feature_disabled" });
+      }
+      return ok({ hasAccess: true });
+    },
+  ),
 );
 
 export const getRecommendationHistory = createServerFn({
   method: "POST",
-}).handler(
-  async (): Promise<ApiResult<(typeof aiRecommendations.$inferSelect)[]>> => {
-    const context = await getAuthContext();
-    if (!context) return ok([]);
-    const allowed = await hasFeature(
-      context.claims,
-      context.user,
-      "ai-recommendations",
-    );
-    if (!allowed) return ok([]);
+}).handler(() =>
+  authedFn(
+    {
+      mode: "require",
+      guest: () => ok([]),
+      feature: "ai-recommendations",
+      featureDenied: "guest",
+    },
+    undefined,
+    async ({
+      db,
+      user,
+    }): Promise<ApiResult<(typeof aiRecommendations.$inferSelect)[]>> => {
+      const rows = await db
+        .select()
+        .from(aiRecommendations)
+        .where(eq(aiRecommendations.userId, user.id))
+        .orderBy(desc(aiRecommendations.createdAt))
+        .limit(20);
 
-    const db = getDb(getEnv());
-    const rows = await db
-      .select()
-      .from(aiRecommendations)
-      .where(eq(aiRecommendations.userId, context.user.id))
-      .orderBy(desc(aiRecommendations.createdAt))
-      .limit(20);
-
-    return ok(rows);
-  },
+      return ok(rows);
+    },
+  ),
 );
 
 export const deleteRecommendation = createServerFn({ method: "POST" })
   .validator(deleteRecommendationArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "require" },
+      data,
+      async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
+        const entry = await db
+          .select()
+          .from(aiRecommendations)
+          // Scope the read to the authenticated user so ownership is enforced
+          // by the query itself, not a follow-up check.
+          .where(
+            and(
+              eq(aiRecommendations.id, data.id),
+              eq(aiRecommendations.userId, user.id),
+            ),
+          )
+          .limit(1);
+        if (entry.length === 0) return fail("NOT_FOUND", "Not found");
 
-    const db = getDb(getEnv());
-    const entry = await db
-      .select()
-      .from(aiRecommendations)
-      // Scope the read to the authenticated user so ownership is enforced
-      // by the query itself, not a follow-up check.
-      .where(
-        and(
-          eq(aiRecommendations.id, data.id),
-          eq(aiRecommendations.userId, user.id),
-        ),
-      )
-      .limit(1);
-    if (entry.length === 0) return fail("NOT_FOUND", "Not found");
+        // The most recent generation row doubles as the cooldown marker for the
+        // rate limiter (checkAndSetRecommendationCooldown). If a user could
+        // delete it, they'd erase the marker and regenerate immediately,
+        // bypassing the cooldown and burning Gemini API calls. Block deletion
+        // of rows still inside the rate window; they become deletable once the
+        // window elapses.
+        if (Date.now() - entry[0].createdAt < RATE_LIMIT_MS) {
+          return fail(
+            "RATE_LIMITED",
+            "Cannot delete a recommendation generated in the last few minutes",
+          );
+        }
 
-    // The most recent generation row doubles as the cooldown marker for the
-    // rate limiter (checkAndSetRecommendationCooldown). If a user could
-    // delete it, they'd erase the marker and regenerate immediately,
-    // bypassing the cooldown and burning Gemini API calls. Block deletion
-    // of rows still inside the rate window; they become deletable once the
-    // window elapses.
-    if (Date.now() - entry[0].createdAt < RATE_LIMIT_MS) {
-      return fail(
-        "RATE_LIMITED",
-        "Cannot delete a recommendation generated in the last few minutes",
-      );
-    }
-
-    await db
-      .delete(aiRecommendations)
-      .where(
-        and(
-          eq(aiRecommendations.id, data.id),
-          eq(aiRecommendations.userId, user.id),
-        ),
-      );
-    await bumpAiRev(db, user.id);
-    return ok({ ok: true });
-  });
+        await db
+          .delete(aiRecommendations)
+          .where(
+            and(
+              eq(aiRecommendations.id, data.id),
+              eq(aiRecommendations.userId, user.id),
+            ),
+          );
+        await bumpAiRev(db, user.id);
+        return ok({ ok: true });
+      },
+    ),
+  );
 
 export const updateVerifiedRecommendations = createServerFn({ method: "POST" })
   .validator(updateVerifiedRecommendationsArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "require" },
+      data,
+      async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
+        // Validate the recommendations payload before constructing the patch;
+        // a malformed payload is a client error, not a server crash.
+        let parsedRecommendations: unknown;
+        try {
+          parsedRecommendations = JSON.parse(data.recommendations);
+        } catch {
+          return fail("BAD_REQUEST", "Invalid recommendations payload");
+        }
+        const validated = v.safeParse(
+          recommendationsArraySchema,
+          parsedRecommendations,
+        );
+        if (!validated.success) {
+          return fail("BAD_REQUEST", "Invalid recommendations payload");
+        }
 
-    // Validate the recommendations payload before constructing the patch;
-    // a malformed payload is a client error, not a server crash.
-    let parsedRecommendations: unknown;
-    try {
-      parsedRecommendations = JSON.parse(data.recommendations);
-    } catch {
-      return fail("BAD_REQUEST", "Invalid recommendations payload");
-    }
-    const validated = v.safeParse(
-      recommendationsArraySchema,
-      parsedRecommendations,
-    );
-    if (!validated.success) {
-      return fail("BAD_REQUEST", "Invalid recommendations payload");
-    }
+        const entry = await db
+          .select()
+          .from(aiRecommendations)
+          .where(
+            and(
+              eq(aiRecommendations.id, data.id),
+              eq(aiRecommendations.userId, user.id),
+            ),
+          )
+          .limit(1);
+        if (entry.length === 0) return fail("NOT_FOUND", "Not found");
 
-    const db = getDb(getEnv());
-    const entry = await db
-      .select()
-      .from(aiRecommendations)
-      .where(
-        and(
-          eq(aiRecommendations.id, data.id),
-          eq(aiRecommendations.userId, user.id),
-        ),
-      )
-      .limit(1);
-    if (entry.length === 0) return fail("NOT_FOUND", "Not found");
+        const patch: Partial<typeof aiRecommendations.$inferSelect> = {
+          recommendations: validated.output,
+          verified: true,
+        };
+        if (!entry[0].originalRecommendations) {
+          patch.originalRecommendations = entry[0].recommendations;
+        }
 
-    const patch: Partial<typeof aiRecommendations.$inferSelect> = {
-      recommendations: validated.output,
-      verified: true,
-    };
-    if (!entry[0].originalRecommendations) {
-      patch.originalRecommendations = entry[0].recommendations;
-    }
-
-    await db
-      .update(aiRecommendations)
-      .set(patch)
-      .where(
-        and(
-          eq(aiRecommendations.id, data.id),
-          eq(aiRecommendations.userId, user.id),
-        ),
-      );
-    await bumpAiRev(db, user.id);
-    return ok({ ok: true });
-  });
+        await db
+          .update(aiRecommendations)
+          .set(patch)
+          .where(
+            and(
+              eq(aiRecommendations.id, data.id),
+              eq(aiRecommendations.userId, user.id),
+            ),
+          );
+        await bumpAiRev(db, user.id);
+        return ok({ ok: true });
+      },
+    ),
+  );
 
 // ---------------------------------------------------------------------------
 // Feedback
@@ -246,192 +223,199 @@ export const updateVerifiedRecommendations = createServerFn({ method: "POST" })
 
 export const getRecommendationFeedback = createServerFn({
   method: "POST",
-}).handler(
-  async (): Promise<
-    ApiResult<(typeof recommendationFeedback.$inferSelect)[]>
-  > => {
-    const user = await getCurrentUser();
-    if (!user) return ok([]);
+}).handler(() =>
+  authedFn(
+    { mode: "current", guest: () => ok([]) },
+    undefined,
+    async ({
+      db,
+      user,
+    }): Promise<ApiResult<(typeof recommendationFeedback.$inferSelect)[]>> => {
+      const rows = await db
+        .select()
+        .from(recommendationFeedback)
+        .where(eq(recommendationFeedback.userId, user.id))
+        .limit(100);
 
-    const db = getDb(getEnv());
-    const rows = await db
-      .select()
-      .from(recommendationFeedback)
-      .where(eq(recommendationFeedback.userId, user.id))
-      .limit(100);
-
-    return ok(rows);
-  },
+      return ok(rows);
+    },
+  ),
 );
 
 export const setRecommendationFeedback = createServerFn({ method: "POST" })
   .validator(setRecommendationFeedbackArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "require" },
+      data,
+      async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
+        const now = Date.now();
 
-    const db = getDb(getEnv());
-    const now = Date.now();
-
-    const existing = await db
-      .select()
-      .from(recommendationFeedback)
-      .where(
-        and(
-          eq(recommendationFeedback.userId, user.id),
-          eq(recommendationFeedback.tmdbId, data.tmdbId),
-          eq(recommendationFeedback.mediaType, data.mediaType),
-        ),
-      )
-      .limit(1);
-
-    if (existing.length > 0) {
-      await db
-        .update(recommendationFeedback)
-        .set({ feedback: data.feedback, updatedAt: now })
-        .where(eq(recommendationFeedback.id, existing[0].id));
-    } else {
-      await db.insert(recommendationFeedback).values({
-        id: crypto.randomUUID(),
-        userId: user.id,
-        tmdbId: data.tmdbId,
-        mediaType: data.mediaType,
-        title: data.title,
-        feedback: data.feedback,
-        updatedAt: now,
-      });
-    }
-    await bumpAiRev(db, user.id);
-
-    // When user likes a recommendation, auto-add to watchlist with
-    // "recommended" reaction & Pebbly Picks list.
-    if (data.feedback === "like") {
-      const existingWatchItem = await db
-        .select()
-        .from(watchItems)
-        .where(
-          and(
-            eq(watchItems.userId, user.id),
-            eq(watchItems.tmdbId, data.tmdbId),
-            eq(watchItems.mediaType, data.mediaType),
-          ),
-        )
-        .limit(1);
-
-      if (existingWatchItem.length > 0) {
-        await db
-          .update(watchItems)
-          .set({
-            inWatchlist: true,
-            reaction: existingWatchItem[0].reaction ?? "recommended",
-            updatedAt: now,
-          })
-          .where(eq(watchItems.id, existingWatchItem[0].id));
-      } else {
-        await db.insert(watchItems).values({
-          id: crypto.randomUUID(),
-          userId: user.id,
-          tmdbId: data.tmdbId,
-          mediaType: data.mediaType,
-          inWatchlist: true,
-          progressStatus: "watch-later",
-          reaction: "recommended",
-          title: data.title,
-          image: data.image,
-          rating: data.rating,
-          releaseDate: data.release_date,
-          overview: data.overview,
-          updatedAt: now,
-        });
-      }
-
-      await bumpWatchlistRev(db, user.id);
-
-      // Find or create the Pebbly Picks list, onConflictDoNothing makes
-      // the create race-safe against the (userId, name) unique index, then
-      // one lookup returns the authoritative row.
-      await db
-        .insert(lists)
-        .values({
-          id: crypto.randomUUID(),
-          userId: user.id,
-          name: "Pebbly Picks",
-          listType: "pebbly-picks",
-          sortOrder: 0,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .onConflictDoNothing();
-
-      const pebblyList = await db
-        .select()
-        .from(lists)
-        .where(and(eq(lists.userId, user.id), eq(lists.name, "Pebbly Picks")))
-        .limit(1);
-
-      if (pebblyList.length > 0) {
-        const existingItem = await db
+        const existing = await db
           .select()
-          .from(listItems)
+          .from(recommendationFeedback)
           .where(
             and(
-              eq(listItems.listId, pebblyList[0].id),
-              eq(listItems.tmdbId, data.tmdbId),
-              eq(listItems.mediaType, data.mediaType),
+              eq(recommendationFeedback.userId, user.id),
+              eq(recommendationFeedback.tmdbId, data.tmdbId),
+              eq(recommendationFeedback.mediaType, data.mediaType),
             ),
           )
           .limit(1);
 
-        if (existingItem.length === 0) {
-          await db.insert(listItems).values({
+        if (existing.length > 0) {
+          await db
+            .update(recommendationFeedback)
+            .set({ feedback: data.feedback, updatedAt: now })
+            .where(eq(recommendationFeedback.id, existing[0].id));
+        } else {
+          await db.insert(recommendationFeedback).values({
             id: crypto.randomUUID(),
             userId: user.id,
-            listId: pebblyList[0].id,
             tmdbId: data.tmdbId,
             mediaType: data.mediaType,
-            addedAt: now,
             title: data.title,
-            image: data.image,
-            backdrop: data.backdrop,
-            rating: data.rating,
-            releaseDate: data.release_date,
-            overview: data.overview,
+            feedback: data.feedback,
+            updatedAt: now,
           });
         }
-      }
-      await bumpListsRev(db, user.id);
-    }
+        await bumpAiRev(db, user.id);
 
-    return ok({ ok: true });
-  });
+        // When user likes a recommendation, auto-add to watchlist with
+        // "recommended" reaction & Pebbly Picks list.
+        if (data.feedback === "like") {
+          const existingWatchItem = await db
+            .select()
+            .from(watchItems)
+            .where(
+              and(
+                eq(watchItems.userId, user.id),
+                eq(watchItems.tmdbId, data.tmdbId),
+                eq(watchItems.mediaType, data.mediaType),
+              ),
+            )
+            .limit(1);
+
+          if (existingWatchItem.length > 0) {
+            await db
+              .update(watchItems)
+              .set({
+                inWatchlist: true,
+                reaction: existingWatchItem[0].reaction ?? "recommended",
+                updatedAt: now,
+              })
+              .where(eq(watchItems.id, existingWatchItem[0].id));
+          } else {
+            await db.insert(watchItems).values({
+              id: crypto.randomUUID(),
+              userId: user.id,
+              tmdbId: data.tmdbId,
+              mediaType: data.mediaType,
+              inWatchlist: true,
+              progressStatus: "watch-later",
+              reaction: "recommended",
+              title: data.title,
+              image: data.image,
+              rating: data.rating,
+              releaseDate: data.release_date,
+              overview: data.overview,
+              updatedAt: now,
+            });
+          }
+
+          await bumpWatchlistRev(db, user.id);
+
+          // Find or create the Pebbly Picks list, onConflictDoNothing makes
+          // the create race-safe against the (userId, name) unique index, then
+          // one lookup returns the authoritative row.
+          await db
+            .insert(lists)
+            .values({
+              id: crypto.randomUUID(),
+              userId: user.id,
+              name: "Pebbly Picks",
+              listType: "pebbly-picks",
+              sortOrder: 0,
+              createdAt: now,
+              updatedAt: now,
+            })
+            .onConflictDoNothing();
+
+          const pebblyList = await db
+            .select()
+            .from(lists)
+            .where(
+              and(eq(lists.userId, user.id), eq(lists.name, "Pebbly Picks")),
+            )
+            .limit(1);
+
+          if (pebblyList.length > 0) {
+            const existingItem = await db
+              .select()
+              .from(listItems)
+              .where(
+                and(
+                  eq(listItems.listId, pebblyList[0].id),
+                  eq(listItems.tmdbId, data.tmdbId),
+                  eq(listItems.mediaType, data.mediaType),
+                ),
+              )
+              .limit(1);
+
+            if (existingItem.length === 0) {
+              await db.insert(listItems).values({
+                id: crypto.randomUUID(),
+                userId: user.id,
+                listId: pebblyList[0].id,
+                tmdbId: data.tmdbId,
+                mediaType: data.mediaType,
+                addedAt: now,
+                title: data.title,
+                image: data.image,
+                backdrop: data.backdrop,
+                rating: data.rating,
+                releaseDate: data.release_date,
+                overview: data.overview,
+              });
+            }
+          }
+          await bumpListsRev(db, user.id);
+        }
+
+        return ok({ ok: true });
+      },
+    ),
+  );
 export const removeRecommendationFeedback = createServerFn({ method: "POST" })
   .validator(removeRecommendationFeedbackArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
-    const { user, error } = await requireUser();
-    if (error) return error;
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "require" },
+      data,
+      async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
+        const existing = await db
+          .select()
+          .from(recommendationFeedback)
+          .where(
+            and(
+              eq(recommendationFeedback.userId, user.id),
+              eq(recommendationFeedback.tmdbId, data.tmdbId),
+              eq(recommendationFeedback.mediaType, data.mediaType),
+            ),
+          )
+          .limit(1);
 
-    const db = getDb(getEnv());
-    const existing = await db
-      .select()
-      .from(recommendationFeedback)
-      .where(
-        and(
-          eq(recommendationFeedback.userId, user.id),
-          eq(recommendationFeedback.tmdbId, data.tmdbId),
-          eq(recommendationFeedback.mediaType, data.mediaType),
-        ),
-      )
-      .limit(1);
+        if (existing.length > 0) {
+          await db
+            .delete(recommendationFeedback)
+            .where(eq(recommendationFeedback.id, existing[0].id));
+          await bumpAiRev(db, user.id);
+        }
 
-    if (existing.length > 0) {
-      await db
-        .delete(recommendationFeedback)
-        .where(eq(recommendationFeedback.id, existing[0].id));
-      await bumpAiRev(db, user.id);
-    }
-
-    return ok({ ok: true });
-  });
+        return ok({ ok: true });
+      },
+    ),
+  );
 
 // ---------------------------------------------------------------------------
 // Homepage recommendations
@@ -439,89 +423,99 @@ export const removeRecommendationFeedback = createServerFn({ method: "POST" })
 
 export const getHomepageRecommendations = createServerFn({ method: "POST" })
   .validator(getHomepageRecommendationsArgsSchema)
-  .handler(async (): Promise<ApiResult<HomepageRecommendationsResult>> => {
-    // Resolve the user once (without creating one on the read path).
-    const context = await getAuthContext();
-    if (!context) {
-      return ok({
-        recommendations: [],
-        lastUpdatedAt: 0,
-        lastAttemptedAt: 0,
-        status: "none",
-        needsRefresh: false,
-      });
-    }
-    const user = context.user;
-
-    // Only request a refresh when the user actually has the feature.
-    // Otherwise the client would keep firing generateHomepageRecommendations
-    // (which the server rejects with FORBIDDEN) on every refetch, a loop.
-    const featureEnabled = await hasFeature(
-      context.claims,
-      context.user,
-      "ai-recommendations",
-    );
-
-    const db = getDb(getEnv());
-    const entry = await db
-      .select()
-      .from(homepageRecommendations)
-      .where(eq(homepageRecommendations.userId, user.id))
-      .limit(1);
-
-    // One query covering both exclusion feedback values instead of two.
-    const excludedFeedback = await db
-      .select()
-      .from(recommendationFeedback)
-      .where(
-        and(
-          eq(recommendationFeedback.userId, user.id),
-          inArray(recommendationFeedback.feedback, [
-            "not_interested",
-            "dislike",
-          ]),
-        ),
-      );
-
-    const excludedFeedbackIds = new Set(excludedFeedback.map((f) => f.tmdbId));
-
-    let recs: Recommendation[] = [];
-    const row = entry[0];
-    if (row?.recommendations) {
-      try {
-        const parsed = Array.isArray(row.recommendations)
-          ? row.recommendations
-          : (JSON.parse(row.recommendations) as Recommendation[]);
-        recs = parsed.filter(
-          (r) => r.tmdbId === null || !excludedFeedbackIds.has(r.tmdbId),
+  .handler(({ data }) =>
+    authedFn(
+      {
+        mode: "require",
+        guest: () =>
+          ok({
+            recommendations: [],
+            lastUpdatedAt: 0,
+            lastAttemptedAt: 0,
+            status: "none",
+            needsRefresh: false,
+          }),
+      },
+      data,
+      async ({
+        claims,
+        db,
+        user,
+      }): Promise<ApiResult<HomepageRecommendationsResult>> => {
+        // Only request a refresh when the user actually has the feature.
+        // Otherwise the client would keep firing generateHomepageRecommendations
+        // (which the server rejects with FORBIDDEN) on every refetch, a loop.
+        const featureEnabled = await hasFeature(
+          claims,
+          user,
+          "ai-recommendations",
         );
-      } catch (e) {
-        console.error("Failed to parse homepage recommendations", e);
-      }
-    }
 
-    const lastAttemptedAt = row?.lastAttemptedAt ?? 0;
-    const lastUpdatedAt = row?.lastUpdatedAt ?? 0;
-    const status = row?.status ?? "none";
+        const entry = await db
+          .select()
+          .from(homepageRecommendations)
+          .where(eq(homepageRecommendations.userId, user.id))
+          .limit(1);
 
-    // Refresh gating uses server-derived time exclusively; the client-
-    // supplied `now` is only used for display-related behavior.
-    const currentTime = Date.now();
-    const isOlderThan24Hours =
-      currentTime - lastAttemptedAt > 24 * 60 * 60 * 1000;
-    const hasFailedRecently =
-      status === "failed" && currentTime - lastAttemptedAt < 1 * 60 * 60 * 1000;
-    const needsRefresh =
-      featureEnabled && (!row || (isOlderThan24Hours && !hasFailedRecently));
+        // One query covering both exclusion feedback values instead of two.
+        const excludedFeedback = await db
+          .select()
+          .from(recommendationFeedback)
+          .where(
+            and(
+              eq(recommendationFeedback.userId, user.id),
+              inArray(recommendationFeedback.feedback, [
+                "not_interested",
+                "dislike",
+              ]),
+            ),
+          );
 
-    return ok({
-      recommendations: recs,
-      lastUpdatedAt,
-      lastAttemptedAt,
-      status,
-      needsRefresh,
-    });
-  });
+        const excludedFeedbackIds = new Set(
+          excludedFeedback.map((f) => f.tmdbId),
+        );
+
+        let recs: Recommendation[] = [];
+        const row = entry[0];
+        if (row?.recommendations) {
+          try {
+            const parsed = Array.isArray(row.recommendations)
+              ? row.recommendations
+              : (JSON.parse(row.recommendations) as Recommendation[]);
+            recs = parsed.filter(
+              (r) => r.tmdbId === null || !excludedFeedbackIds.has(r.tmdbId),
+            );
+          } catch (e) {
+            console.error("Failed to parse homepage recommendations", e);
+          }
+        }
+
+        const lastAttemptedAt = row?.lastAttemptedAt ?? 0;
+        const lastUpdatedAt = row?.lastUpdatedAt ?? 0;
+        const status = row?.status ?? "none";
+
+        // Refresh gating uses server-derived time exclusively; the client-
+        // supplied `now` is only used for display-related behavior.
+        const currentTime = Date.now();
+        const isOlderThan24Hours =
+          currentTime - lastAttemptedAt > 24 * 60 * 60 * 1000;
+        const hasFailedRecently =
+          status === "failed" &&
+          currentTime - lastAttemptedAt < 1 * 60 * 60 * 1000;
+        const needsRefresh =
+          featureEnabled &&
+          (!row || (isOlderThan24Hours && !hasFailedRecently));
+
+        return ok({
+          recommendations: recs,
+          lastUpdatedAt,
+          lastAttemptedAt,
+          status,
+          needsRefresh,
+        });
+      },
+    ),
+  );
 
 // ---------------------------------------------------------------------------
 // Generation helpers (private, no longer separate RPCs)
@@ -864,138 +858,139 @@ async function saveHomepageFailure(userId: string) {
 // ---------------------------------------------------------------------------
 export const generateRecommendations = createServerFn({ method: "POST" })
   .validator(generateRecommendationsArgsSchema)
-  .handler(async ({ data }): Promise<ApiResult<GenerateResult>> => {
-    const genType = data.generationType ?? "watchlist";
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "require", feature: "ai-recommendations" },
+      data,
+      async ({ user }): Promise<ApiResult<GenerateResult>> => {
+        const genType = data.generationType ?? "watchlist";
 
-    // Resolve auth + feature once and reuse.
-    const auth = await getAuthUserWithFeature();
-    if ("error" in auth) return auth.error;
-    const user = auth.user;
+        // A `list` generation without a listId is a client error.
+        if (genType === "list" && !data.listId) {
+          return fail("BAD_REQUEST", "listId is required for list generation");
+        }
 
-    // A `list` generation without a listId is a client error.
-    if (genType === "list" && !data.listId) {
-      return fail("BAD_REQUEST", "listId is required for list generation");
-    }
+        const watchlistData = await gatherWatchlistData(user.id);
 
-    const watchlistData = await gatherWatchlistData(user.id);
+        if (genType === "watchlist" && watchlistData.watchItems.length === 0) {
+          return ok({ error: "empty_watchlist" });
+        }
+        if (genType === "list" && data.listId) {
+          if (
+            watchlistData.listItems.filter((li) => li.listId === data.listId)
+              .length === 0
+          ) {
+            return ok({ error: "empty_watchlist" });
+          }
+        }
 
-    if (genType === "watchlist" && watchlistData.watchItems.length === 0) {
-      return ok({ error: "empty_watchlist" });
-    }
-    if (genType === "list" && data.listId) {
-      if (
-        watchlistData.listItems.filter((li) => li.listId === data.listId)
-          .length === 0
-      ) {
-        return ok({ error: "empty_watchlist" });
-      }
-    }
+        const { allowed, reservedId } = await checkAndSetRecommendationCooldown(
+          user.id,
+        );
+        if (!allowed) {
+          return ok({ error: "rate_limited" });
+        }
 
-    const { allowed, reservedId } = await checkAndSetRecommendationCooldown(
-      user.id,
-    );
-    if (!allowed) {
-      return ok({ error: "rate_limited" });
-    }
+        const feedbackList = await getRecommendationFeedbackInternal(user.id);
 
-    const feedbackList = await getRecommendationFeedbackInternal(user.id);
+        const likedTitles = collectFeedback(feedbackList, ["like"], "title");
+        const dislikedTitles = collectFeedback(
+          feedbackList,
+          ["not_interested"],
+          "title",
+        );
+        const dislikedTmdbIds = collectFeedback(
+          feedbackList,
+          ["not_interested"],
+          "tmdbId",
+        );
 
-    const likedTitles = collectFeedback(feedbackList, ["like"], "title");
-    const dislikedTitles = collectFeedback(
-      feedbackList,
-      ["not_interested"],
-      "title",
-    );
-    const dislikedTmdbIds = collectFeedback(
-      feedbackList,
-      ["not_interested"],
-      "tmdbId",
-    );
+        const excludeTmdbIds = [
+          ...new Set([...(data.excludeTmdbIds ?? []), ...dislikedTmdbIds]),
+        ];
 
-    const excludeTmdbIds = [
-      ...new Set([...(data.excludeTmdbIds ?? []), ...dislikedTmdbIds]),
-    ];
+        const feedbackSignals: FeedbackSignals = {
+          likedTitles,
+          dislikedTitles,
+          dislikedTmdbIds,
+        };
 
-    const feedbackSignals: FeedbackSignals = {
-      likedTitles,
-      dislikedTitles,
-      dislikedTmdbIds,
-    };
+        const userPrompt =
+          genType === "watchlist"
+            ? buildWatchlistPrompt(
+                watchlistData,
+                data.mediaTypePreference,
+                excludeTmdbIds,
+                data.yearFrom,
+                data.yearTo,
+                data.count,
+                feedbackSignals,
+              )
+            : genType === "list" && data.listId
+              ? buildCustomListPrompt(
+                  watchlistData,
+                  data.listId,
+                  data.mediaTypePreference,
+                  excludeTmdbIds,
+                  data.yearFrom,
+                  data.yearTo,
+                  data.count,
+                  feedbackSignals,
+                )
+              : buildGenrePrompt(
+                  watchlistData,
+                  data.mediaTypePreference,
+                  data.genrePreference,
+                  excludeTmdbIds,
+                  data.yearFrom,
+                  data.yearTo,
+                  data.count,
+                  feedbackSignals,
+                );
 
-    const userPrompt =
-      genType === "watchlist"
-        ? buildWatchlistPrompt(
-            watchlistData,
-            data.mediaTypePreference,
-            excludeTmdbIds,
-            data.yearFrom,
-            data.yearTo,
-            data.count,
-            feedbackSignals,
-          )
-        : genType === "list" && data.listId
-          ? buildCustomListPrompt(
-              watchlistData,
-              data.listId,
-              data.mediaTypePreference,
-              excludeTmdbIds,
-              data.yearFrom,
-              data.yearTo,
-              data.count,
-              feedbackSignals,
-            )
-          : buildGenrePrompt(
-              watchlistData,
-              data.mediaTypePreference,
-              data.genrePreference,
-              excludeTmdbIds,
-              data.yearFrom,
-              data.yearTo,
-              data.count,
-              feedbackSignals,
-            );
+        const aiResult = await callGeminiAI(userPrompt, SYSTEM_INSTRUCTION, 1);
+        if (aiResult.error || !aiResult.result) {
+          // Release the cooldown so a failed AI call does not consume it.
+          if (reservedId) await releaseRecommendationCooldown(reservedId);
+          return ok({ error: aiResult.error ?? "api_unavailable" });
+        }
+        const parsed = aiResult.result;
+        const usedModel = aiResult.usedModel ?? MODELS_TO_TRY[0];
 
-    const aiResult = await callGeminiAI(userPrompt, SYSTEM_INSTRUCTION, 1);
-    if (aiResult.error || !aiResult.result) {
-      // Release the cooldown so a failed AI call does not consume it.
-      if (reservedId) await releaseRecommendationCooldown(reservedId);
-      return ok({ error: aiResult.error ?? "api_unavailable" });
-    }
-    const parsed = aiResult.result;
-    const usedModel = aiResult.usedModel ?? MODELS_TO_TRY[0];
+        parsed.recommendations = filterKnownRecommendations(
+          parsed.recommendations,
+          watchlistData.watchItems,
+          excludeTmdbIds,
+        );
 
-    parsed.recommendations = filterKnownRecommendations(
-      parsed.recommendations,
-      watchlistData.watchItems,
-      excludeTmdbIds,
-    );
+        const watchlistHash = computeHash(
+          watchlistData.watchItems,
+          data.mediaTypePreference,
+          data.genrePreference,
+        );
+        await saveRecommendations(
+          {
+            userId: user.id,
+            recommendations: parsed.recommendations,
+            watchlistHash,
+            inputStats: watchlistData.inputStats,
+            model: usedModel,
+            mediaTypePreference: data.mediaTypePreference,
+            genrePreference: data.genrePreference,
+            generationType: genType,
+          },
+          reservedId,
+        );
 
-    const watchlistHash = computeHash(
-      watchlistData.watchItems,
-      data.mediaTypePreference,
-      data.genrePreference,
-    );
-    await saveRecommendations(
-      {
-        userId: user.id,
-        recommendations: parsed.recommendations,
-        watchlistHash,
-        inputStats: watchlistData.inputStats,
-        model: usedModel,
-        mediaTypePreference: data.mediaTypePreference,
-        genrePreference: data.genrePreference,
-        generationType: genType,
+        return ok({
+          recommendations: parsed.recommendations,
+          inputStats: watchlistData.inputStats,
+          generatedAt: Date.now(),
+          cached: false,
+        });
       },
-      reservedId,
-    );
-
-    return ok({
-      recommendations: parsed.recommendations,
-      inputStats: watchlistData.inputStats,
-      generatedAt: Date.now(),
-      cached: false,
-    });
-  });
+    ),
+  );
 
 // ---------------------------------------------------------------------------
 // generateHomepageRecommendations (action → server fn)
@@ -1003,85 +998,91 @@ export const generateRecommendations = createServerFn({ method: "POST" })
 
 export const generateHomepageRecommendations = createServerFn({
   method: "POST",
-}).handler(
-  async (): Promise<ApiResult<{ success: boolean; error?: string }>> => {
-    // Resolve auth + feature once and reuse.
-    const auth = await getAuthUserWithFeature();
-    if ("error" in auth) return auth.error;
-    const user = auth.user;
+}).handler(() =>
+  authedFn(
+    { mode: "require", feature: "ai-recommendations" },
+    undefined,
+    async ({
+      user,
+    }): Promise<ApiResult<{ success: boolean; error?: string }>> => {
+      const watchlistData = await gatherWatchlistData(user.id);
 
-    const watchlistData = await gatherWatchlistData(user.id);
-
-    const attemptInfo = await getHomepageAttemptInfo(user.id);
-    if (
-      attemptInfo &&
-      Date.now() - attemptInfo.lastAttemptedAt < RATE_LIMIT_MS
-    ) {
-      return ok({ success: false, error: "rate_limited" });
-    }
-
-    const feedbackList = await getRecommendationFeedbackInternal(user.id);
-
-    const likedFeedback = collectFeedback(feedbackList, ["like"], "title");
-    const dislikedFeedbackTitles = collectFeedback(
-      feedbackList,
-      ["not_interested", "dislike"],
-      "title",
-    );
-    const dislikedFeedbackIds = collectFeedback(
-      feedbackList,
-      ["not_interested", "dislike"],
-      "tmdbId",
-    );
-
-    const homepageEntry = await getHomepageRecommendationEntryInternal(user.id);
-
-    let previousTitles: string[] = [];
-    let previousTmdbIds: number[] = [];
-    if (homepageEntry?.recommendations) {
-      try {
-        const prevRecs = Array.isArray(homepageEntry.recommendations)
-          ? homepageEntry.recommendations
-          : (JSON.parse(homepageEntry.recommendations) as Recommendation[]);
-        previousTitles = prevRecs.map((r) => r.title);
-        previousTmdbIds = prevRecs
-          .map((r) => r.tmdbId)
-          .filter((id): id is number => typeof id === "number");
-      } catch {
-        // ignore parse error
+      const attemptInfo = await getHomepageAttemptInfo(user.id);
+      if (
+        attemptInfo &&
+        Date.now() - attemptInfo.lastAttemptedAt < RATE_LIMIT_MS
+      ) {
+        return ok({ success: false, error: "rate_limited" });
       }
-    }
 
-    const prompt = buildHomepageRecommendationsPrompt(
-      watchlistData,
-      likedFeedback,
-      dislikedFeedbackTitles,
-      [...dislikedFeedbackIds, ...previousTmdbIds],
-      previousTitles,
-    );
+      const feedbackList = await getRecommendationFeedbackInternal(user.id);
 
-    const aiResult = await callGeminiAI(prompt, SYSTEM_INSTRUCTION, 2);
-    if (aiResult.error || !aiResult.result) {
-      await saveHomepageFailure(user.id);
-      return ok({ success: false, error: aiResult.error ?? "api_unavailable" });
-    }
-    const parsed = aiResult.result;
+      const likedFeedback = collectFeedback(feedbackList, ["like"], "title");
+      const dislikedFeedbackTitles = collectFeedback(
+        feedbackList,
+        ["not_interested", "dislike"],
+        "title",
+      );
+      const dislikedFeedbackIds = collectFeedback(
+        feedbackList,
+        ["not_interested", "dislike"],
+        "tmdbId",
+      );
 
-    parsed.recommendations = filterKnownRecommendations(
-      parsed.recommendations,
-      watchlistData.watchItems,
-      dislikedFeedbackIds,
-    );
+      const homepageEntry = await getHomepageRecommendationEntryInternal(
+        user.id,
+      );
 
-    // An empty result after filtering is a failed generation, record the
-    // failure so refresh logic can retry instead of saving "success".
-    if (parsed.recommendations.length === 0) {
-      await saveHomepageFailure(user.id);
-      return ok({ success: false, error: "empty_result" });
-    }
+      let previousTitles: string[] = [];
+      let previousTmdbIds: number[] = [];
+      if (homepageEntry?.recommendations) {
+        try {
+          const prevRecs = Array.isArray(homepageEntry.recommendations)
+            ? homepageEntry.recommendations
+            : (JSON.parse(homepageEntry.recommendations) as Recommendation[]);
+          previousTitles = prevRecs.map((r) => r.title);
+          previousTmdbIds = prevRecs
+            .map((r) => r.tmdbId)
+            .filter((id): id is number => typeof id === "number");
+        } catch {
+          // ignore parse error
+        }
+      }
 
-    await saveHomepageRecommendations(user.id, parsed.recommendations);
+      const prompt = buildHomepageRecommendationsPrompt(
+        watchlistData,
+        likedFeedback,
+        dislikedFeedbackTitles,
+        [...dislikedFeedbackIds, ...previousTmdbIds],
+        previousTitles,
+      );
 
-    return ok({ success: true });
-  },
+      const aiResult = await callGeminiAI(prompt, SYSTEM_INSTRUCTION, 2);
+      if (aiResult.error || !aiResult.result) {
+        await saveHomepageFailure(user.id);
+        return ok({
+          success: false,
+          error: aiResult.error ?? "api_unavailable",
+        });
+      }
+      const parsed = aiResult.result;
+
+      parsed.recommendations = filterKnownRecommendations(
+        parsed.recommendations,
+        watchlistData.watchItems,
+        dislikedFeedbackIds,
+      );
+
+      // An empty result after filtering is a failed generation, record the
+      // failure so refresh logic can retry instead of saving "success".
+      if (parsed.recommendations.length === 0) {
+        await saveHomepageFailure(user.id);
+        return ok({ success: false, error: "empty_result" });
+      }
+
+      await saveHomepageRecommendations(user.id, parsed.recommendations);
+
+      return ok({ success: true });
+    },
+  ),
 );

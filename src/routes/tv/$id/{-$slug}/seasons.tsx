@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
-import type { SeasonInfo, Tv } from "@/lib/tmdb-schemas";
+import type { SeasonInfo } from "@/lib/tmdb-schemas";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
@@ -11,46 +11,28 @@ import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
-import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
+import { detailHead, loadMediaRouteData } from "@/lib/route-helpers";
+import { formatMediaTitle } from "@/lib/utils";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
-  loader: ({ params, context }) => {
-    const { id, slug } = params;
-    const parsed = parseAndValidateId(id);
-    if (!parsed.success) {
-      throw notFound();
-    }
-    context.queryClient.prefetchQuery({
-      queryKey: queryKeys.tmdb.tvDetails(Number(id)),
-      queryFn: () => getTvDetails({ id: parsed.data }),
-    });
-    const data = context.queryClient.getQueryData<Tv>(
-      queryKeys.tmdb.tvDetails(Number(id)),
-    );
-    const title = formatMediaTitle.decode(slug ?? "");
-    return { id, slug, title, posterPath: data?.poster_path ?? null };
-  },
+  loader: ({ params, context }) =>
+    loadMediaRouteData(context, params, { mediaType: "tv", level: "full" }),
   head: ({ loaderData }) => ({
-    meta: [
-      ...MetaImageTagsGenerator({
-        title: loaderData?.title
-          ? `${loaderData.title} - Seasons | Pebbly`
-          : "Page Not Found | Pebbly",
-        description: loaderData?.title
-          ? `All seasons of  ${loaderData.title}.`
-          : "Explore all seasons of your favorite shows on Pebbly.",
-        ogImage: loaderData?.posterPath
-          ? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
-          : undefined,
-        url:
-          loaderData?.id &&
-          loaderData.title &&
-          `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${loaderData.slug}/seasons`,
-      }),
-    ],
+    meta: detailHead({
+      title: loaderData?.title
+        ? `${loaderData.title} - Seasons | Pebbly`
+        : "Page Not Found | Pebbly",
+      description: loaderData?.title
+        ? `All seasons of  ${loaderData.title}.`
+        : "Explore all seasons of your favorite shows on Pebbly.",
+      posterPath: loaderData?.posterPath,
+      url:
+        loaderData?.id &&
+        loaderData.title &&
+        `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${loaderData.slug}/seasons`,
+    }),
   }),
   component: TvSeasonsPage,
 });
