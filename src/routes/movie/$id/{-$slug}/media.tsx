@@ -1,81 +1,28 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { DefaultLoader } from "@/components/default-loader";
-import { DefaultNotFoundComponent } from "@/components/default-not-found";
-import { GoBack } from "@/components/go-back";
-import { MediaVideoImageContainer } from "@/components/media/media-video-image-container";
-import { ShareButton } from "@/components/share-button";
-import { VITE_PUBLIC_APP_URL } from "@/constants";
-import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
-import { getBasicMovieDetails } from "@/lib/queries";
-import { queryKeys } from "@/lib/query/keys";
-import { detailHead, loadMediaRouteData } from "@/lib/route-helpers";
+import { MediaGalleryPage } from "@/components/media/basic-media-pages";
+import {
+  basicDetailsQuery,
+  mediaRouteOptions,
+} from "@/lib/media-route-options";
 
-export const Route = createFileRoute("/movie/$id/{-$slug}/media")({
-  loader: ({ params, context }) =>
-    loadMediaRouteData(context, params, { mediaType: "movie" }),
-  head: ({ loaderData }) => ({
-    meta: detailHead({
-      title: loaderData?.title
-        ? `${loaderData.title} - Media | Pebbly`
-        : "Page Not Found | Pebbly",
-      description: loaderData?.title
-        ? `Watch the latest videos and images of ${loaderData.title}.`
-        : "Explore the latest movie videos and images on Pebbly.",
-      posterPath: loaderData?.posterPath,
-      url:
-        loaderData?.id &&
-        loaderData?.title &&
-        `${VITE_PUBLIC_APP_URL}/movie/${loaderData.id}/${encodeURIComponent(loaderData.title)}/media`,
-    }),
-  }),
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      video: search.video as string | undefined,
-      backdrop: search.backdrop as string | undefined,
-      poster: search.poster as string | undefined,
-    };
-  },
-  component: MovieMediaPage,
-});
+export const Route = createFileRoute("/movie/$id/{-$slug}/media")(
+  mediaRouteOptions("movie", MovieMediaPage),
+);
 
 function MovieMediaPage() {
   const { id, slug, title } = Route.useLoaderData();
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.tmdb.basicMovieDetails(Number(id)),
-    queryFn: async () => await getBasicMovieDetails({ id: parseInt(id, 10) }),
-    enabled: !!id,
-  });
-
-  useCanonicalSlugRedirect({
-    entity: "movie",
-    subPageEntity: "media",
-    id: data?.id,
-    title: data?.title ?? data?.original_title,
-    incomingPathname: `/movie/${id}/${slug}/media`,
-    isLoading,
-  });
-  if (isLoading) {
-    return <DefaultLoader />;
-  }
-
-  if (!data) {
-    return <DefaultNotFoundComponent />;
-  }
+  const { data, isLoading } = useQuery(basicDetailsQuery("movie", id));
 
   return (
-    <section className="mx-auto block max-w-screen-xl items-center px-4">
-      <div className="space-y-3 py-5">
-        <div className="flex items-center justify-between gap-3">
-          <GoBack link={`/movie/${id}/${slug}`} title="Back to main" />
-          <ShareButton />
-        </div>
-        <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
-          {title}
-        </h1>
-      </div>
-      <MediaVideoImageContainer id={parseInt(id, 10)} media_type="movie" />
-    </section>
+    <MediaGalleryPage
+      entity="movie"
+      id={id}
+      slug={slug}
+      title={title}
+      data={data}
+      isLoading={isLoading}
+    />
   );
 }
