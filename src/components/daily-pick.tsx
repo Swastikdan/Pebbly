@@ -97,7 +97,7 @@ export function DailyPickButton() {
                   height={350}
                 />
               ) : (
-                <div className="h-full w-full bg-gradient-to-br from-neutral-800 to-neutral-950" />
+                <div className="h-full w-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-800 dark:to-neutral-950" />
               )}
               {/* Scrim: dark modes blend the banner into the panel with a tall
 						    background fade; light mode gets a gentle contrast dim plus a
