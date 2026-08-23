@@ -126,8 +126,8 @@ export function WatchlistCard({
           mediaType={item.type}
           year={year}
           rating={item.rating}
-          className="text-meta text-muted-foreground"
-          labelClassName="uppercase"
+          className="text-muted-foreground/90 dark:text-muted-foreground/75 text-[11px]"
+          labelClassName="font-semibold tracking-wide uppercase"
         />
       }
       overview={item.overview}
@@ -141,13 +141,13 @@ export function WatchlistCard({
             onClick={cycleStatus}
             title={`Status: ${progressOption.label}. Tap to change.`}
             aria-label={`Status: ${progressOption.label}. Tap to change.`}
-            className="bg-secondary/80 text-secondary-foreground hover:bg-secondary inline-flex h-auto items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-medium sm:py-1"
+            className="bg-secondary/80 text-secondary-foreground hover:bg-secondary inline-flex h-6 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium"
           >
             <ProgressIcon size={12} />
             {progressOption.label}
           </Button>
           {isRecommended && (
-            <span className="border-info/30 bg-info/15 text-info inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium sm:py-1">
+            <span className="border-info/30 bg-info/15 text-info inline-flex h-6 items-center gap-1.5 rounded-md border px-2.5 text-[10px] font-medium">
               <Sparkles size={12} />
               Recommended
             </span>

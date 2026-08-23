@@ -140,8 +140,7 @@ function SearchPage() {
   const noResultsDueToFilters =
     filteredData.length === 0 && hasActiveFilters && baselineNonPersonCount > 0;
   const showPagination = hasResults && totalPages > 1;
-  const isLoadingState =
-    isLoading || (isPending && !data) || (isFetching && !data);
+  const isLoadingState = isLoading || isPending || isFetching;
 
   let content: React.ReactNode;
   if (!query) {

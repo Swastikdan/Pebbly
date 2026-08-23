@@ -36,7 +36,7 @@ export function MediaChip({
 }) {
   return (
     <span
-      className="bg-secondary/80 text-secondary-foreground inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-medium sm:py-1"
+      className="bg-secondary/80 text-secondary-foreground inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium"
       title={title}
     >
       <Icon size={12} />

@@ -11,7 +11,7 @@ export const GenreContainer = (props: {
           <Badge
             key={genre.id}
             aria-label={`Genre: ${genre.name}`}
-            className="rounded-lg px-3 py-1 text-xs font-medium"
+            className="inline-flex h-7 items-center rounded-md px-3 text-xs font-medium"
             role="listitem"
             variant="secondary"
           >
