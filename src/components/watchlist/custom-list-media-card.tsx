@@ -115,14 +115,14 @@ export function CustomListMediaCard({
 				{hasMetadata && imageUrl ? (
 					<Image
 						alt={item.title ?? ""}
-						className="h-[140px] w-[93px] rounded-xl bg-muted object-cover"
+						className="h-[160px] w-[107px] rounded-xl bg-muted object-cover sm:h-[140px] sm:w-[93px]"
 						height={210}
 						src={imageUrl}
 						width={140}
 						priority={priority}
 					/>
 				) : (
-					<div className="flex h-[140px] w-[93px] shrink-0 items-center justify-center rounded-xl bg-secondary text-xs font-semibold uppercase text-muted-foreground animate-pulse">
+					<div className="flex h-[160px] w-[107px] shrink-0 items-center justify-center rounded-xl bg-secondary text-xs font-semibold uppercase text-muted-foreground animate-pulse sm:h-[140px] sm:w-[93px]">
 						{item.mediaType === "movie" ? "MOV" : "TV"}
 					</div>
 				)}
@@ -143,7 +143,7 @@ export function CustomListMediaCard({
 
 						<div className="flex shrink-0 items-start gap-0.5">
 							{!readOnly && onMove !== undefined && (
-								<div className="flex flex-col gap-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+								<div className="flex flex-col gap-0 opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
 									<button
 										type="button"
 										onClick={handleMoveClick(-1)}
@@ -180,7 +180,7 @@ export function CustomListMediaCard({
 									type="button"
 									variant="ghost"
 									size="icon"
-									className="shrink-0 p-1.5 text-muted-foreground/40 opacity-0 transition-colors group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
+									className="shrink-0 p-1.5 text-muted-foreground/40 opacity-100 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
 									aria-label={`Remove from collection`}
 									onClick={handleRemove}
 								>

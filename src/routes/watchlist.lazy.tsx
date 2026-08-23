@@ -79,8 +79,8 @@ function WatchlistPage() {
 							onValueChange={handleTabChange}
 							className="w-full"
 						>
-							<div className="flex items-center justify-between gap-3">
-								<TabsList>
+							<div className="flex items-center justify-center gap-3">
+								<TabsList className="w-full max-w-sm sm:w-fit">
 									<TabsTab value="watchlist">
 										<Bookmark size={15} />
 										Watchlist
@@ -439,7 +439,7 @@ function MyListsTabContent() {
 					</Button>
 				</div>
 			) : (
-				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+				<div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
 					{sortedLists.map((list) => (
 						<CustomListCard
 							key={list._id}
