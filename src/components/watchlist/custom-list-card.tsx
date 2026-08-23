@@ -91,7 +91,7 @@ export function CustomListCard({
               <Lock size={11} />
             </span>
           )}
-          <span className="bg-background/95 ring-border/20 rounded-xl px-2 py-1 text-xs font-bold tracking-tight shadow-md ring-1 backdrop-blur-md sm:text-[10px]">
+          <span className="bg-background/95 ring-border/20 inline-flex h-6 items-center rounded-md px-2.5 text-[11px] font-bold tracking-tight shadow-md ring-1 backdrop-blur-md">
             {itemCount} {itemCount === 1 ? "title" : "titles"}
           </span>
         </div>
