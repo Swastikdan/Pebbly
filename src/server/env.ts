@@ -1,5 +1,6 @@
-import type { D1Database, Fetcher } from "@cloudflare/workers-types";
 import * as v from "valibot";
+
+import type { D1Database, Fetcher } from "@cloudflare/workers-types";
 
 /**
  * The Worker `env` binding. On the Cloudflare Workers runtime, Nitro's
@@ -7,14 +8,14 @@ import * as v from "valibot";
  * Node-based local dev (`vite dev`) the same names come from `process.env`.
  */
 export interface Env {
-	DB: D1Database;
-	ASSETS?: Fetcher;
-	CLERK_SECRET_KEY?: string;
-	CLERK_ISSUER_URL?: string;
-	GEMINI_API_KEY?: string;
-	/** Set to "preview" in wrangler.toml `[env.preview.vars]` for cf-* deploys. */
-	APP_ENV?: string;
-	[key: string]: unknown;
+  DB: D1Database;
+  ASSETS?: Fetcher;
+  CLERK_SECRET_KEY?: string;
+  CLERK_ISSUER_URL?: string;
+  GEMINI_API_KEY?: string;
+  /** Set to "preview" in wrangler.toml `[env.preview.vars]` for cf-* deploys. */
+  APP_ENV?: string;
+  [key: string]: unknown;
 }
 
 /**
@@ -23,10 +24,10 @@ export interface Env {
  * `getDb` (see `db/client.ts`), so it is intentionally not part of this schema.
  */
 const envSchema = v.object({
-	CLERK_SECRET_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
-	CLERK_ISSUER_URL: v.optional(v.pipe(v.string(), v.minLength(1))),
-	GEMINI_API_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
-	APP_ENV: v.optional(v.pipe(v.string(), v.minLength(1))),
+  CLERK_SECRET_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
+  CLERK_ISSUER_URL: v.optional(v.pipe(v.string(), v.minLength(1))),
+  GEMINI_API_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
+  APP_ENV: v.optional(v.pipe(v.string(), v.minLength(1))),
 });
 
 type WorkerEnvHolder = { __env__?: Env };
@@ -42,26 +43,26 @@ let validated = false;
  * validated here.
  */
 export function validateEnv(env: Env = getEnv()): void {
-	if (validated) return;
-	validated = true;
+  if (validated) return;
+  validated = true;
 
-	const result = v.safeParse(envSchema, env);
-	if (result.success) return;
+  const result = v.safeParse(envSchema, env);
+  if (result.success) return;
 
-	for (const issue of result.issues) {
-		const name = issue.path?.map((p) => String(p.key)).join(".") ?? "unknown";
-		if (name === "CLERK_SECRET_KEY") {
-			console.error(
-				"[env] CLERK_SECRET_KEY is missing or empty. Clerk sessions will not verify and every user is treated as a guest. Set it in wrangler secrets (prod) or .dev.vars (local).",
-			);
-		} else if (name === "GEMINI_API_KEY") {
-			console.warn(
-				"[env] GEMINI_API_KEY is missing. AI recommendation features will be unavailable.",
-			);
-		} else {
-			console.warn(`[env] Invalid or missing value for ${name}.`);
-		}
-	}
+  for (const issue of result.issues) {
+    const name = issue.path?.map((p) => String(p.key)).join(".") ?? "unknown";
+    if (name === "CLERK_SECRET_KEY") {
+      console.error(
+        "[env] CLERK_SECRET_KEY is missing or empty. Clerk sessions will not verify and every user is treated as a guest. Set it in wrangler secrets (prod) or .dev.vars (local).",
+      );
+    } else if (name === "GEMINI_API_KEY") {
+      console.warn(
+        "[env] GEMINI_API_KEY is missing. AI recommendation features will be unavailable.",
+      );
+    } else {
+      console.warn(`[env] Invalid or missing value for ${name}.`);
+    }
+  }
 }
 
 /**
@@ -72,16 +73,16 @@ export function validateEnv(env: Env = getEnv()): void {
  * call stack.
  */
 export function getEnv(): Env {
-	const workerEnv = (globalThis as WorkerEnvHolder).__env__;
-	const env = workerEnv ?? (process.env as unknown as Env);
-	if (!validated) validateEnv(env);
-	return env;
+  const workerEnv = (globalThis as WorkerEnvHolder).__env__;
+  const env = workerEnv ?? (process.env as unknown as Env);
+  if (!validated) validateEnv(env);
+  return env;
 }
 
 export function getEnvVar(name: keyof Env): string | undefined {
-	const value = getEnv()[name];
-	if (typeof value === "string" && value.length > 0) return value;
-	return undefined;
+  const value = getEnv()[name];
+  if (typeof value === "string" && value.length > 0) return value;
+  return undefined;
 }
 
 /**
@@ -92,10 +93,10 @@ export function getEnvVar(name: keyof Env): string | undefined {
  * not preview.
  */
 export function isPreview(): boolean {
-	return getEnvVar("APP_ENV") === "preview";
+  return getEnvVar("APP_ENV") === "preview";
 }
 
 /** True for the production `cloudflare`-branch deployment (and local dev). */
 export function isProduction(): boolean {
-	return !isPreview();
+  return !isPreview();
 }

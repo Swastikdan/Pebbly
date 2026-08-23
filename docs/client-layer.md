@@ -22,7 +22,7 @@ mutation goes to the server or to local storage.
   light/dark/system before first paint so neither palette ever flashes),
   `ToastProvider`, `NavigationProgressBar`, skip-to-content link, nav bar,
   footer (with the theme picker), mobile bottom nav, `UserSync`, and app CSS.
-  It also registers the service worker in prod (and *unregisters* any stale
+  It also registers the service worker in prod (and _unregisters_ any stale
   one in dev), binds `/` as a global shortcut that focuses search, and mounts
   TanStack devtools in dev only.
 - `src/routeTree.gen.ts`, generated route tree (do not edit).
@@ -32,7 +32,7 @@ mutation goes to the server or to local storage.
 - `src/lib/query/query-client.ts`, `getContext()` creates a fresh QueryClient
   per render/request with sane defaults (24 h staleTime, 30 min gcTime, retry 1,
   no refetch on window focus). TMDB data is treated as fresh for a day to avoid
-  refetch churn, but `gcTime` (how long *unused* queries stay resident) is kept
+  refetch churn, but `gcTime` (how long _unused_ queries stay resident) is kept
   short so visited page payloads are evicted from memory instead of
   accumulating to hundreds of MB over a session. A fresh client per SSR
   request keeps journal state (see pending-ops) from leaking between requests.
@@ -59,14 +59,14 @@ mutation goes to the server or to local storage.
 
 ## 3. State management (Zustand)
 
-| Store | File | Purpose |
-| :--- | :--- | :--- |
-| `useWatchlistStore` | `src/hooks/watchlist-store.ts` | Guest watchlist (`mediaState`), persisted to localStorage with LRU eviction; mutators `setWatchlistMembershipLocal`, `setProgressStatusLocal`, `setReactionLocal`, `setProgressLocal`, `importWatchlistLocal` |
-| `useLocalListsStore` | `src/hooks/use-local-lists-store.ts` | Guest custom lists |
-| `useLocalProgressStore` | `src/hooks/use-local-progress-store.ts` | Guest episode/progress state (`lastPlayed`, watched episodes) |
-| `useDailyPickStore` | `src/hooks/use-daily-pick-store.ts` | Daily-pick seed/date bookkeeping |
-| `useThemeStore` | `src/hooks/use-theme.ts` | Light/dark/system theme preference (persisted separately in localStorage under `pebbly-theme`) |
-| Toasts | `src/hooks/use-toast-store.ts` | Fire-and-forget `toast()` backed by Base UI's toast manager — call it from anywhere, no provider needed |
+| Store                   | File                                    | Purpose                                                                                                                                                                                                       |
+| :---------------------- | :-------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `useWatchlistStore`     | `src/hooks/watchlist-store.ts`          | Guest watchlist (`mediaState`), persisted to localStorage with LRU eviction; mutators `setWatchlistMembershipLocal`, `setProgressStatusLocal`, `setReactionLocal`, `setProgressLocal`, `importWatchlistLocal` |
+| `useLocalListsStore`    | `src/hooks/use-local-lists-store.ts`    | Guest custom lists                                                                                                                                                                                            |
+| `useLocalProgressStore` | `src/hooks/use-local-progress-store.ts` | Guest episode/progress state (`lastPlayed`, watched episodes)                                                                                                                                                 |
+| `useDailyPickStore`     | `src/hooks/use-daily-pick-store.ts`     | Daily-pick seed/date bookkeeping                                                                                                                                                                              |
+| `useThemeStore`         | `src/hooks/use-theme.ts`                | Light/dark/system theme preference (persisted separately in localStorage under `pebbly-theme`)                                                                                                                |
+| Toasts                  | `src/hooks/use-toast-store.ts`          | Fire-and-forget `toast()` backed by Base UI's toast manager — call it from anywhere, no provider needed                                                                                                       |
 
 All guest stores share their persist plumbing via `src/hooks/guest-store-kit.ts`:
 `guestPersistOptions()` (LRU-capped storage on the client, plain memory during
@@ -93,7 +93,7 @@ The mutation layer that eliminated the old `if (isSignedIn)` branches:
   adapters run for progress-status writes. It resolves the TV-vs-movie action
   and, when episode rows must follow the new status, kicks off the one TMDB
   season fetch and builds the per-season episode selections. Adapters only
-  *execute* the plan; neither re-implements the semantics.
+  _execute_ the plan; neither re-implements the semantics.
 - `use-repository.ts`, `useRepository()` returns the remote implementation
   when signed in, the local one otherwise (memoized per auth state).
 - `remote-repository.ts`, server-backed implementation:
@@ -127,7 +127,7 @@ A replayable journal for array-shaped query caches (watchlist, lists):
 - Ops that touch the same rows supersede each other (latest intent wins),
   matching the server batcher's dedupe.
 - `reconcileListFetch` / `applyServerState` merge fresh server snapshots by
-  *replaying still-pending ops on top*, so a snapshot computed before a write
+  _replaying still-pending ops on top_, so a snapshot computed before a write
   committed can never clobber newer optimistic state (kills the UI-flicker
   race).
 - `resolve` (success) folds the op into the journal base; `remove` (failure)
@@ -138,6 +138,7 @@ A replayable journal for array-shaped query caches (watchlist, lists):
 - `clearPendingOps` is called on sign-out.
 
 Optimistic op builders live in:
+
 - `src/hooks/watchlist/watchlist-optimistic.ts`, membership/progress/reaction/
   mark-show op builders (incl. `buildSeasonEpisodeSelections`).
 - `src/hooks/custom-lists/list-optimistic.ts`, list CRUD op builders

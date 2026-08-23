@@ -6,7 +6,7 @@
 
 <!-- Bullet-list the concrete changes made. -->
 
-- 
+-
 
 ## Related issues
 

@@ -1,210 +1,211 @@
 import { useEffect, useMemo } from "react";
+
+import type { MediaType } from "@/lib/media-types";
+import type { ProgressStatus, ReactionStatus } from "@/types";
 import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
 import { WatchlistStatusMenu } from "@/components/media/watchlist-status-menu";
 import { ShareButton } from "@/components/share-button";
 import {
-	useMediaState,
-	useToggleWatchlistItem,
-	useWatchlistItem,
+  useMediaState,
+  useToggleWatchlistItem,
+  useWatchlistItem,
 } from "@/hooks/use-watchlist";
-import type { MediaType } from "@/lib/media-types";
 import { useRepository } from "@/lib/repository/use-repository";
-import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export const MediaTitleContainer = (props: {
-	title: string;
-	rating: number;
-	image: string;
-	poster_path?: string | null;
-	backdrop_path?: string;
-	id: number;
-	media_type: MediaType;
-	release_date: string | null;
-	description: string;
-	tagline: string | null;
-	releaseyear: string;
-	uscertification: string;
-	runtime?: string | null;
-	vote_average: number | null;
-	vote_count: number | null;
-	imdb_url?: string | null;
-	tv_status?: string | null;
+  title: string;
+  rating: number;
+  image: string;
+  poster_path?: string | null;
+  backdrop_path?: string;
+  id: number;
+  media_type: MediaType;
+  release_date: string | null;
+  description: string;
+  tagline: string | null;
+  releaseyear: string;
+  uscertification: string;
+  runtime?: string | null;
+  vote_average: number | null;
+  vote_count: number | null;
+  imdb_url?: string | null;
+  tv_status?: string | null;
 }) => {
-	const {
-		id,
-		title,
-		rating,
-		poster_path,
-		media_type,
-		release_date,
-		tagline,
-		releaseyear,
-		uscertification,
-		runtime,
-		vote_average,
-		vote_count,
-		imdb_url,
-		tv_status,
-	} = props;
+  const {
+    id,
+    title,
+    rating,
+    poster_path,
+    media_type,
+    release_date,
+    tagline,
+    releaseyear,
+    uscertification,
+    runtime,
+    vote_average,
+    vote_count,
+    imdb_url,
+    tv_status,
+  } = props;
 
-	const mediaState = useMediaState(String(id), media_type);
-	const { setProgressStatus, setReaction } = useRepository();
-	const toggleWatchlist = useToggleWatchlistItem();
-	const { isOnWatchList } = useWatchlistItem(String(id), media_type);
-	const progressStatus = mediaState?.progressStatus ?? null;
-	const reaction = mediaState?.reaction ?? null;
+  const mediaState = useMediaState(String(id), media_type);
+  const { setProgressStatus, setReaction } = useRepository();
+  const toggleWatchlist = useToggleWatchlistItem();
+  const { isOnWatchList } = useWatchlistItem(String(id), media_type);
+  const progressStatus = mediaState?.progressStatus ?? null;
+  const reaction = mediaState?.reaction ?? null;
 
-	const metadata = useMemo(
-		() => ({
-			title,
-			image: poster_path ?? props.image ?? undefined,
-			backdrop: props.backdrop_path,
-			rating,
-			release_date: release_date ?? "",
-			overview: props.description,
-		}),
-		[
-			title,
-			poster_path,
-			props.backdrop_path,
-			rating,
-			release_date,
-			props.description,
-			props.image,
-		],
-	);
+  const metadata = useMemo(
+    () => ({
+      title,
+      image: poster_path ?? props.image ?? undefined,
+      backdrop: props.backdrop_path,
+      rating,
+      release_date: release_date ?? "",
+      overview: props.description,
+    }),
+    [
+      title,
+      poster_path,
+      props.backdrop_path,
+      rating,
+      release_date,
+      props.description,
+      props.image,
+    ],
+  );
 
-	useEffect(() => {
-		if (
-			mediaState &&
-			(!mediaState.title || mediaState.title === "Unknown Title") &&
-			title &&
-			title !== "Unknown Title"
-		) {
-			if (progressStatus) {
-				setProgressStatus(String(id), media_type, progressStatus, metadata);
-			}
-		}
-	}, [
-		mediaState,
-		title,
-		id,
-		media_type,
-		progressStatus,
-		setProgressStatus,
-		metadata,
-	]);
+  useEffect(() => {
+    if (
+      mediaState &&
+      (!mediaState.title || mediaState.title === "Unknown Title") &&
+      title &&
+      title !== "Unknown Title"
+    ) {
+      if (progressStatus) {
+        setProgressStatus(String(id), media_type, progressStatus, metadata);
+      }
+    }
+  }, [
+    mediaState,
+    title,
+    id,
+    media_type,
+    progressStatus,
+    setProgressStatus,
+    metadata,
+  ]);
 
-	const handleAdd = () => {
-		toggleWatchlist(
-			{
-				...metadata,
-				id: String(id),
-				media_type,
-			},
-			false,
-		).catch(console.error);
-	};
+  const handleAdd = () => {
+    toggleWatchlist(
+      {
+        ...metadata,
+        id: String(id),
+        media_type,
+      },
+      false,
+    ).catch(console.error);
+  };
 
-	const handleStatusChange = (status: ProgressStatus) => {
-		setProgressStatus(String(id), media_type, status, metadata, progressStatus);
-	};
+  const handleStatusChange = (status: ProgressStatus) => {
+    setProgressStatus(String(id), media_type, status, metadata, progressStatus);
+  };
 
-	const handleReactionChange = (r: ReactionStatus | null) => {
-		setReaction(String(id), media_type, r, metadata);
-	};
+  const handleReactionChange = (r: ReactionStatus | null) => {
+    setReaction(String(id), media_type, r, metadata);
+  };
 
-	const handleRemove = () => {
-		toggleWatchlist(
-			{
-				...metadata,
-				id: String(id),
-				media_type,
-			},
-			true,
-		).catch(console.error);
-	};
+  const handleRemove = () => {
+    toggleWatchlist(
+      {
+        ...metadata,
+        id: String(id),
+        media_type,
+      },
+      true,
+    ).catch(console.error);
+  };
 
-	const renderWatchListSection = (className?: string) => (
-		<div className={className}>
-			<WatchlistStatusMenu
-				isOnWatchlist={isOnWatchList}
-				progressStatus={progressStatus}
-				reaction={reaction}
-				mediaType={media_type}
-				tmdbId={id}
-				onAdd={handleAdd}
-				onStatusChange={handleStatusChange}
-				onReactionChange={handleReactionChange}
-				onRemove={handleRemove}
-				metadata={metadata}
-			/>
-		</div>
-	);
+  const renderWatchListSection = (className?: string) => (
+    <div className={className}>
+      <WatchlistStatusMenu
+        isOnWatchlist={isOnWatchList}
+        progressStatus={progressStatus}
+        reaction={reaction}
+        mediaType={media_type}
+        tmdbId={id}
+        onAdd={handleAdd}
+        onStatusChange={handleStatusChange}
+        onReactionChange={handleReactionChange}
+        onRemove={handleRemove}
+        metadata={metadata}
+      />
+    </div>
+  );
 
-	return (
-		<div className="pt-5 pb-4 animate-fade-in">
-			<div className="space-y-3 pb-4">
-				<div className="flex items-center justify-between gap-3">
-					<GoBack title="Back" />
-					<div className="flex flex-wrap items-center justify-end gap-2">
-						{renderWatchListSection("hidden sm:flex")}
-						<ShareButton title={title} />
-					</div>
-				</div>
-				{renderWatchListSection("flex justify-end sm:hidden")}
-				<h1 className="text-h1 lg:px-0">
-					{imdb_url ? (
-						<a
-							className="transition-opacity hover:opacity-70"
-							href={imdb_url}
-							rel="noopener noreferrer"
-							target="_blank"
-						>
-							{title}
-						</a>
-					) : (
-						title
-					)}
-				</h1>
-				{tagline && (
-					<h2 className="hidden text-compact italic text-muted-foreground/80 sm:flex">
-						{tagline}
-					</h2>
-				)}
-			</div>
-			<div className="flex flex-row items-center justify-between">
-				<span className="flex items-center gap-1.5 text-meta text-muted-foreground whitespace-nowrap">
-					{releaseyear && releaseyear !== "null" && (
-						<>
-							<span>{releaseyear}</span>
-							<span className="text-border">·</span>
-						</>
-					)}
+  return (
+    <div className="animate-fade-in pt-5 pb-4">
+      <div className="space-y-3 pb-4">
+        <div className="flex items-center justify-between gap-3">
+          <GoBack title="Back" />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {renderWatchListSection("hidden sm:flex")}
+            <ShareButton title={title} />
+          </div>
+        </div>
+        {renderWatchListSection("flex justify-end sm:hidden")}
+        <h1 className="text-h1 lg:px-0">
+          {imdb_url ? (
+            <a
+              className="transition-opacity hover:opacity-70"
+              href={imdb_url}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              {title}
+            </a>
+          ) : (
+            title
+          )}
+        </h1>
+        {tagline && (
+          <h2 className="text-compact text-muted-foreground/80 hidden italic sm:flex">
+            {tagline}
+          </h2>
+        )}
+      </div>
+      <div className="flex flex-row items-center justify-between">
+        <span className="text-meta text-muted-foreground flex items-center gap-1.5 whitespace-nowrap">
+          {releaseyear && releaseyear !== "null" && (
+            <>
+              <span>{releaseyear}</span>
+              <span className="text-border">·</span>
+            </>
+          )}
 
-					<span className="rounded-md border border-border/80 px-1.5 py-0.5 text-label text-foreground">
-						{uscertification}
-					</span>
-					{runtime && (
-						<>
-							<span className="text-border">·</span>
-							<span>{runtime}</span>
-						</>
-					)}
-					{tv_status && (
-						<>
-							<span className="text-border">·</span>
-							<span>{tv_status}</span>
-						</>
-					)}
-				</span>
+          <span className="border-border/80 text-label text-foreground rounded-md border px-1.5 py-0.5">
+            {uscertification}
+          </span>
+          {runtime && (
+            <>
+              <span className="text-border">·</span>
+              <span>{runtime}</span>
+            </>
+          )}
+          {tv_status && (
+            <>
+              <span className="text-border">·</span>
+              <span>{tv_status}</span>
+            </>
+          )}
+        </span>
 
-				<RatingCount
-					rating={parseFloat(vote_average?.toFixed(1) ?? "0")}
-					ratingcount={vote_count ?? 0}
-				/>
-			</div>
-		</div>
-	);
+        <RatingCount
+          rating={parseFloat(vote_average?.toFixed(1) ?? "0")}
+          ratingcount={vote_count ?? 0}
+        />
+      </div>
+    </div>
+  );
 };

@@ -114,7 +114,7 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
   a single batched round trip (idempotent, race-safe with
   `onConflictDoNothing`).
 - **Change propagation**: role changes and bans bump the target user's
-  `perms_rev`; a global feature-flag toggle bumps `perms_rev` for *every*
+  `perms_rev`; a global feature-flag toggle bumps `perms_rev` for _every_
   user. Clients see the change on their next version poll (see ADR-015) —
   there is no separate permissions poll anymore.
 
@@ -123,6 +123,7 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 All fns return `ApiResult<T>` and validate input with Valibot.
 
 ### watchlist.ts
+
 - Reads: `getWatchlist` (status-filtered, max 500), `getTrackedTmdbIds`,
   `getMediaState` (single row for a media id), `getAllWatchedEpisodes`,
   `getAllEpisodeProgress`, and `getDataVersion` (1-row read returning the
@@ -147,6 +148,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
   bumps `watchlist_rev`.
 
 ### lists.ts
+
 - Reads: `getCustomLists` (with preview images + item counts),
   `getListItems` (owner-only, enriched with watch-item metadata; TMDB-id
   `IN` clauses are chunked at 90 ids because D1 caps bound parameters at
@@ -171,6 +173,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
   bumps the user's `lists_rev`.
 
 ### import-export.ts
+
 - `importWatchlist`, bulk import of `watch_items` + `episode_progress`
   (caps: 5,000 items, 50,000 watched episodes, strings ≤500 chars).
   Dedupes by `(mediaType, tmdbId)`, normalizes statuses/reactions, and
@@ -179,6 +182,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
   watchlist snapshot and a single `watchlist_rev` bump.
 
 ### recommendations.ts
+
 - Access/history: `getUserRecommendationAccess`, `getRecommendationHistory`
   (last 20), `deleteRecommendation` (blocked inside the 2-minute rate window
   so users can't erase the cooldown marker), `updateVerifiedRecommendations`.
@@ -203,6 +207,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
   row in place so history never shows a placeholder).
 
 ### admin.ts
+
 - `requireAdmin()`, `requireUser` + JWT-claim/live-API admin check
   (`FORBIDDEN` otherwise). Never consults a stored flag.
 - `getUserFeaturesFn`, `getRolePermissions`, `setRolePermission` (global
@@ -215,6 +220,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
   Permissions) and polls `listUsers` every 10 s while open.
 
 ### users.ts
+
 - `storeUser`, upserts identity fields from the verified Clerk session
   (admin is deliberately not part of the payload). `getStatus`, current user
   row or null.

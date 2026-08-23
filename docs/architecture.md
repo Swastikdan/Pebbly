@@ -2,19 +2,19 @@
 
 ## 1. Tech stack
 
-| Layer | Technology | Where it lives |
-| :--- | :--- | :--- |
-| Framework | TanStack Start (file-based routing) + TanStack Router + React 19 | `src/router.tsx`, `src/start.ts`, `src/routes/` |
-| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset) | `wrangler.toml`, `nitro.config.ts` |
-| Database | Cloudflare D1 (SQLite) via Drizzle ORM | `src/server/db/`, `drizzle/` |
-| Validation | Valibot (schemas shared between client and server fns) | `src/server/schema/`, `src/lib/tmdb-schemas.ts` |
-| Auth | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification) | `src/server/auth.ts`, `src/start.ts` |
-| AI | Google Gemini over REST (`generativelanguage.googleapis.com`) | `src/server/ai.ts`, `src/lib/prompts/` |
-| Media metadata | TMDB REST API (`@better-fetch/fetch` client) | `src/lib/tmdb.ts`, `src/lib/queries.ts` |
-| Client data | TanStack Query (React Query) | `src/lib/query/` |
-| Client state | Zustand (persisted to localStorage with LRU eviction) | `src/hooks/*-store.ts` |
-| Styling | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts` |
-| Tooling | Vite 7, Biome (lint+format), TypeScript strict, Wrangler | root config files |
+| Layer          | Technology                                                                                             | Where it lives                                                   |
+| :------------- | :----------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| Framework      | TanStack Start (file-based routing) + TanStack Router + React 19                                       | `src/router.tsx`, `src/start.ts`, `src/routes/`                  |
+| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset)                                                  | `wrangler.toml`, `nitro.config.ts`                               |
+| Database       | Cloudflare D1 (SQLite) via Drizzle ORM                                                                 | `src/server/db/`, `drizzle/`                                     |
+| Validation     | Valibot (schemas shared between client and server fns)                                                 | `src/server/schema/`, `src/lib/tmdb-schemas.ts`                  |
+| Auth           | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification)                                       | `src/server/auth.ts`, `src/start.ts`                             |
+| AI             | Google Gemini over REST (`generativelanguage.googleapis.com`)                                          | `src/server/ai.ts`, `src/lib/prompts/`                           |
+| Media metadata | TMDB REST API (`@better-fetch/fetch` client)                                                           | `src/lib/tmdb.ts`, `src/lib/queries.ts`                          |
+| Client data    | TanStack Query (React Query)                                                                           | `src/lib/query/`                                                 |
+| Client state   | Zustand (persisted to localStorage with LRU eviction)                                                  | `src/hooks/*-store.ts`                                           |
+| Styling        | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts` |
+| Tooling        | Vite 7, Biome (lint+format), TypeScript strict, Wrangler                                               | root config files                                                |
 
 ## 2. High-level diagram
 
@@ -74,16 +74,17 @@ The same Worker serves both the static frontend (via the `ASSETS` binding,
 
 Every mutating/authenticated operation is a TanStack Start server function:
 
-| Module | Responsibility |
-| :--- | :--- |
-| `watchlist.ts` | Read/watchlist queries, membership toggle (+batch), progress status, reactions, episode progress (single/season/show) |
-| `lists.ts` | Custom-list CRUD + list-item toggling/reordering, public collection pages (`/c/$id`), list cloning, enriched reads |
-| `import-export.ts` | Bulk JSON watchlist import (bounded D1 batches) |
-| `recommendations.ts` | AI generation (watchlist/list/genre), homepage picks, history, feedback, rate limiting |
-| `admin.ts` | Admin-only: user listing, roles, ban status, feature-flag permissions |
-| `users.ts` | User upsert from Clerk identity + status |
+| Module               | Responsibility                                                                                                        |
+| :------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| `watchlist.ts`       | Read/watchlist queries, membership toggle (+batch), progress status, reactions, episode progress (single/season/show) |
+| `lists.ts`           | Custom-list CRUD + list-item toggling/reordering, public collection pages (`/c/$id`), list cloning, enriched reads    |
+| `import-export.ts`   | Bulk JSON watchlist import (bounded D1 batches)                                                                       |
+| `recommendations.ts` | AI generation (watchlist/list/genre), homepage picks, history, feedback, rate limiting                                |
+| `admin.ts`           | Admin-only: user listing, roles, ban status, feature-flag permissions                                                 |
+| `users.ts`           | User upsert from Clerk identity + status                                                                              |
 
 Server functions are:
+
 - **Validated on input**, every fn uses a Valibot schema via `.validator()`,
   so malformed payloads fail before touching the DB.
 - **Typed on output**, every fn returns `ApiResult<T>` (a
@@ -143,7 +144,7 @@ Server functions are:
   progress-status writes, so "what happens when you mark a show as done"
   is defined exactly once.
 - **Optimistic journal** (`src/hooks/pending-ops.ts`), every write registers a
-  *replayable* op against the query cache; server snapshots are merged through
+  _replayable_ op against the query cache; server snapshots are merged through
   the journal so refetches can't clobber in-flight optimistic state.
 - **Zustand stores** persist guest/local state:
   `watchlist-store`, `local-lists-store`, `local-progress-store`,
@@ -159,7 +160,7 @@ Server functions are:
   feedback, scroll-area, etc. This replaced the earlier Radix/shadcn set
   (same component roles, different foundation, plus first-class light mode).
 - **Theming** is light/dark/system. A tiny inline script in `__root.tsx`
-  resolves the stored preference *before first paint* (no flash of the wrong
+  resolves the stored preference _before first paint_ (no flash of the wrong
   palette); `src/hooks/use-theme.ts` owns the preference (Zustand +
   localStorage) and applies it to `<html>`. Switching themes uses a short
   View Transitions crossfade when the browser supports it.
@@ -209,7 +210,7 @@ Server functions are:
 
 ### 4.3 Signed-out flow
 
-The same button calls the *local* repository: `useWatchlistStore`
+The same button calls the _local_ repository: `useWatchlistStore`
 (Zustand, persisted to localStorage with an LRU eviction wrapper). When the
 user later signs in, `UserSync` (`src/components/user-sync.tsx`) exports the
 local watchlist into the remote backend.
@@ -262,7 +263,7 @@ local watchlist into the remote backend.
 3. **Every server fn input is Valibot-validated**, every output is a typed
    `ApiResult`.
 4. **Every mutation is optimistic** and goes through the pending-op journal.
-   Server snapshots are *replayed* through pending ops, never applied raw.
+   Server snapshots are _replayed_ through pending ops, never applied raw.
 5. **Client and server share schema enums** (`mediaType`, `progressStatus`,
    `reaction`, `feedback`) defined once in `src/server/schema/common.ts`.
 6. **D1 batches are bounded** (≤100 statements) and chunked for large imports

@@ -6,59 +6,59 @@ export type Theme = "light" | "dark" | "system";
 export const THEME_STORAGE_KEY = "pebbly-theme";
 
 const THEME_COLOR = {
-	light: "#f5f5f5",
-	dark: "#161616",
+  light: "#f5f5f5",
+  dark: "#161616",
 } as const;
 
 interface ThemeStore {
-	theme: Theme;
-	setTheme: (theme: Theme) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 }
 
 function readStoredTheme(): Theme {
-	if (typeof window === "undefined") return "system";
-	try {
-		const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-		if (stored === "light" || stored === "dark" || stored === "system") {
-			return stored;
-		}
-	} catch {
-		// Storage unavailable (private mode, blocked) — fall through to system.
-	}
-	return "system";
+  if (typeof window === "undefined") return "system";
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      return stored;
+    }
+  } catch {
+    // Storage unavailable (private mode, blocked) — fall through to system.
+  }
+  return "system";
 }
 
 function systemPrefersDark(): boolean {
-	return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
 export function isDarkTheme(theme: Theme): boolean {
-	return theme === "dark" || (theme === "system" && systemPrefersDark());
+  return theme === "dark" || (theme === "system" && systemPrefersDark());
 }
 
 /** Applies the resolved theme straight to the DOM — synchronous, no re-render needed. */
 function applyThemeToDom(dark: boolean) {
-	const root = document.documentElement;
-	root.classList.toggle("dark", dark);
-	root.style.colorScheme = dark ? "dark" : "light";
-	for (const meta of document.querySelectorAll('meta[name="theme-color"]')) {
-		meta.setAttribute("content", dark ? THEME_COLOR.dark : THEME_COLOR.light);
-	}
+  const root = document.documentElement;
+  root.classList.toggle("dark", dark);
+  root.style.colorScheme = dark ? "dark" : "light";
+  for (const meta of document.querySelectorAll('meta[name="theme-color"]')) {
+    meta.setAttribute("content", dark ? THEME_COLOR.dark : THEME_COLOR.light);
+  }
 }
 
 export const useThemeStore = create<ThemeStore>()((set) => ({
-	// Initialized from the stored preference (never from the DOM class) so SSR
-	// markup and hydration agree; the visual theme itself lives on <html>, set
-	// pre-paint by the inline head script.
-	theme: readStoredTheme(),
-	setTheme: (next) => {
-		try {
-			window.localStorage.setItem(THEME_STORAGE_KEY, next);
-		} catch {
-			// Ignore — theme still applies for this session.
-		}
-		set({ theme: next });
-	},
+  // Initialized from the stored preference (never from the DOM class) so SSR
+  // markup and hydration agree; the visual theme itself lives on <html>, set
+  // pre-paint by the inline head script.
+  theme: readStoredTheme(),
+  setTheme: (next) => {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch {
+      // Ignore — theme still applies for this session.
+    }
+    set({ theme: next });
+  },
 }));
 
 /**
@@ -70,45 +70,45 @@ export const useThemeStore = create<ThemeStore>()((set) => ({
  * regardless of the resolved theme.
  */
 export function useTheme() {
-	const theme = useThemeStore((s) => s.theme);
-	const setTheme = useThemeStore((s) => s.setTheme);
+  const theme = useThemeStore((s) => s.theme);
+  const setTheme = useThemeStore((s) => s.setTheme);
 
-	useEffect(() => {
-		applyThemeToDom(isDarkTheme(useThemeStore.getState().theme));
-	}, []);
+  useEffect(() => {
+    applyThemeToDom(isDarkTheme(useThemeStore.getState().theme));
+  }, []);
 
-	useEffect(() => {
-		if (theme !== "system") return;
-		const media = window.matchMedia("(prefers-color-scheme: dark)");
-		const onChange = () => applyThemeToDom(media.matches);
-		media.addEventListener("change", onChange);
-		return () => media.removeEventListener("change", onChange);
-	}, [theme]);
+  useEffect(() => {
+    if (theme !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => applyThemeToDom(media.matches);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [theme]);
 
-	return { theme, setTheme };
+  return { theme, setTheme };
 }
 
 /** Swaps the palette with a short view-transition crossfade when allowed. */
 export function setThemeWithTransition(next: Theme) {
-	const { setTheme } = useThemeStore.getState();
-	const reducedMotion = window.matchMedia(
-		"(prefers-reduced-motion: reduce)",
-	).matches;
+  const { setTheme } = useThemeStore.getState();
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
 
-	const apply = () => {
-		setTheme(next);
-		applyThemeToDom(isDarkTheme(next));
-	};
+  const apply = () => {
+    setTheme(next);
+    applyThemeToDom(isDarkTheme(next));
+  };
 
-	if (!reducedMotion && typeof document.startViewTransition === "function") {
-		document.startViewTransition(apply);
-	} else {
-		apply();
-	}
+  if (!reducedMotion && typeof document.startViewTransition === "function") {
+    document.startViewTransition(apply);
+  } else {
+    apply();
+  }
 }
 
 /** Toggles between light and dark, resolving "system" against the live DOM state. */
 export function toggleTheme() {
-	const dark = document.documentElement.classList.contains("dark");
-	setThemeWithTransition(dark ? "light" : "dark");
+  const dark = document.documentElement.classList.contains("dark");
+  setThemeWithTransition(dark ? "light" : "dark");
 }

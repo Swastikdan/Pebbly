@@ -12,6 +12,7 @@
 // the Worker execution budget.
 import { eq } from "drizzle-orm";
 import { defineTask } from "nitro/task";
+
 import { getDb } from "../../src/server/db/client";
 import { snapshotCursors } from "../../src/server/db/schema";
 import { getEnv } from "../../src/server/env";
@@ -21,39 +22,40 @@ const CURSOR_KEY = "watchlist_snapshot_cursor";
 const MAX_USERS_PER_RUN = 200;
 
 async function readCursor(): Promise<string> {
-	try {
-		const db = getDb(getEnv());
-		const row = await db
-			.select({ value: snapshotCursors.value })
-			.from(snapshotCursors)
-			.where(eq(snapshotCursors.key, CURSOR_KEY))
-			.limit(1);
-		return row[0]?.value ?? "";
-	} catch (error) {
-		console.error("Failed to read snapshot cursor:", error);
-		return "";
-	}
+  try {
+    const db = getDb(getEnv());
+    const row = await db
+      .select({ value: snapshotCursors.value })
+      .from(snapshotCursors)
+      .where(eq(snapshotCursors.key, CURSOR_KEY))
+      .limit(1);
+    return row[0]?.value ?? "";
+  } catch (error) {
+    console.error("Failed to read snapshot cursor:", error);
+    return "";
+  }
 }
 
 async function writeCursor(cursor: string) {
-	try {
-		const db = getDb(getEnv());
-		await db
-			.insert(snapshotCursors)
-			.values({ key: CURSOR_KEY, value: cursor, updatedAt: Date.now() })
-			.onConflictDoUpdate({
-				target: snapshotCursors.key,
-				set: { value: cursor, updatedAt: Date.now() },
-			});
-	} catch (error) {
-		console.error("Failed to persist snapshot cursor:", error);
-	}
+  try {
+    const db = getDb(getEnv());
+    await db
+      .insert(snapshotCursors)
+      .values({ key: CURSOR_KEY, value: cursor, updatedAt: Date.now() })
+      .onConflictDoUpdate({
+        target: snapshotCursors.key,
+        set: { value: cursor, updatedAt: Date.now() },
+      });
+  } catch (error) {
+    console.error("Failed to persist snapshot cursor:", error);
+  }
 }
 
 export default defineTask({
   meta: {
     name: "snapshots",
-    description: "Create daily watchlist snapshots for all users (bounded per run)",
+    description:
+      "Create daily watchlist snapshots for all users (bounded per run)",
   },
   async run() {
     const cursor = await readCursor();

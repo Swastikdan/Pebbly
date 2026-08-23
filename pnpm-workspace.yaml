@@ -5,12 +5,12 @@ trustPolicyExclude:
   - chokidar
   - semver
   - undici-types
-  - '@hono/node-server'
+  - "@hono/node-server"
 allowBuilds:
-  '@clerk/shared': true
-  '@google/genai': true
-  '@parcel/watcher': true
-  '@tailwindcss/oxide': true
+  "@clerk/shared": true
+  "@google/genai": true
+  "@parcel/watcher": true
+  "@tailwindcss/oxide": true
   browser-tabs-lock: true
   bufferutil: false
   core-js: false

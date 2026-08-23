@@ -8,21 +8,22 @@ Pebbly is a full-stack movie and TV show discovery app built with TanStack Start
 
 In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
-| Document | Covers |
-| :--- | :--- |
-| [Architecture](./docs/architecture.md) | Tech stack, layers, request flows, deployment & CI |
-| [Server Layer](./docs/server-layer.md) | Nitro, server functions, auth, RBAC, AI engine |
-| [Client Layer](./docs/client-layer.md) | Routing, data fetching, state, repository pattern, optimistic updates |
-| [Data Model](./docs/data-model.md) | Every D1 table, index, constraint & migration |
-| [Architecture Decisions](./docs/architecture-decisions.md) | ADRs, why the code is shaped the way it is |
-| [File Reference](./docs/file-reference.md) | A per-file map of the entire repository |
-| [Contributing](./docs/contributing.md) | How to keep the docs accurate as the code changes |
+| Document                                                   | Covers                                                                |
+| :--------------------------------------------------------- | :-------------------------------------------------------------------- |
+| [Architecture](./docs/architecture.md)                     | Tech stack, layers, request flows, deployment & CI                    |
+| [Server Layer](./docs/server-layer.md)                     | Nitro, server functions, auth, RBAC, AI engine                        |
+| [Client Layer](./docs/client-layer.md)                     | Routing, data fetching, state, repository pattern, optimistic updates |
+| [Data Model](./docs/data-model.md)                         | Every D1 table, index, constraint & migration                         |
+| [Architecture Decisions](./docs/architecture-decisions.md) | ADRs, why the code is shaped the way it is                            |
+| [File Reference](./docs/file-reference.md)                 | A per-file map of the entire repository                               |
+| [Contributing](./docs/contributing.md)                     | How to keep the docs accurate as the code changes                     |
 
 ---
 
 ## Key features
 
 ### Media discovery and watchlist
+
 - Browse trending, popular, top-rated, upcoming, and curated movie/TV collections.
 - Cross-media search with genre, media type, and keyword filters.
 - Detail pages with cast/crew info, trailers, season/episode browsers, and an embedded video player.
@@ -31,6 +32,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 - Light/dark/system themes resolved before first paint (no flash of the wrong palette).
 
 ### AI recommendations
+
 - Recommendations from Google Gemini models (`gemini-3.1-flash-lite`, `gemini-2.5-flash`) based on your watchlist and interactions.
 - A "Picks For You" homepage row that refreshes twice daily and excludes titles already on your watchlist.
 - Feedback loop: liking a recommendation adds it to your **Pebbly Picks** list; disliking one excludes it from future runs.
@@ -41,18 +43,18 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 ## Tech stack
 
-| Layer | Technology |
-| :--- | :--- |
-| **Framework** | [TanStack Start](https://tanstack.com/start) + [TanStack Router](https://tanstack.com/router) + React 19 |
-| **Host & Compute** | [Cloudflare Workers](https://workers.cloudflare.com/) (Nitro `cloudflare_module` preset) |
-| **Database** | [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) via [Drizzle ORM](https://orm.drizzle.team/) |
-| **Validation** | [Valibot](https://valibot.dev/) (Lightweight, modular schema validation) |
-| **Authentication** | [Clerk](https://clerk.com/) (`@clerk/react` + `@clerk/backend` JWT verification) |
-| **AI Engine** | Google Gemini REST API (`generativelanguage.googleapis.com` via `fetch`, `gemini-3.1-flash-lite` + fallback chain) |
-| **Styling** | Tailwind CSS 4, [coss ui](https://coss.com/ui) components on Base UI (`@base-ui/react`), light/dark/system themes |
-| **Data Fetching** | TanStack Query (React Query) |
-| **State Management** | Zustand |
-| **Tooling & Linter** | Vite 7, Biome, TypeScript, Wrangler |
+| Layer                | Technology                                                                                                         |
+| :------------------- | :----------------------------------------------------------------------------------------------------------------- |
+| **Framework**        | [TanStack Start](https://tanstack.com/start) + [TanStack Router](https://tanstack.com/router) + React 19           |
+| **Host & Compute**   | [Cloudflare Workers](https://workers.cloudflare.com/) (Nitro `cloudflare_module` preset)                           |
+| **Database**         | [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) via [Drizzle ORM](https://orm.drizzle.team/)       |
+| **Validation**       | [Valibot](https://valibot.dev/) (Lightweight, modular schema validation)                                           |
+| **Authentication**   | [Clerk](https://clerk.com/) (`@clerk/react` + `@clerk/backend` JWT verification)                                   |
+| **AI Engine**        | Google Gemini REST API (`generativelanguage.googleapis.com` via `fetch`, `gemini-3.1-flash-lite` + fallback chain) |
+| **Styling**          | Tailwind CSS 4, [coss ui](https://coss.com/ui) components on Base UI (`@base-ui/react`), light/dark/system themes  |
+| **Data Fetching**    | TanStack Query (React Query)                                                                                       |
+| **State Management** | Zustand                                                                                                            |
+| **Tooling & Linter** | Vite 7, Biome, TypeScript, Wrangler                                                                                |
 
 ---
 
@@ -106,12 +108,14 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 ### Environment setup
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/Swastikdan/Pebbly.git
    cd Pebbly
    ```
 
 2. **Install dependencies:**
+
    ```bash
    pnpm install
    ```
@@ -120,6 +124,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
    Create a `.env` or `.dev.vars` file in the project root (see
    `.env.example`; local dev secrets live in `.dev.vars`, production secrets
    use `wrangler secret put`):
+
    ```env
    # Clerk Auth
    VITE_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_CLERK_PUBLISHABLE_KEY
@@ -156,11 +161,13 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 ## Running locally
 
 - **Run frontend dev server (Vite + Node SSR):**
+
   ```bash
   pnpm dev
   ```
 
 - **Run full Cloudflare Workers + Miniflare D1 emulator locally:**
+
   ```bash
   pnpm preview:cf
   ```
@@ -176,16 +183,19 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 ## Database and migrations
 
 - **Generate new SQL migration after editing `src/server/db/schema.ts`:**
+
   ```bash
   pnpm db:generate
   ```
 
 - **Apply migrations to local database (`.wrangler` emulator):**
+
   ```bash
   pnpm db:migrate:local
   ```
 
 - **Apply migrations to remote Cloudflare D1 database (Production):**
+
   ```bash
   pnpm db:migrate:prod
   ```
@@ -219,19 +229,19 @@ pnpm deploy:cf
 
 ## Available scripts
 
-| Script | Description |
-| :--- | :--- |
-| `pnpm dev` | Run Vite development server |
-| `pnpm preview:cf` | Build and run full app on local Cloudflare Worker & D1 emulator |
-| `pnpm build` | Build production bundle (Nitro Cloudflare preset) |
-| `pnpm db:generate` | Generate SQL migrations from `src/server/db/schema.ts` |
-| `pnpm db:migrate:local` | Apply migrations to local Miniflare D1 database |
-| `pnpm db:migrate:prod` | Apply migrations to Cloudflare production D1 database |
-| `pnpm db:studio` | Launch Drizzle Studio database explorer |
-| `pnpm deploy:cf` | Build and deploy directly to Cloudflare Workers |
-| `pnpm typecheck` | Run TypeScript compiler type-checking |
-| `pnpm lint` | Run Biome linter |
-| `pnpm format` | Auto-format codebase with Biome |
+| Script                  | Description                                                     |
+| :---------------------- | :-------------------------------------------------------------- |
+| `pnpm dev`              | Run Vite development server                                     |
+| `pnpm preview:cf`       | Build and run full app on local Cloudflare Worker & D1 emulator |
+| `pnpm build`            | Build production bundle (Nitro Cloudflare preset)               |
+| `pnpm db:generate`      | Generate SQL migrations from `src/server/db/schema.ts`          |
+| `pnpm db:migrate:local` | Apply migrations to local Miniflare D1 database                 |
+| `pnpm db:migrate:prod`  | Apply migrations to Cloudflare production D1 database           |
+| `pnpm db:studio`        | Launch Drizzle Studio database explorer                         |
+| `pnpm deploy:cf`        | Build and deploy directly to Cloudflare Workers                 |
+| `pnpm typecheck`        | Run TypeScript compiler type-checking                           |
+| `pnpm lint`             | Run Biome linter                                                |
+| `pnpm format`           | Auto-format codebase with Biome                                 |
 
 ---
 

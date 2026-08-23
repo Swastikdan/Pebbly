@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+
+import type { TvSeasonDetail } from "@/lib/tmdb-schemas";
 import { createBatcher } from "@/lib/batcher";
 import { getTvSeasonDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import type { TvSeasonDetail } from "@/lib/tmdb-schemas";
 
 /**
  * Coalesce per-card season-detail fetches. A continue-watching strip renders N
@@ -14,21 +15,21 @@ import type { TvSeasonDetail } from "@/lib/tmdb-schemas";
  * fetched twice for the same screen.
  */
 const seasonDetailBatcher = createBatcher<
-	{ tvId: number; season: number },
-	TvSeasonDetail
+  { tvId: number; season: number },
+  TvSeasonDetail
 >(
-	async (items) => {
-		return await Promise.all(
-			items.map(({ tvId, season }) =>
-				getTvSeasonDetails({ tvId, seasonNumber: season }),
-			),
-		);
-	},
-	{
-		delayMs: 50,
-		maxBatchSize: 30,
-		getKey: ({ tvId, season }) => `${tvId}:${season}`,
-	},
+  async (items) => {
+    return await Promise.all(
+      items.map(({ tvId, season }) =>
+        getTvSeasonDetails({ tvId, seasonNumber: season }),
+      ),
+    );
+  },
+  {
+    delayMs: 50,
+    maxBatchSize: 30,
+    getKey: ({ tvId, season }) => `${tvId}:${season}`,
+  },
 );
 
 /**
@@ -38,14 +39,14 @@ const seasonDetailBatcher = createBatcher<
  * (show, season), coalesced across whatever requested it first.
  */
 export function fetchSeasonDetails(tvId: number, season: number) {
-	return seasonDetailBatcher.schedule({ tvId, season });
+  return seasonDetailBatcher.schedule({ tvId, season });
 }
 
 /** Fetch a TV season's details through the shared batcher. */
 export function useSeasonDetails(tvId: number, season: number | undefined) {
-	return useQuery({
-		queryKey: queryKeys.tmdb.seasonDetails(tvId, season ?? 1),
-		queryFn: () => fetchSeasonDetails(tvId, season ?? 1),
-		enabled: !!season,
-	});
+  return useQuery({
+    queryKey: queryKeys.tmdb.seasonDetails(tvId, season ?? 1),
+    queryFn: () => fetchSeasonDetails(tvId, season ?? 1),
+    enabled: !!season,
+  });
 }

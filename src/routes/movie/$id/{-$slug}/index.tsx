@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
+
+import type { Movie } from "@/lib/tmdb-schemas";
 import { DefaultLoader } from "@/components/default-loader";
 import {
-	DefaultErrorComponent,
-	DefaultNotFoundComponent,
+  DefaultErrorComponent,
+  DefaultNotFoundComponent,
 } from "@/components/default-not-found";
 import { CastSection } from "@/components/media/cast-section";
 import { Collections } from "@/components/media/collections";
@@ -21,183 +23,182 @@ import { formatRuntime, getMovieCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getMovieDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import type { Movie } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
 export const Route = createFileRoute("/movie/$id/{-$slug}/")({
-	loader: async ({ params, context }) => {
-		const { id, slug } = params;
-		const parsed = parseAndValidateId(id);
-		if (!parsed.success) {
-			throw notFound();
-		}
-		await context.queryClient.ensureQueryData({
-			queryKey: queryKeys.tmdb.movieDetails(parsed.data),
-			queryFn: () => getMovieDetails({ id: parsed.data }),
-		});
-		const data = context.queryClient.getQueryData<Movie>(
-			queryKeys.tmdb.movieDetails(parsed.data),
-		);
-		const title = slug ? formatMediaTitle.decode(slug) : "Movie Page";
-		return { id, slug, title, posterPath: data?.poster_path ?? null };
-	},
-	head: ({ loaderData }) => ({
-		meta: [
-			...MetaImageTagsGenerator({
-				title: loaderData?.title
-					? `${loaderData.title} | Pebbly`
-					: "Page Not Found | Pebbly",
-				description: loaderData?.title
-					? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
-					: "Explore detailed information about movies on Pebbly.",
-				ogImage: loaderData?.posterPath
-					? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
-					: undefined,
-				url:
-					loaderData?.id &&
-					loaderData?.title &&
-					`${VITE_PUBLIC_APP_URL}/movie/${loaderData.id}/${encodeURIComponent(loaderData.title)}`,
-			}),
-		],
-	}),
-	validateSearch: (search: Record<string, unknown>) => {
-		return {
-			trailer: search.trailer as string | undefined,
-			play: search.play === true || search.play === "true" ? true : undefined,
-			video: search.video as string | undefined,
-			backdrop: search.backdrop as string | undefined,
-			poster: search.poster as string | undefined,
-		};
-	},
-	component: MovieHomePage,
+  loader: async ({ params, context }) => {
+    const { id, slug } = params;
+    const parsed = parseAndValidateId(id);
+    if (!parsed.success) {
+      throw notFound();
+    }
+    await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.tmdb.movieDetails(parsed.data),
+      queryFn: () => getMovieDetails({ id: parsed.data }),
+    });
+    const data = context.queryClient.getQueryData<Movie>(
+      queryKeys.tmdb.movieDetails(parsed.data),
+    );
+    const title = slug ? formatMediaTitle.decode(slug) : "Movie Page";
+    return { id, slug, title, posterPath: data?.poster_path ?? null };
+  },
+  head: ({ loaderData }) => ({
+    meta: [
+      ...MetaImageTagsGenerator({
+        title: loaderData?.title
+          ? `${loaderData.title} | Pebbly`
+          : "Page Not Found | Pebbly",
+        description: loaderData?.title
+          ? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
+          : "Explore detailed information about movies on Pebbly.",
+        ogImage: loaderData?.posterPath
+          ? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
+          : undefined,
+        url:
+          loaderData?.id &&
+          loaderData?.title &&
+          `${VITE_PUBLIC_APP_URL}/movie/${loaderData.id}/${encodeURIComponent(loaderData.title)}`,
+      }),
+    ],
+  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      trailer: search.trailer as string | undefined,
+      play: search.play === true || search.play === "true" ? true : undefined,
+      video: search.video as string | undefined,
+      backdrop: search.backdrop as string | undefined,
+      poster: search.poster as string | undefined,
+    };
+  },
+  component: MovieHomePage,
 });
 
 function MovieHomePage() {
-	const { id: movie_id, slug: movie_slug } = Route.useLoaderData();
-	const movie_id_param = parseInt(movie_id, 10);
-	const { data, error, isLoading } = useQuery<Movie>({
-		queryKey: queryKeys.tmdb.movieDetails(movie_id_param),
-		queryFn: () => getMovieDetails({ id: movie_id_param }),
-	});
-	useCanonicalSlugRedirect({
-		entity: "movie",
-		subPageEntity: "home",
-		id: data?.id,
-		title: data?.title ?? data?.original_title,
-		incomingPathname: `/movie/${movie_id}/${movie_slug}`,
-		isLoading,
-	});
-	if (isLoading) {
-		return <DefaultLoader />;
-	}
+  const { id: movie_id, slug: movie_slug } = Route.useLoaderData();
+  const movie_id_param = parseInt(movie_id, 10);
+  const { data, error, isLoading } = useQuery<Movie>({
+    queryKey: queryKeys.tmdb.movieDetails(movie_id_param),
+    queryFn: () => getMovieDetails({ id: movie_id_param }),
+  });
+  useCanonicalSlugRedirect({
+    entity: "movie",
+    subPageEntity: "home",
+    id: data?.id,
+    title: data?.title ?? data?.original_title,
+    incomingPathname: `/movie/${movie_id}/${movie_slug}`,
+    isLoading,
+  });
+  if (isLoading) {
+    return <DefaultLoader />;
+  }
 
-	if (error) {
-		return <DefaultErrorComponent />;
-	}
-	if (!data) {
-		return <DefaultNotFoundComponent />;
-	}
+  if (error) {
+    return <DefaultErrorComponent />;
+  }
+  if (!data) {
+    return <DefaultNotFoundComponent />;
+  }
 
-	const {
-		belongs_to_collection,
-		genres,
-		id,
-		imdb_id,
-		original_title,
-		overview,
-		poster_path,
-		backdrop_path,
-		release_date,
-		runtime,
-		tagline,
-		title,
-		vote_average,
-		vote_count,
-		images,
-		credits,
-		videos,
-		release_dates,
-		keywords,
-	} = data;
+  const {
+    belongs_to_collection,
+    genres,
+    id,
+    imdb_id,
+    original_title,
+    overview,
+    poster_path,
+    backdrop_path,
+    release_date,
+    runtime,
+    tagline,
+    title,
+    vote_average,
+    vote_count,
+    images,
+    credits,
+    videos,
+    release_dates,
+    keywords,
+  } = data;
 
-	const mediaPage = buildSharedMediaPageData({
-		title,
-		originalTitle: original_title,
-		posterPath: poster_path,
-		releaseDate: release_date,
-		genres,
-		images,
-		credits,
-		videos,
-	});
-	const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
-	const uscertification = getMovieCertification(release_dates?.results);
-	const movieRuntime = formatRuntime(runtime);
-	const moviekeywords =
-		keywords?.keywords?.map((k) => ({ name: k.name, id: k.id })) ?? [];
-	return (
-		<section className="mx-auto block max-w-screen-xl items-center px-4">
-			<MediaTitleContainer
-				runtime={movieRuntime ?? null}
-				description={`${overview?.slice(0, 100)}...`}
-				id={id}
-				image={mediaPage.image}
-				imdb_url={imdb_url}
-				media_type="movie"
-				poster_path={poster_path}
-				backdrop_path={backdrop_path ?? undefined}
-				rating={vote_average}
-				releaseyear={
-					mediaPage.releaseYear != null &&
-					Number.isFinite(mediaPage.releaseYear)
-						? String(mediaPage.releaseYear)
-						: "Not Released"
-				}
-				release_date={release_date}
-				tagline={tagline ?? null}
-				title={mediaPage.displayTitle}
-				uscertification={uscertification}
-				vote_average={vote_average}
-				vote_count={vote_count}
-			/>
-			<MediaPosterTrailerContainer
-				tmdbId={id}
-				type="movie"
-				image={mediaPage.image}
-				title={mediaPage.displayTitle}
-				trailervideos={mediaPage.trailervideos}
-			/>
-			<GenreContainer genres={mediaPage.genres} />
-			<MediaDescription description={overview} />
-			<CastSection
-				cast={mediaPage.cast}
-				crew={mediaPage.crew}
-				id={id}
-				is_more_cast_crew={
-					(credits?.cast?.length ?? 0) > 10 || (credits?.crew?.length ?? 0) > 10
-				}
-				type="movie"
-				urltitle={mediaPage.urltitle}
-			/>
-			<MediaContainer
-				backdrops={mediaPage.backdrops}
-				id={id}
-				is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
-				is_more_clips_available={mediaPage.allVideos.length > 10}
-				is_more_posters_available={(images?.posters?.length ?? 0) > 10}
-				posters={mediaPage.posters}
-				title={mediaPage.displayTitle}
-				type="movie"
-				urltitle={mediaPage.urltitle}
-				youtubeclips={mediaPage.youtubeclips}
-			/>
-			{belongs_to_collection && <Collections id={belongs_to_collection.id} />}
-			{keywords && <MediaKeywords keywords={moviekeywords} />}
-			<MediaRecommendations
-				id={id}
-				type="movie"
-				urltitle={mediaPage.urltitle}
-			/>
-		</section>
-	);
+  const mediaPage = buildSharedMediaPageData({
+    title,
+    originalTitle: original_title,
+    posterPath: poster_path,
+    releaseDate: release_date,
+    genres,
+    images,
+    credits,
+    videos,
+  });
+  const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
+  const uscertification = getMovieCertification(release_dates?.results);
+  const movieRuntime = formatRuntime(runtime);
+  const moviekeywords =
+    keywords?.keywords?.map((k) => ({ name: k.name, id: k.id })) ?? [];
+  return (
+    <section className="mx-auto block max-w-screen-xl items-center px-4">
+      <MediaTitleContainer
+        runtime={movieRuntime ?? null}
+        description={`${overview?.slice(0, 100)}...`}
+        id={id}
+        image={mediaPage.image}
+        imdb_url={imdb_url}
+        media_type="movie"
+        poster_path={poster_path}
+        backdrop_path={backdrop_path ?? undefined}
+        rating={vote_average}
+        releaseyear={
+          mediaPage.releaseYear != null &&
+          Number.isFinite(mediaPage.releaseYear)
+            ? String(mediaPage.releaseYear)
+            : "Not Released"
+        }
+        release_date={release_date}
+        tagline={tagline ?? null}
+        title={mediaPage.displayTitle}
+        uscertification={uscertification}
+        vote_average={vote_average}
+        vote_count={vote_count}
+      />
+      <MediaPosterTrailerContainer
+        tmdbId={id}
+        type="movie"
+        image={mediaPage.image}
+        title={mediaPage.displayTitle}
+        trailervideos={mediaPage.trailervideos}
+      />
+      <GenreContainer genres={mediaPage.genres} />
+      <MediaDescription description={overview} />
+      <CastSection
+        cast={mediaPage.cast}
+        crew={mediaPage.crew}
+        id={id}
+        is_more_cast_crew={
+          (credits?.cast?.length ?? 0) > 10 || (credits?.crew?.length ?? 0) > 10
+        }
+        type="movie"
+        urltitle={mediaPage.urltitle}
+      />
+      <MediaContainer
+        backdrops={mediaPage.backdrops}
+        id={id}
+        is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
+        is_more_clips_available={mediaPage.allVideos.length > 10}
+        is_more_posters_available={(images?.posters?.length ?? 0) > 10}
+        posters={mediaPage.posters}
+        title={mediaPage.displayTitle}
+        type="movie"
+        urltitle={mediaPage.urltitle}
+        youtubeclips={mediaPage.youtubeclips}
+      />
+      {belongs_to_collection && <Collections id={belongs_to_collection.id} />}
+      {keywords && <MediaKeywords keywords={moviekeywords} />}
+      <MediaRecommendations
+        id={id}
+        type="movie"
+        urltitle={mediaPage.urltitle}
+      />
+    </section>
+  );
 }

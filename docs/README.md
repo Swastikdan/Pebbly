@@ -2,26 +2,27 @@
 
 > **Pebbly** is a full-stack movie & TV discovery app: TanStack
 > Start (React 19) + Cloudflare Workers + Cloudflare D1 (SQLite) + Drizzle ORM
-> + Valibot + Clerk + Google Gemini + TMDB.
+>
+> - Valibot + Clerk + Google Gemini + TMDB.
 >
 > This documentation describes the overall architecture, every meaningful
 > source file, and the architecture decisions that shaped the codebase.
 
 ## How to use these docs
 
-| Document | What it covers |
-| :--- | :--- |
-| [architecture.md](./architecture.md) | The big picture: tech stack, layers, request/data flows, deployment, cron |
-| [server-layer.md](./server-layer.md) | Everything server-side: Nitro, server functions, auth, RBAC, Gemini AI, watchlist snapshots |
-| [client-layer.md](./client-layer.md) | Everything client-side: routing, TanStack Query, Zustand stores, the repository pattern, optimistic updates |
-| [data-model.md](./data-model.md) | The D1 database: every table, index, constraint, and migration |
-| [architecture-decisions.md](./architecture-decisions.md) | Architecture Decision Records (ADRs), *why* the code is shaped this way |
-| [file-reference.md](./file-reference.md) | A per-file map of the repository: what each file exists for |
-| [contributing.md](./contributing.md) | How to keep these docs accurate when code changes |
+| Document                                                 | What it covers                                                                                              |
+| :------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
+| [architecture.md](./architecture.md)                     | The big picture: tech stack, layers, request/data flows, deployment, cron                                   |
+| [server-layer.md](./server-layer.md)                     | Everything server-side: Nitro, server functions, auth, RBAC, Gemini AI, watchlist snapshots                 |
+| [client-layer.md](./client-layer.md)                     | Everything client-side: routing, TanStack Query, Zustand stores, the repository pattern, optimistic updates |
+| [data-model.md](./data-model.md)                         | The D1 database: every table, index, constraint, and migration                                              |
+| [architecture-decisions.md](./architecture-decisions.md) | Architecture Decision Records (ADRs), _why_ the code is shaped this way                                     |
+| [file-reference.md](./file-reference.md)                 | A per-file map of the repository: what each file exists for                                                 |
+| [contributing.md](./contributing.md)                     | How to keep these docs accurate when code changes                                                           |
 
 ## Quick orientation (TL;DR)
 
-- **One backend.** Cloudflare D1 via Drizzle ORM is the *only* database. The
+- **One backend.** Cloudflare D1 via Drizzle ORM is the _only_ database. The
   former Convex backend was fully removed (see
   [ADR-001](./architecture-decisions.md)).
 - **Server functions, not REST endpoints.** All authenticated reads/writes go

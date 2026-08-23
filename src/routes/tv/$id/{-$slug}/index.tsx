@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound } from "@tanstack/react-router";
+
+import type { Tv } from "@/lib/tmdb-schemas";
 import { DefaultLoader } from "@/components/default-loader";
 import {
-	DefaultErrorComponent,
-	DefaultNotFoundComponent,
+  DefaultErrorComponent,
+  DefaultNotFoundComponent,
 } from "@/components/default-not-found";
 import { CastSection } from "@/components/media/cast-section";
 import { GenreContainer } from "@/components/media/genre-container";
@@ -21,193 +23,192 @@ import { getTvCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import type { Tv } from "@/lib/tmdb-schemas";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/")({
-	loader: async ({ params, context }) => {
-		const { id, slug } = params;
-		const parsed = parseAndValidateId(id);
-		if (!parsed.success) {
-			throw notFound();
-		}
-		await context.queryClient.ensureQueryData({
-			queryKey: queryKeys.tmdb.tvDetails(parsed.data),
-			queryFn: () => getTvDetails({ id: parsed.data }),
-		});
-		const data = context.queryClient.getQueryData<Tv>(
-			queryKeys.tmdb.tvDetails(parsed.data),
-		);
-		const title = slug ? formatMediaTitle.decode(slug) : "Tv Page";
-		return { id, slug, title, posterPath: data?.poster_path ?? null };
-	},
-	head: ({ loaderData }) => ({
-		meta: [
-			...MetaImageTagsGenerator({
-				title: loaderData?.title
-					? `${loaderData.title} | Pebbly`
-					: "Page Not Found | Pebbly",
-				description: loaderData?.title
-					? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
-					: "Explore detailed information about movies and shows on Pebbly.",
-				ogImage: loaderData?.posterPath
-					? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
-					: undefined,
-				url:
-					loaderData?.id &&
-					loaderData?.title &&
-					`${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${encodeURIComponent(loaderData.title)}`,
-			}),
-		],
-	}),
-	validateSearch: (search: Record<string, unknown>) => {
-		return {
-			trailer: search.trailer as string | undefined,
-			play: search.play === true || search.play === "true" ? true : undefined,
-			video: search.video as string | undefined,
-			backdrop: search.backdrop as string | undefined,
-			poster: search.poster as string | undefined,
-		};
-	},
-	component: TvHomePage,
+  loader: async ({ params, context }) => {
+    const { id, slug } = params;
+    const parsed = parseAndValidateId(id);
+    if (!parsed.success) {
+      throw notFound();
+    }
+    await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.tmdb.tvDetails(parsed.data),
+      queryFn: () => getTvDetails({ id: parsed.data }),
+    });
+    const data = context.queryClient.getQueryData<Tv>(
+      queryKeys.tmdb.tvDetails(parsed.data),
+    );
+    const title = slug ? formatMediaTitle.decode(slug) : "Tv Page";
+    return { id, slug, title, posterPath: data?.poster_path ?? null };
+  },
+  head: ({ loaderData }) => ({
+    meta: [
+      ...MetaImageTagsGenerator({
+        title: loaderData?.title
+          ? `${loaderData.title} | Pebbly`
+          : "Page Not Found | Pebbly",
+        description: loaderData?.title
+          ? `Explore detailed information about ${loaderData.title}, including cast, crew, reviews, and more.`
+          : "Explore detailed information about movies and shows on Pebbly.",
+        ogImage: loaderData?.posterPath
+          ? `${IMAGE_PREFIX.SD_POSTER}${loaderData.posterPath}`
+          : undefined,
+        url:
+          loaderData?.id &&
+          loaderData?.title &&
+          `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${encodeURIComponent(loaderData.title)}`,
+      }),
+    ],
+  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      trailer: search.trailer as string | undefined,
+      play: search.play === true || search.play === "true" ? true : undefined,
+      video: search.video as string | undefined,
+      backdrop: search.backdrop as string | undefined,
+      poster: search.poster as string | undefined,
+    };
+  },
+  component: TvHomePage,
 });
 
 function TvHomePage() {
-	const { id: tv_id, slug: tv_slug } = Route.useLoaderData();
-	const tv_id_param = parseInt(tv_id, 10);
-	const { data, error, isLoading } = useQuery<Tv>({
-		queryKey: queryKeys.tmdb.tvDetails(tv_id_param),
-		queryFn: () => getTvDetails({ id: tv_id_param }),
-	});
+  const { id: tv_id, slug: tv_slug } = Route.useLoaderData();
+  const tv_id_param = parseInt(tv_id, 10);
+  const { data, error, isLoading } = useQuery<Tv>({
+    queryKey: queryKeys.tmdb.tvDetails(tv_id_param),
+    queryFn: () => getTvDetails({ id: tv_id_param }),
+  });
 
-	useCanonicalSlugRedirect({
-		entity: "tv",
-		subPageEntity: "home",
-		id: data?.id,
-		title: data?.name ?? data?.original_name,
-		incomingPathname: `/tv/${tv_id}/${tv_slug}`,
-		isLoading,
-	});
-	if (isLoading) {
-		return <DefaultLoader />;
-	}
-	if (error) {
-		return <DefaultErrorComponent />;
-	}
-	if (!data) {
-		return <DefaultNotFoundComponent />;
-	}
-	const {
-		genres,
-		id,
-		external_ids: { imdb_id },
-		original_name,
-		overview,
-		poster_path,
-		backdrop_path,
-		first_air_date: release_date,
-		content_ratings,
-		tagline,
-		name,
-		vote_average,
-		vote_count,
-		images,
-		credits,
-		videos,
-		status,
-		keywords,
-	} = data;
+  useCanonicalSlugRedirect({
+    entity: "tv",
+    subPageEntity: "home",
+    id: data?.id,
+    title: data?.name ?? data?.original_name,
+    incomingPathname: `/tv/${tv_id}/${tv_slug}`,
+    isLoading,
+  });
+  if (isLoading) {
+    return <DefaultLoader />;
+  }
+  if (error) {
+    return <DefaultErrorComponent />;
+  }
+  if (!data) {
+    return <DefaultNotFoundComponent />;
+  }
+  const {
+    genres,
+    id,
+    external_ids: { imdb_id },
+    original_name,
+    overview,
+    poster_path,
+    backdrop_path,
+    first_air_date: release_date,
+    content_ratings,
+    tagline,
+    name,
+    vote_average,
+    vote_count,
+    images,
+    credits,
+    videos,
+    status,
+    keywords,
+  } = data;
 
-	const mediaPage = buildSharedMediaPageData({
-		title: name,
-		originalTitle: original_name,
-		posterPath: poster_path,
-		releaseDate: release_date,
-		genres,
-		images,
-		credits,
-		videos,
-	});
-	const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
+  const mediaPage = buildSharedMediaPageData({
+    title: name,
+    originalTitle: original_name,
+    posterPath: poster_path,
+    releaseDate: release_date,
+    genres,
+    images,
+    credits,
+    videos,
+  });
+  const imdb_url = imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null;
 
-	const uscertification = getTvCertification(content_ratings?.results);
-	const tvkeywords =
-		keywords?.results?.map((keyword) => ({
-			name: keyword.name,
-			id: keyword.id,
-		})) ?? [];
+  const uscertification = getTvCertification(content_ratings?.results);
+  const tvkeywords =
+    keywords?.results?.map((keyword) => ({
+      name: keyword.name,
+      id: keyword.id,
+    })) ?? [];
 
-	return (
-		<section className="mx-auto block max-w-screen-xl items-center px-4">
-			<MediaTitleContainer
-				runtime={null}
-				description={`${overview?.slice(0, 100)}...`}
-				id={id}
-				image={mediaPage.image}
-				imdb_url={imdb_url}
-				media_type="tv"
-				poster_path={poster_path}
-				backdrop_path={backdrop_path ?? undefined}
-				rating={vote_average}
-				releaseyear={
-					mediaPage.releaseYear != null &&
-					Number.isFinite(mediaPage.releaseYear)
-						? String(mediaPage.releaseYear)
-						: "Not Released"
-				}
-				release_date={release_date}
-				tagline={tagline ?? null}
-				title={mediaPage.displayTitle}
-				tv_status={status}
-				uscertification={uscertification}
-				vote_average={vote_average}
-				vote_count={vote_count}
-			/>
-			<MediaPosterTrailerContainer
-				tmdbId={id}
-				type="tv"
-				image={mediaPage.image}
-				title={mediaPage.displayTitle}
-				trailervideos={mediaPage.trailervideos}
-			/>
-			<GenreContainer genres={mediaPage.genres} />
-			<MediaDescription description={overview} />
-			<CastSection
-				cast={mediaPage.cast}
-				crew={mediaPage.crew}
-				id={id}
-				is_more_cast_crew={
-					(credits?.cast?.length ?? 0) > 10 || (credits?.crew?.length ?? 0) > 10
-				}
-				type="tv"
-				urltitle={mediaPage.urltitle}
-			/>
-			{data.seasons && data.seasons.length > 0 && (
-				<InlineEpisodeBrowser
-					tvId={id}
-					showName={mediaPage.displayTitle}
-					seasons={data.seasons}
-					image={mediaPage.image}
-					release_date={release_date}
-					overview={overview}
-					rating={vote_average}
-					status={status}
-				/>
-			)}
-			<MediaContainer
-				backdrops={mediaPage.backdrops}
-				id={id}
-				is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
-				is_more_clips_available={mediaPage.allVideos.length > 10}
-				is_more_posters_available={(images?.posters?.length ?? 0) > 10}
-				posters={mediaPage.posters}
-				title={mediaPage.displayTitle}
-				type="tv"
-				urltitle={mediaPage.urltitle}
-				youtubeclips={mediaPage.youtubeclips}
-			/>
-			{keywords && <MediaKeywords keywords={tvkeywords} />}
-			<MediaRecommendations id={id} type="tv" urltitle={mediaPage.urltitle} />
-		</section>
-	);
+  return (
+    <section className="mx-auto block max-w-screen-xl items-center px-4">
+      <MediaTitleContainer
+        runtime={null}
+        description={`${overview?.slice(0, 100)}...`}
+        id={id}
+        image={mediaPage.image}
+        imdb_url={imdb_url}
+        media_type="tv"
+        poster_path={poster_path}
+        backdrop_path={backdrop_path ?? undefined}
+        rating={vote_average}
+        releaseyear={
+          mediaPage.releaseYear != null &&
+          Number.isFinite(mediaPage.releaseYear)
+            ? String(mediaPage.releaseYear)
+            : "Not Released"
+        }
+        release_date={release_date}
+        tagline={tagline ?? null}
+        title={mediaPage.displayTitle}
+        tv_status={status}
+        uscertification={uscertification}
+        vote_average={vote_average}
+        vote_count={vote_count}
+      />
+      <MediaPosterTrailerContainer
+        tmdbId={id}
+        type="tv"
+        image={mediaPage.image}
+        title={mediaPage.displayTitle}
+        trailervideos={mediaPage.trailervideos}
+      />
+      <GenreContainer genres={mediaPage.genres} />
+      <MediaDescription description={overview} />
+      <CastSection
+        cast={mediaPage.cast}
+        crew={mediaPage.crew}
+        id={id}
+        is_more_cast_crew={
+          (credits?.cast?.length ?? 0) > 10 || (credits?.crew?.length ?? 0) > 10
+        }
+        type="tv"
+        urltitle={mediaPage.urltitle}
+      />
+      {data.seasons && data.seasons.length > 0 && (
+        <InlineEpisodeBrowser
+          tvId={id}
+          showName={mediaPage.displayTitle}
+          seasons={data.seasons}
+          image={mediaPage.image}
+          release_date={release_date}
+          overview={overview}
+          rating={vote_average}
+          status={status}
+        />
+      )}
+      <MediaContainer
+        backdrops={mediaPage.backdrops}
+        id={id}
+        is_more_backdrops_available={(images?.backdrops?.length ?? 0) > 10}
+        is_more_clips_available={mediaPage.allVideos.length > 10}
+        is_more_posters_available={(images?.posters?.length ?? 0) > 10}
+        posters={mediaPage.posters}
+        title={mediaPage.displayTitle}
+        type="tv"
+        urltitle={mediaPage.urltitle}
+        youtubeclips={mediaPage.youtubeclips}
+      />
+      {keywords && <MediaKeywords keywords={tvkeywords} />}
+      <MediaRecommendations id={id} type="tv" urltitle={mediaPage.urltitle} />
+    </section>
+  );
 }
