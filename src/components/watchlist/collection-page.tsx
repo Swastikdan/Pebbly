@@ -21,16 +21,11 @@ import { Button } from "@/components/ui/button";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
-import {
-	useCloneList,
-	useDeleteCustomList,
-	useReorderListItems,
-	useUpdateCustomList,
-} from "@/hooks/use-custom-lists";
 import { destructiveToast } from "@/hooks/use-destructive-toast";
 import { toast } from "@/hooks/use-toast-store";
 import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
+import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle } from "@/lib/utils";
 import { getCollectionPage } from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
@@ -55,10 +50,12 @@ export function CollectionPage({ listId }: { listId: string }) {
 		queryFn: () => unwrap(getCollectionPage({ data: { listId } })),
 	});
 
-	const updateList = useUpdateCustomList();
-	const deleteCustomList = useDeleteCustomList();
-	const cloneList = useCloneList();
-	const reorderItems = useReorderListItems();
+	const {
+		updateList,
+		deleteList: deleteCustomList,
+		cloneList,
+		reorderListItem: reorderItems,
+	} = useRepository();
 
 	const refreshPage = () =>
 		queryClient.invalidateQueries({

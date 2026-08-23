@@ -219,16 +219,9 @@ export const getCollectionPage = createServerFn({ method: "POST" })
 				createdAt: list.createdAt,
 				updatedAt: list.updatedAt,
 			},
-			items: items.map((item) => ({
-				tmdbId: item.tmdbId,
-				mediaType: item.mediaType,
-				title: item.title,
-				image: item.image,
-				backdrop: item.backdrop,
-				rating: item.rating,
-				release_date: item.releaseDate,
-				overview: item.overview,
-				position: item.position,
+			items: items.map(({ releaseDate, ...item }) => ({
+				...item,
+				release_date: releaseDate,
 				progressStatus: null,
 				reaction: null,
 			})),
@@ -323,51 +316,24 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
 
 		// Atomic-ish: create the list and insert the item, rolling back the
 		// list if the item insert fails so a failure cannot leave an empty
-		// orphaned list behind.
-		const db = getDb(getEnv());
-
-		const now = Date.now();
-		const id = crypto.randomUUID();
-
-		// Fetch the next sortOrder + check duplicate name inside the same helper;
-		// the unique (userId, name) index is the real guard against races.
-		const existing = await db
-			.select({ id: lists.id })
-			.from(lists)
-			.where(and(eq(lists.userId, user.id), eq(lists.name, data.name)))
-			.limit(1);
-		if (existing.length > 0)
-			return fail("CONFLICT", "A list with this name already exists");
-
-		const highestList = await db
-			.select({ sortOrder: lists.sortOrder })
-			.from(lists)
-			.where(eq(lists.userId, user.id))
-			.orderBy(desc(lists.sortOrder))
-			.limit(1);
-		const maxSort = highestList.length > 0 ? highestList[0].sortOrder : 0;
-
-		const listVerified = await db
-			.insert(lists)
-			.values({
-				id,
-				userId: user.id,
+		// orphaned list behind. The (userId, name) unique index is the real
+		// guard against duplicate-name races.
+		const created = await createCustomListInner(
+			user.id,
+			{
 				name: data.name,
 				color: data.color,
 				description: data.description,
 				visibility: data.visibility,
 				listType: data.listType,
-				sortType: data.sortType ?? "unordered",
-				sortOrder: maxSort + 1,
-				createdAt: now,
-				updatedAt: now,
-			})
-			.onConflictDoNothing()
-			.returning({ id: lists.id });
-
-		if (listVerified.length === 0) {
-			return fail("CONFLICT", "A list with this name already exists");
-		}
+				sortType: data.sortType,
+			},
+			// The item toggle below bumps listsRev once for the whole
+			// operation, keeping the rev delta explainable to UserSync.
+			{ skipRevBump: true },
+		);
+		if (!created.ok) return created;
+		const id = created.data;
 
 		const itemResult = await toggleListItemInner(user.id, {
 			listId: id,
@@ -382,8 +348,7 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
 		});
 
 		if (!itemResult.ok) {
-			// Roll back the just-created list so a failure cannot leave an empty
-			// list behind.
+			const db = getDb(getEnv());
 			await db.delete(lists).where(eq(lists.id, id));
 			return itemResult;
 		}
@@ -532,13 +497,7 @@ export const cloneCustomList = createServerFn({ method: "POST" })
 
 		const now = Date.now();
 		const id = crypto.randomUUID();
-		const highestList = await db
-			.select({ sortOrder: lists.sortOrder })
-			.from(lists)
-			.where(eq(lists.userId, user.id))
-			.orderBy(desc(lists.sortOrder))
-			.limit(1);
-		const maxSort = highestList.length > 0 ? highestList[0].sortOrder : 0;
+		const maxSort = await nextSortOrder(db, user.id);
 
 		// Clones always land as private custom lists regardless of the source.
 		const inserted = await db
@@ -552,7 +511,7 @@ export const cloneCustomList = createServerFn({ method: "POST" })
 				visibility: "private",
 				listType: "custom",
 				sortType: source.sortType ?? "unordered",
-				sortOrder: maxSort + 1,
+				sortOrder: maxSort,
 				createdAt: now,
 				updatedAt: now,
 			})
@@ -584,9 +543,7 @@ export const cloneCustomList = createServerFn({ method: "POST" })
 					overview: item.overview,
 				}),
 			);
-			for (let i = 0; i < statements.length; i += 80) {
-				await runBatch(db, statements.slice(i, i + 80));
-			}
+			await runChunkedBatch(db, statements);
 		}
 
 		await bumpListsRev(db, user.id);
@@ -607,6 +564,7 @@ async function createCustomListInner(
 		listType?: string;
 		sortType?: "unordered" | "ordered";
 	},
+	options: { skipRevBump?: boolean } = {},
 ): Promise<ApiResult<string>> {
 	const db = getDb(getEnv());
 	const now = Date.now();
@@ -615,13 +573,7 @@ async function createCustomListInner(
 	// Duplicate-name uniqueness is enforced by the (userId, name) unique index;
 	// onConflictDoNothing turns a concurrent race into a clean CONFLICT instead
 	// of a TOCTOU check-then-insert. sortOrder stays best-effort max+1.
-	const highestList = await db
-		.select({ sortOrder: lists.sortOrder })
-		.from(lists)
-		.where(eq(lists.userId, userId))
-		.orderBy(desc(lists.sortOrder))
-		.limit(1);
-	const maxSort = highestList.length > 0 ? highestList[0].sortOrder : 0;
+	const maxSort = await nextSortOrder(db, userId);
 
 	const inserted = await db
 		.insert(lists)
@@ -634,7 +586,7 @@ async function createCustomListInner(
 			visibility: args.visibility,
 			listType: args.listType,
 			sortType: args.sortType ?? "unordered",
-			sortOrder: maxSort + 1,
+			sortOrder: maxSort,
 			createdAt: now,
 			updatedAt: now,
 		})
@@ -644,8 +596,19 @@ async function createCustomListInner(
 	if (inserted.length === 0) {
 		return fail("CONFLICT", "A list with this name already exists");
 	}
-	await bumpListsRev(db, userId);
+	if (!options.skipRevBump) await bumpListsRev(db, userId);
 	return ok(id);
+}
+
+/** Best-effort max(sortOrder)+1 for appending a list at the end. */
+async function nextSortOrder(db: Db, userId: string): Promise<number> {
+	const highestList = await db
+		.select({ sortOrder: lists.sortOrder })
+		.from(lists)
+		.where(eq(lists.userId, userId))
+		.orderBy(desc(lists.sortOrder))
+		.limit(1);
+	return highestList.length > 0 ? highestList[0].sortOrder + 1 : 1;
 }
 
 async function toggleListItemInner(
@@ -716,6 +679,19 @@ async function toggleListItemInner(
 	return ok(true);
 }
 
+/**
+ * D1 caps statements per batch round trip; chunk any statement list through
+ * runBatch so arbitrarily large writes stay within limits.
+ */
+async function runChunkedBatch(
+	db: Db,
+	statements: Parameters<typeof db.batch>[0][number][],
+): Promise<void> {
+	for (let i = 0; i < statements.length; i += 80) {
+		await runBatch(db, statements.slice(i, i + 80));
+	}
+}
+
 async function applyItemOrder(
 	db: Db,
 	listId: string,
@@ -738,7 +714,5 @@ async function applyItemOrder(
 				),
 			),
 	);
-	for (let i = 0; i < statements.length; i += 80) {
-		await runBatch(db, statements.slice(i, i + 80));
-	}
+	await runChunkedBatch(db, statements);
 }

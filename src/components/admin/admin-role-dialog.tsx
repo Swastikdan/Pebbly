@@ -10,6 +10,7 @@ import {
 	DialogPopup,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { ErrorBanner } from "@/components/ui/feedback";
 
 export function AdminRoleDialog({
 	selectedUser,
@@ -66,10 +67,10 @@ export function AdminRoleDialog({
 				</DialogHeader>
 
 				{errorMessage && (
-					<div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+					<ErrorBanner className="flex items-center gap-2">
 						<AlertCircle className="size-4 shrink-0" />
 						<span>{errorMessage}</span>
-					</div>
+					</ErrorBanner>
 				)}
 
 				<DialogFooter className="mt-4 gap-2 sm:gap-2 flex-col sm:flex-row">

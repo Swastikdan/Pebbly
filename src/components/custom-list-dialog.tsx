@@ -9,12 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	useCreateCustomList,
-	useCreateCustomListAndAddItem,
-	useUpdateCustomList,
-} from "@/hooks/use-custom-lists";
 import type { MediaType } from "@/lib/media-types";
+import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 const PRESET_COLORS = [
@@ -101,9 +97,11 @@ export function CustomListDialog({
 	const [error, setError] = useState("");
 	const [saving, setSaving] = useState(false);
 
-	const createList = useCreateCustomList();
-	const createListAndAdd = useCreateCustomListAndAddItem();
-	const updateList = useUpdateCustomList();
+	const {
+		createList,
+		createListAndAddItem: createListAndAdd,
+		updateList,
+	} = useRepository();
 
 	const isEditing = !!listId;
 	const listNameId = useId();

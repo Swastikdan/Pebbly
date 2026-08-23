@@ -6,6 +6,7 @@ import {
 	useAdminUsers,
 } from "@/components/admin/use-admin-users";
 import { Button } from "@/components/ui/button";
+import { ErrorBanner } from "@/components/ui/feedback";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -49,7 +50,7 @@ export function AdminUserTable() {
 	return (
 		<div className="space-y-4">
 			{roleError && (
-				<div className="flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+				<ErrorBanner className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<AlertCircle className="size-4 shrink-0" />
 						<span>{roleError}</span>
@@ -62,7 +63,7 @@ export function AdminUserTable() {
 					>
 						Dismiss
 					</Button>
-				</div>
+				</ErrorBanner>
 			)}
 
 			{/* Search + Filter */}

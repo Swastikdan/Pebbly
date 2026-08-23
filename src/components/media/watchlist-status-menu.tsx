@@ -22,12 +22,9 @@ import {
 import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { getProgressOption, REACTION_OPTIONS } from "@/constants/watchlist";
-import {
-	useCustomLists,
-	useItemLists,
-	useToggleListItem,
-} from "@/hooks/use-custom-lists";
+import { useCustomLists, useItemLists } from "@/hooks/use-custom-lists";
 import type { MediaType } from "@/lib/media-types";
+import { useRepository } from "@/lib/repository/use-repository";
 import { cn } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
@@ -305,7 +302,7 @@ function AddToListDialog({
 }) {
 	const { lists } = useCustomLists();
 	const itemLists = useItemLists(tmdbId, mediaType);
-	const toggleListItem = useToggleListItem();
+	const { toggleListItem } = useRepository();
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 
 	const safeList = lists ?? [];

@@ -1,9 +1,13 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
-import { MediaLightboxDialog } from "@/components/media/media-lightbox-dialog";
+import {
+	MediaLightboxDialog,
+	PlayOverlay,
+	YouTubeEmbed,
+} from "@/components/media/media-lightbox-dialog";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
-import { ArrowRightLine, Play } from "@/components/ui/icons";
+import { ArrowRightLine } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import {
@@ -145,11 +149,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
 											variant="ghost"
 											className="absolute inset-0 size-full p-0 hover:bg-transparent rounded-xl"
 										>
-											<div className="absolute inset-0 flex items-center justify-center">
-												<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
-													<Play className="size-6 fill-white text-white" />
-												</div>
-											</div>
+											<PlayOverlay />
 										</Button>
 									</div>
 								))}
@@ -183,13 +183,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
 										>
 											{activeVideo && (
 												<div className="bg-foreground/10 size-full overflow-hidden rounded-2xl">
-													<iframe
-														allowFullScreen
-														allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-														className="size-full rounded-2xl"
-														sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-forms"
-														src={`https://www.youtube.com/embed/${activeVideo.key}?autoplay=1`}
+													<YouTubeEmbed
+														videoKey={activeVideo.key}
 														title={activeVideo.name}
+														className="size-full rounded-2xl"
 													/>
 												</div>
 											)}

@@ -1,8 +1,7 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-import { createJSONStorage, persist } from "zustand/middleware";
-
-import { createMemoryStorage } from "@/lib/utils";
+import { guestPersistOptions } from "./guest-store-kit";
 
 interface LocalProgressStore {
 	watchedEpisodes: Record<string, boolean>;
@@ -28,8 +27,6 @@ interface LocalProgressStore {
 
 	setLastPlayed: (id: string, season: number, episode: number) => void;
 }
-
-const memoryStorage = createMemoryStorage();
 
 export const useLocalProgressStore = create<LocalProgressStore>()(
 	persist(
@@ -78,11 +75,6 @@ export const useLocalProgressStore = create<LocalProgressStore>()(
 					return { watchedEpisodes: newEpisodes };
 				}),
 		}),
-		{
-			name: "local-progress-store",
-			storage: createJSONStorage(() =>
-				typeof window !== "undefined" ? window.localStorage : memoryStorage,
-			),
-		},
+		guestPersistOptions("local-progress-store", "localStorage"),
 	),
 );

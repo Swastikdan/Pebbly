@@ -2,11 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { IMAGE_PREFIX } from "@/constants";
 import { useDailyPickStore } from "@/hooks/use-daily-pick-store";
-import {
-	useAllMediaStates,
-	useSetReaction,
-	useWatchlist,
-} from "@/hooks/use-watchlist";
+import { useAllMediaStates, useWatchlist } from "@/hooks/use-watchlist";
 import {
 	buildDailyPickCandidates,
 	getPickKey,
@@ -16,6 +12,7 @@ import {
 } from "@/lib/daily-pick-engine";
 import { getMedia, getMovieDetails, getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
+import { useRepository } from "@/lib/repository/use-repository";
 import { formatMediaTitle } from "@/lib/utils";
 
 export type { PickItem };
@@ -39,7 +36,7 @@ export function useDailyPick(open: boolean) {
 
 	const { watchlist } = useWatchlist();
 	const { allMediaStates } = useAllMediaStates();
-	const setReaction = useSetReaction();
+	const { setReaction } = useRepository();
 
 	// Key of the currently shown pick ("movie:123"). Keeps the displayed tile
 	// stable when `candidateItems` reorders, e.g. adding the pick to the

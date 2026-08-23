@@ -1,12 +1,9 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import type { MediaType } from "@/lib/media-types";
-import {
-	createLRUStorage,
-	createMemoryStorage,
-	normalizeProgressStatus,
-} from "@/lib/utils";
+import { normalizeProgressStatus } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
+import { guestPersistOptions } from "./guest-store-kit";
 
 export type { MediaType };
 
@@ -72,9 +69,6 @@ interface WatchlistStore {
 	) => void;
 	importWatchlistLocal: (items: LocalWatchlistImportItem[]) => void;
 }
-
-const memoryStorage = createMemoryStorage();
-const lruStorage = createLRUStorage();
 
 function isSameItem(item: WatchlistItem, id: string, type: MediaType) {
 	return item.external_id === id && item.type === type;
@@ -337,11 +331,6 @@ export const useWatchlistStore = create<WatchlistStore>()(
 					return { mediaState: nextItems };
 				}),
 		}),
-		{
-			name: "watchlist-storage",
-			storage: createJSONStorage(() =>
-				typeof window !== "undefined" ? lruStorage : memoryStorage,
-			),
-		},
+		guestPersistOptions("watchlist-storage"),
 	),
 );

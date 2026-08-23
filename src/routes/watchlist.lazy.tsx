@@ -21,11 +21,7 @@ import { CustomListCard } from "@/components/watchlist/custom-list-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { WatchlistFilters } from "@/components/watchlist/watchlist-filters";
 import { WatchlistGrid } from "@/components/watchlist/watchlist-grid";
-import {
-	useCloneList,
-	useCustomLists,
-	useDeleteCustomList,
-} from "@/hooks/use-custom-lists";
+import { useCustomLists } from "@/hooks/use-custom-lists";
 import { destructiveToast } from "@/hooks/use-destructive-toast";
 import {
 	useFilteredWatchlist,
@@ -41,6 +37,7 @@ import {
 	type WatchlistItem,
 } from "@/hooks/use-watchlist";
 import { useWatchlistImportExport } from "@/hooks/use-watchlist-import-export";
+import { useRepository } from "@/lib/repository/use-repository";
 
 export const Route = createLazyFileRoute("/watchlist")({
 	component: WatchlistPage,
@@ -342,8 +339,7 @@ function WatchlistTabContent() {
 
 function MyListsTabContent() {
 	const { lists: customLists, loading } = useCustomLists();
-	const deleteCustomList = useDeleteCustomList();
-	const cloneList = useCloneList();
+	const { deleteList: deleteCustomList, cloneList } = useRepository();
 	const [showCreateList, setShowCreateList] = useState(false);
 	const [editingList, setEditingList] = useState<{
 		id: string;

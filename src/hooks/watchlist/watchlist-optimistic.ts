@@ -115,24 +115,6 @@ function beginMembershipOp(
 	]);
 }
 
-/**
- * Apply a whole batch of membership changes as a single optimistic op so the
- * UI updates in one transaction and one rollback covers every item.
- */
-function beginMembershipBatchOp(
-	queryClient: QueryClient,
-	argsList: WatchlistMembershipArgs[],
-): OpHandle {
-	return beginOp(
-		queryClient,
-		argsList.map((args) => ({
-			key: queryKeys.watchlist.list(),
-			touchedIds: [`${args.mediaType}:${args.tmdbId}`],
-			apply: (rows: WatchItemRow[]) => applyMembershipRows(rows, args),
-		})),
-	);
-}
-
 function applyProgressStatusRows(
 	rows: WatchItemRow[],
 	args: ProgressStatusArgs,
@@ -296,7 +278,6 @@ function buildSeasonEpisodeSelections(details?: {
 
 export const watchlistOptimistic = {
 	beginMembershipOp,
-	beginMembershipBatchOp,
 	beginProgressStatusOp,
 	beginMarkShowOp,
 	beginReactionOp,

@@ -22,10 +22,8 @@ import { useRecommendations } from "@/hooks/use-recommendations";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
-import {
-	type AIRecommendation,
-	normalizeTitleKey,
-} from "@/lib/recommendation-engine";
+import type { AIRecommendation } from "@/lib/recommendation-engine";
+import { normalizeTitleKey } from "@/lib/text";
 import { getCustomLists } from "@/server/fns/lists";
 import { getTrackedTmdbIds } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";

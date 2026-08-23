@@ -29,7 +29,6 @@ import {
 } from "@/hooks/watchlist/watchlist-optimistic";
 
 import { createBatcher } from "@/lib/batcher";
-import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
@@ -54,16 +53,19 @@ import {
 	updateProgress as updateProgressFn,
 } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
-import {
-	type ListsRepository,
-	type Repository,
-	resolveProgressStatusAction,
-	type WatchlistRepository,
-} from "./types";
+import { resolveStatusPlan } from "./status-plan";
+import type { ListsRepository, Repository, WatchlistRepository } from "./types";
 
 function logWatchlistError(action: string, error: unknown) {
 	console.error(`Failed to ${action}`, error);
 }
+
+/** The three query groups every lists write must keep fresh. */
+const listsSyncKeys = (userId: string | undefined) => [
+	queryKeys.lists.all(userId),
+	queryKeys.lists.itemsPrefix(),
+	queryKeys.lists.itemListsPrefix(),
+];
 
 /**
  * Run a server write through the optimistic journal: begin the op, resolve on
@@ -72,30 +74,46 @@ function logWatchlistError(action: string, error: unknown) {
  * imperatively so the repository does not depend on hooks. Own-write revision
  * counting is handled by the op's domain tag (see `beginOp`).
  */
-function runJournaledMutation(
+async function runMutationAsync<T = unknown>(
 	queryClient: QueryClient,
 	{
 		begin,
 		run,
 		syncKeys,
 		errorMessage,
+		onSuccess,
 	}: {
 		begin: () => OpHandle | undefined;
-		run: () => Promise<unknown>;
+		run: () => Promise<T>;
 		syncKeys: readonly (readonly unknown[])[];
 		errorMessage: string;
+		onSuccess?: (result: T) => void;
 	},
-) {
+): Promise<T> {
 	const handle = begin();
-	run()
-		.then(() => {
-			handle?.resolve();
-		})
-		.catch((error) => {
-			logWatchlistError(errorMessage, error);
-			handle?.remove();
-		})
-		.finally(() => scheduleSync(queryClient, syncKeys));
+	try {
+		const result = await run();
+		onSuccess?.(result);
+		handle?.resolve();
+		return result;
+	} catch (error) {
+		logWatchlistError(errorMessage, error);
+		handle?.remove();
+		throw error;
+	} finally {
+		scheduleSync(queryClient, syncKeys);
+	}
+}
+
+/**
+ * Fire-and-forget variant of `runMutationAsync` for callers that don't await
+ * the write; failures are logged and rolled back inside the async runner.
+ */
+function runJournaledMutation(
+	queryClient: QueryClient,
+	options: Parameters<typeof runMutationAsync>[1],
+) {
+	runMutationAsync(queryClient, options).catch(() => {});
 }
 
 type BatchedWatchlistMembershipTask = {
@@ -191,39 +209,16 @@ export function createRemoteRepository(
 			});
 		},
 
-		async batchToggleMembership(items) {
-			if (items.length === 0) return;
-
-			const argsList: WatchlistMembershipArgs[] = items.map((item) => ({
-				tmdbId: Number(item.id),
-				mediaType: item.media_type,
-				inWatchlist: item.inWatchlist,
-				title: item.title,
-				image: item.image,
-				rating: item.rating,
-				release_date: item.release_date || undefined,
-				overview: item.overview || undefined,
-			}));
-			// One optimistic transaction for the whole batch: a single handle
-			// is shared by every task so a failure rolls everything back
-			// together instead of leaving per-item patches in flight.
-			const handle = watchlistOptimistic.beginMembershipBatchOp(
+		async setProgressStatus(
+			id,
+			mediaType,
+			progressStatus,
+			metadata,
+			currentStatus,
+		) {
+			const { action, seasonsPromise } = resolveStatusPlan(
 				queryClient,
-				argsList,
-			);
-			const tasks: BatchedWatchlistMembershipTask[] = argsList.map((args) => ({
-				args,
-				handle,
-				queryClient,
-			}));
-
-			await Promise.all(
-				tasks.map((task) => watchlistMembershipBatcher.schedule(task)),
-			);
-		},
-
-		setProgressStatus(id, mediaType, progressStatus, metadata, currentStatus) {
-			const action = resolveProgressStatusAction(
+				id,
 				mediaType,
 				progressStatus,
 				currentStatus,
@@ -243,72 +238,42 @@ export function createRemoteRepository(
 					release_date: metadata?.release_date,
 					overview: metadata?.overview,
 				};
-				if (action.isLeavingCompletion && !action.shouldMarkWatched) {
+				const syncKeys = [
+					queryKeys.watchlist.list(),
+					queryKeys.watchlist.episodes(Number(id)),
+				];
+				const send = (extra: Partial<MarkShowEpisodesAndStatusArgs>) =>
 					runJournaledMutation(queryClient, {
 						begin: () =>
 							watchlistOptimistic.beginMarkShowOp(queryClient, {
 								...baseArgs,
-								clearAllEpisodes: true,
+								...extra,
 							}),
 						run: () =>
 							unwrap(
 								markShowEpisodesAndStatus({
-									data: { ...baseArgs, clearAllEpisodes: true },
+									data: { ...baseArgs, ...extra },
 								}),
 							),
-						syncKeys: [
-							queryKeys.watchlist.list(),
-							queryKeys.watchlist.episodes(Number(id)),
-						],
+						syncKeys,
 						errorMessage: "sync show episode status",
 					});
-				} else if (action.needsEpisodeUpdate) {
-					queryClient
-						.ensureQueryData({
-							queryKey: queryKeys.tmdb.tvDetails(Number(id)),
-							queryFn: () => getTvDetails({ id: Number(id) }),
-						})
-						.then((details) => {
-							const seasons =
-								watchlistOptimistic.buildSeasonEpisodeSelections(details);
-							runJournaledMutation(queryClient, {
-								begin: () =>
-									watchlistOptimistic.beginMarkShowOp(queryClient, {
-										...baseArgs,
-										seasons,
-										isWatched: action.shouldMarkWatched,
-									}),
-								run: () =>
-									unwrap(
-										markShowEpisodesAndStatus({
-											data: {
-												...baseArgs,
-												seasons,
-												isWatched: action.shouldMarkWatched,
-											},
-										}),
-									),
-								syncKeys: [
-									queryKeys.watchlist.list(),
-									queryKeys.watchlist.episodes(Number(id)),
-								],
-								errorMessage: "sync show episode status",
-							});
-						})
+
+				if (action.isLeavingCompletion && !action.shouldMarkWatched) {
+					send({ clearAllEpisodes: true });
+				} else if (seasonsPromise) {
+					seasonsPromise
+						.then((seasons) =>
+							send({
+								seasons,
+								isWatched: action.shouldMarkWatched,
+							}),
+						)
 						.catch((error) =>
 							logWatchlistError("sync remote show episode status", error),
 						);
 				} else {
-					runJournaledMutation(queryClient, {
-						begin: () =>
-							watchlistOptimistic.beginMarkShowOp(queryClient, baseArgs),
-						run: () => unwrap(markShowEpisodesAndStatus({ data: baseArgs })),
-						syncKeys: [
-							queryKeys.watchlist.list(),
-							queryKeys.watchlist.episodes(Number(id)),
-						],
-						errorMessage: "sync show episode status",
-					});
+					send({});
 				}
 				return;
 			}
@@ -496,65 +461,40 @@ export function createRemoteRepository(
 			await runMutationAsync(queryClient, {
 				begin: () => beginDeleteListOp(queryClient, listId, userId),
 				run: () => unwrap(deleteCustomList({ data: { listId } })),
-				syncKeys: [
-					queryKeys.lists.all(userId),
-					queryKeys.lists.itemsPrefix(),
-					queryKeys.lists.itemListsPrefix(),
-				],
+				syncKeys: listsSyncKeys(userId),
 				errorMessage: "delete custom list",
 			});
 		},
 
 		async createList(args) {
 			const optimisticId = `optimistic_${Date.now()}`;
-			const handle = beginCreateListOp(queryClient, args, optimisticId, userId);
-			try {
-				const realId = await unwrap(createCustomList({ data: args }));
-				swapListId(queryClient, optimisticId, realId, userId);
-				handle?.resolve();
-				scheduleSync(queryClient, [queryKeys.lists.all(userId)]);
-				return realId;
-			} catch (error) {
-				console.error("Failed to create custom list", error);
-				handle?.remove();
-				scheduleSync(queryClient, [queryKeys.lists.all(userId)]);
-				throw error;
-			}
+			return runMutationAsync<string>(queryClient, {
+				begin: () => beginCreateListOp(queryClient, args, optimisticId, userId),
+				run: () => unwrap(createCustomList({ data: args })),
+				onSuccess: (realId) =>
+					swapListId(queryClient, optimisticId, realId, userId),
+				syncKeys: [queryKeys.lists.all(userId)],
+				errorMessage: "create custom list",
+			});
 		},
 
 		async createListAndAddItem(args) {
 			const optimisticId = `optimistic_${Date.now()}`;
-			const handle = beginCreateListAndAddOp(
-				queryClient,
-				args,
-				optimisticId,
-				userId,
-			);
-			try {
-				const realId = await unwrap(createCustomListAndAddItem({ data: args }));
-				swapListId(
-					queryClient,
-					optimisticId,
-					realId,
-					userId,
-					queryKeys.lists.itemLists(args.tmdbId, args.mediaType, userId),
-				);
-				handle?.resolve();
-				scheduleSync(queryClient, [
-					queryKeys.lists.all(userId),
-					queryKeys.lists.itemsPrefix(),
-					queryKeys.lists.itemListsPrefix(),
-				]);
-			} catch (error) {
-				console.error("Failed to create list and add item", error);
-				handle?.remove();
-				scheduleSync(queryClient, [
-					queryKeys.lists.all(userId),
-					queryKeys.lists.itemsPrefix(),
-					queryKeys.lists.itemListsPrefix(),
-				]);
-				throw error;
-			}
+			await runMutationAsync<string>(queryClient, {
+				begin: () =>
+					beginCreateListAndAddOp(queryClient, args, optimisticId, userId),
+				run: () => unwrap(createCustomListAndAddItem({ data: args })),
+				onSuccess: (realId) =>
+					swapListId(
+						queryClient,
+						optimisticId,
+						realId,
+						userId,
+						queryKeys.lists.itemLists(args.tmdbId, args.mediaType, userId),
+					),
+				syncKeys: listsSyncKeys(userId),
+				errorMessage: "create list and add item",
+			});
 		},
 
 		async updateList(args) {
@@ -567,33 +507,22 @@ export function createRemoteRepository(
 		},
 
 		async toggleListItem(args) {
-			const { handle, adding } = beginToggleListItemOp(
-				queryClient,
-				args,
-				userId,
-			);
-			try {
-				const result = await unwrap(toggleListItem({ data: args }));
-				if (result !== adding) {
-					applyToggleInverse(queryClient, args, adding, userId);
-				}
-				handle?.resolve();
-				scheduleSync(queryClient, [
-					queryKeys.lists.all(userId),
-					queryKeys.lists.itemsPrefix(),
-					queryKeys.lists.itemListsPrefix(),
-				]);
-				return result;
-			} catch (error) {
-				console.error("Failed to toggle list item", error);
-				handle?.remove();
-				scheduleSync(queryClient, [
-					queryKeys.lists.all(userId),
-					queryKeys.lists.itemsPrefix(),
-					queryKeys.lists.itemListsPrefix(),
-				]);
-				throw error;
-			}
+			let adding = false;
+			return runMutationAsync<boolean>(queryClient, {
+				begin: () => {
+					const op = beginToggleListItemOp(queryClient, args, userId);
+					adding = op.adding;
+					return op.handle;
+				},
+				run: () => unwrap(toggleListItem({ data: args })),
+				onSuccess: (result) => {
+					if (result !== adding) {
+						applyToggleInverse(queryClient, args, adding, userId);
+					}
+				},
+				syncKeys: listsSyncKeys(userId),
+				errorMessage: "toggle list item",
+			});
 		},
 
 		async reorderListItem(args) {
@@ -614,35 +543,4 @@ export function createRemoteRepository(
 	};
 
 	return { ...watchlist, ...lists };
-}
-
-/**
- * Awaitable variant of `runJournaledMutation` for callers that need the write
- * to settle (e.g. dialogs that disable their submit button until it resolves).
- */
-async function runMutationAsync(
-	queryClient: QueryClient,
-	{
-		begin,
-		run,
-		syncKeys,
-		errorMessage,
-	}: {
-		begin: () => OpHandle | undefined;
-		run: () => Promise<unknown>;
-		syncKeys: readonly (readonly unknown[])[];
-		errorMessage: string;
-	},
-) {
-	const handle = begin();
-	try {
-		await run();
-		handle?.resolve();
-	} catch (error) {
-		logWatchlistError(errorMessage, error);
-		handle?.remove();
-		throw error;
-	} finally {
-		scheduleSync(queryClient, syncKeys);
-	}
 }

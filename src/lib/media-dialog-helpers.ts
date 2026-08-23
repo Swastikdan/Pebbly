@@ -1,5 +1,5 @@
 export type MediaDialogSearch = Record<string, unknown>;
-export type MediaDialogKey = "video" | "backdrop" | "poster";
+export type MediaDialogKey = "video" | "backdrop" | "poster" | "trailer";
 
 type DialogNavigate = (options: unknown) => void;
 

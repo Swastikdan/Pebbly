@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
-import type { ProgressStatus, ReactionStatus } from "@/types";
 import { fetchWatchlistList } from "./watchlist-queries";
 import {
 	type MediaMetadata,
@@ -16,10 +15,14 @@ import {
 export { useWatchlistStore } from "./watchlist-store";
 export type { MediaMetadata, MediaType, WatchlistItem };
 
-export function useWatchlist() {
-	const { isSignedIn, isLoaded } = useUser();
+/**
+ * The single shared watchlist fetch (key + queryFn + auth gate). Per-item
+ * state derives from this one query instead of per-card RPCs.
+ */
+function useWatchlistQuery() {
+	const { isSignedIn } = useUser();
 	const queryClient = useQueryClient();
-	const remote = useQuery({
+	return useQuery({
 		queryKey: queryKeys.watchlist.list(),
 		queryFn: () => fetchWatchlistList(queryClient),
 		enabled: !!isSignedIn,
@@ -28,6 +31,11 @@ export function useWatchlist() {
 		// not poll. Re-fetching the full list on an interval is O(list size)
 		// in D1 rows read.
 	});
+}
+
+export function useWatchlist() {
+	const { isSignedIn, isLoaded } = useUser();
+	const remote = useWatchlistQuery();
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
 	const watchlist: WatchlistItem[] = useMemo(() => {
@@ -55,16 +63,7 @@ export function useWatchlist() {
 
 export function useAllMediaStates() {
 	const { isSignedIn, isLoaded } = useUser();
-	const queryClient = useQueryClient();
-	const remote = useQuery({
-		queryKey: queryKeys.watchlist.list(),
-		queryFn: () => fetchWatchlistList(queryClient),
-		enabled: !!isSignedIn,
-		// Cross-device sync is driven by UserSync's watchlist-version poll
-		// (refetch only when the revision changes), so this query itself does
-		// not poll. Re-fetching the full list on an interval is O(list size)
-		// in D1 rows read.
-	});
+	const remote = useWatchlistQuery();
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 
 	const allMediaStates: WatchlistItem[] = useMemo(() => {
@@ -85,22 +84,13 @@ export function useAllMediaStates() {
 
 export function useMediaState(id: string, mediaType: MediaType) {
 	const { isSignedIn } = useUser();
-	const queryClient = useQueryClient();
 	const localMediaState = useWatchlistStore((state) => state.mediaState);
 	const tmdbId = Number(id);
 	// Derive per-item state from the single shared watchlist query instead of
 	// firing one `getMediaState` RPC per item. A grid of N cards used to trigger
 	// N backend calls (every WatchlistButton on every card); now they all share
 	// the one `getWatchlist` fetch, so a 50-card grid is a single request.
-	const remote = useQuery({
-		queryKey: queryKeys.watchlist.list(),
-		queryFn: () => fetchWatchlistList(queryClient),
-		enabled: !!isSignedIn,
-		// Cross-device sync is driven by UserSync's watchlist-version poll
-		// (refetch only when the revision changes), so this query itself does
-		// not poll. Re-fetching the full list on an interval is O(list size)
-		// in D1 rows read.
-	});
+	const remote = useWatchlistQuery();
 
 	return useMemo(() => {
 		if (!isSignedIn) {
@@ -159,68 +149,6 @@ export function useToggleWatchlistItem() {
 	);
 }
 
-export function useBatchToggleWatchlist() {
-	const repository = useRepository();
-
-	return useCallback(
-		async (
-			items: Array<{
-				id: string;
-				media_type: MediaType;
-				inWatchlist: boolean;
-				title?: string;
-				image?: string;
-				rating?: number;
-				release_date?: string;
-				overview?: string;
-			}>,
-		) => {
-			if (items.length === 0) return;
-			await repository.batchToggleMembership(items);
-		},
-		[repository],
-	);
-}
-
-export function useSetProgressStatus() {
-	const repository = useRepository();
-
-	return useCallback(
-		(
-			id: string,
-			mediaType: MediaType,
-			progressStatus: ProgressStatus,
-			metadata?: MediaMetadata,
-			currentStatus?: ProgressStatus | null,
-		) => {
-			repository.setProgressStatus(
-				id,
-				mediaType,
-				progressStatus,
-				metadata,
-				currentStatus,
-			);
-		},
-		[repository],
-	);
-}
-
-export function useSetReaction() {
-	const repository = useRepository();
-
-	return useCallback(
-		(
-			id: string,
-			mediaType: MediaType,
-			reaction: ReactionStatus | null,
-			metadata?: MediaMetadata,
-		) => {
-			repository.setReaction(id, mediaType, reaction, metadata);
-		},
-		[repository],
-	);
-}
-
 export function useWatchlistItem(id: string, mediaType?: MediaType) {
 	const { watchlist } = useWatchlist();
 	const mediaState = useMediaState(id, mediaType ?? "movie");
@@ -243,9 +171,4 @@ export function useWatchlistItem(id: string, mediaType?: MediaType) {
 	}, [watchlist, id, mediaType, mediaState]);
 
 	return { isOnWatchList };
-}
-
-export function useWatchlistCount() {
-	const { watchlist } = useWatchlist();
-	return watchlist.length;
 }

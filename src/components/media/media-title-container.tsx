@@ -5,12 +5,11 @@ import { WatchlistStatusMenu } from "@/components/media/watchlist-status-menu";
 import { ShareButton } from "@/components/share-button";
 import {
 	useMediaState,
-	useSetProgressStatus,
-	useSetReaction,
 	useToggleWatchlistItem,
 	useWatchlistItem,
 } from "@/hooks/use-watchlist";
 import type { MediaType } from "@/lib/media-types";
+import { useRepository } from "@/lib/repository/use-repository";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 export const MediaTitleContainer = (props: {
@@ -50,8 +49,7 @@ export const MediaTitleContainer = (props: {
 	} = props;
 
 	const mediaState = useMediaState(String(id), media_type);
-	const setProgressStatus = useSetProgressStatus();
-	const setReaction = useSetReaction();
+	const { setProgressStatus, setReaction } = useRepository();
 	const toggleWatchlist = useToggleWatchlistItem();
 	const { isOnWatchList } = useWatchlistItem(String(id), media_type);
 	const progressStatus = mediaState?.progressStatus ?? null;

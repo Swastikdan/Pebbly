@@ -7,14 +7,16 @@ import {
 	isAdminFromClerkApi,
 	requireUser,
 } from "../auth";
-import { getDb } from "../db/client";
+import { type Db, getDb } from "../db/client";
 import { rolePermissions, users } from "../db/schema";
 import { getEnv } from "../env";
 import { bumpPermsRev } from "../helpers/watch-item";
 import {
 	DYNAMIC_ROLES,
+	getGlobalFeatureFlags,
 	getUserFeatures,
 	isAdminByClaims,
+	ROLE_FEATURES,
 	syncRolePermissions,
 } from "../rbac";
 import {
@@ -49,6 +51,15 @@ async function requireAdmin(): Promise<
 	return { user, error: null };
 }
 
+async function findUserByTokenIdentifier(db: Db, tokenIdentifier: string) {
+	const rows = await db
+		.select()
+		.from(users)
+		.where(eq(users.tokenIdentifier, tokenIdentifier))
+		.limit(1);
+	return rows[0] ?? null;
+}
+
 export const getUserFeaturesFn = createServerFn({ method: "POST" }).handler(
 	async (): Promise<
 		ApiResult<{
@@ -72,17 +83,12 @@ export const getRolePermissions = createServerFn({ method: "POST" }).handler(
 		if (admin.error) return admin.error;
 
 		const db = getDb(getEnv());
-		const perms = await db.select().from(rolePermissions);
+		const flags = await getGlobalFeatureFlags(db);
 
 		const result: Record<string, Record<string, boolean>> = {};
 		for (const role of DYNAMIC_ROLES) {
-			result[role] = {};
-			const feature =
-				role === "video-player" ? "video-player" : "ai-recommendations";
-			const perm = perms.find(
-				(p) => p.role === "global" && p.feature === feature,
-			);
-			result[role][feature] = perm ? perm.enabled : true;
+			const feature = ROLE_FEATURES[role];
+			result[role] = { [feature]: flags[feature] };
 		}
 
 		return ok(result);
@@ -127,23 +133,19 @@ export const setUserRoles = createServerFn({ method: "POST" })
 		if (admin.error) return admin.error;
 
 		const db = getDb(getEnv());
-		const target = await db
-			.select()
-			.from(users)
-			.where(eq(users.tokenIdentifier, data.tokenIdentifier))
-			.limit(1);
+		const target = await findUserByTokenIdentifier(db, data.tokenIdentifier);
 
-		if (target.length === 0) return fail("NOT_FOUND", "User not found");
+		if (!target) return fail("NOT_FOUND", "User not found");
 
 		await db
 			.update(users)
 			.set({
 				roles: data.roles.length > 0 ? data.roles : [],
 			})
-			.where(eq(users.id, target[0].id));
+			.where(eq(users.id, target.id));
 
-		await bumpPermsRev(db, target[0].id);
-		invalidateUserCache(target[0].tokenIdentifier);
+		await bumpPermsRev(db, target.id);
+		invalidateUserCache(target.tokenIdentifier);
 		return ok({ ok: true });
 	});
 
@@ -154,25 +156,21 @@ export const setUserBanned = createServerFn({ method: "POST" })
 		if (admin.error) return admin.error;
 
 		const db = getDb(getEnv());
-		const target = await db
-			.select()
-			.from(users)
-			.where(eq(users.tokenIdentifier, data.tokenIdentifier))
-			.limit(1);
+		const target = await findUserByTokenIdentifier(db, data.tokenIdentifier);
 
-		if (target.length === 0) return fail("NOT_FOUND", "User not found");
+		if (!target) return fail("NOT_FOUND", "User not found");
 
-		if (admin.user.id === target[0].id) {
+		if (admin.user.id === target.id) {
 			return fail("BAD_REQUEST", "Cannot ban yourself");
 		}
 
 		await db
 			.update(users)
 			.set({ isBanned: data.banned })
-			.where(eq(users.id, target[0].id));
+			.where(eq(users.id, target.id));
 
-		await bumpPermsRev(db, target[0].id);
-		invalidateUserCache(target[0].tokenIdentifier);
+		await bumpPermsRev(db, target.id);
+		invalidateUserCache(target.tokenIdentifier);
 		return ok({ ok: true });
 	});
 

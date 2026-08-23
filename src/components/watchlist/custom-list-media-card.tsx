@@ -5,9 +5,9 @@ import { Star, TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
-import { useToggleListItem } from "@/hooks/use-custom-lists";
 import { toast } from "@/hooks/use-toast-store";
 import type { MediaType } from "@/lib/media-types";
+import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle } from "@/lib/utils";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
@@ -41,7 +41,7 @@ export function CustomListMediaCard({
 	canMoveUp?: boolean;
 	canMoveDown?: boolean;
 }) {
-	const toggleListItem = useToggleListItem();
+	const { toggleListItem } = useRepository();
 	const hasMetadata = !!(item.title && (item.backdrop || item.image));
 	const formattedTitle = item.title
 		? formatMediaTitle.encode(item.title)

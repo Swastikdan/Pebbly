@@ -9,12 +9,12 @@ import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
 import { useSeasonDetails } from "@/hooks/use-season-details";
 import { toast } from "@/hooks/use-toast-store";
-import { useSetProgressStatus } from "@/hooks/use-watchlist";
 import {
 	useRemoveFromContinueWatching,
 	useWatchProgress,
 } from "@/hooks/watch-progress/use-watch-progress";
 import type { MediaType } from "@/lib/media-types";
+import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
@@ -112,7 +112,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 	} = props;
 
 	const { removeFromContinueWatching } = useRemoveFromContinueWatching();
-	const setProgressStatus = useSetProgressStatus();
+	const { setProgressStatus } = useRepository();
 
 	return (
 		<div className={cn("group relative", containerClassName)}>

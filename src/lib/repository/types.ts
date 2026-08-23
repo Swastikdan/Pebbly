@@ -24,17 +24,6 @@ export interface WatchlistToggleItem {
 	overview?: string;
 }
 
-export interface WatchlistBatchItem {
-	id: string;
-	media_type: MediaType;
-	inWatchlist: boolean;
-	title?: string;
-	image?: string;
-	rating?: number;
-	release_date?: string;
-	overview?: string;
-}
-
 export type MarkEpisodeArgs = {
 	tmdbId: number;
 	season: number;
@@ -72,8 +61,6 @@ export interface WatchlistRepository {
 		item: WatchlistToggleItem,
 		inWatchlist: boolean,
 	): Promise<void>;
-	/** Apply membership changes for many titles as one write. */
-	batchToggleMembership(items: WatchlistBatchItem[]): Promise<void>;
 	/** Update progress status; for TV shows also syncs episode state. */
 	setProgressStatus(
 		id: string,

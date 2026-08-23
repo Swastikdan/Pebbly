@@ -33,10 +33,28 @@ const DEFAULT_PERMISSIONS: Record<
 	},
 };
 
-const ROLE_FEATURES: Record<DynamicRbacRole, RbacFeature> = {
+export const ROLE_FEATURES: Record<DynamicRbacRole, RbacFeature> = {
 	"video-player": "video-player",
 	"ai-integrations": "ai-recommendations",
 };
+
+/**
+ * Effective global feature flags (missing row = enabled), the gate
+ * `computeRoleFeatures` applies before any role contributes.
+ */
+export async function getGlobalFeatureFlags(
+	db: Db,
+): Promise<Record<RbacFeature, boolean>> {
+	const perms = await db.select().from(rolePermissions);
+	const flags = {} as Record<RbacFeature, boolean>;
+	for (const feature of VALID_FEATURES) {
+		const perm = perms.find(
+			(p) => p.role === "global" && p.feature === feature,
+		);
+		flags[feature] = perm ? perm.enabled : true;
+	}
+	return flags;
+}
 
 function parseClerkPublicMeta(
 	identity: Record<string, unknown> | null,
@@ -165,34 +183,12 @@ export async function hasFeature(
 	}
 	if (!user) return false;
 
-	// Single-query evaluation: load the full permission set once and resolve
-	// the global gate + per-role rows from the in-memory map (shared with
-	// computeRoleFeatures). Preserves the global override, dynamic-role
-	// filtering, enabled-row handling, and DEFAULT_PERMISSIONS fallback.
 	const db = getDb(getEnv());
-	const allPermissions = await loadPermissions(db);
-	const permissionMap = new Map<string, boolean>();
-	for (const p of allPermissions) {
-		permissionMap.set(`${p.role}:${p.feature}`, p.enabled);
-	}
-
-	const globalEnabled = permissionMap.get(`global:${feature}`);
-	const isGloballyEnabled = globalEnabled !== undefined ? globalEnabled : true;
-	if (!isGloballyEnabled) return false;
-
-	for (const role of user.roles ?? []) {
-		if (!DYNAMIC_ROLES.includes(role as DynamicRbacRole)) continue;
-		const existingEnabled = permissionMap.get(`${role}:${feature}`);
-		if (existingEnabled !== undefined) {
-			if (existingEnabled) return true;
-		} else if (
-			DEFAULT_PERMISSIONS[role as DynamicRbacRole]?.[feature] === true
-		) {
-			return true;
-		}
-	}
-
-	return false;
+	const roles = (user.roles ?? []).filter((role) =>
+		DYNAMIC_ROLES.includes(role as DynamicRbacRole),
+	);
+	const features = await computeRoleFeatures(db, roles);
+	return features[feature] === true;
 }
 
 /**

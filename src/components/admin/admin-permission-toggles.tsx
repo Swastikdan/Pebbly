@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, AlertTriangle, Zap } from "lucide-react";
 import { useState } from "react";
+import { ErrorBanner } from "@/components/ui/feedback";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	type PermissionRole,
@@ -61,7 +62,7 @@ function featurePermissions(
 
 function FeatureError({ onRetry }: { onRetry: () => void }) {
 	return (
-		<div className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+		<ErrorBanner className="flex items-center justify-between gap-3">
 			<span>Failed to load permission settings.</span>
 			<button
 				type="button"
@@ -70,7 +71,7 @@ function FeatureError({ onRetry }: { onRetry: () => void }) {
 			>
 				Retry
 			</button>
-		</div>
+		</ErrorBanner>
 	);
 }
 
@@ -163,11 +164,7 @@ export function AdminPermissionToggles() {
 
 	return (
 		<div className="space-y-4">
-			{toggleError && (
-				<div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-					{toggleError}
-				</div>
-			)}
+			{toggleError && <ErrorBanner>{toggleError}</ErrorBanner>}
 			<div className="space-y-3">
 				{Object.entries(RBAC_FEATURES).map(([feature, config]) => (
 					<FeatureRow

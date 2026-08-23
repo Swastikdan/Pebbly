@@ -1,7 +1,11 @@
 import { useQueries } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
+import {
+	LightboxNavButton,
+	PlayOverlay,
+	YouTubeEmbed,
+} from "@/components/media/media-lightbox-dialog";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,9 +15,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Play } from "@/components/ui/icons";
+import { SkeletonGrid } from "@/components/ui/feedback";
 import { Image } from "@/components/ui/image";
-import { Skeleton } from "@/components/ui/skeleton";
 import { IMAGE_PREFIX } from "@/constants";
 import {
 	getImageDialogKey,
@@ -124,11 +127,7 @@ export const MediaVideoImageContainer = (props: {
 											{video.type}
 										</span>
 									</div>
-									<div className="absolute inset-0 flex items-center justify-center">
-										<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
-											<Play className="size-6 fill-white text-white" />
-										</div>
-									</div>
+									<PlayOverlay />
 								</DialogTrigger>
 								<DialogPopup
 									overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
@@ -138,48 +137,31 @@ export const MediaVideoImageContainer = (props: {
 										<DialogTitle>{video.name}</DialogTitle>
 									</DialogHeader>
 									<div className="bg-foreground/10 size-full overflow-hidden rounded-xl">
-										<iframe
-											allowFullScreen
-											allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-											className="size-full rounded-xl"
-											sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-forms"
-											src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
-											title={video.name}
-										/>
+										<YouTubeEmbed videoKey={video.key} title={video.name} />
 									</div>
 									{index > 0 && (
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-											onClick={(e) => {
-												e.stopPropagation();
+										<LightboxNavButton
+											dir="prev"
+											label="Previous video"
+											onClick={() =>
 												onUpdateDialogSearch(
 													"video",
 													mediaVideos[index - 1].key,
-												);
-											}}
-										>
-											<ChevronLeft className="size-6" />
-										</Button>
+												)
+											}
+										/>
 									)}
 									{index < mediaVideos.length - 1 && (
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-											onClick={(e) => {
-												e.stopPropagation();
+										<LightboxNavButton
+											dir="next"
+											label="Next video"
+											onClick={() =>
 												onUpdateDialogSearch(
 													"video",
 													mediaVideos[index + 1].key,
-												);
-											}}
-										>
-											<ChevronRight className="size-6" />
-										</Button>
+												)
+											}
+										/>
 									)}
 								</DialogPopup>
 							</Dialog>
@@ -238,13 +220,10 @@ export const MediaVideoImageContainer = (props: {
 												/>
 											</div>
 											{index > 0 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
+												<LightboxNavButton
+													dir="prev"
+													label="Previous backdrop"
+													onClick={() => {
 														const prevImg = mediaImages?.backdrops?.[index - 1];
 														if (prevImg) {
 															onUpdateDialogSearch(
@@ -253,18 +232,13 @@ export const MediaVideoImageContainer = (props: {
 															);
 														}
 													}}
-												>
-													<ChevronLeft className="size-6" />
-												</Button>
+												/>
 											)}
 											{index < (mediaImages?.backdrops?.length || 0) - 1 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
+												<LightboxNavButton
+													dir="next"
+													label="Next backdrop"
+													onClick={() => {
 														const nextImg = mediaImages?.backdrops?.[index + 1];
 														if (nextImg) {
 															onUpdateDialogSearch(
@@ -273,9 +247,7 @@ export const MediaVideoImageContainer = (props: {
 															);
 														}
 													}}
-												>
-													<ChevronRight className="size-6" />
-												</Button>
+												/>
 											)}
 										</DialogPopup>
 									</Dialog>
@@ -329,13 +301,10 @@ export const MediaVideoImageContainer = (props: {
 												/>
 											</div>
 											{index > 0 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
+												<LightboxNavButton
+													dir="prev"
+													label="Previous poster"
+													onClick={() => {
 														const prevImg = mediaImages?.posters?.[index - 1];
 														if (prevImg) {
 															onUpdateDialogSearch(
@@ -344,18 +313,13 @@ export const MediaVideoImageContainer = (props: {
 															);
 														}
 													}}
-												>
-													<ChevronLeft className="size-6" />
-												</Button>
+												/>
 											)}
 											{index < (mediaImages?.posters?.length || 0) - 1 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
+												<LightboxNavButton
+													dir="next"
+													label="Next poster"
+													onClick={() => {
 														const nextImg = mediaImages?.posters?.[index + 1];
 														if (nextImg) {
 															onUpdateDialogSearch(
@@ -364,9 +328,7 @@ export const MediaVideoImageContainer = (props: {
 															);
 														}
 													}}
-												>
-													<ChevronRight className="size-6" />
-												</Button>
+												/>
 											)}
 										</DialogPopup>
 									</Dialog>
@@ -389,13 +351,10 @@ const GLobalMediaVideoImageContainerLoader = () => {
 				</span>
 				<ScrollContainer isButtonsVisible={false}>
 					<div className="flex items-center justify-center gap-3">
-						{Array.from({ length: 6 }).map((_, index) => (
-							<Skeleton
-								// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-								key={index}
-								className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
-							/>
-						))}
+						<SkeletonGrid
+							count={6}
+							itemClassName="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+						/>
 					</div>
 				</ScrollContainer>
 			</div>
@@ -407,25 +366,19 @@ const GLobalMediaVideoImageContainerLoader = () => {
 					<span className="w-fit text-lg md:text-xl">Backdrops</span>
 					<ScrollContainer isButtonsVisible={false}>
 						<div className="flex items-center justify-center gap-3">
-							{Array.from({ length: 6 }).map((_, index) => (
-								<Skeleton
-									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-									key={index}
-									className="bg-accent aspect-video h-44 w-auto rounded-xl md:h-52 lg:h-60"
-								/>
-							))}
+							<SkeletonGrid
+								count={6}
+								itemClassName="bg-accent aspect-video h-44 w-auto rounded-xl md:h-52 lg:h-60"
+							/>
 						</div>
 					</ScrollContainer>
 					<span className="w-fit text-lg font-heading md:text-xl">Posters</span>
 					<ScrollContainer isButtonsVisible={false}>
 						<div className="flex items-center justify-center gap-3">
-							{Array.from({ length: 12 }).map((_, index) => (
-								<Skeleton
-									// biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-									key={index}
-									className="bg-accent aspect-video h-44 w-30 rounded-xl md:h-52 md:w-35.75 lg:h-60 lg:w-41.25"
-								/>
-							))}
+							<SkeletonGrid
+								count={12}
+								itemClassName="bg-accent aspect-video h-44 w-30 rounded-xl md:h-52 md:w-35.75 lg:h-60 lg:w-41.25"
+							/>
 						</div>
 					</ScrollContainer>
 				</div>
