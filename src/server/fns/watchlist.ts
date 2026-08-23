@@ -5,12 +5,18 @@ import { getCurrentUser, requireUser } from "../auth";
 import { getDb, runBatch } from "../db/client";
 import { episodeProgress, users, watchItems } from "../db/schema";
 import { getEnv } from "../env";
+import {
+	buildEpisodeSyncStatements,
+	loadEpisodeRowsByKey,
+	syncEpisodeProgressRecord,
+} from "../helpers/episode-sync";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
 import {
 	buildMetadataPatch,
 	bumpWatchlistRev,
 	getWatchItem,
 	normalizeProgressStatus,
+	planMembershipRemoval,
 	upsertWatchItem,
 } from "../helpers/watch-item";
 import { type ApiResult, ok } from "../schema/common";
@@ -273,37 +279,21 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
 			if (!data.inWatchlist) {
 				if (!existing) return ok(null);
 
-				// If the user has a reaction or non-default progress, keep row with inWatchlist: false
-				if (
-					existing.reaction ||
-					(existing.progress &&
-						existing.progress > 0 &&
-						existing.progressStatus !== "watch-later")
-				) {
-					const next = {
-						...existing,
-						inWatchlist: false,
-						progressStatus:
-							existing.progressStatus === "watch-later"
-								? null
-								: existing.progressStatus,
-						updatedAt: Date.now(),
-					};
+				const plan = planMembershipRemoval(existing, Date.now());
+				if (plan.delete) {
+					await db.delete(watchItems).where(eq(watchItems.id, existing.id));
+				} else {
 					await db
 						.update(watchItems)
 						.set({
 							inWatchlist: false,
-							progressStatus: next.progressStatus,
-							updatedAt: next.updatedAt,
+							progressStatus: plan.nextRow.progressStatus,
+							updatedAt: plan.nextRow.updatedAt,
 						})
 						.where(eq(watchItems.id, existing.id));
-					await bumpWatchlistRev(db, user.id);
-					return ok(next);
 				}
-				// Otherwise, delete the row entirely
-				await db.delete(watchItems).where(eq(watchItems.id, existing.id));
 				await bumpWatchlistRev(db, user.id);
-				return ok(null);
+				return ok(plan.delete ? null : plan.nextRow);
 			}
 
 			const row = await upsertWatchItem(
@@ -311,25 +301,17 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
 				user.id,
 				data.tmdbId,
 				data.mediaType,
-				(curr) => {
-					const normalizedExisting = curr
-						? normalizeProgressStatus(curr.progressStatus)
-						: undefined;
-					const progressStatus = curr
-						? (normalizedExisting ?? "watch-later")
-						: "watch-later";
-
-					return {
-						inWatchlist: true,
-						progressStatus,
-						...(curr ? {} : { progress: 0 }),
-						title: data.title,
-						image: data.image,
-						rating: data.rating,
-						release_date: data.release_date,
-						overview: data.overview,
-					};
-				},
+				(curr) => ({
+					inWatchlist: true,
+					progressStatus:
+						normalizeProgressStatus(curr?.progressStatus) ?? "watch-later",
+					...(curr ? {} : { progress: 0 }),
+					title: data.title,
+					image: data.image,
+					rating: data.rating,
+					release_date: data.release_date,
+					overview: data.overview,
+				}),
 			);
 
 			return ok(row ?? null);
@@ -380,46 +362,29 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
 				if (!item.inWatchlist) {
 					if (!existing) continue;
 
-					if (
-						existing.reaction ||
-						(existing.progress &&
-							existing.progress > 0 &&
-							existing.progressStatus !== "watch-later")
-					) {
-						const next = {
-							...existing,
-							inWatchlist: false,
-							progressStatus:
-								existing.progressStatus === "watch-later"
-									? null
-									: existing.progressStatus,
-							updatedAt: now,
-						};
+					const plan = planMembershipRemoval(existing, now);
+					if (plan.delete) {
+						statements.push(
+							db.delete(watchItems).where(eq(watchItems.id, existing.id)),
+						);
+					} else {
 						statements.push(
 							db
 								.update(watchItems)
 								.set({
 									inWatchlist: false,
-									progressStatus: next.progressStatus,
+									progressStatus: plan.nextRow.progressStatus,
 									updatedAt: now,
 								})
 								.where(eq(watchItems.id, existing.id)),
 						);
-						resultRows.push(next);
-					} else {
-						statements.push(
-							db.delete(watchItems).where(eq(watchItems.id, existing.id)),
-						);
+						resultRows.push(plan.nextRow);
 					}
 					continue;
 				}
 
-				const normalizedExisting = existing
-					? normalizeProgressStatus(existing.progressStatus)
-					: undefined;
-				const progressStatus = existing
-					? (normalizedExisting ?? "watch-later")
-					: "watch-later";
+				const progressStatus =
+					normalizeProgressStatus(existing?.progressStatus) ?? "watch-later";
 				const metadataPatch = buildMetadataPatch(item, existing ?? undefined);
 
 				if (existing) {
@@ -546,119 +511,14 @@ export const setReaction = createServerFn({ method: "POST" })
 // Episode progress
 // ---------------------------------------------------------------------------
 
-type EpisodeSyncArgs = {
-	tmdbId: number;
-	season: number;
-	episode: number;
-	isWatched: boolean;
-};
-
-/**
- * Build the write statements needed to sync one episode's watched state.
- * `existingByKey` maps `season:episode` -> row and is preloaded once by the
- * caller, so the whole season/show sync becomes one read + one db.batch.
- */
-function buildEpisodeSyncStatements(
-	db: ReturnType<typeof getDb>,
-	userId: string,
-	args: EpisodeSyncArgs,
-	now: number,
-	existingByKey: Map<string, typeof episodeProgress.$inferSelect>,
-) {
-	const statements: Parameters<typeof db.batch>[0][number][] = [];
-	const existing = existingByKey.get(`${args.season}:${args.episode}`);
-
-	if (existing) {
-		if (existing.isWatched !== args.isWatched) {
-			statements.push(
-				db
-					.update(episodeProgress)
-					.set({ isWatched: args.isWatched, updatedAt: now })
-					.where(eq(episodeProgress.id, existing.id)),
-			);
-		}
-		return statements;
-	}
-
-	if (!args.isWatched) {
-		return statements;
-	}
-
-	statements.push(
-		db
-			.insert(episodeProgress)
-			.values({
-				id: crypto.randomUUID(),
-				userId,
-				tmdbId: args.tmdbId,
-				season: args.season,
-				episode: args.episode,
-				isWatched: args.isWatched,
-				updatedAt: now,
-			})
-			.onConflictDoNothing(),
-	);
-	return statements;
-}
-
-/** Preload existing episode rows for (user, show), used to batch syncs. */
-async function loadEpisodeRowsByKey(
-	userId: string,
-	tmdbId: number,
-): Promise<Map<string, typeof episodeProgress.$inferSelect>> {
-	const db = getDb(getEnv());
-	const rowsByKey = new Map<string, typeof episodeProgress.$inferSelect>();
-	// Offset-paginate instead of a hard cap: long-running shows can have
-	// >1000 watched rows, and missing any would corrupt the sync (rows past
-	// the cap would be re-inserted or never cleared).
-	const pageSize = 500;
-	for (let offset = 0; ; offset += pageSize) {
-		const page = await db
-			.select()
-			.from(episodeProgress)
-			.where(
-				and(
-					eq(episodeProgress.userId, userId),
-					eq(episodeProgress.tmdbId, tmdbId),
-				),
-			)
-			.limit(pageSize)
-			.offset(offset);
-		for (const row of page) {
-			rowsByKey.set(`${row.season}:${row.episode}`, row);
-		}
-		if (page.length < pageSize) break;
-	}
-	return rowsByKey;
-}
-
-export async function syncEpisodeProgressRecord(
-	userId: string,
-	args: EpisodeSyncArgs,
-	now: number,
-) {
-	// Single-row helper kept for markEpisodeWatched; batch paths use
-	// buildEpisodeSyncStatements directly.
-	const db = getDb(getEnv());
-	const existingByKey = await loadEpisodeRowsByKey(userId, args.tmdbId);
-	const statements = buildEpisodeSyncStatements(
-		db,
-		userId,
-		args,
-		now,
-		existingByKey,
-	);
-	await runBatch(db, statements);
-	await bumpWatchlistRev(db, userId);
-}
-
 export const markEpisodeWatched = createServerFn({ method: "POST" })
 	.validator(markEpisodeWatchedArgsSchema)
 	.handler(async ({ data }): Promise<ApiResult<{ ok: true }>> => {
 		const { user, error } = await requireUser();
 		if (error) return error;
 
-		await syncEpisodeProgressRecord(user.id, data, Date.now());
+		const db = getDb(getEnv());
+		await syncEpisodeProgressRecord(db, user.id, data, Date.now());
 		return ok({ ok: true });
 	});
 
@@ -670,7 +530,7 @@ export const markSeasonEpisodesWatched = createServerFn({ method: "POST" })
 
 		const now = Date.now();
 		const db = getDb(getEnv());
-		const existingByKey = await loadEpisodeRowsByKey(user.id, data.tmdbId);
+		const existingByKey = await loadEpisodeRowsByKey(db, user.id, data.tmdbId);
 		const statements: Parameters<typeof db.batch>[0][number][] = [];
 		const uniqueEpisodes = Array.from(new Set(data.episodes));
 		for (const epNum of uniqueEpisodes) {
@@ -736,7 +596,7 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
 			}
 		}
 
-		const existingByKey = await loadEpisodeRowsByKey(user.id, data.tmdbId);
+		const existingByKey = await loadEpisodeRowsByKey(db, user.id, data.tmdbId);
 		const statements: Parameters<typeof db.batch>[0][number][] = [];
 
 		// Only `clearAllEpisodes` unwatches the entire show. Requests with

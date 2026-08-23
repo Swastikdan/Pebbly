@@ -1,23 +1,11 @@
+import type * as v from "valibot";
 import type { MediaType } from "@/lib/media-types";
 import type { MediaListQuery, MediaQuery } from "@/types";
 import { getTmdbFetch } from "./tmdb";
 import type {
-	BasicMovie,
-	BasicTv,
-	Collection,
-	Credits,
-	MediaImages,
 	MediaListResults,
 	MediaListResultsEntity,
-	MediaRecommendations,
-	MediaVideos,
-	Movie,
-	MovieRecommendations,
-	PersonDetails,
 	SearchResults,
-	Tv,
-	TvEpisodeDetail,
-	TvRecommendations,
 	TvSeasonDetail,
 } from "./tmdb-schemas";
 import * as Schemas from "./tmdb-schemas";
@@ -51,6 +39,60 @@ async function safeFetch<Output>(
 		}
 		throw error;
 	}
+}
+
+/*
+ * Endpoint factories — one home for the TMDB fetch ritual: validate ids,
+ * default pages, build URLs, fetch + validate. Each exported query below
+ * declares only its name, path template, and response schema.
+ */
+function idEndpoint<S extends v.GenericSchema>(
+	name: string,
+	schema: S,
+	path: (id: number) => string,
+) {
+	return async ({ id }: { id: number }): Promise<v.InferOutput<S>> => {
+		validateId(id);
+		return await safeFetch<v.InferOutput<S>>(name, path(id), schema);
+	};
+}
+
+function pagedIdEndpoint<S extends v.GenericSchema>(
+	name: string,
+	schema: S,
+	path: (id: number, page: number) => string,
+) {
+	return async ({
+		id,
+		page,
+	}: {
+		id: number;
+		page?: number;
+	}): Promise<v.InferOutput<S>> => {
+		validateId(id);
+		return await safeFetch<v.InferOutput<S>>(name, path(id, page ?? 1), schema);
+	};
+}
+
+function typedEndpoint<S extends v.GenericSchema>(
+	name: string,
+	schema: S,
+	suffix: string,
+) {
+	return async ({
+		type,
+		id,
+	}: {
+		type: MediaType;
+		id: number;
+	}): Promise<v.InferOutput<S>> => {
+		validateId(id);
+		return await safeFetch<v.InferOutput<S>>(
+			name,
+			`/${type}/${id}/${suffix}`,
+			schema,
+		);
+	};
 }
 
 /*
@@ -107,170 +149,71 @@ export async function getMedia({
 	return data.results ?? [];
 }
 
-export async function getSearchResult({
-	query,
-	page,
-}: {
-	query: string;
-	page?: number;
-}): Promise<SearchResults> {
-	const pageNumber = page ?? 1;
-	const url = `/search/multi?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=${pageNumber}`;
+export const getCollection = idEndpoint(
+	"getCollection",
+	Schemas.CollectionSchema,
+	(id) => `/collection/${id}?language=en-US`,
+);
 
-	return await safeFetch<SearchResults>(
-		"getSearchResult",
-		url,
-		Schemas.SearchResultsSchema,
-	);
-}
+export const getMovieDetails = idEndpoint(
+	"getMovieDetails",
+	Schemas.MovieSchema,
+	(id) =>
+		`/movie/${id}?language=en-US&append_to_response=images,videos,credits,release_dates,external_ids,keywords`,
+);
 
-export async function getCollection({
-	id,
-}: {
-	id: number;
-}): Promise<Collection> {
-	validateId(id);
-	const url = `/collection/${id}?language=en-US`;
+export const getBasicMovieDetails = idEndpoint(
+	"getBasicMovieDetails",
+	Schemas.BasicMovieSchema,
+	(id) => `/movie/${id}?language=en-US`,
+);
 
-	return await safeFetch<Collection>(
-		"getCollection",
-		url,
-		Schemas.CollectionSchema,
-	);
-}
+// `recommendations` is deliberately NOT appended: media pages fetch it
+// separately via getTvSeriesRecommendations, and TMDB returns a full 20-item
+// result set per title, dropping it shaves ~20 objects off every detail
+// payload that is otherwise cached client-side.
+export const getTvDetails = idEndpoint(
+	"getTvDetails",
+	Schemas.TvSchema,
+	(id) =>
+		`/tv/${id}?language=en-US&append_to_response=images,videos,credits,external_ids,keywords,content_ratings`,
+);
 
-export async function getMovieDetails({ id }: { id: number }): Promise<Movie> {
-	validateId(id);
-	const url = `/movie/${id}?language=en-US&append_to_response=images,videos,credits,release_dates,external_ids,keywords`;
+export const getBasicTvDetails = idEndpoint(
+	"getBasicTvDetails",
+	Schemas.BasicTvSchema,
+	(id) => `/tv/${id}?language=en-US`,
+);
 
-	return await safeFetch<Movie>("getMovieDetails", url, Schemas.MovieSchema);
-}
+export const getMovieRecommendations = pagedIdEndpoint(
+	"getMovieRecommendations",
+	Schemas.MovieRecommendationsSchema,
+	(id, page) => `/movie/${id}/recommendations?language=en-US&page=${page}`,
+);
 
-export async function getBasicMovieDetails({
-	id,
-}: {
-	id: number;
-}): Promise<BasicMovie> {
-	validateId(id);
-	const url = `/movie/${id}?language=en-US`;
+export const getTvSeriesRecommendations = pagedIdEndpoint(
+	"getTvSeriesRecommendations",
+	Schemas.TvRecommendationsSchema,
+	(id, page) => `/tv/${id}/recommendations?language=en-US&page=${page}`,
+);
 
-	return await safeFetch<BasicMovie>(
-		"getBasicMovieDetails",
-		url,
-		Schemas.BasicMovieSchema,
-	);
-}
+export const getCredits = typedEndpoint(
+	"getCredits",
+	Schemas.CreditsSchema,
+	"credits?language=en-US",
+);
 
-export async function getMovieRecommendations({
-	id,
-	page,
-}: {
-	id: number;
-	page?: number;
-}): Promise<MovieRecommendations> {
-	validateId(id);
-	const pageNumber = page ?? 1;
-	const url = `/movie/${id}/recommendations?language=en-US&page=${pageNumber}`;
+export const getVideos = typedEndpoint(
+	"getVideos",
+	Schemas.MediaVideosSchema,
+	"videos?language=en-US",
+);
 
-	return await safeFetch<MovieRecommendations>(
-		"getMovieRecommendations",
-		url,
-		Schemas.MovieRecommendationsSchema,
-	);
-}
-
-export async function getTvDetails({ id }: { id: number }): Promise<Tv> {
-	validateId(id);
-	// `recommendations` is deliberately NOT appended: the media pages fetch it
-	// separately via getTvRecommendations, and TMDB returns a full 20-item
-	// result set per title, dropping it shaves ~20 objects off every detail
-	// payload that is otherwise cached client-side.
-	const url = `/tv/${id}?language=en-US&append_to_response=images,videos,credits,external_ids,keywords,content_ratings`;
-
-	return await safeFetch<Tv>("getTvDetails", url, Schemas.TvSchema);
-}
-
-export async function getBasicTvDetails({
-	id,
-}: {
-	id: number;
-}): Promise<BasicTv> {
-	validateId(id);
-	const url = `/tv/${id}?language=en-US`;
-
-	return await safeFetch<BasicTv>(
-		"getBasicTvDetails",
-		url,
-		Schemas.BasicTvSchema,
-	);
-}
-
-export async function getTvRecommendations({
-	id,
-	page,
-}: {
-	id: number;
-	page?: number;
-}): Promise<TvRecommendations> {
-	validateId(id);
-	const pageNumber = page ?? 1;
-	const url = `/tv/${id}/recommendations?language=en-US&page=${pageNumber}`;
-
-	return await safeFetch<TvRecommendations>(
-		"getTvRecommendations",
-		url,
-		Schemas.TvRecommendationsSchema,
-	);
-}
-
-export const getTvSeriesRecommendations = getTvRecommendations;
-
-export async function getCredits({
-	type,
-	id,
-}: {
-	type: MediaType;
-	id: number;
-}): Promise<Credits> {
-	validateId(id);
-	const url = `/${type}/${id}/credits?language=en-US`;
-
-	return await safeFetch<Credits>("getCredits", url, Schemas.CreditsSchema);
-}
-
-export async function getVideos({
-	type,
-	id,
-}: {
-	type: MediaType;
-	id: number;
-}): Promise<MediaVideos> {
-	validateId(id);
-	const url = `/${type}/${id}/videos?language=en-US`;
-
-	return await safeFetch<MediaVideos>(
-		"getVideos",
-		url,
-		Schemas.MediaVideosSchema,
-	);
-}
-
-export async function getImages({
-	type,
-	id,
-}: {
-	type: MediaType;
-	id: number;
-}): Promise<MediaImages> {
-	validateId(id);
-	const url = `/${type}/${id}/images`;
-
-	return await safeFetch<MediaImages>(
-		"getImages",
-		url,
-		Schemas.MediaImagesSchema,
-	);
-}
+export const getImages = typedEndpoint(
+	"getImages",
+	Schemas.MediaImagesSchema,
+	"images",
+);
 
 export async function getDiscoverMovies({
 	with_keywords,
@@ -309,78 +252,36 @@ export async function getTvSeasonDetails({
 	);
 }
 
-export async function getTvEpisodeDetails({
-	id,
-	tvId,
-	seasonNumber,
-	episodeNumber,
-}: {
-	id?: number;
-	tvId?: number;
-	seasonNumber: number;
-	episodeNumber: number;
-}): Promise<TvEpisodeDetail> {
-	const targetId = id ?? tvId ?? 0;
-	validateId(targetId);
-	const url = `/tv/${targetId}/season/${seasonNumber}/episode/${episodeNumber}?language=en-US`;
-
-	return await safeFetch<TvEpisodeDetail>(
-		"getTvEpisodeDetails",
-		url,
-		Schemas.TvEpisodeDetailSchema,
-	);
-}
-
-export async function getMediaRecommendations({
-	type,
-	id,
+export async function getSearchResult({
+	query,
 	page,
 }: {
-	type: MediaType;
-	id: number;
+	query: string;
 	page?: number;
-}): Promise<MediaRecommendations> {
-	validateId(id);
+}): Promise<SearchResults> {
 	const pageNumber = page ?? 1;
-	const url = `/${type}/${id}/recommendations?language=en-US&page=${pageNumber}`;
+	const url = `/search/multi?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=${pageNumber}`;
 
-	return await safeFetch<MediaRecommendations>(
-		"getMediaRecommendations",
+	return await safeFetch<SearchResults>(
+		"getSearchResult",
 		url,
-		Schemas.MediaRecommendationsSchema,
+		Schemas.SearchResultsSchema,
 	);
 }
 
-export async function getPersonDetails({
-	id,
-}: {
-	id: number;
-}): Promise<PersonDetails> {
-	validateId(id);
-	// The person page only renders movie_credits + tv_credits (and external
-	// links). combined_credits is a third copy of the same cast/crew data and
-	// images is unused, so both are omitted to shrink a payload that can hold
-	// hundreds of credits for prolific actors.
-	const url = `/person/${id}?language=en-US&append_to_response=movie_credits,tv_credits,external_ids`;
+// The person page only renders movie_credits + tv_credits (and external
+// links). combined_credits is a third copy of the same cast/crew data and
+// images is unused, so both are omitted to shrink a payload that can hold
+// hundreds of credits for prolific actors.
+export const getPersonDetails = idEndpoint(
+	"getPersonDetails",
+	Schemas.PersonDetailsSchema,
+	(id) =>
+		`/person/${id}?language=en-US&append_to_response=movie_credits,tv_credits,external_ids`,
+);
 
-	return await safeFetch<PersonDetails>(
-		"getPersonDetails",
-		url,
-		Schemas.PersonDetailsSchema,
-	);
-}
-
-export async function getKeywordDetails({
-	id,
-}: {
-	id: number;
-}): Promise<{ id: number; name: string }> {
-	validateId(id);
-	const url = `/keyword/${id}`;
-
-	return await safeFetch<{ id: number; name: string }>(
-		"getKeywordDetails",
-		url,
-		Schemas.KeywordResultSchema,
-	);
-}
+export const getKeywordDetails = idEndpoint(
+	"getKeywordDetails",
+	Schemas.KeywordResultSchema,
+	(id) => `/keyword/${id}`,
+);

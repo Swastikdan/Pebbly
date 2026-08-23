@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/sheet";
 import { SITE_CONFIG } from "@/constants";
 import { usePermissions } from "@/hooks/use-permissions";
+import { cn } from "@/lib/utils";
 
 interface TabItem {
 	href: string;
@@ -87,25 +88,25 @@ const MOVIE_LINKS: NavLinkItem[] = [
 		name: "Popular Movies",
 		url: "/list/movies/popular",
 		subtext: "Trending now",
-		icon: <Flame className="size-4 text-foreground" />,
+		icon: <Flame className="size-4" />,
 	},
 	{
 		name: "Now Playing",
 		url: "/list/movies/now-playing",
 		subtext: "In theaters",
-		icon: <PlayCircle className="size-4 text-foreground" />,
+		icon: <PlayCircle className="size-4" />,
 	},
 	{
 		name: "Top Rated",
 		url: "/list/movies/top-rated",
 		subtext: "Highest rated",
-		icon: <Star className="size-4 text-foreground" />,
+		icon: <Star className="size-4" />,
 	},
 	{
 		name: "Upcoming",
 		url: "/list/movies/upcoming",
 		subtext: "Releasing soon",
-		icon: <Calendar className="size-4 text-foreground" />,
+		icon: <Calendar className="size-4" />,
 	},
 ];
 
@@ -114,25 +115,25 @@ const TV_LINKS: NavLinkItem[] = [
 		name: "Popular TV",
 		url: "/list/tv-shows/popular",
 		subtext: "Trending series",
-		icon: <Flame className="size-4 text-foreground" />,
+		icon: <Flame className="size-4" />,
 	},
 	{
 		name: "On The Air",
 		url: "/list/tv-shows/on-the-air",
 		subtext: "Currently airing",
-		icon: <Radio className="size-4 text-foreground" />,
+		icon: <Radio className="size-4" />,
 	},
 	{
 		name: "Top Rated",
 		url: "/list/tv-shows/top-rated",
 		subtext: "Highest rated",
-		icon: <Star className="size-4 text-foreground" />,
+		icon: <Star className="size-4" />,
 	},
 	{
 		name: "Airing Today",
 		url: "/list/tv-shows/airing-today",
 		subtext: "New episodes",
-		icon: <Clock className="size-4 text-foreground" />,
+		icon: <Clock className="size-4" />,
 	},
 ];
 
@@ -141,28 +142,28 @@ const QUICK_LINKS: NavLinkItem[] = [
 		name: "Watchlist",
 		url: "/watchlist",
 		subtext: "Saved titles",
-		icon: <Bookmark className="size-4 text-foreground" />,
+		icon: <Bookmark className="size-4" />,
 		isExternal: false,
 	},
 	{
 		name: "Search Catalog",
 		url: "/search",
 		subtext: "Find movies & TV",
-		icon: <Search className="size-4 text-foreground" />,
+		icon: <Search className="size-4" />,
 		isExternal: false,
 	},
 	{
 		name: "Disclaimer",
 		url: "/disclaimer",
 		subtext: "Terms & info",
-		icon: <Info className="size-4 text-foreground" />,
+		icon: <Info className="size-4" />,
 		isExternal: false,
 	},
 	{
 		name: "GitHub Code",
 		url: SITE_CONFIG.Footerlinks.github,
 		subtext: "View repository",
-		icon: <Github className="size-4 text-foreground" />,
+		icon: <Github className="size-4" />,
 		isExternal: true,
 	},
 ];
@@ -225,31 +226,56 @@ const NavCard = ({
 	const cardContent = (
 		<>
 			<div className="flex items-center gap-3 min-w-0 flex-1">
-				<div className="rounded-xl bg-muted/60 p-2.5 text-foreground shrink-0">
+				<div
+					className={cn(
+						"rounded-xl p-2.5 shrink-0",
+						isActive
+							? "bg-nav-active-fg/15 text-nav-active-fg"
+							: "bg-muted text-foreground",
+					)}
+				>
 					{item.icon}
 				</div>
 				<div className="min-w-0 flex-1">
-					<div className="font-bold text-sm text-foreground truncate">
+					<div
+						className={cn(
+							"font-bold text-sm truncate",
+							isActive ? "text-nav-active-fg" : "text-foreground",
+						)}
+					>
 						{item.name}
 					</div>
-					<div className="text-[11px] text-muted-foreground truncate">
+					<div
+						className={cn(
+							"text-[11px] truncate",
+							isActive ? "text-nav-active-fg/75" : "text-muted-foreground",
+						)}
+					>
 						{item.subtext}
 					</div>
 				</div>
 			</div>
 			{badge && (
-				<span className="rounded-md bg-muted px-2.5 py-0.5 font-semibold text-[10px] text-muted-foreground border border-border/50 shrink-0 ml-2">
+				<span
+					className={cn(
+						"rounded-md px-2.5 py-0.5 font-semibold text-[10px] shrink-0 ml-2 border",
+						isActive
+							? "bg-nav-active-fg/15 text-nav-active-fg border-transparent"
+							: "bg-muted text-muted-foreground border-border/60",
+					)}
+				>
 					{badge}
 				</span>
 			)}
 		</>
 	);
 
-	const baseClasses =
-		"flex items-center justify-between rounded-2xl border border-white/10 bg-secondary/30 p-3 transition-[color,background-color,border-color,transform] active:scale-[0.98]";
-	const activeClasses = isActive
-		? "ring-2 ring-primary/60 border-primary/50 bg-secondary/80"
-		: "";
+	const baseClasses = cn(
+		"flex items-center justify-between rounded-2xl border p-3 transition-[color,background-color,border-color,transform] active:scale-[0.98]",
+		isActive
+			? "border-transparent bg-nav-active-bg shadow-sm"
+			: "border-border bg-card",
+	);
 
 	if (item.isExternal) {
 		return (
@@ -257,7 +283,7 @@ const NavCard = ({
 				href={item.url}
 				target="_blank"
 				rel="noopener noreferrer"
-				className={`${baseClasses} ${activeClasses}`}
+				className={baseClasses}
 			>
 				{cardContent}
 			</a>
@@ -267,7 +293,7 @@ const NavCard = ({
 	return (
 		<SheetClose
 			render={<Link to={item.url} search={search} />}
-			className={`${baseClasses} ${activeClasses}`}
+			className={baseClasses}
 		>
 			{cardContent}
 		</SheetClose>

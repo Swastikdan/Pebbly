@@ -21,16 +21,11 @@ import { Button } from "@/components/ui/button";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
-import {
-	useCloneList,
-	useDeleteCustomList,
-	useReorderListItems,
-	useUpdateCustomList,
-} from "@/hooks/use-custom-lists";
 import { destructiveToast } from "@/hooks/use-destructive-toast";
 import { toast } from "@/hooks/use-toast-store";
 import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
+import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle } from "@/lib/utils";
 import { getCollectionPage } from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
@@ -55,10 +50,12 @@ export function CollectionPage({ listId }: { listId: string }) {
 		queryFn: () => unwrap(getCollectionPage({ data: { listId } })),
 	});
 
-	const updateList = useUpdateCustomList();
-	const deleteCustomList = useDeleteCustomList();
-	const cloneList = useCloneList();
-	const reorderItems = useReorderListItems();
+	const {
+		updateList,
+		deleteList: deleteCustomList,
+		cloneList,
+		reorderListItem: reorderItems,
+	} = useRepository();
 
 	const refreshPage = () =>
 		queryClient.invalidateQueries({
@@ -213,14 +210,14 @@ export function CollectionPage({ listId }: { listId: string }) {
 				</div>
 
 				{canManage ? (
-					<div className="flex flex-wrap items-center gap-2 shrink-0 self-end md:self-center z-10">
+					<div className="flex w-full flex-wrap items-center gap-2 z-10 md:w-auto md:flex-nowrap md:shrink-0 md:self-center md:justify-end">
 						{/* Live visibility switch */}
-						<div className="flex p-1 rounded-xl bg-muted/70 border border-border/50">
+						<div className="flex flex-1 rounded-xl bg-muted/70 border border-border/50 p-1 md:flex-none">
 							<button
 								type="button"
 								onClick={() => !isPublic && handleVisibility("public")}
 								className={cn(
-									"flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
+									"flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border md:flex-none md:px-2.5 md:py-1.5 md:text-[10.5px]",
 									isPublic
 										? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
 										: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
@@ -234,7 +231,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 								type="button"
 								onClick={() => isPublic && handleVisibility("private")}
 								className={cn(
-									"flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[10.5px] rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border",
+									"flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs rounded-lg cursor-pointer transition-[color,background-color,border-color,box-shadow] border md:flex-none md:px-2.5 md:py-1.5 md:text-[10.5px]",
 									!isPublic
 										? "bg-background text-foreground border-border/40 shadow-xs dark:shadow-none font-semibold"
 										: "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40",
@@ -285,7 +282,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 						</Menu>
 					</div>
 				) : (
-					<div className="flex flex-wrap items-center gap-2 shrink-0 self-end md:self-center z-10">
+					<div className="flex w-full flex-wrap items-center gap-2 z-10 md:w-auto md:flex-nowrap md:shrink-0 md:self-center md:justify-end">
 						{isSignedIn ? (
 							<Button
 								type="button"
@@ -317,7 +314,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 			</div>
 
 			{items.length > 0 && (
-				<div className="flex gap-1.5 border-b border-border/20 pb-2 overflow-x-auto scrollbar-hidden">
+				<div className="flex justify-center gap-1.5 border-b border-border/20 pb-2 overflow-x-auto scrollbar-hidden sm:justify-start">
 					{(["all", "movie", "tv"] as const).map((filter) => {
 						const isActive = mediaFilter === filter;
 						const count = items.filter(
@@ -337,7 +334,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 								variant={isActive ? "default" : "ghost"}
 								onClick={() => setMediaFilter(filter)}
 								className={cn(
-									"h-auto items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
+									"h-auto flex-1 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors whitespace-nowrap sm:flex-none sm:py-1.5",
 									isActive
 										? "bg-foreground text-background"
 										: "text-muted-foreground hover:bg-secondary hover:text-foreground",

@@ -106,21 +106,10 @@ export const ImageAssetSchema = v.looseObject({
 });
 export type ImageAsset = v.InferOutput<typeof ImageAssetSchema>;
 
-export const BackdropsEntityOrPostersEntitySchema = ImageAssetSchema;
-export type BackdropsEntityOrPostersEntity = v.InferOutput<
-	typeof BackdropsEntityOrPostersEntitySchema
->;
-
-export const LogoAssetSchema = ImageAssetSchema;
-export type LogoAsset = v.InferOutput<typeof LogoAssetSchema>;
-
-export const LogosEntitySchema = LogoAssetSchema;
-export type LogosEntity = v.InferOutput<typeof LogosEntitySchema>;
-
 export const MediaImagesSchema = v.looseObject({
 	id: numNull(),
 	backdrops: v.nullish(v.array(ImageAssetSchema), () => []),
-	logos: v.nullish(v.array(LogoAssetSchema), () => []),
+	logos: v.nullish(v.array(ImageAssetSchema), () => []),
 	posters: v.nullish(v.array(ImageAssetSchema), () => []),
 });
 export type MediaImages = v.InferOutput<typeof MediaImagesSchema>;
@@ -143,6 +132,18 @@ export const MediaVideosResultsEntitySchema = VideoResultSchema;
 export type MediaVideosResultsEntity = v.InferOutput<
 	typeof MediaVideosResultsEntitySchema
 >;
+
+/*
+ * Standard TMDB paged envelope (page / results / total_pages / total_results)
+ * shared by every list-shaped endpoint response.
+ */
+const paginated = <S extends v.GenericSchema>(item: S) =>
+	v.looseObject({
+		page: num(1),
+		results: v.nullish(v.array(item), () => []),
+		total_pages: num(1),
+		total_results: num(0),
+	});
 
 export const MediaVideosSchema = v.looseObject({
 	id: numNull(),
@@ -222,12 +223,7 @@ export type SearchResultsEntity = v.InferOutput<
 	typeof SearchResultsEntitySchema
 >;
 
-export const SearchResultsSchema = v.looseObject({
-	page: num(1),
-	results: v.nullish(v.array(SearchResultsEntitySchema), () => []),
-	total_pages: num(1),
-	total_results: num(0),
-});
+export const SearchResultsSchema = paginated(SearchResultsEntitySchema);
 export type SearchResults = v.InferOutput<typeof SearchResultsSchema>;
 
 export const MediaListResultsEntitySchema = v.looseObject({
@@ -370,15 +366,9 @@ export type MovieRecommendationsResultsEntity = v.InferOutput<
 	typeof MovieRecommendationsResultsEntitySchema
 >;
 
-export const MovieRecommendationsSchema = v.looseObject({
-	page: num(1),
-	results: v.nullish(
-		v.array(MovieRecommendationsResultsEntitySchema),
-		() => [],
-	),
-	total_pages: num(1),
-	total_results: num(0),
-});
+export const MovieRecommendationsSchema = paginated(
+	MovieRecommendationsResultsEntitySchema,
+);
 export type MovieRecommendations = v.InferOutput<
 	typeof MovieRecommendationsSchema
 >;
@@ -500,17 +490,7 @@ export type RecommendationResult = v.InferOutput<
 	typeof RecommendationResultSchema
 >;
 
-export const TvRecommendationsResultsEntitySchema = RecommendationResultSchema;
-export type TvRecommendationsResultsEntity = v.InferOutput<
-	typeof TvRecommendationsResultsEntitySchema
->;
-
-export const TvRecommendationsSchema = v.looseObject({
-	page: num(1),
-	results: v.nullish(v.array(RecommendationResultSchema), () => []),
-	total_pages: num(1),
-	total_results: num(0),
-});
+export const TvRecommendationsSchema = paginated(RecommendationResultSchema);
 export type TvRecommendations = v.InferOutput<typeof TvRecommendationsSchema>;
 
 export const TvKeywordsSchema = v.looseObject({
@@ -588,15 +568,9 @@ export type MediaRecommendationsResultsEntity = v.InferOutput<
 	typeof MediaRecommendationsResultsEntitySchema
 >;
 
-export const MediaRecommendationsSchema = v.looseObject({
-	page: num(1),
-	results: v.nullish(
-		v.array(MediaRecommendationsResultsEntitySchema),
-		() => [],
-	),
-	total_pages: num(1),
-	total_results: num(0),
-});
+export const MediaRecommendationsSchema = paginated(
+	MediaRecommendationsResultsEntitySchema,
+);
 export type MediaRecommendations = v.InferOutput<
 	typeof MediaRecommendationsSchema
 >;
@@ -642,10 +616,9 @@ export const TvSeasonDetailSchema = v.looseObject({
 });
 export type TvSeasonDetail = v.InferOutput<typeof TvSeasonDetailSchema>;
 
-export const PersonCreditCastSchema = v.looseObject({
+const personCreditBase = {
 	adult: bool(),
 	backdrop_path: strNull(),
-	genre_ids: v.nullish(v.array(v.number()), () => []),
 	id: v.number(),
 	original_language: str(),
 	original_title: strOpt(),
@@ -660,6 +633,11 @@ export const PersonCreditCastSchema = v.looseObject({
 	video: bool(),
 	vote_average: num(),
 	vote_count: num(),
+} satisfies v.ObjectEntries;
+
+export const PersonCreditCastSchema = v.looseObject({
+	...personCreditBase,
+	genre_ids: v.nullish(v.array(v.number()), () => []),
 	character: str(),
 	credit_id: str(),
 	order: num(),
@@ -669,26 +647,11 @@ export const PersonCreditCastSchema = v.looseObject({
 export type PersonCreditCast = v.InferOutput<typeof PersonCreditCastSchema>;
 
 export const PersonCreditCrewSchema = v.looseObject({
-	adult: bool(),
-	backdrop_path: strNull(),
+	...personCreditBase,
 	genre_ids: v.fallback(v.nullable(v.array(v.number())), []),
-	id: v.number(),
-	original_language: str(),
-	original_title: strOpt(),
-	original_name: strOpt(),
-	overview: str(),
-	popularity: num(),
-	poster_path: strNull(),
-	release_date: strOpt(),
-	first_air_date: strOpt(),
-	title: strOpt(),
-	name: strOpt(),
-	video: bool(),
-	vote_average: num(),
-	vote_count: num(),
-	credit_id: str(),
 	department: str(),
 	job: str(),
+	credit_id: str(),
 	media_type: str("movie"),
 	episode_count: numOpt(),
 });

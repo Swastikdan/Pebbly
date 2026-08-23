@@ -92,6 +92,37 @@ function UserAvatar({ user, size }: { user: AdminUser; size: "sm" | "lg" }) {
 	);
 }
 
+function UserStatusBadge({
+	isBanned,
+	size,
+}: {
+	isBanned: boolean;
+	size: "sm" | "lg";
+}) {
+	if (isBanned) {
+		return (
+			<Badge
+				className={`gap-1 bg-destructive/15 text-destructive border-destructive/30 font-semibold ${
+					size === "sm" ? "hover:bg-destructive/20" : "text-xs py-1 shrink-0"
+				}`}
+			>
+				<UserX className="size-3" />
+				Banned
+			</Badge>
+		);
+	}
+	return (
+		<Badge
+			className={`gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-semibold ${
+				size === "sm" ? "hover:bg-emerald-500/20" : "text-xs py-1 shrink-0"
+			}`}
+		>
+			<ShieldCheck className="size-3" />
+			Active
+		</Badge>
+	);
+}
+
 export function AdminUserRow({
 	user,
 	isSelf,
@@ -132,17 +163,7 @@ export function AdminUserRow({
 					</div>
 				</td>
 				<td className="px-4 py-3.5">
-					{isBanned ? (
-						<Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/20 font-semibold">
-							<UserX className="size-3" />
-							Banned
-						</Badge>
-					) : (
-						<Badge className="gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold">
-							<ShieldCheck className="size-3" />
-							Active
-						</Badge>
-					)}
+					<UserStatusBadge isBanned={isBanned} size="sm" />
 				</td>
 				<td className="px-4 py-3.5">
 					<div className="flex items-center gap-1 flex-wrap">
@@ -217,17 +238,7 @@ export function AdminUserRow({
 					</div>
 				</div>
 
-				{isBanned ? (
-					<Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30 font-semibold text-xs py-1 shrink-0">
-						<UserX className="size-3" />
-						Banned
-					</Badge>
-				) : (
-					<Badge className="gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-semibold text-xs py-1 shrink-0">
-						<ShieldCheck className="size-3" />
-						Active
-					</Badge>
-				)}
+				<UserStatusBadge isBanned={isBanned} size="lg" />
 			</div>
 
 			<div className="mt-3.5 pt-3 border-t border-border/40 flex items-center justify-between gap-2 flex-wrap">

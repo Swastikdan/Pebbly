@@ -6,6 +6,7 @@ import {
 	getSearchResult,
 } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
+import { normalizeTitleKey } from "@/lib/text";
 import type { BasicMovie, BasicTv } from "@/lib/tmdb-schemas";
 import type { AIRecommendation } from "@/types";
 
@@ -46,14 +47,9 @@ export function normalizeTmdbData(
 }
 
 export function titlesMatch(aiTitle: string, tmdbTitle: string): boolean {
-	const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-	const a = normalize(aiTitle);
-	const b = normalize(tmdbTitle);
+	const a = normalizeTitleKey(aiTitle);
+	const b = normalizeTitleKey(tmdbTitle);
 	return a === b || a.includes(b) || b.includes(a);
-}
-
-export function normalizeTitleKey(title?: string | null): string {
-	return (title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 export function useTmdbData(tmdbId: number | null, mediaType: MediaType) {

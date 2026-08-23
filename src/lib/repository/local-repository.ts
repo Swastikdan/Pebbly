@@ -1,16 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { useLocalListsStore } from "@/hooks/use-local-lists-store";
 import { useLocalProgressStore } from "@/hooks/use-local-progress-store";
-import { watchlistOptimistic } from "@/hooks/watchlist/watchlist-optimistic";
 import { useWatchlistStore } from "@/hooks/watchlist-store";
-import { getTvDetails } from "@/lib/queries";
-import { queryKeys } from "@/lib/query/keys";
-import {
-	type ListsRepository,
-	type Repository,
-	resolveProgressStatusAction,
-	type WatchlistRepository,
-} from "./types";
+import { resolveStatusPlan } from "./status-plan";
+import type { ListsRepository, Repository, WatchlistRepository } from "./types";
 
 function logLocalError(action: string, error: unknown) {
 	console.error(`Failed to ${action}`, error);
@@ -30,27 +23,17 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
 				});
 		},
 
-		async batchToggleMembership(items) {
-			const setLocal = useWatchlistStore.getState().setWatchlistMembershipLocal;
-			for (const item of items) {
-				setLocal(item.id, item.media_type, item.inWatchlist, {
-					title: item.title,
-					image: item.image,
-					rating: item.rating,
-					release_date: item.release_date,
-					overview: item.overview,
-				});
-			}
-		},
-
 		setProgressStatus(id, mediaType, progressStatus, metadata, currentStatus) {
-			const action = resolveProgressStatusAction(
+			const { action, seasonsPromise } = resolveStatusPlan(
+				queryClient,
+				id,
 				mediaType,
 				progressStatus,
 				currentStatus,
 			);
 			const setLocalStatus =
 				useWatchlistStore.getState().setProgressStatusLocal;
+			const tvId = Number(id);
 
 			if (action.type === "tv") {
 				setLocalStatus(
@@ -62,20 +45,14 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
 				);
 
 				if (action.isLeavingCompletion && !action.shouldMarkWatched) {
-					useLocalProgressStore.getState().clearShowProgress(Number(id));
-				} else if (action.needsEpisodeUpdate) {
-					queryClient
-						.ensureQueryData({
-							queryKey: queryKeys.tmdb.tvDetails(Number(id)),
-							queryFn: () => getTvDetails({ id: Number(id) }),
-						})
-						.then((details) => {
+					useLocalProgressStore.getState().clearShowProgress(tvId);
+				} else if (seasonsPromise) {
+					seasonsPromise
+						.then((seasons) => {
 							const { markSeasonWatched } = useLocalProgressStore.getState();
-							for (const season of watchlistOptimistic.buildSeasonEpisodeSelections(
-								details,
-							)) {
+							for (const season of seasons) {
 								markSeasonWatched(
-									Number(id),
+									tvId,
 									season.season,
 									season.episodes,
 									action.shouldMarkWatched,

@@ -6,8 +6,8 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
 import { toast } from "@/hooks/use-toast-store";
-import { useSetProgressStatus } from "@/hooks/use-watchlist";
 import type { WatchlistItem } from "@/hooks/watchlist-store";
+import { useRepository } from "@/lib/repository/use-repository";
 import { formatMediaTitle } from "@/lib/utils";
 import type { ProgressStatus } from "@/types";
 
@@ -48,7 +48,7 @@ export function WatchlistCard({
 		? new Date(item.release_date).getFullYear()
 		: null;
 
-	const setProgressStatus = useSetProgressStatus();
+	const { setProgressStatus } = useRepository();
 
 	const metadata = {
 		title: item.title,

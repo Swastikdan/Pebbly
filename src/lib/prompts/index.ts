@@ -43,6 +43,14 @@ export interface FeedbackSignals {
 	previousTitles?: string[];
 }
 
+export function formatStats(inputStats: {
+	movieCount: number;
+	tvCount: number;
+	episodesWatched: number;
+}): string {
+	return `## Stats:\n- ${inputStats.movieCount} movies, ${inputStats.tvCount} TV shows tracked\n- ${inputStats.episodesWatched} episodes watched\n\n`;
+}
+
 export interface BasePromptConfig {
 	mediaTypePreference?: string;
 	yearFrom?: number;
@@ -285,7 +293,7 @@ export function buildWatchlistPrompt(
 		feedback,
 		watchlistText: " (already in my watchlist)",
 		recommendationGoal: `Based on this data, recommend exactly ${titleCount} ${mediaLabel(mediaTypePreference)} I would likely enjoy.\n`,
-		statsText: `## Stats:\n- ${inputStats.movieCount} movies, ${inputStats.tvCount} TV shows tracked\n- ${inputStats.episodesWatched} episodes watched\n\n`,
+		statsText: formatStats(inputStats),
 	});
 
 	prompt += RESPONSE_SCHEMA;
@@ -410,7 +418,7 @@ export function buildHomepageRecommendationsPrompt(
 		},
 		watchlistText: "",
 		recommendationGoal: `Based on this data, recommend exactly 15 movies and 15 TV shows I would likely enjoy.\n`,
-		statsText: `## Stats:\n- ${inputStats.movieCount} movies, ${inputStats.tvCount} TV shows tracked\n- ${inputStats.episodesWatched} episodes watched\n\n`,
+		statsText: formatStats(inputStats),
 	});
 
 	prompt += RESPONSE_SCHEMA;

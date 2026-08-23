@@ -6,6 +6,7 @@
  */
 
 import type { MediaType } from "@/lib/media-types";
+import { hashString } from "@/lib/text";
 
 export interface PickItem {
 	id: number;
@@ -58,12 +59,7 @@ export interface DiscoveryCandidate {
 export function getTodaySeedIndex(max: number, date = new Date()): number {
 	if (max <= 0) return 0;
 	const todayStr = date.toISOString().slice(0, 10);
-	let hash = 0;
-	for (let i = 0; i < todayStr.length; i++) {
-		hash = (hash << 5) - hash + (todayStr.charCodeAt(i) || 0);
-		hash |= 0;
-	}
-	return Math.abs(hash) % max;
+	return Math.abs(hashString(todayStr)) % max;
 }
 
 export function getPickKey(item: PickItem): string {

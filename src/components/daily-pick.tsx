@@ -97,7 +97,13 @@ export function DailyPickButton() {
 							) : (
 								<div className="h-full w-full bg-gradient-to-br from-neutral-800 to-neutral-950" />
 							)}
-							<div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+							{/* Scrim: dark modes blend the banner into the panel with a tall
+						    background fade; light mode gets a gentle contrast dim plus a
+						    short bottom fade so the artwork stays vivid instead of washing
+						    out under a white veil. */}
+							<div className="absolute inset-0 hidden bg-gradient-to-t from-background via-background/40 to-transparent dark:block" />
+							<div className="absolute inset-0 bg-black/15 dark:hidden" />
+							<div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background via-background/60 to-transparent dark:hidden" />
 
 							{/* Header badges */}
 							<div className="absolute top-3 left-3 pr-12 flex flex-wrap items-center gap-1.5">
@@ -220,7 +226,7 @@ export function DailyPickButton() {
 												variant="outline"
 												onClick={pick.handleDislike}
 												title="Dislike / Not for me (Removes from picks)"
-												className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive transition-colors"
+												className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs text-foreground transition-[color,background-color,border-color,transform] duration-150 hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:scale-[0.97] active:bg-destructive/15 active:text-destructive"
 											>
 												<ThumbsDown className="mr-1.5 size-3.5" />
 												<span>Dislike</span>
@@ -230,7 +236,7 @@ export function DailyPickButton() {
 												variant="outline"
 												onClick={pick.handleShuffle}
 												title="Pick Another"
-												className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs hover:bg-accent"
+												className="h-9 sm:h-10 rounded-xl border-border px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 hover:bg-accent active:scale-[0.97] active:bg-accent"
 											>
 												🎲 Another
 											</Button>
@@ -259,7 +265,7 @@ export function DailyPickButton() {
 											variant="outline"
 											onClick={pick.handleDislike}
 											title="Dislike / Not for me (Removes from picks)"
-											className="w-full h-10 sm:h-11 rounded-xl border-border px-2 text-xs sm:text-sm font-semibold text-muted-foreground hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive transition-colors"
+											className="w-full h-10 sm:h-11 rounded-xl border-border px-2 text-xs sm:text-sm font-semibold text-foreground transition-[color,background-color,border-color,transform] duration-150 hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:scale-[0.97] active:bg-destructive/15 active:text-destructive"
 										>
 											<ThumbsDown className="mr-1.5 size-3.5" />
 											<span>Dislike</span>
@@ -269,7 +275,7 @@ export function DailyPickButton() {
 											variant="outline"
 											onClick={pick.handleShuffle}
 											title="Pick Another"
-											className="w-full h-10 sm:h-11 rounded-xl border-border px-2 text-xs sm:text-sm font-semibold hover:bg-accent"
+											className="w-full h-10 sm:h-11 rounded-xl border-border px-2 text-xs sm:text-sm font-semibold transition-[color,background-color,border-color,transform] duration-150 hover:bg-accent active:scale-[0.97] active:bg-accent"
 										>
 											🎲 Another
 										</Button>

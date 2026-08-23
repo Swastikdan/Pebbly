@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
 import type { CustomListRow, ListItemRow } from "@/lib/server-types";
+import { mergeDefinedFields } from "../guest-store-kit";
 import { beginOp, type OpHandle, type PendingOpEntry } from "../pending-ops";
 
 export const listIdOf = (list: CustomListRow) => list.id;
@@ -185,24 +186,15 @@ export function beginUpdateListOp(
 				apply: (rows: CustomListRow[]) =>
 					rows.map((l) =>
 						l.id === args.listId
-							? {
-									...l,
-									...(args.name !== undefined && { name: args.name }),
-									...(args.color !== undefined && { color: args.color }),
-									...(args.description !== undefined && {
-										description: args.description,
-									}),
-									...(args.visibility !== undefined && {
-										visibility: args.visibility,
-									}),
-									...(args.listType !== undefined && {
-										listType: args.listType,
-									}),
-									...(args.sortType !== undefined && {
-										sortType: args.sortType,
-									}),
+							? mergeDefinedFields(l, {
+									name: args.name,
+									color: args.color,
+									description: args.description,
+									visibility: args.visibility,
+									listType: args.listType,
+									sortType: args.sortType,
 									updatedAt: Date.now(),
-								}
+								})
 							: l,
 					),
 			},

@@ -4,21 +4,13 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import type { MediaType } from "@/lib/media-types";
 import { queryKeys } from "@/lib/query/keys";
-import { useRepository } from "@/lib/repository/use-repository";
 import type { CustomListRow, ListItemRow } from "@/lib/server-types";
 import { getCustomLists, getItemLists, getListItems } from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
 import type { ProgressStatus, ReactionStatus } from "@/types";
-import type {
-	CreateListAndAddArgs,
-	CreateListArgs,
-	ReorderItemsArgs,
-	ToggleListItemArgs,
-	UpdateListArgs,
-} from "./custom-lists/list-optimistic";
 import { reconcileListFetch } from "./pending-ops";
 import { useLocalListsStore } from "./use-local-lists-store";
 import { useWatchlistStore } from "./watchlist-store";
@@ -185,80 +177,4 @@ export function useItemLists(tmdbId: number, mediaType: MediaType) {
 			.filter((item) => item.tmdbId === tmdbId && item.mediaType === mediaType)
 			.map((item) => item.listId);
 	}, [isSignedIn, remote.data, tmdbId, mediaType, localItems]);
-}
-export function useDeleteCustomList() {
-	const repository = useRepository();
-
-	return useCallback(
-		async (listId: string) => {
-			await repository.deleteList(listId);
-		},
-		[repository],
-	);
-}
-
-export function useCreateCustomList() {
-	const repository = useRepository();
-
-	return useCallback(
-		async (args: CreateListArgs) => {
-			return await repository.createList(args);
-		},
-		[repository],
-	);
-}
-
-export function useCreateCustomListAndAddItem() {
-	const repository = useRepository();
-
-	return useCallback(
-		async (args: CreateListAndAddArgs) => {
-			await repository.createListAndAddItem(args);
-		},
-		[repository],
-	);
-}
-
-export function useUpdateCustomList() {
-	const repository = useRepository();
-
-	return useCallback(
-		async (args: UpdateListArgs) => {
-			await repository.updateList(args);
-		},
-		[repository],
-	);
-}
-
-export function useToggleListItem() {
-	const repository = useRepository();
-
-	return useCallback(
-		async (args: ToggleListItemArgs) => {
-			return await repository.toggleListItem(args);
-		},
-		[repository],
-	);
-}
-
-export function useReorderListItems() {
-	const repository = useRepository();
-
-	return useCallback(
-		async (args: ReorderItemsArgs) => {
-			await repository.reorderListItem(args);
-		},
-		[repository],
-	);
-}
-
-export function useCloneList() {
-	const repository = useRepository();
-
-	return useCallback(
-		async (sourceListId: string) => {
-			return await repository.cloneList(sourceListId);
-		},
-		[repository],
-	);
 }

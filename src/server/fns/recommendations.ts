@@ -10,6 +10,7 @@ import {
 	type FeedbackSignals,
 	type WatchlistData,
 } from "@/lib/prompts";
+import { hashString, normalizeTitleKey } from "@/lib/text";
 import { callGeminiAI, MODELS_TO_TRY, type Recommendation } from "../ai";
 import {
 	type AuthUser,
@@ -538,19 +539,39 @@ function computeHash(
 	const sorted = items
 		.map((i) => `${i.tmdbId}:${i.progressStatus ?? ""}:${i.reaction ?? ""}`)
 		.sort();
-	let hash = 0;
 	const str =
 		sorted.join("|") +
 		`|mt:${mediaTypePreference ?? ""}|g:${genrePreference ?? ""}`;
-	for (let i = 0; i < str.length; i++) {
-		const char = str.charCodeAt(i);
-		hash = ((hash << 5) - hash + char) | 0;
-	}
-	return hash.toString(36);
+	return hashString(str).toString(36);
 }
 
-function normalizeTitleKey(title?: string | null): string {
-	return (title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+function filterKnownRecommendations<
+	T extends { tmdbId?: number | null; title?: string | null },
+>(
+	recommendations: T[],
+	watchItems: Array<{ tmdbId: number; title: string | null }>,
+	extraExcludedIds: number[],
+): T[] {
+	const existingIds = new Set([
+		...watchItems.map((item) => item.tmdbId),
+		...extraExcludedIds,
+	]);
+	const existingTitles = new Set(
+		watchItems.map((item) => normalizeTitleKey(item.title)),
+	);
+	return recommendations.filter(
+		(r) =>
+			(r.tmdbId == null || !existingIds.has(r.tmdbId)) &&
+			!existingTitles.has(normalizeTitleKey(r.title)),
+	);
+}
+
+function collectFeedback<K extends "title" | "tmdbId">(
+	list: Array<typeof recommendationFeedback.$inferSelect>,
+	feedback: string[],
+	key: K,
+): Array<(typeof recommendationFeedback.$inferSelect)[K]> {
+	return list.filter((f) => feedback.includes(f.feedback)).map((f) => f[key]);
 }
 
 async function gatherWatchlistData(userId: string): Promise<WatchlistData> {
@@ -879,15 +900,17 @@ export const generateRecommendations = createServerFn({ method: "POST" })
 
 		const feedbackList = await getRecommendationFeedbackInternal(user.id);
 
-		const likedTitles = feedbackList
-			.filter((f) => f.feedback === "like")
-			.map((f) => f.title);
-		const dislikedTitles = feedbackList
-			.filter((f) => f.feedback === "not_interested")
-			.map((f) => f.title);
-		const dislikedTmdbIds = feedbackList
-			.filter((f) => f.feedback === "not_interested")
-			.map((f) => f.tmdbId);
+		const likedTitles = collectFeedback(feedbackList, ["like"], "title");
+		const dislikedTitles = collectFeedback(
+			feedbackList,
+			["not_interested"],
+			"title",
+		);
+		const dislikedTmdbIds = collectFeedback(
+			feedbackList,
+			["not_interested"],
+			"tmdbId",
+		);
 
 		const excludeTmdbIds = [
 			...new Set([...(data.excludeTmdbIds ?? []), ...dislikedTmdbIds]),
@@ -941,17 +964,10 @@ export const generateRecommendations = createServerFn({ method: "POST" })
 		const parsed = aiResult.result;
 		const usedModel = aiResult.usedModel ?? MODELS_TO_TRY[0];
 
-		const existingIds = new Set([
-			...watchlistData.watchItems.map((item) => item.tmdbId),
-			...excludeTmdbIds,
-		]);
-		const existingTitles = new Set(
-			watchlistData.watchItems.map((item) => normalizeTitleKey(item.title)),
-		);
-		parsed.recommendations = parsed.recommendations.filter(
-			(r) =>
-				(r.tmdbId == null || !existingIds.has(r.tmdbId)) &&
-				!existingTitles.has(normalizeTitleKey(r.title)),
+		parsed.recommendations = filterKnownRecommendations(
+			parsed.recommendations,
+			watchlistData.watchItems,
+			excludeTmdbIds,
 		);
 
 		const watchlistHash = computeHash(
@@ -1006,21 +1022,17 @@ export const generateHomepageRecommendations = createServerFn({
 
 		const feedbackList = await getRecommendationFeedbackInternal(user.id);
 
-		const likedFeedback = feedbackList
-			.filter((f) => f.feedback === "like")
-			.map((f) => f.title);
-
-		const dislikedFeedbackTitles = feedbackList
-			.filter(
-				(f) => f.feedback === "not_interested" || f.feedback === "dislike",
-			)
-			.map((f) => f.title);
-
-		const dislikedFeedbackIds = feedbackList
-			.filter(
-				(f) => f.feedback === "not_interested" || f.feedback === "dislike",
-			)
-			.map((f) => f.tmdbId);
+		const likedFeedback = collectFeedback(feedbackList, ["like"], "title");
+		const dislikedFeedbackTitles = collectFeedback(
+			feedbackList,
+			["not_interested", "dislike"],
+			"title",
+		);
+		const dislikedFeedbackIds = collectFeedback(
+			feedbackList,
+			["not_interested", "dislike"],
+			"tmdbId",
+		);
 
 		const homepageEntry = await getHomepageRecommendationEntryInternal(user.id);
 
@@ -1055,18 +1067,10 @@ export const generateHomepageRecommendations = createServerFn({
 		}
 		const parsed = aiResult.result;
 
-		const existingIds = new Set([
-			...watchlistData.watchItems.map((item) => item.tmdbId),
-			...dislikedFeedbackIds,
-		]);
-		const existingTitles = new Set(
-			watchlistData.watchItems.map((item) => normalizeTitleKey(item.title)),
-		);
-
-		parsed.recommendations = parsed.recommendations.filter(
-			(r) =>
-				(r.tmdbId == null || !existingIds.has(r.tmdbId)) &&
-				!existingTitles.has(normalizeTitleKey(r.title)),
+		parsed.recommendations = filterKnownRecommendations(
+			parsed.recommendations,
+			watchlistData.watchItems,
+			dislikedFeedbackIds,
 		);
 
 		// An empty result after filtering is a failed generation, record the

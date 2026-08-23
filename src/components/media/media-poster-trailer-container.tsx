@@ -1,6 +1,10 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { lazy, Suspense } from "react";
+import {
+	LightboxNavButton,
+	PlayOverlay,
+	YouTubeEmbed,
+} from "@/components/media/media-lightbox-dialog";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,17 +14,20 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Play } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
+import { useWatchProgress } from "@/hooks/watch-progress/use-watch-progress";
+import type {
+	MediaDialogKey,
+	MediaDialogSearch,
+} from "@/lib/media-dialog-helpers";
+import { updateDialogSearch } from "@/lib/media-dialog-helpers";
+import type { MediaType } from "@/lib/media-types";
 
 const VideoPlayerModal = lazy(() =>
 	import("@/components/video-player-modal").then((m) => ({
 		default: m.VideoPlayerModal,
 	})),
 );
-
-import { useWatchProgress } from "@/hooks/watch-progress/use-watch-progress";
-import type { MediaType } from "@/lib/media-types";
 
 export function MediaPosterTrailerContainer(props: {
 	tmdbId: number;
@@ -32,7 +39,7 @@ export function MediaPosterTrailerContainer(props: {
 	const { tmdbId, type, image, title, trailervideos } = props;
 	const { progress } = useWatchProgress(tmdbId, type);
 	const navigate = useNavigate();
-	const search = useSearch({ strict: false }) as Record<string, unknown>;
+	const search = useSearch({ strict: false }) as MediaDialogSearch;
 
 	let defaultSeason: number | undefined;
 	let defaultEpisode: number | undefined;
@@ -83,21 +90,11 @@ export function MediaPosterTrailerContainer(props: {
 								key={video.key}
 								open={search.trailer === video.key}
 								onOpenChange={(isOpen) =>
-									navigate({
-										// biome-ignore lint/suspicious/noExplicitAny: navigate requires route-specific search type
-										search: (prev: any) => {
-											const next = { ...prev };
-											if (isOpen) {
-												next.trailer = video.key;
-											} else {
-												delete next.trailer;
-											}
-											return next;
-										},
-										resetScroll: false,
-										replace: true,
-										// biome-ignore lint/suspicious/noExplicitAny: navigate options need route-specific type
-									} as any)
+									updateDialogSearch(
+										(options) => navigate(options as never),
+										"trailer" as MediaDialogKey,
+										isOpen ? video.key : undefined,
+									)
 								}
 							>
 								<DialogTrigger
@@ -119,11 +116,7 @@ export function MediaPosterTrailerContainer(props: {
 									<span className="absolute top-4 left-4 w-min max-w-[200px] truncate rounded-lg bg-background px-2 py-1 text-sm text-foreground sm:max-w-[250px] dark:bg-foreground dark:text-background">
 										{video.name}
 									</span>
-									<div className="absolute inset-0 flex items-center justify-center">
-										<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
-											<Play className="size-6 fill-white text-white" />
-										</div>
-									</div>
+									<PlayOverlay />
 								</DialogTrigger>
 								<DialogPopup
 									overlayClassName="bg-black/80 backdrop-blur-md"
@@ -133,59 +126,32 @@ export function MediaPosterTrailerContainer(props: {
 										<DialogTitle>{video.name}</DialogTitle>
 									</DialogHeader>
 									<div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
-										<iframe
-											allowFullScreen
-											allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-											className="size-full rounded-xl"
-											sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-forms"
-											src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
-											title={video.name}
-										/>
+										<YouTubeEmbed videoKey={video.key} title={video.name} />
 										{index > 0 && (
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon"
-												className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-												onClick={(e) => {
-													e.stopPropagation();
-													navigate({
-														// biome-ignore lint/suspicious/noExplicitAny: navigate requires route-specific search type
-														search: (prev: any) => ({
-															...prev,
-															trailer: trailervideos[index - 1].key,
-														}),
-														resetScroll: false,
-														replace: true,
-														// biome-ignore lint/suspicious/noExplicitAny: navigate options need route-specific type
-													} as any);
-												}}
-											>
-												<ChevronLeft className="size-6" />
-											</Button>
+											<LightboxNavButton
+												dir="prev"
+												label="Previous trailer"
+												onClick={() =>
+													updateDialogSearch(
+														(options) => navigate(options as never),
+														"trailer",
+														trailervideos[index - 1].key,
+													)
+												}
+											/>
 										)}
 										{index < trailervideos.length - 1 && (
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon"
-												className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-												onClick={(e) => {
-													e.stopPropagation();
-													navigate({
-														// biome-ignore lint/suspicious/noExplicitAny: navigate requires route-specific search type
-														search: (prev: any) => ({
-															...prev,
-															trailer: trailervideos[index + 1].key,
-														}),
-														resetScroll: false,
-														replace: true,
-														// biome-ignore lint/suspicious/noExplicitAny: navigate options need route-specific type
-													} as any);
-												}}
-											>
-												<ChevronRight className="size-6" />
-											</Button>
+											<LightboxNavButton
+												dir="next"
+												label="Next trailer"
+												onClick={() =>
+													updateDialogSearch(
+														(options) => navigate(options as never),
+														"trailer",
+														trailervideos[index + 1].key,
+													)
+												}
+											/>
 										)}
 									</div>
 								</DialogPopup>

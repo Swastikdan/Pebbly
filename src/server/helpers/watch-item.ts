@@ -130,6 +130,39 @@ export function buildMetadataPatch(
 	};
 }
 
+export type MembershipRemovalPlan =
+	| { delete: true }
+	| { delete: false; nextRow: WatchItemRow };
+
+/**
+ * Decide what happens to a watch item when it leaves the watchlist: rows with
+ * a reaction or real watch progress survive with `inWatchlist: false` (a
+ * "watch-later"-only status is cleared); bare rows are deleted entirely.
+ */
+export function planMembershipRemoval(
+	existing: WatchItemRow,
+	now: number,
+): MembershipRemovalPlan {
+	const hasAttachment =
+		existing.reaction ||
+		(existing.progress &&
+			existing.progress > 0 &&
+			existing.progressStatus !== "watch-later");
+	if (!hasAttachment) return { delete: true };
+	return {
+		delete: false,
+		nextRow: {
+			...existing,
+			inWatchlist: false,
+			progressStatus:
+				existing.progressStatus === "watch-later"
+					? null
+					: existing.progressStatus,
+			updatedAt: now,
+		},
+	};
+}
+
 export type UpsertUpdate =
 	| (Partial<Omit<WatchItemRow, "id">> & Partial<WatchItemMetadata>)
 	| ((

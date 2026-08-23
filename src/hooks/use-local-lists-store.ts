@@ -1,7 +1,12 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 import type { MediaType } from "@/lib/media-types";
-import { createLRUStorage, createMemoryStorage } from "@/lib/utils";
+import {
+	guestPersistOptions,
+	localId,
+	mergeDefinedFields,
+	nextRank,
+} from "./guest-store-kit";
 
 export type LocalList = {
 	_id: string;
@@ -94,8 +99,35 @@ interface LocalListsStore {
 	cloneList: (sourceListId: string) => string;
 }
 
-const memoryStorage = createMemoryStorage();
-const lruStorage = createLRUStorage();
+function buildLocalListItem(
+	args: {
+		tmdbId: number;
+		mediaType: MediaType;
+		title?: string;
+		image?: string;
+		backdrop?: string;
+		rating?: number;
+		release_date?: string;
+		overview?: string;
+	},
+	listId: string,
+	position?: number,
+): LocalListItem {
+	return {
+		_id: localId("item"),
+		listId,
+		tmdbId: args.tmdbId,
+		mediaType: args.mediaType,
+		position,
+		addedAt: Date.now(),
+		title: args.title,
+		image: args.image,
+		backdrop: args.backdrop,
+		rating: args.rating,
+		release_date: args.release_date,
+		overview: args.overview,
+	};
+}
 
 export const useLocalListsStore = create<LocalListsStore>()(
 	persist(
@@ -111,13 +143,8 @@ export const useLocalListsStore = create<LocalListsStore>()(
 				description,
 				sortType,
 			) => {
-				const id = `local_list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+				const id = localId("list");
 				set((state) => {
-					const nextSortOrder =
-						state.lists.length > 0
-							? Math.max(...state.lists.map((l) => l.sortOrder)) + 1
-							: 0;
-
 					const newList: LocalList = {
 						_id: id,
 						name,
@@ -126,7 +153,10 @@ export const useLocalListsStore = create<LocalListsStore>()(
 						visibility,
 						listType,
 						sortType,
-						sortOrder: nextSortOrder,
+						sortOrder: nextRank(
+							state.lists.map((l) => l.sortOrder),
+							0,
+						),
 						createdAt: Date.now(),
 						updatedAt: Date.now(),
 					};
@@ -147,26 +177,12 @@ export const useLocalListsStore = create<LocalListsStore>()(
 				);
 
 				set((state) => {
-					const listItems = state.listItems.filter((i) => i.listId === listId);
-					const nextPosition =
-						listItems.length > 0
-							? Math.max(...listItems.map((i) => i.position ?? 0)) + 1
-							: 1;
-
-					const newItem: LocalListItem = {
-						_id: `local_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+					const siblings = state.listItems.filter((i) => i.listId === listId);
+					const newItem = buildLocalListItem(
+						args,
 						listId,
-						tmdbId: args.tmdbId,
-						mediaType: args.mediaType,
-						position: nextPosition,
-						addedAt: Date.now(),
-						title: args.title,
-						image: args.image,
-						backdrop: args.backdrop,
-						rating: args.rating,
-						release_date: args.release_date,
-						overview: args.overview,
-					};
+						nextRank(siblings.map((i) => i.position)),
+					);
 
 					return { listItems: [...state.listItems, newItem] };
 				});
@@ -184,16 +200,15 @@ export const useLocalListsStore = create<LocalListsStore>()(
 				set((state) => ({
 					lists: state.lists.map((l) =>
 						l._id === listId
-							? {
-									...l,
-									...(name !== undefined && { name }),
-									...(color !== undefined && { color }),
-									...(visibility !== undefined && { visibility }),
-									...(listType !== undefined && { listType }),
-									...(description !== undefined && { description }),
-									...(sortType !== undefined && { sortType }),
+							? mergeDefinedFields(l, {
+									name,
+									color,
+									visibility,
+									listType,
+									description,
+									sortType,
 									updatedAt: Date.now(),
-								}
+								})
 							: l,
 					),
 				})),
@@ -223,25 +238,11 @@ export const useLocalListsStore = create<LocalListsStore>()(
 					const siblings = state.listItems.filter(
 						(i) => i.listId === args.listId,
 					);
-					const nextPosition =
-						siblings.length > 0
-							? Math.max(...siblings.map((i) => i.position ?? 0)) + 1
-							: 1;
-
-					const newItem: LocalListItem = {
-						_id: `local_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-						listId: args.listId,
-						tmdbId: args.tmdbId,
-						mediaType: args.mediaType,
-						position: nextPosition,
-						addedAt: Date.now(),
-						title: args.title,
-						image: args.image,
-						backdrop: args.backdrop,
-						rating: args.rating,
-						release_date: args.release_date,
-						overview: args.overview,
-					};
+					const newItem = buildLocalListItem(
+						args,
+						args.listId,
+						nextRank(siblings.map((i) => i.position)),
+					);
 
 					return { listItems: [...state.listItems, newItem] };
 				});
@@ -278,12 +279,8 @@ export const useLocalListsStore = create<LocalListsStore>()(
 					name = `${source.name} (copy ${n})`;
 				}
 
-				const newId = `local_list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+				const newId = localId("list");
 				const now = Date.now();
-				const nextSortOrder =
-					state.lists.length > 0
-						? Math.max(...state.lists.map((l) => l.sortOrder)) + 1
-						: 0;
 
 				const clonedList: LocalList = {
 					...source,
@@ -291,7 +288,10 @@ export const useLocalListsStore = create<LocalListsStore>()(
 					name,
 					visibility: "private",
 					listType: "custom",
-					sortOrder: nextSortOrder,
+					sortOrder: nextRank(
+						state.lists.map((l) => l.sortOrder),
+						0,
+					),
 					createdAt: now,
 					updatedAt: now,
 				};
@@ -301,7 +301,7 @@ export const useLocalListsStore = create<LocalListsStore>()(
 				);
 				const clonedItems = sourceItems.map((item, index) => ({
 					...item,
-					_id: `local_item_${now}_${Math.random().toString(36).substr(2, 9)}`,
+					_id: localId("item"),
 					listId: newId,
 					position: item.position ?? index + 1,
 					addedAt: now,
@@ -314,11 +314,6 @@ export const useLocalListsStore = create<LocalListsStore>()(
 				return newId;
 			},
 		}),
-		{
-			name: "local-lists-store",
-			storage: createJSONStorage(() =>
-				typeof window !== "undefined" ? lruStorage : memoryStorage,
-			),
-		},
+		guestPersistOptions<LocalListsStore>("local-lists-store"),
 	),
 );
