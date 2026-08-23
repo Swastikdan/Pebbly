@@ -15,7 +15,12 @@ import { useLocalListsStore } from "@/stores/local-lists-store";
 // Reads (routed through the reconciler so refetches can't clobber pending ops)
 // ---------------------------------------------------------------------------
 
-async function fetchCustomLists(
+/**
+ * Shared queryFn for `queryKeys.lists.all(userId)`. Every consumer registering
+ * that key must route through this reconciled fetcher so refetches can't
+ * clobber pending ops, regardless of which hook mounted first.
+ */
+export async function fetchCustomLists(
   queryClient: QueryClient,
   userId: string | undefined,
 ): Promise<CustomListRow[]> {

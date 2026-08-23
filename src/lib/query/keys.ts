@@ -97,12 +97,8 @@ export const queryKeys = {
       ["tmdb_search_fallback", title, mediaType] as const,
     trendingDay: () => ["trending_day"] as const,
     homepageMedia: (type: string) => [type] as const,
-    continueWatching: (id: string | number, mediaType: MediaType) =>
-      ["continue-watching", id, mediaType] as const,
     dailyPickTrending: () => ["daily-pick-trending"] as const,
     dailyPickPopularTv: () => ["daily-pick-popular-tv"] as const,
-    dailyPickDetails: (mediaType: MediaType, id: number) =>
-      ["daily-pick-details", mediaType, id] as const,
   },
 } as const;
 

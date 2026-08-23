@@ -20,6 +20,19 @@ export function normalizeProgressStatus(
     : null;
 }
 
+/**
+ * Status implied by a raw progress percent: >=95 counts as done, anything
+ * above zero is still watching, otherwise no status. Shared by every local /
+ * optimistic writer so they all derive the same status from playback.
+ */
+export function inferStatusFromProgress(
+  progress: number,
+): ProgressStatus | null {
+  if (progress >= 95) return "done";
+  if (progress > 0) return "watching";
+  return null;
+}
+
 type ValidationResult<T> =
   | {
       success: true;

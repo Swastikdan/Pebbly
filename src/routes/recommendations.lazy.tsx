@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useUser } from "@clerk/react";
 import { BrainCircuit } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
 
 import type { RecommendationHistoryEntry } from "@/hooks/use-recommendations";
@@ -13,6 +13,7 @@ import { GoBack } from "@/components/go-back";
 import { RecommendationFilters } from "@/components/recommendations/recommendation-filters";
 import { RecommendationHistory } from "@/components/recommendations/recommendation-history";
 import { RecommendationResults } from "@/components/recommendations/recommendation-results";
+import { fetchCustomLists } from "@/hooks/use-custom-lists";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
   buildGenerateOptions,
@@ -22,7 +23,6 @@ import {
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { queryKeys } from "@/lib/query/keys";
 import { normalizeTitleKey } from "@/lib/text";
-import { getCustomLists } from "@/server/fns/lists";
 import { getTrackedTmdbIds } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
 
@@ -100,6 +100,7 @@ function RecommendationsContent({
   const { watchlist, loading: watchlistLoading } = useWatchlist();
 
   const { user } = useUser();
+  const queryClient = useQueryClient();
   const trackedTmdbIdsQuery = useQuery({
     queryKey: queryKeys.watchlist.trackedTmdbIds(user?.id),
     queryFn: () => unwrap(getTrackedTmdbIds()),
@@ -185,7 +186,7 @@ function RecommendationsContent({
 
   const customListsQuery = useQuery({
     queryKey: queryKeys.lists.all(user?.id),
-    queryFn: () => unwrap(getCustomLists()),
+    queryFn: () => fetchCustomLists(queryClient, user?.id),
     enabled: !!isSignedIn,
   });
   const customLists = customListsQuery.data ?? [];

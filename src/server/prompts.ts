@@ -183,27 +183,19 @@ function buildWatchlistContext(
   return { contextPrompt: prompt, existingIds, existingTitles };
 }
 
-function appendFeedbackSignals(
-  prompt: string,
-  feedback?: FeedbackSignals,
-): string {
-  let result = prompt;
-  if (feedback?.likedTitles && feedback.likedTitles.length > 0) {
-    result += `## Recommendations I explicitly liked and want more content similar to:\n${feedback.likedTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
-  }
-  if (feedback?.dislikedTitles && feedback.dislikedTitles.length > 0) {
-    result += `## Recommendations I explicitly marked as "not interested" (avoid similar styles/genres):\n${feedback.dislikedTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
-  }
-  if (feedback?.previousTitles && feedback.previousTitles.length > 0) {
-    result += `## Previously recommended titles (do NOT repeat these):\n${feedback.previousTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
-  }
-  return result;
-}
-
 function buildBasePromptSections(config: BasePromptConfig): string {
   let prompt = "";
+  const { feedback } = config;
 
-  prompt = appendFeedbackSignals(prompt, config.feedback);
+  if (feedback?.likedTitles && feedback.likedTitles.length > 0) {
+    prompt += `## Recommendations I explicitly liked and want more content similar to:\n${feedback.likedTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
+  }
+  if (feedback?.dislikedTitles && feedback.dislikedTitles.length > 0) {
+    prompt += `## Recommendations I explicitly marked as "not interested" (avoid similar styles/genres):\n${feedback.dislikedTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
+  }
+  if (feedback?.previousTitles && feedback.previousTitles.length > 0) {
+    prompt += `## Previously recommended titles (do NOT repeat these):\n${feedback.previousTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
+  }
 
   if (config.statsText) {
     prompt += config.statsText;
@@ -237,22 +229,12 @@ function buildBasePromptSections(config: BasePromptConfig): string {
   return prompt;
 }
 
-export function buildWatchlistPrompt(
-  data: WatchlistData,
-  mediaTypePreference?: string,
-  excludeTmdbIds: number[] = [],
-  yearFrom?: number,
-  yearTo?: number,
-  count?: number,
-  feedback?: FeedbackSignals,
+function buildCustomListsSection(
+  lists: CustomListSummary[],
+  listItems: CustomListItemSummary[],
+  watchItems: WatchItemSummary[],
 ): string {
-  const { lists, listItems, inputStats } = data;
-  const { contextPrompt, existingIds, existingTitles } = buildWatchlistContext(
-    data,
-    excludeTmdbIds,
-  );
-
-  let prompt = `Here is my watchlist data:\n\n${contextPrompt}`;
+  if (lists.length === 0) return "";
 
   const listItemsByListId = new Map<string, CustomListItemSummary[]>();
   for (const li of listItems) {
@@ -265,40 +247,68 @@ export function buildWatchlistPrompt(
     items.push(li);
   }
 
-  const watchItemByMediaKey = indexWatchItemsByMediaKey(data.watchItems);
+  const watchItemByMediaKey = indexWatchItemsByMediaKey(watchItems);
 
-  if (lists.length > 0) {
-    prompt += `## My custom lists:\n`;
-    for (const list of lists) {
-      const items = listItemsByListId.get(String(list._id)) ?? [];
-      const titles = items
-        .map((li) => {
-          const wi = watchItemByMediaKey.get(`${li.tmdbId}_${li.mediaType}`);
-          return wi?.title ?? `TMDB:${li.tmdbId}`;
-        })
-        .join(", ");
-      prompt += `- "${list.name}": ${titles}\n`;
-    }
-    prompt += "\n";
+  let section = `## My custom lists:\n`;
+  for (const list of lists) {
+    const items = listItemsByListId.get(String(list._id)) ?? [];
+    const titles = items
+      .map((li) => {
+        const wi = watchItemByMediaKey.get(`${li.tmdbId}_${li.mediaType}`);
+        return wi?.title ?? `TMDB:${li.tmdbId}`;
+      })
+      .join(", ");
+    section += `- "${list.name}": ${titles}\n`;
   }
+  return `${section}\n`;
+}
 
+interface SectionedPromptConfig {
+  intro: string;
+  contextSections?: string[];
+  base: BasePromptConfig;
+}
+
+function buildSectionedPrompt(config: SectionedPromptConfig): string {
+  let prompt = config.intro;
+  for (const section of config.contextSections ?? []) {
+    prompt += section;
+  }
+  return prompt + buildBasePromptSections(config.base) + RESPONSE_SCHEMA;
+}
+
+export function buildWatchlistPrompt(
+  data: WatchlistData,
+  mediaTypePreference?: string,
+  excludeTmdbIds: number[] = [],
+  yearFrom?: number,
+  yearTo?: number,
+  count?: number,
+  feedback?: FeedbackSignals,
+): string {
+  const { contextPrompt, existingIds, existingTitles } = buildWatchlistContext(
+    data,
+    excludeTmdbIds,
+  );
   const titleCount = clampTitleCount(count);
 
-  prompt += buildBasePromptSections({
-    mediaTypePreference,
-    yearFrom,
-    yearTo,
-    existingIds,
-    existingTitles,
-    feedback,
-    watchlistText: " (already in my watchlist)",
-    recommendationGoal: `Based on this data, recommend exactly ${titleCount} ${mediaLabel(mediaTypePreference)} I would likely enjoy.\n`,
-    statsText: formatStats(inputStats),
+  return buildSectionedPrompt({
+    intro: `Here is my watchlist data:\n\n${contextPrompt}`,
+    contextSections: [
+      buildCustomListsSection(data.lists, data.listItems, data.watchItems),
+    ],
+    base: {
+      mediaTypePreference,
+      yearFrom,
+      yearTo,
+      existingIds,
+      existingTitles,
+      feedback,
+      watchlistText: " (already in my watchlist)",
+      recommendationGoal: `Based on this data, recommend exactly ${titleCount} ${mediaLabel(mediaTypePreference)} I would likely enjoy.\n`,
+      statsText: formatStats(data.inputStats),
+    },
   });
-
-  prompt += RESPONSE_SCHEMA;
-
-  return prompt;
 }
 
 export function buildGenrePrompt(
@@ -315,30 +325,27 @@ export function buildGenrePrompt(
     data,
     excludeTmdbIds,
   );
-
   const titleCount = clampTitleCount(count);
 
-  let prompt = `Recommend me exactly ${titleCount} popular and highly-rated ${mediaLabel(mediaTypePreference)}`;
-
+  let intro = `Recommend me exactly ${titleCount} popular and highly-rated ${mediaLabel(mediaTypePreference)}`;
   if (genrePreference) {
-    prompt += ` in these genres: ${genrePreference}`;
+    intro += ` in these genres: ${genrePreference}`;
   }
-  prompt += `.\n\n`;
+  intro += `.\n\n`;
+  intro += `Focus on well-known, critically acclaimed titles that are widely loved. Include a mix of classic and recent titles.\n\n`;
 
-  prompt += `Focus on well-known, critically acclaimed titles that are widely loved. Include a mix of classic and recent titles.\n\n`;
-
-  prompt += buildBasePromptSections({
-    mediaTypePreference,
-    yearFrom,
-    yearTo,
-    existingIds,
-    existingTitles,
-    feedback,
-    watchlistText: " (already in my watchlist)",
+  return buildSectionedPrompt({
+    intro,
+    base: {
+      mediaTypePreference,
+      yearFrom,
+      yearTo,
+      existingIds,
+      existingTitles,
+      feedback,
+      watchlistText: " (already in my watchlist)",
+    },
   });
-
-  prompt += RESPONSE_SCHEMA;
-  return prompt;
 }
 
 export function buildCustomListPrompt(
@@ -355,7 +362,6 @@ export function buildCustomListPrompt(
     data,
     excludeTmdbIds,
   );
-
   const titleCount = clampTitleCount(count);
 
   const list = data.lists.find((l) => l._id === listId);
@@ -363,8 +369,8 @@ export function buildCustomListPrompt(
 
   const watchItemByMediaKey = indexWatchItemsByMediaKey(data.watchItems);
 
-  const items = data.listItems.filter((li) => li.listId === listId);
-  const titles = items
+  const titles = data.listItems
+    .filter((li) => li.listId === listId)
     .map((li) => {
       const wi = watchItemByMediaKey.get(`${li.tmdbId}_${li.mediaType}`);
       return wi?.title
@@ -373,21 +379,19 @@ export function buildCustomListPrompt(
     })
     .join("\n");
 
-  let prompt = `Here are the movies and TV shows in my custom list "${listName}":\n\n${titles}\n\n`;
-
-  prompt += buildBasePromptSections({
-    mediaTypePreference,
-    yearFrom,
-    yearTo,
-    existingIds,
-    existingTitles,
-    feedback,
-    watchlistText: " (already in my overall watchlist)",
-    recommendationGoal: `Based on these titles, recommend exactly ${titleCount} ${mediaLabel(mediaTypePreference)} I would likely enjoy.\nFind movies/shows that share similar themes, genres, directors, actors, or vibe as the ones in the list.\n\n`,
+  return buildSectionedPrompt({
+    intro: `Here are the movies and TV shows in my custom list "${listName}":\n\n${titles}\n\n`,
+    base: {
+      mediaTypePreference,
+      yearFrom,
+      yearTo,
+      existingIds,
+      existingTitles,
+      feedback,
+      watchlistText: " (already in my overall watchlist)",
+      recommendationGoal: `Based on these titles, recommend exactly ${titleCount} ${mediaLabel(mediaTypePreference)} I would likely enjoy.\nFind movies/shows that share similar themes, genres, directors, actors, or vibe as the ones in the list.\n\n`,
+    },
   });
-
-  prompt += RESPONSE_SCHEMA;
-  return prompt;
 }
 
 export function buildHomepageRecommendationsPrompt(
@@ -397,31 +401,27 @@ export function buildHomepageRecommendationsPrompt(
   excludeTmdbIds: number[],
   previousTitles: string[],
 ): string {
-  const { inputStats } = data;
   const { contextPrompt, existingIds, existingTitles } = buildWatchlistContext(
     data,
     excludeTmdbIds,
   );
 
-  let prompt =
-    `You are generating personalized recommendations for the user's homepage.\n\n` +
-    `Here is the user's watchlist/viewing data:\n\n` +
-    contextPrompt;
-
-  prompt += buildBasePromptSections({
-    existingIds,
-    existingTitles,
-    feedback: {
-      likedTitles: likedFeedbackTitles,
-      dislikedTitles: dislikedFeedbackTitles,
-      previousTitles,
+  return buildSectionedPrompt({
+    intro:
+      `You are generating personalized recommendations for the user's homepage.\n\n` +
+      `Here is the user's watchlist/viewing data:\n\n` +
+      contextPrompt,
+    base: {
+      existingIds,
+      existingTitles,
+      feedback: {
+        likedTitles: likedFeedbackTitles,
+        dislikedTitles: dislikedFeedbackTitles,
+        previousTitles,
+      },
+      watchlistText: "",
+      recommendationGoal: `Based on this data, recommend exactly 15 movies and 15 TV shows I would likely enjoy.\n`,
+      statsText: formatStats(data.inputStats),
     },
-    watchlistText: "",
-    recommendationGoal: `Based on this data, recommend exactly 15 movies and 15 TV shows I would likely enjoy.\n`,
-    statsText: formatStats(inputStats),
   });
-
-  prompt += RESPONSE_SCHEMA;
-
-  return prompt;
 }

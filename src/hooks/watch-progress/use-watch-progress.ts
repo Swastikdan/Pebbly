@@ -139,8 +139,9 @@ export function useContinueWatching() {
   const items = useMemo(() => {
     if (isSignedIn) {
       if (!remote.data) return [];
+      // The server filters by status (SQL `progressStatus = 'watching'`) and
+      // no optimistic op writes this filtered cache, so rows are trusted.
       return remote.data
-        .filter((item) => item.progressStatus === "watching")
         .map((item) => ({
           id: String(item.tmdbId),
           type: item.mediaType as MediaType,

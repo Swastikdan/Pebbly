@@ -173,10 +173,13 @@ export function useDailyPick(open: boolean) {
   };
 
   const { data: selectedDetails } = useQuery({
-    queryKey: queryKeys.tmdb.dailyPickDetails(
-      selectedItem?.media_type ?? "movie",
-      selectedItem?.id ?? 0,
-    ),
+    // Reuse the canonical full-details cache: same fetchers and payload as
+    // every other movie/tv details consumer, so the tile never re-fetches
+    // what a visited detail page already cached (and vice versa).
+    queryKey:
+      selectedItem?.media_type === "tv"
+        ? queryKeys.tmdb.tvDetails(selectedItem.id)
+        : queryKeys.tmdb.movieDetails(selectedItem?.id ?? 0),
     queryFn: async () => {
       if (!selectedItem) return null;
       if (selectedItem.media_type === "movie") {

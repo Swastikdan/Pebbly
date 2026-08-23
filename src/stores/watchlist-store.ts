@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 
 import type { MediaType } from "@/lib/media-types";
 import type { ProgressStatus, ReactionStatus } from "@/types";
-import { normalizeProgressStatus } from "@/lib/utils";
+import { inferStatusFromProgress, normalizeProgressStatus } from "@/lib/utils";
 import { guestPersistOptions } from "@/stores/guest-store-kit";
 
 export type { MediaType };
@@ -258,19 +258,14 @@ export const useWatchlistStore = create<WatchlistStore>()(
                 inWatchlist: true,
                 progress,
                 progressStatus:
-                  fallback.progressStatus ??
-                  (progress >= 95 ? "done" : progress > 0 ? "watching" : null),
+                  fallback.progressStatus ?? inferStatusFromProgress(progress),
               }),
               (current) => ({
                 ...current,
                 inWatchlist: true,
                 progress,
                 progressStatus:
-                  progress >= 95
-                    ? "done"
-                    : progress > 0
-                      ? "watching"
-                      : current.progressStatus,
+                  inferStatusFromProgress(progress) ?? current.progressStatus,
               }),
             ),
           };

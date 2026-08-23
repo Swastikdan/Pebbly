@@ -56,6 +56,18 @@ export type MarkShowEpisodesAndStatusArgs = {
   overview?: string;
 };
 
+export type ProgressResetArgs = {
+  tmdbId: number;
+  mediaType: MediaType;
+};
+
+type ProgressUpdateArgs = {
+  tmdbId: number;
+  mediaType: MediaType;
+  progress?: number;
+  progressStatus?: ProgressStatus;
+};
+
 function applyMembershipRows(
   rows: WatchItemRow[],
   args: WatchlistMembershipArgs,
@@ -147,6 +159,53 @@ function beginProgressStatusOp(
       },
     ],
     { domain: "watchlist" },
+  );
+}
+
+/**
+ * Optimistic row patch for `updateProgress`: merge the new progress percent
+ * and, when provided, overwrite the status. Shared by the remote repository's
+ * journaled op so the transform lives beside its sibling row patches.
+ */
+export function applyProgressUpdateRows(
+  rows: WatchItemRow[],
+  args: ProgressUpdateArgs,
+): WatchItemRow[] {
+  return rows.map((row) => {
+    if (row.tmdbId !== args.tmdbId || row.mediaType !== args.mediaType) {
+      return row;
+    }
+    const status =
+      args.progressStatus !== undefined
+        ? { progressStatus: args.progressStatus }
+        : {};
+    return {
+      ...row,
+      progress: args.progress ?? row.progress,
+      ...status,
+      updatedAt: Date.now(),
+    };
+  });
+}
+
+/**
+ * Optimistic row patch for `removeFromContinueWatching`: reset progress to 0
+ * and fall back to watch-later for tracked items (cleared entirely for
+ * non-watchlist rows).
+ */
+export function applyProgressResetRows(
+  rows: WatchItemRow[],
+  args: ProgressResetArgs,
+): WatchItemRow[] {
+  return rows.map((row) =>
+    row.tmdbId === args.tmdbId && row.mediaType === args.mediaType
+      ? {
+          ...row,
+          progressStatus: row.inWatchlist ? ("watch-later" as const) : null,
+          progress: 0,
+          updatedAt: Date.now(),
+        }
+      : row,
   );
 }
 

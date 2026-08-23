@@ -24,7 +24,11 @@ import {
   beginUpdateListOp,
   swapListId,
 } from "@/lib/data/optimistic/list-optimistic";
-import { watchlistOptimistic } from "@/lib/data/optimistic/watchlist-optimistic";
+import {
+  applyProgressResetRows,
+  applyProgressUpdateRows,
+  watchlistOptimistic,
+} from "@/lib/data/optimistic/watchlist-optimistic";
 import {
   applyServerState,
   beginOp,
@@ -372,24 +376,7 @@ export function createRemoteRepository(
                 key: listKey,
                 touchedIds: [`${args.mediaType}:${args.tmdbId}`],
                 apply: (rows: WatchItemRow[]) =>
-                  rows.map((row) => {
-                    if (
-                      row.tmdbId !== args.tmdbId ||
-                      row.mediaType !== args.mediaType
-                    ) {
-                      return row;
-                    }
-                    const status =
-                      args.progressStatus !== undefined
-                        ? { progressStatus: args.progressStatus }
-                        : {};
-                    return {
-                      ...row,
-                      progress: args.progress ?? row.progress,
-                      ...status,
-                      updatedAt: Date.now(),
-                    };
-                  }),
+                  applyProgressUpdateRows(rows, args),
               },
             ],
             { domain: "watchlist" },
@@ -420,18 +407,7 @@ export function createRemoteRepository(
                 key: listKey,
                 touchedIds: [`${mediaType}:${tmdbId}`],
                 apply: (rows: WatchItemRow[]) =>
-                  rows.map((row) =>
-                    row.tmdbId === tmdbId && row.mediaType === mediaType
-                      ? {
-                          ...row,
-                          progressStatus: row.inWatchlist
-                            ? ("watch-later" as const)
-                            : null,
-                          progress: 0,
-                          updatedAt: Date.now(),
-                        }
-                      : row,
-                  ),
+                  applyProgressResetRows(rows, { tmdbId, mediaType }),
               },
             ],
             { domain: "watchlist" },

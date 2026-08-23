@@ -191,7 +191,12 @@ function ContinueWatchingContent({
   }[];
 }) {
   const queries = items.map((item) => ({
-    queryKey: queryKeys.tmdb.continueWatching(item.id, item.type),
+    // Reuse the canonical basic-details cache: identical payload to the old
+    // continue-watching key, shared with every other basic-details consumer.
+    queryKey:
+      item.type === "movie"
+        ? queryKeys.tmdb.basicMovieDetails(Number(item.id))
+        : queryKeys.tmdb.basicTvDetails(Number(item.id)),
     queryFn: () =>
       item.type === "movie"
         ? getBasicMovieDetails({ id: Number(item.id) })
