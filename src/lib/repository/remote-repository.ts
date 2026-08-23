@@ -1,13 +1,19 @@
 import type { ListsRepository, Repository, WatchlistRepository } from "./types";
-import type { OpHandle } from "@/hooks/pending-ops";
 import type {
   MarkShowEpisodesAndStatusArgs,
   ProgressStatusArgs,
   SetReactionArgs,
   WatchlistMembershipArgs,
-} from "@/hooks/watchlist/watchlist-optimistic";
+} from "@/lib/data/optimistic/watchlist-optimistic";
+import type { OpHandle } from "@/lib/data/pending-ops";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
+import {
+  episodeRowIdOf,
+  toggleEpisodeRows,
+  toggleSeasonRows,
+} from "@/hooks/watch-progress/progress-helpers";
+import { createBatcher } from "@/lib/batcher";
 import {
   applyToggleInverse,
   beginCreateListAndAddOp,
@@ -17,15 +23,13 @@ import {
   beginToggleListItemOp,
   beginUpdateListOp,
   swapListId,
-} from "@/hooks/custom-lists/list-optimistic";
-import { applyServerState, beginOp, scheduleSync } from "@/hooks/pending-ops";
+} from "@/lib/data/optimistic/list-optimistic";
+import { watchlistOptimistic } from "@/lib/data/optimistic/watchlist-optimistic";
 import {
-  episodeRowIdOf,
-  toggleEpisodeRows,
-  toggleSeasonRows,
-} from "@/hooks/watch-progress/progress-helpers";
-import { watchlistOptimistic } from "@/hooks/watchlist/watchlist-optimistic";
-import { createBatcher } from "@/lib/batcher";
+  applyServerState,
+  beginOp,
+  scheduleSync,
+} from "@/lib/data/pending-ops";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import {

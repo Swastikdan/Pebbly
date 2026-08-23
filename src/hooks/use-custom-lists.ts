@@ -5,11 +5,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MediaType } from "@/lib/media-types";
 import type { CustomListRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
+import { reconcileListFetch } from "@/lib/data/pending-ops";
 import { queryKeys } from "@/lib/query/keys";
 import { getCustomLists, getItemLists } from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
-import { reconcileListFetch } from "./pending-ops";
-import { useLocalListsStore } from "./use-local-lists-store";
+import { useLocalListsStore } from "@/stores/local-lists-store";
 
 // ---------------------------------------------------------------------------
 // Reads (routed through the reconciler so refetches can't clobber pending ops)

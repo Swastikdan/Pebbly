@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import type { MediaType } from "@/lib/media-types";
 import { useRepository } from "@/lib/repository/use-repository";
-import { useLocalProgressStore } from "../use-local-progress-store";
+import { useLocalProgressStore } from "@/stores/local-progress-store";
 import {
   logWatchProgressError,
   parsePlayerEventPayload,

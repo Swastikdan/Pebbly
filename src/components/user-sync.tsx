@@ -5,9 +5,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DataVersion } from "@/hooks/data-version";
 import type { MutationDomain } from "@/lib/realtime-mutations";
 import { fetchDataVersion } from "@/hooks/data-version";
-import { clearPendingOps } from "@/hooks/pending-ops";
 import { usePermissions } from "@/hooks/use-permissions";
 import { subscribeToCrossTabMutations } from "@/lib/cross-tab-sync";
+import { clearPendingOps } from "@/lib/data/pending-ops";
 import { queryKeys } from "@/lib/query/keys";
 import {
   hasRecentOwnMutation,

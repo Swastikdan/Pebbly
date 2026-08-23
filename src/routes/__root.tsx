@@ -189,6 +189,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         crossOrigin: "anonymous",
       },
     ],
+    scripts: [
+      {
+        type: "module",
+        src: "https://static.cloudflareinsights.com/beacon.min.js",
+        "data-cf-beacon": '{"token": "cf131605e09945caa1b60fe00a7a919a"}',
+      },
+    ],
   }),
 
   notFoundComponent: DefaultNotFoundComponent,

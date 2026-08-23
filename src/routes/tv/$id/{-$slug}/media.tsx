@@ -8,7 +8,7 @@ import { GoBack } from "@/components/go-back";
 import { MediaVideoImageContainer } from "@/components/media/media-video-image-container";
 import { ShareButton } from "@/components/share-button";
 import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
-import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
+import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getBasicTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";

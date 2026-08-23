@@ -4,7 +4,7 @@ import { persist } from "zustand/middleware";
 import type { MediaType } from "@/lib/media-types";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 import { normalizeProgressStatus } from "@/lib/utils";
-import { guestPersistOptions } from "./guest-store-kit";
+import { guestPersistOptions } from "@/stores/guest-store-kit";
 
 export type { MediaType };
 

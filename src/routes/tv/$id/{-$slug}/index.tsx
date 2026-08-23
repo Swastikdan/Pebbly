@@ -17,7 +17,7 @@ import { MediaPosterTrailerContainer } from "@/components/media/media-poster-tra
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContainer } from "@/components/media/media-title-container";
 import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
-import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
+import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { buildSharedMediaPageData } from "@/lib/media-page";
 import { getTvCertification } from "@/lib/media-transform";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";

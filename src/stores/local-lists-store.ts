@@ -7,7 +7,7 @@ import {
   localId,
   mergeDefinedFields,
   nextRank,
-} from "./guest-store-kit";
+} from "@/stores/guest-store-kit";
 
 export type LocalList = {
   _id: string;

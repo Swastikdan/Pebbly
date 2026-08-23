@@ -3,23 +3,23 @@ import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-import type { AIRecommendation } from "@/lib/recommendation-engine";
+import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
+import { MediaSkeletonList } from "@/components/media-skeleton-list";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
-import { MediaSkeletonList } from "@/components/ui/media-skeleton-list";
 import { usePermissions } from "@/hooks/use-permissions";
+import {
+  titlesMatch,
+  useTmdbData,
+  useTmdbSearchFallback,
+} from "@/hooks/use-tmdb-verification";
 import {
   useAllMediaStates,
   useToggleWatchlistItem,
 } from "@/hooks/use-watchlist";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
-import {
-  titlesMatch,
-  useTmdbData,
-  useTmdbSearchFallback,
-} from "@/lib/recommendation-engine";
 import { cn } from "@/lib/utils";
 import {
   generateHomepageRecommendations,

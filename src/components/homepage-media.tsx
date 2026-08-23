@@ -9,8 +9,8 @@ import type {
   MediaListResultsEntity,
 } from "@/lib/tmdb-schemas";
 import { MediaCard } from "@/components/media-card";
+import { MediaSkeletonList } from "@/components/media-skeleton-list";
 import { ScrollContainer } from "@/components/scroll-container";
-import { MediaSkeletonList } from "@/components/ui/media-skeleton-list";
 import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
 import {
   getBasicMovieDetails,

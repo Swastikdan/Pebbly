@@ -1,10 +1,10 @@
-import type { OpHandle, PendingOpEntry } from "../pending-ops";
-import type { MediaType } from "../watchlist-store";
+import type { OpHandle, PendingOpEntry } from "@/lib/data/pending-ops";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
+import type { MediaType } from "@/stores/watchlist-store";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 import type { QueryClient } from "@tanstack/react-query";
+import { beginOp } from "@/lib/data/pending-ops";
 import { queryKeys } from "@/lib/query/keys";
-import { beginOp } from "../pending-ops";
 
 export type WatchlistMembershipArgs = {
   tmdbId: number;

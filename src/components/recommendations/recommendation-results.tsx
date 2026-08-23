@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import type { RecommendationHistoryEntry } from "@/hooks/use-recommendations";
-import type { AIRecommendation } from "@/lib/recommendation-engine";
+import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { formatTimestamp } from "@/components/recommendations/recommendation-utils";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import {
   titlesMatch,
   useTmdbData,
   useTmdbSearchFallback,
-} from "@/lib/recommendation-engine";
+} from "@/hooks/use-tmdb-verification";
 import { cn } from "@/lib/utils";
 
 export function RecommendationResults({

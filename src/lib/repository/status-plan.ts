@@ -1,8 +1,8 @@
 import type { ProgressStatusAction } from "./types";
-import type { MediaType } from "@/hooks/watchlist-store";
+import type { MediaType } from "@/stores/watchlist-store";
 import type { ProgressStatus } from "@/types";
 import type { QueryClient } from "@tanstack/react-query";
-import { watchlistOptimistic } from "@/hooks/watchlist/watchlist-optimistic";
+import { watchlistOptimistic } from "@/lib/data/optimistic/watchlist-optimistic";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { resolveProgressStatusAction } from "./types";

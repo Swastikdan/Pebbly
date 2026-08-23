@@ -9,8 +9,8 @@ import type {
   GenerateOptions,
   RecommendationHistoryEntry,
 } from "@/hooks/use-recommendations";
+import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
 import type { MediaType } from "@/lib/media-types";
-import type { AIRecommendation } from "@/lib/recommendation-engine";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";

@@ -3,8 +3,8 @@ import type {
   CreateListArgs,
   ToggleListItemArgs,
   UpdateListArgs,
-} from "@/hooks/custom-lists/list-optimistic";
-import type { MediaMetadata, MediaType } from "@/hooks/watchlist-store";
+} from "@/lib/data/optimistic/list-optimistic";
+import type { MediaMetadata, MediaType } from "@/stores/watchlist-store";
 import type { ProgressStatus, ReactionStatus } from "@/types";
 
 /**

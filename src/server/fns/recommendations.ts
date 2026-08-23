@@ -11,14 +11,14 @@ import type {
   HomepageRecommendationsResult,
 } from "../schema/recommendations";
 import type { MediaType } from "@/lib/media-types";
-import type { FeedbackSignals, WatchlistData } from "@/lib/prompts";
+import type { FeedbackSignals, WatchlistData } from "@/server/prompts";
+import { hashString, normalizeTitleKey } from "@/lib/text";
 import {
   buildCustomListPrompt,
   buildGenrePrompt,
   buildHomepageRecommendationsPrompt,
   buildWatchlistPrompt,
-} from "@/lib/prompts";
-import { hashString, normalizeTitleKey } from "@/lib/text";
+} from "@/server/prompts";
 import { callGeminiAI, MODELS_TO_TRY } from "../ai";
 import { getCurrentUser, requireUser } from "../auth";
 import { getDb } from "../db/client";

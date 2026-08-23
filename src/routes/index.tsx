@@ -14,8 +14,8 @@ import {
   UpcomingMovies,
 } from "@/components/homepage-media";
 import { HomepageRecommendations } from "@/components/homepage-recommendations";
+import { MediaSkeletonList } from "@/components/media-skeleton-list";
 import { LazySection } from "@/components/ui/lazy-section";
-import { MediaSkeletonList } from "@/components/ui/media-skeleton-list";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { SITE_CONFIG } from "@/constants";

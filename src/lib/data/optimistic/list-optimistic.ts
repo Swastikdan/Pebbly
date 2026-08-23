@@ -1,10 +1,10 @@
-import type { OpHandle, PendingOpEntry } from "../pending-ops";
+import type { OpHandle, PendingOpEntry } from "@/lib/data/pending-ops";
 import type { MediaType } from "@/lib/media-types";
 import type { CustomListRow, ListItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
+import { beginOp } from "@/lib/data/pending-ops";
 import { queryKeys } from "@/lib/query/keys";
-import { mergeDefinedFields } from "../guest-store-kit";
-import { beginOp } from "../pending-ops";
+import { mergeDefinedFields } from "@/stores/guest-store-kit";
 
 export const listIdOf = (list: CustomListRow) => list.id;
 export const stringIdOf = (id: string) => id;

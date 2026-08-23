@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { guestPersistOptions } from "./guest-store-kit";
+import { guestPersistOptions } from "@/stores/guest-store-kit";
 
 interface LocalProgressStore {
   watchedEpisodes: Record<string, boolean>;

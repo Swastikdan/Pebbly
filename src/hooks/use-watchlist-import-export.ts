@@ -10,15 +10,15 @@ import type {
   WatchedEpisode,
 } from "@/server/schema/import";
 import type { ProgressStatus, ReactionStatus } from "@/types";
-import { useLocalProgressStore } from "@/hooks/use-local-progress-store";
 import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
-import { fetchAllEpisodeProgress } from "@/hooks/watchlist-queries";
+import { fetchAllEpisodeProgress } from "@/lib/data/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { normalizeProgressStatus } from "@/lib/utils";
 import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
 import { unwrap } from "@/server/schema/common";
 import { importWatchlistArgsSchema } from "@/server/schema/import";
+import { useLocalProgressStore } from "@/stores/local-progress-store";
 
 type ImportError = {
   message: string;

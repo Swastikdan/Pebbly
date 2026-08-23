@@ -1,6 +1,7 @@
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import type { ProgressStatus } from "@/server/schema/common";
 import type { QueryClient } from "@tanstack/react-query";
+import { reconcileListFetch } from "@/lib/data/pending-ops";
 import { queryKeys } from "@/lib/query/keys";
 import {
   getAllEpisodeProgress,
@@ -8,7 +9,6 @@ import {
   getWatchlist,
 } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
-import { reconcileListFetch } from "./pending-ops";
 
 /**
  * Query functions for watchlist caches. Each one routes its server response

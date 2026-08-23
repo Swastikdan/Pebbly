@@ -6,13 +6,16 @@ import type {
   MediaMetadata,
   MediaType,
   WatchlistItem,
-} from "./watchlist-store";
+} from "@/stores/watchlist-store";
+import { fetchWatchlistList } from "@/lib/data/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
-import { fetchWatchlistList } from "./watchlist-queries";
-import { mapWatchlistRowToItem, useWatchlistStore } from "./watchlist-store";
+import {
+  mapWatchlistRowToItem,
+  useWatchlistStore,
+} from "@/stores/watchlist-store";
 
-export { useWatchlistStore } from "./watchlist-store";
+export { useWatchlistStore } from "@/stores/watchlist-store";
 export type { MediaMetadata, MediaType, WatchlistItem };
 
 /**

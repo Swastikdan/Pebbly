@@ -9,14 +9,14 @@ import type {
 } from "./progress-helpers";
 import type { MediaType } from "@/lib/media-types";
 import type { ProgressStatus } from "@/types";
-import { queryKeys } from "@/lib/query/keys";
-import { useRepository } from "@/lib/repository/use-repository";
-import { useLocalProgressStore } from "../use-local-progress-store";
-import { useMediaState, useWatchlistStore } from "../use-watchlist";
 import {
   fetchWatchedEpisodes,
   fetchWatchlistListFiltered,
-} from "../watchlist-queries";
+} from "@/lib/data/watchlist-queries";
+import { queryKeys } from "@/lib/query/keys";
+import { useRepository } from "@/lib/repository/use-repository";
+import { useLocalProgressStore } from "@/stores/local-progress-store";
+import { useMediaState, useWatchlistStore } from "../use-watchlist";
 import { logWatchProgressError, makeEpisodeKey } from "./progress-helpers";
 
 export type {

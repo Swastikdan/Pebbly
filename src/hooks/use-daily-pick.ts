@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { MediaStateInfo, PickItem } from "@/lib/daily-pick-engine";
 import { IMAGE_PREFIX } from "@/constants";
-import { useDailyPickStore } from "@/hooks/use-daily-pick-store";
 import { useAllMediaStates, useWatchlist } from "@/hooks/use-watchlist";
 import {
   buildDailyPickCandidates,
@@ -14,6 +13,7 @@ import { getMedia, getMovieDetails, getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
 import { formatMediaTitle } from "@/lib/utils";
+import { useDailyPickStore } from "@/stores/daily-pick-store";
 
 export type { PickItem };
 

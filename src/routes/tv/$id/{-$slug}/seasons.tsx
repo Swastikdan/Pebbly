@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
-import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
+import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";

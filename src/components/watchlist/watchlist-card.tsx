@@ -1,7 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
-import type { WatchlistItem } from "@/hooks/watchlist-store";
+import type { WatchlistItem } from "@/stores/watchlist-store";
 import type { ProgressStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Star, TrashBin } from "@/components/ui/icons";

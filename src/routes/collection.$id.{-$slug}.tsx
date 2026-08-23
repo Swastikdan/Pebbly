@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
-import { useCanonicalSlugRedirect } from "@/lib/canonical-slug-redirect";
+import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { getCollection } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
