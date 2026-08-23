@@ -37,13 +37,29 @@ exactly, so a change that touches code always touches at least that one doc.
   section). Only touch `client-layer.md` if the route adds a new *pattern*.
 - **New dependency or infra change** → `architecture.md` (stack table,
   diagram, deployment section).
-- **Behavioral decision** → write an ADR (below) *and* mention it in the
-  relevant layer doc.
+- **Behavioral decision** → fold it into the narrative of the relevant layer
+  doc (see "Documenting decisions" below); add an ADR only for truly
+  foundational, hard-to-reverse choices.
 
-## Writing an ADR
+## Documenting decisions
 
-Add a new entry to `architecture-decisions.md`, keeping the numbering. Use the
-same four-part format as existing entries:
+Prefer **cohesive narratives over decision stubs**: when a change introduces
+a new pattern (say, a shared pipeline or a new deployment flow), explain it
+in the layer doc where the code lives — with a short "why" so the next reader
+understands the intent without archaeology. Keep the story in one place
+rather than scattering it across numbered records.
+
+The exception is `architecture-decisions.md`: it stays as the historical
+record of *foundational* decisions (backend choice, auth model, optimistic
+journal design). Add a new entry there only when a decision is:
+- architectural (changes how layers interact), and
+- expensive or risky to reverse.
+
+For anything smaller, one or two sentences of "why" inside the relevant
+layer doc is enough.
+
+If you do write an ADR, keep the numbering and use the same four-part format
+as existing entries:
 
 ```markdown
 ## ADR-0XX: <short imperative title>
@@ -64,6 +80,7 @@ Rules:
 - Reference the code (file paths, function names) so the ADR is verifiable.
 - When an ADR is superseded, mark the old one `**Status:** Superseded` and
   link to the new one instead of rewriting history.
+- When in doubt: narrative in the layer doc beats a new ADR.
 
 ## Conventions
 

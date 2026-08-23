@@ -16,9 +16,16 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
   observability config. Secrets are NOT in this file (they go through
   `wrangler secret put`); only non-secret `VITE_*` build-time vars are inlined
   by Vite.
+- `wrangler.preview.toml`, the **preview** Worker definition used by
+  `preview.yml` on `cf-*` branches: separate `pebbly-preview` D1 database,
+  `APP_ENV=preview` var, no cron triggers, and `no_bundle = true` with
+  ESModule rules (Nitro pre-bundles the output). It must be passed to
+  wrangler via `--config`, never `--env`.
 - `server/routes/api/health.ts`, `GET /api/health`: pings D1 with `select 1`,
-  returns `{ ok, checks, durationMs }`, `503` when the DB is down. Never leaks
-  raw driver errors (public endpoint).
+  returns `{ ok, checks, durationMs }`, `503` when the DB is down. The DB
+  check result is memoized for 10 s (failures ~5 s) so an outage doesn't turn
+  into a stampede, and the check is skipped entirely when there's no D1
+  binding (plain `vite dev`). Never leaks raw driver errors (public endpoint).
 - `server/tasks/snapshots.ts`, Nitro task dispatched by the cron. Reads the
   persisted cursor (`snapshot_cursors`), calls `createDailySnapshots` (max 200
   users/run, keyset pagination), persists the new cursor, and returns a
@@ -27,12 +34,14 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 ## 2. Environment (`src/server/env.ts`)
 
 - `Env` interface mirrors the Worker bindings (`DB`, `ASSETS`,
-  `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL`, `GEMINI_API_KEY`).
+  `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL`, `GEMINI_API_KEY`, `APP_ENV`).
 - `getEnv()` reads `globalThis.__env__` (set by Nitro on the Worker) with a
   `process.env` fallback for Node dev.
 - `validateEnv()` runs once per isolate/process and validates string vars with
   Valibot. A missing `CLERK_SECRET_KEY` is a loud `console.error` (it silently
   degrades everyone to guest), while a missing `GEMINI_API_KEY` is a warning.
+- `isPreview()` / `isProduction()` read the optional `APP_ENV` var (the
+  preview Worker sets `APP_ENV=preview`) for environment-specific behavior.
 - The `DB` binding is validated separately in `getDb` with an actionable error
   (explains that `pnpm dev:web` is UI-only and `pnpm dev:cf` is needed for D1).
 
@@ -46,13 +55,23 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 - `schema.ts`, the complete Drizzle schema (see [data-model.md](./data-model.md)).
 - `helpers/watch-item.ts`, shared watch-item logic: `getWatchItem`,
   `normalizeProgressStatus` / `normalizeReaction` (safe guards against invalid
-  legacy values), `buildMetadataPatch` (clamps rating 0–10), and
-  `upsertWatchItem` (insert-or-patch on the `(user, tmdb, mediaType)` unique
-  key, with `onConflictDoUpdate` so a concurrent duplicate insert applies this
+  legacy values), `buildMetadataPatch` (clamps rating 0–10),
+  `planMembershipRemoval` (the single decision for "what happens when a title
+  leaves the watchlist": rows with a reaction or real progress survive as
+  detached rows with `in_watchlist: false`, bare rows are deleted, and a
+  leftover `watch-later` status is cleared), and `upsertWatchItem`
+  (insert-or-patch on the `(user, tmdb, mediaType)` unique key, with
+  `onConflictDoUpdate` so a concurrent duplicate insert applies this
   request's state to the winner's row instead of silently dropping it). Also
-  `bumpUserRev` + the `bumpWatchlistRev` / `bumpListsRev` / `bumpAiRev`
-  wrappers, atomic increments of the per-user revision counters that drive
-  cross-device change detection (see ADR-015).
+  `bumpUserRev` + the `bumpWatchlistRev` / `bumpListsRev` / `bumpAiRev` /
+  `bumpPermsRev` wrappers, atomic increments of the per-user revision counters
+  that drive cross-device change detection (see ADR-015).
+- `helpers/episode-sync.ts`, everything episode-progress writes share:
+  `buildEpisodeSyncStatements` (update only when watched-state actually
+  changed; insert-on-watch with `onConflictDoNothing`),
+  `loadEpisodeRowsByKey` (offset pagination in pages of 500), and
+  `syncEpisodeProgressRecord` (one read + one batch + rev bump). The
+  watchlist fns call into this so a whole-show sync is never N round trips.
 - `helpers/snapshots.ts`, `createWatchlistSnapshot` (records the current
   watchlist media ids unless identical to the latest snapshot; deterministic
   ordering before the 500-row limit) and `createDailySnapshots` (keyset
@@ -94,6 +113,10 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 - `syncRolePermissions(db, force)`, prunes invalid rows and seeds defaults in
   a single batched round trip (idempotent, race-safe with
   `onConflictDoNothing`).
+- **Change propagation**: role changes and bans bump the target user's
+  `perms_rev`; a global feature-flag toggle bumps `perms_rev` for *every*
+  user. Clients see the change on their next version poll (see ADR-015) —
+  there is no separate permissions poll anymore.
 
 ## 6. Server functions (`src/server/fns/`)
 
@@ -103,54 +126,78 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 - Reads: `getWatchlist` (status-filtered, max 500), `getTrackedTmdbIds`,
   `getMediaState` (single row for a media id), `getAllWatchedEpisodes`,
   `getAllEpisodeProgress`, and `getDataVersion` (1-row read returning the
-  user's `watchlistRev` / `listsRev` / `aiRev`, polled by clients for
-  cross-device change detection, see ADR-015).
+  user's `watchlistRev` / `listsRev` / `aiRev` / `permsRev`, polled by
+  clients for cross-device change detection, see ADR-015).
 - Writes: `setWatchlistMembership` / `batchSetWatchlistMembership` (removing
-  from the watchlist keeps the row when it has a reaction or real progress,
-  else deletes it; batch path does one read + one `db.batch`),
-  `setProgressStatus`, `setReaction`, `updateProgress`, `removeFromContinueWatching`.
-  **Every write also bumps the user's `watchlist_rev`** so other devices pick
-  up the change via their version poll.
-- Episode progress: `markEpisodeWatched`, `markSeasonEpisodesWatched`,
-  `markShowEpisodesAndStatus`, all build statements via
-  `buildEpisodeSyncStatements` against a preloaded `existingByKey` map so a
-  whole show sync is one read + one batch. Each also bumps `watchlist_rev`.
+  from the watchlist follows `planMembershipRemoval`: keep the row detached
+  when it has a reaction or real progress, else delete it; batch path does
+  one read + one `db.batch`, ≤100 items, deduped with latest-wins),
+  `setProgressStatus`, `setReaction`, `updateProgress` (infers status from
+  the value: ≥95 → done, >0 → watching; an explicit `isWatched: true` forces
+  done; always attaches the title to the watchlist),
+  `removeFromContinueWatching` (clears status + progress so a title stops
+  appearing in continue-watching). **Every write also bumps the user's
+  `watchlist_rev`** so other devices pick up the change via their version
+  poll.
+- Episode progress: `markEpisodeWatched`, `markSeasonEpisodesWatched`
+  (≤5,000 episodes), `markShowEpisodesAndStatus` (≤100 seasons × ≤5,000
+  episodes each, supports `clearAllEpisodes` to unwatch an entire show),
+  all delegating statement building to `helpers/episode-sync.ts` against a
+  preloaded row map so a whole show sync is one read + one batch. Each also
+  bumps `watchlist_rev`.
 
 ### lists.ts
 - Reads: `getCustomLists` (with preview images + item counts),
-  `getListItems` (enriched with watch-item metadata; TMDB-id `IN` clauses are
-  chunked at 90 ids because D1 caps bound parameters at 100), `getItemLists`.
-- Writes: `createCustomList`, `createCustomListAndAddItem` (rolls back the
-  list if the item insert fails), `updateCustomList`, `deleteCustomList`
-  (FK cascade removes children), `toggleListItem`. Duplicate names are guarded
-  by the `(user_id, name)` unique index via `onConflictDoNothing`. Every write
+  `getListItems` (owner-only, enriched with watch-item metadata; TMDB-id
+  `IN` clauses are chunked at 90 ids because D1 caps bound parameters at
+  100), `getItemLists`, and `getCollectionPage` — the payload behind the
+  public `/c/$id` pages. `getCollectionPage` resolves the viewer per
+  request: the owner gets the full editable payload, visitors get a
+  sanitized public one; private and missing lists both return `NOT_FOUND`
+  (no existence leak), and owner-only fields (`progressStatus`, `reaction`)
+  never reach visitors.
+- Writes: `createCustomList` (name 1–50 chars, optional description ≤150,
+  hex color, `public`/`private` visibility, `custom`/`pebbly-picks` type,
+  `unordered`/`ordered` sort type; duplicate names are guarded by the
+  `(user_id, name)` unique index via `onConflictDoNothing` → `CONFLICT`),
+  `createCustomListAndAddItem` (rolls back the list if the item insert
+  fails), `updateCustomList` (ownership + duplicate-name checks),
+  `deleteCustomList` (FK cascade removes children), `toggleListItem`
+  (appends at `max(position) + 1` so ordered lists keep their rank),
+  `reorderListItems` (≤1,000 items, one UPDATE per item, chunked at 80
+  statements), `cloneCustomList` (own lists always cloneable, foreign ones
+  only when public; the clone lands private/custom under a name that walks
+  `"(copy)"`, `"(copy 2)"`…; items insert in chunks of 80). Every write
   bumps the user's `lists_rev`.
 
 ### import-export.ts
-- `importWatchlist`, bulk import of `watch_items` + `episode_progress`.
-  Dedupes by `(mediaType, tmdbId)`, normalizes statuses/reactions, and executes
-  in bounded batches (≤100 statements per `db.batch`, episode INSERTs chunked
-  at 14 rows to respect the 100-parameter limit). Ends with a watchlist
-  snapshot and a single `watchlist_rev` bump.
+- `importWatchlist`, bulk import of `watch_items` + `episode_progress`
+  (caps: 5,000 items, 50,000 watched episodes, strings ≤500 chars).
+  Dedupes by `(mediaType, tmdbId)`, normalizes statuses/reactions, and
+  executes in bounded batches (≤100 statements per `db.batch`, episode INSERTs
+  chunked at 14 rows to respect the 100-parameter limit). Ends with a
+  watchlist snapshot and a single `watchlist_rev` bump.
 
 ### recommendations.ts
-- Access/history: `getUserRecommendationAccess`, `getRecommendationHistory`,
-  `deleteRecommendation` (blocked inside the 2-minute rate window so users
-  can't erase the cooldown marker), `updateVerifiedRecommendations`.
-- Feedback: `getRecommendationFeedback`, `setRecommendationFeedback`
-  (a `like` auto-adds the title to the watchlist with the `recommended`
-  reaction and to the "Pebbly Picks" list, bumping `watchlist_rev` **and**
-  `lists_rev`), `removeRecommendationFeedback`.
+- Access/history: `getUserRecommendationAccess`, `getRecommendationHistory`
+  (last 20), `deleteRecommendation` (blocked inside the 2-minute rate window
+  so users can't erase the cooldown marker), `updateVerifiedRecommendations`.
+- Feedback: `getRecommendationFeedback` (last 100), `setRecommendationFeedback`
+  (accepts `like` or `not_interested`; a `like` auto-adds the title to the
+  watchlist with the `recommended` reaction and to the "Pebbly Picks" list,
+  bumping `watchlist_rev` **and** `lists_rev`), `removeRecommendationFeedback`.
 - History writes (`saveRecommendations`, `deleteRecommendation`,
   `updateVerifiedRecommendations`) bump the user's `ai_rev`.
-- Homepage: `getHomepageRecommendations` (filters out disliked feedback,
-  computes `needsRefresh` from server time, 24 h cadence, retry after 1 h on
-  failure), `generateHomepageRecommendations`.
+- Homepage: `getHomepageRecommendations` (filters out disliked/not-interested
+  feedback, computes `needsRefresh` from server time, 24 h cadence, retry
+  after 1 h on failure), `generateHomepageRecommendations`.
 - Generation: `generateRecommendations`, auth + feature gate, empty-input
   guard, atomic cooldown reservation
   (`checkAndSetRecommendationCooldown`, a reserved `ai_recommendations` row
   that doubles as the rate-limit marker; released on failure),
-  `gatherWatchlistData` (4 batched pruned reads), prompt building,
+  `gatherWatchlistData` (one batched read of watch items ≤200, lists ≤50,
+  list items ≤200, episode progress ≤200), prompt building (excluded ids
+  capped at `MAX_EXCLUDE_TMDB_IDS = 1000`, also enforced client-side),
   `callGeminiAI`, filtering (dedupe against existing ids/titles, drop
   disliked), and persistence (`saveRecommendations` updates the reservation
   row in place so history never shows a placeholder).
@@ -159,9 +206,13 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 - `requireAdmin()`, `requireUser` + JWT-claim/live-API admin check
   (`FORBIDDEN` otherwise). Never consults a stored flag.
 - `getUserFeaturesFn`, `getRolePermissions`, `setRolePermission` (global
-  feature toggle via atomic upsert), `setUserRoles`, `setUserBanned`
-  (cannot ban yourself), `listUsers` (admin badges derived from one paginated
-  Clerk call; display-only).
+  feature toggle via atomic upsert; bumps `perms_rev` for **every** user),
+  `setUserRoles` (bumps the target's `perms_rev` + invalidates the server's
+  user cache), `setUserBanned` (cannot ban yourself; same rev bump),
+  `listUsers` (≤200 rows; admin badges derived from one paginated Clerk
+  call; display-only).
+- The admin dashboard consumes these through a tabbed UI (Users /
+  Permissions) and polls `listUsers` every 10 s while open.
 
 ### users.ts
 - `storeUser`, upserts identity fields from the verified Clerk session
@@ -184,7 +235,9 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 - `common.ts`, the shared enums (`mediaType`, `progressStatus`, `reaction`,
   `feedback`), `metadataSchema`, the `ApiResult<T>` error contract, `ok`/`fail`
   helpers, `ApiError`, and the client-side `unwrap()`.
-- `watchlist.ts`, `lists.ts`, `recommendations.ts`, `admin.ts`, and
-  `import.ts`, which hold Valibot schemas for every server-fn argument (also
-  imported client-side by the fns themselves, since TanStack Start bundles
-  them).
+- `watchlist.ts`, `lists.ts` (incl. visibility/sort-type/description rules and
+  the ≤1,000-item reorder cap), `recommendations.ts` (incl.
+  `MAX_EXCLUDE_TMDB_IDS = 1000`, year ranges 1900–2100, count 1–30),
+  `admin.ts`, and `import.ts` (5,000 items / 50,000 episodes), which hold
+  Valibot schemas for every server-fn argument (also imported client-side by
+  the fns themselves, since TanStack Start bundles them).

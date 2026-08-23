@@ -29,7 +29,7 @@ Identity for signed-in users, mirrored from Clerk.
 | `name` / `image` / `email` | text | profile snapshot from Clerk claims |
 | `roles` | text (json) | dynamic RBAC roles: `video-player`, `ai-integrations` |
 | `is_banned` | boolean | default `false` |
-| `watchlist_rev` / `lists_rev` / `ai_rev` | integer | monotonic per-domain revision counters for cross-device change detection, bumped atomically by every relevant mutation, polled via `getDataVersion` (see ADR-015) |
+| `watchlist_rev` / `lists_rev` / `ai_rev` / `perms_rev` | integer | monotonic per-domain revision counters for cross-device change detection, bumped atomically by every relevant mutation, polled via `getDataVersion` (see ADR-015). `perms_rev` covers RBAC state: role/ban changes bump the target user, global feature-flag toggles bump every user |
 
 > **No `is_admin` column.** Admin status lives in Clerk's public metadata
 > (JWT claim or live API). The column existed in the initial migration
@@ -97,9 +97,10 @@ Custom user lists (including the auto-created **Pebbly Picks** list).
 | :--- | :--- | :--- |
 | `id` | text PK | |
 | `user_id` | text FK → users | cascade |
-| `name` | text | unique per user |
-| `color` / `visibility` / `list_type` | text | display + `pebbly-picks` type marker |
-| `sort_order` | integer | default 0, drives ordering |
+| `name` | text | unique per user, 1–50 chars (enforced by validation) |
+| `color` / `description` / `visibility` / `list_type` | text | display + `pebbly-picks` type marker; `description` ≤150 chars; `visibility` is `public` \| `private` (public lists are what `/c/$id` shares) |
+| `sort_type` | text enum | `unordered` \| `ordered`, default `unordered`; ordered lists render items by rank |
+| `sort_order` | integer | default 0, drives list ordering in the watchlist UI |
 | `created_at` / `updated_at` | integer | |
 
 Indexes: `(user_id, name)` **unique** · `(user_id, sort_order)`.
@@ -114,6 +115,7 @@ Membership of a title in a list.
 | `user_id` | text FK → users | cascade |
 | `list_id` | text FK → lists | cascade (deleting a list deletes its items) |
 | `tmdb_id` / `media_type` | integer / enum | |
+| `position` | integer | default 0; appends at `max(position) + 1`; drives ordering on `ordered` lists (reorder writes one UPDATE per item) |
 | `added_at` | integer | |
 | `title` / `image` / `backdrop` / `overview` / `release_date` | text | metadata snapshot |
 | `rating` | real | |
@@ -207,6 +209,8 @@ Keyset-pagination cursor for the daily cron task.
 | `0003_petite_sugar_man.sql` | Drops `users.is_admin` (admin now read from Clerk only) |
 | `0004_wise_sabretooth.sql` | Adds `users.watchlist_rev`, watchlist change-detection counter |
 | `0005_yellow_rafael_vega.sql` | Adds `users.lists_rev` and `users.ai_rev`, lists + AI history counters |
+| `0006_wild_iron_man.sql` | Adds `users.perms_rev`, RBAC change-detection counter (role/ban/flag changes propagate through the same version poll) |
+| `0007_misty_vance_astro.sql` | Collections support: adds `list_items.position`, `lists.description`, and `lists.sort_type` (public shareable lists with ranked ordering) |
 
 > `drizzle-kit generate` (via `drizzle.config.ts`) produces these from the
 > schema. They are applied to D1 with `wrangler d1 migrations apply`, so the

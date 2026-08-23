@@ -31,7 +31,8 @@
 - **A repository pattern hides remote-vs-local.** `useRepository()` picks a
   remote (server-fn + optimistic journal) or local (Zustand + localStorage)
   implementation based on auth state, so mutation hooks never branch on
-  `isSignedIn`.
+  `isSignedIn`. Both adapters share one decision pipeline (`status-plan.ts`)
+  for progress-status writes.
 - **Optimistic UI with a replayable journal.** Every write is applied to the
   query cache immediately through `pending-ops.ts`, then reconciled against
   server snapshots so a stale refetch can never clobber in-flight state.
@@ -41,15 +42,18 @@
 - **AI recommendations are gated and rate-limited.** Gemini is called over
   REST with a model fallback chain, and every generation is verified/cleaned
   before it is shown to the user.
+- **coss ui on Base UI for the interface.** The Radix/shadcn primitive set was
+  replaced by Base UI-based components with first-class light/dark/system
+  themes resolved before first paint.
 
-## Repo stats (as of 2026-08-16)
+## Repo stats (as of 2026-08-23)
 
-- ~31,500 lines across `src/`, `server/`, `drizzle/`, and `.github/`
-- ~150 source files: server fns, routes, hooks, components, lib utilities
+- ~33,500 lines across `src/`, `server/`, `drizzle/`, and `.github/`
+- ~200 source files: server fns, routes, hooks, components, lib utilities
 
 ## Also see
 
-- [`REFACTOR_PLAN.md`](../REFACTOR_PLAN.md), the original refactoring plan
-  (Convex → D1, god-hook decomposition) with its progress log.
 - [`README.md`](../README.md), setup, env vars, scripts, and deployment
   instructions.
+- [`plan/`](../plan/), working plans for in-flight refactors (historical
+  context).

@@ -27,7 +27,8 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 - Cross-media search with genre, media type, and keyword filters.
 - Detail pages with cast/crew info, trailers, season/episode browsers, and an embedded video player.
 - Watchlist statuses (`watch-later`, `watching`, `done`, `dropped`), per-episode progress, and reaction tags (`loved`, `liked`, `mixed`, `not-for-me`, `recommended`).
-- Custom lists, JSON export/import for watchlists, and sync across devices via Cloudflare D1.
+- Custom lists with public share pages (`/c/<id>`): owners can edit, reorder (ranked lists), and clone; visitors only see public lists. JSON export/import for watchlists, and sync across devices via Cloudflare D1.
+- Light/dark/system themes resolved before first paint (no flash of the wrong palette).
 
 ### AI recommendations
 - Recommendations from Google Gemini models (`gemini-3.1-flash-lite`, `gemini-2.5-flash`) based on your watchlist and interactions.
@@ -47,8 +48,8 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 | **Database** | [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) via [Drizzle ORM](https://orm.drizzle.team/) |
 | **Validation** | [Valibot](https://valibot.dev/) (Lightweight, modular schema validation) |
 | **Authentication** | [Clerk](https://clerk.com/) (`@clerk/react` + `@clerk/backend` JWT verification) |
-| **AI Engine** | Google Gemini REST API (`generativelanguage.googleapis.com` via `fetch`, `gemini-3.1-flash-lite` + `gemini-2.5-flash` fallback chain) |
-| **Styling** | Tailwind CSS 4, Radix UI, shadcn/ui |
+| **AI Engine** | Google Gemini REST API (`generativelanguage.googleapis.com` via `fetch`, `gemini-3.1-flash-lite` + fallback chain) |
+| **Styling** | Tailwind CSS 4, [coss ui](https://coss.com/ui) components on Base UI (`@base-ui/react`), light/dark/system themes |
 | **Data Fetching** | TanStack Query (React Query) |
 | **State Management** | Zustand |
 | **Tooling & Linter** | Vite 7, Biome, TypeScript, Wrangler |
@@ -65,22 +66,26 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 ├── src/
 │   ├── server/                      # Co-located backend server functions & database layer
 │   │   ├── db/                      # D1 database schema & Drizzle client
+│   │   ├── helpers/                 # Shared DB logic (watch items, episode sync, snapshots)
 │   │   ├── fns/                     # Type-safe TanStack Start server functions (watchlist, lists, recs, admin)
 │   │   ├── schema/                  # Valibot schemas & typed API result contracts
 │   │   ├── auth.ts                  # Clerk server-side JWT verification & user resolution
 │   │   ├── ai.ts                    # Gemini AI client with model fallback chain
-│   │   ├── prompts.ts               # Context-aware prompts for AI recommendations
 │   │   └── rbac.ts                  # Role-based access control & feature flags
-│   ├── components/                  # UI components & domain-specific widgets
+│   ├── lib/                         # Core utilities, query keys, TMDB queries, prompts
+│   │   ├── prompts/                 # Context-aware prompt builders for AI recommendations
+│   │   ├── repository/              # Remote/local mutation layer (repository pattern)
+│   │   └── query/                   # TanStack Query client, provider, key factory
+│   ├── components/                  # UI components (coss ui on Base UI) & domain widgets
+│   │   ├── ui/                      # Base UI-based primitives + theming
 │   │   ├── homepage-recommendations.tsx # Homepage "Picks For You" row with interaction buttons
 │   │   ├── video-player-modal.tsx   # Fullscreen-capable responsive video player
-│   │   ├── media-card.tsx           # Reusable media grid/carousel card
-│   │   └── recommendations/         # Recommendation loading skeletons and UI elements
-│   ├── hooks/                       # Custom hooks (watchlist, watch progress, recommendations, RBAC)
-│   ├── lib/                         # Core utility libraries, query keys, and TMDB queries
-│   ├── routes/                      # TanStack file-based routes
+│   │   └── media-card.tsx           # Reusable media grid/carousel card
+│   ├── hooks/                       # Custom hooks (watchlist, watch progress, theme, recommendations, RBAC)
+│   ├── routes/                      # TanStack file-based routes (incl. public /c/$id list pages)
 │   └── types.d.ts                   # TypeScript declarations & domain types
 ├── wrangler.toml                    # Cloudflare Workers & D1 configuration
+├── wrangler.preview.toml            # Preview Worker config for cf-* branches
 ├── drizzle.config.ts                # Drizzle Kit migration generator config
 └── drizzle.studio.config.ts         # Drizzle Studio dashboard config
 ```
@@ -112,23 +117,29 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
    ```
 
 3. **Configure environment variables:**
-   Create a `.env` or `.env.local` file in the project root:
+   Create a `.env` or `.dev.vars` file in the project root (see
+   `.env.example`; local dev secrets live in `.dev.vars`, production secrets
+   use `wrangler secret put`):
    ```env
+   # Clerk Auth
+   VITE_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_CLERK_PUBLISHABLE_KEY
+   VITE_CLERK_ISSUER_URL=https://your-app.clerk.accounts.dev
+
+   # App URLs
+   VITE_PUBLIC_APP_URL=http://localhost:3000
+   # Optional — enables the embedded player:
+   # VITE_PUBLIC_VIDEO_URL=your_video_provider_base_url
+
    # TMDB API (read-only public API key, safe for client)
    VITE_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
    VITE_PUBLIC_TMDB_API_URL=https://api.themoviedb.org/3
 
-   # Clerk Auth
-   VITE_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_CLERK_PUBLISHABLE_KEY
+   # AI Providers (server-only)
+   GEMINI_API_KEY=your_gemini_key
+
+   # Clerk server-side session verification (@clerk/backend)
    CLERK_SECRET_KEY=sk_test_YOUR_CLERK_SECRET_KEY
    CLERK_ISSUER_URL=https://your-app.clerk.accounts.dev
-
-   # App URLs
-   VITE_PUBLIC_APP_URL=http://localhost:3000
-   VITE_PUBLIC_VIDEO_URL=your_video_provider_base_url
-
-   # AI Providers
-   GEMINI_API_KEY=your_gemini_key
 
    # Cloudflare (needed for `pnpm db:studio` dashboard & GitHub Actions)
    CLOUDFLARE_API_TOKEN=your_cloudflare_api_token
@@ -188,7 +199,13 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 ## Deploying to Cloudflare
 
-Deploying to Cloudflare Workers is automated via GitHub Actions CI/CD whenever you push to the deployment branch, or you can deploy manually:
+Deployment is automated via GitHub Actions:
+
+- **CI** (`ci.yml`) — every PR targeting `cloudflare` runs typecheck, lint, and a build.
+- **Production** (`deploy.yml`) — pushes to the `cloudflare` branch apply D1 migrations and deploy the production Worker.
+- **Preview** (`preview.yml`) — pushes to any `cf-*` branch deploy an isolated preview Worker with its own `pebbly-preview` D1 database.
+
+Or deploy manually:
 
 ```bash
 # 1. Apply any pending migrations to production D1
