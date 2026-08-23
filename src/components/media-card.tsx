@@ -265,7 +265,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 					{relevanceScore && (
 						<span
 							className={cn(
-								"font-mono text-[11px] font-semibold tabular-nums",
+								"text-[11px] font-semibold tabular-nums",
 								relevanceScore >= 80
 									? "text-emerald-600 dark:text-emerald-400"
 									: relevanceScore >= 60

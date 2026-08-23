@@ -22,12 +22,19 @@ export type InputStats = v.InferOutput<typeof inputStatsSchema>;
 
 export const generationTypeSchema = v.picklist(["watchlist", "list", "genre"]);
 
+// A heavy user's tracked library alone can exceed a few hundred titles, so the
+// cap must sit well above realistic watchlist sizes — it only guards against
+// unbounded payloads, not normal usage.
+export const MAX_EXCLUDE_TMDB_IDS = 1000;
+
 export const generateRecommendationsArgsSchema = v.object({
 	generationType: v.optional(generationTypeSchema),
 	listId: v.optional(v.string()),
 	mediaTypePreference: v.optional(mediaTypeSchema),
 	genrePreference: v.optional(v.string()),
-	excludeTmdbIds: v.optional(v.pipe(v.array(v.number()), v.maxLength(100))),
+	excludeTmdbIds: v.optional(
+		v.pipe(v.array(v.number()), v.maxLength(MAX_EXCLUDE_TMDB_IDS)),
+	),
 	yearFrom: v.optional(
 		v.pipe(v.number(), v.integer(), v.minValue(1900), v.maxValue(2100)),
 	),

@@ -2,7 +2,6 @@
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/public-sans";
-@import "@fontsource-variable/geist-mono";
 @import "@fontsource-variable/bricolage-grotesque";
 
 @custom-variant dark (&:is(.dark *));
@@ -13,7 +12,6 @@
 		sans-serif;
 	--font-display: "Bricolage Grotesque Variable", var(--font-sans);
 	--font-heading: "Bricolage Grotesque Variable", var(--font-sans);
-	--font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
 
 	/* Custom easing curves, stronger than the built-in CSS easings.
 	   Available as `ease-standard`, `ease-emphatic`, `ease-snappy` utilities. */
@@ -137,6 +135,13 @@
 		var(--color-emerald-700);
 	--warning-foreground:
 		var(--color-amber-700);
+	/* Inverted nav-drawer chip. Deliberately NOT the opposite theme's surface
+	   pair: light mode inverts to a softened charcoal, dark mode to a warm
+	   off-white, so an active row never reads as a foreign-theme card. */
+	--nav-active-bg:
+		oklch(0.34 0 0);
+	--nav-active-fg:
+		oklch(0.97 0 0);
 }
 
 .dark {
@@ -238,6 +243,10 @@
 		var(--color-emerald-400);
 	--warning-foreground:
 		var(--color-amber-400);
+	--nav-active-bg:
+		oklch(0.87 0 0);
+	--nav-active-fg:
+		oklch(0.22 0 0);
 }
 
 @theme inline {
@@ -315,6 +324,8 @@
 		var(--info-foreground);
 	--color-info:
 		var(--info);
+	--color-nav-active-bg: var(--nav-active-bg);
+	--color-nav-active-fg: var(--nav-active-fg);
   @keyframes skeleton {
   to {
     background-position:
@@ -668,9 +679,9 @@
 		text-transform: uppercase;
 	}
 
-	/* Film-can label: mono metadata (ratings, years, episode codes). */
+	/* Film-can label: compact metadata (ratings, years, episode codes). */
 	.text-meta {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
 		font-variant-numeric: tabular-nums;
 		font-feature-settings: "tnum";
 		font-size: 0.6875rem; /* 11px */

@@ -27,6 +27,7 @@ import { normalizeTitleKey } from "@/lib/text";
 import { getCustomLists } from "@/server/fns/lists";
 import { getTrackedTmdbIds } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
+import { MAX_EXCLUDE_TMDB_IDS } from "@/server/schema/recommendations";
 
 export const Route = createLazyFileRoute("/recommendations")({
 	component: RecommendationsPage,
@@ -235,7 +236,10 @@ function RecommendationsContent({
 		}
 
 		if (trackedIdSet.size > 0) {
-			options.excludeTmdbIds = Array.from(trackedIdSet);
+			options.excludeTmdbIds = Array.from(trackedIdSet).slice(
+				0,
+				MAX_EXCLUDE_TMDB_IDS,
+			);
 		}
 
 		options.count = count;
@@ -254,7 +258,10 @@ function RecommendationsContent({
 			options.mediaTypePreference = entry.mediaTypePreference as MediaType;
 		if (entry.genrePreference) options.genrePreference = entry.genrePreference;
 		if (trackedIdSet.size > 0) {
-			options.excludeTmdbIds = Array.from(trackedIdSet);
+			options.excludeTmdbIds = Array.from(trackedIdSet).slice(
+				0,
+				MAX_EXCLUDE_TMDB_IDS,
+			);
 		}
 		options.count = count;
 		generate(options);
@@ -279,7 +286,7 @@ function RecommendationsContent({
 					.filter((id): id is number => typeof id === "number"),
 				...Array.from(trackedIdSet),
 			]),
-		];
+		].slice(0, MAX_EXCLUDE_TMDB_IDS);
 
 		options.count = count;
 		generate(options);
