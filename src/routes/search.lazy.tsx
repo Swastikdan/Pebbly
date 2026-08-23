@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MAX_PAGINATION_LIMIT } from "@/constants";
+import { useUrlPagedQuery } from "@/hooks/use-url-paged-query";
 import { getMedia, getSearchResult } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import {
@@ -54,14 +54,14 @@ function SearchPage() {
   });
 
   const query = searchQuery ?? "";
-  const [page, setPage] = useState(pageNumber ?? 1);
   const [type, setType] = useState<FilterType>(null);
-  const [isPending, setIsPending] = useState(false);
   const [minRating, setMinRating] = useState("0");
 
+  const urlPage = pageNumber ?? 1;
+
   const { data, error, isFetching, isLoading } = useQuery({
-    queryKey: queryKeys.tmdb.search(query, page),
-    queryFn: () => getSearchResult({ query, page }),
+    queryKey: queryKeys.tmdb.search(query, urlPage),
+    queryFn: () => getSearchResult({ query, page: urlPage }),
     enabled: typeof window !== "undefined" && !!query,
     staleTime: 1000 * 60 * 60 * 24,
     // Keep search results bounded in memory; data is still considered
@@ -82,13 +82,20 @@ function SearchPage() {
     enabled: typeof window !== "undefined" && !query,
   });
 
-  useEffect(() => {
-    const urlPage = pageNumber ?? 1;
-    if (page !== urlPage) {
-      setPage(urlPage);
-    }
-    setIsPending(false);
-  }, [pageNumber, page]);
+  const { page, isPending, totalPages, handlePageChange } = useUrlPagedQuery({
+    urlPage: pageNumber,
+    totalPages: data?.total_pages,
+    clampGuard: true,
+    goToPage: (newPage) => {
+      navigate({
+        to: "/search",
+        search: {
+          query,
+          page: newPage,
+        },
+      });
+    },
+  });
 
   const filteredData = useMemo(() => {
     if (!data?.results) return [];
@@ -108,26 +115,6 @@ function SearchPage() {
       setMinRating("0");
     }
   }, [filteredData.length, type, data?.results?.length]);
-
-  const handlePageChange = useCallback(
-    (newPage: number) => {
-      const totalPages = Math.min(data?.total_pages ?? 0, MAX_PAGINATION_LIMIT);
-
-      if (!data || newPage < 1 || newPage > totalPages || newPage === page) {
-        return;
-      }
-
-      setIsPending(true);
-      navigate({
-        to: "/search",
-        search: {
-          query,
-          page: newPage,
-        },
-      });
-    },
-    [data, page, navigate, query],
-  );
 
   const handleTypeChange = useCallback((newType: FilterType) => {
     setType((prevType) => (prevType === newType ? prevType : newType));
@@ -152,7 +139,6 @@ function SearchPage() {
   const hasActiveFilters = type !== null || Number(minRating) > 0;
   const noResultsDueToFilters =
     filteredData.length === 0 && hasActiveFilters && baselineNonPersonCount > 0;
-  const totalPages = Math.min(data?.total_pages ?? 0, MAX_PAGINATION_LIMIT);
   const showPagination = hasResults && totalPages > 1;
   const isLoadingState =
     isLoading || (isPending && !data) || (isFetching && !data);

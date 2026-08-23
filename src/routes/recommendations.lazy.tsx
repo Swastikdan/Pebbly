@@ -5,53 +5,30 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
 
-import type {
-  GenerateOptions,
-  RecommendationHistoryEntry,
-} from "@/hooks/use-recommendations";
-import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
+import type { RecommendationHistoryEntry } from "@/hooks/use-recommendations";
 import type { MediaType } from "@/lib/media-types";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
-import {
-  ERA_PRESETS,
-  RecommendationFilters,
-} from "@/components/recommendations/recommendation-filters";
+import { RecommendationFilters } from "@/components/recommendations/recommendation-filters";
 import { RecommendationHistory } from "@/components/recommendations/recommendation-history";
 import { RecommendationResults } from "@/components/recommendations/recommendation-results";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useRecommendations } from "@/hooks/use-recommendations";
+import {
+  buildGenerateOptions,
+  selectUntrackedHistory,
+  useRecommendations,
+} from "@/hooks/use-recommendations";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { queryKeys } from "@/lib/query/keys";
 import { normalizeTitleKey } from "@/lib/text";
 import { getCustomLists } from "@/server/fns/lists";
 import { getTrackedTmdbIds } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
-import { MAX_EXCLUDE_TMDB_IDS } from "@/server/schema/recommendations";
 
 export const Route = createLazyFileRoute("/recommendations")({
   component: RecommendationsPage,
 });
-
-function isTrackedRecommendation(
-  recommendation: AIRecommendation,
-  trackedIds: Set<number>,
-  trackedTitles: Set<string>,
-) {
-  const candidateIds = [
-    recommendation.tmdbId,
-    recommendation.verifiedTmdbId,
-  ].filter((id): id is number => typeof id === "number");
-  if (candidateIds.some((id) => trackedIds.has(id))) return true;
-
-  const candidateTitles = [
-    recommendation.title,
-    recommendation.verifiedTitle,
-  ].map(normalizeTitleKey);
-
-  return candidateTitles.some((title) => title && trackedTitles.has(title));
-}
 
 function RecommendationsPage() {
   const { hasFeature, loading: accessLoading, isSignedIn } = usePermissions();
@@ -114,6 +91,8 @@ function RecommendationsContent({
     isGenerating,
     error,
     generate,
+    generateAgain,
+    generateMore,
     deleteEntry,
     updateVerified,
   } = useRecommendations();
@@ -140,17 +119,11 @@ function RecommendationsContent({
 
   const filteredHistory = useMemo(
     () =>
-      watchlistLoading
-        ? history
-        : history
-            .map((entry) => ({
-              ...entry,
-              recommendations: entry.recommendations.filter(
-                (r) =>
-                  !isTrackedRecommendation(r, trackedIdSet, trackedTitleSet),
-              ),
-            }))
-            .filter((entry) => entry.recommendations.length > 0),
+      selectUntrackedHistory(
+        history,
+        { trackedTmdbIds: trackedIdSet, trackedTitles: trackedTitleSet },
+        !watchlistLoading,
+      ),
     [history, trackedIdSet, trackedTitleSet, watchlistLoading],
   );
 
@@ -221,72 +194,29 @@ function RecommendationsContent({
     if (genMode === "watchlist" && watchlist.length === 0) return;
     if (genMode === "list" && !listId) return;
 
-    const options: GenerateOptions = { generationType: genMode };
-    if (genMode === "list") options.listId = listId;
-
-    if (mediaType) options.mediaTypePreference = mediaType;
-    if (genMode === "genre" && selectedGenres.length > 0)
-      options.genrePreference = selectedGenres.join(", ");
-
-    if (selectedEras.length > 0) {
-      const matchedEras = ERA_PRESETS.filter((e) =>
-        selectedEras.includes(e.label),
-      );
-      options.yearFrom = Math.min(...matchedEras.map((e) => e.from));
-      options.yearTo = Math.max(...matchedEras.map((e) => e.to));
-    }
-
-    if (trackedIdSet.size > 0) {
-      options.excludeTmdbIds = Array.from(trackedIdSet).slice(
-        0,
-        MAX_EXCLUDE_TMDB_IDS,
-      );
-    }
-
-    options.count = count;
-    generate(options);
+    generate(
+      buildGenerateOptions(
+        {
+          generationType: genMode,
+          listId,
+          mediaTypePreference: mediaType,
+          selectedGenres,
+          selectedEras,
+          count,
+        },
+        trackedIdSet,
+      ),
+    );
     setActiveId(null);
   };
 
   const handleGenerateAgain = (entry: RecommendationHistoryEntry) => {
-    const options: GenerateOptions = {
-      generationType: (entry.generationType || "watchlist") as
-        "watchlist" | "list" | "genre",
-    };
-    if (entry.mediaTypePreference)
-      options.mediaTypePreference = entry.mediaTypePreference as MediaType;
-    if (entry.genrePreference) options.genrePreference = entry.genrePreference;
-    if (trackedIdSet.size > 0) {
-      options.excludeTmdbIds = Array.from(trackedIdSet).slice(
-        0,
-        MAX_EXCLUDE_TMDB_IDS,
-      );
-    }
-    options.count = count;
-    generate(options);
+    generateAgain(entry, { count, trackedTmdbIds: trackedIdSet });
     setActiveId(null);
   };
 
   const handleGenerateMore = (entry: RecommendationHistoryEntry) => {
-    const options: GenerateOptions = {
-      generationType: (entry.generationType || "watchlist") as
-        "watchlist" | "list" | "genre",
-    };
-    if (entry.mediaTypePreference)
-      options.mediaTypePreference = entry.mediaTypePreference as MediaType;
-    if (entry.genrePreference) options.genrePreference = entry.genrePreference;
-
-    options.excludeTmdbIds = [
-      ...new Set([
-        ...entry.recommendations
-          .flatMap((r) => [r.tmdbId, r.verifiedTmdbId])
-          .filter((id): id is number => typeof id === "number"),
-        ...Array.from(trackedIdSet),
-      ]),
-    ].slice(0, MAX_EXCLUDE_TMDB_IDS);
-
-    options.count = count;
-    generate(options);
+    generateMore(entry, { count, trackedTmdbIds: trackedIdSet });
     setActiveId(null);
   };
 

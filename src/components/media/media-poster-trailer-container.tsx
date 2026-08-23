@@ -1,28 +1,13 @@
 import { lazy, Suspense } from "react";
-import { useNavigate, useSearch } from "@tanstack/react-router";
 
-import type {
-  MediaDialogKey,
-  MediaDialogSearch,
-} from "@/lib/media-dialog-helpers";
 import type { MediaType } from "@/lib/media-types";
 import {
-  LightboxNavButton,
   PlayOverlay,
   YouTubeEmbed,
 } from "@/components/media/media-lightbox-dialog";
-import { ScrollContainer } from "@/components/scroll-container";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogHeader,
-  DialogPopup,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { MediaThumbRail } from "@/components/media/media-thumb-rail";
 import { Image } from "@/components/ui/image";
 import { useWatchProgress } from "@/hooks/watch-progress/use-watch-progress";
-import { updateDialogSearch } from "@/lib/media-dialog-helpers";
 
 const VideoPlayerModal = lazy(() =>
   import("@/components/video-player-modal").then((m) => ({
@@ -39,8 +24,6 @@ export function MediaPosterTrailerContainer(props: {
 }) {
   const { tmdbId, type, image, title, trailervideos } = props;
   const { progress } = useWatchProgress(tmdbId, type);
-  const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as MediaDialogSearch;
 
   let defaultSeason: number | undefined;
   let defaultEpisode: number | undefined;
@@ -84,82 +67,36 @@ export function MediaPosterTrailerContainer(props: {
       </div>
 
       {trailervideos.length > 0 && (
-        <ScrollContainer className="h-full flex-1">
-          <div className="flex h-full gap-3">
-            {trailervideos.map((video, index) => (
-              <Dialog
-                key={video.key}
-                open={search.trailer === video.key}
-                onOpenChange={(isOpen) =>
-                  updateDialogSearch(
-                    (options) => navigate(options as never),
-                    "trailer" as MediaDialogKey,
-                    isOpen ? video.key : undefined,
-                  )
-                }
-              >
-                <DialogTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="group ring-offset-background focus-visible:ring-ring relative h-auto shrink-0 cursor-pointer overflow-hidden rounded-xl border-none p-0 text-start hover:bg-transparent focus-visible:ring-2 focus-visible:ring-offset-2"
-                    />
-                  }
-                >
-                  <Image
-                    alt={video.name}
-                    className="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
-                    height={450}
-                    src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
-                    width={300}
-                  />
-                  <span className="bg-background text-foreground dark:bg-foreground dark:text-background absolute top-4 left-4 w-min max-w-[200px] truncate rounded-lg px-2 py-1 text-sm sm:max-w-[250px]">
-                    {video.name}
-                  </span>
-                  <PlayOverlay />
-                </DialogTrigger>
-                <DialogPopup
-                  overlayClassName="bg-black/80 backdrop-blur-md"
-                  className="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]"
-                >
-                  <DialogHeader className="sr-only">
-                    <DialogTitle>{video.name}</DialogTitle>
-                  </DialogHeader>
-                  <div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
-                    <YouTubeEmbed videoKey={video.key} title={video.name} />
-                    {index > 0 && (
-                      <LightboxNavButton
-                        dir="prev"
-                        label="Previous trailer"
-                        onClick={() =>
-                          updateDialogSearch(
-                            (options) => navigate(options as never),
-                            "trailer",
-                            trailervideos[index - 1].key,
-                          )
-                        }
-                      />
-                    )}
-                    {index < trailervideos.length - 1 && (
-                      <LightboxNavButton
-                        dir="next"
-                        label="Next trailer"
-                        onClick={() =>
-                          updateDialogSearch(
-                            (options) => navigate(options as never),
-                            "trailer",
-                            trailervideos[index + 1].key,
-                          )
-                        }
-                      />
-                    )}
-                  </div>
-                </DialogPopup>
-              </Dialog>
-            ))}
-          </div>
-        </ScrollContainer>
+        <MediaThumbRail
+          items={trailervideos}
+          paramKey="trailer"
+          getKey={(video) => video.key}
+          getThumbSrc={(video) =>
+            `https://img.youtube.com/vi/${video.key}/sddefault.jpg`
+          }
+          getThumbAlt={(video) => video.name}
+          imageClassName="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
+          renderTileOverlay={(video) => (
+            <>
+              <span className="bg-background text-foreground dark:bg-foreground dark:text-background absolute top-4 left-4 w-min max-w-[200px] truncate rounded-lg px-2 py-1 text-sm sm:max-w-[250px]">
+                {video.name}
+              </span>
+              <PlayOverlay />
+            </>
+          )}
+          getLightboxTitle={(video) => video.name}
+          prevLabel="Previous trailer"
+          nextLabel="Next trailer"
+          lightboxOverlayClassName="bg-black/80 backdrop-blur-md"
+          lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]"
+          renderLightboxBody={(video) => (
+            <div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
+              <YouTubeEmbed videoKey={video.key} title={video.name} />
+            </div>
+          )}
+          scrollContainerClassName="h-full flex-1"
+          railClassName="flex h-full gap-3"
+        />
       )}
     </div>
   );

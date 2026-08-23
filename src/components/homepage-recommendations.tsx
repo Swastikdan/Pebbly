@@ -9,11 +9,7 @@ import { MediaSkeletonList } from "@/components/media-skeleton-list";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/hooks/use-permissions";
-import {
-  titlesMatch,
-  useTmdbData,
-  useTmdbSearchFallback,
-} from "@/hooks/use-tmdb-verification";
+import { useResolvedRecommendation } from "@/hooks/use-resolved-recommendation";
 import {
   useAllMediaStates,
   useToggleWatchlistItem,
@@ -53,37 +49,11 @@ const HomepageRecommendationCard = memo(
       },
     ) => void;
   }) => {
-    const { title, tmdbId, mediaType } = recommendation;
-    const {
-      data: tmdbData,
-      isLoading: idLoading,
-      exists: idExists,
-    } = useTmdbData(tmdbId, mediaType);
+    const { mediaType } = recommendation;
+    const { resolvedData, isResolving } =
+      useResolvedRecommendation(recommendation);
 
-    const idVerified =
-      tmdbData &&
-      idExists &&
-      titlesMatch(title, tmdbData.title) &&
-      tmdbData.rating > 0 &&
-      !!tmdbData.posterPath;
-    const idResolved = !tmdbId || !idLoading;
-
-    const shouldSearch = idResolved && !idVerified;
-    const {
-      data: searchData,
-      isLoading: searchLoading,
-      exists: searchExists,
-    } = useTmdbSearchFallback(title, mediaType, shouldSearch);
-
-    const resolvedData = idVerified
-      ? tmdbData
-      : searchExists
-        ? searchData
-        : null;
-    const isStillLoading =
-      (!!tmdbId && idLoading) || (shouldSearch && searchLoading);
-
-    if (isStillLoading) {
+    if (isResolving) {
       return <MediaCardSkeleton card_type="horizontal" />;
     }
 

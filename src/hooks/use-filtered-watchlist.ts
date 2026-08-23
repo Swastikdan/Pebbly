@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo } from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 
 import type { WatchlistItem } from "@/hooks/use-watchlist";
 import type { MediaType } from "@/lib/media-types";
@@ -9,22 +9,51 @@ export type WatchlistMediaFilter = "all" | MediaType;
 export type WatchlistSort = "recent" | "rating" | "title" | "year";
 export type WatchlistReactionFilter = "all" | "none" | ReactionStatus;
 
-export function useFilteredWatchlist(
-  watchlistData: WatchlistItem[],
-  {
-    searchQuery,
-    activeFilter,
-    reactionFilter,
-    mediaFilter,
-    sortBy,
-  }: {
-    searchQuery: string;
-    activeFilter: WatchlistFilter;
-    reactionFilter: WatchlistReactionFilter;
-    mediaFilter: WatchlistMediaFilter;
-    sortBy: WatchlistSort;
-  },
-) {
+export type WatchlistCounts = {
+  all: number;
+  "watch-later": number;
+  watching: number;
+  done: number;
+  dropped: number;
+};
+
+/**
+ * The complete filter-bar view model: state, setters, and the derived
+ * secondary-filter summary. WatchlistFilters consumes this as a single
+ * `filters` prop instead of a dozen loose value/setter pairs.
+ */
+export type WatchlistFiltersModel = {
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  activeFilter: WatchlistFilter;
+  setActiveFilter: (filter: WatchlistFilter) => void;
+  reactionFilter: WatchlistReactionFilter;
+  setReactionFilter: (filter: WatchlistReactionFilter) => void;
+  mediaFilter: WatchlistMediaFilter;
+  setMediaFilter: (filter: WatchlistMediaFilter) => void;
+  sortBy: WatchlistSort;
+  setSortBy: (sort: WatchlistSort) => void;
+  filtersOpen: boolean;
+  setFiltersOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+  activeSecondaryCount: number;
+  resetSecondaryFilters: () => void;
+};
+
+/**
+ * Single owner of watchlist filtering: holds the raw filter state, derives
+ * the filtered/sorted list and the per-status counts from it. Filter state
+ * is pure component state — nothing here persists to the URL.
+ */
+export function useFilteredWatchlist(watchlistData: WatchlistItem[]) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] =
+    useState<WatchlistFilter>("watch-later");
+  const [reactionFilter, setReactionFilter] =
+    useState<WatchlistReactionFilter>("all");
+  const [mediaFilter, setMediaFilter] = useState<WatchlistMediaFilter>("all");
+  const [sortBy, setSortBy] = useState<WatchlistSort>("recent");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const filteredWatchlist = useMemo(() => {
@@ -104,5 +133,36 @@ export function useFilteredWatchlist(
     return result;
   }, [watchlistData]);
 
-  return { filteredWatchlist, counts };
+  const activeSecondaryCount = [
+    searchQuery.trim().length > 0,
+    mediaFilter !== "all",
+    reactionFilter !== "all",
+    sortBy !== "recent",
+  ].filter(Boolean).length;
+
+  const resetSecondaryFilters = useCallback(() => {
+    setSearchQuery("");
+    setMediaFilter("all");
+    setReactionFilter("all");
+    setSortBy("recent");
+  }, []);
+
+  return {
+    searchQuery,
+    setSearchQuery,
+    activeFilter,
+    setActiveFilter,
+    reactionFilter,
+    setReactionFilter,
+    mediaFilter,
+    setMediaFilter,
+    sortBy,
+    setSortBy,
+    filtersOpen,
+    setFiltersOpen,
+    activeSecondaryCount,
+    resetSecondaryFilters,
+    filteredWatchlist,
+    counts,
+  };
 }

@@ -9,11 +9,7 @@ import { formatTimestamp } from "@/components/recommendations/recommendation-uti
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MediaGrid } from "@/components/ui/media-grid";
-import {
-  titlesMatch,
-  useTmdbData,
-  useTmdbSearchFallback,
-} from "@/hooks/use-tmdb-verification";
+import { useResolvedRecommendation } from "@/hooks/use-resolved-recommendation";
 import { cn } from "@/lib/utils";
 
 export function RecommendationResults({
@@ -130,49 +126,18 @@ function RecommendationCard({
   isEntryVerified: boolean;
   onResolved?: (verifiedRec: AIRecommendation) => void;
 }) {
-  const { title, tmdbId, mediaType, relevanceScore, reasoning } =
-    recommendation;
+  const { title, mediaType, relevanceScore, reasoning } = recommendation;
   const navigate = useNavigate();
   const hasReportedRef = useRef(false);
 
   const usesCachedData = isEntryVerified && !!recommendation.verifiedTmdbId;
-
-  const {
-    data: tmdbData,
-    isLoading: idLoading,
-    exists: idExists,
-  } = useTmdbData(usesCachedData ? null : tmdbId, mediaType);
-
-  const idVerified =
-    !usesCachedData &&
-    tmdbData &&
-    idExists &&
-    titlesMatch(title, tmdbData.title) &&
-    tmdbData.rating > 0 &&
-    !!tmdbData.posterPath;
-  const idResolved = usesCachedData || !tmdbId || !idLoading;
-
-  const shouldSearch = !usesCachedData && idResolved && !idVerified;
-  const {
-    data: searchData,
-    isLoading: searchLoading,
-    exists: searchExists,
-  } = useTmdbSearchFallback(title, mediaType, shouldSearch);
-
-  const resolvedData = usesCachedData
-    ? null
-    : idVerified
-      ? tmdbData
-      : searchExists
-        ? searchData
-        : null;
-
-  const isStillLoading =
-    !usesCachedData &&
-    ((!!tmdbId && idLoading) || (shouldSearch && searchLoading));
+  const { resolvedData, isResolving } = useResolvedRecommendation(
+    recommendation,
+    { enabled: !usesCachedData },
+  );
 
   useEffect(() => {
-    if (usesCachedData || hasReportedRef.current || isStillLoading) return;
+    if (usesCachedData || hasReportedRef.current || isResolving) return;
     hasReportedRef.current = true;
 
     if (resolvedData && onResolved) {
@@ -189,13 +154,7 @@ function RecommendationCard({
       // Keep unresolved cards in the batch so backend verification can finish.
       onResolved(recommendation);
     }
-  }, [
-    usesCachedData,
-    isStillLoading,
-    resolvedData,
-    recommendation,
-    onResolved,
-  ]);
+  }, [usesCachedData, isResolving, resolvedData, recommendation, onResolved]);
 
   if (usesCachedData) {
     return (
@@ -214,7 +173,7 @@ function RecommendationCard({
     );
   }
 
-  if (isStillLoading) {
+  if (isResolving) {
     return <MediaCardSkeleton card_type="horizontal" />;
   }
 

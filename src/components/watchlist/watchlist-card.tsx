@@ -1,11 +1,16 @@
 import { Sparkles } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 
 import type { WatchlistItem } from "@/stores/watchlist-store";
 import type { ProgressStatus } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Star, TrashBin } from "@/components/ui/icons";
+import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
+import {
+  MediaChip,
+  MediaMetaRow,
+  MediaRowCardShell,
+  releaseYearOf,
+} from "@/components/watchlist/media-row-card-shell";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
 import { toast } from "@/hooks/use-toast-store";
@@ -45,9 +50,7 @@ export function WatchlistCard({
   const blurSrc = item.image
     ? `${IMAGE_PREFIX.PREVIEW}${item.image}`
     : undefined;
-  const year = item.release_date
-    ? new Date(item.release_date).getFullYear()
-    : null;
+  const year = releaseYearOf(item.release_date);
 
   const { setProgressStatus } = useRepository();
 
@@ -91,12 +94,10 @@ export function WatchlistCard({
   };
 
   return (
-    <Link
-      // @ts-expect-error - correct link
+    <MediaRowCardShell
       to={`/${item.type}/${item.external_id}/${formattedTitle}`}
-      className="border-border/40 bg-card hover:border-border/70 relative flex gap-3.5 rounded-2xl border p-3.5 transition-[border-color,transform] duration-150 [@media(hover:hover)]:hover:-translate-y-0.5"
-    >
-      <div className="relative shrink-0">
+      className="rounded-2xl transition-[border-color,transform] duration-150 [@media(hover:hover)]:hover:-translate-y-0.5"
+      poster={
         <Image
           alt={item.title}
           className="bg-muted h-[140px] w-[93px] rounded-xl object-cover"
@@ -106,53 +107,32 @@ export function WatchlistCard({
           width={140}
           priority={priority}
         />
-      </div>
-
-      <div className="flex min-w-0 flex-1 flex-col justify-between">
-        <div>
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 text-sm leading-snug font-semibold">
-              {item.title}
-            </h3>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive shrink-0 p-1.5 transition-colors"
-              aria-label={`Remove ${item.title} from watchlist`}
-              onClick={(e) => handleRemove(e, item, onRemoveFromWatchlist)}
-            >
-              <TrashBin size={14} />
-            </Button>
-          </div>
-
-          <div className="text-meta text-muted-foreground mt-1 flex items-center gap-1.5">
-            <span className="uppercase">{item.type}</span>
-            {year && (
-              <>
-                <span className="text-border">·</span>
-                <span>{year}</span>
-              </>
-            )}
-            {item.rating > 0 && (
-              <>
-                <span className="text-border">·</span>
-                <span className="flex items-center gap-0.5">
-                  <Star className="size-2.5 fill-yellow-400 text-yellow-400" />
-                  {item.rating.toFixed(1)}
-                </span>
-              </>
-            )}
-          </div>
-
-          {item.overview && (
-            <p className="text-muted-foreground/60 mt-1.5 line-clamp-2 text-xs leading-relaxed">
-              {item.overview}
-            </p>
-          )}
-        </div>
-
+      }
+      title={item.title}
+      actions={
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive shrink-0 p-1.5 transition-colors"
+          aria-label={`Remove ${item.title} from watchlist`}
+          onClick={(e) => handleRemove(e, item, onRemoveFromWatchlist)}
+        >
+          <TrashBin size={14} />
+        </Button>
+      }
+      metaRow={
+        <MediaMetaRow
+          mediaType={item.type}
+          year={year}
+          rating={item.rating}
+          className="text-meta text-muted-foreground"
+          labelClassName="uppercase"
+        />
+      }
+      overview={item.overview}
+      overviewClassName="text-muted-foreground/60"
+      footer={
         <div className="flex flex-wrap items-center gap-1.5 pt-2">
           <Button
             type="button"
@@ -173,17 +153,15 @@ export function WatchlistCard({
             </span>
           )}
           {reactionOption && (
-            <span
-              className="bg-secondary/80 text-secondary-foreground inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-medium sm:py-1"
+            <MediaChip
+              icon={reactionOption.icon}
+              label={reactionOption.label}
               title={reactionOption.label}
-            >
-              <reactionOption.icon size={12} />
-              {reactionOption.label}
-            </span>
+            />
           )}
         </div>
-      </div>
-    </Link>
+      }
+    />
   );
 }
 

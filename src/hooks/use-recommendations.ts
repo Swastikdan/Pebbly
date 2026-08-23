@@ -4,8 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { MediaType } from "@/lib/media-types";
 import type { AIRecommendation } from "@/types";
+import { ERA_PRESETS } from "@/components/recommendations/recommendation-filters";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
+import { normalizeTitleKey } from "@/lib/text";
 import {
   deleteRecommendation,
   generateRecommendations,
@@ -13,6 +15,7 @@ import {
   updateVerifiedRecommendations,
 } from "@/server/fns/recommendations";
 import { unwrap } from "@/server/schema/common";
+import { MAX_EXCLUDE_TMDB_IDS } from "@/server/schema/recommendations";
 
 function logRecommendationError(action: string, error: unknown) {
   console.error(`Failed to ${action}`, error);
@@ -59,6 +62,145 @@ type GenerateResult =
       listId?: string;
     }
   | { error: string };
+
+export interface TrackedContentSets {
+  trackedTmdbIds: Set<number>;
+  trackedTitles: Set<string>;
+}
+
+export function isTrackedRecommendation(
+  recommendation: AIRecommendation,
+  tracked: TrackedContentSets,
+): boolean {
+  const candidateIds = [
+    recommendation.tmdbId,
+    recommendation.verifiedTmdbId,
+  ].filter((id): id is number => typeof id === "number");
+  if (candidateIds.some((id) => tracked.trackedTmdbIds.has(id))) return true;
+
+  const candidateTitles = [
+    recommendation.title,
+    recommendation.verifiedTitle,
+  ].map(normalizeTitleKey);
+
+  return candidateTitles.some(
+    (title) => title && tracked.trackedTitles.has(title),
+  );
+}
+
+/**
+ * Drops already-tracked (watchlisted/in-progress) recommendations from every
+ * history entry, then drops emptied entries. Pass filteringEnabled=false
+ * while the watchlist is still loading to surface entries unfiltered.
+ */
+export function selectUntrackedHistory(
+  history: RecommendationHistoryEntry[],
+  tracked: TrackedContentSets,
+  filteringEnabled: boolean,
+): RecommendationHistoryEntry[] {
+  if (!filteringEnabled) return history;
+  return history
+    .map((entry) => ({
+      ...entry,
+      recommendations: entry.recommendations.filter(
+        (r) => !isTrackedRecommendation(r, tracked),
+      ),
+    }))
+    .filter((entry) => entry.recommendations.length > 0);
+}
+
+function cappedTrackedExclusions(
+  trackedTmdbIds: Set<number>,
+): number[] | undefined {
+  if (trackedTmdbIds.size === 0) return undefined;
+  return Array.from(trackedTmdbIds).slice(0, MAX_EXCLUDE_TMDB_IDS);
+}
+
+export interface FreshGenerateOptionsInput {
+  generationType: "watchlist" | "genre" | "list";
+  listId?: string;
+  mediaTypePreference?: MediaType;
+  selectedGenres?: string[];
+  selectedEras?: string[];
+  count: number;
+}
+
+export function buildGenerateOptions(
+  input: FreshGenerateOptionsInput,
+  trackedTmdbIds: Set<number>,
+): GenerateOptions {
+  const options: GenerateOptions = { generationType: input.generationType };
+  if (input.generationType === "list") options.listId = input.listId;
+
+  if (input.mediaTypePreference)
+    options.mediaTypePreference = input.mediaTypePreference;
+  if (input.generationType === "genre" && input.selectedGenres?.length)
+    options.genrePreference = input.selectedGenres.join(", ");
+
+  if (input.selectedEras && input.selectedEras.length > 0) {
+    const matchedEras = ERA_PRESETS.filter((e) =>
+      input.selectedEras?.includes(e.label),
+    );
+    options.yearFrom = Math.min(...matchedEras.map((e) => e.from));
+    options.yearTo = Math.max(...matchedEras.map((e) => e.to));
+  }
+
+  const exclusions = cappedTrackedExclusions(trackedTmdbIds);
+  if (exclusions) options.excludeTmdbIds = exclusions;
+
+  options.count = input.count;
+  return options;
+}
+
+export interface RepeatGenerateContext {
+  count: number;
+  trackedTmdbIds: Set<number>;
+}
+
+function buildRepeatBaseOptions(
+  entry: RecommendationHistoryEntry,
+  { count, trackedTmdbIds }: RepeatGenerateContext,
+): GenerateOptions {
+  const options: GenerateOptions = {
+    generationType: (entry.generationType || "watchlist") as
+      "watchlist" | "list" | "genre",
+  };
+  if (entry.mediaTypePreference)
+    options.mediaTypePreference = entry.mediaTypePreference as MediaType;
+  if (entry.genrePreference) options.genrePreference = entry.genrePreference;
+
+  const exclusions = cappedTrackedExclusions(trackedTmdbIds);
+  if (exclusions) options.excludeTmdbIds = exclusions;
+
+  options.count = count;
+  return options;
+}
+
+export function buildGenerateAgainOptions(
+  entry: RecommendationHistoryEntry,
+  context: RepeatGenerateContext,
+): GenerateOptions {
+  return buildRepeatBaseOptions(entry, context);
+}
+
+export function buildGenerateMoreOptions(
+  entry: RecommendationHistoryEntry,
+  { count, trackedTmdbIds }: RepeatGenerateContext,
+): GenerateOptions {
+  const options = buildRepeatBaseOptions(entry, { count, trackedTmdbIds });
+
+  // Always set for "more": exclude the entry's own picks plus tracked ids.
+  options.excludeTmdbIds = [
+    ...new Set([
+      ...entry.recommendations
+        .flatMap((r) => [r.tmdbId, r.verifiedTmdbId])
+        .filter((id): id is number => typeof id === "number"),
+      ...Array.from(trackedTmdbIds),
+    ]),
+  ].slice(0, MAX_EXCLUDE_TMDB_IDS);
+
+  return options;
+}
 
 export function useRecommendations() {
   const { isSignedIn, user } = useUser();
@@ -136,6 +278,18 @@ export function useRecommendations() {
     [queryClient, user?.id],
   );
 
+  const generateAgain = useCallback(
+    (entry: RecommendationHistoryEntry, context: RepeatGenerateContext) =>
+      generate(buildGenerateAgainOptions(entry, context)),
+    [generate],
+  );
+
+  const generateMore = useCallback(
+    (entry: RecommendationHistoryEntry, context: RepeatGenerateContext) =>
+      generate(buildGenerateMoreOptions(entry, context)),
+    [generate],
+  );
+
   const deleteEntry = useCallback(
     async (id: string) => {
       setOptimisticDeletedIds((prev) => new Set(prev).add(id));
@@ -173,6 +327,8 @@ export function useRecommendations() {
     isGenerating,
     error,
     generate,
+    generateAgain,
+    generateMore,
     deleteEntry,
     updateVerified,
   };

@@ -1,7 +1,9 @@
 import { Search, SlidersHorizontal, X } from "lucide-react";
 
 import type {
+  WatchlistCounts,
   WatchlistFilter,
+  WatchlistFiltersModel,
   WatchlistMediaFilter,
   WatchlistReactionFilter,
   WatchlistSort,
@@ -54,49 +56,37 @@ const SORT_ITEMS: Array<{ value: WatchlistSort; label: string }> = [
   { value: "year", label: "Newest Release" },
 ];
 
+/**
+ * Pure rendering of the filter bar. All state and setters arrive bundled in
+ * the single `filters` model owned by `useFilteredWatchlist`.
+ */
 export function WatchlistFilters({
-  searchQuery,
-  setSearchQuery,
-  activeFilter,
-  setActiveFilter,
-  reactionFilter,
-  setReactionFilter,
-  mediaFilter,
-  setMediaFilter,
-  sortBy,
-  setSortBy,
-  filtersOpen,
-  setFiltersOpen,
-  activeSecondaryCount,
-  resetSecondaryFilters,
+  filters,
   counts,
   filteredCount,
   totalCount,
 }: {
-  searchQuery: string;
-  setSearchQuery: (value: string) => void;
-  activeFilter: WatchlistFilter;
-  setActiveFilter: (filter: WatchlistFilter) => void;
-  reactionFilter: WatchlistReactionFilter;
-  setReactionFilter: (filter: WatchlistReactionFilter) => void;
-  mediaFilter: WatchlistMediaFilter;
-  setMediaFilter: (filter: WatchlistMediaFilter) => void;
-  sortBy: WatchlistSort;
-  setSortBy: (sort: WatchlistSort) => void;
-  filtersOpen: boolean;
-  setFiltersOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
-  activeSecondaryCount: number;
-  resetSecondaryFilters: () => void;
-  counts: {
-    all: number;
-    "watch-later": number;
-    watching: number;
-    done: number;
-    dropped: number;
-  };
+  filters: WatchlistFiltersModel;
+  counts: WatchlistCounts;
   filteredCount: number;
   totalCount: number;
 }) {
+  const {
+    searchQuery,
+    setSearchQuery,
+    activeFilter,
+    setActiveFilter,
+    reactionFilter,
+    setReactionFilter,
+    mediaFilter,
+    setMediaFilter,
+    sortBy,
+    setSortBy,
+    filtersOpen,
+    setFiltersOpen,
+    activeSecondaryCount,
+    resetSecondaryFilters,
+  } = filters;
   const showDroppedTab = counts.dropped > 0;
 
   return (

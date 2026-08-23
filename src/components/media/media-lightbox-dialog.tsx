@@ -86,6 +86,8 @@ interface MediaLightboxDialogProps {
   onNext: () => void;
   overlayClassName?: string;
   contentClassName?: string;
+  prevLabel?: string;
+  nextLabel?: string;
   children: React.ReactNode;
 }
 
@@ -99,6 +101,8 @@ export function MediaLightboxDialog({
   onNext,
   overlayClassName = "bg-white/40 backdrop-blur-lg dark:bg-black/70",
   contentClassName = "aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-2xl border-0 bg-transparent p-0 ring-0 overflow-hidden",
+  prevLabel = "Previous item",
+  nextLabel = "Next item",
   children,
 }: MediaLightboxDialogProps) {
   return (
@@ -117,14 +121,10 @@ export function MediaLightboxDialog({
         </DialogHeader>
         {children}
         {hasPrev && (
-          <LightboxNavButton
-            dir="prev"
-            label="Previous item"
-            onClick={onPrev}
-          />
+          <LightboxNavButton dir="prev" label={prevLabel} onClick={onPrev} />
         )}
         {hasNext && (
-          <LightboxNavButton dir="next" label="Next item" onClick={onNext} />
+          <LightboxNavButton dir="next" label={nextLabel} onClick={onNext} />
         )}
       </DialogPopup>
     </Dialog>
