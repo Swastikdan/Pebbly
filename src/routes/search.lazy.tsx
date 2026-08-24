@@ -86,6 +86,7 @@ function SearchPage() {
     urlPage: pageNumber,
     totalPages: data?.total_pages,
     clampGuard: true,
+    scrollToTop: true,
     goToPage: (newPage) => {
       navigate({
         to: "/search",
@@ -188,7 +189,7 @@ function SearchPage() {
     content = (
       <div className="flex h-full flex-col gap-5 py-5">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="bg-secondary/40 ring-border/40 flex gap-0.5 rounded-lg p-0.5 ring-1">
+          <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
             <Skeleton className="h-7 w-10 rounded-md" />
             <Skeleton className="h-7 w-16 rounded-md" />
             <Skeleton className="h-7 w-14 rounded-md" />
@@ -255,25 +256,52 @@ function SearchPage() {
     content = (
       <div className="flex h-full flex-col gap-5 py-5">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="bg-secondary/40 ring-border/40 flex h-8 items-center gap-0.5 rounded-lg p-0.5 ring-1">
+          <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex h-8 items-center gap-0.5 rounded-lg border p-0.5">
             <Button
               className="h-7 rounded-md px-3 text-xs font-semibold"
-              variant={!type ? "default" : "ghost"}
+              variant="ghost"
               onClick={handleAllClick}
+              data-active={!type}
+              style={
+                !type
+                  ? {
+                      background: "var(--foreground)",
+                      color: "var(--background)",
+                    }
+                  : undefined
+              }
             >
               All
             </Button>
             <Button
               className="h-7 rounded-md px-3 text-xs font-semibold"
-              variant={type === "movie" ? "default" : "ghost"}
+              variant="ghost"
               onClick={handleMovieClick}
+              data-active={type === "movie"}
+              style={
+                type === "movie"
+                  ? {
+                      background: "var(--foreground)",
+                      color: "var(--background)",
+                    }
+                  : undefined
+              }
             >
               Movies
             </Button>
             <Button
               className="h-7 rounded-md px-3 text-xs font-semibold"
-              variant={type === "tv" ? "default" : "ghost"}
+              variant="ghost"
               onClick={handleTVClick}
+              data-active={type === "tv"}
+              style={
+                type === "tv"
+                  ? {
+                      background: "var(--foreground)",
+                      color: "var(--background)",
+                    }
+                  : undefined
+              }
             >
               Series
             </Button>

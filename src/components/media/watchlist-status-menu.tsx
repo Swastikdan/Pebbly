@@ -1,3 +1,4 @@
+import { SignInButton, useUser } from "@clerk/react";
 import {
   Bookmark,
   Check,
@@ -293,6 +294,7 @@ function AddToListDialog({
 }) {
   const { lists } = useCustomLists();
   const itemLists = useItemLists(tmdbId, mediaType);
+  const { isSignedIn } = useUser();
   const { toggleListItem } = useRepository();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
@@ -309,83 +311,105 @@ function AddToListDialog({
                 My Collections
               </DialogTitle>
               <DialogDescription className="text-muted-foreground text-xs">
-                Add or remove this title from your collections.
+                {isSignedIn
+                  ? "Add or remove this title from your collections."
+                  : "Sign in to organize titles into your own collections."}
               </DialogDescription>
             </DialogHeader>
           </div>
 
-          <div className="px-6">
-            <div className="max-h-64 space-y-1.5 overflow-y-auto">
-              {safeList.length === 0 && (
-                <p className="text-muted-foreground py-6 text-center text-sm">
-                  No collections yet. Create one to get started.
-                </p>
-              )}
-
-              {safeList
-                .filter((list) => list.listType !== "pebbly-picks")
-                .map((list) => {
-                  const isInList = safeItemLists.includes(list._id);
-                  return (
-                    <button
-                      key={list._id}
-                      type="button"
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-xl border border-transparent px-4 py-3 text-sm transition-[color,background-color,border-color] duration-200",
-                        isInList
-                          ? "bg-primary/[0.03] border-primary/10 text-foreground font-semibold"
-                          : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-                      )}
-                      onClick={() =>
-                        toggleListItem({
-                          listId: list._id,
-                          tmdbId,
-                          mediaType,
-                          title: metadata?.title,
-                          image: metadata?.image,
-                          backdrop: metadata?.backdrop,
-                          rating: metadata?.rating,
-                          release_date: metadata?.release_date,
-                          overview: metadata?.overview,
-                        })
-                      }
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div
-                          className={cn(
-                            "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-[color,background-color,border-color] duration-200",
-                            isInList
-                              ? "border-primary bg-primary text-primary-foreground scale-105"
-                              : "border-muted-foreground/30 bg-transparent",
-                          )}
-                        >
-                          {isInList && <Check size={11} strokeWidth={3} />}
-                        </div>
-                        <span className="truncate">{list.name}</span>
-                      </div>
-                      {list.color && (
-                        <span
-                          className="size-2.5 shrink-0 rounded-full shadow-sm"
-                          style={{ backgroundColor: list.color }}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
+          {!isSignedIn ? (
+            <div className="flex flex-col items-center gap-3 px-6 pt-2 pb-6 text-center">
+              <p className="text-muted-foreground text-xs">
+                Collections belong to your account, so they stay yours — private
+                by default and shareable when you want.
+              </p>
+              <SignInButton mode="modal">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs font-semibold"
+                >
+                  Sign In
+                </Button>
+              </SignInButton>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="px-6">
+                <div className="max-h-64 space-y-1.5 overflow-y-auto">
+                  {safeList.length === 0 && (
+                    <p className="text-muted-foreground py-6 text-center text-sm">
+                      No collections yet. Create one to get started.
+                    </p>
+                  )}
 
-          <div className="px-6 pt-3 pb-6">
-            <Button
-              type="button"
-              variant="outline"
-              className="text-muted-foreground hover:bg-secondary/60 hover:text-foreground h-auto w-full justify-center gap-2 border-dashed py-2.5 text-sm font-medium transition-colors"
-              onClick={() => setShowCreateDialog(true)}
-            >
-              <Plus size={16} />
-              Create New Collection
-            </Button>
-          </div>
+                  {safeList
+                    .filter((list) => list.listType !== "pebbly-picks")
+                    .map((list) => {
+                      const isInList = safeItemLists.includes(list._id);
+                      return (
+                        <button
+                          key={list._id}
+                          type="button"
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-xl border border-transparent px-4 py-3 text-sm transition-[color,background-color,border-color] duration-200",
+                            isInList
+                              ? "bg-primary/[0.03] border-primary/10 text-foreground font-semibold"
+                              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                          )}
+                          onClick={() =>
+                            toggleListItem({
+                              listId: list._id,
+                              tmdbId,
+                              mediaType,
+                              title: metadata?.title,
+                              image: metadata?.image,
+                              backdrop: metadata?.backdrop,
+                              rating: metadata?.rating,
+                              release_date: metadata?.release_date,
+                              overview: metadata?.overview,
+                            })
+                          }
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div
+                              className={cn(
+                                "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-[color,background-color,border-color] duration-200",
+                                isInList
+                                  ? "border-primary bg-primary text-primary-foreground scale-105"
+                                  : "border-muted-foreground/30 bg-transparent",
+                              )}
+                            >
+                              {isInList && <Check size={11} strokeWidth={3} />}
+                            </div>
+                            <span className="truncate">{list.name}</span>
+                          </div>
+                          {list.color && (
+                            <span
+                              className="size-2.5 shrink-0 rounded-full shadow-sm"
+                              style={{ backgroundColor: list.color }}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+
+              <div className="px-6 pt-3 pb-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="text-muted-foreground hover:bg-secondary/60 hover:text-foreground h-auto w-full justify-center gap-2 border-dashed py-2.5 text-sm font-medium transition-colors"
+                  onClick={() => setShowCreateDialog(true)}
+                >
+                  <Plus size={16} />
+                  Create New Collection
+                </Button>
+              </div>
+            </>
+          )}
         </DialogPopup>
       </Dialog>
 

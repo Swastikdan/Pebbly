@@ -167,7 +167,7 @@ export function WatchlistCard({
 
 export function WatchlistCardSkeleton() {
   return (
-    <div className="border-border/40 bg-card relative flex animate-pulse gap-3.5 rounded-2xl border p-3.5">
+    <div className="border-border/60 bg-card dark:border-border/40 relative flex animate-pulse gap-3.5 rounded-2xl border p-3.5 shadow-xs dark:shadow-none">
       <div className="bg-muted h-[140px] w-[93px] shrink-0 rounded-xl" />
       <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
         <div>

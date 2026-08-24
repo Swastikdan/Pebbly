@@ -1,3 +1,4 @@
+import { SignInButton, useUser } from "@clerk/react";
 import { ListPlus, Plus } from "lucide-react";
 import { lazy, Suspense, useMemo, useState } from "react";
 
@@ -16,6 +17,7 @@ const CustomListDialog = lazy(() =>
 );
 
 export function MyListsTab() {
+  const { isSignedIn } = useUser();
   const { lists: customLists, loading } = useCustomLists();
   const { deleteList: deleteCustomList, cloneList } = useRepository();
   const [showCreateList, setShowCreateList] = useState(false);
@@ -35,6 +37,42 @@ export function MyListsTab() {
 
   if (loading) {
     return <DefaultLoader />;
+  }
+
+  // Collections live on the server (they are the shareable/private objects
+  // opened at /c/$id), so signed-out visitors get a sign-in CTA instead of
+  // the creation UI — a localStorage-only list could never be opened or
+  // shared, which read as broken.
+  if (!isSignedIn) {
+    return (
+      <div className="animate-fade-in-up flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-6 py-16 text-center">
+        <div className="relative flex size-20 items-center justify-center">
+          <div className="border-border/30 bg-muted/40 absolute size-14 rotate-[-6deg] rounded-xl border shadow-sm" />
+          <div className="border-border/40 bg-muted/70 absolute size-14 rotate-[6deg] rounded-xl border shadow-md" />
+          <div className="border-border/80 bg-background shadow-primary/5 absolute flex size-14 items-center justify-center rounded-xl border shadow-lg">
+            <ListPlus className="text-primary size-6" />
+          </div>
+        </div>
+        <div>
+          <h3 className="mb-2 text-lg font-bold tracking-tight">
+            Sign in to create collections
+          </h3>
+          <p className="text-muted-foreground/80 max-w-sm text-xs leading-relaxed">
+            Collections are saved to your account, so you can keep them private
+            or share them with anyone.
+          </p>
+        </div>
+        <SignInButton mode="modal">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-2 px-5 text-xs font-semibold"
+          >
+            Sign In
+          </Button>
+        </SignInButton>
+      </div>
+    );
   }
 
   const deleteListWithUndo = (list: {
