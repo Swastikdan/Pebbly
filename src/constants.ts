@@ -3,8 +3,16 @@
 export const IS_PREVIEW_BUILD =
   import.meta.env.VITE_PUBLIC_APP_ENV === "preview";
 
+// True only under the Vite dev server (pnpm dev); statically false in every
+// production bundle.
+export const IS_DEV_BUILD = !IS_PREVIEW_BUILD && import.meta.env.DEV === true;
+
 export const SITE_CONFIG = {
-  name: IS_PREVIEW_BUILD ? "Pebbly Preview" : "Pebbly",
+  name: IS_PREVIEW_BUILD
+    ? "Pebbly Preview"
+    : IS_DEV_BUILD
+      ? "Pebbly Dev"
+      : "Pebbly",
   description: IS_PREVIEW_BUILD
     ? "Preview environment of Pebbly — explore movies and TV shows before changes ship."
     : "Explore a vast collection of movies and TV shows with Pebbly.",
