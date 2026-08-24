@@ -80,7 +80,9 @@ const HomepageRecommendationCard = memo(
           hideWatchlistButton={true}
         />
 
-        <div className="absolute top-2 right-2 z-20 flex gap-1.5 opacity-0 transition-opacity duration-200 ease-out group-hover/rec-card:opacity-100 md:opacity-100">
+        {/* Always visible on touch devices (no hover to reveal); on
+            hover-capable screens they fade in with the card hover. */}
+        <div className="absolute top-2 right-2 z-20 flex gap-1.5 opacity-100 transition-opacity duration-200 ease-out [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/rec-card:opacity-100">
           <Button
             variant="secondary"
             size="icon"

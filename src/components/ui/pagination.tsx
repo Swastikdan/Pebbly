@@ -27,7 +27,7 @@ export function Pagination({
     >
       <Button
         variant="outline"
-        className="border-border/60 rounded-lg px-4 pr-4 text-sm"
+        className="border-border/60 flex-1 rounded-lg px-4 text-sm md:flex-none"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         aria-label="Previous Page"
@@ -35,7 +35,7 @@ export function Pagination({
         <ChevronLeft />
         <span>Prev</span>
       </Button>
-      <div className="bg-secondary/60 flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 md:hidden">
+      <div className="bg-secondary/60 flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 md:hidden">
         <span className="text-foreground text-sm font-medium">Page</span>
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-semibold" aria-current="page">
@@ -114,7 +114,7 @@ export function Pagination({
       </div>
       <Button
         variant="outline"
-        className="border-border/60 rounded-lg px-4 pl-4 text-sm"
+        className="border-border/60 flex-1 rounded-lg px-4 pl-4 text-sm md:flex-none"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Next Page"

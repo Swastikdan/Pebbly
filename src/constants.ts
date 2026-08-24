@@ -1,7 +1,20 @@
+// Build-time environment marker, injected by the deploy workflows:
+// preview.yml sets "preview", production/CI set "production". Absent locally.
+// Branding note: the app NAME and page titles always stay "Pebbly" — only the
+// navbar pill and canonical URL reflect the environment.
+export const IS_PREVIEW_BUILD =
+  import.meta.env.VITE_PUBLIC_APP_ENV === "preview";
+
+// True only under the Vite dev server (pnpm dev); statically false in every
+// production bundle.
+export const IS_DEV_BUILD = !IS_PREVIEW_BUILD && import.meta.env.DEV === true;
+
 export const SITE_CONFIG = {
   name: "Pebbly",
   description: "Explore a vast collection of movies and TV shows with Pebbly.",
-  url: "https://pebbly.swastik.workers.dev/",
+  url: IS_PREVIEW_BUILD
+    ? "https://pebbly-preview.swastik.workers.dev/"
+    : "https://pebbly.swastik.workers.dev/",
   defaultMetaImage:
     "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/ogimage.webp",
   navItems: [

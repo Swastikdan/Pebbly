@@ -9,7 +9,12 @@ import {
   MenuPopup,
   MenuTrigger,
 } from "@/components/ui/menu";
-import { NAV_ITEMS, SITE_CONFIG } from "@/constants";
+import {
+  IS_DEV_BUILD,
+  IS_PREVIEW_BUILD,
+  NAV_ITEMS,
+  SITE_CONFIG,
+} from "@/constants";
 
 const NavSubmenuItems = ({
   items,
@@ -88,6 +93,11 @@ const Navbar = () => {
           <h1 className="font-heading text-lg font-bold md:text-xl">
             {SITE_CONFIG.name}
           </h1>
+          {(IS_PREVIEW_BUILD || IS_DEV_BUILD) && (
+            <span className="bg-foreground text-background rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+              {IS_PREVIEW_BUILD ? "Preview" : "Dev"}
+            </span>
+          )}
         </Link>
         <section className="flex items-center gap-1.5 md:gap-2">
           <ul className="hidden gap-1.5 md:flex">
