@@ -41,7 +41,7 @@ jobs:
         run: pnpm build
         env:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-          VITE_PUBLIC_TMDB_ACCESS_TOKEN: ${ secrets.VITE_PUBLIC_TMDB_ACCESS_TOKEN }
+          VITE_PUBLIC_TMDB_ACCESS_TOKEN: ${{ secrets.VITE_PUBLIC_TMDB_ACCESS_TOKEN }}
           # Branding/canonical-URL switch (see src/constants.ts IS_PREVIEW_BUILD)
           VITE_PUBLIC_APP_ENV: preview
           VITE_PUBLIC_TMDB_API_URL: ${{ secrets.VITE_PUBLIC_TMDB_API_URL }}
