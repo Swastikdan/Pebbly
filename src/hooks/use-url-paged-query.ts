@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MAX_PAGINATION_LIMIT } from "@/constants";
 
@@ -29,6 +29,18 @@ export function useUrlPagedQuery({
 
   const clampedTotalPages = Math.min(totalPages ?? 0, MAX_PAGINATION_LIMIT);
 
+  // Pagination clicks happen at the bottom of the page, so the router's
+  // scroll restoration remembers that spot and drops the user back at the
+  // pagination bar when they navigate back/forward. Force paginated views
+  // to open at the top instead — the effect runs after the router restores,
+  // so it wins on POP navigations too.
+  const lastScrolledPage = useRef<number | null>(page);
+  useEffect(() => {
+    if (!scrollToTop || lastScrolledPage.current === page) return;
+    lastScrolledPage.current = page;
+    window.scrollTo({ top: 0 });
+  }, [page, scrollToTop]);
+
   const handlePageChange = useCallback(
     (newPage: number) => {
       const maxPage = clampGuard ? clampedTotalPages : (totalPages ?? 0);
@@ -38,13 +50,9 @@ export function useUrlPagedQuery({
       }
 
       setPendingPage(newPage);
-      if (scrollToTop && typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-
       goToPage(newPage);
     },
-    [clampGuard, clampedTotalPages, totalPages, page, scrollToTop, goToPage],
+    [clampGuard, clampedTotalPages, totalPages, page, goToPage],
   );
 
   return {

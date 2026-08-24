@@ -22,9 +22,9 @@ const dbCache = new WeakMap<Env["DB"], DrizzleD1Database<typeof schema>>();
 export function getDb(env: Env) {
   if (!env.DB) {
     throw new Error(
-      "D1 binding 'DB' is missing. Full-stack dev needs `pnpm dev:cf` " +
-        "(wrangler dev, provides D1 + .dev.vars secrets). `pnpm dev:web` is " +
-        "UI-only, database-backed server functions will fail there.",
+      "D1 binding 'DB' is missing. `pnpm dev` loads it via " +
+        "server/plugins/dev-bindings.ts (wrangler platform proxy) — check the " +
+        "dev server log for load errors, or use `pnpm preview:cf`.",
     );
   }
 

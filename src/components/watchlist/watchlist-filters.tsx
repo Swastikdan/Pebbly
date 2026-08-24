@@ -121,7 +121,7 @@ export function WatchlistFilters({
           }
           size="sm"
           className={cn(
-            "ring-border/40 h-9 shrink-0 justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold ring-1",
+            "border-border/40 dark:border-border/20 h-9 shrink-0 justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold",
             filtersOpen || activeSecondaryCount > 0
               ? "bg-foreground text-background hover:bg-foreground/90"
               : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
@@ -138,52 +138,54 @@ export function WatchlistFilters({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="scrollbar-hidden flex flex-1 gap-1 overflow-x-auto">
-          {PRIMARY_TABS.map((tab) => {
-            const isActive = activeFilter === tab.value;
-            return (
-              <Button
-                key={tab.value}
-                type="button"
-                variant={isActive ? "default" : "ghost"}
-                onClick={() => setActiveFilter(tab.value)}
-                className={cn(
-                  "h-auto items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-                  isActive
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                )}
-              >
-                {tab.label}
-                <span
+        <div className="scrollbar-hidden flex flex-1 overflow-x-auto">
+          <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
+            {PRIMARY_TABS.map((tab) => {
+              const isActive = activeFilter === tab.value;
+              return (
+                <Button
+                  key={tab.value}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setActiveFilter(tab.value)}
                   className={cn(
-                    "text-[10px] tabular-nums",
-                    isActive ? "opacity-70" : "opacity-50",
+                    "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-all",
+                    isActive
+                      ? "bg-foreground text-background hover:bg-foreground shadow-xs"
+                      : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
                   )}
                 >
-                  {counts[tab.value as keyof typeof counts] ?? 0}
+                  {tab.label}
+                  <span
+                    className={cn(
+                      "text-[10px] tabular-nums",
+                      isActive ? "opacity-70" : "opacity-50",
+                    )}
+                  >
+                    {counts[tab.value as keyof typeof counts] ?? 0}
+                  </span>
+                </Button>
+              );
+            })}
+            {showDroppedTab && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setActiveFilter("dropped")}
+                className={cn(
+                  "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-all",
+                  activeFilter === "dropped"
+                    ? "bg-foreground text-background hover:bg-foreground shadow-xs"
+                    : "text-muted-foreground/60 hover:bg-secondary/80 hover:text-foreground",
+                )}
+              >
+                Dropped
+                <span className="text-[10px] tabular-nums opacity-50">
+                  {counts.dropped}
                 </span>
               </Button>
-            );
-          })}
-          {showDroppedTab && (
-            <Button
-              type="button"
-              variant={activeFilter === "dropped" ? "default" : "ghost"}
-              onClick={() => setActiveFilter("dropped")}
-              className={cn(
-                "h-auto items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-                activeFilter === "dropped"
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground/60 hover:bg-secondary hover:text-foreground",
-              )}
-            >
-              Dropped
-              <span className="text-[10px] tabular-nums opacity-50">
-                {counts.dropped}
-              </span>
-            </Button>
-          )}
+            )}
+          </div>
         </div>
         <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
           {filteredCount}/{totalCount}

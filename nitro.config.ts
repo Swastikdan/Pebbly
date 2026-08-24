@@ -54,9 +54,33 @@ const videoPlayerOrigins = originsOf(buildEnv.VITE_PUBLIC_VIDEO_URL);
 // promote to enforced `Content-Security-Policy` afterwards.
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+  [
+    "script-src",
+    "'self'",
+    "'unsafe-inline'",
+    "https://static.cloudflareinsights.com",
+    // @clerk/react injects clerk-js either from its Frontend API origin or
+    // the jsdelivr mirror depending on version/proxy mode.
+    ...clerkOrigins,
+    "https://cdn.jsdelivr.net",
+  ].join(" "),
+  // Clerk registers its telemetry/handshake workers from blob: URLs, which
+  // falls back to script-src when worker-src is absent.
+  "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://image.tmdb.org https://ik.imagekit.io https://img.youtube.com https://placehold.co https://placehold.jp",
+  [
+    "img-src",
+    "'self'",
+    "data:",
+    "blob:",
+    "https://image.tmdb.org",
+    "https://ik.imagekit.io",
+    "https://img.youtube.com",
+    "https://placehold.co",
+    "https://placehold.jp",
+    // Clerk-proxied avatars (user profile images).
+    "https://img.clerk.com",
+  ].join(" "),
   "font-src 'self'",
   [
     "connect-src",
@@ -64,6 +88,8 @@ const contentSecurityPolicy = [
     ...tmdbApiOrigins,
     ...clerkOrigins,
     "https://static.cloudflareinsights.com",
+    // Clerk SDK telemetry beacon.
+    "https://clerk-telemetry.com",
   ].join(" "),
   [
     "frame-src",
@@ -118,3 +144,13 @@ export default defineNitroConfig({
     preset: "cloudflare_module",
   },
 });
+
+// Dev-mode note: Nitro ships a `cloudflare-dev` preset that would run the
+// backend inside workerd (real D1 bindings from wrangler.toml + .dev.vars)
+// under `vite dev`. With nitro@3.0.1-20260821-nightly it hangs at worker
+// init ("Worker not initialized"), even with miniflare pinned to ^4 and a
+// compatibility_date ≤ the bundled workerd's supported date. Until a newer
+// nitro fixes it, use `pnpm dev` (HMR for UI + server fns, Node runtime)
+// and `pnpm preview:cf` when you need real Cloudflare runtime parity.
+// To retry later:
+//   $development: { preset: "cloudflare-dev" }

@@ -17,7 +17,11 @@ import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { normalizeProgressStatus } from "@/lib/utils";
 import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
 import { unwrap } from "@/server/schema/common";
-import { importWatchlistArgsSchema } from "@/server/schema/import";
+import {
+  IMPORT_BATCH_SIZE,
+  importWatchlistArgsSchema,
+  MAX_WATCHED_EPISODES,
+} from "@/server/schema/import";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
 
 type ImportError = {
@@ -53,6 +57,7 @@ type RawImportItem = {
 export const useWatchlistImportExport = () => {
   const [importLoading, setImportLoading] = useState(false);
   const [importTotal, setImportTotal] = useState<number | null>(null);
+  const [importedCount, setImportedCount] = useState(0);
   const [exportLoading, setExportLoading] = useState(false);
   const [error, setError] = useState<ImportError | null>(null);
 
@@ -160,6 +165,7 @@ export const useWatchlistImportExport = () => {
 
       setImportLoading(true);
       setImportTotal(null);
+      setImportedCount(0);
       setError(null);
 
       const reader = new FileReader();
@@ -326,32 +332,116 @@ export const useWatchlistImportExport = () => {
             );
           }
 
-          const payload = {
-            items: validItems,
-            watchedEpisodes,
-          };
-
-          const validationResult = v.safeParse(
-            importWatchlistArgsSchema,
-            payload,
-          );
-          if (!validationResult.success) {
-            const firstIssue = validationResult.issues[0];
-            const issuePath =
-              firstIssue.path?.map((p) => p.key).join(".") ?? "root";
-            throw new Error(
-              `Validation error in ${issuePath}: ${firstIssue.message}`,
-            );
-          }
-
           setImportTotal(validItems.length);
 
           if (isSignedIn) {
-            await unwrap(
-              importWatchlistFn({
-                data: validationResult.output,
-              }),
-            );
+            let importedSoFar = 0;
+            try {
+              const episodesByTvId = new Map<number, WatchedEpisode[]>();
+              for (const episode of watchedEpisodes) {
+                const list = episodesByTvId.get(episode.tmdbId);
+                if (list) list.push(episode);
+                else episodesByTvId.set(episode.tmdbId, [episode]);
+              }
+
+              // The server only applies a batch's watched episodes for titles
+              // included in that same batch's items, and each payload must
+              // satisfy BOTH schema limits (items ≤ IMPORT_BATCH_SIZE,
+              // episodes ≤ MAX_WATCHED_EPISODES). So batches are grouped
+              // greedily per title instead of a fixed item slice.
+              let cursor = 0;
+              while (cursor < validItems.length) {
+                const batchItems: ServerImportItem[] = [];
+                const batchTvIds = new Set<number>();
+                let batchEpisodeCount = 0;
+
+                while (
+                  cursor < validItems.length &&
+                  batchItems.length < IMPORT_BATCH_SIZE
+                ) {
+                  const candidate = validItems[cursor];
+                  const candidateEpisodes =
+                    episodesByTvId.get(candidate.tmdbId)?.length ?? 0;
+
+                  if (candidateEpisodes > MAX_WATCHED_EPISODES) {
+                    // A single title carrying more episodes than the whole
+                    // payload limit can never fit any batch — fail fast
+                    // before anything is committed for this import.
+                    throw new Error(
+                      `"${candidate.title}" has ${candidateEpisodes} watched ` +
+                        `episodes, exceeding the maximum of ${MAX_WATCHED_EPISODES} ` +
+                        "per import batch. Remove some entries and retry.",
+                    );
+                  }
+
+                  if (
+                    batchItems.length > 0 &&
+                    batchEpisodeCount + candidateEpisodes > MAX_WATCHED_EPISODES
+                  ) {
+                    break;
+                  }
+
+                  batchItems.push(candidate);
+                  batchTvIds.add(candidate.tmdbId);
+                  batchEpisodeCount += candidateEpisodes;
+                  cursor++;
+                }
+
+                const isFinalBatch = cursor >= validItems.length;
+
+                const payload = {
+                  items: batchItems,
+                  watchedEpisodes: watchedEpisodes.filter((ep) =>
+                    batchTvIds.has(ep.tmdbId),
+                  ),
+                  final: isFinalBatch,
+                };
+
+                const validationResult = v.safeParse(
+                  importWatchlistArgsSchema,
+                  payload,
+                );
+                if (!validationResult.success) {
+                  const firstIssue = validationResult.issues[0];
+                  const issuePath =
+                    firstIssue.path?.map((p) => p.key).join(".") ?? "root";
+                  throw new Error(
+                    `Validation error in ${issuePath}: ${firstIssue.message}`,
+                  );
+                }
+
+                await unwrap(
+                  importWatchlistFn({ data: validationResult.output }),
+                );
+                importedSoFar += batchItems.length;
+                setImportedCount(importedSoFar);
+              }
+            } catch (batchErr) {
+              // Some batches may have committed before the failure. Finalize
+              // the partial import — refresh caches and publish the mutation
+              // for cross-tab sync (normally skipped for non-final batches) —
+              // so the UI reflects what actually landed, then rethrow.
+              if (importedSoFar > 0) {
+                recordOwnMutation("watchlist");
+                try {
+                  await queryClient.invalidateQueries({
+                    queryKey: queryKeys.watchlist.list(),
+                  });
+                  await queryClient.invalidateQueries({
+                    queryKey: queryKeys.watchlist.allEpisodes(),
+                  });
+                } catch {
+                  // Cache refresh is best-effort here; the original failure
+                  // is what the user needs to see.
+                }
+              }
+              const message =
+                batchErr instanceof Error ? batchErr.message : String(batchErr);
+              throw new Error(
+                `${message} (imported ${importedSoFar} of ${validItems.length} titles before failing)`,
+              );
+            }
+
             recordOwnMutation("watchlist");
             await queryClient.invalidateQueries({
               queryKey: queryKeys.watchlist.list(),
@@ -423,6 +513,7 @@ export const useWatchlistImportExport = () => {
   return {
     importLoading,
     importTotal,
+    importedCount,
     exportLoading,
     error,
     loading,

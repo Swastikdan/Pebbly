@@ -427,12 +427,13 @@ const MobileBottomNav = () => {
 
         <SheetPopup
           side="bottom"
-          className="bg-background/95 z-50 flex flex-col p-0 backdrop-blur-2xl outline-none"
+          viewportClassName="pt-0"
+          className="bg-background/95 z-50 flex h-dvh flex-col p-0 backdrop-blur-2xl outline-none"
+          closeProps={{
+            className:
+              "top-3 right-3 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 dark:bg-black/60 dark:text-white dark:hover:bg-black/80 border border-white/20 backdrop-blur-md",
+          }}
         >
-          <div className="flex shrink-0 justify-center pt-3 pb-1">
-            <div className="bg-muted-foreground/30 h-1.5 w-12 rounded-full" />
-          </div>
-
           <SheetHeader className="border-border/40 shrink-0 border-b px-5 pt-1 pb-3 text-left">
             <SheetTitle className="font-heading flex items-center gap-2 text-lg font-bold">
               <Grid className="text-primary size-5" />

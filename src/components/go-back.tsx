@@ -29,6 +29,8 @@ export const GoBack = (props: {
     <Button
       className={className}
       variant="secondary"
+      // Matches ShareButton, which these two almost always sit beside.
+      size="lg"
       onClick={goBack}
       aria-label={title ?? "Go Back"}
     >

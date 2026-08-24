@@ -233,7 +233,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
 
   const formattedTitle = formatMediaTitle.encode(title);
   const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
-  const blurSrc = image ? `${IMAGE_PREFIX.LQ_POSTER}${image}` : undefined;
+  const blurSrc = image ? `${IMAGE_PREFIX.PREVIEW}${image}` : undefined;
   const year = release_date ? new Date(release_date).getFullYear() : "";
 
   return (
@@ -311,14 +311,14 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
     (ep) => ep.episode_number === episode,
   );
   let imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${image}`;
-  let blurSrc = image ? `${IMAGE_PREFIX.LQ_BACKDROP}${image}` : undefined;
+  let blurSrc = image ? `${IMAGE_PREFIX.PREVIEW}${image}` : undefined;
   if (isTVContinueWatching) {
     if (episodeDetail?.still_path) {
       imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${episodeDetail.still_path}`;
-      blurSrc = `${IMAGE_PREFIX.LQ_BACKDROP}${episodeDetail.still_path}`;
+      blurSrc = `${IMAGE_PREFIX.PREVIEW}${episodeDetail.still_path}`;
     } else if (seasonDetails?.poster_path) {
       imageUrl = `${IMAGE_PREFIX.SD_POSTER}${seasonDetails.poster_path}`;
-      blurSrc = `${IMAGE_PREFIX.LQ_POSTER}${seasonDetails.poster_path}`;
+      blurSrc = `${IMAGE_PREFIX.PREVIEW}${seasonDetails.poster_path}`;
     }
   }
   return (
@@ -370,7 +370,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
   const { id, name, profile_path, known_for_department, priority } = props;
   const imageUrl = `${IMAGE_PREFIX.SD_PROFILE}${profile_path}`;
   const blurSrc = profile_path
-    ? `${IMAGE_PREFIX.LQ_PROFILE}${profile_path}`
+    ? `${IMAGE_PREFIX.PREVIEW}${profile_path}`
     : undefined;
 
   return (

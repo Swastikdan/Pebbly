@@ -102,7 +102,7 @@ export function MediaRowCardShell({
     <Link
       to={to}
       className={cn(
-        "border-border/40 bg-card hover:border-border/70 group relative flex gap-3.5 border p-3.5 transition-colors",
+        "border-border/60 bg-card hover:border-border/90 dark:border-border/40 dark:hover:border-border/70 group relative flex gap-3.5 border p-3.5 shadow-xs transition-colors dark:shadow-none",
         className,
       )}
     >
