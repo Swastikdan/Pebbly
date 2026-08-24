@@ -1,7 +1,16 @@
+// Build-time environment marker, injected by the deploy workflows:
+// preview.yml sets "preview", production/CI set "production". Absent locally.
+export const IS_PREVIEW_BUILD =
+  import.meta.env.VITE_PUBLIC_APP_ENV === "preview";
+
 export const SITE_CONFIG = {
-  name: "Pebbly",
-  description: "Explore a vast collection of movies and TV shows with Pebbly.",
-  url: "https://pebbly.swastik.workers.dev/",
+  name: IS_PREVIEW_BUILD ? "Pebbly Preview" : "Pebbly",
+  description: IS_PREVIEW_BUILD
+    ? "Preview environment of Pebbly — explore movies and TV shows before changes ship."
+    : "Explore a vast collection of movies and TV shows with Pebbly.",
+  url: IS_PREVIEW_BUILD
+    ? "https://pebbly-preview.swastik.workers.dev/"
+    : "https://pebbly.swastik.workers.dev/",
   defaultMetaImage:
     "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/ogimage.webp",
   navItems: [
