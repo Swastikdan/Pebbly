@@ -12,15 +12,15 @@ describe. A stale doc is worse than no doc.
 
 ## The docs map
 
-| File | Keep updated when... |
-| :--- | :--- |
-| `README.md` (this folder) | Adding/removing a doc file; the index table changes |
-| `architecture.md` | The stack, layers, request flows, deployment, or invariants change (new service, new layer, new infra) |
-| `server-layer.md` | Adding/renaming/removing a server fn, Nitro route/task, auth/RBAC logic, AI behavior |
-| `client-layer.md` | Adding/renaming/removing hooks, stores, the repository layer, routing, key components/libraries |
-| `data-model.md` | Any schema change (table, column, index, constraint) or new migration |
-| `architecture-decisions.md` | A significant decision is made (see "Writing an ADR" below) |
-| `file-reference.md` | **Any** file is added, renamed, moved, or deleted |
+| File                        | Keep updated when...                                                                                   |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------- |
+| `README.md` (this folder)   | Adding/removing a doc file; the index table changes                                                    |
+| `architecture.md`           | The stack, layers, request flows, deployment, or invariants change (new service, new layer, new infra) |
+| `server-layer.md`           | Adding/renaming/removing a server fn, Nitro route/task, auth/RBAC logic, AI behavior                   |
+| `client-layer.md`           | Adding/renaming/removing hooks, stores, the repository layer, routing, key components/libraries        |
+| `data-model.md`             | Any schema change (table, column, index, constraint) or new migration                                  |
+| `architecture-decisions.md` | A significant decision is made (see "Writing an ADR" below)                                            |
+| `file-reference.md`         | **Any** file is added, renamed, moved, or deleted                                                      |
 
 `file-reference.md` is the safety net: it should always match the repository
 exactly, so a change that touches code always touches at least that one doc.
@@ -34,7 +34,7 @@ exactly, so a change that touches code always touches at least that one doc.
 - **New hook, store, or query key** → `client-layer.md` (stores table,
   hooks list, or query section) + `file-reference.md`.
 - **New route or component** → `file-reference.md` (route table / component
-  section). Only touch `client-layer.md` if the route adds a new *pattern*.
+  section). Only touch `client-layer.md` if the route adds a new _pattern_.
 - **New dependency or infra change** → `architecture.md` (stack table,
   diagram, deployment section).
 - **Behavioral decision** → fold it into the narrative of the relevant layer
@@ -50,8 +50,9 @@ understands the intent without archaeology. Keep the story in one place
 rather than scattering it across numbered records.
 
 The exception is `architecture-decisions.md`: it stays as the historical
-record of *foundational* decisions (backend choice, auth model, optimistic
+record of _foundational_ decisions (backend choice, auth model, optimistic
 journal design). Add a new entry there only when a decision is:
+
 - architectural (changes how layers interact), and
 - expensive or risky to reverse.
 
@@ -76,6 +77,7 @@ future reader must know before reversing it.
 ```
 
 Rules:
+
 - One decision per ADR. Small implementation details do **not** warrant one.
 - Reference the code (file paths, function names) so the ADR is verifiable.
 - When an ADR is superseded, mark the old one `**Status:** Superseded` and

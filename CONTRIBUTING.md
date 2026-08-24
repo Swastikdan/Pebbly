@@ -82,15 +82,15 @@ uphold this code. Please report unacceptable behavior to the maintainers.
 
 A quick map of where things live:
 
-| Path | Purpose |
-| :--- | :--- |
-| `src/routes/` | TanStack Router file-based routes (movie/tv/person/search pages) |
-| `src/server/` | Server functions, D1 schema, auth, RBAC, AI engine |
-| `src/components/` | UI components & domain widgets (media cards, watchlist, player) |
-| `src/hooks/` | Custom hooks (watchlist, watch progress, daily pick, recommendations) |
-| `src/lib/` | Queries, schemas, repository pattern, utils, query keys |
-| `drizzle/` | Generated SQL migrations for Cloudflare D1 |
-| `server/` | Nitro server routes & scheduled tasks |
+| Path              | Purpose                                                               |
+| :---------------- | :-------------------------------------------------------------------- |
+| `src/routes/`     | TanStack Router file-based routes (movie/tv/person/search pages)      |
+| `src/server/`     | Server functions, D1 schema, auth, RBAC, AI engine                    |
+| `src/components/` | UI components & domain widgets (media cards, watchlist, player)       |
+| `src/hooks/`      | Custom hooks (watchlist, watch progress, daily pick, recommendations) |
+| `src/lib/`        | Queries, schemas, repository pattern, utils, query keys               |
+| `drizzle/`        | Generated SQL migrations for Cloudflare D1                            |
+| `server/`         | Nitro server routes & scheduled tasks                                 |
 
 See [docs/](docs/README.md) for in-depth architecture docs, especially
 [`docs/architecture.md`](docs/architecture.md) and
@@ -107,6 +107,7 @@ See [docs/](docs/README.md) for in-depth architecture docs, especially
    ```
 
    Use a descriptive prefix: `feat/`, `fix/`, `refactor/`, `docs/`, `chore/`.
+
 3. **Make your changes**, keeping them focused and as small as possible.
 4. **Run the checks** below before pushing.
 5. **Open a pull request**, see [Opening a pull request](#opening-a-pull-request).

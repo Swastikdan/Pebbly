@@ -1,62 +1,51 @@
+import type { ProgressStatusAction } from "./types";
+import type { MediaType } from "@/stores/watchlist-store";
+import type { ProgressStatus } from "@/types";
 import type { QueryClient } from "@tanstack/react-query";
-import { watchlistOptimistic } from "@/hooks/watchlist/watchlist-optimistic";
-import type { MediaType } from "@/hooks/watchlist-store";
+import { watchlistOptimistic } from "@/lib/data/optimistic/watchlist-optimistic";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import type { ProgressStatus } from "@/types";
-import {
-	type ProgressStatusAction,
-	resolveProgressStatusAction,
-} from "./types";
+import { resolveProgressStatusAction } from "./types";
 
 export interface SeasonSelection {
-	season: number;
-	episodes: number[];
+  season: number;
+  episodes: number[];
 }
 
 export interface StatusPlan {
-	action: ProgressStatusAction;
-	/** Resolves with per-season episode selections when episode rows must
-	 *  follow the new status; null when no episode sync is needed. */
-	seasonsPromise: Promise<SeasonSelection[]> | null;
+  action: ProgressStatusAction;
+  seasonsPromise: Promise<SeasonSelection[]> | null;
 }
 
-/**
- * One decision pipeline for progress-status writes shared by both repository
- * adapters: resolves the TV-vs-movie action and, when episode state must
- * follow the status, kicks off the single TMDB season fetch both adapters
- * previously duplicated. Adapters execute the plan; neither re-implements
- * the semantics.
- */
 export function resolveStatusPlan(
-	queryClient: QueryClient,
-	id: string,
-	mediaType: MediaType,
-	progressStatus: ProgressStatus,
-	currentStatus?: ProgressStatus | null,
+  queryClient: QueryClient,
+  id: string,
+  mediaType: MediaType,
+  progressStatus: ProgressStatus,
+  currentStatus?: ProgressStatus | null,
 ): StatusPlan {
-	const action = resolveProgressStatusAction(
-		mediaType,
-		progressStatus,
-		currentStatus,
-	);
+  const action = resolveProgressStatusAction(
+    mediaType,
+    progressStatus,
+    currentStatus,
+  );
 
-	if (action.type !== "tv") return { action, seasonsPromise: null };
+  if (action.type !== "tv") return { action, seasonsPromise: null };
 
-	const clearAllEpisodes =
-		action.isLeavingCompletion && !action.shouldMarkWatched;
-	const needsSeasons = action.needsEpisodeUpdate && !clearAllEpisodes;
+  const clearAllEpisodes =
+    action.isLeavingCompletion && !action.shouldMarkWatched;
+  const needsSeasons = action.needsEpisodeUpdate && !clearAllEpisodes;
 
-	const seasonsPromise = needsSeasons
-		? queryClient
-				.ensureQueryData({
-					queryKey: queryKeys.tmdb.tvDetails(Number(id)),
-					queryFn: () => getTvDetails({ id: Number(id) }),
-				})
-				.then((details) =>
-					watchlistOptimistic.buildSeasonEpisodeSelections(details),
-				)
-		: null;
+  const seasonsPromise = needsSeasons
+    ? queryClient
+        .ensureQueryData({
+          queryKey: queryKeys.tmdb.tvDetails(Number(id)),
+          queryFn: () => getTvDetails({ id: Number(id) }),
+        })
+        .then((details) =>
+          watchlistOptimistic.buildSeasonEpisodeSelections(details),
+        )
+    : null;
 
-	return { action, seasonsPromise };
+  return { action, seasonsPromise };
 }

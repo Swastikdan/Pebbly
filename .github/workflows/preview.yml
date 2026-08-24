@@ -1,12 +1,9 @@
 name: Deploy Cloudflare Preview
 on:
-  # Deploy a preview Worker whenever a `cf-*` branch is pushed. The `cloudflare`
-  # branch still deploys to production via deploy.yml; other branches run checks
-  # in ci.yml and never deploy.
   push:
     branches:
       - "cf-*"
-  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+  workflow_dispatch:
 
 # Serialize preview deploys targeting the same branch so migrations and Worker
 # deployments against the same preview D1 database never run concurrently.

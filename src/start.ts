@@ -1,8 +1,6 @@
 import { getToken } from "@clerk/react";
 import { createCsrfMiddleware, createStart } from "@tanstack/react-start";
 
-// Bounded timeout for server-function RPCs so a stalled request terminates
-// instead of hanging the UI indefinitely.
 const RPC_TIMEOUT_MS = 30_000;
 
 /**
@@ -18,40 +16,38 @@ const RPC_TIMEOUT_MS = 30_000;
  * called directly in-process.
  */
 export const startInstance = createStart(() => ({
-	// Reject cross-site server-function requests. Scoped to server fns so
-	// ordinary page navigation/SSR is never affected. Browser same-origin
-	// calls carry Sec-Fetch-Site/Origin and pass; cookie-derived sessions
-	// can no longer be abused by a cross-site form/fetch from another origin.
-	requestMiddleware: [
-		createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" }),
-	],
-	serverFns: {
-		fetch: async (url, args = {}) => {
-			const headers = new Headers(args.headers);
-			try {
-				const token = await getToken();
-				if (token) {
-					headers.set("Authorization", `Bearer ${token}`);
-				}
-			} catch (error) {
-				// Not signed in / Clerk not loaded, fall through to the cookie.
-				// Still log when a token was expected so failures are visible.
-				console.debug(
-					"[start] Failed to mint Clerk session token; falling back to cookie:",
-					error,
-				);
-			}
-			const controller = new AbortController();
-			const timeout = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
-			try {
-				return await fetch(url, {
-					...args,
-					headers,
-					signal: controller.signal,
-				});
-			} finally {
-				clearTimeout(timeout);
-			}
-		},
-	},
+  // Reject cross-site server-function requests. Scoped to server fns so
+  // ordinary page navigation/SSR is never affected. Browser same-origin
+  // calls carry Sec-Fetch-Site/Origin and pass; cookie-derived sessions
+  // can no longer be abused by a cross-site form/fetch from another origin.
+  requestMiddleware: [
+    createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" }),
+  ],
+  serverFns: {
+    fetch: async (url, args = {}) => {
+      const headers = new Headers(args.headers);
+      try {
+        const token = await getToken();
+        if (token) {
+          headers.set("Authorization", `Bearer ${token}`);
+        }
+      } catch (error) {
+        console.debug(
+          "[start] Failed to mint Clerk session token; falling back to cookie:",
+          error,
+        );
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), RPC_TIMEOUT_MS);
+      try {
+        return await fetch(url, {
+          ...args,
+          headers,
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+  },
 }));

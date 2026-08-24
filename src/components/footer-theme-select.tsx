@@ -1,21 +1,19 @@
 import { useEffect, useState } from "react";
+
+import type { Theme } from "@/hooks/use-theme";
 import {
-	Select,
-	SelectItem,
-	SelectPopup,
-	SelectTrigger,
-	SelectValue,
+  Select,
+  SelectItem,
+  SelectPopup,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import {
-	setThemeWithTransition,
-	type Theme,
-	useThemeStore,
-} from "@/hooks/use-theme";
+import { setThemeWithTransition, useThemeStore } from "@/hooks/use-theme";
 
 const THEME_OPTIONS: Array<{ value: Theme; label: string }> = [
-	{ value: "light", label: "Light" },
-	{ value: "dark", label: "Dark" },
-	{ value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
 ];
 
 /**
@@ -24,39 +22,39 @@ const THEME_OPTIONS: Array<{ value: Theme; label: string }> = [
  * SSR markup can never disagree with the persisted preference.
  */
 const FooterThemeSelect = () => {
-	const theme = useThemeStore((s) => s.theme);
-	const [mounted, setMounted] = useState(false);
+  const theme = useThemeStore((s) => s.theme);
+  const [mounted, setMounted] = useState(false);
 
-	useEffect(() => setMounted(true), []);
+  useEffect(() => setMounted(true), []);
 
-	if (!mounted) {
-		return <span className="px-2 py-1 text-muted-foreground">Theme</span>;
-	}
+  if (!mounted) {
+    return <span className="text-muted-foreground px-2 py-1">Theme</span>;
+  }
 
-	return (
-		<Select
-			items={THEME_OPTIONS}
-			value={theme}
-			onValueChange={(next) => {
-				if (next) setThemeWithTransition(next as Theme);
-			}}
-		>
-			<SelectTrigger
-				size="sm"
-				aria-label={`Theme. Current: ${theme}`}
-				className="w-auto min-w-0 gap-1 rounded-md border-none bg-transparent px-2 py-1 text-sm text-muted-foreground shadow-none hover:text-foreground [&_[data-slot=select-icon]]:hidden"
-			>
-				<SelectValue />
-			</SelectTrigger>
-			<SelectPopup className="min-w-0">
-				{THEME_OPTIONS.map((option) => (
-					<SelectItem key={option.value} value={option.value}>
-						{option.label}
-					</SelectItem>
-				))}
-			</SelectPopup>
-		</Select>
-	);
+  return (
+    <Select
+      items={THEME_OPTIONS}
+      value={theme}
+      onValueChange={(next) => {
+        if (next) setThemeWithTransition(next as Theme);
+      }}
+    >
+      <SelectTrigger
+        size="sm"
+        aria-label={`Theme. Current: ${theme}`}
+        className="text-muted-foreground hover:text-foreground w-auto min-w-0 gap-1 rounded-md border-none bg-transparent px-2 py-1 text-sm shadow-none [&_[data-slot=select-icon]]:hidden"
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectPopup className="min-w-0">
+        {THEME_OPTIONS.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectPopup>
+    </Select>
+  );
 };
 
 export { FooterThemeSelect };

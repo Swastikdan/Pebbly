@@ -1,0 +1,11 @@
+node_modules
+pnpm-lock.yaml
+.output
+.nitro
+.wrangler
+.tanstack
+.pnpm-store
+.git
+public
+drizzle
+src/routeTree.gen.ts

@@ -1,12 +1,9 @@
 name: Deploy Cloudflare
 on:
-  # Deploy only when changes land on the `cloudflare` branch (i.e. a PR is
-  # merged into it). Feature-branch pushes and pull requests never deploy —
-  # they run checks in the separate `ci.yml` workflow instead.
   push:
     branches:
       - cloudflare
-  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+  workflow_dispatch:
 
 # Serialize production deploys so migrations and Worker deployments targeting
 # the same D1 database / Worker never run concurrently.
@@ -17,8 +14,6 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Only deploy when the push was made by the repo owner (Swastikdan).
-    # Pushes/commits from any other user skip the deploy entirely.
     if: github.event.pusher.name == 'Swastikdan'
     permissions:
       contents: read

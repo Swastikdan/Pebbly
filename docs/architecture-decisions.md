@@ -23,6 +23,7 @@ action/query was ported to a TanStack Start server function. All Convex env
 vars were dropped.
 
 **Consequences:**
+
 - One schema (`src/server/db/schema.ts`), one set of server fns, no more
   duplication.
 - Lost Convex's realtime/subscriptions initially; cross-device realtime was
@@ -50,6 +51,7 @@ Client calls them through the generated RPC layer; `unwrap()` throws an
 `ApiError` on non-ok so TanStack Query's error path fires.
 
 **Consequences:**
+
 - End-to-end type safety: the client imports the same fns it calls; schemas
   are shared, so a schema change is a compile error on both sides.
 - No OpenAPI/REST surface to maintain; Nitro only owns `/api/health` and the
@@ -71,13 +73,15 @@ hard to test.
 
 **Decision:** Introduce `src/lib/repository/` with two implementations of a
 single `Repository` interface:
+
 - `remote-repository.ts`, server fns + optimistic journal + request batcher,
 - `local-repository.ts`, Zustand stores (guest/localStorage),
-selected by `useRepository()` based on Clerk auth state. The shared
-`resolveProgressStatusAction` keeps the TV-vs-movie progress semantics in one
-place.
+  selected by `useRepository()` based on Clerk auth state. The shared
+  `resolveProgressStatusAction` keeps the TV-vs-movie progress semantics in one
+  place.
 
 **Consequences:**
+
 - Mutation hooks are thin (e.g. `use-watchlist.ts` dropped from 868 → 239
   lines); the `isSignedIn` branches are gone.
 - New mutation types are added once (interface + two implementations).
@@ -99,11 +103,12 @@ privilege-escalation hazard.
 status is resolved from two live sources: the **signed JWT claim**
 (`public_meta.isAdmin`, available when a custom session claim is configured)
 first, then the **live Clerk API** (`isAdminFromClerkApi`, time-boxed, degrades
-to `false`). The `users.roles` column only carries the two *dynamic* feature
+to `false`). The `users.roles` column only carries the two _dynamic_ feature
 roles (`video-player`, `ai-integrations`), not admin. `listUsers` derives
 admin badges from one paginated Clerk user-list call (display-only).
 
 **Consequences:**
+
 - A demotion in Clerk takes effect immediately.
 - Every admin-gated request pays one extra Clerk API call when the JWT claim
   is absent. Preferring the signed claim limits how often that happens.
@@ -117,12 +122,14 @@ admin badges from one paginated Clerk user-list call (display-only).
 **Status:** Accepted
 
 **Context:** Naive optimistic updates had a "UI flicker" race: a full-list
-refetch computed *before* a write committed could clobber newer optimistic
+refetch computed _before_ a write committed could clobber newer optimistic
 state. Rollbacks restored an all-or-nothing array snapshot, wiping concurrent
 ops. And the original journal lived in module-level globals, shared across
 all SSR requests (a cross-user data leak).
 
-**Decision:** `src/hooks/pending-ops.ts` implements a **replayable journal**:
+**Decision:** `src/lib/data/pending-ops.ts` implements a **replayable
+journal**:
+
 - Every write registers a pure `apply(rows)` patch; the patch is applied
   immediately to the cache.
 - Server snapshots (refetches, write responses) are merged by replaying
@@ -133,6 +140,7 @@ all SSR requests (a cross-user data leak).
   module-level, and `beginOp` **throws during SSR**.
 
 **Consequences:**
+
 - No UI flicker, no lost concurrent writes, no cross-request leaks.
 - Every mutation must be written as a replayable patch (a discipline that has
   kept the op builders pure and idempotent).
@@ -152,11 +160,13 @@ N requests to the server/TMDB.
 (debounce window, max-wait, max-batch-size, per-item dedupe where latest
 state wins, and flush-on-page-hide so queued writes aren't lost on unload).
 It is used for:
+
 - watchlist membership writes → `setWatchlistMembership` /
   `batchSetWatchlistMembership` (300 ms / 1.2 s / dedupe by `mediaType:tmdbId`),
 - TV season-detail fetches in media cards (`use-season-details.ts`).
 
 **Consequences:**
+
 - Fewer round trips, D1 batches stay small, TMDB rate limits are respected.
 - Dedupe-by-key semantics match the server's own per-item deduplication, so
   client and server agree on "latest intent wins".
@@ -173,16 +183,20 @@ deep in call stacks and made errors unreadable.
 
 **Decision:** Use Valibot (lightweight, tree-shakeable, TS-first) at every
 boundary:
+
 - Every server fn has a `.validator(schema)` (input) and returns `ApiResult<T>`
   (output) with a finite error-code set (`UNAUTHORIZED`, `FORBIDDEN`,
   `NOT_FOUND`, `RATE_LIMITED`, `CONFLICT`, `BAD_REQUEST`).
-- TMDB responses are validated against `src/lib/tmdb-schemas.ts` (742 lines).
+- TMDB responses are validated against `src/lib/tmdb-schemas.ts` (~670 lines).
 - Gemini output is validated **per element**, malformed entries are dropped,
   never trusted.
 - Domain enums (`progressStatus`, `reaction`, `feedback`, `mediaType`) are
-  defined once in `src/server/schema/common.ts`.
+  defined once in `src/server/schema/common.ts`: the `PROGRESS_STATUSES` /
+  `REACTIONS` arrays feed the Valibot picklists, the runtime validation Sets
+  in the helpers, and the Drizzle column enums alike.
 
 **Consequences:**
+
 - Malformed input fails fast at the boundary with a typed error, not a 500.
 - Shared schemas mean client and server can't drift.
 - Validation cost is negligible (Valibot is small and lazy by design).
@@ -198,6 +212,7 @@ The `@google/genai` SDK was suspected of misbehaving on Workers, and a single
 model can be unavailable or "high demand".
 
 **Decision:** Call Gemini's REST API directly (`generateContent`) with:
+
 - the API key in the `x-goog-api-key` header (never the URL),
 - a 30 s per-attempt timeout,
 - a model fallback chain: `gemini-3.1-flash-lite` → `gemini-2.5-flash` →
@@ -206,6 +221,7 @@ model can be unavailable or "high demand".
 - retries with 503/"high demand" detection surfaced as `high_demand` errors.
 
 **Consequences:**
+
 - Recommendations survive transient Gemini outages.
 - Cost/quality tradeoff: the cheapest fast model is tried first.
 - Server-side only: the key never reaches the client.
@@ -226,6 +242,7 @@ time from the client payload (or the existing row). TMDB remains the
 authoritative source; the snapshots are display copies refreshed on touch.
 
 **Consequences:**
+
 - Watchlist/list pages render with zero TMDB calls.
 - Metadata can go slightly stale if TMDB updates a title's poster; accepted
   for this app.
@@ -244,6 +261,7 @@ isolates. Violating them fails whole operations (e.g. a >100-item `IN` clause
 or a >100-statement batch).
 
 **Decision:** Encode the limits in the code:
+
 - `runBatch` + `MAX_STATEMENTS_PER_BATCH = 100` for all multi-statement writes.
 - `IN` clauses chunked at 90 ids (`lists.ts`), episode INSERTs chunked at 14
   rows (`import-export.ts`).
@@ -253,6 +271,7 @@ or a >100-statement batch).
 - Reads are capped (`limit 500`) and ordered deterministically.
 
 **Consequences:**
+
 - Large operations are safe by construction; no "magic number" failures.
 - Import of a huge watchlist takes multiple round trips (bounded, atomic per
   batch) instead of one giant transaction.
@@ -266,14 +285,16 @@ or a >100-statement batch).
 **Context:** Signed-out users can still use the watchlist. Their data must
 survive reloads and, when they sign in, must not be lost.
 
-**Decision:** Guest state lives in persisted Zustand stores backed by
-localStorage with an LRU eviction wrapper (`createLRUStorage`, ~4 MB
+**Decision:** Guest state lives in persisted Zustand stores (`src/stores/`)
+backed by localStorage with an LRU eviction wrapper (`createLRUStorage`, 4 MB
 threshold). The repository's local implementation writes to these stores.
-`UserSync` (`src/components/user-sync.tsx`) exports the local watchlist into
-the remote backend at sign-in; sign-out clears the pending-op journal and
-switches the repository back to local.
+`UserSync` (`src/components/user-sync.tsx`) upserts the Clerk profile and
+clears the pending-op journal on sign-out; uploading guest data is an explicit
+action via `use-watchlist-import-export.ts` (the same server `importWatchlist`
+path), never an automatic side effect of signing in.
 
 **Consequences:**
+
 - Guests get the full watchlist UX with no backend account.
 - localStorage quota is managed (LRU eviction across stores).
 - Promotion is a bulk server-fn call (the same `importWatchlist` path), so it
@@ -291,6 +312,7 @@ everyone into a guest with no warning).
 
 **Decision:** `src/server/env.ts` validates the Worker env once per
 isolate/process with a Valibot schema:
+
 - missing `CLERK_SECRET_KEY` → `console.error` (loud; every user degrades to
   guest),
 - missing `GEMINI_API_KEY` → warning (feature-gated degradation),
@@ -298,6 +320,7 @@ isolate/process with a Valibot schema:
   `pnpm dev:web` is UI-only and `pnpm dev:cf` provides D1 + secrets.
 
 **Consequences:**
+
 - Misconfiguration is reported at the surface with a fix hint.
 - Validation runs once (memoized) so it costs nothing per request.
 
@@ -311,13 +334,15 @@ isolate/process with a Valibot schema:
 invented poster/title is worse than not showing the pick at all.
 
 **Decision:** AI suggestions are verified against TMDB before rendering
-(`src/lib/recommendation-engine.ts`): first a direct fetch by the suggested
-`tmdbId`; if that fails or is missing, a search fallback with normalized
-title matching (`titlesMatch`). Verified results are cached (48 h staleTime)
-and can be persisted back via `updateVerifiedRecommendations`. Unverifiable
-titles render as text-only or are dropped.
+(`src/hooks/use-tmdb-verification.ts` + `use-resolved-recommendation.ts`):
+first a direct fetch by the suggested `tmdbId`; if that fails or is missing,
+a search fallback with normalized title matching (`titlesMatch`). Verified
+results are cached (48 h staleTime) and can be persisted back via
+`updateVerifiedRecommendations`. Unverifiable titles render as text-only or
+are dropped.
 
 **Consequences:**
+
 - The UI never fabricates media that doesn't exist.
 - Extra TMDB calls on the recs pages, mitigated by 48 h caching and the fact
   that only recs results (≤30 titles) are checked.
@@ -337,6 +362,7 @@ warnings and, eventually, breakage.
 **Decision:** Bump every action to the current major that runs on **node24**
 and keep the repository's immutable-SHA pinning convention (full commit SHA +
 `# vN` comment):
+
 - `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7`
 - `actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7`
   (keeps `node-version: 22`, the project runtime, with `cache: pnpm`)
@@ -349,6 +375,7 @@ The newer checkout/setup-node majors contain breaking changes only around
 workflow never exercises.
 
 **Consequences:**
+
 - No Node 20 deprecation warnings; the workflow is future-proof against the
   Node 20 removal.
 - SHA pinning keeps supply-chain integrity (no mutable tags in CI).
@@ -387,8 +414,8 @@ path rather than the first step.
   own mutations, 10 s during an active session, 30 s when quiet, and 60 s
   backoff after repeated poll failures. It refetches on window focus
   (covers visibilitychange) and invalidates a query group only when its
-   revision moved **beyond what this client's own mutations can explain**.
-    Own successful writes are counted per domain in
+  revision moved **beyond what this client's own mutations can explain**.
+  Own successful writes are counted per domain in
   `src/lib/realtime-mutations.ts`, instrumented at every rev-bumping call
   site (repository, watch-progress, player listener, import, AI hooks).
   Full-list fetches remain capped at 500 rows.
@@ -401,6 +428,7 @@ path rather than the first step.
   interval instead of up to 30 s.
 
 **Consequences:**
+
 - Per-poll cost is O(1) regardless of watchlist/lists/history size; a 50k-item
   user costs the same as a 10-item user. The adaptive cadence cuts steady-state
   reads further (30 s when quiet vs the old fixed 10 s) while feeling faster
