@@ -1,6 +1,5 @@
 import * as v from "valibot";
 
-/** Canonical media-type union. Single source of truth for "movie" | "tv". */
 export type MediaType = "movie" | "tv";
 
 export const MEDIA_TYPES = [
@@ -12,10 +11,8 @@ export function isMediaType(value: unknown): value is MediaType {
   return value === "movie" || value === "tv";
 }
 
-/** Parses untrusted input (route params, query strings, API payloads) into MediaType. */
 export const mediaTypeSchema = v.picklist([...MEDIA_TYPES]);
 
-/** Route-slug segment for each media type (e.g. /list/movies/popular). */
 export const MEDIA_TYPE_SLUGS = {
   movie: "movies",
   tv: "tv-shows",

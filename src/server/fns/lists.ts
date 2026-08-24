@@ -23,10 +23,6 @@ import {
 } from "../schema/lists";
 import { authedFn } from "./rpc";
 
-// ---------------------------------------------------------------------------
-// Reads
-// ---------------------------------------------------------------------------
-
 export const getCustomLists = createServerFn({ method: "POST" }).handler(() =>
   authedFn(
     { mode: "current", guest: () => ok([]) },
@@ -322,10 +318,6 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
   .validator(createCustomListAndAddItemArgsSchema)
   .handler(({ data }) =>
     authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      // Atomic-ish: create the list and insert the item, rolling back the
-      // list if the item insert fails so a failure cannot leave an empty
-      // orphaned list behind. The (userId, name) unique index is the real
-      // guard against duplicate-name races.
       const created = await createCustomListInner(
         user.id,
         {
@@ -419,8 +411,6 @@ export const deleteCustomList = createServerFn({ method: "POST" })
         .limit(1);
       if (list.length === 0) return fail("NOT_FOUND", "List not found");
 
-      // Cascade via FK, the list_id FK deletes child items automatically, so a
-      // single delete replaces the old per-row loop.
       await db.delete(lists).where(eq(lists.id, data.listId));
       await bumpListsRev(db, user.id);
       return ok({ ok: true });
@@ -467,8 +457,6 @@ export const cloneCustomList = createServerFn({ method: "POST" })
       }
       const source = sourceRows[0];
 
-      // Own lists can always be cloned; other people's only if public.
-      // Private foreign lists get NOT_FOUND so they don't reveal existence.
       if (source.userId !== user.id && source.visibility !== "public") {
         return fail("NOT_FOUND", "Collection not found");
       }
@@ -479,8 +467,6 @@ export const cloneCustomList = createServerFn({ method: "POST" })
         .where(eq(listItems.listId, source.id))
         .orderBy(asc(listItems.position), asc(listItems.addedAt));
 
-      // The (userId, name) unique index needs a fresh name; walk the
-      // "(copy)" suffix until one is free.
       let name = `${source.name} (copy)`;
       for (let n = 2; ; n++) {
         const dup = await db
@@ -496,7 +482,6 @@ export const cloneCustomList = createServerFn({ method: "POST" })
       const id = crypto.randomUUID();
       const maxSort = await nextSortOrder(db, user.id);
 
-      // Clones always land as private custom lists regardless of the source.
       const inserted = await db
         .insert(lists)
         .values({
@@ -548,10 +533,6 @@ export const cloneCustomList = createServerFn({ method: "POST" })
     }),
   );
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 async function createCustomListInner(
   userId: string,
   args: {
@@ -568,9 +549,6 @@ async function createCustomListInner(
   const now = Date.now();
   const id = crypto.randomUUID();
 
-  // Duplicate-name uniqueness is enforced by the (userId, name) unique index;
-  // onConflictDoNothing turns a concurrent race into a clean CONFLICT instead
-  // of a TOCTOU check-then-insert. sortOrder stays best-effort max+1.
   const maxSort = await nextSortOrder(db, userId);
 
   const inserted = await db
@@ -598,7 +576,6 @@ async function createCustomListInner(
   return ok(id);
 }
 
-/** Best-effort max(sortOrder)+1 for appending a list at the end. */
 async function nextSortOrder(db: Db, userId: string): Promise<number> {
   const highestList = await db
     .select({ sortOrder: lists.sortOrder })

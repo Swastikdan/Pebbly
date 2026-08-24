@@ -63,13 +63,6 @@ function logWatchlistError(action: string, error: unknown) {
   console.error(`Failed to ${action}`, error);
 }
 
-/**
- * Run a server write through the optimistic journal: begin the op, resolve on
- * success, roll back on failure, and always schedule a background sync. This
- * replicates the `useMutation` lifecycle (onMutate/onSuccess/onError/onSettled)
- * imperatively so the repository does not depend on hooks. Own-write revision
- * counting is handled by the op's domain tag (see `beginOp`).
- */
 async function runMutationAsync<T = unknown>(
   queryClient: QueryClient,
   {
@@ -101,10 +94,6 @@ async function runMutationAsync<T = unknown>(
   }
 }
 
-/**
- * Fire-and-forget variant of `runMutationAsync` for callers that don't await
- * the write; failures are logged and rolled back inside the async runner.
- */
 function runJournaledMutation(
   queryClient: QueryClient,
   options: Parameters<typeof runMutationAsync>[1],
@@ -135,9 +124,6 @@ const watchlistMembershipBatcher = createBatcher<
         rows = await unwrap(batchSetWatchlistMembership({ data: { items } }));
       }
 
-      // Merge the authoritative rows into the cache (no full refetch, the
-      // server response already reflects this batch). Touched items missing
-      // from the response were deleted.
       // Each flush is one server write (single or batched), which bumps the
       // watchlist revision once.
       recordOwnMutation("watchlist");
@@ -175,7 +161,6 @@ const watchlistMembershipBatcher = createBatcher<
     maxWaitMs: 1200,
     maxBatchSize: 100,
     getKey: (task) => `${task.args.mediaType}:${task.args.tmdbId}`,
-    // Don't lose queued membership writes if the page unloads mid-debounce.
     flushOnPageHide: true,
   },
 );

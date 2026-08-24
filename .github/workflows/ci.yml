@@ -5,7 +5,6 @@ on:
       - cloudflare
     types: [opened, synchronize, reopened, ready_for_review]
 
-# Cancel superseded runs for the same PR so CI doesn't queue stale checks.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -13,9 +12,6 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    # Read-only on purpose: PRs only run checks — they can never push, deploy,
-    # or touch Cloudflare. Only the build-time VITE_* env vars are provided;
-    # the Cloudflare deploy token/account are intentionally absent here.
     permissions:
       contents: read
     steps:
@@ -46,14 +42,11 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
-    # Read-only like the checks job: scans history and audits dependencies,
-    # never pushes or deploys.
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (node24 runtime)
         with:
-          # Full history so the secret scan covers every commit.
           fetch-depth: 0
           persist-credentials: false
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6 (node24 runtime)

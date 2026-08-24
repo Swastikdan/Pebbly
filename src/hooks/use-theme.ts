@@ -22,9 +22,7 @@ function readStoredTheme(): Theme {
     if (stored === "light" || stored === "dark" || stored === "system") {
       return stored;
     }
-  } catch {
-    // Storage unavailable (private mode, blocked) — fall through to system.
-  }
+  } catch {}
   return "system";
 }
 
@@ -36,7 +34,6 @@ export function isDarkTheme(theme: Theme): boolean {
   return theme === "dark" || (theme === "system" && systemPrefersDark());
 }
 
-/** Applies the resolved theme straight to the DOM — synchronous, no re-render needed. */
 function applyThemeToDom(dark: boolean) {
   const root = document.documentElement;
   root.classList.toggle("dark", dark);
@@ -54,9 +51,7 @@ export const useThemeStore = create<ThemeStore>()((set) => ({
   setTheme: (next) => {
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      // Ignore — theme still applies for this session.
-    }
+    } catch {}
     set({ theme: next });
   },
 }));
@@ -88,7 +83,6 @@ export function useTheme() {
   return { theme, setTheme };
 }
 
-/** Swaps the palette with a short view-transition crossfade when allowed. */
 export function setThemeWithTransition(next: Theme) {
   const { setTheme } = useThemeStore.getState();
   const reducedMotion = window.matchMedia(

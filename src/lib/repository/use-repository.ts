@@ -6,12 +6,6 @@ import type { Repository } from "./types";
 import { createLocalRepository } from "./local-repository";
 import { createRemoteRepository } from "./remote-repository";
 
-/**
- * Select the mutation repository for the current auth state. Signed-in users
- * write through server fns with optimistic ops; signed-out users write to the
- * local Zustand stores. Memoized per auth state so the object identity is
- * stable across renders.
- */
 export function useRepository(): Repository {
   const { isSignedIn, user } = useUser();
   const queryClient = useQueryClient();

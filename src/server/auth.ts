@@ -26,11 +26,6 @@ export interface ClerkSessionClaims {
   [key: string]: unknown;
 }
 
-/**
- * Extract the Clerk session token from the incoming request. Prefers the
- * `Authorization: Bearer` header (server-fn calls / API clients), then the
- * standard Clerk `__session` cookie (browser same-origin calls).
- */
 export function getSessionToken(): string | undefined {
   const authHeader = getRequestHeader("authorization");
   if (authHeader?.toLowerCase().startsWith("bearer ")) {
@@ -44,15 +39,10 @@ export function getSessionToken(): string | undefined {
   return undefined;
 }
 
-/**
- * Verify the Clerk session token and return the JWT claims, or `null` when
- * there is no session / the token is invalid or expired.
- */
 export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
   const token = getSessionToken();
   if (!token) return null;
 
-  // A valid JWT consists of header.payload.signature (3 dot-separated segments)
   if (token.split(".").length !== 3) return null;
 
   const secretKey = getEnvVar("CLERK_SECRET_KEY");
@@ -70,12 +60,10 @@ export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
     });
     return claims as ClerkSessionClaims;
   } catch {
-    // Expired or transitioning token, treated safely as unauthenticated/guest
     return null;
   }
 }
 
-/** Derive the canonical tokenIdentifier (Convex Clerk format: `clerk|<sub>`). */
 export function toTokenIdentifier(sub: string): string {
   return sub.startsWith("clerk|") ? sub : `clerk|${sub}`;
 }
@@ -89,10 +77,6 @@ function escapeLikePattern(value: string): string {
   return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
-/**
- * LIKE predicate matching any tokenIdentifier that ends in `|{subject}`,
- * treating `%` / `_` inside the subject as literals.
- */
 function tokenIdentifierLike(subject: string) {
   return sql`${users.tokenIdentifier} like ${`%|${escapeLikePattern(subject)}`} escape '\\'`;
 }
@@ -185,8 +169,6 @@ export async function getClerkAdminIds(): Promise<Set<string>> {
           adminIds.add(clerkUser.id);
         }
       }
-      // Stop when we've seen every user or the API returned a short page
-      // (defensive, a hard cap above guards against an endless loop).
       const totalCount = result.totalCount ?? 0;
       if (pageUsers.length < PAGE_SIZE || offset + PAGE_SIZE >= totalCount) {
         break;
@@ -240,7 +222,6 @@ async function findUserMatchesByClaims(
   if (!subject) return [];
   const tokenIdentifier = toTokenIdentifier(subject);
 
-  // Fast path: direct unique index seek on the canonical tokenIdentifier
   const exactMatches = await db
     .select()
     .from(users)
@@ -251,7 +232,6 @@ async function findUserMatchesByClaims(
     return exactMatches;
   }
 
-  // Fallback for legacy user formats (bare sub or custom prefixes)
   return db
     .select()
     .from(users)
@@ -259,10 +239,6 @@ async function findUserMatchesByClaims(
     .limit(10);
 }
 
-/**
- * Pick the canonical user from a set of duplicate matches: prefer the doc that
- * already has watch items, then the exact `clerk|<sub>` tokenIdentifier.
- */
 async function pickBestUserMatch(
   matches: AuthUser[],
   tokenIdentifier: string,
@@ -285,11 +261,6 @@ async function pickBestUserMatch(
   );
 }
 
-/**
- * Port of `convex/helpers/watch_item.ts` `getCurrentUser`, multi-format
- * tokenIdentifier matching so users created under any prior format resolve.
- * Uses a short-lived in-memory cache to eliminate duplicate database hits.
- */
 export async function findUserByClaims(
   claims: ClerkSessionClaims,
 ): Promise<AuthUser | null> {
@@ -323,7 +294,7 @@ export type RequireUserResult =
     };
 
 /**
- * `requireCurrentUser` port: resolves the user, creating one on first sign-in
+ * Resolves the user, creating one on first sign-in
  * (identity from the verified Clerk claims). Returns a typed error result when
  * unauthenticated.
  */
@@ -340,18 +311,11 @@ export async function requireUser(): Promise<RequireUserResult> {
   const db = getDb(getEnv());
   const tokenIdentifier = toTokenIdentifier(claims.sub);
 
-  // Resolve once and reuse the matches, no second identical query below.
   const userMatches = await findUserMatchesByClaims(claims);
   let user = await pickBestUserMatch(userMatches, tokenIdentifier);
 
   if (!user) {
     const id = crypto.randomUUID();
-    // onConflictDoNothing makes concurrent first sign-ins race-safe: when
-    // two requests for a brand-new user insert at once, one wins and the
-    // other no-ops instead of throwing on the unique token_identifier
-    // index (which would 500 a parallel request on first load).
-    // Admin status is intentionally NOT persisted here, it lives in Clerk's
-    // public metadata (JWT claim / live API) and a stored copy would go stale.
     await db
       .insert(users)
       .values({
@@ -377,10 +341,6 @@ export async function requireUser(): Promise<RequireUserResult> {
     }
   }
 
-  // Auto-consolidate orphaned watch items from duplicate user documents (port
-  // of the Convex `requireCurrentUser` consolidation step). Only runs when
-  // duplicate user rows were matched, and rewrites are batched so the path
-  // stays O(2-3 queries) instead of one query per duplicate item.
   if (userMatches.length > 1) {
     const dupUserIds = userMatches
       .filter((dup) => dup.id !== user.id)

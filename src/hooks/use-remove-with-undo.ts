@@ -4,15 +4,6 @@ import type { WatchlistItem } from "@/hooks/use-watchlist";
 import { toast } from "@/hooks/use-toast-store";
 import { useToggleWatchlistItem } from "@/hooks/use-watchlist";
 
-/**
- * Removes a watchlist item immediately and offers an "Undo" that performs
- * the inverse toggle to re-add it.
- *
- * Note: intentionally NOT `destructiveToast` — that util defers the mutation
- * until its countdown expires, while this flow commits right away and reverts
- * on undo. The two are behaviorally distinct, so the original semantics are
- * preserved here.
- */
 export function useRemoveFromWatchlistWithUndo() {
   const toggleWatchlist = useToggleWatchlistItem();
 

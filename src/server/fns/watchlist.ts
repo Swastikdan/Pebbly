@@ -34,10 +34,6 @@ import {
 } from "../schema/watchlist";
 import { authedFn } from "./rpc";
 
-// ---------------------------------------------------------------------------
-// Reads
-// ---------------------------------------------------------------------------
-
 export const getWatchlist = createServerFn({ method: "POST" })
   .validator(getWatchlistArgsSchema)
   .handler(({ data }) =>
@@ -99,16 +95,6 @@ export const getTrackedTmdbIds = createServerFn({ method: "POST" }).handler(
     ),
 );
 
-// ---------------------------------------------------------------------------
-// Realtime change detection
-// ---------------------------------------------------------------------------
-
-/**
- * Cheap (1-row) read clients poll to detect cross-device changes across all
- * user-data domains. Each revision is bumped by the matching mutations
- * (watchlist, custom lists, AI recommendations), so polling this single row
- * is O(1) no matter how large the underlying collections are.
- */
 export const getDataVersion = createServerFn({ method: "POST" }).handler(() =>
   authedFn(
     {
@@ -145,10 +131,6 @@ export const getDataVersion = createServerFn({ method: "POST" }).handler(() =>
   ),
 );
 
-// ---------------------------------------------------------------------------
-// Writes
-// ---------------------------------------------------------------------------
-
 export const updateProgress = createServerFn({ method: "POST" })
   .validator(updateProgressArgsSchema)
   .handler(({ data }) =>
@@ -180,8 +162,6 @@ export const updateProgress = createServerFn({ method: "POST" })
                 ? "watching"
                 : undefined;
 
-        // An explicit `isWatched: true` always means "done", never let a stale
-        // stored status (e.g. "watch-later") shadow it.
         const nextProgressStatus =
           data.isWatched === true
             ? "done"
@@ -232,8 +212,6 @@ export const removeFromContinueWatching = createServerFn({ method: "POST" })
         await db
           .update(watchItems)
           .set({
-            // Clear the status for items outside the watchlist; keep
-            // "watch-later" when the item is still in it.
             progressStatus: existing.inWatchlist ? "watch-later" : null,
             progress: 0,
             updatedAt: Date.now(),
@@ -320,7 +298,6 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
 
         const now = Date.now();
 
-        // Fetch existing watch items for this user in 1 fast query
         const userWatchItems = await db
           .select()
           .from(watchItems)
@@ -331,7 +308,6 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
           existingMap.set(`${item.mediaType}:${item.tmdbId}`, item);
         }
 
-        // Deduplicate items in the incoming batch taking the latest state
         const batchMap = new Map<string, (typeof data.items)[number]>();
         for (const item of data.items) {
           batchMap.set(`${item.mediaType}:${item.tmdbId}`, item);
@@ -411,8 +387,6 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
           }
         }
 
-        // Execute the whole batch as one transactional round trip instead of
-        // one D1 statement per row.
         await runBatch(db, statements);
 
         await createWatchlistSnapshot(db, user.id);
@@ -435,8 +409,6 @@ export const setProgressStatus = createServerFn({ method: "POST" })
           data.tmdbId,
           data.mediaType,
           (existing) => {
-            // data.progressStatus is already validated by progressStatusSchema,
-            // so no re-normalization is needed here.
             const normalized = data.progressStatus;
             let nextProgress: number | null | undefined = data.progress;
             if (nextProgress === undefined) {
@@ -497,10 +469,6 @@ export const setReaction = createServerFn({ method: "POST" })
       },
     ),
   );
-
-// ---------------------------------------------------------------------------
-// Episode progress
-// ---------------------------------------------------------------------------
 
 export const markEpisodeWatched = createServerFn({ method: "POST" })
   .validator(markEpisodeWatchedArgsSchema)
@@ -602,9 +570,6 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
         );
         const statements: Parameters<typeof db.batch>[0][number][] = [];
 
-        // Only `clearAllEpisodes` unwatches the entire show. Requests with
-        // selected seasons (including isWatched: false) go through the seasons
-        // loop so the requested-season scope is preserved.
         if (data.clearAllEpisodes) {
           for (const ep of existingByKey.values()) {
             if (ep.isWatched) {
@@ -655,10 +620,7 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
   );
 
 export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
-  .validator(
-    // matches the Convex `getAllWatchedEpisodes({ tmdbId })` signature
-    v.object({ tmdbId: v.number() }),
-  )
+  .validator(v.object({ tmdbId: v.number() }))
   .handler(({ data }) =>
     authedFn(
       { mode: "current", guest: () => ok([]) },

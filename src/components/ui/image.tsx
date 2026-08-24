@@ -15,7 +15,6 @@ const ImageComponent = ({
   ...props
 }: ImageProps & {
   fallbackImage?: string;
-  /** Tiny (e.g. TMDB w92/w300) version rendered as a blurred backdrop while the real image loads. */
   blurSrc?: string;
 }) => {
   const [error, setError] = useState(false);
@@ -24,7 +23,6 @@ const ImageComponent = ({
   const [loaded, setLoaded] = useState(() => !blurSrc);
   const [prevSrc, setPrevSrc] = useState(initialSrc);
 
-  // Reset state immediately if the initialSrc prop changes
   if (initialSrc !== prevSrc) {
     setPrevSrc(initialSrc);
     setError(false);

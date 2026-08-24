@@ -1,7 +1,5 @@
 import { createFetch } from "@better-fetch/fetch";
 
-// import { logger } from "@better-fetch/logger";
-
 /**
  * Lazily built TMDB client. Importing this module must never throw (tests and
  * server bundles import transitively without TMDB env vars); the missing-env

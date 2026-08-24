@@ -7,18 +7,10 @@ import {
 } from "@/hooks/use-tmdb-verification";
 
 export interface ResolvedRecommendation {
-  /** TMDB-backed display data, null while unresolved or lookups disabled. */
   resolvedData: NormalizedTmdbData | null;
-  /** True while the id lookup or title-search fallback is still in flight. */
   isResolving: boolean;
 }
 
-/**
- * Shared TMDB resolution machine for AI recommendation cards: verifies the
- * AI-provided tmdbId (title match + rating + poster), falls back to a title
- * search when the id doesn't pan out. Pass `enabled: false` to skip lookups
- * entirely (cards already backed by verified cached data).
- */
 export function useResolvedRecommendation(
   recommendation: AIRecommendation,
   options?: { enabled?: boolean },

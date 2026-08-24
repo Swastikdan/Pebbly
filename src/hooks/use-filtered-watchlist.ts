@@ -17,11 +17,6 @@ export type WatchlistCounts = {
   dropped: number;
 };
 
-/**
- * The complete filter-bar view model: state, setters, and the derived
- * secondary-filter summary. WatchlistFilters consumes this as a single
- * `filters` prop instead of a dozen loose value/setter pairs.
- */
 export type WatchlistFiltersModel = {
   searchQuery: string;
   setSearchQuery: (value: string) => void;
@@ -39,11 +34,6 @@ export type WatchlistFiltersModel = {
   resetSecondaryFilters: () => void;
 };
 
-/**
- * Single owner of watchlist filtering: holds the raw filter state, derives
- * the filtered/sorted list and the per-status counts from it. Filter state
- * is pure component state — nothing here persists to the URL.
- */
 export function useFilteredWatchlist(watchlistData: WatchlistItem[]) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] =

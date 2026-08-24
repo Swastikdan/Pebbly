@@ -12,7 +12,6 @@ import { Play } from "@/components/ui/icons";
 const NAV_BUTTON_CLASS =
   "absolute top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0";
 
-/** Centered play-circle overlay shown on video thumbnails. */
 export function PlayOverlay() {
   return (
     <div className="absolute inset-0 flex items-center justify-center">
@@ -23,7 +22,6 @@ export function PlayOverlay() {
   );
 }
 
-/** Sandbox-hardened autoplaying YouTube embed used by every lightbox. */
 export function YouTubeEmbed({
   videoKey,
   title,
@@ -45,7 +43,6 @@ export function YouTubeEmbed({
   );
 }
 
-/** Prev/next chevron overlaid inside a lightbox popup. */
 export function LightboxNavButton({
   dir,
   label,

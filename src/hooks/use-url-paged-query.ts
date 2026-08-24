@@ -3,18 +3,10 @@ import { useCallback, useState } from "react";
 import { MAX_PAGINATION_LIMIT } from "@/constants";
 
 type UseUrlPagedQueryOptions = {
-  /** Page taken straight from the route search params. */
   urlPage: number | undefined;
-  /** Raw total page count reported by the active query data, if any. */
   totalPages: number | undefined;
-  /**
-   * Validate requested pages against the pagination-limit-clamped count
-   * instead of the raw total (the search route's existing behavior).
-   */
   clampGuard?: boolean;
-  /** Scroll back to the top of the window when the page changes. */
   scrollToTop?: boolean;
-  /** Performs the route-specific navigation for the requested page. */
   goToPage: (page: number) => void;
 };
 

@@ -67,8 +67,6 @@ export const MediaContainer = (props: MediaContainerProps) => {
         ? "posters"
         : "videos";
 
-  // Determine which tab should be active based on URL params
-  // so that dialogs can auto-open on page reload
   const activeTabFromSearch = search.backdrop
     ? "backdrops"
     : search.poster

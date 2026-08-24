@@ -11,10 +11,6 @@ import { getCustomLists, getItemLists } from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
 import { useLocalListsStore } from "@/stores/local-lists-store";
 
-// ---------------------------------------------------------------------------
-// Reads (routed through the reconciler so refetches can't clobber pending ops)
-// ---------------------------------------------------------------------------
-
 /**
  * Shared queryFn for `queryKeys.lists.all(userId)`. Every consumer registering
  * that key must route through this reconciled fetcher so refetches can't
@@ -57,8 +53,6 @@ export function useCustomLists() {
 
   const lists = useMemo(() => {
     if (isSignedIn) {
-      // Normalize the server rows to the legacy client shape (`_id`,
-      // optional fields) so list consumers work unchanged.
       return (remote.data ?? []).map((list) => ({
         ...list,
         _id: list.id,

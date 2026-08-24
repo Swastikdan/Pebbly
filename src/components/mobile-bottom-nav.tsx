@@ -174,7 +174,6 @@ function useScrollDirection(pathname: string) {
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
 
-  // Reset nav visibility immediately when navigating to a new route
   useEffect(() => {
     if (pathname) {
       setHidden(false);
@@ -348,7 +347,6 @@ const MobileBottomNav = () => {
       className={`mobile-bottom-nav md:hidden ${isHidden ? "mobile-bottom-nav-hidden" : ""}`}
       aria-label="Mobile Navigation"
     >
-      {/* 1. Home, 2. Search, 3. Watchlist */}
       {MAIN_TABS.map((tab) => {
         const active = isTabActive(tab);
         return (
@@ -368,7 +366,6 @@ const MobileBottomNav = () => {
         );
       })}
 
-      {/* 4. Account Tab - Expanded tap target */}
       <div className="mobile-bottom-nav-tab min-h-[44px]" data-active="false">
         <ClerkLoading>
           <div className="flex h-full w-full flex-col items-center justify-center">
@@ -411,7 +408,6 @@ const MobileBottomNav = () => {
         </ClerkLoaded>
       </div>
 
-      {/* 5. More Sheet Trigger */}
       <Sheet>
         <SheetTrigger
           render={
@@ -433,7 +429,6 @@ const MobileBottomNav = () => {
           side="bottom"
           className="bg-background/95 z-50 flex flex-col p-0 backdrop-blur-2xl outline-none"
         >
-          {/* Top handle pill */}
           <div className="flex shrink-0 justify-center pt-3 pb-1">
             <div className="bg-muted-foreground/30 h-1.5 w-12 rounded-full" />
           </div>
@@ -456,7 +451,6 @@ const MobileBottomNav = () => {
           </div>
 
           <div className="min-h-0 flex-1 scrollbar-none space-y-5 overflow-y-auto px-4 py-4 pb-10">
-            {/* Featured & Admin */}
             {(isAdmin || hasAiRecommendations) && (
               <div className="space-y-2">
                 <div className="text-muted-foreground px-1 text-xs font-semibold tracking-wider uppercase">

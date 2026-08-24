@@ -96,14 +96,8 @@ export const importWatchlist = createServerFn({ method: "POST" })
         }
       }
 
-      // Execute the watch-item import in bounded batches. D1 batches run
-      // atomically, but each call must finish within the platform's 30 s
-      // budget, so a very large import is split into ≤100-statement batches.
-      // Typical imports stay a single atomic round trip.
       await runBoundedBatches(db, watchStatements);
 
-      // Episode writes accumulate here so they run as a second batch after the
-      // watch-item batch.
       const episodeStatements: Parameters<typeof db.batch>[0][number][] = [];
 
       const importedTvIds = new Set(

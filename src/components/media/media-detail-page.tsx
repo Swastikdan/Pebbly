@@ -13,13 +13,6 @@ import { MediaTitleContainer } from "@/components/media/media-title-container";
 
 type SharedMediaPageData = ReturnType<typeof buildSharedMediaPageData>;
 
-/**
- * Full page body shared by the movie/tv detail ("index") twin routes.
- * `aboveMedia` renders between CastSection and MediaContainer (tv: episode
- * browser); `belowMedia` renders between MediaContainer and keywords
- * (movie: collections). Kind-specific derivations (certification, runtime,
- * status, imdb url, keyword mapping) stay in the route files.
- */
 export function MediaDetailPage(props: {
   entity: MediaType;
   mediaPage: SharedMediaPageData;

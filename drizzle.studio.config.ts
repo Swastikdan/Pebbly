@@ -24,14 +24,6 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-/**
- * Read the top-level `database_id` from wrangler.toml.
- *
- * wrangler.toml is TOML, so we parse the top-level `d1_databases` array and
- * take the `database_id` of the entry named `pebbly` (falling back to the
- * first entry). Regex extraction is deliberately avoided so environment
- * blocks (`[env.production]`) cannot shadow the top-level database id.
- */
 function readWranglerDatabaseId(): string {
   const raw = readWranglerToml();
 
@@ -49,7 +41,6 @@ function readWranglerDatabaseId(): string {
   const parseSection = (section: string): Record<string, string> => {
     const values: Record<string, string> = {};
     for (const line of section.split("\n")) {
-      // Stop at the next top-level table/array header.
       if (/^\[|^\[\[/.test(line.trim())) break;
       const kv = line.match(/^\s*(\w+)\s*=\s*"([^"]+)"/);
       if (kv) values[kv[1]] = kv[2];
@@ -57,7 +48,6 @@ function readWranglerDatabaseId(): string {
     return values;
   };
 
-  // Take the first top-level `[[d1_databases]]` entry that binds `DB`.
   const d1 = sections.map(parseSection).find((entry) => entry.binding === "DB");
   const databaseId = d1?.database_id;
   if (!databaseId) {

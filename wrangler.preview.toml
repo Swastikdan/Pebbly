@@ -22,6 +22,7 @@ main = ".output/server/index.mjs"
 compatibility_date = "2026-08-08"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
+upload_source_maps = true
 
 # Nitro pre-bundles the entry; tell Wrangler not to re-bundle it. Production
 # gets these fields from the generated redirected config, but --config bypasses
@@ -37,7 +38,6 @@ globs = ["**/*.mjs", "**/*.js"]
 directory = ".output/public"
 binding = "ASSETS"
 
-# Preview D1 database (separate from prod)
 [[d1_databases]]
 binding = "DB"
 database_name = "pebbly-preview"

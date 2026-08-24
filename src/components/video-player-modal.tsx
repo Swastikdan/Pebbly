@@ -46,8 +46,6 @@ export function VideoPlayerModal({
   const { isSignedIn, hasFeature, loading } = usePermissions();
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Prevents the auto-open effect from re-opening the modal immediately
-  // after the user explicitly closes it (play param has a 150ms removal delay)
   const closedByUserRef = useRef(false);
 
   const [isMobile, setIsMobile] = useState(false);
@@ -74,9 +72,6 @@ export function VideoPlayerModal({
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
 
-  // Pass the exact player URL so the listener trusts postMessage sources by
-  // origin instead of scanning the DOM for /embed/ iframes. The URL builder
-  // throws when VITE_PUBLIC_VIDEO_URL is unset, so guard with the raw env var.
   const playerUrl = import.meta.env.VITE_PUBLIC_VIDEO_URL
     ? buildPlayerUrl({
         type,
@@ -86,10 +81,6 @@ export function VideoPlayerModal({
       })
     : undefined;
 
-  // Stable context so the listener effect in usePlayerProgressListener
-  // doesn't tear down / re-register on every render. The listener is only
-  // active while the dialog is open (see `isOpen` below), so season pages
-  // with one modal per episode no longer accumulate window listeners.
   const listenerContext = useMemo(
     () => ({
       tmdbId,
@@ -104,11 +95,9 @@ export function VideoPlayerModal({
 
   usePlayerProgressListener(listenerContext, isOpen);
 
-  // Auto-open when ?play=true is in the URL
   useEffect(() => {
     const shouldPlay = search.play === true || search.play === "true";
     if (!shouldPlay) {
-      // play param has been removed, safe to reset the guard
       closedByUserRef.current = false;
     }
     if (shouldPlay && !isOpen && !closedByUserRef.current) {
@@ -116,7 +105,6 @@ export function VideoPlayerModal({
     }
   }, [search.play, isOpen]);
 
-  // Fullscreen listener
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
@@ -129,7 +117,6 @@ export function VideoPlayerModal({
     };
   }, []);
 
-  // Inactivity timer to hide close button
   const resetInactivityTimer = useCallback(() => {
     setCloseVisible(true);
     if (inactivityTimerRef.current) {
@@ -182,10 +169,6 @@ export function VideoPlayerModal({
     };
   }, [isOpen, resetInactivityTimer]);
 
-  // While the player is open, confirm before leaving the page. The embed
-  // iframe is sandboxed (no allow-popups / allow-top-navigation) so the
-  // provider cannot redirect the app to another site or open new windows;
-  // this beforeunload guard is kept as a defense-in-depth fallback.
   useEffect(() => {
     if (!isOpen) return;
 
@@ -209,20 +192,15 @@ export function VideoPlayerModal({
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      // Set guard BEFORE setIsOpen(false) so the auto-open effect
-      // doesn't re-open the modal while play param is still in the URL
       closedByUserRef.current = true;
     }
     setIsOpen(open);
     if (!open) {
       setIsLoading(true);
-      // Exit browser fullscreen if active
       if (document.fullscreenElement) {
         try {
           document.exitFullscreen();
-        } catch {
-          // ignore
-        }
+        } catch {}
       }
       if (search?.play) {
         setTimeout(() => {
@@ -271,9 +249,6 @@ export function VideoPlayerModal({
     }
   };
 
-  // Controls are hidden after inactivity on desktop (mouse hover reveals
-  // them), but on mobile the auto-hide makes them impossible to bring back
-  // inside the cross-origin iframe, so keep them always visible there.
   const controlsVisible = closeVisible;
 
   return (
@@ -377,8 +352,6 @@ export function VideoPlayerModal({
             referrerPolicy="no-referrer"
             onLoad={() => setIsLoading(false)}
           />
-          {/* Transparent overlay used to reveal the controls when hovering/tapping the
-					video. It is pass-through when controls are visible so clicks reach iframe. */}
           <div
             className={cn(
               "absolute inset-0 z-[5]",

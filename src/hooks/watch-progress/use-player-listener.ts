@@ -8,15 +8,6 @@ import {
   parsePlayerEventPayload,
 } from "./progress-helpers";
 
-/**
- * Listens for postMessage progress events from the video-player iframe and
- * persists them through the repository (server write with optimistic journal
- * when signed in, Zustand store otherwise).
- *
- * Trusted sources are resolved by origin from the `playerUrl` the caller
- * renders (the modal knows the exact iframe it mounts), falling back to a DOM
- * scan for `/embed/` iframes when no URL is supplied.
- */
 export function usePlayerProgressListener(
   activeContext?: {
     tmdbId: number;
@@ -28,10 +19,6 @@ export function usePlayerProgressListener(
     rating?: number;
     release_date?: string;
     overview?: string;
-    /**
-     * Exact iframe URL the player renders. When provided, postMessage sources
-     * are trusted by origin instead of scanning the DOM for /embed/ iframes.
-     */
     playerUrl?: string;
   },
   enabled = true,
@@ -39,20 +26,13 @@ export function usePlayerProgressListener(
   const repository = useRepository();
 
   useEffect(() => {
-    // Skip registering a window message listener while the player is closed.
-    // Season pages mount one modal per episode (plus an episode-row variant),
-    // so without this gate a 20-episode page holds ~40 listeners.
     if (!enabled || typeof window === "undefined") return;
 
     let lastSavedPercent = 0;
-    // Legacy fallback: scan for trusted /embed/ iframes (used when the
-    // caller can't supply the exact player URL).
     let cachedIframeOrigins: string[] = [];
     let cachedIframeWindows = new Set<Window>();
     let lastQueryTime = 0;
 
-    // Preferred: the caller (VideoPlayerModal) knows the exact iframe URL it
-    // renders, so trust messages only from that origin, no DOM querying.
     const trustedOrigin = activeContext?.playerUrl
       ? (() => {
           try {
@@ -138,10 +118,6 @@ export function usePlayerProgressListener(
       }
 
       if (mediaType === "tv" && season !== undefined && episode !== undefined) {
-        // Route resume state through the Zustand store (which persists to
-        // localStorage) instead of writing storage + dispatching a custom
-        // event: subscribers update via the store, and the persist
-        // middleware keeps cross-tab sync via its own storage listener.
         useLocalProgressStore
           .getState()
           .setLastPlayed(String(id), season, episode);

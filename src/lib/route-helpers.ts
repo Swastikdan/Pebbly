@@ -12,18 +12,10 @@ import {
 import { queryKeys } from "@/lib/query/keys";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
 
-/**
- * Shared loader/head ceremony for detail-style routes: id validation,
- * awaited details hydration (so SSR og:image sees real data), slug titles,
- * and meta-tag construction.
- */
-
-/** Minimal shape needed to extract an og:image poster path. */
 type PosterBearing = { poster_path?: string | null };
 
 export type MediaKind = "movie" | "tv";
 
-/** "full" = append_to_response detail payload (index pages); "basic" = lean payload (subpages). */
 export type DetailLevel = "full" | "basic";
 
 type MediaDetailQuery = {
@@ -51,7 +43,6 @@ const MEDIA_DETAIL_QUERIES: Record<
   },
 };
 
-/** Parse a route `$id` param, throwing the route's 404 when malformed. */
 export function requireRouteId(raw: string): number {
   const parsed = parseAndValidateId(raw);
   if (!parsed.success) {
@@ -60,7 +51,6 @@ export function requireRouteId(raw: string): number {
   return parsed.data;
 }
 
-/** Slug segment -> display title, falling back when the slug is absent. */
 export function slugTitle(slug: string | undefined, fallback = ""): string {
   return slug ? formatMediaTitle.decode(slug) : fallback;
 }
@@ -84,7 +74,6 @@ export async function ensureMediaDetails(
 export type MediaRouteOptions = {
   mediaType: MediaKind;
   level?: DetailLevel;
-  /** Title when the URL carries no slug (e.g. "Movie Page"). */
   titleFallback?: string;
 };
 
@@ -95,7 +84,6 @@ export type MediaRouteData = {
   posterPath: string | null;
 };
 
-/** Loader body for movie/tv detail routes: validate id, hydrate, build head data. */
 export function loadMediaRouteData(
   context: { queryClient: QueryClient },
   params: { id: string; slug?: string },
@@ -114,7 +102,6 @@ export function loadMediaRouteData(
   }));
 }
 
-/** Meta array for detail pages, deriving og:image from the hydrated poster. */
 export function detailHead(input: {
   title: string;
   description: string;

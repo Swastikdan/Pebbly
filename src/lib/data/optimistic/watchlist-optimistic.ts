@@ -162,11 +162,6 @@ function beginProgressStatusOp(
   );
 }
 
-/**
- * Optimistic row patch for `updateProgress`: merge the new progress percent
- * and, when provided, overwrite the status. Shared by the remote repository's
- * journaled op so the transform lives beside its sibling row patches.
- */
 export function applyProgressUpdateRows(
   rows: WatchItemRow[],
   args: ProgressUpdateArgs,
@@ -188,11 +183,6 @@ export function applyProgressUpdateRows(
   });
 }
 
-/**
- * Optimistic row patch for `removeFromContinueWatching`: reset progress to 0
- * and fall back to watch-later for tracked items (cleared entirely for
- * non-watchlist rows).
- */
 export function applyProgressResetRows(
   rows: WatchItemRow[],
   args: ProgressResetArgs,

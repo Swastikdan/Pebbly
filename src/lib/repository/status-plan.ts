@@ -14,18 +14,9 @@ export interface SeasonSelection {
 
 export interface StatusPlan {
   action: ProgressStatusAction;
-  /** Resolves with per-season episode selections when episode rows must
-   *  follow the new status; null when no episode sync is needed. */
   seasonsPromise: Promise<SeasonSelection[]> | null;
 }
 
-/**
- * One decision pipeline for progress-status writes shared by both repository
- * adapters: resolves the TV-vs-movie action and, when episode state must
- * follow the status, kicks off the single TMDB season fetch both adapters
- * previously duplicated. Adapters execute the plan; neither re-implements
- * the semantics.
- */
 export function resolveStatusPlan(
   queryClient: QueryClient,
   id: string,

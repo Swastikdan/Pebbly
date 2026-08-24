@@ -15,16 +15,7 @@ import { getEnv } from "../env";
 import { hasFeature, isAdminByClaims } from "../rbac";
 import { fail } from "../schema/common";
 
-// ---------------------------------------------------------------------------
-// Auth-guard ceremony for server functions
-// ---------------------------------------------------------------------------
-
 /**
- * Consolidated replacement for the four hand-written guard idioms that used to
- * open every protected server fn (inline `requireUser`, guest-read
- * `getCurrentUser`, `getAuthContext`, and `getAuthUserWithFeature` /
- * `requireAdmin`).
- *
  * Usage — `createServerFn` must stay written out at each site (the TanStack
  * Start compiler statically extracts the literal `.handler(fn)` argument to
  * build the RPC endpoint), so `authedFn` produces the awaited handler result:
@@ -45,9 +36,7 @@ import { fail } from "../schema/common";
  * an `ApiResult` envelope instead of throwing.
  */
 
-/** How the session is resolved before the handler runs. */
 export type AuthMode =
-  /** Create-on-first-sign-in (port of Convex `requireCurrentUser`). */
   | "require"
   /** Resolve without creating; unauthenticated requests get `guest`. */
   | "current"
@@ -57,9 +46,7 @@ export type AuthMode =
 type RpcSchema = GenericSchema<unknown, unknown>;
 
 export interface AuthedFnConfig {
-  /** Mirrors the `.validator(...)` schema so `data` is typed in the handler. */
   readonly schema?: RpcSchema;
-  /** Defaults to `"require"`. */
   readonly mode?: AuthMode;
   /**
    * Response for requests that never reach the handler:
@@ -68,11 +55,8 @@ export interface AuthedFnConfig {
    * ok-with-defaults instead of `UNAUTHORIZED`.
    */
   readonly guest?: () => ApiResult<unknown>;
-  /** Feature gate via `hasFeature` (rbac). */
   readonly feature?: RbacFeature;
-  /** What a failed feature gate returns; defaults to `"fail"` (FORBIDDEN). */
   readonly featureDenied?: "fail" | "guest";
-  /** Admin gate: signed JWT `public_meta.isAdmin` claim or live Clerk API. */
   readonly admin?: boolean;
 }
 
@@ -97,7 +81,6 @@ type DataOf<C> = C extends { readonly schema: infer S }
   : undefined;
 
 export interface AuthedContext<TData, TUser, TClaims> {
-  /** Validated `.validator(...)` output (`undefined` without a schema). */
   data: TData;
   user: TUser;
   claims: TClaims;
@@ -169,8 +152,6 @@ type ResolvedAuth =
 
 async function resolveAuth(config: AuthedFnConfig): Promise<ResolvedAuth> {
   if (config.mode === "current" || config.mode === "anonymous") {
-    // Same resolution path as `getCurrentUser`: verify claims, look up the
-    // stored user, never create one.
     const claims = await getSessionClaims();
     const user = claims ? await findUserByClaims(claims) : null;
     if (!user) {
@@ -193,19 +174,12 @@ async function resolveAuth(config: AuthedFnConfig): Promise<ResolvedAuth> {
 
   const result = await requireUser();
   if (result.error) {
-    // Typed error passes through verbatim unless a `guest` override answers
-    // in its place (ok-with-defaults quirks).
     if (config.guest) return { kind: "fallback", response: config.guest() };
     return { kind: "unauthorized", error: result.error };
   }
   return { kind: "authenticated", user: result.user, claims: result.claims };
 }
 
-/**
- * Normalize a guest response given as a plain value or a lazy thunk into the
- * thunk `AuthedFnConfig.guest` expects. Payloads are `ApiResult` objects, so
- * a bare function is unambiguously the lazy form.
- */
 export function guestFallback<T>(value: T | (() => T)): () => T {
   return typeof value === "function" ? (value as () => T) : () => value;
 }
@@ -214,11 +188,6 @@ export type RequiredAuthResult =
   | { ok: true; user: AuthUser; claims: ClerkSessionClaims; db: Db }
   | { ok: false; error: UnauthorizedError };
 
-/**
- * Escape hatch for handlers whose branching genuinely depends on the auth
- * outcome (distinct payloads per scenario rather than a uniform gate):
- * `requireUser` semantics (creates the user on first sign-in) plus the db.
- */
 export async function resolveRequiredAuth(): Promise<RequiredAuthResult> {
   const result = await requireUser();
   if (result.error) return { ok: false, error: result.error };

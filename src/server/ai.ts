@@ -3,10 +3,9 @@ import * as v from "valibot";
 import type { MediaType } from "@/lib/media-types";
 import { getEnvVar } from "./env";
 
-// Port of `convex/ai.ts`, same retry/fallback logic, but Gemini is called over
-// REST `fetch` instead of the `@google/genai` SDK (per the Cloudflare plan §6.7:
-// the SDK may misbehave on the Workers runtime; the REST API is a drop-in
-// replacement behind the same `callGeminiAI` signature).
+// Gemini is called over REST `fetch` instead of the `@google/genai` SDK (per
+// the Cloudflare plan §6.7: the SDK may misbehave on the Workers runtime; the
+// REST API is a drop-in replacement behind the same `callGeminiAI` signature).
 
 export interface Recommendation {
   title: string;
@@ -56,10 +55,6 @@ export async function delay(ms: number) {
 
 const GEMINI_TIMEOUT_MS = 30_000;
 
-/**
- * Per-element schema for a Gemini recommendation. `tmdbId` is nullable, but
- * when present must be numeric; mediaType is limited to movie/tv.
- */
 const recommendationElementSchema = v.pipe(
   v.object({
     title: v.string(),
@@ -83,8 +78,6 @@ async function generateContent(
   userPrompt: string,
   systemInstruction: string,
 ): Promise<string> {
-  // Send the API key via the x-goog-api-key header (never in the URL), with
-  // a per-attempt timeout so a stalled Gemini call cannot hang the Worker.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
@@ -221,8 +214,6 @@ export async function callGeminiAI(
       return { error: "invalid_response" };
     }
 
-    // Validate each element with valibot (not a type cast): keep valid
-    // entries, filter out anything missing the required fields.
     const validRecommendations: Recommendation[] = [];
     for (const entry of rawRecommendations) {
       const validated = v.safeParse(recommendationElementSchema, entry);

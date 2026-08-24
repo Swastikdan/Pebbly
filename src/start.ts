@@ -1,8 +1,6 @@
 import { getToken } from "@clerk/react";
 import { createCsrfMiddleware, createStart } from "@tanstack/react-start";
 
-// Bounded timeout for server-function RPCs so a stalled request terminates
-// instead of hanging the UI indefinitely.
 const RPC_TIMEOUT_MS = 30_000;
 
 /**
@@ -34,8 +32,6 @@ export const startInstance = createStart(() => ({
           headers.set("Authorization", `Bearer ${token}`);
         }
       } catch (error) {
-        // Not signed in / Clerk not loaded, fall through to the cookie.
-        // Still log when a token was expected so failures are visible.
         console.debug(
           "[start] Failed to mint Clerk session token; falling back to cookie:",
           error,

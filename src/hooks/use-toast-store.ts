@@ -14,10 +14,6 @@ export interface ToastOptions {
 
 const TOAST_DURATION = 5000;
 
-/**
- * Fire-and-forget toast backed by the coss/Base UI toast manager.
- * No provider/context required — call from anywhere.
- */
 export function toast(options: ToastOptions) {
   const { action, type = "info", ...rest } = options;
 

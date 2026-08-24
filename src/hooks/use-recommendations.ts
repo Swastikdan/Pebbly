@@ -88,11 +88,6 @@ export function isTrackedRecommendation(
   );
 }
 
-/**
- * Drops already-tracked (watchlisted/in-progress) recommendations from every
- * history entry, then drops emptied entries. Pass filteringEnabled=false
- * while the watchlist is still loading to surface entries unfiltered.
- */
 export function selectUntrackedHistory(
   history: RecommendationHistoryEntry[],
   tracked: TrackedContentSets,
@@ -189,7 +184,6 @@ export function buildGenerateMoreOptions(
 ): GenerateOptions {
   const options = buildRepeatBaseOptions(entry, { count, trackedTmdbIds });
 
-  // Always set for "more": exclude the entry's own picks plus tracked ids.
   options.excludeTmdbIds = [
     ...new Set([
       ...entry.recommendations
@@ -209,8 +203,6 @@ export function useRecommendations() {
     queryKey: queryKeys.recommendations.history(user?.id),
     queryFn: () => unwrap(getRecommendationHistory()),
     enabled: !!isSignedIn,
-    // Cross-device sync is driven by UserSync's data-version poll (refetch
-    // only when the ai_rev revision changes).
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);

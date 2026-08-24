@@ -9,7 +9,6 @@
     sans-serif;
   --font-display: "Bricolage Grotesque Variable", var(--font-sans);
   --font-heading: var(--font-display);
-  /* Custom easing curves, stronger than the built-in CSS easings. Available as `ease-standard`, `ease-emphatic`, `ease-snappy` utilities. */
   --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-emphatic: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
@@ -75,7 +74,6 @@
   --info-foreground: var(--color-blue-700);
   --success-foreground: var(--color-emerald-700);
   --warning-foreground: var(--color-amber-700);
-  /* Inverted nav-drawer chip. Deliberately NOT the opposite theme's surface pair: light mode inverts to a softened charcoal, dark mode to a warm off-white, so an active row never reads as a foreign-theme card. */
   --nav-active-bg: oklch(0.34 0 0);
   --nav-active-fg: oklch(0.97 0 0);
 }
@@ -173,6 +171,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --animate-skeleton: skeleton 2s -1s infinite linear;
+  --animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
   --animate-toast-success-odd: toast-success 0.32s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-success-even: toast-success 0.32s
     cubic-bezier(0.5, 1, 0.89, 1);
@@ -189,6 +188,15 @@
   @keyframes skeleton {
     to {
       background-position: -200% 0;
+    }
+  }
+  @keyframes spinner-leaf-fade {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
     }
   }
   @keyframes toast-success {
@@ -288,7 +296,6 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  /* High-contrast focus indicator for keyboard navigation */
   a:focus-visible,
   button:focus-visible,
   [role="button"]:focus-visible,
@@ -297,7 +304,6 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
-  /* Global touch-target expansion for interactive controls on coarse-pointer screens */
   @media (pointer: coarse) {
     button,
     [role="button"],
@@ -321,7 +327,6 @@
       z-index: 10;
       pointer-events: auto;
     }
-    /* Exclude hidden/screen-reader elements */
     .sr-only::after,
     [aria-hidden="true"]::after {
       /* biome-ignore lint/complexity/noImportantStyles: required to force hide touch target expansion */
@@ -335,8 +340,6 @@
   *::after {
     /* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override component animations */
     scroll-behavior: auto !important;
-    /* Keep opacity/color fades;
-         drop movement (transform-based motion). */
     /* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override component animations */
     transition-property:
       opacity, color, background-color, border-color, outline-color, fill,
@@ -353,14 +356,12 @@
     animation: none;
   }
 }
-/* Theme swap: brief crossfade between the pre/post snapshots. Kept short — this is a tens-of-times-per-day interaction, not a moment to savor. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 150ms;
   animation-timing-function: var(--ease-standard);
 }
 @layer utilities {
-  /* ── Typography System Utilities ── */
   .text-display {
     font-family: var(--font-display);
     font-size: clamp(2rem, 1.5rem + 2.5vw, 4.5rem);
@@ -371,56 +372,43 @@
   .text-h1 {
     font-family: var(--font-display);
     font-size: 2rem;
-    /* 32px */
     line-height: 2.375rem;
-    /* 38px */
     font-weight: 700;
     letter-spacing: -0.02em;
   }
   .text-h2 {
     font-family: var(--font-display);
     font-size: 1.5rem;
-    /* 24px */
     line-height: 1.875rem;
-    /* 30px */
     font-weight: 650;
     letter-spacing: -0.015em;
   }
   .text-body {
     font-family: var(--font-sans);
     font-size: 0.9375rem;
-    /* 15px */
     line-height: 1.5rem;
-    /* 24px */
     font-weight: 400;
   }
   .text-compact {
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    /* 13px */
     line-height: 1.125rem;
-    /* 18px */
     font-weight: 550;
   }
   .text-label {
     font-family: var(--font-sans);
     font-size: 0.6875rem;
-    /* 11px */
     line-height: 1rem;
-    /* 16px */
     font-weight: 650;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
-  /* Film-can label: compact metadata (ratings, years, episode codes). */
   .text-meta {
     font-family: var(--font-sans);
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     font-size: 0.6875rem;
-    /* 11px */
     line-height: 1rem;
-    /* 16px */
     font-weight: 500;
     letter-spacing: 0.02em;
   }
@@ -528,7 +516,6 @@
     .stagger-grid > *:nth-child(8) {
       animation-delay: 105ms;
     }
-    /* Cap the cascade, long delays read as broken, not dramatic. */
     .stagger-grid > *:nth-child(n + 9) {
       animation-delay: 120ms;
     }
@@ -576,7 +563,6 @@
     transform: translateX(280%);
   }
 }
-/* Toast popup radius: the coss default reads too bubbly next to our buttons and cards — pull it down to the base --radius. */
 [data-slot="toast-root"] {
   border-radius: var(--radius);
 }
@@ -593,7 +579,6 @@
 .cl-internal-57atez {
   display: none;
 }
-/* Mobile Performance & Touch Enhancements */
 .scroll-snap-x {
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
@@ -610,10 +595,8 @@
     contain: layout style paint;
   }
 }
-/* ── Mobile Bottom Navigation ── */
 :root {
   --mobile-nav-height: 4.75rem;
-  /* ~76px for bigger, touch-friendly tab bar */
 }
 .mobile-bottom-nav {
   position: fixed;
@@ -694,7 +677,6 @@
   font-weight: 600;
   letter-spacing: 0.01em;
 }
-/* Add bottom padding to main content on mobile to clear the nav bar */
 @media (max-width: 767px) {
   .mobile-nav-spacer {
     padding-bottom: calc(

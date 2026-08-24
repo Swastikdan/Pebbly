@@ -12,16 +12,13 @@ const buildEnv = {
   ...loadEnv("production", process.cwd()),
 };
 
-/** Unique URL origins for every well-formed value; malformed input is skipped. */
 function originsOf(...values: Array<string | undefined>): string[] {
   const found = new Set<string>();
   for (const value of values) {
     if (!value) continue;
     try {
       found.add(new URL(value).origin);
-    } catch {
-      // Ignore placeholder/garbage values rather than breaking builds.
-    }
+    } catch {}
   }
   return [...found];
 }
@@ -55,11 +52,6 @@ const videoPlayerOrigins = originsOf(buildEnv.VITE_PUBLIC_VIDEO_URL);
 
 // Report-only until violation reports confirm the allowlist is complete;
 // promote to enforced `Content-Security-Policy` afterwards.
-//
-// Origins cover: self-hosted assets/fonts, Clerk (bundled JS, hosted widget
-// iframe, API), TMDB API + images, ImageKit/placeholder image fallbacks,
-// YouTube trailer embeds, the configured external player, and Cloudflare Web
-// Analytics.
 const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
@@ -122,10 +114,6 @@ export default defineNitroConfig({
       },
     },
   },
-  // Cloudflare Workers is the deployment target for production builds only.
-  // In dev (`vite dev`), the default nitro-dev preset is used so the Vite SSR
-  // server runs as plain Node — full Worker emulation (D1, secrets, cron) is
-  // exercised via `wrangler dev` against the built output instead.
   $production: {
     preset: "cloudflare_module",
   },

@@ -65,7 +65,6 @@ export function AdminUserTable() {
         </ErrorBanner>
       )}
 
-      {/* Search + Filter */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2" />
@@ -109,7 +108,6 @@ export function AdminUserTable() {
         </div>
       </div>
 
-      {/* Desktop Table */}
       <div className="hidden overflow-hidden rounded-xl border md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -161,7 +159,6 @@ export function AdminUserTable() {
         </div>
       </div>
 
-      {/* Mobile Cards */}
       <div className="space-y-3 md:hidden">
         {filteredUsers.length === 0 ? (
           <div className="text-muted-foreground rounded-xl border py-10 text-center text-sm">
@@ -190,7 +187,6 @@ export function AdminUserTable() {
         </p>
       )}
 
-      {/* Ban / Unban Confirmation Dialog */}
       <AdminRoleDialog
         selectedUser={selectedUser}
         isSubmitting={isSubmitting}

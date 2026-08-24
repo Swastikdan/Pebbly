@@ -10,7 +10,6 @@ import * as v from "valibot";
  * runtime validation errors or breaking TypeScript types.
  */
 
-// Resilient field primitives using v.fallback and v.transform
 const str = (fallback = "") => v.fallback(v.string(), fallback);
 const strNull = () => v.fallback(v.nullable(v.string()), null);
 const strOpt = () =>
@@ -126,10 +125,6 @@ export type MediaVideosResultsEntity = v.InferOutput<
   typeof MediaVideosResultsEntitySchema
 >;
 
-/*
- * Standard TMDB paged envelope (page / results / total_pages / total_results)
- * shared by every list-shaped endpoint response.
- */
 const paginated = <S extends v.GenericSchema>(item: S) =>
   v.looseObject({
     page: num(1),

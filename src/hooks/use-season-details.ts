@@ -5,15 +5,6 @@ import { createBatcher } from "@/lib/batcher";
 import { getTvSeasonDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 
-/**
- * Coalesce per-card season-detail fetches. A continue-watching strip renders N
- * cards, each needing the season detail for its next episode. Without
- * batching that is N parallel TMDB requests from the same render pass.
- *
- * The batcher flushes all cards' season requests in one window and dedupes the
- * same (show, season) across card instances / re-renders, so a season is never
- * fetched twice for the same screen.
- */
 const seasonDetailBatcher = createBatcher<
   { tvId: number; season: number },
   TvSeasonDetail
@@ -32,17 +23,10 @@ const seasonDetailBatcher = createBatcher<
   },
 );
 
-/**
- * Fetch a TV season's details through the shared batcher. Every consumer
- * (per-card hook, season page, inline episode browser) uses this fetcher with
- * the same `tmdb.seasonDetails` key so one cache entry is filled per
- * (show, season), coalesced across whatever requested it first.
- */
 export function fetchSeasonDetails(tvId: number, season: number) {
   return seasonDetailBatcher.schedule({ tvId, season });
 }
 
-/** Fetch a TV season's details through the shared batcher. */
 export function useSeasonDetails(tvId: number, season: number | undefined) {
   return useQuery({
     queryKey: queryKeys.tmdb.seasonDetails(tvId, season ?? 1),

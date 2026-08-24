@@ -13,16 +13,10 @@ const storeUserArgsSchema = v.object({
   image: v.optional(v.string()),
 });
 
-/**
- * Port of `users.store`, upserts the user from the verified Clerk session.
- * Admin status is deliberately not part of this payload: it lives in Clerk's
- * public metadata (JWT claim / live API), and a stored copy would go stale.
- */
 export const storeUser = createServerFn({ method: "POST" })
   .validator(storeUserArgsSchema)
   .handler(({ data }) =>
     authedFn({ mode: "require" }, data, async ({ claims, db, user }) => {
-      // Only include defined fields so an empty request performs no update.
       const update: Partial<typeof users.$inferSelect> = {};
       if (data.name !== undefined) update.name = data.name;
       if (data.image !== undefined) update.image = data.image;

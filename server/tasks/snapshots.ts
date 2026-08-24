@@ -1,4 +1,4 @@
-// Daily watchlist snapshot cron (03:00 UTC), port of convex/crons.ts.
+// Daily watchlist snapshot cron (03:00 UTC).
 //
 // Nitro's cloudflare-module preset wires the Worker `scheduled()` handler to
 // Nitro's task system: the cron expression in wrangler.toml

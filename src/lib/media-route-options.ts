@@ -11,16 +11,6 @@ import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { detailHead, loadMediaRouteData } from "@/lib/route-helpers";
 
-/**
- * Option factories for the movie/tv twin routes (index, media, cast-crew).
- * Each pair differs only by media kind; every meta string, search param, and
- * loader option below is lifted verbatim from the original route files so the
- * generated routes behave identically.
- *
- * Usage: `createFileRoute("/movie/$id/{-$slug}/media")(mediaRouteOptions("movie", MovieMediaPage))`
- * — the createFileRoute call stays literal in each file (router requirement).
- */
-
 type RouteContext = { queryClient: QueryClient };
 type RouteParams = { id: string; slug?: string };
 
@@ -108,7 +98,6 @@ const CAST_CREW_HEAD: Record<MediaKind, HeadCopy> = {
   },
 };
 
-/** Search params for the index routes: trailer/play/video/backdrop/poster. */
 export function indexDetailSearch(search: Record<string, unknown>) {
   return {
     trailer: search.trailer as string | undefined,
@@ -119,7 +108,6 @@ export function indexDetailSearch(search: Record<string, unknown>) {
   };
 }
 
-/** Search params for the media gallery routes: video/backdrop/poster. */
 export function mediaGallerySearch(search: Record<string, unknown>) {
   return {
     video: search.video as string | undefined,
@@ -128,7 +116,6 @@ export function mediaGallerySearch(search: Record<string, unknown>) {
   };
 }
 
-/** Options for `/movie|$tv/$id/{-$slug}/` (full detail hydration). */
 export function indexRouteOptions(kind: MediaKind, component: RouteComponent) {
   return {
     loader: buildLoader({
@@ -142,7 +129,6 @@ export function indexRouteOptions(kind: MediaKind, component: RouteComponent) {
   };
 }
 
-/** Options for `/movie|$tv/$id/{-$slug}/media`. */
 export function mediaRouteOptions(kind: MediaKind, component: RouteComponent) {
   return {
     loader: buildLoader({ mediaType: kind }),
@@ -152,7 +138,6 @@ export function mediaRouteOptions(kind: MediaKind, component: RouteComponent) {
   };
 }
 
-/** Options for `/movie|$tv/$id/{-$slug}/cast-crew`. */
 export function castCrewRouteOptions(
   kind: MediaKind,
   component: RouteComponent,
@@ -170,7 +155,6 @@ type BasicDetailsQueryOptions<D> = {
   enabled: boolean;
 };
 
-/** useQuery options for the lean details payload backing the subpages. */
 export function basicDetailsQuery(
   kind: "movie",
   id: string,

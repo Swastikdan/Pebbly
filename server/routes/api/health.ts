@@ -1,4 +1,3 @@
-// GET /api/health, pings D1 (select 1) with caching to prevent DB DoS
 import { sql } from "drizzle-orm";
 import { defineEventHandler, setResponseHeader, setResponseStatus } from "h3";
 
@@ -7,7 +6,6 @@ import { getEnv } from "../../../src/server/env";
 
 type CheckResult = { ok: boolean; [key: string]: unknown };
 
-// In-memory cache for DB check result to prevent D1 DoS / quota exhaustion on high request volumes
 const DB_CHECK_CACHE_TTL_MS = 10_000; // 10 seconds
 let cachedDbCheck: {
   result: CheckResult;
@@ -23,8 +21,6 @@ export default defineEventHandler(async (event) => {
   const checks: Record<string, CheckResult> = {};
   let ok = true;
 
-  // D1 ping, skipped when there's no binding (plain Node `vite dev`); on the
-  // Worker (`wrangler dev` / deployed) the DB binding is always present.
   if (!env.DB) {
     checks.db = { ok: true, skipped: "no D1 binding (vite dev)" };
   } else if (
@@ -46,7 +42,6 @@ export default defineEventHandler(async (event) => {
       ok = false;
       const res: CheckResult = { ok: false, error: "database unavailable" };
       checks.db = res;
-      // Cache failure for 5 seconds to avoid DB hammering during an outage
       cachedDbCheck = { result: res, ok: false, timestamp: now - 5_000 };
     }
   }
@@ -59,7 +54,6 @@ export default defineEventHandler(async (event) => {
       "no-cache, no-store, must-revalidate",
     );
   } else {
-    // Cache-Control header allows edge CDN and browsers to cache healthy status for 10 seconds
     setResponseHeader(
       event,
       "Cache-Control",

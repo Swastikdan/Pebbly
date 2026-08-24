@@ -104,7 +104,6 @@ export const mapPosters = (posters?: MinimalImage[] | null) =>
     .sort(sortByVoteAverage)
     .map((image) => ({
       poster_image: `${IMAGE_PREFIX.SD_POSTER}${image.file_path}`,
-      // HD (w780) instead of ORIGINAL for the same memory/bandwidth win.
       poster_image_raw: `${IMAGE_PREFIX.HD_POSTER}${image.file_path}`,
       aspect_ratio: image.aspect_ratio,
     }))

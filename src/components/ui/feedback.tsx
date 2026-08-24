@@ -1,7 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-/** Row of loading placeholders for horizontal media rails/grids. */
 export function SkeletonGrid({
   count,
   itemClassName,
@@ -22,7 +21,6 @@ export function SkeletonGrid({
   );
 }
 
-/** Destructive inline notice shared by admin surfaces. */
 export function ErrorBanner({
   className = "",
   children,

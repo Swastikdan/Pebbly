@@ -25,20 +25,15 @@ import { recordOwnMutation } from "@/lib/realtime-mutations";
  */
 
 export type PendingOpEntry<T> = {
-  /** Query key the patch applies to (e.g. `["watchlist","list",{}]`). */
   key: readonly unknown[];
-  /** Identity strings of the rows this op touches (e.g. `"movie:123"`). */
   touchedIds: string[];
-  /** Extracts an identity string from a row; defaults to `mediaType:tmdbId`. */
   idOf?: (row: T) => string;
   /** Pure patch applied to the array cache. Must be safe to re-run. */
   apply: (rows: T[]) => T[];
 };
 
 export type OpHandle = {
-  /** Write succeeded: drop the op, folding its state into the server base. */
   resolve: () => void;
-  /** Write failed: drop the op and rebuild from base + remaining ops. */
   remove: () => void;
 };
 
@@ -63,11 +58,8 @@ type RegisteredOp = {
 };
 
 type JournalState = {
-  /** Pending ops per key, in registration order (= seq order). */
   pendingByKey: Map<string, RegisteredOp[]>;
-  /** Last known server truth per key; used to rebuild after a rollback. */
   baseByKey: Map<string, unknown[]>;
-  /** Reverse lookup: keyString -> key array (for `setQueryData`). */
   keyByString: Map<string, readonly unknown[]>;
   seqCounter: number;
   syncTimers: Map<string, ReturnType<typeof setTimeout>>;
@@ -105,7 +97,6 @@ function dropOp(journal: JournalState, keyString_: string, op: RegisteredOp) {
   else journal.pendingByKey.set(keyString_, next);
 }
 
-/** True while `op` is still registered (i.e. not superseded by a newer op). */
 function isRegistered(journal: JournalState, op: RegisteredOp) {
   return op.entries.some((entry) =>
     (journal.pendingByKey.get(entry.keyString) ?? []).includes(op),
@@ -127,19 +118,9 @@ function replay(
 }
 
 export type BeginOpOptions = {
-  /** Revision domain the server write bumps; counted automatically on resolve. */
   domain?: MutationDomain;
 };
 
-/**
- * Register one or more optimistic patches and apply them to the cache
- * immediately. Returns a handle used to resolve (success) or remove (error)
- * the op later.
- *
- * Client-only by construction: mutations run in the browser, never during SSR.
- * Throwing here (instead of silently writing to a request-scoped journal)
- * catches any future code path that would register an op on the server.
- */
 export function beginOp<T>(
   queryClient: QueryClient,
   entries: PendingOpEntry<T>[],
@@ -190,8 +171,6 @@ export function beginOp<T>(
     list.push(op);
     journal.pendingByKey.set(entry.keyString, list);
 
-    // First op for a key: snapshot the current (server-loaded) cache as the
-    // base used to rebuild after a rollback.
     if (!journal.baseByKey.has(entry.keyString)) {
       const current =
         (queryClient.getQueryData(entry.key) as unknown[] | undefined) ?? [];
@@ -259,11 +238,6 @@ function removeOp(
   }
 }
 
-/**
- * Wrap a watchlist fetch: remember the server snapshot as the new base and
- * re-apply still-pending optimistic ops on top before returning. This makes
- * refetches safe even when a response was computed before a write committed.
- */
 export function reconcileListFetch<T>(
   queryClient: QueryClient,
   key: readonly unknown[],
@@ -307,11 +281,6 @@ export function applyServerState<T>(
   queryClient.setQueryData(key, replay(journal, keyString_, truth) as T[]);
 }
 
-/**
- * Debounce cache invalidations so N rapid mutations produce a single refetch
- * (which itself reconciles pending ops). Keys are matched as prefixes, so
- * `["watchlist","list"]` refreshes both the full list and filtered variants.
- */
 export function scheduleSync(
   queryClient: QueryClient,
   keys: readonly (readonly unknown[])[],
@@ -330,7 +299,6 @@ export function scheduleSync(
   }
 }
 
-/** Forget all journal state for the given client (used when a user signs out). */
 export function clearPendingOps(queryClient: QueryClient) {
   const journal = journalFor(queryClient);
   journal.pendingByKey.clear();

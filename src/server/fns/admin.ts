@@ -73,11 +73,8 @@ export const setRolePermission = createServerFn({ method: "POST" })
   .validator(setRolePermissionArgsSchema)
   .handler(({ data }) =>
     authedFn({ admin: true }, data, async ({ db }) => {
-      // feature is already validated to a known RbacFeature by the schema.
       await syncRolePermissions(db, true);
 
-      // Atomic upsert keyed on the (role, feature) primary key, replaces the
-      // old select-then-insert. Role is always the global feature flag.
       await db
         .insert(rolePermissions)
         .values({

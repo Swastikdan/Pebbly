@@ -28,7 +28,6 @@ export function DailyPickButton() {
 
   const pick = useDailyPick(isOpen);
 
-  // Render placeholder while permissions load to prevent homepage layout shift
   if (isPermissionsLoading) {
     return (
       <Button
@@ -86,7 +85,6 @@ export function DailyPickButton() {
           </div>
         ) : pick.selectedItem ? (
           <div className="relative">
-            {/* Backdrop banner */}
             <div className="bg-muted relative aspect-video w-full overflow-hidden">
               {pick.backdropUrl ? (
                 <Image
@@ -99,15 +97,10 @@ export function DailyPickButton() {
               ) : (
                 <div className="h-full w-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-800 dark:to-neutral-950" />
               )}
-              {/* Scrim: dark modes blend the banner into the panel with a tall
-						    background fade; light mode gets a gentle contrast dim plus a
-						    short bottom fade so the artwork stays vivid instead of washing
-						    out under a white veil. */}
               <div className="from-background via-background/40 absolute inset-0 hidden bg-gradient-to-t to-transparent dark:block" />
               <div className="absolute inset-0 bg-black/15 dark:hidden" />
               <div className="from-background via-background/60 absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t to-transparent dark:hidden" />
 
-              {/* Header badges */}
               <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 pr-12">
                 {pick.selectedItem.isCurrentlyWatching ? (
                   <span className="inline-flex items-center gap-1.5 rounded-lg bg-green-500/90 px-2.5 py-0.5 text-[11px] font-bold text-black shadow-md backdrop-blur-md">
@@ -131,10 +124,8 @@ export function DailyPickButton() {
               </div>
             </div>
 
-            {/* Content details */}
             <div className="relative -mt-10 px-4 pb-5 sm:-mt-12 sm:px-6 sm:pb-6">
               <div className="flex items-end gap-3 sm:gap-4">
-                {/* Poster thumbnail - Clickable Link */}
                 {pick.posterUrl && (
                   <Link
                     to={pick.targetPath}
@@ -153,7 +144,6 @@ export function DailyPickButton() {
                 )}
 
                 <div className="flex min-w-0 flex-1 flex-col justify-end gap-1 pb-0.5">
-                  {/* Title Link */}
                   <Link
                     to={pick.targetPath}
                     onClick={() => setIsOpen(false)}
@@ -187,11 +177,9 @@ export function DailyPickButton() {
                 {pick.selectedItem.overview}
               </p>
 
-              {/* Action buttons */}
               <div className="mt-5 flex flex-col gap-2">
                 {isVideoPlaybackEnabled ? (
                   <>
-                    {/* Main action row */}
                     <div className="flex items-center gap-2">
                       <Link
                         to={pick.targetPath}
@@ -222,7 +210,6 @@ export function DailyPickButton() {
                       />
                     </div>
 
-                    {/* Secondary action grid */}
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         variant="outline"
@@ -245,7 +232,6 @@ export function DailyPickButton() {
                     </div>
                   </>
                 ) : (
-                  /* 3 buttons inline when playback is disabled (e.g. signed out) */
                   <div className="grid grid-cols-3 gap-2">
                     <WatchlistButton
                       id={pick.selectedItem.id}

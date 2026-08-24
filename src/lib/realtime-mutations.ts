@@ -34,12 +34,9 @@ let lastMutationAt = 0;
 export function recordOwnMutation(domain: MutationDomain, count = 1): void {
   counts[domain] += count;
   lastMutationAt = Date.now();
-  // Sibling tabs don't share this module's state, so push the mutation to
-  // them directly instead of letting them wait for the next version poll.
   broadcastMutation(domain);
 }
 
-/** Snapshot and reset the counters (called once per version poll). */
 export function takeOwnMutationCounts(): Record<MutationDomain, number> {
   const snapshot = { ...counts };
   counts.watchlist = 0;
@@ -48,11 +45,6 @@ export function takeOwnMutationCounts(): Record<MutationDomain, number> {
   return snapshot;
 }
 
-/**
- * True while this client is actively mutating data. UserSync polls faster in
- * this window so follow-up external changes converge quickly, then settles
- * back to the slow idle cadence.
- */
 export function hasRecentOwnMutation(windowMs = 20_000): boolean {
   return Date.now() - lastMutationAt < windowMs;
 }

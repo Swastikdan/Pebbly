@@ -14,7 +14,6 @@ export function AdminDashboard() {
 
       <div className="mx-auto max-w-6xl px-4 py-6 pb-20 sm:px-6 sm:pb-8 lg:px-8">
         <Tabs defaultValue="users" className="gap-6">
-          {/* Dashboard Title + Tab Navigation */}
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <h1 className="text-xl leading-tight font-bold tracking-tight sm:text-2xl">

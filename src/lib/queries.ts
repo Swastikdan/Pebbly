@@ -12,9 +12,6 @@ import { getTmdbFetch } from "./tmdb";
 import * as Schemas from "./tmdb-schemas";
 import { validateId } from "./utils";
 
-/*
- * Safe fetch helper with dev logging for URL, endpoint, and schema validation issues
- */
 async function safeFetch<Output>(
   queryName: string,
   url: string,
@@ -42,11 +39,6 @@ async function safeFetch<Output>(
   }
 }
 
-/*
- * Endpoint factories — one home for the TMDB fetch ritual: validate ids,
- * default pages, build URLs, fetch + validate. Each exported query below
- * declares only its name, path template, and response schema.
- */
 function idEndpoint<S extends v.GenericSchema>(
   name: string,
   schema: S,
@@ -96,13 +88,8 @@ function typedEndpoint<S extends v.GenericSchema>(
   };
 }
 
-/*
- * TMDB Query Functions
- */
-
 type MediaListType = MediaQuery["type"] | MediaListQuery["type"];
 
-/** Endpoint path for each media-list query type. */
 const MEDIA_LIST_PATHS: Record<MediaListType, string> = {
   movies_popular: "/movie/popular",
   "movies_now-playing": "/movie/now_playing",
@@ -116,11 +103,6 @@ const MEDIA_LIST_PATHS: Record<MediaListType, string> = {
   trending_week: "/trending/all/week",
 };
 
-/**
- * Fetch one page of a media list (popular, top-rated, trending, ...).
- * Replaces the old getMedia/getMediaList switch duplicates: the type -> path
- * mapping above is the single source of truth for these endpoints.
- */
 export async function getMediaList({
   type,
   page,
@@ -138,7 +120,6 @@ export async function getMediaList({
   );
 }
 
-/** Convenience wrapper returning only the results array. */
 export async function getMedia({
   type,
   page,

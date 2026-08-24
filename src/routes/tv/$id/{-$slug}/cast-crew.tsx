@@ -23,8 +23,6 @@ function TvCastAndCrewPage() {
       title={title}
       data={data}
       isLoading={isLoading}
-      // Preserved verbatim from the pre-refactor route.
-      selectRedirectTitle={(data) => data?.name ?? data?.name}
     />
   );
 }

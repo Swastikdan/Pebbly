@@ -76,7 +76,6 @@ const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
   ]
 }`;
 
-/** Shared media label for prompt goals (movie / TV show / both). */
 function mediaLabel(mediaTypePreference?: string): string {
   return mediaTypePreference === "movie"
     ? "movies"
@@ -85,12 +84,10 @@ function mediaLabel(mediaTypePreference?: string): string {
       : "movies and TV shows";
 }
 
-/** Clamp the requested title count to the 1..30 bound used by every prompt. */
 function clampTitleCount(count?: number): number {
   return Math.min(Math.max(count ?? 10, 1), 30);
 }
 
-/** Index watch items by the `tmdbId_mediaType` key used across prompt builders. */
 function indexWatchItemsByMediaKey(
   items: WatchItemSummary[],
 ): Map<string, WatchItemSummary> {

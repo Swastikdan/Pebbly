@@ -12,39 +12,26 @@ import { Image } from "@/components/ui/image";
 import { updateDialogSearch } from "@/lib/media-dialog-helpers";
 
 interface MediaThumbRailProps<T> {
-  /** Items rendered left to right; array order drives prev/next cycling. */
   items: T[];
-  /** URL search param storing the active item's key so dialogs deep-link. */
   paramKey: MediaDialogKey;
-  /** Stable value written to the search param for an item. */
   getKey: (item: T) => string | undefined;
   getThumbSrc: (item: T) => string;
   getThumbAlt: (item: T) => string;
-  /** Full thumbnail Image classes: aspect ratio, heights, hover states. */
   imageClassName: string;
   thumbWidth?: number;
   thumbHeight?: number;
-  /** Optional label badges / play overlays rendered inside the tile. */
   renderTileOverlay?: (item: T) => React.ReactNode;
   getLightboxTitle: (item: T) => string;
   lightboxOverlayClassName?: string;
   lightboxContentClassName?: string;
-  /** Lightbox body rendered for the active item. */
   renderLightboxBody: (item: T) => React.ReactNode;
-  /** Accessible labels for the lightbox chevrons. */
   prevLabel?: string;
   nextLabel?: string;
-  /** Renders the trailing "View More" link when provided. */
   viewMoreHref?: string;
   railClassName?: string;
   scrollContainerClassName?: string;
 }
 
-/**
- * Scrollable thumbnail rail with a single search-param-driven lightbox.
- * Owns the a11y tile wrapper (role="button" + Enter/Space handling),
- * the dialog search-param wiring, and the prev/next/close index math.
- */
 export function MediaThumbRail<T>({
   items,
   paramKey,

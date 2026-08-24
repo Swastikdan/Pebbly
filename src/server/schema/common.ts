@@ -40,10 +40,6 @@ export const metadataSchema = v.object({
 });
 export type MediaMetadata = v.InferOutput<typeof metadataSchema>;
 
-// ---------------------------------------------------------------------------
-// Typed error contract (replaces Convex's bare `throw new Error`)
-// ---------------------------------------------------------------------------
-
 export const errorCodeSchema = v.picklist([
   "UNAUTHORIZED",
   "FORBIDDEN",

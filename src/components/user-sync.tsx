@@ -22,10 +22,8 @@ export const UserSync = () => {
   const { signOut } = useClerk();
   const { isBanned, isSignedIn, loading } = usePermissions();
 
-  // Per-user revision baselines for change detection.
   const lastRevsRef = useRef<Record<string, DataVersion>>({});
 
-  // Sync user profile data to D1 on mount / user change
   useEffect(() => {
     if (isLoaded && user) {
       unwrap(
@@ -42,8 +40,6 @@ export const UserSync = () => {
     }
   }, [isLoaded, user]);
 
-  // Enforce ban: sign the user out immediately when banned status is confirmed.
-  // This clears their Clerk session so there is no client-side bypass.
   useEffect(() => {
     if (!loading && isSignedIn && isBanned) {
       signOut();
@@ -88,8 +84,6 @@ export const UserSync = () => {
     [queryClient, user?.id],
   );
 
-  // Same-browser sibling tabs learn about this tab's mutations instantly via
-  // BroadcastChannel instead of waiting for the next version poll.
   useEffect(() => {
     return subscribeToCrossTabMutations(invalidateDomain);
   }, [invalidateDomain]);
@@ -103,14 +97,7 @@ export const UserSync = () => {
     queryKey: queryKeys.data.version(user?.id),
     queryFn: fetchDataVersion,
     enabled: !!isSignedIn,
-    // Instant convergence when the user returns to the tab (covers
-    // visibilitychange too via TanStack's focus manager) instead of
-    // waiting for the next tick of the interval.
     refetchOnWindowFocus: true,
-    // Adaptive cadence: burst right after own mutations (external changes
-    // converge fast while the user is active), normal cadence during an
-    // active session, slow when quiet, and back off when the API is
-    // failing so a degraded backend isn't hammered. Pauses when hidden.
     refetchInterval: (query) => {
       if (query.state.fetchFailureCount >= 3) return 60_000;
       if (hasRecentOwnMutation(20_000)) return 4_000;
@@ -118,8 +105,6 @@ export const UserSync = () => {
     },
   });
 
-  // Diagnostic: a failing version poll silently disables cross-device sync
-  // (the effect below bails on undefined data), so surface it loudly instead.
   useEffect(() => {
     if (versionQuery.error) {
       console.warn(
@@ -132,8 +117,6 @@ export const UserSync = () => {
   useEffect(() => {
     if (!user?.id || versionQuery.data === undefined) return;
     const current = versionQuery.data;
-    // Guard against a malformed payload (e.g. a server fn returning the
-    // wrong shape) so a silent NaN comparison can't disable sync.
     if (
       typeof current.watchlistRev !== "number" ||
       typeof current.listsRev !== "number" ||

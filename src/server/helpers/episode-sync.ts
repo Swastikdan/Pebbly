@@ -60,7 +60,6 @@ export function buildEpisodeSyncStatements(
   return statements;
 }
 
-/** Preload existing episode rows for (user, show), used to batch syncs. */
 export async function loadEpisodeRowsByKey(
   db: Db,
   userId: string,

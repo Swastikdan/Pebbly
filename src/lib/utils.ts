@@ -51,7 +51,7 @@ export function cn(...inputs: ClassValue[]) {
  * Creates an LRU-aware localStorage wrapper that evicts the oldest store
  * when total usage approaches the ~5MB quota (threshold: 4MB).
  */
-const STORAGE_SIZE_LIMIT = 4 * 1024 * 1024; // 4MB, room for misc overhead
+const STORAGE_SIZE_LIMIT = 4 * 1024 * 1024;
 
 function getStorageSize(storage: Storage): number {
   let size = 0;
@@ -82,9 +82,7 @@ function saveLruTimestamps(
 ) {
   try {
     storage.setItem(LRU_KEY, JSON.stringify(timestamps));
-  } catch {
-    // If we can't even save timestamps, just skip LRU tracking
-  }
+  } catch {}
 }
 
 export function createLRUStorage(): Storage {
@@ -101,18 +99,16 @@ export function createLRUStorage(): Storage {
     const timestamps = getLruTimestamps(base);
     const entries = Object.entries(timestamps)
       .filter(([key]) => key !== LRU_KEY)
-      .sort(([, a], [, b]) => a - b); // oldest first
+      .sort(([, a], [, b]) => a - b);
 
     for (const [key] of entries) {
-      if (size < STORAGE_SIZE_LIMIT * 0.6) break; // evict down to ~60%
+      if (size < STORAGE_SIZE_LIMIT * 0.6) break;
       try {
         const val = base.getItem(key);
         base.removeItem(key);
         delete timestamps[key];
         if (val) size -= (key.length + val.length) * 2;
-      } catch {
-        // best-effort
-      }
+      } catch {}
     }
 
     saveLruTimestamps(base, timestamps);

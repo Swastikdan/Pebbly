@@ -229,7 +229,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   // Keeps the OS-preference subscription alive for the whole app.
   useTheme();
 
-  // Global keyboard shortcuts: "/" focuses search (or navigates there).
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -350,8 +349,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </a>
           <UserSync />
           <Navbar />
-          {/* The skip-to-content link targets #main-content, keep a visible
-					    focus ring so keyboard users can see where focus landed. */}
           <main
             id="main-content"
             tabIndex={-1}

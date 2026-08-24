@@ -56,10 +56,6 @@ const SORT_ITEMS: Array<{ value: WatchlistSort; label: string }> = [
   { value: "year", label: "Newest Release" },
 ];
 
-/**
- * Pure rendering of the filter bar. All state and setters arrive bundled in
- * the single `filters` model owned by `useFilteredWatchlist`.
- */
 export function WatchlistFilters({
   filters,
   counts,
@@ -91,7 +87,6 @@ export function WatchlistFilters({
 
   return (
     <div className="mb-4 space-y-2">
-      {/* Row 1 — search + filters toggle */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search
@@ -142,7 +137,6 @@ export function WatchlistFilters({
         </Button>
       </div>
 
-      {/* Row 2 — status tabs + count */}
       <div className="flex items-center gap-2">
         <div className="scrollbar-hidden flex flex-1 gap-1 overflow-x-auto">
           {PRIMARY_TABS.map((tab) => {

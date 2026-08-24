@@ -53,10 +53,6 @@ const RATE_LIMIT_MS = 2 * 60 * 1000;
 const SYSTEM_INSTRUCTION =
   "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
 
-// ---------------------------------------------------------------------------
-// Access / history
-// ---------------------------------------------------------------------------
-
 export const getUserRecommendationAccess = createServerFn({
   method: "POST",
 }).handler(() =>
@@ -121,8 +117,6 @@ export const deleteRecommendation = createServerFn({ method: "POST" })
         const entry = await db
           .select()
           .from(aiRecommendations)
-          // Scope the read to the authenticated user so ownership is enforced
-          // by the query itself, not a follow-up check.
           .where(
             and(
               eq(aiRecommendations.id, data.id),
@@ -166,8 +160,6 @@ export const updateVerifiedRecommendations = createServerFn({ method: "POST" })
       { mode: "require" },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
-        // Validate the recommendations payload before constructing the patch;
-        // a malformed payload is a client error, not a server crash.
         let parsedRecommendations: unknown;
         try {
           parsedRecommendations = JSON.parse(data.recommendations);
@@ -216,10 +208,6 @@ export const updateVerifiedRecommendations = createServerFn({ method: "POST" })
       },
     ),
   );
-
-// ---------------------------------------------------------------------------
-// Feedback
-// ---------------------------------------------------------------------------
 
 export const getRecommendationFeedback = createServerFn({
   method: "POST",
@@ -281,8 +269,6 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
         }
         await bumpAiRev(db, user.id);
 
-        // When user likes a recommendation, auto-add to watchlist with
-        // "recommended" reaction & Pebbly Picks list.
         if (data.feedback === "like") {
           const existingWatchItem = await db
             .select()
@@ -325,9 +311,6 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
 
           await bumpWatchlistRev(db, user.id);
 
-          // Find or create the Pebbly Picks list, onConflictDoNothing makes
-          // the create race-safe against the (userId, name) unique index, then
-          // one lookup returns the authoritative row.
           await db
             .insert(lists)
             .values({
@@ -417,10 +400,6 @@ export const removeRecommendationFeedback = createServerFn({ method: "POST" })
     ),
   );
 
-// ---------------------------------------------------------------------------
-// Homepage recommendations
-// ---------------------------------------------------------------------------
-
 export const getHomepageRecommendations = createServerFn({ method: "POST" })
   .validator(getHomepageRecommendationsArgsSchema)
   .handler(({ data }) =>
@@ -457,7 +436,6 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
           .where(eq(homepageRecommendations.userId, user.id))
           .limit(1);
 
-        // One query covering both exclusion feedback values instead of two.
         const excludedFeedback = await db
           .select()
           .from(recommendationFeedback)
@@ -517,10 +495,6 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
     ),
   );
 
-// ---------------------------------------------------------------------------
-// Generation helpers (private, no longer separate RPCs)
-// ---------------------------------------------------------------------------
-
 function computeHash(
   items: Array<{
     tmdbId: number;
@@ -570,7 +544,6 @@ function collectFeedback<K extends "title" | "tmdbId">(
 
 async function gatherWatchlistData(userId: string): Promise<WatchlistData> {
   const db = getDb(getEnv());
-  // Execute the four independent reads in one batched round trip with pruned projections.
   const [watchItemRows, listRows, listItemRows, episodeRows] = await db.batch([
     db
       .select({
@@ -700,12 +673,9 @@ async function checkAndSetRecommendationCooldown(
 
   const freshRow = mostRecent.find((row) => row.id === reservedId);
   if (!freshRow && inserted.length === 0) {
-    // Insert failed (unlikely), treat as not allowed.
     return { allowed: false };
   }
 
-  // The reservation is always the newest row we just inserted; if there is an
-  // older row within the window, reject and clean up the reservation.
   const older = mostRecent.find((row) => row.id !== reservedId);
   if (older && now - older.createdAt < RATE_LIMIT_MS) {
     await db
@@ -717,7 +687,6 @@ async function checkAndSetRecommendationCooldown(
   return { allowed: true, reservedId };
 }
 
-/** Delete a reserved generation row (AI call failed, release the cooldown). */
 async function releaseRecommendationCooldown(reservedId: string) {
   const db = getDb(getEnv());
   await db
@@ -763,11 +732,6 @@ type SaveRecommendationsArgs = {
   generationType?: string;
 };
 
-/**
- * Persist a generation. When `reservedId` is present the pending reservation
- * row (created by checkAndSetRecommendationCooldown) is updated in place, so
- * the history contains one row per generation, never a placeholder.
- */
 async function saveRecommendations(
   args: SaveRecommendationsArgs,
   reservedId?: string,
@@ -800,7 +764,6 @@ async function saveRecommendations(
   await bumpAiRev(db, args.userId);
 }
 
-/** Upsert the homepage recommendations row keyed on the unique userId. */
 async function saveHomepageRecommendations(
   userId: string,
   recommendations: RecommendationRow[],
@@ -832,7 +795,6 @@ async function saveHomepageRecommendations(
   await bumpAiRev(db, userId);
 }
 
-/** Upsert the homepage failure state keyed on the unique userId. */
 async function saveHomepageFailure(userId: string) {
   const db = getDb(getEnv());
   const now = Date.now();
@@ -853,9 +815,6 @@ async function saveHomepageFailure(userId: string) {
   await bumpAiRev(db, userId);
 }
 
-// ---------------------------------------------------------------------------
-// generateRecommendations (action → server fn)
-// ---------------------------------------------------------------------------
 export const generateRecommendations = createServerFn({ method: "POST" })
   .validator(generateRecommendationsArgsSchema)
   .handler(({ data }) =>
@@ -865,7 +824,6 @@ export const generateRecommendations = createServerFn({ method: "POST" })
       async ({ user }): Promise<ApiResult<GenerateResult>> => {
         const genType = data.generationType ?? "watchlist";
 
-        // A `list` generation without a listId is a client error.
         if (genType === "list" && !data.listId) {
           return fail("BAD_REQUEST", "listId is required for list generation");
         }
@@ -950,7 +908,6 @@ export const generateRecommendations = createServerFn({ method: "POST" })
 
         const aiResult = await callGeminiAI(userPrompt, SYSTEM_INSTRUCTION, 1);
         if (aiResult.error || !aiResult.result) {
-          // Release the cooldown so a failed AI call does not consume it.
           if (reservedId) await releaseRecommendationCooldown(reservedId);
           return ok({ error: aiResult.error ?? "api_unavailable" });
         }
@@ -991,10 +948,6 @@ export const generateRecommendations = createServerFn({ method: "POST" })
       },
     ),
   );
-
-// ---------------------------------------------------------------------------
-// generateHomepageRecommendations (action → server fn)
-// ---------------------------------------------------------------------------
 
 export const generateHomepageRecommendations = createServerFn({
   method: "POST",
@@ -1044,9 +997,7 @@ export const generateHomepageRecommendations = createServerFn({
           previousTmdbIds = prevRecs
             .map((r) => r.tmdbId)
             .filter((id): id is number => typeof id === "number");
-        } catch {
-          // ignore parse error
-        }
+        } catch {}
       }
 
       const prompt = buildHomepageRecommendationsPrompt(

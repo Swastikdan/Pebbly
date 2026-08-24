@@ -49,12 +49,6 @@ export type WatchItemRow = typeof watchItems.$inferSelect;
 
 export type UserRevColumn = "watchlistRev" | "listsRev" | "aiRev" | "permsRev";
 
-/**
- * Bump one of the user's data-domain revision counters. Clients poll this
- * single small row (via `getDataVersion`) to detect cross-device changes
- * instead of re-fetching whole collections on an interval, this keeps
- * polling cost O(1) no matter how large the underlying data is.
- */
 export async function bumpUserRev(
   db: Db,
   userId: string,
@@ -123,11 +117,6 @@ export function buildMetadataPatch(
 export type MembershipRemovalPlan =
   { delete: true } | { delete: false; nextRow: WatchItemRow };
 
-/**
- * Decide what happens to a watch item when it leaves the watchlist: rows with
- * a reaction or real watch progress survive with `inWatchlist: false` (a
- * "watch-later"-only status is cleared); bare rows are deleted entirely.
- */
 export function planMembershipRemoval(
   existing: WatchItemRow,
   now: number,
@@ -159,12 +148,6 @@ export type UpsertUpdate =
     ) =>
       (Partial<Omit<WatchItemRow, "id">> & Partial<WatchItemMetadata>) | null);
 
-/**
- * Port of `upsertWatchItem`, insert or patch the unique (user, tmdb, media)
- * watch item row. Timestamps are always set here (`updatedAt`). Returns the
- * final row so callers can echo the authoritative state back to the client
- * without an extra read.
- */
 export async function upsertWatchItem(
   db: Db,
   userId: string,

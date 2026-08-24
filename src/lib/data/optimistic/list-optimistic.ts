@@ -12,10 +12,6 @@ export const itemTmdbIdOf = (item: ListItemRow) => String(item.tmdbId);
 
 export type MixedListRow = CustomListRow | ListItemRow | string;
 
-/**
- * Swap an optimistic list id for the server-assigned id across affected
- * caches.
- */
 export function swapListId(
   queryClient: QueryClient,
   optimisticId: string,
@@ -332,10 +328,6 @@ export function beginToggleListItemOp(
   return { handle: beginOp(queryClient, entries, { domain: "lists" }), adding };
 }
 
-/**
- * The server returned the authoritative new state; flip the optimistic patch
- * if it disagreed.
- */
 export function applyToggleInverse(
   queryClient: QueryClient,
   args: ToggleListItemArgs,
@@ -380,11 +372,6 @@ export type ReorderItemsArgs = {
   orderedItems: Array<{ tmdbId: number; mediaType: MediaType }>;
 };
 
-/**
- * Optimistically re-sort the cached items array into the submitted order and
- * stamp matching 1-based positions, so the UI moves immediately while the
- * server write is in flight.
- */
 export function beginReorderListItemsOp(
   queryClient: QueryClient,
   args: ReorderItemsArgs,

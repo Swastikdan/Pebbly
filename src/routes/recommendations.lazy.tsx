@@ -160,7 +160,6 @@ function RecommendationsContent({
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [genStage, setGenStage] = useState(0);
 
-  // Cycle through the generation narrative; reset whenever generation stops.
   useEffect(() => {
     if (!isGenerating) {
       setGenStage(0);
@@ -292,7 +291,6 @@ function RecommendationsContent({
               </p>
             </div>
           </div>
-          {/* Indeterminate progress bar */}
           <div
             className="bg-secondary h-1 w-full overflow-hidden rounded-full"
             role="progressbar"

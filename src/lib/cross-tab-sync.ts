@@ -1,10 +1,3 @@
-/**
- * Cross-tab realtime sync over BroadcastChannel. When a tab records a
- * successful mutation it broadcasts the domain; sibling tabs invalidate the
- * matching query groups immediately instead of waiting up to a full version
- * poll to discover the change via the server. Same-browser only (no server
- * cost), and it removes the own-mutation masking blind spot between tabs.
- */
 const CHANNEL_NAME = "pebbly-sync";
 
 export type MutationDomain = "watchlist" | "lists" | "ai";
@@ -31,12 +24,9 @@ function getChannel(): BroadcastChannel | null {
 export function broadcastMutation(domain: MutationDomain): void {
   try {
     getChannel()?.postMessage(domain);
-  } catch {
-    // A closed or failing channel must never break the mutation itself.
-  }
+  } catch {}
 }
 
-/** Listen for mutations from sibling tabs. Returns an unsubscribe function. */
 export function subscribeToCrossTabMutations(
   handler: (domain: MutationDomain) => void,
 ): () => void {

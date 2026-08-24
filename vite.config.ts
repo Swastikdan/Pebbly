@@ -6,16 +6,14 @@ import { defineConfig } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 
 const config = defineConfig(({ mode }) => ({
-  // Only VITE_-prefixed variables are inlined into the client bundle.
-  // CONVEX_* vars (e.g. CONVEX_DEPLOY_KEY) stay server-side only.
   envPrefix: ["VITE_"],
   server: {
     port: 3000,
   },
   build: {
     minify: "terser",
+    sourcemap: "hidden",
     terserOptions: {
-      sourceMap: false,
       compress: {
         drop_console: mode === "production",
         drop_debugger: mode === "production",
@@ -45,7 +43,10 @@ const config = defineConfig(({ mode }) => ({
         manualChunks(id) {
           if (
             id.includes("/node_modules/react/") ||
-            id.includes("/node_modules/react-dom/")
+            id.includes("/node_modules/react-dom/") ||
+            // react-dom's peer dep — keep it in vendor-react so a React
+            // upgrade invalidates exactly one chunk instead of app chunks.
+            id.includes("/node_modules/scheduler/")
           ) {
             return "vendor-react";
           }
@@ -54,12 +55,6 @@ const config = defineConfig(({ mode }) => ({
           }
           if (id.includes("/node_modules/@clerk/")) {
             return "vendor-auth-db";
-          }
-          if (
-            id.includes("/node_modules/@radix-ui/") ||
-            id.includes("/node_modules/radix-ui/")
-          ) {
-            return "vendor-radix";
           }
           if (id.includes("/node_modules/lucide-react/")) {
             return "vendor-icons";

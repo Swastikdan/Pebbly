@@ -15,7 +15,7 @@ import { MEDIA_TYPES } from "@/lib/media-types";
 import { PROGRESS_STATUSES, REACTIONS } from "@/server/schema/common";
 
 export const users = sqliteTable("users", {
-  id: text("id").primaryKey(), // Convex _id | uuid
+  id: text("id").primaryKey(),
   tokenIdentifier: text("token_identifier").notNull().unique(),
   name: text("name"),
   image: text("image"),
@@ -55,7 +55,7 @@ export const watchItems = sqliteTable(
     reaction: text("reaction", {
       enum: REACTIONS,
     }),
-    progress: integer("progress").default(0), // 0..100
+    progress: integer("progress").default(0),
     title: text("title"),
     image: text("image"),
     rating: real("rating"),
@@ -162,7 +162,6 @@ export const episodeProgress = sqliteTable(
     updatedAt: integer("updated_at").notNull(),
   },
   (t) => [
-    // Covers (user), (user, show), and (user, show, season), the 4 Convex indexes collapse here.
     uniqueIndex("episode_user_season_ep_uq").on(
       t.userId,
       t.tmdbId,

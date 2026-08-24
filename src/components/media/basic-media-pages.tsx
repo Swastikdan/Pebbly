@@ -8,13 +8,6 @@ import { MediaVideoImageContainer } from "@/components/media/media-video-image-c
 import { ShareButton } from "@/components/share-button";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 
-/**
- * Presentational bodies shared by the movie/tv "media" and "cast-crew" twin
- * routes: canonical slug redirect, loading/not-found guards, and page markup.
- * The route files keep the literal createFileRoute call, the useQuery call,
- * and pass the loader trio + query result down.
- */
-
 type AnyBasicDetails = BasicMovie | BasicTv;
 type BasicDetailsOf<K extends MediaType> = K extends "movie"
   ? BasicMovie
@@ -79,10 +72,6 @@ export function MediaCreditsPage<K extends MediaType>(props: {
   title: string;
   data?: BasicDetailsOf<K>;
   isLoading: boolean;
-  /**
-   * Overrides the default entity redirect-title lookup. Kept so each twin can
-   * preserve its exact original selector expression.
-   */
   selectRedirectTitle?: (
     data: BasicDetailsOf<K> | undefined,
   ) => string | undefined;

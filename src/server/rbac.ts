@@ -37,10 +37,6 @@ export const ROLE_FEATURES: Record<DynamicRbacRole, RbacFeature> = {
   "ai-integrations": "ai-recommendations",
 };
 
-/**
- * Effective global feature flags (missing row = enabled), the gate
- * `computeRoleFeatures` applies before any role contributes.
- */
 export async function getGlobalFeatureFlags(
   db: Db,
 ): Promise<Record<RbacFeature, boolean>> {
@@ -70,9 +66,7 @@ function parseClerkPublicMeta(
         if (parsed && typeof parsed === "object") {
           return parsed as Record<string, unknown>;
         }
-      } catch {
-        // Ignore malformed metadata claim payloads.
-      }
+      } catch {}
       continue;
     }
     if (typeof candidate === "object") {
@@ -96,11 +90,6 @@ export function isClerkAdmin(
   return parseClerkPublicMeta(identity)?.isAdmin === true;
 }
 
-/**
- * True only when the (Clerk-signed) JWT itself carries an admin
- * `public_meta.isAdmin` claim. Access decisions must come from the live
- * JWT/API, never a stored flag.
- */
 export function isAdminByClaims(claims: ClerkSessionClaims | null): boolean {
   return (
     parseClerkPublicMeta(claims as unknown as Record<string, unknown> | null)
@@ -110,8 +99,6 @@ export function isAdminByClaims(claims: ClerkSessionClaims | null): boolean {
 
 async function loadPermissions(db: Db) {
   const rows = await db.select().from(rolePermissions);
-  // Filter to known roles/features before anything consumes them, so a stray
-  // row can never leak into feature evaluation.
   return rows.filter(
     (p) =>
       (p.role === "global" ||
@@ -157,10 +144,6 @@ async function computeRoleFeatures(
   return features;
 }
 
-/**
- * `hasFeature` port, evaluates RBAC for the given feature.
- * `user` may be null (unauthenticated); `claims` supplies the admin claim.
- */
 export async function hasFeature(
   claims: ClerkSessionClaims | null,
   user: AuthUser | null,
@@ -169,11 +152,6 @@ export async function hasFeature(
   if (!claims) return false;
 
   if (user?.isBanned === true) return false;
-  // Admin status comes from the signed JWT claim or the live Clerk API, the
-  // same source the client `useUser()` reads. Never trust the stored
-  // `users.isAdmin` flag for access decisions: it is only written at account
-  // creation and never refreshed, so a user demoted in Clerk would otherwise
-  // keep admin privileges indefinitely.
   if (isAdminByClaims(claims)) {
     return true;
   }
@@ -190,9 +168,6 @@ export async function hasFeature(
   return features[feature] === true;
 }
 
-/**
- * `getUserFeatures` port, returns the RBAC summary for the request.
- */
 export async function getUserFeatures(
   claims: ClerkSessionClaims | null,
   user: AuthUser | null,
@@ -214,8 +189,7 @@ export async function getUserFeatures(
       isBanned: true,
     };
   }
-  // Same authoritative admin source as `hasFeature`, JWT claim or live Clerk
-  // API, never the stale DB flag.
+
   if (isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub))) {
     return {
       roles: [] as string[],
@@ -255,8 +229,6 @@ export async function syncRolePermissions(
     return;
   }
 
-  // Collect invalid-row deletes and missing-default inserts, then execute
-  // them in a single batched round trip instead of sequential writes.
   const statements: unknown[] = [];
   const deleteKeys = new Set<string>();
 
@@ -298,8 +270,6 @@ export async function syncRolePermissions(
         permission.role === role && permission.feature === feature,
     );
     if (!existing) {
-      // onConflictDoNothing + the (role, feature) primary key make this
-      // safe against concurrent syncs.
       statements.push(
         db
           .insert(rolePermissions)
