@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import bricolageLatinWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
+import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -147,6 +149,23 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      // Preload the latin body/display subsets so text isn't blocked on CSS
+      // parse before the @font-face fetch even starts. crossOrigin is required
+      // for font preloads (even same-origin) or the browser fetches twice.
+      {
+        rel: "preload",
+        href: geistLatinWoff2,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        href: bricolageLatinWoff2,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
       },
       {
         rel: "icon",

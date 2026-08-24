@@ -39,6 +39,9 @@ const config = defineConfig(({ mode }) => ({
         tryCatchDeoptimization: false,
       },
       output: {
+        entryFileNames: "assets/[hash].js",
+        chunkFileNames: "assets/[hash].js",
+        assetFileNames: "assets/[hash][extname]",
         manualChunks(id) {
           if (
             id.includes("/node_modules/react/") ||

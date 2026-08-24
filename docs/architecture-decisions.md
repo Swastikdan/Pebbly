@@ -127,7 +127,8 @@ state. Rollbacks restored an all-or-nothing array snapshot, wiping concurrent
 ops. And the original journal lived in module-level globals, shared across
 all SSR requests (a cross-user data leak).
 
-**Decision:** `src/hooks/pending-ops.ts` implements a **replayable journal**:
+**Decision:** `src/lib/data/pending-ops.ts` implements a **replayable
+journal**:
 
 - Every write registers a pure `apply(rows)` patch; the patch is applied
   immediately to the cache.
@@ -186,11 +187,13 @@ boundary:
 - Every server fn has a `.validator(schema)` (input) and returns `ApiResult<T>`
   (output) with a finite error-code set (`UNAUTHORIZED`, `FORBIDDEN`,
   `NOT_FOUND`, `RATE_LIMITED`, `CONFLICT`, `BAD_REQUEST`).
-- TMDB responses are validated against `src/lib/tmdb-schemas.ts` (742 lines).
+- TMDB responses are validated against `src/lib/tmdb-schemas.ts` (~670 lines).
 - Gemini output is validated **per element**, malformed entries are dropped,
   never trusted.
 - Domain enums (`progressStatus`, `reaction`, `feedback`, `mediaType`) are
-  defined once in `src/server/schema/common.ts`.
+  defined once in `src/server/schema/common.ts`: the `PROGRESS_STATUSES` /
+  `REACTIONS` arrays feed the Valibot picklists, the runtime validation Sets
+  in the helpers, and the Drizzle column enums alike.
 
 **Consequences:**
 
@@ -282,12 +285,13 @@ or a >100-statement batch).
 **Context:** Signed-out users can still use the watchlist. Their data must
 survive reloads and, when they sign in, must not be lost.
 
-**Decision:** Guest state lives in persisted Zustand stores backed by
-localStorage with an LRU eviction wrapper (`createLRUStorage`, ~4 MB
+**Decision:** Guest state lives in persisted Zustand stores (`src/stores/`)
+backed by localStorage with an LRU eviction wrapper (`createLRUStorage`, 4 MB
 threshold). The repository's local implementation writes to these stores.
-`UserSync` (`src/components/user-sync.tsx`) exports the local watchlist into
-the remote backend at sign-in; sign-out clears the pending-op journal and
-switches the repository back to local.
+`UserSync` (`src/components/user-sync.tsx`) upserts the Clerk profile and
+clears the pending-op journal on sign-out; uploading guest data is an explicit
+action via `use-watchlist-import-export.ts` (the same server `importWatchlist`
+path), never an automatic side effect of signing in.
 
 **Consequences:**
 
@@ -330,11 +334,12 @@ isolate/process with a Valibot schema:
 invented poster/title is worse than not showing the pick at all.
 
 **Decision:** AI suggestions are verified against TMDB before rendering
-(`src/lib/recommendation-engine.ts`): first a direct fetch by the suggested
-`tmdbId`; if that fails or is missing, a search fallback with normalized
-title matching (`titlesMatch`). Verified results are cached (48 h staleTime)
-and can be persisted back via `updateVerifiedRecommendations`. Unverifiable
-titles render as text-only or are dropped.
+(`src/hooks/use-tmdb-verification.ts` + `use-resolved-recommendation.ts`):
+first a direct fetch by the suggested `tmdbId`; if that fails or is missing,
+a search fallback with normalized title matching (`titlesMatch`). Verified
+results are cached (48 h staleTime) and can be persisted back via
+`updateVerifiedRecommendations`. Unverifiable titles render as text-only or
+are dropped.
 
 **Consequences:**
 

@@ -19,7 +19,9 @@ export const getRouter = () => {
     routeTree,
     context: { ...rqContext },
     defaultPreload: "intent",
-    defaultPreloadDelay: 0,
+    // Small delay so a cursor sweeping across poster grids doesn't fire
+    // prefetches (route chunks + loader data) for every card it crosses.
+    defaultPreloadDelay: 200,
     // Show the pending loader only when a navigation genuinely takes a
     // while, and hide it as soon as it resolves. The previous config
     // (pendingMs 0 + pendingMinMs 180) flashed a loader for a guaranteed

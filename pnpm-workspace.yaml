@@ -6,6 +6,9 @@ trustPolicyExclude:
   - semver
   - undici-types
   - "@hono/node-server"
+overrides:
+  "uuid@<11.1.1": ">=11.1.1"
+  "esbuild@<0.25.0": ">=0.25.0"
 allowBuilds:
   "@clerk/shared": true
   "@parcel/watcher": true

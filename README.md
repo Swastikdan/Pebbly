@@ -54,7 +54,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 | **Styling**          | Tailwind CSS 4, [coss ui](https://coss.com/ui) components on Base UI (`@base-ui/react`), light/dark/system themes  |
 | **Data Fetching**    | TanStack Query (React Query)                                                                                       |
 | **State Management** | Zustand                                                                                                            |
-| **Tooling & Linter** | Vite 7, Biome, TypeScript, Wrangler                                                                                |
+| **Tooling**          | Vite 7, Prettier (formatting) + Biome (linting), TypeScript, Wrangler                                              |
 
 ---
 
@@ -69,13 +69,14 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 │   ├── server/                      # Co-located backend server functions & database layer
 │   │   ├── db/                      # D1 database schema & Drizzle client
 │   │   ├── helpers/                 # Shared DB logic (watch items, episode sync, snapshots)
-│   │   ├── fns/                     # Type-safe TanStack Start server functions (watchlist, lists, recs, admin)
+│   │   ├── fns/                     # Type-safe TanStack Start server functions (rpc guards, watchlist, lists, recs, admin)
 │   │   ├── schema/                  # Valibot schemas & typed API result contracts
 │   │   ├── auth.ts                  # Clerk server-side JWT verification & user resolution
+│   │   ├── prompts.ts               # Context-aware prompt builders for AI recommendations
 │   │   ├── ai.ts                    # Gemini AI client with model fallback chain
 │   │   └── rbac.ts                  # Role-based access control & feature flags
-│   ├── lib/                         # Core utilities, query keys, TMDB queries, prompts
-│   │   ├── prompts/                 # Context-aware prompt builders for AI recommendations
+│   ├── lib/                         # Core utilities, query keys, TMDB queries
+│   │   ├── data/                    # Optimistic journal, op builders, watchlist queries
 │   │   ├── repository/              # Remote/local mutation layer (repository pattern)
 │   │   └── query/                   # TanStack Query client, provider, key factory
 │   ├── components/                  # UI components (coss ui on Base UI) & domain widgets
@@ -83,6 +84,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 │   │   ├── homepage-recommendations.tsx # Homepage "Picks For You" row with interaction buttons
 │   │   ├── video-player-modal.tsx   # Fullscreen-capable responsive video player
 │   │   └── media-card.tsx           # Reusable media grid/carousel card
+│   ├── stores/                      # Zustand guest/local stores (watchlist, lists, progress, daily pick)
 │   ├── hooks/                       # Custom hooks (watchlist, watch progress, theme, recommendations, RBAC)
 │   ├── routes/                      # TanStack file-based routes (incl. public /c/$id list pages)
 │   └── types.d.ts                   # TypeScript declarations & domain types
@@ -132,8 +134,6 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
    # App URLs
    VITE_PUBLIC_APP_URL=http://localhost:3000
-   # Optional — enables the embedded player:
-   # VITE_PUBLIC_VIDEO_URL=your_video_provider_base_url
 
    # TMDB API (read-only public API key, safe for client)
    VITE_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
@@ -241,7 +241,8 @@ pnpm deploy:cf
 | `pnpm deploy:cf`        | Build and deploy directly to Cloudflare Workers                 |
 | `pnpm typecheck`        | Run TypeScript compiler type-checking                           |
 | `pnpm lint`             | Run Biome linter                                                |
-| `pnpm format`           | Auto-format codebase with Biome                                 |
+| `pnpm format`           | Auto-format codebase with Prettier                              |
+| `pnpm format:check`     | Verify formatting without writing (CI-friendly)                 |
 
 ---
 
