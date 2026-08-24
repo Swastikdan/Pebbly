@@ -17,7 +17,7 @@ const CustomListDialog = lazy(() =>
 );
 
 export function MyListsTab() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const { lists: customLists, loading } = useCustomLists();
   const { deleteList: deleteCustomList, cloneList } = useRepository();
   const [showCreateList, setShowCreateList] = useState(false);
@@ -34,6 +34,12 @@ export function MyListsTab() {
     () => [...customLists].sort((a, b) => a.sortOrder - b.sortOrder),
     [customLists],
   );
+
+  // Clerk's isSignedIn is false until the session resolves — wait for it so
+  // signed-in users don't flash the signed-out CTA on first paint.
+  if (!isLoaded) {
+    return <DefaultLoader />;
+  }
 
   if (loading) {
     return <DefaultLoader />;

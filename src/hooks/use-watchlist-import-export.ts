@@ -20,6 +20,7 @@ import { unwrap } from "@/server/schema/common";
 import {
   IMPORT_BATCH_SIZE,
   importWatchlistArgsSchema,
+  MAX_WATCHED_EPISODES,
 } from "@/server/schema/import";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
 
@@ -343,22 +344,56 @@ export const useWatchlistImportExport = () => {
                 else episodesByTvId.set(episode.tmdbId, [episode]);
               }
 
-              for (let i = 0; i < validItems.length; i += IMPORT_BATCH_SIZE) {
-                const items = validItems.slice(i, i + IMPORT_BATCH_SIZE);
-                const tvIds = new Set(
-                  items
-                    .filter((item) => item.mediaType === "tv")
-                    .map((item) => item.tmdbId),
-                );
-                const batchEpisodes =
-                  tvIds.size === 0
-                    ? []
-                    : watchedEpisodes.filter((ep) => tvIds.has(ep.tmdbId));
-                const isFinalBatch = i + IMPORT_BATCH_SIZE >= validItems.length;
+              // The server only applies a batch's watched episodes for titles
+              // included in that same batch's items, and each payload must
+              // satisfy BOTH schema limits (items ≤ IMPORT_BATCH_SIZE,
+              // episodes ≤ MAX_WATCHED_EPISODES). So batches are grouped
+              // greedily per title instead of a fixed item slice.
+              let cursor = 0;
+              while (cursor < validItems.length) {
+                const batchItems: ServerImportItem[] = [];
+                const batchTvIds = new Set<number>();
+                let batchEpisodeCount = 0;
+
+                while (
+                  cursor < validItems.length &&
+                  batchItems.length < IMPORT_BATCH_SIZE
+                ) {
+                  const candidate = validItems[cursor];
+                  const candidateEpisodes =
+                    episodesByTvId.get(candidate.tmdbId)?.length ?? 0;
+
+                  if (candidateEpisodes > MAX_WATCHED_EPISODES) {
+                    // A single title carrying more episodes than the whole
+                    // payload limit can never fit any batch — fail fast
+                    // before anything is committed for this import.
+                    throw new Error(
+                      `"${candidate.title}" has ${candidateEpisodes} watched ` +
+                        `episodes, exceeding the maximum of ${MAX_WATCHED_EPISODES} ` +
+                        "per import batch. Remove some entries and retry.",
+                    );
+                  }
+
+                  if (
+                    batchItems.length > 0 &&
+                    batchEpisodeCount + candidateEpisodes > MAX_WATCHED_EPISODES
+                  ) {
+                    break;
+                  }
+
+                  batchItems.push(candidate);
+                  batchTvIds.add(candidate.tmdbId);
+                  batchEpisodeCount += candidateEpisodes;
+                  cursor++;
+                }
+
+                const isFinalBatch = cursor >= validItems.length;
 
                 const payload = {
-                  items,
-                  watchedEpisodes: batchEpisodes,
+                  items: batchItems,
+                  watchedEpisodes: watchedEpisodes.filter((ep) =>
+                    batchTvIds.has(ep.tmdbId),
+                  ),
                   final: isFinalBatch,
                 };
 
@@ -378,10 +413,28 @@ export const useWatchlistImportExport = () => {
                 await unwrap(
                   importWatchlistFn({ data: validationResult.output }),
                 );
-                importedSoFar += items.length;
+                importedSoFar += batchItems.length;
                 setImportedCount(importedSoFar);
               }
             } catch (batchErr) {
+              // Some batches may have committed before the failure. Finalize
+              // the partial import — refresh caches and publish the mutation
+              // for cross-tab sync (normally skipped for non-final batches) —
+              // so the UI reflects what actually landed, then rethrow.
+              if (importedSoFar > 0) {
+                recordOwnMutation("watchlist");
+                try {
+                  await queryClient.invalidateQueries({
+                    queryKey: queryKeys.watchlist.list(),
+                  });
+                  await queryClient.invalidateQueries({
+                    queryKey: queryKeys.watchlist.allEpisodes(),
+                  });
+                } catch {
+                  // Cache refresh is best-effort here; the original failure
+                  // is what the user needs to see.
+                }
+              }
               const message =
                 batchErr instanceof Error ? batchErr.message : String(batchErr);
               throw new Error(

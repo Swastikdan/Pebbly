@@ -4,7 +4,7 @@ import { mediaTypeSchema } from "./common";
 
 export const IMPORT_BATCH_SIZE = 1_000;
 const MAX_ITEMS = IMPORT_BATCH_SIZE;
-const MAX_WATCHED_EPISODES = 50_000;
+export const MAX_WATCHED_EPISODES = 50_000;
 const MAX_STRING_LEN = 500;
 const MAX_OVERVIEW_LEN = 2_000;
 

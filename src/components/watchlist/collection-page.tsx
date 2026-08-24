@@ -66,8 +66,10 @@ export function CollectionPage({ listId }: { listId: string }) {
   const isPebblyPicks = list.listType === "pebbly-picks";
   const isOrdered = list.sortType === "ordered";
   const isPublic = list.visibility === "public";
-  const isOwner = payload.role === "owner" || !isPublic;
-  const canManage = isOwner;
+  // Private lists only ever resolve for their owner (visitors get a 404 from
+  // the loader), so role === "owner" covers them; pebbly-picks are system
+  // lists that must never expose Edit/Delete.
+  const canManage = payload.role === "owner" && !isPebblyPicks;
 
   const indexed = items.map((item, index) => ({ item, index }));
   const filtered =
@@ -183,9 +185,10 @@ export function CollectionPage({ listId }: { listId: string }) {
         )}
         <span className="ml-auto shrink-0 text-[11px]">
           Created{" "}
-          {new Date(list.createdAt).toLocaleDateString(undefined, {
+          {new Date(list.createdAt).toLocaleDateString("en-US", {
             month: "short",
             year: "numeric",
+            timeZone: "UTC",
           })}
         </span>
       </div>
@@ -211,6 +214,7 @@ export function CollectionPage({ listId }: { listId: string }) {
                   type="button"
                   variant="ghost"
                   onClick={() => setMediaFilter(filter)}
+                  aria-pressed={isActive}
                   className={cn(
                     "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-all",
                     isActive
