@@ -22,6 +22,7 @@ export function WatchlistTab() {
   const {
     importLoading,
     importTotal,
+    importedCount,
     exportLoading,
     error,
     fileInputRef,
@@ -133,8 +134,9 @@ export function WatchlistTab() {
           className="border-primary/15 bg-primary/5 text-muted-foreground mb-4 rounded-xl border px-3 py-2 text-sm"
           role="status"
         >
-          Importing {importTotal} title{importTotal === 1 ? "" : "s"} in one
-          batch…
+          {importedCount > 0 && importedCount < importTotal
+            ? `Importing ${importedCount} of ${importTotal} titles…`
+            : `Importing ${importTotal} title${importTotal === 1 ? "" : "s"}…`}
         </div>
       )}
 

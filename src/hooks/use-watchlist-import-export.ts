@@ -17,7 +17,10 @@ import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { normalizeProgressStatus } from "@/lib/utils";
 import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
 import { unwrap } from "@/server/schema/common";
-import { importWatchlistArgsSchema } from "@/server/schema/import";
+import {
+  IMPORT_BATCH_SIZE,
+  importWatchlistArgsSchema,
+} from "@/server/schema/import";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
 
 type ImportError = {
@@ -53,6 +56,7 @@ type RawImportItem = {
 export const useWatchlistImportExport = () => {
   const [importLoading, setImportLoading] = useState(false);
   const [importTotal, setImportTotal] = useState<number | null>(null);
+  const [importedCount, setImportedCount] = useState(0);
   const [exportLoading, setExportLoading] = useState(false);
   const [error, setError] = useState<ImportError | null>(null);
 
@@ -160,6 +164,7 @@ export const useWatchlistImportExport = () => {
 
       setImportLoading(true);
       setImportTotal(null);
+      setImportedCount(0);
       setError(null);
 
       const reader = new FileReader();
@@ -326,32 +331,64 @@ export const useWatchlistImportExport = () => {
             );
           }
 
-          const payload = {
-            items: validItems,
-            watchedEpisodes,
-          };
-
-          const validationResult = v.safeParse(
-            importWatchlistArgsSchema,
-            payload,
-          );
-          if (!validationResult.success) {
-            const firstIssue = validationResult.issues[0];
-            const issuePath =
-              firstIssue.path?.map((p) => p.key).join(".") ?? "root";
-            throw new Error(
-              `Validation error in ${issuePath}: ${firstIssue.message}`,
-            );
-          }
-
           setImportTotal(validItems.length);
 
           if (isSignedIn) {
-            await unwrap(
-              importWatchlistFn({
-                data: validationResult.output,
-              }),
-            );
+            let importedSoFar = 0;
+            try {
+              const episodesByTvId = new Map<number, WatchedEpisode[]>();
+              for (const episode of watchedEpisodes) {
+                const list = episodesByTvId.get(episode.tmdbId);
+                if (list) list.push(episode);
+                else episodesByTvId.set(episode.tmdbId, [episode]);
+              }
+
+              for (let i = 0; i < validItems.length; i += IMPORT_BATCH_SIZE) {
+                const items = validItems.slice(i, i + IMPORT_BATCH_SIZE);
+                const tvIds = new Set(
+                  items
+                    .filter((item) => item.mediaType === "tv")
+                    .map((item) => item.tmdbId),
+                );
+                const batchEpisodes =
+                  tvIds.size === 0
+                    ? []
+                    : watchedEpisodes.filter((ep) => tvIds.has(ep.tmdbId));
+                const isFinalBatch = i + IMPORT_BATCH_SIZE >= validItems.length;
+
+                const payload = {
+                  items,
+                  watchedEpisodes: batchEpisodes,
+                  final: isFinalBatch,
+                };
+
+                const validationResult = v.safeParse(
+                  importWatchlistArgsSchema,
+                  payload,
+                );
+                if (!validationResult.success) {
+                  const firstIssue = validationResult.issues[0];
+                  const issuePath =
+                    firstIssue.path?.map((p) => p.key).join(".") ?? "root";
+                  throw new Error(
+                    `Validation error in ${issuePath}: ${firstIssue.message}`,
+                  );
+                }
+
+                await unwrap(
+                  importWatchlistFn({ data: validationResult.output }),
+                );
+                importedSoFar += items.length;
+                setImportedCount(importedSoFar);
+              }
+            } catch (batchErr) {
+              const message =
+                batchErr instanceof Error ? batchErr.message : String(batchErr);
+              throw new Error(
+                `${message} (imported ${importedSoFar} of ${validItems.length} titles before failing)`,
+              );
+            }
+
             recordOwnMutation("watchlist");
             await queryClient.invalidateQueries({
               queryKey: queryKeys.watchlist.list(),
@@ -423,6 +460,7 @@ export const useWatchlistImportExport = () => {
   return {
     importLoading,
     importTotal,
+    importedCount,
     exportLoading,
     error,
     loading,

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import { runBatch } from "../db/client";
@@ -15,6 +15,8 @@ import { ok } from "../schema/common";
 import { importWatchlistArgsSchema } from "../schema/import";
 import { authedFn } from "./rpc";
 
+const IN_CLAUSE_CHUNK = 90;
+
 export const importWatchlist = createServerFn({ method: "POST" })
   .validator(importWatchlistArgsSchema)
   .handler(({ data }) =>
@@ -26,15 +28,21 @@ export const importWatchlist = createServerFn({ method: "POST" })
         importedItems.set(`${item.mediaType}:${item.tmdbId}`, item);
       }
 
-      const userWatchItems = await db
-        .select()
-        .from(watchItems)
-        .where(eq(watchItems.userId, user.id))
-        .limit(500);
-
+      const tmdbIds = [...new Set(data.items.map((item) => item.tmdbId))];
       const existingMap = new Map<string, typeof watchItems.$inferSelect>();
-      for (const item of userWatchItems) {
-        existingMap.set(`${item.mediaType}:${item.tmdbId}`, item);
+      for (let i = 0; i < tmdbIds.length; i += IN_CLAUSE_CHUNK) {
+        const rows = await db
+          .select()
+          .from(watchItems)
+          .where(
+            and(
+              eq(watchItems.userId, user.id),
+              inArray(watchItems.tmdbId, tmdbIds.slice(i, i + IN_CLAUSE_CHUNK)),
+            ),
+          );
+        for (const row of rows) {
+          existingMap.set(`${row.mediaType}:${row.tmdbId}`, row);
+        }
       }
 
       const watchStatements: Parameters<typeof db.batch>[0][number][] = [];
@@ -106,18 +114,27 @@ export const importWatchlist = createServerFn({ method: "POST" })
           .map((item) => item.tmdbId),
       );
 
-      const userEpisodes = await db
-        .select()
-        .from(episodeProgress)
-        .where(eq(episodeProgress.userId, user.id))
-        .limit(500);
-
       const existingEpisodeMap = new Map<
         string,
         typeof episodeProgress.$inferSelect
       >();
-      for (const ep of userEpisodes) {
-        existingEpisodeMap.set(`${ep.tmdbId}:${ep.season}:${ep.episode}`, ep);
+      const tvIds = [...importedTvIds];
+      for (let i = 0; i < tvIds.length; i += IN_CLAUSE_CHUNK) {
+        const rows = await db
+          .select()
+          .from(episodeProgress)
+          .where(
+            and(
+              eq(episodeProgress.userId, user.id),
+              inArray(
+                episodeProgress.tmdbId,
+                tvIds.slice(i, i + IN_CLAUSE_CHUNK),
+              ),
+            ),
+          );
+        for (const ep of rows) {
+          existingEpisodeMap.set(`${ep.tmdbId}:${ep.season}:${ep.episode}`, ep);
+        }
       }
 
       const episodeKeys = new Set<string>();
@@ -176,8 +193,10 @@ export const importWatchlist = createServerFn({ method: "POST" })
 
       await runBoundedBatches(db, episodeStatements);
 
-      await createWatchlistSnapshot(db, user.id);
-      await bumpWatchlistRev(db, user.id);
+      if (data.final !== false) {
+        await createWatchlistSnapshot(db, user.id);
+        await bumpWatchlistRev(db, user.id);
+      }
       return ok({ imported: importedItems.size });
     }),
   );
