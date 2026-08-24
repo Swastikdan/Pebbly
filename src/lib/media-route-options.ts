@@ -6,6 +6,7 @@ import type {
 import type { BasicMovie, BasicTv } from "@/lib/tmdb-schemas";
 import type { QueryClient } from "@tanstack/react-query";
 import type { RouteComponent } from "@tanstack/react-router";
+import { DefaultLoader } from "@/components/default-loader";
 import { VITE_PUBLIC_APP_URL } from "@/constants";
 import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
@@ -126,6 +127,8 @@ export function indexRouteOptions(kind: MediaKind, component: RouteComponent) {
     head: buildHead(kind, INDEX_HEAD[kind]),
     validateSearch: indexDetailSearch,
     component,
+    pendingMs: 150,
+    pendingComponent: DefaultLoader,
   };
 }
 
@@ -135,6 +138,8 @@ export function mediaRouteOptions(kind: MediaKind, component: RouteComponent) {
     head: buildHead(kind, MEDIA_HEAD[kind]),
     validateSearch: mediaGallerySearch,
     component,
+    pendingMs: 150,
+    pendingComponent: DefaultLoader,
   };
 }
 
@@ -146,6 +151,8 @@ export function castCrewRouteOptions(
     loader: buildLoader({ mediaType: kind }),
     head: buildHead(kind, CAST_CREW_HEAD[kind]),
     component,
+    pendingMs: 150,
+    pendingComponent: DefaultLoader,
   };
 }
 
