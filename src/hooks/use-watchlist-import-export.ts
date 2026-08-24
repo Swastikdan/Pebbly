@@ -1,315 +1,527 @@
-import { useUser } from "@clerk/react";
-import { useMutation, useQuery } from "convex/react";
 import type React from "react";
-
+import { useUser } from "@clerk/react";
 import { useCallback, useRef, useState } from "react";
-import { useLocalProgressStore } from "@/hooks/use-local-progress-store";
-import {
-	useWatchlist,
-	useWatchlistStore,
-	type WatchlistItem,
-} from "@/hooks/use-watchlist";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import * as v from "valibot";
+
+import type { EpisodeProgressRow } from "@/lib/server-types";
+import type {
+  ImportItem as ServerImportItem,
+  WatchedEpisode,
+} from "@/server/schema/import";
+import type { ProgressStatus, ReactionStatus } from "@/types";
+import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
+import { fetchAllEpisodeProgress } from "@/lib/data/watchlist-queries";
+import { queryKeys } from "@/lib/query/keys";
+import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { normalizeProgressStatus } from "@/lib/utils";
-import type { ReactionStatus } from "@/types";
-
-import { api } from "../../convex/_generated/api";
-
-function isValidWatchlistItem(item: unknown): item is ImportItem {
-	if (typeof item !== "object" || item === null) return false;
-	const obj = item as Record<string, unknown>;
-	return (
-		typeof obj.title === "string" &&
-		typeof obj.external_id === "string" &&
-		(obj.type === "tv" || obj.type === "movie")
-	);
-}
+import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
+import { unwrap } from "@/server/schema/common";
+import {
+  IMPORT_BATCH_SIZE,
+  importWatchlistArgsSchema,
+  MAX_WATCHED_EPISODES,
+} from "@/server/schema/import";
+import { useLocalProgressStore } from "@/stores/local-progress-store";
 
 type ImportError = {
-	message: string;
-	invalidItems?: number;
+  message: string;
+  invalidItems?: number;
 };
 
-type ImportItem = Pick<WatchlistItem, "title" | "external_id" | "type"> &
-	Partial<Omit<WatchlistItem, "title" | "external_id" | "type">> & {
-		status?: string;
-		watchedEpisodes?: Record<string, boolean>;
-	};
+type RawImportItem = {
+  title?: unknown;
+  name?: unknown;
+  external_id?: unknown;
+  id?: unknown;
+  tmdbId?: unknown;
+  type?: unknown;
+  media_type?: unknown;
+  mediaType?: unknown;
+  image?: unknown;
+  poster_path?: unknown;
+  rating?: unknown;
+  vote_average?: unknown;
+  release_date?: unknown;
+  releaseDate?: unknown;
+  first_air_date?: unknown;
+  overview?: unknown;
+  inWatchlist?: unknown;
+  progressStatus?: unknown;
+  status?: unknown;
+  progress?: unknown;
+  reaction?: unknown;
+  watchedEpisodes?: unknown;
+};
 
 export const useWatchlistImportExport = () => {
-	const [importLoading, setImportLoading] = useState(false);
-	const [importTotal, setImportTotal] = useState<number | null>(null);
-	const [exportLoading, setExportLoading] = useState(false);
-	const [error, setError] = useState<ImportError | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importTotal, setImportTotal] = useState<number | null>(null);
+  const [importedCount, setImportedCount] = useState(0);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [error, setError] = useState<ImportError | null>(null);
 
-	const { watchlist, loading } = useWatchlist();
+  const queryClient = useQueryClient();
+  const { watchlist, loading } = useWatchlist();
 
-	const importWatchlistBatch = useMutation(api.watchlist.importWatchlist);
-	const importWatchlistLocal = useWatchlistStore(
-		(state) => state.importWatchlistLocal,
-	);
-	const markEpisodeWatchedLocal = useLocalProgressStore(
-		(state) => state.markEpisodeWatched,
-	);
+  const importWatchlistLocal = useWatchlistStore(
+    (state) => state.importWatchlistLocal,
+  );
+  const markEpisodeWatchedLocal = useLocalProgressStore(
+    (state) => state.markEpisodeWatched,
+  );
 
-	const { isSignedIn } = useUser();
-	const allEpisodeProgress = useQuery(
-		api.watchlist.getAllEpisodeProgress,
-		isSignedIn ? {} : "skip",
-	);
-	const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { isSignedIn } = useUser();
+  const allEpisodeProgress = useQuery({
+    queryKey: queryKeys.watchlist.allEpisodes(),
+    queryFn: () => fetchAllEpisodeProgress(queryClient),
+    enabled: !!isSignedIn,
+  });
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-	const exportWatchlist = useCallback(async () => {
-		if (!watchlist || watchlist.length === 0) return;
+  const exportWatchlist = useCallback(async () => {
+    if (!watchlist || watchlist.length === 0) return;
 
-		try {
-			setExportLoading(true);
-			setError(null);
+    try {
+      setExportLoading(true);
+      setError(null);
 
-			const localWatchedEpisodes =
-				useLocalProgressStore.getState().watchedEpisodes;
+      const localWatchedEpisodes =
+        useLocalProgressStore.getState().watchedEpisodes;
 
-			const enhancedWatchlist = watchlist.map((item) => {
-				const itemWatched: Record<string, boolean> = {};
+      const enhancedWatchlist = watchlist.map((item) => {
+        const itemWatched: Record<string, boolean> = {};
 
-				if (item.type === "tv") {
-					if (isSignedIn && allEpisodeProgress) {
-						allEpisodeProgress
-							.filter(
-								(ep: {
-									tmdbId: number;
-									isWatched: boolean;
-									season: number;
-									episode: number;
-								}) =>
-									String(ep.tmdbId) === String(item.external_id) &&
-									ep.isWatched,
-							)
-							.forEach((ep: { season: number; episode: number }) => {
-								itemWatched[`${ep.season}:${ep.episode}`] = true;
-							});
-					} else {
-						const prefix = `${item.external_id}:`;
-						Object.entries(localWatchedEpisodes).forEach(([key, val]) => {
-							if (key.startsWith(prefix) && val) {
-								const suffix = key.slice(prefix.length);
-								itemWatched[suffix] = true;
-							}
-						});
-					}
-				}
+        if (item.type === "tv") {
+          if (isSignedIn && allEpisodeProgress.data) {
+            allEpisodeProgress.data
+              .filter(
+                (ep: EpisodeProgressRow) =>
+                  String(ep.tmdbId) === String(item.external_id) &&
+                  ep.isWatched,
+              )
+              .forEach((ep: { season: number; episode: number }) => {
+                itemWatched[`${ep.season}:${ep.episode}`] = true;
+              });
+          } else {
+            const prefix = `${item.external_id}:`;
+            Object.entries(localWatchedEpisodes).forEach(([key, val]) => {
+              if (key.startsWith(prefix) && val) {
+                const suffix = key.slice(prefix.length);
+                itemWatched[suffix] = true;
+              }
+            });
+          }
+        }
 
-				return {
-					...item,
-					...(Object.keys(itemWatched).length > 0
-						? { watchedEpisodes: itemWatched }
-						: {}),
-				};
-			});
+        return {
+          ...item,
+          ...(Object.keys(itemWatched).length > 0
+            ? { watchedEpisodes: itemWatched }
+            : {}),
+        };
+      });
 
-			const json = JSON.stringify(enhancedWatchlist, null, 2);
-			const blob = new Blob([json], { type: "application/json" });
-			const url = URL.createObjectURL(blob);
+      const json = JSON.stringify(enhancedWatchlist, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
 
-			const link = document.createElement("a");
-			const timestamp = new Date().toISOString().split("T")[0];
+      const link = document.createElement("a");
+      const timestamp = new Date().toISOString().split("T")[0];
 
-			link.href = url;
-			link.download = `watchlist-${timestamp}.json`;
+      link.href = url;
+      link.download = `watchlist-${timestamp}.json`;
 
-			document.body.appendChild(link);
-			link.click();
+      document.body.appendChild(link);
+      link.click();
 
-			setTimeout(() => {
-				document.body.removeChild(link);
-				URL.revokeObjectURL(url);
-			}, 100);
-		} catch (err) {
-			setError({ message: "Failed to export watchlist. Please try again." });
-			console.error("Export error:", err);
-		} finally {
-			setExportLoading(false);
-		}
-	}, [watchlist, isSignedIn, allEpisodeProgress]);
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (err) {
+      setError({ message: "Failed to export watchlist. Please try again." });
+      console.error("Export error:", err);
+    } finally {
+      setExportLoading(false);
+    }
+  }, [watchlist, isSignedIn, allEpisodeProgress.data]);
 
-	const importWatchlist = useCallback(
-		async (event: React.ChangeEvent<HTMLInputElement>) => {
-			const file = event.target.files?.[0];
-			if (!file) return;
+  const importWatchlist = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-			if (!file.name.endsWith(".json")) {
-				setError({ message: "Please select a valid JSON file." });
-				return;
-			}
+      if (!file.name.endsWith(".json")) {
+        setError({ message: "Please select a valid JSON (.json) file." });
+        return;
+      }
 
-			const MAX_FILE_SIZE = 10 * 1024 * 1024;
-			if (file.size > MAX_FILE_SIZE) {
-				setError({ message: "File size exceeds 10MB limit." });
-				return;
-			}
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        setError({ message: "File size exceeds 10MB limit." });
+        return;
+      }
 
-			setImportLoading(true);
-			setImportTotal(null);
-			setError(null);
+      setImportLoading(true);
+      setImportTotal(null);
+      setImportedCount(0);
+      setError(null);
 
-			const reader = new FileReader();
+      const reader = new FileReader();
 
-			reader.onload = async (e) => {
-				try {
-					const content = e.target?.result as string;
-					if (!content || content.trim().length === 0) {
-						throw new Error("File is empty.");
-					}
+      reader.onload = async (e) => {
+        try {
+          const content = e.target?.result as string;
+          if (!content || content.trim().length === 0) {
+            throw new Error("The selected file is empty.");
+          }
 
-					const importedData = JSON.parse(content) as unknown;
-					if (!Array.isArray(importedData)) {
-						throw new Error("Invalid file format: Expected a JSON array.");
-					}
+          let importedData: unknown;
+          try {
+            importedData = JSON.parse(content);
+          } catch {
+            throw new Error(
+              "Invalid JSON format: Unable to parse file content. Please check the file for syntax errors.",
+            );
+          }
 
-					let invalidItemCount = 0;
-					const validatedList: ImportItem[] = [];
+          if (!Array.isArray(importedData)) {
+            throw new Error(
+              "Invalid file structure: Expected a JSON array of items at the root level.",
+            );
+          }
 
-					for (const item of importedData) {
-						if (
-							isValidWatchlistItem(item) &&
-							Number.isFinite(Number(item.external_id))
-						) {
-							validatedList.push(item);
-						} else {
-							invalidItemCount++;
-						}
-					}
+          if (importedData.length === 0) {
+            throw new Error(
+              "The uploaded JSON array is empty. No items found to import.",
+            );
+          }
 
-					if (validatedList.length === 0) {
-						throw new Error("No valid items found in the watchlist file.");
-					}
+          let invalidItemCount = 0;
+          const validationErrors: string[] = [];
+          const validItems: ServerImportItem[] = [];
+          const watchedEpisodes: WatchedEpisode[] = [];
 
-					const watchedEpisodes: Array<{
-						tmdbId: number;
-						season: number;
-						episode: number;
-					}> = [];
-					for (const item of validatedList) {
-						if (
-							item.watchedEpisodes &&
-							typeof item.watchedEpisodes === "object"
-						) {
-							for (const [key, isWatched] of Object.entries(
-								item.watchedEpisodes,
-							)) {
-								if (!isWatched) continue;
-								const [seasonStr, episodeStr] = key.split(":");
-								const season = Number.parseInt(seasonStr, 10);
-								const episode = Number.parseInt(episodeStr, 10);
+          for (let i = 0; i < importedData.length; i++) {
+            const raw = importedData[i] as RawImportItem;
+            if (typeof raw !== "object" || raw === null) {
+              invalidItemCount++;
+              validationErrors.push(`Item #${i + 1}: Not a valid JSON object.`);
+              continue;
+            }
 
-								if (!Number.isNaN(season) && !Number.isNaN(episode)) {
-									watchedEpisodes.push({
-										tmdbId: Number(item.external_id),
-										season,
-										episode,
-									});
-								}
-							}
-						}
-					}
+            const rawTitle = raw.title ?? raw.name;
+            if (typeof rawTitle !== "string" || rawTitle.trim() === "") {
+              invalidItemCount++;
+              validationErrors.push(`Item #${i + 1}: Missing title name.`);
+              continue;
+            }
+            const title = rawTitle.trim();
 
-					setImportTotal(validatedList.length);
-					const importItems = validatedList.map((item) => ({
-						tmdbId: Number(item.external_id),
-						mediaType: item.type,
-						title: item.title,
-						image: item.image,
-						rating: item.rating,
-						release_date: item.release_date,
-						overview: item.overview,
-						progressStatus:
-							normalizeProgressStatus(item.progressStatus as string) ??
-							"watch-later",
-						progress: item.progress,
-						reaction: (item.reaction as ReactionStatus | null) ?? null,
-					}));
+            const rawId = raw.external_id ?? raw.tmdbId ?? raw.id;
+            const tmdbId = Number(rawId);
+            if (!Number.isFinite(tmdbId) || tmdbId <= 0) {
+              invalidItemCount++;
+              validationErrors.push(
+                `Item #${i + 1} ("${title}"): Invalid TMDB ID (${String(rawId)}).`,
+              );
+              continue;
+            }
 
-					if (isSignedIn) {
-						await importWatchlistBatch({
-							// biome-ignore lint/suspicious/noExplicitAny: dynamic reaction item import
-							items: importItems as any,
-							watchedEpisodes,
-						});
-					} else {
-						importWatchlistLocal(
-							importItems.map((item) => ({
-								id: String(item.tmdbId),
-								type: item.mediaType,
-								title: item.title,
-								image: item.image,
-								rating: item.rating,
-								release_date: item.release_date,
-								overview: item.overview,
-								progressStatus: item.progressStatus,
-								progress: item.progress,
-								reaction: item.reaction,
-							})),
-						);
-						for (const episode of watchedEpisodes) {
-							markEpisodeWatchedLocal(
-								episode.tmdbId,
-								episode.season,
-								episode.episode,
-								true,
-							);
-						}
-					}
+            const rawType = raw.type ?? raw.mediaType ?? raw.media_type;
+            const mediaType =
+              rawType === "tv" || rawType === "movie" ? rawType : null;
+            if (!mediaType) {
+              invalidItemCount++;
+              validationErrors.push(
+                `Item #${i + 1} ("${title}"): Invalid media type (${String(rawType)}). Must be "tv" or "movie".`,
+              );
+              continue;
+            }
 
-					if (invalidItemCount > 0) {
-						setError({
-							message: `Successfully imported ${validatedList.length} items. ${invalidItemCount} invalid items were skipped.`,
-							invalidItems: invalidItemCount,
-						});
-					} else {
-						setError(null);
-					}
-				} catch (err) {
-					const errorMessage =
-						err instanceof Error ? err.message : "Unknown error occurred";
-					setError({ message: `Import failed: ${errorMessage}` });
-					console.error("Import error:", err);
-				} finally {
-					setImportLoading(false);
-					if (fileInputRef.current) fileInputRef.current.value = "";
-				}
-			};
+            const rawImage = raw.image ?? raw.poster_path;
+            const image =
+              typeof rawImage === "string" && rawImage.trim() !== ""
+                ? rawImage.trim()
+                : null;
 
-			reader.onerror = () => {
-				setError({ message: "Error reading file. Please try again." });
-				setImportLoading(false);
-				if (fileInputRef.current) fileInputRef.current.value = "";
-			};
+            const rawRating = raw.rating ?? raw.vote_average;
+            const rating =
+              typeof rawRating === "number" && !Number.isNaN(rawRating)
+                ? Math.min(Math.max(rawRating, 0), 10)
+                : null;
 
-			reader.readAsText(file);
-		},
-		[
-			importWatchlistBatch,
-			importWatchlistLocal,
-			isSignedIn,
-			markEpisodeWatchedLocal,
-		],
-	);
+            const rawDate =
+              raw.release_date ?? raw.releaseDate ?? raw.first_air_date;
+            const release_date =
+              typeof rawDate === "string" && rawDate.trim() !== ""
+                ? rawDate.trim()
+                : null;
 
-	const handleImportClick = useCallback(() => {
-		setError(null);
-		fileInputRef.current?.click();
-	}, []);
+            const overview =
+              typeof raw.overview === "string" && raw.overview.trim() !== ""
+                ? raw.overview.trim()
+                : null;
 
-	return {
-		importLoading,
-		importTotal,
-		exportLoading,
-		error,
-		loading,
-		watchlist,
-		fileInputRef,
-		exportWatchlist,
-		importWatchlist,
-		handleImportClick,
-		setError,
-	};
+            const inWatchlist =
+              raw.inWatchlist !== undefined && raw.inWatchlist !== null
+                ? Boolean(raw.inWatchlist)
+                : true;
+
+            const rawStatus = raw.progressStatus ?? raw.status;
+            const progressStatus =
+              normalizeProgressStatus(
+                typeof rawStatus === "string" ? rawStatus : undefined,
+              ) ?? "watch-later";
+
+            const rawProgress = raw.progress;
+            const progress =
+              typeof rawProgress === "number" && !Number.isNaN(rawProgress)
+                ? Math.min(Math.max(rawProgress, 0), 100)
+                : null;
+
+            const rawReaction = raw.reaction;
+            const reaction =
+              typeof rawReaction === "string" && rawReaction.trim() !== ""
+                ? (rawReaction.trim() as ReactionStatus)
+                : null;
+
+            validItems.push({
+              tmdbId,
+              mediaType,
+              title,
+              image,
+              rating,
+              release_date,
+              overview,
+              inWatchlist,
+              progressStatus,
+              progress,
+              reaction,
+            });
+
+            if (
+              mediaType === "tv" &&
+              raw.watchedEpisodes &&
+              typeof raw.watchedEpisodes === "object"
+            ) {
+              for (const [key, isWatched] of Object.entries(
+                raw.watchedEpisodes as Record<string, unknown>,
+              )) {
+                if (!isWatched) continue;
+                const [seasonStr, episodeStr] = key.split(":");
+                const season = Number.parseInt(seasonStr, 10);
+                const episode = Number.parseInt(episodeStr, 10);
+
+                if (!Number.isNaN(season) && !Number.isNaN(episode)) {
+                  watchedEpisodes.push({
+                    tmdbId,
+                    season,
+                    episode,
+                  });
+                }
+              }
+            }
+          }
+
+          if (validItems.length === 0) {
+            const sampleErrors = validationErrors.slice(0, 3).join(" ");
+            throw new Error(
+              `No valid items found in the watchlist file. ${sampleErrors}`,
+            );
+          }
+
+          setImportTotal(validItems.length);
+
+          if (isSignedIn) {
+            let importedSoFar = 0;
+            try {
+              const episodesByTvId = new Map<number, WatchedEpisode[]>();
+              for (const episode of watchedEpisodes) {
+                const list = episodesByTvId.get(episode.tmdbId);
+                if (list) list.push(episode);
+                else episodesByTvId.set(episode.tmdbId, [episode]);
+              }
+
+              // The server only applies a batch's watched episodes for titles
+              // included in that same batch's items, and each payload must
+              // satisfy BOTH schema limits (items ≤ IMPORT_BATCH_SIZE,
+              // episodes ≤ MAX_WATCHED_EPISODES). So batches are grouped
+              // greedily per title instead of a fixed item slice.
+              let cursor = 0;
+              while (cursor < validItems.length) {
+                const batchItems: ServerImportItem[] = [];
+                const batchTvIds = new Set<number>();
+                let batchEpisodeCount = 0;
+
+                while (
+                  cursor < validItems.length &&
+                  batchItems.length < IMPORT_BATCH_SIZE
+                ) {
+                  const candidate = validItems[cursor];
+                  const candidateEpisodes =
+                    episodesByTvId.get(candidate.tmdbId)?.length ?? 0;
+
+                  if (candidateEpisodes > MAX_WATCHED_EPISODES) {
+                    // A single title carrying more episodes than the whole
+                    // payload limit can never fit any batch — fail fast
+                    // before anything is committed for this import.
+                    throw new Error(
+                      `"${candidate.title}" has ${candidateEpisodes} watched ` +
+                        `episodes, exceeding the maximum of ${MAX_WATCHED_EPISODES} ` +
+                        "per import batch. Remove some entries and retry.",
+                    );
+                  }
+
+                  if (
+                    batchItems.length > 0 &&
+                    batchEpisodeCount + candidateEpisodes > MAX_WATCHED_EPISODES
+                  ) {
+                    break;
+                  }
+
+                  batchItems.push(candidate);
+                  batchTvIds.add(candidate.tmdbId);
+                  batchEpisodeCount += candidateEpisodes;
+                  cursor++;
+                }
+
+                const isFinalBatch = cursor >= validItems.length;
+
+                const payload = {
+                  items: batchItems,
+                  watchedEpisodes: watchedEpisodes.filter((ep) =>
+                    batchTvIds.has(ep.tmdbId),
+                  ),
+                  final: isFinalBatch,
+                };
+
+                const validationResult = v.safeParse(
+                  importWatchlistArgsSchema,
+                  payload,
+                );
+                if (!validationResult.success) {
+                  const firstIssue = validationResult.issues[0];
+                  const issuePath =
+                    firstIssue.path?.map((p) => p.key).join(".") ?? "root";
+                  throw new Error(
+                    `Validation error in ${issuePath}: ${firstIssue.message}`,
+                  );
+                }
+
+                await unwrap(
+                  importWatchlistFn({ data: validationResult.output }),
+                );
+                importedSoFar += batchItems.length;
+                setImportedCount(importedSoFar);
+              }
+            } catch (batchErr) {
+              // Some batches may have committed before the failure. Finalize
+              // the partial import — refresh caches and publish the mutation
+              // for cross-tab sync (normally skipped for non-final batches) —
+              // so the UI reflects what actually landed, then rethrow.
+              if (importedSoFar > 0) {
+                recordOwnMutation("watchlist");
+                try {
+                  await queryClient.invalidateQueries({
+                    queryKey: queryKeys.watchlist.list(),
+                  });
+                  await queryClient.invalidateQueries({
+                    queryKey: queryKeys.watchlist.allEpisodes(),
+                  });
+                } catch {
+                  // Cache refresh is best-effort here; the original failure
+                  // is what the user needs to see.
+                }
+              }
+              const message =
+                batchErr instanceof Error ? batchErr.message : String(batchErr);
+              throw new Error(
+                `${message} (imported ${importedSoFar} of ${validItems.length} titles before failing)`,
+              );
+            }
+
+            recordOwnMutation("watchlist");
+            await queryClient.invalidateQueries({
+              queryKey: queryKeys.watchlist.list(),
+            });
+            await queryClient.invalidateQueries({
+              queryKey: queryKeys.watchlist.allEpisodes(),
+            });
+          } else {
+            importWatchlistLocal(
+              validItems.map((item) => ({
+                id: String(item.tmdbId),
+                type: item.mediaType,
+                title: item.title,
+                image: item.image ?? "",
+                rating: item.rating ?? 0,
+                release_date: item.release_date ?? "",
+                overview: item.overview ?? undefined,
+                inWatchlist: item.inWatchlist ?? true,
+                progressStatus: (item.progressStatus as ProgressStatus) ?? null,
+                progress: item.progress ?? 0,
+                reaction: item.reaction as ReactionStatus | null,
+              })),
+            );
+            for (const episode of watchedEpisodes) {
+              markEpisodeWatchedLocal(
+                episode.tmdbId,
+                episode.season,
+                episode.episode,
+                true,
+              );
+            }
+          }
+
+          if (invalidItemCount > 0) {
+            setError({
+              message: `Successfully imported ${validItems.length} titles. ${invalidItemCount} invalid items were skipped.`,
+              invalidItems: invalidItemCount,
+            });
+          } else {
+            setError(null);
+          }
+        } catch (err) {
+          const errorMessage =
+            err instanceof Error ? err.message : "Unknown error occurred";
+          setError({ message: `Import failed: ${errorMessage}` });
+          console.error("Import error:", err);
+        } finally {
+          setImportLoading(false);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+      };
+
+      reader.onerror = () => {
+        setError({ message: "Error reading file. Please try again." });
+        setImportLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      };
+
+      reader.readAsText(file);
+    },
+    [importWatchlistLocal, isSignedIn, markEpisodeWatchedLocal, queryClient],
+  );
+
+  const handleImportClick = useCallback(() => {
+    setError(null);
+    fileInputRef.current?.click();
+  }, []);
+
+  return {
+    importLoading,
+    importTotal,
+    importedCount,
+    exportLoading,
+    error,
+    loading,
+    watchlist,
+    fileInputRef,
+    exportWatchlist,
+    importWatchlist,
+    handleImportClick,
+    setError,
+  };
 };

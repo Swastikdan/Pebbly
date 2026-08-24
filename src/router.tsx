@@ -1,59 +1,61 @@
-import { ClerkProvider, useAuth } from "@clerk/react";
+import { ClerkProvider } from "@clerk/react";
 import { shadcn } from "@clerk/ui/themes";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
-import { ConvexReactClient } from "convex/react";
-import { ConvexProviderWithClerk } from "convex/react-clerk";
+
 import { DefaultLoader } from "@/components/default-loader";
 import {
-	DefaultErrorComponent,
-	DefaultNotFoundComponent,
+  DefaultErrorComponent,
+  DefaultNotFoundComponent,
 } from "@/components/default-not-found";
 import { getContext } from "@/lib/query/query-client";
 import { Provider as QueryProvider } from "@/lib/query/root-provider";
-
 import { routeTree } from "@/routeTree.gen";
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
-
 export const getRouter = () => {
-	const rqContext = getContext();
+  const rqContext = getContext();
 
-	const router = createRouter({
-		routeTree,
-		context: { ...rqContext },
-		defaultPreload: false,
-		defaultPendingMs: 0,
-		defaultPendingMinMs: 180,
-		Wrap: (props: { children: React.ReactNode }) => {
-			return (
-				<ClerkProvider
-					publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
-					appearance={{
-						theme: shadcn,
-					}}
-				>
-					<ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-						<QueryProvider {...rqContext}>{props.children}</QueryProvider>
-					</ConvexProviderWithClerk>
-				</ClerkProvider>
-			);
-		},
-		scrollRestoration: true,
-		caseSensitive: true,
-		defaultStaleTime: 30 * 1000,
+  const router = createRouter({
+    routeTree,
+    context: { ...rqContext },
+    defaultPreload: "intent",
+    // Small delay so a cursor sweeping across poster grids doesn't fire
+    // prefetches (route chunks + loader data) for every card it crosses.
+    defaultPreloadDelay: 200,
+    // Show the pending loader only when a navigation genuinely takes a
+    // while, and hide it as soon as it resolves. The previous config
+    // (pendingMs 0 + pendingMinMs 180) flashed a loader for a guaranteed
+    // 180 ms on every tap, which read as a sluggish, unresponsive nav on
+    // mobile even when the destination was already cached.
+    defaultPendingMs: 250,
+    defaultPendingMinMs: 0,
+    Wrap: (props: { children: React.ReactNode }) => {
+      return (
+        <ClerkProvider
+          publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+          appearance={{
+            theme: shadcn,
+          }}
+        >
+          <QueryProvider {...rqContext}>{props.children}</QueryProvider>
+        </ClerkProvider>
+      );
+    },
+    scrollRestoration: true,
+    caseSensitive: true,
+    defaultStaleTime: 30 * 1000,
 
-		defaultPendingComponent: () => <DefaultLoader />,
-		defaultNotFoundComponent: () => <DefaultNotFoundComponent />,
-		defaultErrorComponent: () => <DefaultErrorComponent />,
-	});
+    defaultPendingComponent: () => <DefaultLoader />,
+    defaultNotFoundComponent: () => <DefaultNotFoundComponent />,
+    defaultErrorComponent: () => <DefaultErrorComponent />,
+  });
 
-	setupRouterSsrQueryIntegration({
-		router,
-		queryClient: rqContext.queryClient,
-		handleRedirects: true,
-		wrapQueryClient: true,
-	});
+  setupRouterSsrQueryIntegration({
+    router,
+    queryClient: rqContext.queryClient,
+    handleRedirects: true,
+    wrapQueryClient: true,
+  });
 
-	return router;
+  return router;
 };

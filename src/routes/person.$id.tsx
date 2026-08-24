@@ -1,6 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+
+import type { MediaType } from "@/lib/media-types";
+import type { PersonDetails } from "@/lib/tmdb-schemas";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
@@ -10,291 +13,291 @@ import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { getPersonDetails } from "@/lib/queries";
-import { parseAndValidateId } from "@/lib/utils";
-import type { PersonDetails } from "@/types";
+import { queryKeys } from "@/lib/query/keys";
+import { requireRouteId } from "@/lib/route-helpers";
 
 type KnownForCredit = {
-	id: number;
-	popularity: number;
-	vote_average: number;
-	poster_path: string | null;
-	title?: string;
-	name?: string;
-	release_date?: string;
-	first_air_date?: string;
-	media_type: "movie" | "tv";
+  id: number;
+  popularity: number;
+  vote_average: number;
+  poster_path: string | null;
+  title?: string;
+  name?: string;
+  release_date?: string;
+  first_air_date?: string;
+  media_type: MediaType;
 };
 
 export const Route = createFileRoute("/person/$id")({
-	loader: async ({ params, context }) => {
-		const { id } = params;
-		const parsed = parseAndValidateId(id);
-		if (!parsed.success) {
-			throw notFound();
-		}
-		await context.queryClient.ensureQueryData({
-			queryKey: ["person_details", parsed.data],
-			queryFn: () => getPersonDetails({ id: parsed.data }),
-		});
-		return { id };
-	},
-	head: () => ({
-		meta: [
-			{ title: "Person Details | Pebbly" },
-			{
-				name: "description",
-				content: "Explore detailed information about cast and crew on Pebbly.",
-			},
-		],
-	}),
-	component: PersonPage,
+  loader: async ({ params, context }) => {
+    const personId = requireRouteId(params.id);
+    await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.tmdb.personDetails(personId),
+      queryFn: () => getPersonDetails({ id: personId }),
+    });
+    return { id: params.id };
+  },
+  head: () => ({
+    meta: [
+      { title: "Person Details | Pebbly" },
+      {
+        name: "description",
+        content: "Explore detailed information about cast and crew on Pebbly.",
+      },
+    ],
+  }),
+  component: PersonPage,
 });
 
 function PersonPage() {
-	const [isBiographyExpanded, setIsBiographyExpanded] = useState(false);
+  const [isBiographyExpanded, setIsBiographyExpanded] = useState(false);
 
-	const { id } = Route.useLoaderData();
-	const personId = parseInt(id, 10);
+  const { id } = Route.useLoaderData();
+  const personId = parseInt(id, 10);
 
-	useEffect(() => {
-		if (!id) {
-			return;
-		}
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
 
-		setIsBiographyExpanded(false);
-	}, [id]);
+    setIsBiographyExpanded(false);
+  }, [id]);
 
-	const { data, error, isLoading } = useQuery<PersonDetails>({
-		queryKey: ["person_details", personId],
-		queryFn: async () => await getPersonDetails({ id: personId }),
-		enabled: typeof window !== "undefined",
-	});
+  const { data, error, isLoading } = useQuery<PersonDetails>({
+    queryKey: queryKeys.tmdb.personDetails(personId),
+    queryFn: async () => await getPersonDetails({ id: personId }),
+    enabled: typeof window !== "undefined",
+  });
 
-	const knownForCredits = useMemo(() => {
-		const movieCastCredits =
-			data?.movie_credits?.cast?.map((credit) => ({
-				id: credit.id,
-				popularity: credit.popularity,
-				vote_average: credit.vote_average,
-				poster_path: credit.poster_path,
-				title: credit.title,
-				name: credit.name,
-				release_date: credit.release_date,
-				first_air_date: credit.first_air_date,
-				media_type: "movie" as const,
-			})) ?? [];
+  const knownForCredits = useMemo(() => {
+    const movieCastCredits =
+      data?.movie_credits?.cast?.map((credit) => ({
+        id: credit.id,
+        popularity: credit.popularity,
+        vote_average: credit.vote_average,
+        poster_path: credit.poster_path,
+        title: credit.title,
+        name: credit.name,
+        release_date: credit.release_date,
+        first_air_date: credit.first_air_date,
+        media_type: "movie" as const,
+      })) ?? [];
 
-		const movieCrewCredits =
-			data?.movie_credits?.crew?.map((credit) => ({
-				id: credit.id,
-				popularity: credit.popularity,
-				vote_average: credit.vote_average,
-				poster_path: credit.poster_path,
-				title: credit.title,
-				name: credit.name,
-				release_date: credit.release_date,
-				first_air_date: credit.first_air_date,
-				media_type: "movie" as const,
-			})) ?? [];
+    const movieCrewCredits =
+      data?.movie_credits?.crew?.map((credit) => ({
+        id: credit.id,
+        popularity: credit.popularity,
+        vote_average: credit.vote_average,
+        poster_path: credit.poster_path,
+        title: credit.title,
+        name: credit.name,
+        release_date: credit.release_date,
+        first_air_date: credit.first_air_date,
+        media_type: "movie" as const,
+      })) ?? [];
 
-		const tvCastCredits =
-			data?.tv_credits?.cast?.map((credit) => ({
-				id: credit.id,
-				popularity: credit.popularity,
-				vote_average: credit.vote_average,
-				poster_path: credit.poster_path,
-				title: credit.title,
-				name: credit.name,
-				release_date: credit.release_date,
-				first_air_date: credit.first_air_date,
-				media_type: "tv" as const,
-			})) ?? [];
+    const tvCastCredits =
+      data?.tv_credits?.cast?.map((credit) => ({
+        id: credit.id,
+        popularity: credit.popularity,
+        vote_average: credit.vote_average,
+        poster_path: credit.poster_path,
+        title: credit.title,
+        name: credit.name,
+        release_date: credit.release_date,
+        first_air_date: credit.first_air_date,
+        media_type: "tv" as const,
+      })) ?? [];
 
-		const tvCrewCredits =
-			data?.tv_credits?.crew?.map((credit) => ({
-				id: credit.id,
-				popularity: credit.popularity,
-				vote_average: credit.vote_average,
-				poster_path: credit.poster_path,
-				title: credit.title,
-				name: credit.name,
-				release_date: credit.release_date,
-				first_air_date: credit.first_air_date,
-				media_type: "tv" as const,
-			})) ?? [];
+    const tvCrewCredits =
+      data?.tv_credits?.crew?.map((credit) => ({
+        id: credit.id,
+        popularity: credit.popularity,
+        vote_average: credit.vote_average,
+        poster_path: credit.poster_path,
+        title: credit.title,
+        name: credit.name,
+        release_date: credit.release_date,
+        first_air_date: credit.first_air_date,
+        media_type: "tv" as const,
+      })) ?? [];
 
-		const creditsMap = new Map<string, KnownForCredit>();
+    const creditsMap = new Map<string, KnownForCredit>();
 
-		for (const credit of [
-			...movieCastCredits,
-			...tvCastCredits,
-			...movieCrewCredits,
-			...tvCrewCredits,
-		]) {
-			const key = `${credit.media_type}-${credit.id}`;
-			if (!creditsMap.has(key)) {
-				creditsMap.set(key, credit);
-			}
-		}
+    for (const credit of [
+      ...movieCastCredits,
+      ...tvCastCredits,
+      ...movieCrewCredits,
+      ...tvCrewCredits,
+    ]) {
+      const key = `${credit.media_type}-${credit.id}`;
+      if (!creditsMap.has(key)) {
+        creditsMap.set(key, credit);
+      }
+    }
 
-		return [...creditsMap.values()]
-			.sort((a, b) => b.popularity - a.popularity)
-			.slice(0, 24);
-	}, [
-		data?.movie_credits?.cast,
-		data?.movie_credits?.crew,
-		data?.tv_credits?.cast,
-		data?.tv_credits?.crew,
-	]);
+    return [...creditsMap.values()]
+      .sort((a, b) => b.popularity - a.popularity)
+      .slice(0, 24);
+  }, [
+    data?.movie_credits?.cast,
+    data?.movie_credits?.crew,
+    data?.tv_credits?.cast,
+    data?.tv_credits?.crew,
+  ]);
 
-	const biography = data?.biography ?? "";
-	const biographyParagraphs = useMemo(
-		() => biography.split("\n\n").filter(Boolean),
-		[biography],
-	);
+  const biography = data?.biography ?? "";
+  const biographyParagraphs = useMemo(
+    () => biography.split("\n\n").filter(Boolean),
+    [biography],
+  );
 
-	if (isLoading) {
-		return <DefaultLoader />;
-	}
+  if (isLoading) {
+    return <DefaultLoader />;
+  }
 
-	if (!data || error) {
-		return <DefaultNotFoundComponent />;
-	}
+  if (!data || error) {
+    return <DefaultNotFoundComponent />;
+  }
 
-	const { name, profile_path, place_of_birth, birthday, deathday } = data;
-	const externalIds = data.external_ids ?? {};
+  const { name, profile_path, place_of_birth, birthday, deathday } = data;
+  const externalIds = data.external_ids ?? {};
 
-	const imageUrl = profile_path
-		? `${IMAGE_PREFIX.HD_PROFILE}${profile_path}`
-		: null;
+  const imageUrl = profile_path
+    ? `${IMAGE_PREFIX.HD_PROFILE}${profile_path}`
+    : null;
 
-	return (
-		<section className="mx-auto block max-w-screen-xl items-center px-4 py-5 animate-fade-in">
-			<div className="mb-5 flex items-center justify-between gap-3">
-				<GoBack title="Back" />
-				<ShareButton title={name} />
-			</div>
-			<div className="flex flex-col gap-8 md:flex-row md:items-start">
-				<div className="flex flex-col items-center gap-4 md:sticky md:top-16 md:w-1/3 md:items-start">
-					<div className="relative aspect-[2/3] w-64 max-w-sm overflow-hidden rounded-xl ring-1 ring-border/40 dark:ring-white/[0.06] md:w-full">
-						{imageUrl ? (
-							<Image
-								src={imageUrl}
-								alt={name}
-								className="h-full w-full object-cover"
-								width={300}
-								height={450}
-								priority
-							/>
-						) : (
-							<div className="flex h-full w-full items-center justify-center bg-secondary text-sm text-muted-foreground">
-								No image available
-							</div>
-						)}
-					</div>
+  return (
+    <section className="animate-fade-in mx-auto block max-w-screen-xl items-center px-4 py-5">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <GoBack title="Back" />
+        <ShareButton title={name} />
+      </div>
+      <div className="flex flex-col gap-8 md:flex-row md:items-start">
+        <div className="flex flex-col items-center gap-4 md:sticky md:top-16 md:w-1/3 md:items-start">
+          <div className="ring-border/40 relative aspect-[2/3] w-64 max-w-sm overflow-hidden rounded-xl ring-1 md:w-full dark:ring-white/[0.06]">
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt={name}
+                className="h-full w-full object-cover"
+                width={300}
+                height={450}
+                priority
+              />
+            ) : (
+              <div className="bg-secondary text-muted-foreground flex h-full w-full items-center justify-center text-sm">
+                No image available
+              </div>
+            )}
+          </div>
 
-					<div className="flex w-full flex-col gap-2">
-						<h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-							{name}
-						</h1>
-						{birthday && (
-							<div className="text-sm text-muted-foreground">
-								<span className="font-semibold text-foreground">Born: </span>
-								{new Date(birthday).toLocaleDateString()}
-								{place_of_birth && ` in ${place_of_birth}`}
-							</div>
-						)}
-						{deathday && (
-							<div className="text-sm text-muted-foreground">
-								<span className="font-semibold text-foreground">Died: </span>
-								{new Date(deathday).toLocaleDateString()}
-							</div>
-						)}
+          <div className="flex w-full flex-col gap-2">
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+              {name}
+            </h1>
+            {birthday && (
+              <div className="text-muted-foreground text-sm">
+                <span className="text-foreground font-semibold">Born: </span>
+                {new Date(birthday).toLocaleDateString()}
+                {place_of_birth && ` in ${place_of_birth}`}
+              </div>
+            )}
+            {deathday && (
+              <div className="text-muted-foreground text-sm">
+                <span className="text-foreground font-semibold">Died: </span>
+                {new Date(deathday).toLocaleDateString()}
+              </div>
+            )}
 
-						<div className="flex gap-4 pt-2">
-							{externalIds.imdb_id && (
-								<a
-									href={`https://www.imdb.com/name/${externalIds.imdb_id}`}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-sm font-medium hover:underline"
-								>
-									IMDb
-								</a>
-							)}
-						</div>
-					</div>
-				</div>
+            <div className="flex gap-4 pt-2">
+              {externalIds.imdb_id && (
+                <a
+                  href={`https://www.imdb.com/name/${externalIds.imdb_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium hover:underline"
+                >
+                  IMDb
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
 
-				<div className="flex flex-col gap-8 md:w-2/3">
-					{biographyParagraphs.length > 0 && (
-						<div className="space-y-2">
-							<h2 className="text-xl font-semibold">Biography</h2>
-							<div className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap sm:text-[15px]">
-								<div className="flex flex-col">
-									{isBiographyExpanded ? (
-										biographyParagraphs.map((paragraph, index) => (
-											<p key={index} className="mb-4">
-												{paragraph}
-											</p>
-										))
-									) : (
-										<p className="mb-2">
-											{biography.length > 300
-												? `${biography.substring(0, 300)}...`
-												: biography}
-										</p>
-									)}
-									{biography.length > 300 && (
-										<Button
-											className="w-fit px-0 text-foreground font-semibold hover:no-underline"
-											size="sm"
-											variant="link"
-											onClick={() => setIsBiographyExpanded((prev) => !prev)}
-										>
-											{isBiographyExpanded ? "Read Less" : "Read More"}
-										</Button>
-									)}
-								</div>
-							</div>
-						</div>
-					)}
+        <div className="flex flex-col gap-8 md:w-2/3">
+          {biographyParagraphs.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">Biography</h2>
+              <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap sm:text-[15px]">
+                <div className="flex flex-col">
+                  {isBiographyExpanded ? (
+                    biographyParagraphs.map((paragraph, index) => (
+                      <p
+                        // biome-ignore lint/suspicious/noArrayIndexKey: static paragraph list
+                        key={index}
+                        className="mb-4"
+                      >
+                        {paragraph}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="mb-2">
+                      {biography.length > 300
+                        ? `${biography.substring(0, 300)}...`
+                        : biography}
+                    </p>
+                  )}
+                  {biography.length > 300 && (
+                    <Button
+                      className="text-foreground w-fit px-0 font-semibold hover:no-underline"
+                      size="sm"
+                      variant="link"
+                      onClick={() => setIsBiographyExpanded((prev) => !prev)}
+                    >
+                      {isBiographyExpanded ? "Read Less" : "Read More"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
-					{knownForCredits.length > 0 && (
-						<div className="space-y-4">
-							<h2 className="text-xl font-semibold">Known For</h2>
-							<div className="grid w-full grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
-								{knownForCredits.map((credit) => (
-									<div
-										key={`${credit.media_type}-${credit.id}`}
-										className="min-h-[300px]"
-									>
-										<MediaCard
-											id={credit.id}
-											title={credit.title || credit.name || "Untitled"}
-											rating={credit.vote_average || 0}
-											poster_path={credit.poster_path || ""}
-											image={credit.poster_path || ""}
-											media_type={credit.media_type}
-											release_date={
-												credit.release_date || credit.first_air_date || null
-											}
-											card_type="horizontal"
-											className="w-full"
-										/>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
+          {knownForCredits.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Known For</h2>
+              <div className="grid w-full grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+                {knownForCredits.map((credit) => (
+                  <div
+                    key={`${credit.media_type}-${credit.id}`}
+                    className="min-h-[300px]"
+                  >
+                    <MediaCard
+                      id={credit.id}
+                      title={credit.title || credit.name || "Untitled"}
+                      rating={credit.vote_average || 0}
+                      poster_path={credit.poster_path || ""}
+                      image={credit.poster_path || ""}
+                      media_type={credit.media_type}
+                      release_date={
+                        credit.release_date || credit.first_air_date || null
+                      }
+                      card_type="horizontal"
+                      className="w-full"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-					{biographyParagraphs.length === 0 && knownForCredits.length === 0 && (
-						<div className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
-							No additional details are available for this person yet.
-						</div>
-					)}
-				</div>
-			</div>
-		</section>
-	);
+          {biographyParagraphs.length === 0 && knownForCredits.length === 0 && (
+            <div className="text-muted-foreground rounded-xl border border-dashed p-6 text-sm">
+              No additional details are available for this person yet.
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
 }

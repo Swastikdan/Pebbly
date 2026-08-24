@@ -1,44 +1,47 @@
 import { useUser } from "@clerk/react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
+
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "@/components/ui/icons";
 
 export const GoBack = (props: {
-	title?: string;
-	link?: string;
-	className?: string;
-	hideLabelOnMobile?: boolean;
+  title?: string;
+  link?: string;
+  className?: string;
+  hideLabelOnMobile?: boolean;
 }) => {
-	const navigate = useNavigate();
-	const router = useRouter();
-	const { isSignedIn } = useUser();
-	const { title, link, className, hideLabelOnMobile = false } = props;
-	const shouldHideLabelOnMobile = hideLabelOnMobile && !!isSignedIn;
+  const navigate = useNavigate();
+  const router = useRouter();
+  const { isSignedIn } = useUser();
+  const { title, link, className, hideLabelOnMobile = false } = props;
+  const shouldHideLabelOnMobile = hideLabelOnMobile && !!isSignedIn;
 
-	function goBack() {
-		if (link) {
-			// Use replace here so the fallback destination does not create a back-button loop.
-			navigate({ to: link, replace: true });
-		} else {
-			router.history.back();
-		}
-	}
+  function goBack() {
+    if (link) {
+      // Use replace here so the fallback destination does not create a back-button loop.
+      navigate({ to: link, replace: true });
+    } else {
+      router.history.back();
+    }
+  }
 
-	return (
-		<Button
-			className={className}
-			variant="secondary"
-			onClick={goBack}
-			aria-label={title ?? "Go Back"}
-		>
-			<span className="flex w-full items-center gap-1">
-				<ArrowLeft size={20} />
-				<span
-					className={shouldHideLabelOnMobile ? "hidden sm:inline" : "inline"}
-				>
-					{title ?? "Go Back"}
-				</span>
-			</span>
-		</Button>
-	);
+  return (
+    <Button
+      className={className}
+      variant="secondary"
+      // Matches ShareButton, which these two almost always sit beside.
+      size="lg"
+      onClick={goBack}
+      aria-label={title ?? "Go Back"}
+    >
+      <span className="flex w-full items-center gap-1">
+        <ArrowLeft size={20} />
+        <span
+          className={shouldHideLabelOnMobile ? "hidden sm:inline" : "inline"}
+        >
+          {title ?? "Go Back"}
+        </span>
+      </span>
+    </Button>
+  );
 };

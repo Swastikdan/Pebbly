@@ -1,0 +1,52 @@
+name: Deploy Production
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+# Production deploys fire when cloudflare is merged into master. Feature
+# branches never deploy here; they go through preview.yml instead.
+concurrency:
+  group: deploy-cloudflare-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event.pusher.name == 'Swastikdan'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (node24 runtime)
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6 (node24 runtime)
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7 (node24 runtime)
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+
+      - name: Apply D1 migrations (prod)
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 migrations apply pebbly --remote
+
+      - name: Build (Nitro cloudflare preset)
+        run: pnpm build
+        env:
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          VITE_PUBLIC_TMDB_ACCESS_TOKEN: ${{ secrets.VITE_PUBLIC_TMDB_ACCESS_TOKEN }}
+          VITE_PUBLIC_TMDB_API_URL: ${{ secrets.VITE_PUBLIC_TMDB_API_URL }}
+          VITE_PUBLIC_APP_URL: ${{ secrets.VITE_PUBLIC_APP_URL }}
+          VITE_PUBLIC_VIDEO_URL: ${{ secrets.VITE_PUBLIC_VIDEO_URL }}
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

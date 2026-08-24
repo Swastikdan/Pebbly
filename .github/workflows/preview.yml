@@ -1,0 +1,59 @@
+name: Deploy Preview
+on:
+  push:
+    branches:
+      - cloudflare
+  workflow_dispatch:
+
+# Previews fire on every merge into the integration branch (cloudflare).
+# Feature branches do not deploy; PRs are validated by ci.yml instead.
+concurrency:
+  group: deploy-cloudflare-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (node24 runtime)
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6 (node24 runtime)
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7 (node24 runtime)
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+
+      - name: Apply D1 migrations (preview)
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Use --config (not --env) so Wrangler reads the flattened preview
+          # config directly. See wrangler.preview.toml header for why --env
+          # cannot be used with Nitro's generated config redirect.
+          command: d1 migrations apply pebbly-preview --remote --config wrangler.preview.toml
+
+      - name: Build (Nitro cloudflare preset)
+        run: pnpm build
+        env:
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          VITE_PUBLIC_TMDB_ACCESS_TOKEN: ${{ secrets.VITE_PUBLIC_TMDB_ACCESS_TOKEN }}
+          VITE_PUBLIC_TMDB_API_URL: ${{ secrets.VITE_PUBLIC_TMDB_API_URL }}
+          VITE_PUBLIC_APP_URL: ${{ secrets.VITE_PUBLIC_APP_URL }}
+          VITE_PUBLIC_VIDEO_URL: ${{ secrets.VITE_PUBLIC_VIDEO_URL }}
+
+      - name: Deploy Worker (preview)
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # --config bypasses the redirected config that Nitro writes to
+          # .output/server/wrangler.json + .wrangler/deploy/config.json.
+          # Wrangler reads wrangler.preview.toml directly (redirected: false),
+          # so the "redirected configs cannot include environments" error does
+          # not apply — there is no env indirection to resolve.
+          command: deploy --config wrangler.preview.toml

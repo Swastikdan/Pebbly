@@ -1,419 +1,217 @@
-import { useQueries } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
+import { useQueries } from "@tanstack/react-query";
+
+import type { MediaType } from "@/lib/media-types";
+import type {
+  MediaImages,
+  MediaVideos,
+  MediaVideosResultsEntity,
+} from "@/lib/tmdb-schemas";
+import {
+  PlayOverlay,
+  YouTubeEmbed,
+} from "@/components/media/media-lightbox-dialog";
+import { MediaThumbRail } from "@/components/media/media-thumb-rail";
 import { ScrollContainer } from "@/components/scroll-container";
-import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
-import { Play } from "@/components/ui/icons";
+import { SkeletonGrid } from "@/components/ui/feedback";
 import { Image } from "@/components/ui/image";
-import { Skeleton } from "@/components/ui/skeleton";
 import { IMAGE_PREFIX } from "@/constants";
-import {
-	getImageDialogKey,
-	type MediaDialogKey,
-	type MediaDialogSearch,
-	updateDialogSearch,
-} from "@/lib/media-dialog-helpers";
+import { getImageDialogKey } from "@/lib/media-dialog-helpers";
 import { getImages, getVideos } from "@/lib/queries";
-import type { MediaImages, MediaVideosResultsEntity } from "@/types";
+import { queryKeys } from "@/lib/query/keys";
 
 const sortVideos = (videos: MediaVideosResultsEntity[] | undefined | null) => {
-	if (!videos) return [];
-	return [...videos].sort((a, b) => {
-		const typeOrder: Record<string, number> = {
-			Trailer: 0,
-			Teaser: 1,
-			Featurette: 2,
-		};
-		const aOrder = typeOrder[a.type] ?? 3;
-		const bOrder = typeOrder[b.type] ?? 3;
-		if (aOrder !== bOrder) return aOrder - bOrder;
-		return (
-			new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
-		);
-	});
+  if (!videos) return [];
+  return [...videos].sort((a, b) => {
+    const typeOrder: Record<string, number> = {
+      Trailer: 0,
+      Teaser: 1,
+      Featurette: 2,
+    };
+    const aOrder = typeOrder[a.type] ?? 3;
+    const bOrder = typeOrder[b.type] ?? 3;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (
+      new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+    );
+  });
 };
 
 export const MediaVideoImageContainer = (props: {
-	id: number;
-	media_type: "movie" | "tv";
+  id: number;
+  media_type: MediaType;
 }) => {
-	const { id, media_type } = props;
-	const navigate = useNavigate();
-	const navigateDialogSearch = (options: unknown) => navigate(options as never);
-	const search = useSearch({ strict: false }) as MediaDialogSearch;
+  const { id, media_type } = props;
 
-	const onUpdateDialogSearch = (key: MediaDialogKey, value?: string) =>
-		updateDialogSearch(navigateDialogSearch, key, value);
+  const queryConfigs = useMemo(
+    () => [
+      {
+        queryKey: queryKeys.tmdb.videos(id, media_type),
+        queryFn: async () => getVideos({ id, type: media_type }),
+      },
+      {
+        queryKey: queryKeys.tmdb.images(id, media_type),
+        queryFn: async () => getImages({ id, type: media_type }),
+      },
+    ],
+    [id, media_type],
+  );
 
-	const queryConfigs = useMemo(
-		() => [
-			{
-				queryKey: ["media_videos", id, media_type],
-				queryFn: async () => getVideos({ id, type: media_type }),
-			},
-			{
-				queryKey: ["media_images", id, media_type],
-				queryFn: async () => getImages({ id, type: media_type }),
-			},
-		],
-		[id, media_type],
-	);
+  const queries = useQueries({ queries: queryConfigs });
 
-	const queries = useQueries({ queries: queryConfigs });
+  const rawVideos = (queries[0].data as unknown as MediaVideos | undefined)
+    ?.results;
+  const mediaImages = queries[1].data as unknown as MediaImages;
+  const mediaVideos = useMemo(() => sortVideos(rawVideos), [rawVideos]);
 
-	const rawVideos = queries[0].data as unknown as MediaVideosResultsEntity[];
-	const mediaImages = queries[1].data as unknown as MediaImages;
-	const mediaVideos = useMemo(() => sortVideos(rawVideos), [rawVideos]);
+  const isGlobalLoading = queries.some((q) => q.isPending);
 
-	const isGlobalLoading = queries.some((q) => q.isPending);
+  if (isGlobalLoading) return <GLobalMediaVideoImageContainerLoader />;
 
-	if (isGlobalLoading) return <GLobalMediaVideoImageContainerLoader />;
-
-	return (
-		<>
-			<div className="flex flex-col gap-5 py-3">
-				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
-					Videos
-				</span>
-				<ScrollContainer isButtonsVisible>
-					<div className="flex items-center justify-center gap-3">
-						{mediaVideos?.map((video, index) => (
-							<Dialog
-								key={video.key}
-								open={search.video === video.key}
-								onOpenChange={(isOpen) =>
-									onUpdateDialogSearch("video", isOpen ? video.key : undefined)
-								}
-							>
-								<DialogTrigger asChild>
-									<Button
-										type="button"
-										variant="ghost"
-										className="group relative h-auto cursor-pointer shrink-0 overflow-hidden rounded-xl border-none p-0 text-start ring-offset-background hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-									>
-										<Image
-											alt={video.name}
-											className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
-											height={450}
-											src={`https://img.youtube.com/vi/${video.key}/sddefault.jpg`}
-											width={300}
-										/>
-										<div className="absolute top-3 left-3 flex items-center gap-1.5 max-w-[80%]">
-											<span className="truncate text-sm text-foreground px-2 py-0.5 rounded-lg bg-background/90 dark:bg-foreground/90 dark:text-background backdrop-blur-sm">
-												{video.name}
-											</span>
-											<span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-white/90 px-1.5 py-0.5 rounded-md bg-black/40 backdrop-blur-sm">
-												{video.type}
-											</span>
-										</div>
-										<div className="absolute inset-0 flex items-center justify-center">
-											<div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 group-hover:scale-110">
-												<Play className="size-6 fill-white text-white" />
-											</div>
-										</div>
-									</Button>
-								</DialogTrigger>
-								<DialogContent
-									overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
-									className="aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-xl border-0 p-0 ring-0 gap-0 overflow-hidden"
-								>
-									<DialogHeader className="sr-only">
-										<DialogTitle>{video.name}</DialogTitle>
-									</DialogHeader>
-									<div className="bg-foreground/10 size-full overflow-hidden rounded-xl">
-										<iframe
-											allowFullScreen
-											allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-											className="size-full rounded-xl"
-											sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-forms"
-											src={`https://www.youtube.com/embed/${video.key}?autoplay=1`}
-											title={video.name}
-										/>
-									</div>
-									{index > 0 && (
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-											onClick={(e) => {
-												e.stopPropagation();
-												onUpdateDialogSearch(
-													"video",
-													mediaVideos[index - 1].key,
-												);
-											}}
-										>
-											<ChevronLeft className="size-6" />
-										</Button>
-									)}
-									{index < mediaVideos.length - 1 && (
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-											onClick={(e) => {
-												e.stopPropagation();
-												onUpdateDialogSearch(
-													"video",
-													mediaVideos[index + 1].key,
-												);
-											}}
-										>
-											<ChevronRight className="size-6" />
-										</Button>
-									)}
-								</DialogContent>
-							</Dialog>
-						))}
-					</div>
-				</ScrollContainer>
-			</div>
-			<div className="flex flex-col gap-5 py-3 pb-32">
-				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
-					Images
-				</span>
-				<div className="flex flex-col gap-3">
-					<span className="w-fit text-lg md:text-xl">Backdrops</span>
-					<ScrollContainer isButtonsVisible>
-						<div className="flex items-center justify-center gap-3">
-							{mediaImages?.backdrops?.map((image, index) => {
-								const imagePathClean = getImageDialogKey(image.file_path);
-								return (
-									<Dialog
-										key={`backdrop-${image.file_path}`}
-										open={search.backdrop === imagePathClean}
-										onOpenChange={(isOpen) =>
-											onUpdateDialogSearch(
-												"backdrop",
-												isOpen ? imagePathClean : undefined,
-											)
-										}
-									>
-										<DialogTrigger asChild>
-											<Image
-												alt={image.file_path}
-												className="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-												height={450}
-												src={IMAGE_PREFIX.SD_BACKDROP + image.file_path}
-												width={300}
-											/>
-										</DialogTrigger>
-										<DialogContent
-											overlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
-											className="aspect-video w-full max-w-[95vw] sm:max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
-										>
-											<DialogHeader className="sr-only">
-												<DialogTitle>
-													{image.file_path} Backdrop Image
-												</DialogTitle>
-											</DialogHeader>
-											<div className="bg-secondary size-full overflow-hidden rounded-2xl">
-												<Image
-													alt={image.file_path}
-													className="aspect-video size-full rounded-2xl object-cover"
-													height={300}
-													src={IMAGE_PREFIX.ORIGINAL + image.file_path}
-													width={450}
-												/>
-											</div>
-											{index > 0 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
-														const prevImg = mediaImages?.backdrops?.[index - 1];
-														if (prevImg) {
-															onUpdateDialogSearch(
-																"backdrop",
-																getImageDialogKey(prevImg.file_path),
-															);
-														}
-													}}
-												>
-													<ChevronLeft className="size-6" />
-												</Button>
-											)}
-											{index < (mediaImages?.backdrops?.length || 0) - 1 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
-														const nextImg = mediaImages?.backdrops?.[index + 1];
-														if (nextImg) {
-															onUpdateDialogSearch(
-																"backdrop",
-																getImageDialogKey(nextImg.file_path),
-															);
-														}
-													}}
-												>
-													<ChevronRight className="size-6" />
-												</Button>
-											)}
-										</DialogContent>
-									</Dialog>
-								);
-							})}
-						</div>
-					</ScrollContainer>
-					<span className="w-fit text-lg font-heading md:text-xl">Posters</span>
-					<ScrollContainer isButtonsVisible>
-						<div className="flex items-center justify-center gap-3">
-							{mediaImages?.posters?.map((image, index) => {
-								const imagePathClean = getImageDialogKey(image.file_path);
-								return (
-									<Dialog
-										key={`poster-${image.file_path}`}
-										open={search.poster === imagePathClean}
-										onOpenChange={(isOpen) =>
-											onUpdateDialogSearch(
-												"poster",
-												isOpen ? imagePathClean : undefined,
-											)
-										}
-									>
-										<DialogTrigger asChild>
-											<Image
-												alt={image.file_path}
-												className="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-												height={300}
-												src={IMAGE_PREFIX.SD_POSTER + image.file_path}
-												width={450}
-											/>
-										</DialogTrigger>
-										<DialogContent
-											overlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
-											className="aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden sm:h-full sm:w-auto"
-										>
-											<DialogHeader className="sr-only">
-												<DialogTitle>
-													{image.file_path} Poster Image
-												</DialogTitle>
-											</DialogHeader>
-											<div className="bg-secondary size-full overflow-hidden rounded-2xl">
-												<Image
-													alt={image.file_path}
-													className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
-													height={300}
-													src={IMAGE_PREFIX.ORIGINAL + image.file_path}
-													width={450}
-												/>
-											</div>
-											{index > 0 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute left-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
-														const prevImg = mediaImages?.posters?.[index - 1];
-														if (prevImg) {
-															onUpdateDialogSearch(
-																"poster",
-																getImageDialogKey(prevImg.file_path),
-															);
-														}
-													}}
-												>
-													<ChevronLeft className="size-6" />
-												</Button>
-											)}
-											{index < (mediaImages?.posters?.length || 0) - 1 && (
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													className="absolute right-4 top-1/2 z-50 -translate-y-1/2 rounded-lg bg-black/50 p-2 text-white ring-0 transition-colors hover:bg-black/70 hover:text-white focus-visible:ring-0"
-													onClick={(e) => {
-														e.stopPropagation();
-														const nextImg = mediaImages?.posters?.[index + 1];
-														if (nextImg) {
-															onUpdateDialogSearch(
-																"poster",
-																getImageDialogKey(nextImg.file_path),
-															);
-														}
-													}}
-												>
-													<ChevronRight className="size-6" />
-												</Button>
-											)}
-										</DialogContent>
-									</Dialog>
-								);
-							})}
-						</div>
-					</ScrollContainer>
-				</div>
-			</div>
-		</>
-	);
+  return (
+    <>
+      <div className="flex flex-col gap-5 py-3">
+        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+          Videos
+        </span>
+        <MediaThumbRail
+          items={mediaVideos}
+          paramKey="video"
+          getKey={(video) => video.key}
+          getThumbSrc={(video) =>
+            `https://img.youtube.com/vi/${video.key}/sddefault.jpg`
+          }
+          getThumbAlt={(video) => video.name}
+          imageClassName="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+          renderTileOverlay={(video) => (
+            <>
+              <div className="absolute top-3 left-3 flex max-w-[80%] items-center gap-1.5">
+                <span className="text-foreground bg-background/90 dark:bg-foreground/90 dark:text-background truncate rounded-lg px-2 py-0.5 text-sm backdrop-blur-sm">
+                  {video.name}
+                </span>
+                <span className="shrink-0 rounded-md bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-white/90 uppercase backdrop-blur-sm">
+                  {video.type}
+                </span>
+              </div>
+              <PlayOverlay />
+            </>
+          )}
+          getLightboxTitle={(video) => video.name}
+          prevLabel="Previous video"
+          nextLabel="Next video"
+          lightboxOverlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
+          lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]"
+          renderLightboxBody={(video) => (
+            <div className="bg-foreground/10 size-full overflow-hidden rounded-xl">
+              <YouTubeEmbed videoKey={video.key} title={video.name} />
+            </div>
+          )}
+        />
+      </div>
+      <div className="flex flex-col gap-5 py-3 pb-32">
+        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+          Images
+        </span>
+        <div className="flex flex-col gap-3">
+          <span className="w-fit text-lg md:text-xl">Backdrops</span>
+          <MediaThumbRail
+            items={mediaImages?.backdrops ?? []}
+            paramKey="backdrop"
+            getKey={(image) => getImageDialogKey(image.file_path)}
+            getThumbSrc={(image) => IMAGE_PREFIX.SD_BACKDROP + image.file_path}
+            getThumbAlt={(image) => image.file_path}
+            imageClassName="bg-foreground/10 aspect-video h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+            getLightboxTitle={(image) => `${image.file_path} Backdrop Image`}
+            prevLabel="Previous backdrop"
+            nextLabel="Next backdrop"
+            lightboxOverlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
+            lightboxContentClassName="bg-secondary aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-2xl border-0 p-0 ring-0 sm:max-w-[90vw]"
+            renderLightboxBody={(image) => (
+              <div className="bg-secondary size-full overflow-hidden rounded-2xl">
+                <Image
+                  alt={image.file_path}
+                  className="aspect-video size-full rounded-2xl object-cover"
+                  height={300}
+                  src={IMAGE_PREFIX.HD_BACKDROP + image.file_path}
+                  width={450}
+                />
+              </div>
+            )}
+          />
+          <span className="font-heading w-fit text-lg md:text-xl">Posters</span>
+          <MediaThumbRail
+            items={mediaImages?.posters ?? []}
+            paramKey="poster"
+            getKey={(image) => getImageDialogKey(image.file_path)}
+            getThumbSrc={(image) => IMAGE_PREFIX.SD_POSTER + image.file_path}
+            getThumbAlt={(image) => image.file_path}
+            thumbWidth={450}
+            thumbHeight={300}
+            imageClassName="bg-foreground/10 aspect-[11/16] h-44 w-auto cursor-pointer rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
+            getLightboxTitle={(image) => `${image.file_path} Poster Image`}
+            prevLabel="Previous poster"
+            nextLabel="Next poster"
+            lightboxOverlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
+            lightboxContentClassName="bg-secondary aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] gap-0 overflow-hidden rounded-2xl border-0 p-0 ring-0 sm:h-full sm:w-auto"
+            renderLightboxBody={(image) => (
+              <div className="bg-secondary size-full overflow-hidden rounded-2xl">
+                <Image
+                  alt={image.file_path}
+                  className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
+                  height={300}
+                  src={IMAGE_PREFIX.HD_POSTER + image.file_path}
+                  width={450}
+                />
+              </div>
+            )}
+          />
+        </div>
+      </div>
+    </>
+  );
 };
 
 const GLobalMediaVideoImageContainerLoader = () => {
-	return (
-		<>
-			<div className="flex flex-col gap-5 py-3">
-				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
-					Videos
-				</span>
-				<ScrollContainer isButtonsVisible={false}>
-					<div className="flex items-center justify-center gap-3">
-						{Array.from({ length: 6 }).map((_, index) => (
-							<Skeleton
-								key={index}
-								className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
-							/>
-						))}
-					</div>
-				</ScrollContainer>
-			</div>
-			<div className="flex flex-col gap-5 py-3 pb-32">
-				<span className="w-fit text-xl font-semibold font-heading md:text-2xl">
-					Images
-				</span>
-				<div className="flex flex-col gap-3">
-					<span className="w-fit text-lg md:text-xl">Backdrops</span>
-					<ScrollContainer isButtonsVisible={false}>
-						<div className="flex items-center justify-center gap-3">
-							{Array.from({ length: 6 }).map((_, index) => (
-								<Skeleton
-									key={index}
-									className="bg-accent aspect-video h-44 w-auto rounded-xl md:h-52 lg:h-60"
-								/>
-							))}
-						</div>
-					</ScrollContainer>
-					<span className="w-fit text-lg font-heading md:text-xl">Posters</span>
-					<ScrollContainer isButtonsVisible={false}>
-						<div className="flex items-center justify-center gap-3">
-							{Array.from({ length: 12 }).map((_, index) => (
-								<Skeleton
-									key={index}
-									className="bg-accent aspect-video h-44 w-30 rounded-xl md:h-52 md:w-35.75 lg:h-60 lg:w-41.25"
-								/>
-							))}
-						</div>
-					</ScrollContainer>
-				</div>
-			</div>
-		</>
-	);
+  return (
+    <>
+      <div className="flex flex-col gap-5 py-3">
+        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+          Videos
+        </span>
+        <ScrollContainer isButtonsVisible={false}>
+          <div className="flex items-center justify-center gap-3">
+            <SkeletonGrid
+              count={6}
+              itemClassName="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+            />
+          </div>
+        </ScrollContainer>
+      </div>
+      <div className="flex flex-col gap-5 py-3 pb-32">
+        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+          Images
+        </span>
+        <div className="flex flex-col gap-3">
+          <span className="w-fit text-lg md:text-xl">Backdrops</span>
+          <ScrollContainer isButtonsVisible={false}>
+            <div className="flex items-center justify-center gap-3">
+              <SkeletonGrid
+                count={6}
+                itemClassName="bg-accent aspect-video h-44 w-auto rounded-xl md:h-52 lg:h-60"
+              />
+            </div>
+          </ScrollContainer>
+          <span className="font-heading w-fit text-lg md:text-xl">Posters</span>
+          <ScrollContainer isButtonsVisible={false}>
+            <div className="flex items-center justify-center gap-3">
+              <SkeletonGrid
+                count={12}
+                itemClassName="bg-accent aspect-video h-44 w-30 rounded-xl md:h-52 md:w-35.75 lg:h-60 lg:w-41.25"
+              />
+            </div>
+          </ScrollContainer>
+        </div>
+      </div>
+    </>
+  );
 };

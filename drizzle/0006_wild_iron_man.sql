@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `perms_rev` integer DEFAULT 0 NOT NULL;

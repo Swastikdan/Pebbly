@@ -1,33 +1,34 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { usePermissions } from "@/hooks/use-permissions";
 
 export const Route = createFileRoute("/admin")({
-	component: AdminPage,
-	head: () => ({
-		meta: [
-			{ title: "Admin | Pebbly" },
-			{
-				name: "description",
-				content: "Admin dashboard for managing roles and permissions.",
-			},
-		],
-	}),
+  component: AdminPage,
+  head: () => ({
+    meta: [
+      { title: "Admin | Pebbly" },
+      {
+        name: "description",
+        content: "Admin dashboard for managing roles and permissions.",
+      },
+    ],
+  }),
 });
 
 function AdminPage() {
-	const { isAdmin, loading, isSignedIn } = usePermissions();
-	const [isMounted, setIsMounted] = useState(false);
+  const { isAdmin, loading, isSignedIn } = usePermissions();
+  const [isMounted, setIsMounted] = useState(false);
 
-	useEffect(() => {
-		setIsMounted(true);
-	}, []);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-	if (!isMounted || loading) return <DefaultLoader />;
-	if (!isSignedIn || !isAdmin) return <DefaultNotFoundComponent />;
+  if (!isMounted || loading) return <DefaultLoader />;
+  if (!isSignedIn || !isAdmin) return <DefaultNotFoundComponent />;
 
-	return <AdminDashboard />;
+  return <AdminDashboard />;
 }

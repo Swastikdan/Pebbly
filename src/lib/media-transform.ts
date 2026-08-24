@@ -4,143 +4,145 @@ const FEATURED_ITEMS_LIMIT = 10;
 const GENRE_LOOKUP = new Map(GENRE_LIST.map((genre) => [genre.id, genre]));
 
 interface MinimalGenre {
-	id: number;
+  id: number;
 }
 
 interface MinimalVideo {
-	key: string;
-	name: string;
-	type: string;
-	published_at: string;
-	official: boolean;
+  key: string;
+  name: string;
+  type: string;
+  published_at: string;
+  official: boolean;
 }
 
 interface MinimalPerson {
-	id: number;
-	name: string;
-	profile_path?: string | null;
-	character?: string;
-	job?: string;
+  id: number;
+  name: string;
+  profile_path?: string | null;
+  character?: string;
+  job?: string;
 }
 
 interface MinimalImage {
-	file_path: string;
-	aspect_ratio: number;
-	vote_average?: number;
+  file_path: string;
+  aspect_ratio: number;
+  vote_average?: number;
 }
 
 export const mapGenres = (genres?: MinimalGenre[] | null) => {
-	if (!genres) {
-		return [];
-	}
+  if (!genres) {
+    return [];
+  }
 
-	return genres
-		.map((genre) => GENRE_LOOKUP.get(genre.id))
-		.filter((genre): genre is NonNullable<typeof genre> => Boolean(genre));
+  return genres
+    .map((genre) => GENRE_LOOKUP.get(genre.id))
+    .filter((genre): genre is NonNullable<typeof genre> => Boolean(genre));
 };
 
 export const splitVideos = (videos?: MinimalVideo[] | null) => {
-	const allVideos = videos ?? [];
+  const allVideos = videos ?? [];
 
-	const trailervideos = allVideos
-		.filter((video) => video.type === "Trailer" || video.type === "Teaser")
-		.sort((a, b) => (a.type === b.type ? 0 : a.type === "Trailer" ? -1 : 1));
+  const trailervideos = allVideos
+    .filter((video) => video.type === "Trailer" || video.type === "Teaser")
+    .sort((a, b) => (a.type === b.type ? 0 : a.type === "Trailer" ? -1 : 1));
 
-	const youtubeclips = allVideos
-		.filter((video) => video.type !== "Trailer" && video.type !== "Teaser")
-		.sort((a, b) => {
-			if (a.type !== b.type) {
-				return a.type === "Featurette" ? -1 : 1;
-			}
+  const youtubeclips = allVideos
+    .filter((video) => video.type !== "Trailer" && video.type !== "Teaser")
+    .sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === "Featurette" ? -1 : 1;
+      }
 
-			return (
-				new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
-			);
-		})
-		.slice(0, FEATURED_ITEMS_LIMIT);
+      return (
+        new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+      );
+    })
+    .slice(0, FEATURED_ITEMS_LIMIT);
 
-	return { allVideos, trailervideos, youtubeclips };
+  return { allVideos, trailervideos, youtubeclips };
 };
 
 export const mapCast = (cast?: MinimalPerson[] | null) =>
-	cast
-		?.map((person) => ({
-			id: person.id,
-			name: person.name,
-			profile_path: person.profile_path ?? undefined,
-			character: person.character ?? "",
-		}))
-		.slice(0, FEATURED_ITEMS_LIMIT) ?? [];
+  cast
+    ?.map((person) => ({
+      id: person.id,
+      name: person.name,
+      profile_path: person.profile_path ?? undefined,
+      character: person.character ?? "",
+    }))
+    .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
 
 export const mapCrew = (crew?: MinimalPerson[] | null) =>
-	crew
-		?.map((person) => ({
-			id: person.id,
-			name: person.name,
-			profile_path: person.profile_path ?? undefined,
-			job: person.job ?? "",
-		}))
-		.slice(0, FEATURED_ITEMS_LIMIT) ?? [];
+  crew
+    ?.map((person) => ({
+      id: person.id,
+      name: person.name,
+      profile_path: person.profile_path ?? undefined,
+      job: person.job ?? "",
+    }))
+    .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
 
 const sortByVoteAverage = (a: MinimalImage, b: MinimalImage) =>
-	(b.vote_average ?? 0) - (a.vote_average ?? 0);
+  (b.vote_average ?? 0) - (a.vote_average ?? 0);
 
 export const mapBackdrops = (backdrops?: MinimalImage[] | null) =>
-	backdrops
-		?.slice()
-		.sort(sortByVoteAverage)
-		.map((image) => ({
-			backdrop_image: `${IMAGE_PREFIX.SD_BACKDROP}${image.file_path}`,
-			backdrop_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
-			aspect_ratio: image.aspect_ratio,
-		}))
-		.slice(0, FEATURED_ITEMS_LIMIT) ?? [];
+  backdrops
+    ?.slice()
+    .sort(sortByVoteAverage)
+    .map((image) => ({
+      backdrop_image: `${IMAGE_PREFIX.SD_BACKDROP}${image.file_path}`,
+      // HD (w1280) instead of ORIGINAL: full-res TMDB files can be several
+      // MB and decode to 4K bitmaps, the lightbox never needs more.
+      backdrop_image_raw: `${IMAGE_PREFIX.HD_BACKDROP}${image.file_path}`,
+      aspect_ratio: image.aspect_ratio,
+    }))
+    .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
 
 export const mapPosters = (posters?: MinimalImage[] | null) =>
-	posters
-		?.slice()
-		.sort(sortByVoteAverage)
-		.map((image) => ({
-			poster_image: `${IMAGE_PREFIX.SD_POSTER}${image.file_path}`,
-			poster_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
-			aspect_ratio: image.aspect_ratio,
-		}))
-		.slice(0, FEATURED_ITEMS_LIMIT) ?? [];
+  posters
+    ?.slice()
+    .sort(sortByVoteAverage)
+    .map((image) => ({
+      poster_image: `${IMAGE_PREFIX.SD_POSTER}${image.file_path}`,
+      poster_image_raw: `${IMAGE_PREFIX.HD_POSTER}${image.file_path}`,
+      aspect_ratio: image.aspect_ratio,
+    }))
+    .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
 
 export const getMovieCertification = (
-	releaseDates?:
-		| {
-				iso_3166_1: string;
-				release_dates?: { certification?: string }[] | null;
-		  }[]
-		| null,
+  releaseDates?:
+    | {
+        iso_3166_1: string;
+        release_dates?: { certification?: string }[] | null;
+      }[]
+    | null,
 ) => {
-	const usRelease = releaseDates?.find(
-		(release) => release.iso_3166_1 === "US",
-	);
+  const usRelease = releaseDates?.find(
+    (release) => release.iso_3166_1 === "US",
+  );
 
-	if (!usRelease?.release_dates) {
-		return "NR";
-	}
+  if (!usRelease?.release_dates) {
+    return "NR";
+  }
 
-	for (const releaseDate of usRelease.release_dates) {
-		if (releaseDate?.certification) {
-			return releaseDate.certification;
-		}
-	}
+  for (const releaseDate of usRelease.release_dates) {
+    if (releaseDate?.certification) {
+      return releaseDate.certification;
+    }
+  }
 
-	return "NR";
+  return "NR";
 };
 
 export const getTvCertification = (
-	contentRatings?: { iso_3166_1: string; rating?: string }[] | null,
+  contentRatings?: { iso_3166_1: string; rating?: string }[] | null,
 ) =>
-	contentRatings?.find((result) => result.iso_3166_1 === "US")?.rating ?? "NR";
+  contentRatings?.find((result) => result.iso_3166_1 === "US")?.rating ?? "NR";
 
 export const formatRuntime = (runtime?: number) =>
-	runtime ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : null;
+  runtime ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : null;
 
 export const getPosterImage = (
-	posterPath: string | null | undefined,
-	fallback = "https://placehold.co/300x450?text=Image+Not+Found",
+  posterPath: string | null | undefined,
+  fallback = "https://placehold.co/300x450?text=Image+Not+Found",
 ) => (posterPath ? `${IMAGE_PREFIX.HD_POSTER}${posterPath}` : fallback);

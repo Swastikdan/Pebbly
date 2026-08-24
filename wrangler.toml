@@ -1,0 +1,37 @@
+name = "pebbly"
+main = ".output/server/index.mjs"
+compatibility_date = "2026-08-08"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+# Upload server-bundle sourcemaps to Cloudflare privately (tail/dashboard
+# stack traces are de-minified) — nothing becomes publicly fetchable.
+upload_source_maps = true
+
+[assets]
+directory = ".output/public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pebbly"
+database_id = "cf94e4ee-291d-499f-b463-ef61ee9d9e1d"
+migrations_dir = "drizzle"
+
+[triggers]
+crons = ["0 3 * * *"]
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+
+# Non-secret server vars only. Secrets: wrangler secret put <NAME>.
+# Client VITE_* vars are inlined at build time from .env — they do NOT go here.
+
+# Preview deploys (cf-* branches) use a separate, flattened config at
+# wrangler.preview.toml deployed with `wrangler deploy --config ...`.
+# Do NOT add an [env.preview] block here: Nitro copies it into the generated
+# .output/server/wrangler.json redirect, and Wrangler rejects --env against
+# redirected configs. See wrangler.preview.toml for details.

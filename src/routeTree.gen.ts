@@ -18,6 +18,7 @@ import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as ApiMetaimageRouteImport } from './routes/api.metaimage'
 import { Route as KeywordIdRouteImport } from './routes/keyword.$id'
 import { Route as PersonIdRouteImport } from './routes/person.$id'
+import { Route as CIdChar123SlugChar125RouteImport } from './routes/c.$id.{-$slug}'
 import { Route as CollectionIdChar123SlugChar125RouteImport } from './routes/collection.$id.{-$slug}'
 import { Route as ListTypeSlugRouteImport } from './routes/list.$type.$slug'
 import { Route as MovieIdChar123SlugChar125IndexRouteImport } from './routes/movie/$id/{-$slug}/index'
@@ -74,6 +75,11 @@ const KeywordIdRoute = KeywordIdRouteImport.update({
 const PersonIdRoute = PersonIdRouteImport.update({
   id: '/person/$id',
   path: '/person/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CIdChar123SlugChar125Route = CIdChar123SlugChar125RouteImport.update({
+  id: '/c/$id/{-$slug}',
+  path: '/c/$id/{-$slug}',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CollectionIdChar123SlugChar125Route =
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/api/metaimage': typeof ApiMetaimageRoute
   '/keyword/$id': typeof KeywordIdRoute
   '/person/$id': typeof PersonIdRoute
+  '/c/$id/{-$slug}': typeof CIdChar123SlugChar125Route
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
   '/list/$type/$slug': typeof ListTypeSlugRoute
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/api/metaimage': typeof ApiMetaimageRoute
   '/keyword/$id': typeof KeywordIdRoute
   '/person/$id': typeof PersonIdRoute
+  '/c/$id/{-$slug}': typeof CIdChar123SlugChar125Route
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
   '/list/$type/$slug': typeof ListTypeSlugRoute
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
@@ -189,6 +197,7 @@ export interface FileRoutesById {
   '/api/metaimage': typeof ApiMetaimageRoute
   '/keyword/$id': typeof KeywordIdRoute
   '/person/$id': typeof PersonIdRoute
+  '/c/$id/{-$slug}': typeof CIdChar123SlugChar125Route
   '/collection/$id/{-$slug}': typeof CollectionIdChar123SlugChar125Route
   '/list/$type/$slug': typeof ListTypeSlugRoute
   '/movie/$id/{-$slug}/cast-crew': typeof MovieIdChar123SlugChar125CastCrewRoute
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
     | '/api/metaimage'
     | '/keyword/$id'
     | '/person/$id'
+    | '/c/$id/{-$slug}'
     | '/collection/$id/{-$slug}'
     | '/list/$type/$slug'
     | '/movie/$id/{-$slug}/cast-crew'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
     | '/api/metaimage'
     | '/keyword/$id'
     | '/person/$id'
+    | '/c/$id/{-$slug}'
     | '/collection/$id/{-$slug}'
     | '/list/$type/$slug'
     | '/movie/$id/{-$slug}/cast-crew'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/api/metaimage'
     | '/keyword/$id'
     | '/person/$id'
+    | '/c/$id/{-$slug}'
     | '/collection/$id/{-$slug}'
     | '/list/$type/$slug'
     | '/movie/$id/{-$slug}/cast-crew'
@@ -276,6 +288,7 @@ export interface RootRouteChildren {
   ApiMetaimageRoute: typeof ApiMetaimageRoute
   KeywordIdRoute: typeof KeywordIdRoute
   PersonIdRoute: typeof PersonIdRoute
+  CIdChar123SlugChar125Route: typeof CIdChar123SlugChar125Route
   CollectionIdChar123SlugChar125Route: typeof CollectionIdChar123SlugChar125Route
   ListTypeSlugRoute: typeof ListTypeSlugRoute
   MovieIdChar123SlugChar125CastCrewRoute: typeof MovieIdChar123SlugChar125CastCrewRoute
@@ -351,6 +364,13 @@ declare module '@tanstack/react-router' {
       path: '/person/$id'
       fullPath: '/person/$id'
       preLoaderRoute: typeof PersonIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$id/{-$slug}': {
+      id: '/c/$id/{-$slug}'
+      path: '/c/$id/{-$slug}'
+      fullPath: '/c/$id/{-$slug}'
+      preLoaderRoute: typeof CIdChar123SlugChar125RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/collection/$id/{-$slug}': {
@@ -436,6 +456,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMetaimageRoute: ApiMetaimageRoute,
   KeywordIdRoute: KeywordIdRoute,
   PersonIdRoute: PersonIdRoute,
+  CIdChar123SlugChar125Route: CIdChar123SlugChar125Route,
   CollectionIdChar123SlugChar125Route: CollectionIdChar123SlugChar125Route,
   ListTypeSlugRoute: ListTypeSlugRoute,
   MovieIdChar123SlugChar125CastCrewRoute:
@@ -454,10 +475,11 @@ export const routeTree = rootRouteImport
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

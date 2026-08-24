@@ -1,0 +1,62 @@
+# Cloudflare Workers + D1 — PREVIEW environment (cf-* branches)
+# ---------------------------------------------------------------------------
+# This is a standalone, fully-flattened Wrangler config for preview deploys.
+# It must NOT use Wrangler `[env.*]` environments: Nitro's Cloudflare preset
+# generates a redirected `.output/server/wrangler.json` at build time, and
+# Wrangler rejects `--env` against redirected configs. Deploy with:
+#
+#   wrangler deploy --config wrangler.preview.toml
+#
+# Passing `--config` makes Wrangler read this file directly (`redirected:
+# false` in `resolveWranglerConfigPath`), so it never touches the generated
+# redirect and there is no environment to resolve.
+#
+# Preview Worker + D1 are separate from production so branch deploys never
+# touch prod data. Runtime secrets are set per-Worker:
+#   wrangler secret put CLERK_SECRET_KEY --config wrangler.preview.toml
+#   wrangler secret put CLERK_ISSUER_URL --config wrangler.preview.toml
+#   wrangler secret put GEMINI_API_KEY --config wrangler.preview.toml
+
+name = "pebbly-preview"
+main = ".output/server/index.mjs"
+compatibility_date = "2026-08-08"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+upload_source_maps = true
+
+# Nitro pre-bundles the entry; tell Wrangler not to re-bundle it. Production
+# gets these fields from the generated redirected config, but --config bypasses
+# that redirect, so they must be stated explicitly here.
+no_bundle = true
+
+[[rules]]
+type = "ESModule"
+globs = ["**/*.mjs", "**/*.js"]
+
+# Frontend static assets served from the edge
+[assets]
+directory = ".output/public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pebbly-preview"
+database_id = "5b4796fa-e49e-4802-a4bc-19c1596cf303"
+migrations_dir = "drizzle"
+
+# No cron triggers in preview — branch deploys must not run the daily
+# watchlist snapshot job against the preview D1 database.
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+
+[vars]
+# Non-secret flag so the app can detect it is running in preview at runtime.
+APP_ENV = "preview"
+
+# Non-secret server vars only. Secrets: wrangler secret put <NAME> --config wrangler.preview.toml.
+# Client VITE_* vars are inlined at build time from .env — they do NOT go here.
