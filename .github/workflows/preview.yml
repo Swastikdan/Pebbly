@@ -1,12 +1,12 @@
-name: Deploy Preview
+name: Deploy Cloudflare Preview
 on:
   push:
     branches:
-      - cloudflare
+      - "cf-*"
   workflow_dispatch:
 
-# Previews fire on every merge into the integration branch (cloudflare).
-# Feature branches do not deploy; PRs are validated by ci.yml instead.
+# Serialize preview deploys targeting the same branch so migrations and Worker
+# deployments against the same preview D1 database never run concurrently.
 concurrency:
   group: deploy-cloudflare-preview-${{ github.ref }}
   cancel-in-progress: false

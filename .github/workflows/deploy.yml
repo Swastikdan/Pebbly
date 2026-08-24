@@ -1,12 +1,12 @@
-name: Deploy Production
+name: Deploy Cloudflare
 on:
   push:
     branches:
-      - master
+      - cloudflare
   workflow_dispatch:
 
-# Production deploys fire when cloudflare is merged into master. Feature
-# branches never deploy here; they go through preview.yml instead.
+# Serialize production deploys so migrations and Worker deployments targeting
+# the same D1 database / Worker never run concurrently.
 concurrency:
   group: deploy-cloudflare-prod
   cancel-in-progress: false
