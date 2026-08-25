@@ -272,22 +272,32 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
             user.id,
             data.tmdbId,
             data.mediaType,
-            (existing) =>
-              existing
-                ? {
-                    inWatchlist: true,
-                    reaction: existing.reaction ?? "recommended",
-                  }
-                : {
+            (existing) => {
+              if (existing) {
+                if (!existing.inWatchlist) {
+                  return {
                     inWatchlist: true,
                     progressStatus: "watch-later",
-                    reaction: "recommended",
-                    title: data.title,
-                    image: data.image,
-                    rating: data.rating,
-                    release_date: data.release_date,
-                    overview: data.overview,
-                  },
+                    progress: 0,
+                    reaction: existing.reaction ?? "recommended",
+                  };
+                }
+                return {
+                  inWatchlist: true,
+                  reaction: existing.reaction ?? "recommended",
+                };
+              }
+              return {
+                inWatchlist: true,
+                progressStatus: "watch-later",
+                reaction: "recommended",
+                title: data.title,
+                image: data.image,
+                rating: data.rating,
+                release_date: data.release_date,
+                overview: data.overview,
+              };
+            },
           );
 
           await appendToPicksList(db, user.id, data);
@@ -851,11 +861,17 @@ export const generateHomepageRecommendations = createServerFn({
         previousTitles,
       );
 
+      const combinedExcludeIds = [
+        ...new Set([
+          ...(feedbackSignals.dislikedTmdbIds ?? []),
+          ...previousTmdbIds,
+        ]),
+      ];
       const generated = await runAiGeneration({
         prompt,
         attempts: 2,
         watchItems: watchlistData.watchItems,
-        excludeTmdbIds: feedbackSignals.dislikedTmdbIds ?? [],
+        excludeTmdbIds: combinedExcludeIds,
       });
       if (!generated.ok) {
         await saveHomepageFailure(db, user.id);

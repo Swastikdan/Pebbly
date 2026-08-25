@@ -59,6 +59,7 @@ export interface WatchlistRepository {
     progressStatus: ProgressStatus,
     metadata?: MediaMetadata,
     currentStatus?: ProgressStatus | null,
+    progress?: number,
   ): void;
   setReaction(
     id: string,

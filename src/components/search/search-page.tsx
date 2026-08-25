@@ -151,9 +151,7 @@ export function SearchPage() {
   if (!query) {
     content = (
       <div className="min-h-[500px]">
-        <div className="min-h-[48px]">
-          <SearchHistory navigate={navigate} />
-        </div>
+        <SearchHistory navigate={navigate} />
         <div className="flex flex-col gap-5 py-6">
           <h2 className="text-lg font-semibold">Trending Now</h2>
           <div className="min-h-[420px]">

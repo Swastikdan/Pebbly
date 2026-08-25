@@ -1,9 +1,9 @@
 import { ExternalLinkIcon, TicketIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import * as v from "valibot";
 
 import type { MediaType } from "@/lib/media-types";
+import type { WatchProvider } from "@/lib/tmdb-schemas";
 import { Badge } from "@/components/ui/badge";
 import { Image } from "@/components/ui/image";
 import {
@@ -15,45 +15,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IMAGE_PREFIX } from "@/constants";
-import { getTmdbFetch } from "@/lib/tmdb";
-import { validateId } from "@/lib/utils";
-
-const WatchProviderSchema = v.object({
-  provider_id: v.number(),
-  provider_name: v.string(),
-  logo_path: v.nullable(v.string()),
-  display_priority: v.number(),
-});
-
-const WatchProvidersRegionSchema = v.object({
-  link: v.optional(v.nullable(v.string())),
-  flatrate: v.optional(v.array(WatchProviderSchema)),
-  rent: v.optional(v.array(WatchProviderSchema)),
-  buy: v.optional(v.array(WatchProviderSchema)),
-});
-
-const WatchProvidersResponseSchema = v.object({
-  id: v.number(),
-  results: v.record(v.string(), WatchProvidersRegionSchema),
-});
-
-type WatchProvider = v.InferOutput<typeof WatchProviderSchema>;
-
-// Kept local to this component: the watch-providers endpoint is the only
-// consumer of this shape, so it lives next to the UI that renders it.
-async function getWatchProviders({
-  type,
-  id,
-}: {
-  type: MediaType;
-  id: number;
-}): Promise<v.InferOutput<typeof WatchProvidersResponseSchema>> {
-  validateId(id);
-  const client = getTmdbFetch();
-  return await client(`/${type}/${id}/watch/providers`, {
-    output: WatchProvidersResponseSchema,
-  });
-}
+import { getWatchProviders } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 
 const REGION_OPTIONS = [
   { value: "US", label: "United States" },
@@ -108,6 +71,18 @@ const ProviderTile = ({
   provider: WatchProvider;
   link?: string;
 }) => {
+  if (!provider.logo_path) {
+    return (
+      <div
+        role="img"
+        className="bg-muted text-muted-foreground flex size-11 items-center justify-center rounded-lg text-[10px] font-medium ring-1 ring-black/8 sm:size-12 dark:ring-white/12"
+        title={provider.provider_name}
+        aria-label={provider.provider_name}
+      >
+        {provider.provider_name.slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
   const tile = (
     <Image
       src={`${IMAGE_PREFIX.PREVIEW}${provider.logo_path}`}
@@ -187,7 +162,7 @@ export const MediaWatchProviders = (props: {
   }, []);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["tmdb", "watch-providers", type, id],
+    queryKey: queryKeys.tmdb.watchProviders(id, type),
     queryFn: () => getWatchProviders({ type, id }),
   });
 
@@ -209,9 +184,11 @@ export const MediaWatchProviders = (props: {
   // Stable min-height wrapper avoids CLS between LoadingState (140px)
   // and the resolved rows (typically 140-200px). Mount gating keeps SSR
   // and client region consistent without unmounting the placeholder.
-  if (isLoading || isError) return <LoadingState />;
+  if (isLoading) return <LoadingState />;
 
-  if (!mounted || !resultsByRegion) return <LoadingState />;
+  if (!mounted) return <LoadingState />;
+
+  if (!resultsByRegion) return isError ? null : <LoadingState />;
   if (availableRegions.length === 0) return null;
 
   const effectiveRegion = availableRegions.includes(region)

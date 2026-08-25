@@ -95,12 +95,20 @@ function applyMembershipRows(
       (i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
     );
     if (existing) {
-      return patchWatchRow(rows, args.tmdbId, args.mediaType, () => ({
-        inWatchlist: true,
-        progressStatus: "watch-later",
-        progress: 0,
-        updatedAt: Date.now(),
-      }));
+      return patchWatchRow(rows, args.tmdbId, args.mediaType, (row) => {
+        const shouldReset = !row.inWatchlist;
+        return shouldReset
+          ? {
+              inWatchlist: true,
+              progressStatus: "watch-later",
+              progress: 0,
+              updatedAt: Date.now(),
+            }
+          : {
+              inWatchlist: true,
+              updatedAt: Date.now(),
+            };
+      });
     }
     return [
       ...rows,

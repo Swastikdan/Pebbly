@@ -76,6 +76,8 @@ export function WatchlistCard({
     e.stopPropagation();
     if (!nextStatus) return;
 
+    const capturedProgress = item.progress;
+    const capturedStatus = progressStatus;
     setProgressStatus(
       String(item.external_id),
       item.type,
@@ -91,9 +93,10 @@ export function WatchlistCard({
           setProgressStatus(
             String(item.external_id),
             item.type,
-            progressStatus,
+            capturedStatus,
             metadata,
             nextStatus,
+            capturedProgress,
           ),
       },
     });

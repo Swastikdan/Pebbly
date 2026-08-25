@@ -38,15 +38,16 @@ export function LazySection({
   // Keep minHeight always to avoid CLS when the fallback is swapped for
   // content. `minHeight` is a lower bound so taller content still expands
   // without collapsing the placeholder that was measured during initial
-  // paint. `content-visibility:auto` with `containIntrinsicSize` keeps the
-  // off-screen cost low without discarding the size reservation.
+  // paint. `content-visibility:auto` with `containIntrinsicSize: auto <size>`
+  // keeps the off-screen cost low without discarding the size reservation
+  // and preserves document height for content taller than minHeight.
   return (
     <div
       ref={ref}
       className={className}
       style={{
         minHeight,
-        containIntrinsicSize: minHeight,
+        containIntrinsicSize: `auto ${minHeight}`,
         contentVisibility: "auto",
       }}
     >

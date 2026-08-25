@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 import type { ApiResult } from "../schema/common";
@@ -264,16 +264,20 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
           user.id,
           data.tmdbId,
           data.mediaType,
-          (_curr) => ({
-            inWatchlist: true,
-            progressStatus: "watch-later",
-            progress: 0,
-            title: data.title,
-            image: data.image,
-            rating: data.rating,
-            release_date: data.release_date,
-            overview: data.overview,
-          }),
+          (curr) => {
+            const shouldReset = !curr || curr.inWatchlist === false;
+            return {
+              inWatchlist: true,
+              ...(shouldReset
+                ? { progressStatus: "watch-later" as const, progress: 0 }
+                : {}),
+              title: data.title,
+              image: data.image,
+              rating: data.rating,
+              release_date: data.release_date,
+              overview: data.overview,
+            };
+          },
         );
 
         return ok(row ?? null);
@@ -344,17 +348,25 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
             continue;
           }
 
-          const progressStatus =
-            normalizeProgressStatus(existing?.progressStatus) ?? "watch-later";
+          const shouldReset = !existing || existing.inWatchlist === false;
+          const progressStatus = shouldReset
+            ? "watch-later"
+            : (normalizeProgressStatus(existing?.progressStatus) ??
+              "watch-later");
           const metadataPatch = buildMetadataPatch(item, existing ?? undefined);
 
           if (existing) {
-            const patch = {
+            const patch: Record<string, unknown> = {
               inWatchlist: true,
-              progressStatus,
               updatedAt: now,
               ...metadataPatch,
             };
+            if (shouldReset) {
+              patch.progressStatus = progressStatus;
+              patch.progress = 0;
+            } else {
+              patch.progressStatus = progressStatus;
+            }
             statements.push(
               db
                 .update(watchItems)
@@ -643,6 +655,7 @@ export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
                 eq(episodeProgress.tmdbId, data.tmdbId),
               ),
             )
+            .orderBy(asc(episodeProgress.id))
             .limit(pageSize)
             .offset(offset);
           rows.push(...page);
@@ -672,6 +685,7 @@ export const getAllEpisodeProgress = createServerFn({ method: "POST" }).handler(
             .select()
             .from(episodeProgress)
             .where(eq(episodeProgress.userId, user.id))
+            .orderBy(asc(episodeProgress.id))
             .limit(pageSize)
             .offset(offset);
           rows.push(...page);

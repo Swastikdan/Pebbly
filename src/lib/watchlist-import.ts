@@ -249,7 +249,9 @@ export function planImportBatches(
     while (cursor < items.length && batchItems.length < IMPORT_BATCH_SIZE) {
       const candidate = items[cursor];
       const candidateEpisodes =
-        episodesByTvId.get(candidate.tmdbId)?.length ?? 0;
+        candidate.mediaType === "tv"
+          ? (episodesByTvId.get(candidate.tmdbId)?.length ?? 0)
+          : 0;
 
       if (candidateEpisodes > MAX_WATCHED_EPISODES) {
         throw new Error(
@@ -267,8 +269,10 @@ export function planImportBatches(
       }
 
       batchItems.push(candidate);
-      batchTvIds.add(candidate.tmdbId);
-      batchEpisodeCount += candidateEpisodes;
+      if (candidate.mediaType === "tv") {
+        batchTvIds.add(candidate.tmdbId);
+        batchEpisodeCount += candidateEpisodes;
+      }
       cursor++;
     }
 

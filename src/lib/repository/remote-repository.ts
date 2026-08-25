@@ -196,6 +196,7 @@ export function createRemoteRepository(
       progressStatus,
       metadata,
       currentStatus,
+      progress,
     ) {
       const { action, seasonsPromise } = resolveStatusPlan(
         queryClient,
@@ -263,6 +264,7 @@ export function createRemoteRepository(
         tmdbId: Number(id),
         mediaType,
         progressStatus,
+        progress,
         title: metadata?.title,
         image: metadata?.image,
         rating: metadata?.rating,

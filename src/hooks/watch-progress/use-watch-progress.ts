@@ -133,6 +133,9 @@ export function useContinueWatching() {
   });
   const localMediaState = useWatchlistStore((state) => state.mediaState);
 
+  const isLoading = isSignedIn ? remote.isLoading || remote.isFetching : false;
+  const isSettled = isSignedIn ? !!remote.data || remote.isError : true;
+
   const items = useMemo(() => {
     if (isSignedIn) {
       if (!remote.data) return [];
@@ -173,7 +176,7 @@ export function useContinueWatching() {
       .sort((a, b) => b.lastUpdated - a.lastUpdated);
   }, [isSignedIn, remote.data, localMediaState]);
 
-  return { items };
+  return { items, isLoading, isSettled };
 }
 
 export function useRemoveFromContinueWatching() {
