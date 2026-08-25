@@ -120,6 +120,9 @@ export default defineNitroConfig({
   // wrangler.toml. The task itself lives in server/tasks/snapshots.ts.
   scheduledTasks: {
     "0 3 * * *": "snapshots",
+    // Legacy duplicate-user consolidation (server/tasks/user-maintenance.ts).
+    // Offset from the snapshot cron so the two never share an invocation.
+    "30 3 * * *": "user-maintenance",
   },
   routeRules: {
     "/assets/**": {

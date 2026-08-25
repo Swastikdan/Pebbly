@@ -1,8 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import { runBatch } from "../db/client";
 import { episodeProgress } from "../db/schema";
+import { collectAllByKeyset } from "./paginate";
 import { bumpWatchlistRev } from "./watch-item";
 
 export type EpisodeSyncArgs = {
@@ -66,26 +67,25 @@ export async function loadEpisodeRowsByKey(
   tmdbId: number,
 ): Promise<Map<string, typeof episodeProgress.$inferSelect>> {
   const rowsByKey = new Map<string, typeof episodeProgress.$inferSelect>();
-  // Offset-paginate instead of a hard cap: long-running shows can have
+  // Keyset pagination instead of a hard cap: long-running shows can have
   // >1000 watched rows, and missing any would corrupt the sync (rows past
   // the cap would be re-inserted or never cleared).
-  const pageSize = 500;
-  for (let offset = 0; ; offset += pageSize) {
-    const page = await db
+  const rows = await collectAllByKeyset(500, (cursor) =>
+    db
       .select()
       .from(episodeProgress)
       .where(
         and(
           eq(episodeProgress.userId, userId),
           eq(episodeProgress.tmdbId, tmdbId),
+          cursor ? gt(episodeProgress.id, cursor) : undefined,
         ),
       )
-      .limit(pageSize)
-      .offset(offset);
-    for (const row of page) {
-      rowsByKey.set(`${row.season}:${row.episode}`, row);
-    }
-    if (page.length < pageSize) break;
+      .orderBy(episodeProgress.id)
+      .limit(500),
+  );
+  for (const row of rows) {
+    rowsByKey.set(`${row.season}:${row.episode}`, row);
   }
   return rowsByKey;
 }

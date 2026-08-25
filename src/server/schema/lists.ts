@@ -2,8 +2,16 @@ import * as v from "valibot";
 
 import { mediaTypeSchema, metadataSchema } from "./common";
 
-export const listVisibilitySchema = v.picklist(["public", "private"]);
-export const listTypeSchema = v.picklist(["custom", "pebbly-picks"]);
+// Canonical values; the valibot picklists here and the drizzle column enums /
+// CHECK constraints in server/db/schema.ts derive from these.
+export const LIST_VISIBILITIES = ["public", "private"] as const;
+export const LIST_TYPES = ["custom", "pebbly-picks"] as const;
+
+export type ListVisibility = (typeof LIST_VISIBILITIES)[number];
+export type ListType = (typeof LIST_TYPES)[number];
+
+export const listVisibilitySchema = v.picklist([...LIST_VISIBILITIES]);
+export const listTypeSchema = v.picklist([...LIST_TYPES]);
 export const listSortTypeSchema = v.picklist(["unordered", "ordered"]);
 
 const listNameSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(50));

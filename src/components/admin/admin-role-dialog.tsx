@@ -28,7 +28,7 @@ export function AdminRoleDialog({
 }) {
   return (
     <Dialog open={selectedUser !== null} onOpenChange={onOpenChange}>
-      <DialogPopup className="p-6 sm:max-w-[420px]">
+      <DialogPopup className="sm:max-w-105">
         <DialogHeader className="space-y-2">
           <div className="flex items-center gap-3">
             {selectedUser?.isBanned ? (
@@ -81,7 +81,7 @@ export function AdminRoleDialog({
                 variant="outline"
                 type="button"
                 disabled={isSubmitting}
-                className="flex-1"
+                className="min-h-8 flex-1"
               />
             }
           >
@@ -92,7 +92,7 @@ export function AdminRoleDialog({
             type="button"
             onClick={onConfirm}
             disabled={isSubmitting}
-            className={`flex-1 ${
+            className={`min-h-8 flex-1 ${
               selectedUser?.isBanned
                 ? "bg-emerald-600 text-white hover:bg-emerald-700"
                 : ""

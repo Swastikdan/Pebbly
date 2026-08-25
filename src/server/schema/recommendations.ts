@@ -23,6 +23,11 @@ export type InputStats = v.InferOutput<typeof inputStatsSchema>;
 
 export const generationTypeSchema = v.picklist(["watchlist", "list", "genre"]);
 
+// Canonical values for homepage_recommendations.status; mirrored by the
+// drizzle CHECK constraint in server/db/schema.ts.
+export const HOMEPAGE_REC_STATUSES = ["none", "success", "failed"] as const;
+export const homepageRecStatusSchema = v.picklist([...HOMEPAGE_REC_STATUSES]);
+
 // A heavy user's tracked library alone can exceed a few hundred titles, so the
 // cap must sit well above realistic watchlist sizes; it only guards against
 // unbounded payloads, not normal usage.

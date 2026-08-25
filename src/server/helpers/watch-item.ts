@@ -49,20 +49,23 @@ export type WatchItemRow = typeof watchItems.$inferSelect;
 
 export type UserRevColumn = "watchlistRev" | "listsRev" | "aiRev" | "permsRev";
 
+// SQL increment descriptors are immutable, so one shared instance per column.
+const REV_COLUMN_PATCH: Record<UserRevColumn, Record<string, unknown>> = {
+  watchlistRev: { watchlistRev: sql`${users.watchlistRev} + 1` },
+  listsRev: { listsRev: sql`${users.listsRev} + 1` },
+  aiRev: { aiRev: sql`${users.aiRev} + 1` },
+  permsRev: { permsRev: sql`${users.permsRev} + 1` },
+};
+
 export async function bumpUserRev(
   db: Db,
   userId: string,
   column: UserRevColumn,
 ): Promise<void> {
-  const patch =
-    column === "watchlistRev"
-      ? { watchlistRev: sql`${users.watchlistRev} + 1` }
-      : column === "listsRev"
-        ? { listsRev: sql`${users.listsRev} + 1` }
-        : column === "aiRev"
-          ? { aiRev: sql`${users.aiRev} + 1` }
-          : { permsRev: sql`${users.permsRev} + 1` };
-  await db.update(users).set(patch).where(eq(users.id, userId));
+  await db
+    .update(users)
+    .set(REV_COLUMN_PATCH[column])
+    .where(eq(users.id, userId));
 }
 
 export const bumpWatchlistRev = (db: Db, userId: string) =>

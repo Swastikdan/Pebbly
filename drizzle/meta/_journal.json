@@ -57,6 +57,13 @@
       "when": 1787330470906,
       "tag": "0007_misty_vance_astro",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787660743190,
+      "tag": "0008_wide_shocker",
+      "breakpoints": true
     }
   ]
 }

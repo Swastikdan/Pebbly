@@ -18,7 +18,9 @@ database_id = "cf94e4ee-291d-499f-b463-ef61ee9d9e1d"
 migrations_dir = "drizzle"
 
 [triggers]
-crons = ["0 3 * * *"]
+# 03:00 UTC — daily watchlist snapshots (Nitro task "snapshots")
+# 03:30 UTC — legacy duplicate-user consolidation (Nitro task "user-maintenance")
+crons = ["0 3 * * *", "30 3 * * *"]
 
 [observability.logs]
 enabled = true

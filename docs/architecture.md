@@ -154,7 +154,8 @@ Server functions are:
   `gemini-2.0-flash` → `gemini-1.5-flash`), retries, and per-element Valibot
   validation of the JSON response.
 - `src/server/fns/recommendations.ts`, generation orchestration: auth +
-  feature gate (via `authedFn`), cooldown reservation (atomic insert),
+  feature gate (via `authedFn`), rate limiting (atomic slot claim on the
+  `rate_limit_attempts` ledger via `helpers/rate-limit.ts`),
   watchlist data gathering, prompt building, Gemini call, de-duplication/
   filtering against existing titles, and persistence.
 - Client side, TMDB verification of AI-suggested titles is hook-based:

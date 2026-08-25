@@ -105,7 +105,7 @@ export function DialogPopup({
               aria-label="Close"
               {...closeRest}
               className={cn(
-                "bg-muted text-foreground hover:bg-muted/80 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90 absolute top-4 right-4 z-50 cursor-pointer rounded-lg p-3 transition-[color,background-color,box-shadow,transform] duration-150 ease-out active:scale-90",
+                "bg-muted text-foreground hover:bg-muted/80 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90 absolute top-4 right-4 z-50 cursor-pointer rounded-lg p-1 transition-[color,background-color,box-shadow,transform] duration-150 ease-out active:scale-90",
                 typeof closeClassName === "string" ? closeClassName : undefined,
               )}
             >
