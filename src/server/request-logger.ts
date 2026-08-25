@@ -23,6 +23,11 @@ const LARGE_PAYLOAD_CHARS = 4000;
 
 type EnvHolder = { __env__?: Record<string, unknown> };
 
+/**
+ * Determines whether RPC payload logging is enabled outside production.
+ *
+ * @returns `true` if the configured flag is set to `1`, `true`, `yes`, or `on` and the environment is not production, `false` otherwise.
+ */
 function payloadLoggingEnabled(): boolean {
   if (process.env.NODE_ENV === "production") return false;
   // Check both the Workers `globalThis.__env__` (populated by the
@@ -47,6 +52,12 @@ function payloadLoggingEnabled(): boolean {
   return value === "1" || value === "true" || value === "yes" || value === "on";
 }
 
+/**
+ * Limits a string to the configured payload length.
+ *
+ * @param value - The string to limit
+ * @returns The original string or a truncated version with the number of hidden characters
+ */
 function truncate(value: string): string {
   return value.length > MAX_PAYLOAD_CHARS
     ? `${value.slice(0, MAX_PAYLOAD_CHARS)}… (+${value.length - MAX_PAYLOAD_CHARS} chars hidden)`
@@ -54,12 +65,10 @@ function truncate(value: string): string {
 }
 
 /**
- * Try to interpret a JSON-parsed value as seroval. TanStack Start uses two
- * seroval modes: `toJSONAsync` (vanilla) for client→server requests and
- * `toCrossJSONStream` (cross) for server→client responses. We try both
- * decoders; with no custom plugins simple payloads still decode, and with
- * plugins we'd need the app's seroval plugins — for logging we accept the
- * best-effort decode and fall back to the raw parsed value.
+ * Attempts to decode a parsed value serialized by Seroval.
+ *
+ * @param parsed - The parsed value to decode.
+ * @returns The decoded value, or `null` if decoding is unavailable or unsuccessful.
  */
 async function tryDecodeSeroval(parsed: unknown): Promise<unknown | null> {
   if (!parsed || typeof parsed !== "object") return null;
@@ -97,6 +106,12 @@ async function tryDecodeSeroval(parsed: unknown): Promise<unknown | null> {
   return null;
 }
 
+/**
+ * Decodes a request or response body for payload logging.
+ *
+ * @param raw - The raw body text to decode
+ * @returns The decoded value, a truncated raw string for invalid JSON, or `null` for empty input
+ */
 async function decodeBody(raw: string): Promise<unknown> {
   if (!raw) return null;
   let parsed: unknown;
@@ -112,9 +127,10 @@ async function decodeBody(raw: string): Promise<unknown> {
 }
 
 /**
- * Render a decoded value for the console. Very large payloads collapse to a
- * size line plus a bounded preview so a 500-row watchlist response doesn't
- * flood the terminal.
+ * Formats a decoded value for console output.
+ *
+ * @param value - The decoded payload to format
+ * @returns A readable representation of the value, with large payloads summarized and oversized output truncated
  */
 function renderPayload(value: unknown): string {
   if (value === null) return "(no args)";
@@ -140,6 +156,12 @@ function renderPayload(value: unknown): string {
     : pretty;
 }
 
+/**
+ * Captures and renders the request payload for logging.
+ *
+ * @param request - The request whose payload should be captured
+ * @returns A formatted payload, `(no args)` for an empty payload, or `(unreadable)` if the payload cannot be read
+ */
 async function captureRequestPayload(request: Request): Promise<string> {
   try {
     if (request.method === "GET") {
@@ -161,6 +183,12 @@ async function captureRequestPayload(request: Request): Promise<string> {
   }
 }
 
+/**
+ * Captures and renders the payload from a response, including a summary for framed streaming responses.
+ *
+ * @param response - The response whose payload should be captured.
+ * @returns The rendered response payload or a description when the response is unavailable or unreadable.
+ */
 async function captureResponsePayload(
   response: Response | undefined | null,
 ): Promise<string> {
@@ -197,6 +225,12 @@ async function captureResponsePayload(
 
 type DevFunctionId = { file?: string; export?: string };
 
+/**
+ * Resolves a server-function pathname to a readable file and export label.
+ *
+ * @param pathname - The pathname containing the encoded server-function identifier
+ * @returns A `file#export` label, or the raw identifier or pathname when decoding fails
+ */
 function describeServerFn(pathname: string): string {
   // The dev-mode id is base64(JSON { file, export }) in the path; strip any
   // query/hash before decoding and clean compiler suffixes from the export.

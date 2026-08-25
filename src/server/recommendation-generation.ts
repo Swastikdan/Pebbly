@@ -22,10 +22,10 @@ export type GenerationInputs = {
 };
 
 /**
- * Load everything a generation prompt needs in one shot: the user's viewing
- * data plus their like/dislike feedback folded into prompt-ready signal
- * lists. `dislikeKinds` selects which feedback values count as dislikes
- * ("not_interested" for history generations, plus "dislike" for homepage).
+ * Loads watchlist data and feedback signals for recommendation generation.
+ *
+ * @param dislikeKinds - Feedback values treated as dislikes when building the signals
+ * @returns The user's watchlist data and prompt-ready feedback signals
  */
 export async function gatherGenerationInputs(
   db: Db,
@@ -57,11 +57,13 @@ export type AiGenerationResult =
   | { ok: false; error: string };
 
 /**
- * Call OpenRouter (model `openrouter/free`) and filter out titles the user
- * already knows (on their watchlist or excluded). Streaming is used so the
- * final chunk's `usage.completionTokensDetails.reasoningTokens` is available
- * for telemetry. Callers own rate limiting before the call and result
- * persistence after. Retains `callGeminiAI` as an alias for backwards compat.
+ * Generates recommendations and removes titles already present in the user's known or excluded content.
+ *
+ * @param prompt - The recommendation-generation prompt
+ * @param attempts - The maximum number of generation attempts
+ * @param watchItems - The user's existing watchlist items
+ * @param excludeTmdbIds - TMDB IDs to exclude from the recommendations
+ * @returns A successful result containing filtered recommendations and model metadata, or an error result
  */
 export async function runAiGeneration(args: {
   prompt: string;

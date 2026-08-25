@@ -685,6 +685,12 @@ export const generateHomepageRecommendations = createServerFn({
   ),
 );
 
+/**
+ * Retrieves the homepage recommendation entry for a user.
+ *
+ * @param userId - The user's identifier
+ * @returns The user's homepage recommendation entry, or `null` if none exists
+ */
 async function getHomepageRecommendationEntry(db: Db, userId: string) {
   const entry = await db
     .select()

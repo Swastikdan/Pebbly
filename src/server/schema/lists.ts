@@ -18,6 +18,12 @@ export type ListType = (typeof LIST_TYPES)[number];
  */
 export const PEBBLY_PICKS_LIST_NAME = "Pebbly Picks";
 
+/**
+ * Determines whether a name matches the reserved list name.
+ *
+ * @param name - The list name to check
+ * @returns `true` if the trimmed name matches the reserved name without regard to case, `false` otherwise.
+ */
 function isReservedListName(name: string): boolean {
   return name.trim().toLowerCase() === PEBBLY_PICKS_LIST_NAME.toLowerCase();
 }

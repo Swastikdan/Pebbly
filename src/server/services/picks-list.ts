@@ -17,18 +17,12 @@ export type PicksListItem = {
 };
 
 /**
- * File a title on the user's Pebbly Picks list, creating the list first when
- * missing. The list insert relies on the (user_id, name) unique index, so
- * concurrent likes cannot produce duplicates; an item already on the list is
- * left alone — the item INSERT is conflict-safe too (see below), so two rapid
- * likes of the same title can never fail the request after the watch-item
- * upsert has already committed. Does not bump revisions; the caller decides
- * which domains to touch.
+ * Adds a media item to the user's Pebbly Picks list, creating the list when needed.
  *
- * "Pebbly Picks" is reserved (schema/lists.ts rejects it for custom lists),
- * and the lookup below also requires listType "pebbly-picks": a legacy
- * custom list squatting on the name keeps its rows untouched — the insert is
- * a no-op against the unique index and the lookup simply misses it.
+ * Existing items are left unchanged, and concurrent attempts to add the same item are handled safely.
+ *
+ * @param userId - The user whose Pebbly Picks list receives the item
+ * @param item - The media item to add
  */
 export async function appendToPicksList(
   db: Db,

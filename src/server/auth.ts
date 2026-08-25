@@ -42,6 +42,11 @@ export function getSessionToken(): string | undefined {
   return undefined;
 }
 
+/**
+ * Verifies the current session token and retrieves its claims.
+ *
+ * @returns The verified session claims, or `null` when no valid session token is available.
+ */
 export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
   const token = getSessionToken();
   if (!token) return null;
@@ -124,12 +129,9 @@ function getClerkApiClient() {
 const ADMIN_API_TIMEOUT_MS = 5_000;
 
 /**
- * Fetch the Clerk user ids whose public metadata marks them admin, using one
- * paginated API call per page (max page size). Used to render the admin user
- * table without a per-row lookup. Returns an empty set on any failure. This
- * is display-only data and must never be used for access decisions — those
- * come exclusively from the signed JWT claim (isAdminByClaims), which the
- * Clerk session-claims template populates from `publicMetadata.isAdmin`.
+ * Retrieves Clerk user IDs marked as administrators for display purposes.
+ *
+ * @returns A set of administrator user IDs collected from paginated Clerk user listings; an empty set is returned when the API is unavailable or a lookup fails. This data must not be used for authorization.
  */
 export async function getClerkAdminIds(): Promise<Set<string>> {
   const client = getClerkApiClient();
@@ -219,6 +221,13 @@ async function findUserMatchesByClaims(
     .limit(10);
 }
 
+/**
+ * Selects the canonical user matching a token identifier.
+ *
+ * @param matches - Candidate users associated with the authenticated identity
+ * @param tokenIdentifier - Canonical identifier derived from the authenticated session
+ * @returns The canonical matching user, or `null` when no match exists
+ */
 async function pickBestUserMatch(
   matches: AuthUser[],
   tokenIdentifier: string,
@@ -228,6 +237,12 @@ async function pickBestUserMatch(
   return pickCanonicalMatch(matches, tokenIdentifier);
 }
 
+/**
+ * Finds the database user associated with verified Clerk session claims.
+ *
+ * @param claims - The verified Clerk session claims used to identify the user
+ * @returns The matching database user, or `null` when no user is found
+ */
 export async function findUserByClaims(
   claims: ClerkSessionClaims,
 ): Promise<AuthUser | null> {
@@ -261,9 +276,10 @@ export type RequireUserResult =
     };
 
 /**
- * Resolves the user, creating one on first sign-in
- * (identity from the verified Clerk claims). Returns a typed error result when
- * unauthenticated.
+ * Authenticates the request and resolves the corresponding database user, creating a record on first sign-in.
+ *
+ * @returns The authenticated user and verified session claims, or an unauthorized error when no valid session exists.
+ * @throws An error if a user record cannot be resolved after first-sign-in creation.
  */
 export async function requireUser(): Promise<RequireUserResult> {
   const claims = await getSessionClaims();

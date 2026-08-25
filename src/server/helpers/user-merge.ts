@@ -30,9 +30,11 @@ import {
  */
 
 /**
- * Deterministic canonical-row choice shared by `requireUser`: prefer the
- * canonical `clerk|<sub>` token format, then the lowest id. Pure — no DB
- * probing — so the hot path stays O(matches).
+ * Selects a deterministic canonical user from matching authentication records.
+ *
+ * @param matches - Authentication records that share the same subject.
+ * @param tokenIdentifier - The preferred canonical token identifier.
+ * @returns The matching user selected by token identifier, bare subject format, or lowest ID; `null` if no records match.
  */
 export function pickCanonicalMatch(
   matches: AuthUser[],
@@ -52,9 +54,9 @@ export function pickCanonicalMatch(
 type DuplicateGroup = { sub: string; ids: string[] };
 
 /**
- * Find groups of users sharing one Clerk subject (the text after the last
- * `|`). One aggregate query; empty result means nothing to do, which keeps a
- * daily schedule harmless.
+ * Finds user groups that share the same Clerk subject suffix.
+ *
+ * @returns Groups containing the shared subject suffix and the associated user IDs.
  */
 async function findDuplicateUserGroups(db: Db): Promise<DuplicateGroup[]> {
   const rows = await db.all<{ sub: string; ids: string }>(sql`
@@ -75,10 +77,9 @@ export interface MergeResult {
 }
 
 /**
- * Re-parent watch/episode/feedback/homepage rows and lists (with their
- * items) from every duplicate user onto the group's canonical user. Rows
- * whose natural key already exists on the canonical side are deleted rather
- * than moved (the unique index would reject the move anyway).
+ * Consolidates duplicate-user data under each group's canonical user.
+ *
+ * @returns The number of duplicate groups found and child rows affected.
  */
 export async function mergeDuplicateUsers(db: Db): Promise<MergeResult> {
   const groups = await findDuplicateUserGroups(db);
@@ -113,11 +114,13 @@ export async function mergeDuplicateUsers(db: Db): Promise<MergeResult> {
 }
 
 /**
- * Move the dupe's lists (and their items) onto the canonical user. Name
- * conflicts resolve to the canonical record: a dupe list whose name already
- * exists on the canonical side stays behind — moving it would fail on
- * lists_user_name_uq, and the starving dupe account keeps it out of the way.
- * Items follow their list; their denormalized userId is re-pointed too.
+ * Moves duplicate-owned lists with unique names onto the canonical user and updates their items' ownership.
+ *
+ * Lists whose names conflict with the canonical user's lists remain with the duplicate user.
+ *
+ * @param canonicalUserId - The user who receives the movable lists.
+ * @param dupeUserId - The duplicate user whose lists are consolidated.
+ * @returns The number of lists moved.
  */
 async function reparentLists(
   db: Db,
@@ -166,7 +169,13 @@ async function reparentLists(
   return movableIds.length;
 }
 
-/** Move one (userId-scoped) domain of rows, deleting natural-key duplicates. */
+/**
+ * Consolidates watch items from a duplicate user into the canonical user.
+ *
+ * @param canonicalUserId - The user receiving unique watch items
+ * @param dupeUserId - The user whose watch items are being consolidated
+ * @returns The number of duplicate-user watch-item rows processed
+ */
 async function reparentWatchItems(
   db: Db,
   canonicalUserId: string,
@@ -204,6 +213,13 @@ async function reparentWatchItems(
   return statements.length;
 }
 
+/**
+ * Consolidates episode progress from a duplicate user under the canonical user.
+ *
+ * Episode progress with keys already owned by the canonical user is deleted; other records are reassigned.
+ *
+ * @returns The number of duplicate episode-progress records processed.
+ */
 async function reparentEpisodes(
   db: Db,
   canonicalUserId: string,
@@ -242,6 +258,13 @@ async function reparentEpisodes(
   return statements.length;
 }
 
+/**
+ * Consolidates duplicate recommendation feedback records under the canonical user.
+ *
+ * @param canonicalUserId - The user who retains unique feedback records
+ * @param dupeUserId - The duplicate user whose feedback records are consolidated
+ * @returns The number of feedback records processed
+ */
 async function reparentFeedback(
   db: Db,
   canonicalUserId: string,
@@ -282,9 +305,11 @@ async function reparentFeedback(
 }
 
 /**
- * homepage_recommendations is unique per user: move the dupe's row only when
- * the canonical user has none (otherwise the canonical row wins and the
- * dupe's row dies with the dupe's other leftovers).
+ * Moves a duplicate user's homepage recommendation row to the canonical user when the canonical user has no row.
+ *
+ * @param canonicalUserId - The user ID that should own the recommendation row
+ * @param dupeUserId - The duplicate user ID whose row may be moved
+ * @returns `1` if a row was moved, `0` otherwise
  */
 async function reparentHomepageRow(
   db: Db,

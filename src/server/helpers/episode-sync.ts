@@ -61,6 +61,13 @@ export function buildEpisodeSyncStatements(
   return statements;
 }
 
+/**
+ * Loads all episode progress rows for a user and TMDB title.
+ *
+ * @param userId - The user whose progress rows to load
+ * @param tmdbId - The TMDB title identifier
+ * @returns A map of progress rows keyed by season and episode
+ */
 export async function loadEpisodeRowsByKey(
   db: Db,
   userId: string,

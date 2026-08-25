@@ -57,6 +57,17 @@ export function DialogViewport({
   );
 }
 
+/**
+ * Renders a dialog popup in a portal with optional backdrop, close control, and mobile bottom-sheet styling.
+ *
+ * @param showCloseButton - Whether to render the close button.
+ * @param bottomStickOnMobile - Whether to align the popup to the bottom of the viewport on small screens.
+ * @param closeProps - Props applied to the close button.
+ * @param portalProps - Props applied to the dialog portal.
+ * @param noOverlay - Whether to omit the backdrop.
+ * @param overlayClassName - Additional classes applied to the backdrop.
+ * @returns The rendered dialog popup.
+ */
 export function DialogPopup({
   className,
   children,
