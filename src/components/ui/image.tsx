@@ -1,9 +1,10 @@
 import { Image as ReactImage } from "@unpic/react";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 
 import type { ImageProps } from "@unpic/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DEFAULT_PLACEHOLDER_IMAGE } from "@/constants";
+import { tmdbSrcSet } from "@/lib/tmdb-image";
 import { cn } from "@/lib/utils";
 
 const ImageComponent = ({
@@ -52,6 +53,15 @@ const ImageComponent = ({
     ? (fallbackImage ?? DEFAULT_PLACEHOLDER_IMAGE)
     : initialSrc;
 
+  // TMDB assets are size-variant ladders on one CDN URL, so a srcset lets
+  // phones pull w185/w342 posters instead of the fixed w500/w780 JPEGs.
+  // Only attached when the caller declared `sizes`: without it browsers
+  // assume 100vw and would download larger files than the single src did.
+  const tmdbSrcSetCandidates = useMemo(
+    () => (props.sizes && !error ? tmdbSrcSet(currentSrc) : undefined),
+    [props.sizes, currentSrc, error],
+  );
+
   const blurStyle =
     blurSrc && !error
       ? {
@@ -86,6 +96,7 @@ const ImageComponent = ({
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : undefined}
         {...props}
+        srcSet={tmdbSrcSetCandidates}
         src={currentSrc}
         onError={handleError}
         onLoad={handleLoad}

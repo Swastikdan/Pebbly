@@ -1,5 +1,4 @@
 import { ClerkProvider } from "@clerk/react";
-import { shadcn } from "@clerk/ui/themes";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
@@ -31,11 +30,12 @@ export const getRouter = () => {
     defaultPendingMinMs: 0,
     Wrap: (props: { children: React.ReactNode }) => {
       return (
+        // Appearance is applied per-widget inside the lazy
+        // components/auth/account-button chunk instead of here: importing
+        // @clerk/ui/themes at the root pulled it into the critical entry
+        // bundle on every page load.
         <ClerkProvider
           publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
-          appearance={{
-            theme: shadcn,
-          }}
         >
           <QueryProvider {...rqContext}>{props.children}</QueryProvider>
         </ClerkProvider>
