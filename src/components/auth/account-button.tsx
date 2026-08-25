@@ -22,6 +22,12 @@ interface AccountButtonProps {
   variant: "desktop" | "mobile";
 }
 
+/**
+ * Renders an authentication control for desktop or mobile layouts.
+ *
+ * @param variant - The layout variant to render: `"desktop"` or `"mobile"`
+ * @returns The account control for the selected layout and authentication state
+ */
 export default function AccountButton({ variant }: AccountButtonProps) {
   if (variant === "desktop") {
     return (

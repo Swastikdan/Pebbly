@@ -50,6 +50,12 @@ export async function getGlobalFeatureFlags(
   return flags;
 }
 
+/**
+ * Extracts public metadata from supported Clerk identity fields.
+ *
+ * @param identity - The Clerk identity claims to inspect
+ * @returns The parsed public metadata, or `null` when no valid metadata is available
+ */
 function parseClerkPublicMeta(
   identity: Record<string, unknown> | null,
 ): Record<string, unknown> | null {
@@ -156,6 +162,14 @@ async function computeRoleFeatures(
   return features;
 }
 
+/**
+ * Determines whether a user can access a feature.
+ *
+ * @param claims - Signed session claims used to identify administrators
+ * @param user - The authenticated user whose roles and ban status are evaluated
+ * @param feature - The feature to check
+ * @returns `true` if access is granted, `false` otherwise
+ */
 export async function hasFeature(
   claims: ClerkSessionClaims | null,
   user: AuthUser | null,
@@ -188,6 +202,13 @@ export async function hasFeature(
   return features[feature] === true;
 }
 
+/**
+ * Resolves the user's valid dynamic roles, feature access, and account status.
+ *
+ * @param claims - Verified session claims used to determine administrative access
+ * @param user - The authenticated user whose roles and ban status are evaluated
+ * @returns The user's roles, enabled features, administrative status, and ban status
+ */
 export async function getUserFeatures(
   claims: ClerkSessionClaims | null,
   user: AuthUser | null,

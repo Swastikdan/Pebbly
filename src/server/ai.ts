@@ -32,10 +32,22 @@ type OpenRouterErrorLike = {
   message?: string;
 };
 
+/**
+ * Converts an unknown error value into a message string.
+ *
+ * @param error - The error value to convert
+ * @returns The error message or string representation of the value
+ */
 export function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ * Determines whether an error indicates that the service is under high demand or overloaded.
+ *
+ * @param error - The error to classify
+ * @returns `true` if the error indicates high demand or overload, `false` otherwise.
+ */
 export function isHighDemandError(error: unknown) {
   const candidate = error as OpenRouterErrorLike;
   const message = candidate.message?.toLowerCase() ?? "";
@@ -52,6 +64,12 @@ export function isHighDemandError(error: unknown) {
   );
 }
 
+/**
+ * Determines whether an error indicates that request rate limits were exceeded.
+ *
+ * @param error - The error to classify
+ * @returns `true` if the error indicates rate limiting, `false` otherwise.
+ */
 export function isRateLimitedError(error: unknown) {
   const candidate = error as OpenRouterErrorLike;
   const message = candidate.message?.toLowerCase() ?? "";
@@ -63,6 +81,11 @@ export function isRateLimitedError(error: unknown) {
   );
 }
 
+/**
+ * Pauses execution for the specified duration.
+ *
+ * @param ms - The delay duration in milliseconds
+ */
 export async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -91,8 +114,14 @@ const recommendationElementSchema = v.pipe(
 );
 
 /**
- * Stream a completion from OpenRouter and collect reasoning-token usage.
- * Uses `stream: true` so the final SSE chunk carries `usage`.
+ * Generates a JSON-formatted completion from OpenRouter.
+ *
+ * @param apiKey - The OpenRouter API key.
+ * @param model - The model used to generate the completion.
+ * @param userPrompt - The user prompt sent to the model.
+ * @param systemInstruction - The system instruction sent to the model.
+ * @returns The generated text and, when reported, the number of reasoning tokens used.
+ * @throws An error if the provider reports a stream error or the request exceeds the timeout.
  */
 async function generateContent(
   apiKey: string,
@@ -176,6 +205,14 @@ async function generateContent(
   return Promise.race([doStream(), timeout]);
 }
 
+/**
+ * Generates a recommendation response using the configured models.
+ *
+ * @param apiKey - The API key used to access the model provider
+ * @param userPrompt - The prompt containing the recommendation request
+ * @param systemInstruction - Instructions that guide response generation
+ * @returns The response text, model used, error classification flags, and reasoning-token usage
+ */
 async function generateRecommendationResponse(
   apiKey: string,
   userPrompt: string,
@@ -225,6 +262,14 @@ async function generateRecommendationResponse(
   };
 }
 
+/**
+ * Generates and validates AI recommendations using OpenRouter.
+ *
+ * @param prompt - The user prompt sent to the model
+ * @param systemInstruction - The system instruction sent to the model
+ * @param retries - The maximum number of generation attempts
+ * @returns An object containing validated recommendations and model metadata, or an error code when generation or response validation fails
+ */
 export async function callOpenRouterAI(
   prompt: string,
   systemInstruction: string,

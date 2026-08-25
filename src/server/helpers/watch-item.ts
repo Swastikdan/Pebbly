@@ -57,6 +57,12 @@ const REV_COLUMN_PATCH: Record<UserRevColumn, Record<string, unknown>> = {
   permsRev: { permsRev: sql`${users.permsRev} + 1` },
 };
 
+/**
+ * Increments the specified revision counter for a user.
+ *
+ * @param userId - The ID of the user whose revision counter should be incremented
+ * @param column - The revision counter to increment
+ */
 export async function bumpUserRev(
   db: Db,
   userId: string,
@@ -160,6 +166,19 @@ export interface UpsertWatchItemOptions {
   skipRevBump?: boolean;
 }
 
+/**
+ * Creates or updates a user's watch item and returns its current database row.
+ *
+ * Progress values are clamped to 0–100, statuses and reactions are normalized,
+ * and the watchlist revision is incremented unless disabled in `options`.
+ *
+ * @param userId - The user who owns the watch item
+ * @param tmdbId - The TMDB identifier for the media
+ * @param mediaType - The media type of the item
+ * @param updates - Field updates or a callback that derives updates from the existing item
+ * @param options - Options controlling revision updates
+ * @returns The created or updated watch item, or `undefined` when the update callback returns `null`
+ */
 export async function upsertWatchItem(
   db: Db,
   userId: string,

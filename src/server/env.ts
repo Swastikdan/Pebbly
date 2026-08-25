@@ -30,6 +30,11 @@ const envSchema = v.object({
   APP_ENV: v.optional(v.pipe(v.string(), v.minLength(1))),
 });
 
+/**
+ * Validates the environment configuration and logs actionable messages for invalid or missing values.
+ *
+ * Validation runs only once per module instance.
+ */
 export function validateEnv(env: Env = getEnv()): void {
   if (validated) return;
   validated = true;

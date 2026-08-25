@@ -19,13 +19,11 @@ const WIDTH_LADDER = [92, 154, 185, 300, 342, 500, 780, 1280] as const;
 const H632_APPROX_WIDTH = 421;
 
 /**
- * Expands a TMDB image URL into a `srcset` value whose candidates span
- * TMDB's documented size tiers. Returns undefined for non-TMDB URLs (data:
- * placeholders, ImageKit, YouTube thumbs) so callers can pass the result
- * straight through.
+ * Builds a responsive `srcset` value for recognized TMDB image URLs.
  *
- * h632 (height-constrained profile variant) maps to its approximate rendered
- * width so width descriptors stay honest for 2:3 portrait crops.
+ * Height-constrained variants retain the original URL with an approximate width descriptor and include a `w185` candidate. Other recognized variants use the documented width ladder.
+ *
+ * @returns A comma-separated `srcset` string, or `undefined` for non-TMDB URLs.
  */
 export function tmdbSrcSet(src: string): string | undefined {
   const match = TMDB_IMAGE_URL_RE.exec(src);

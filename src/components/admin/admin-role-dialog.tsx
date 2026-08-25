@@ -13,6 +13,15 @@ import {
 } from "@/components/ui/dialog";
 import { ErrorBanner } from "@/components/ui/feedback";
 
+/**
+ * Displays a confirmation dialog for banning or unbanning an administrative user.
+ *
+ * @param selectedUser - The user whose ban status will be changed, or `null` when the dialog is closed
+ * @param isSubmitting - Whether the ban or unban action is being submitted
+ * @param errorMessage - An error message to display, or `null` when no error occurred
+ * @param onConfirm - Handles confirmation of the ban or unban action
+ * @param onOpenChange - Handles changes to the dialog's open state
+ */
 export function AdminRoleDialog({
   selectedUser,
   isSubmitting,

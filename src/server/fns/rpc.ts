@@ -87,10 +87,12 @@ export type AuthedHandler<C extends AuthedFnConfig, TResult> = (
 ) => TResult | Promise<TResult>;
 
 /**
- * Executes `handler` behind the configured auth gates. Called from inside
- * `.handler(({ data }) => ...)`; the validated `data` must be forwarded as the
- * second argument. Returns the envelope promise, never a closure, so the
- * result stays serializable across the TanStack RPC boundary.
+ * Executes a handler after applying the configured authentication and authorization rules.
+ *
+ * @param config - Authentication and authorization settings
+ * @param data - Validated input supplied to the handler
+ * @param handler - Function invoked for an authorized request
+ * @returns The handler result, guest fallback response, or authorization failure
  */
 export function authedFn<C extends AuthedFnConfig, TResult>(
   config: C,

@@ -517,6 +517,14 @@ export const cloneCustomList = createServerFn({ method: "POST" })
     }),
   );
 
+/**
+ * Creates a custom list for a user.
+ *
+ * @param userId - The user who owns the list
+ * @param args - The list name and optional display, visibility, type, and ordering settings
+ * @param options - Controls whether the user's lists revision is updated
+ * @returns The new list ID, or a conflict error when the name is already in use
+ */
 async function createCustomListInner(
   db: Db,
   userId: string,
@@ -560,6 +568,12 @@ async function createCustomListInner(
   return ok(id);
 }
 
+/**
+ * Determines the next sort order for a user's custom list.
+ *
+ * @param userId - The user whose lists are being ordered
+ * @returns One greater than the user's highest list sort order, or `1` when the user has no lists
+ */
 async function nextSortOrder(db: Db, userId: string): Promise<number> {
   const highestList = await db
     .select({ sortOrder: lists.sortOrder })
@@ -570,6 +584,13 @@ async function nextSortOrder(db: Db, userId: string): Promise<number> {
   return highestList.length > 0 ? highestList[0].sortOrder + 1 : 1;
 }
 
+/**
+ * Adds a media item to an owned list or removes it when it is already present.
+ *
+ * @param userId - The user who owns the list
+ * @param args - The target list and media item details
+ * @returns `true` when the item is added, `false` when it is removed
+ */
 async function toggleListItemInner(
   db: Db,
   userId: string,

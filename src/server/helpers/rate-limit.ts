@@ -40,13 +40,7 @@ export interface RateLimitReservation {
 export const MAX_RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Ensure the ledger table exists. This is a safety net for deployments
- * where `drizzle/0008_wide_shocker.sql` hasn't been applied yet (e.g.
- * fresh clones where `wrangler d1 migrations apply` previously failed
- * due to D1 batching). Production and local DBs already have the table
- * via the manual sequential apply; this just makes the helper self-healing
- * so a missing table never surfaces as `Failed query: delete from
- * "rate_limit_attempts"...` and instead degrades to "allow".
+ * Ensures the rate-limit ledger table and its key/timestamp index exist.
  */
 async function ensureRateLimitTable(db: Db): Promise<void> {
   // Use raw SQL so we don't depend on the table already being in the
@@ -63,6 +57,12 @@ async function ensureRateLimitTable(db: Db): Promise<void> {
   );
 }
 
+/**
+ * Determines whether an error indicates that the rate-limit attempts table is missing.
+ *
+ * @param error - The value to inspect for a missing-table message
+ * @returns `true` if the error references a missing `rate_limit_attempts` table, `false` otherwise.
+ */
 function isMissingTableError(error: unknown): boolean {
   const msg = String(
     (error as { message?: string })?.message ?? error,
@@ -71,9 +71,9 @@ function isMissingTableError(error: unknown): boolean {
 }
 
 /**
- * Delete every ledger row older than the longest supported window,
- * independently of key. One bounded statement; safe to run daily from the
- * user-maintenance task.
+ * Removes rate-limit ledger rows older than the maximum supported window.
+ *
+ * @returns The number of rows deleted.
  */
 export async function pruneStaleRateLimitRows(db: Db): Promise<number> {
   try {
@@ -97,6 +97,14 @@ export async function pruneStaleRateLimitRows(db: Db): Promise<number> {
   }
 }
 
+/**
+ * Attempts to reserve a rate-limit slot for a key within a time window.
+ *
+ * @param key - Identifier whose requests share the rate limit
+ * @param windowMs - Duration of the rate-limit window in milliseconds
+ * @returns A reservation indicating whether the request is allowed; allowed reservations include a release token
+ * @throws Propagates database errors other than missing-table errors
+ */
 export async function tryConsumeRateLimit(
   db: Db,
   key: string,
@@ -164,7 +172,12 @@ export async function tryConsumeRateLimit(
   }
 }
 
-/** Undo a consumed slot (the attempt did not happen / should not count). */
+/**
+ * Releases a rate-limit reservation so its slot no longer counts toward the limit.
+ *
+ * @param token - The reservation token returned when the slot was consumed
+ * @throws If deleting the reservation fails for a reason other than a missing rate-limit table
+ */
 export async function releaseRateLimit(
   db: Db,
   token: string | undefined,
