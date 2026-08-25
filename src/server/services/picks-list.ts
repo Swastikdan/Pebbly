@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client";
 import type { MediaType } from "@/lib/media-types";
 import { listItems, lists } from "../db/schema";
+import { PEBBLY_PICKS_LIST_NAME } from "../schema/lists";
 
 export type PicksListItem = {
   tmdbId: number;
@@ -23,6 +24,11 @@ export type PicksListItem = {
  * likes of the same title can never fail the request after the watch-item
  * upsert has already committed. Does not bump revisions; the caller decides
  * which domains to touch.
+ *
+ * "Pebbly Picks" is reserved (schema/lists.ts rejects it for custom lists),
+ * and the lookup below also requires listType "pebbly-picks": a legacy
+ * custom list squatting on the name keeps its rows untouched — the insert is
+ * a no-op against the unique index and the lookup simply misses it.
  */
 export async function appendToPicksList(
   db: Db,
@@ -35,7 +41,7 @@ export async function appendToPicksList(
     .values({
       id: crypto.randomUUID(),
       userId,
-      name: "Pebbly Picks",
+      name: PEBBLY_PICKS_LIST_NAME,
       listType: "pebbly-picks",
       sortOrder: 0,
       createdAt: now,
@@ -46,7 +52,13 @@ export async function appendToPicksList(
   const pebblyList = await db
     .select()
     .from(lists)
-    .where(and(eq(lists.userId, userId), eq(lists.name, "Pebbly Picks")))
+    .where(
+      and(
+        eq(lists.userId, userId),
+        eq(lists.name, PEBBLY_PICKS_LIST_NAME),
+        eq(lists.listType, "pebbly-picks"),
+      ),
+    )
     .limit(1);
   if (pebblyList.length === 0) return;
 

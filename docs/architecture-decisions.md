@@ -110,11 +110,15 @@ admin badges from one paginated Clerk user-list call (display-only).
 
 **Consequences:**
 
-- A demotion in Clerk takes effect immediately.
-- Every admin-gated request pays one extra Clerk API call when the JWT claim
-  is absent. Preferring the signed claim limits how often that happens.
-- The admin table display can briefly disagree with reality if the Clerk API
-  call fails (accepted; it never gates access).
+- Authorization stays local to the verified signed JWT claim: no admin gate
+  on the request path performs any Clerk API call.
+- Demotion is not literally instant: claims are fixed until Clerk reissues
+  the session token, so a demotion lands within one short-lived
+  session-token lifetime (`verifyToken` enforces `exp`) or immediately when
+  the session itself is revoked — bounded by Clerk's token refresh/revocation
+  policy, never by a long-lived stored flag.
+- The admin table display can briefly disagree with reality if its one
+  display-only Clerk API call fails (accepted; it never gates access).
 
 ---
 

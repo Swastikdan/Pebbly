@@ -151,12 +151,22 @@ export type UpsertUpdate =
     ) =>
       (Partial<Omit<WatchItemRow, "id">> & Partial<WatchItemMetadata>) | null);
 
+export interface UpsertWatchItemOptions {
+  /**
+   * Skip the internal watchlistRev bump for callers that write several
+   * domains in one operation and bump exactly once themselves (e.g.
+   * markShowEpisodesAndStatus), so the operation never double-bumps.
+   */
+  skipRevBump?: boolean;
+}
+
 export async function upsertWatchItem(
   db: Db,
   userId: string,
   tmdbId: number,
   mediaType: MediaType,
   updates: UpsertUpdate,
+  options: UpsertWatchItemOptions = {},
 ): Promise<WatchItemRow | undefined> {
   const existing = await getWatchItem(db, userId, { tmdbId, mediaType });
   const finalUpdates =
@@ -189,7 +199,7 @@ export async function upsertWatchItem(
       .update(watchItems)
       .set(patch)
       .where(eq(watchItems.id, existing.id));
-    await bumpWatchlistRev(db, userId);
+    if (!options.skipRevBump) await bumpWatchlistRev(db, userId);
     return { ...existing, ...patch };
   }
 
@@ -249,6 +259,6 @@ export async function upsertWatchItem(
   // On conflict the update may have merged with the winner's metadata, so
   // re-read the authoritative row rather than trusting our pre-insert value.
   const refreshed = await getWatchItem(db, userId, { tmdbId, mediaType });
-  await bumpWatchlistRev(db, userId);
+  if (!options.skipRevBump) await bumpWatchlistRev(db, userId);
   return refreshed ?? row;
 }

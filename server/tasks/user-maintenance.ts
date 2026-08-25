@@ -12,22 +12,27 @@ import { defineTask } from "nitro/task";
 
 import { getDb } from "../../src/server/db/client";
 import { getEnv } from "../../src/server/env";
+import { pruneStaleRateLimitRows } from "../../src/server/helpers/rate-limit";
 import { mergeDuplicateUsers } from "../../src/server/helpers/user-merge";
 
 export default defineTask({
   meta: {
     name: "user-maintenance",
     description:
-      "Re-parent watch/episode/feedback rows from legacy duplicate users onto their canonical account",
+      "Re-parent watch/episode/feedback rows from legacy duplicate users onto their canonical account, and prune stale rate-limit ledger rows",
   },
   async run() {
     const db = getDb(getEnv());
     const { groups, rowsTouched } = await mergeDuplicateUsers(db);
+    const rateLimitRowsPruned = await pruneStaleRateLimitRows(db);
 
     return {
-      result: `user maintenance complete (${groups} duplicate groups, ${rowsTouched} rows touched)`,
+      result:
+        `user maintenance complete (${groups} duplicate groups, ` +
+        `${rowsTouched} rows touched, ${rateLimitRowsPruned} stale rate-limit rows pruned)`,
       groups,
       rowsTouched,
+      rateLimitRowsPruned,
     };
   },
 });

@@ -530,7 +530,9 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
         const now = Date.now();
 
         if (data.progressStatus !== undefined) {
-          // Race-safe upsert (same rationale as updateProgress).
+          // Race-safe upsert (same rationale as updateProgress). The rev bump
+          // is skipped here: the single bump below covers the whole operation
+          // (watch item + episodes), so watchlistRev moves exactly once.
           await upsertWatchItem(
             db,
             user.id,
@@ -542,6 +544,7 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
               progress: data.progress ?? existing?.progress ?? 0,
               ...buildMetadataPatch(data, existing),
             }),
+            { skipRevBump: true },
           );
         }
 

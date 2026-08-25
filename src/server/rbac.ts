@@ -168,6 +168,13 @@ export async function hasFeature(
   // never a live Clerk API call (that would add an external request to every
   // gate check). Admin status reaches the claim via the Clerk session-claims
   // template (`publicMetadata.isAdmin`); see isAdminByClaims.
+  //
+  // Revocation latency is bounded by token lifetime, not JWT longevity:
+  // getSessionClaims verifies the token's `exp` via Clerk's verifyToken and
+  // Clerk session tokens are short-lived (reissued continuously), so a
+  // demotion in Clerk lands at the next token refresh — never for the life
+  // of a long-lived credential. Same contract in getUserFeatures and the
+  // authedFn admin gate (fns/rpc.ts).
   if (isAdminByClaims(claims)) {
     return true;
   }
@@ -203,7 +210,8 @@ export async function getUserFeatures(
     };
   }
 
-  // JWT-claim-only admin check, same rationale as hasFeature.
+  // JWT-claim-only admin check, same rationale as hasFeature: staleness of a
+  // revoked admin claim is bounded by the verified token's short lifetime.
   if (isAdminByClaims(claims)) {
     return {
       roles: [] as string[],

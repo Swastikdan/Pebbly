@@ -4,7 +4,7 @@ import type { Recommendation } from "./ai";
 import type { Db } from "./db/client";
 import type { FeedbackSignals, WatchlistData } from "./prompts";
 import { normalizeTitleKey } from "@/lib/text";
-import { callGeminiAI, MODELS_TO_TRY } from "./ai";
+import { callOpenRouterAI, MODELS_TO_TRY } from "./ai";
 import {
   episodeProgress,
   listItems,
@@ -48,13 +48,20 @@ export async function gatherGenerationInputs(
 }
 
 export type AiGenerationResult =
-  | { ok: true; recommendations: Recommendation[]; usedModel: string }
+  | {
+      ok: true;
+      recommendations: Recommendation[];
+      usedModel: string;
+      reasoningTokens?: number;
+    }
   | { ok: false; error: string };
 
 /**
- * Call Gemini and filter out titles the user already knows (on their
- * watchlist or excluded). Returns the surviving recommendations; callers
- * own rate limiting before the call and result persistence after.
+ * Call OpenRouter (model `openrouter/free`) and filter out titles the user
+ * already knows (on their watchlist or excluded). Streaming is used so the
+ * final chunk's `usage.completionTokensDetails.reasoningTokens` is available
+ * for telemetry. Callers own rate limiting before the call and result
+ * persistence after. Retains `callGeminiAI` as an alias for backwards compat.
  */
 export async function runAiGeneration(args: {
   prompt: string;
@@ -62,7 +69,7 @@ export async function runAiGeneration(args: {
   watchItems: WatchlistData["watchItems"];
   excludeTmdbIds: number[];
 }): Promise<AiGenerationResult> {
-  const aiResult = await callGeminiAI(
+  const aiResult = await callOpenRouterAI(
     args.prompt,
     SYSTEM_INSTRUCTION,
     args.attempts,
@@ -74,6 +81,7 @@ export async function runAiGeneration(args: {
   return {
     ok: true,
     usedModel: aiResult.usedModel ?? MODELS_TO_TRY[0],
+    reasoningTokens: aiResult.reasoningTokens,
     recommendations: filterKnownRecommendations(
       aiResult.result.recommendations,
       args.watchItems,

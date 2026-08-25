@@ -1,3 +1,4 @@
+import type { SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import {
   check,
@@ -15,6 +16,19 @@ import { MEDIA_TYPES } from "@/lib/media-types";
 import { PROGRESS_STATUSES, REACTIONS } from "@/server/schema/common";
 import { LIST_TYPES, LIST_VISIBILITIES } from "@/server/schema/lists";
 import { HOMEPAGE_REC_STATUSES } from "@/server/schema/recommendations";
+
+/**
+ * Render a canonical constant list as inline SQL string literals for CHECK
+ * constraints. Table definitions cannot carry bound parameters, so values
+ * must be embedded as literals; the quote-doubling keeps the generated SQL
+ * valid even if a constant ever contains a quote.
+ */
+function enumLiterals(values: readonly string[]): SQL {
+  return sql.join(
+    values.map((value) => sql.raw(`'${value.replaceAll("'", "''")}'`)),
+    sql`, `,
+  );
+}
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -117,10 +131,13 @@ export const lists = sqliteTable(
   (t) => [
     uniqueIndex("lists_user_name_uq").on(t.userId, t.name),
     index("lists_user_sort_idx").on(t.userId, t.sortOrder),
-    check("lists_visibility_ck", sql`${t.visibility} in ('public', 'private')`),
+    check(
+      "lists_visibility_ck",
+      sql`${t.visibility} in (${enumLiterals(LIST_VISIBILITIES)})`,
+    ),
     check(
       "lists_list_type_ck",
-      sql`${t.listType} in ('custom', 'pebbly-picks')`,
+      sql`${t.listType} in (${enumLiterals(LIST_TYPES)})`,
     ),
   ],
 );
@@ -230,7 +247,7 @@ export const homepageRecommendations = sqliteTable(
   (t) => [
     check(
       "homepage_rec_status_ck",
-      sql`${t.status} in ('none', 'success', 'failed')`,
+      sql`${t.status} in (${enumLiterals(HOMEPAGE_REC_STATUSES)})`,
     ),
   ],
 );

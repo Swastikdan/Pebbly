@@ -2,10 +2,12 @@ import { eq, inArray, sql } from "drizzle-orm";
 
 import type { AuthUser } from "../auth";
 import type { Db } from "../db/client";
-import { runBatch } from "../db/client";
+import { MAX_IDS_PER_IN_CLAUSE, runBatch } from "../db/client";
 import {
   episodeProgress,
   homepageRecommendations,
+  listItems,
+  lists,
   recommendationFeedback,
   users,
   watchItems,
@@ -21,10 +23,10 @@ import {
  * the offline `user-maintenance` Nitro task instead.
  *
  * Deliberately conservative: child rows are re-parented onto the canonical
- * user, but duplicate `users` rows themselves are never deleted here — list
- * name collisions and FK cascades make deletion risky without product-level
- * rules. Starving dupes of writes (requireUser always picks the canonical
- * row) is enough for them to become inert.
+ * user, but duplicate `users` rows themselves are never deleted here — FK
+ * cascades make deletion risky without product-level rules. Starving dupes
+ * of writes (requireUser always picks the canonical row) is enough for them
+ * to become inert.
  */
 
 /**
@@ -73,10 +75,10 @@ export interface MergeResult {
 }
 
 /**
- * Re-parent watch/episode/feedback/homepage rows from every duplicate user
- * onto the group's canonical user. Rows whose natural key already exists on
- * the canonical side are deleted rather than moved (the unique index would
- * reject the move anyway).
+ * Re-parent watch/episode/feedback/homepage rows and lists (with their
+ * items) from every duplicate user onto the group's canonical user. Rows
+ * whose natural key already exists on the canonical side are deleted rather
+ * than moved (the unique index would reject the move anyway).
  */
 export async function mergeDuplicateUsers(db: Db): Promise<MergeResult> {
   const groups = await findDuplicateUserGroups(db);
@@ -94,6 +96,7 @@ export async function mergeDuplicateUsers(db: Db): Promise<MergeResult> {
     const dupes = members.filter((m) => m.id !== canonical.id);
 
     for (const dupe of dupes) {
+      rowsTouched += await reparentLists(db, canonical.id, dupe.id);
       rowsTouched += await reparentWatchItems(db, canonical.id, dupe.id);
       rowsTouched += await reparentEpisodes(db, canonical.id, dupe.id);
       rowsTouched += await reparentFeedback(db, canonical.id, dupe.id);
@@ -107,6 +110,60 @@ export async function mergeDuplicateUsers(db: Db): Promise<MergeResult> {
   }
 
   return { groups: groups.length, rowsTouched };
+}
+
+/**
+ * Move the dupe's lists (and their items) onto the canonical user. Name
+ * conflicts resolve to the canonical record: a dupe list whose name already
+ * exists on the canonical side stays behind — moving it would fail on
+ * lists_user_name_uq, and the starving dupe account keeps it out of the way.
+ * Items follow their list; their denormalized userId is re-pointed too.
+ */
+async function reparentLists(
+  db: Db,
+  canonicalUserId: string,
+  dupeUserId: string,
+): Promise<number> {
+  const canonicalNames = new Set(
+    (
+      await db
+        .select({ name: lists.name })
+        .from(lists)
+        .where(eq(lists.userId, canonicalUserId))
+    ).map((r) => r.name),
+  );
+
+  const dupeLists = await db
+    .select({ id: lists.id, name: lists.name })
+    .from(lists)
+    .where(eq(lists.userId, dupeUserId));
+
+  const movableIds = dupeLists
+    .filter((list) => !canonicalNames.has(list.name))
+    .map((list) => list.id);
+  if (movableIds.length === 0) return 0;
+
+  const statements: unknown[] = [];
+  for (let i = 0; i < movableIds.length; i += MAX_IDS_PER_IN_CLAUSE) {
+    statements.push(
+      db
+        .update(lists)
+        .set({ userId: canonicalUserId })
+        .where(
+          inArray(lists.id, movableIds.slice(i, i + MAX_IDS_PER_IN_CLAUSE)),
+        ),
+    );
+  }
+  for (const listId of movableIds) {
+    statements.push(
+      db
+        .update(listItems)
+        .set({ userId: canonicalUserId })
+        .where(eq(listItems.listId, listId)),
+    );
+  }
+  await runBatch(db, statements);
+  return movableIds.length;
 }
 
 /** Move one (userId-scoped) domain of rows, deleting natural-key duplicates. */

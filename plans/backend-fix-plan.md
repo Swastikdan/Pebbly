@@ -128,9 +128,19 @@ Status legend: `[x]` done · `[~]` partial · `[ ]` todo
 
 ## Deployment notes (in order)
 
-1. Apply migration locally then remotely:
-   `pnpm db:migrate:local` → `pnpm db:migrate:prod`
-   (creates `rate_limit_attempts`, rebuilds `lists` + `homepage_recommendations`).
+1. Back up and baseline, then apply migration locally then remotely:
+   - Record baseline row counts for `lists`, `list_items`, and
+     `homepage_recommendations` (local and remote).
+   - Export a database backup and retain it for recovery
+     (`wrangler d1 export pebbly --remote --output=backup-pre-0008.sql`,
+     plus the local equivalent).
+   - Run `pnpm db:migrate:local` → `pnpm db:migrate:prod`
+     (creates `rate_limit_attempts`, rebuilds `lists` +
+     `homepage_recommendations`; preserves `list_items` via stash/rebuild).
+   - Rerun the same row counts after migrating and compare against the
+     baseline: `list_items` and `homepage_recommendations` must match
+     exactly. Any delta is a cascade-deletion signal — stop and recover from
+     the retained backup before proceeding.
 2. Configure the Clerk session-claims template (`isAdmin` ←
    `publicMetadata.isAdmin`) **before/with** deploying #2.
 3. Deploy. The new `30 3 * * *` cron ships in wrangler.toml.

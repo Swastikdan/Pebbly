@@ -120,6 +120,9 @@ export function authedFn<C extends AuthedFnConfig, TResult>(
       // admin decisions (a live Clerk API fallback here would put an external
       // call inside every admin gate). Requires the Clerk session-claims
       // template to embed `publicMetadata.isAdmin` — see isAdminByClaims.
+      // A revoked admin claim stops working when the short-lived session
+      // token expires and refreshes (verifyToken enforces `exp`); same
+      // bounded-staleness contract as hasFeature/getUserFeatures in rbac.ts.
       const isAdmin = claims ? isAdminByClaims(claims) : false;
       if (!isAdmin) {
         return fail("FORBIDDEN", "Forbidden: admin access required") as TResult;
