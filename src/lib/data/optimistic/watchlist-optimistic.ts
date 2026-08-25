@@ -97,6 +97,8 @@ function applyMembershipRows(
     if (existing) {
       return patchWatchRow(rows, args.tmdbId, args.mediaType, () => ({
         inWatchlist: true,
+        progressStatus: "watch-later",
+        progress: 0,
         updatedAt: Date.now(),
       }));
     }

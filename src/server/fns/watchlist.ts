@@ -264,11 +264,10 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
           user.id,
           data.tmdbId,
           data.mediaType,
-          (curr) => ({
+          (_curr) => ({
             inWatchlist: true,
-            progressStatus:
-              normalizeProgressStatus(curr?.progressStatus) ?? "watch-later",
-            ...(curr ? {} : { progress: 0 }),
+            progressStatus: "watch-later",
+            progress: 0,
             title: data.title,
             image: data.image,
             rating: data.rating,

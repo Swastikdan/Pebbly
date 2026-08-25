@@ -102,12 +102,25 @@ export function SearchPage() {
     });
   }, [data?.results, type, minRating]);
 
+  const movieCount =
+    data?.results?.filter((item) => item.media_type === "movie").length ?? 0;
+  const tvCount =
+    data?.results?.filter((item) => item.media_type === "tv").length ?? 0;
+
   useEffect(() => {
     if (type && filteredData.length === 0 && data?.results?.length) {
       setType(null);
       setMinRating("0");
     }
-  }, [filteredData.length, type, data?.results?.length]);
+    if (type === "movie" && movieCount === 0 && data?.results?.length) {
+      setType(null);
+      setMinRating("0");
+    }
+    if (type === "tv" && tvCount === 0 && data?.results?.length) {
+      setType(null);
+      setMinRating("0");
+    }
+  }, [filteredData.length, type, data?.results?.length, movieCount, tvCount]);
 
   const handleTypeChange = useCallback((newType: FilterType) => {
     setType((prevType) => (prevType === newType ? prevType : newType));
@@ -127,8 +140,7 @@ export function SearchPage() {
   );
 
   const hasResults = !!data?.results?.length;
-  const baselineNonPersonCount =
-    data?.results?.filter((item) => item.media_type !== "person").length ?? 0;
+  const baselineNonPersonCount = movieCount + tvCount;
   const hasActiveFilters = type !== null || Number(minRating) > 0;
   const noResultsDueToFilters =
     filteredData.length === 0 && hasActiveFilters && baselineNonPersonCount > 0;
@@ -275,40 +287,44 @@ export function SearchPage() {
             >
               All
             </Button>
-            <Button
-              className="h-7 rounded-md px-3 text-xs font-semibold"
-              variant="ghost"
-              onClick={handleMovieClick}
-              data-active={type === "movie"}
-              aria-pressed={type === "movie"}
-              style={
-                type === "movie"
-                  ? {
-                      background: "var(--foreground)",
-                      color: "var(--background)",
-                    }
-                  : undefined
-              }
-            >
-              Movies
-            </Button>
-            <Button
-              className="h-7 rounded-md px-3 text-xs font-semibold"
-              variant="ghost"
-              onClick={handleTVClick}
-              data-active={type === "tv"}
-              aria-pressed={type === "tv"}
-              style={
-                type === "tv"
-                  ? {
-                      background: "var(--foreground)",
-                      color: "var(--background)",
-                    }
-                  : undefined
-              }
-            >
-              Series
-            </Button>
+            {movieCount > 0 && (
+              <Button
+                className="h-7 rounded-md px-3 text-xs font-semibold"
+                variant="ghost"
+                onClick={handleMovieClick}
+                data-active={type === "movie"}
+                aria-pressed={type === "movie"}
+                style={
+                  type === "movie"
+                    ? {
+                        background: "var(--foreground)",
+                        color: "var(--background)",
+                      }
+                    : undefined
+                }
+              >
+                Movies
+              </Button>
+            )}
+            {tvCount > 0 && (
+              <Button
+                className="h-7 rounded-md px-3 text-xs font-semibold"
+                variant="ghost"
+                onClick={handleTVClick}
+                data-active={type === "tv"}
+                aria-pressed={type === "tv"}
+                style={
+                  type === "tv"
+                    ? {
+                        background: "var(--foreground)",
+                        color: "var(--background)",
+                      }
+                    : undefined
+                }
+              >
+                Series
+              </Button>
+            )}
           </div>
 
           <Select
