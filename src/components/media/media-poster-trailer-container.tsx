@@ -43,10 +43,10 @@ export function MediaPosterTrailerContainer(props: {
       className="animate-fade-in-up flex flex-col justify-start gap-3 pb-3 sm:flex-row"
       style={{ animationDelay: "100ms" }}
     >
-      <div className="surface-raised group relative w-full max-w-[260px] shrink-0 overflow-hidden rounded-xl sm:w-48 sm:max-w-none md:w-56 lg:w-72">
+      <div className="surface-raised group relative w-full shrink-0 overflow-hidden rounded-xl sm:w-auto">
         <Image
           alt={title}
-          className="bg-secondary aspect-[2/3] h-auto w-full rounded-xl object-cover"
+          className="bg-secondary aspect-[2/3] h-full w-full rounded-xl object-cover sm:h-56 sm:w-auto md:h-[17.5rem] lg:h-80"
           height={450}
           src={image}
           width={300}
@@ -75,7 +75,7 @@ export function MediaPosterTrailerContainer(props: {
             `https://img.youtube.com/vi/${video.key}/sddefault.jpg`
           }
           getThumbAlt={(video) => video.name}
-          imageClassName="bg-accent aspect-video h-48 w-auto min-w-[268px] rounded-xl object-cover sm:h-56 md:h-70 lg:h-80 sm:min-w-[320px] md:min-w-[380px]"
+          imageClassName="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
           renderTileOverlay={(video) => (
             <>
               <span className="bg-background text-foreground dark:bg-foreground dark:text-background absolute top-4 left-4 w-min max-w-[200px] truncate rounded-lg px-2 py-1 text-sm sm:max-w-[250px]">
