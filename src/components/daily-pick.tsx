@@ -32,9 +32,10 @@ export function DailyPickButton() {
     return (
       <Button
         variant="secondary"
-        size="default"
+        size="lg"
         disabled
         className="pressable opacity-70"
+        aria-hidden="true"
       >
         <FilmIcon className="text-primary mr-1.5 size-4" />
         <span>What to Watch Today</span>
@@ -44,8 +45,22 @@ export function DailyPickButton() {
 
   // Signed-in users need the video-player feature. Signed-out users get no
   // RBAC features at all, but the pick is still useful to them (browse,
-  // shuffle, save locally), so keep the button visible.
-  if (!isVideoPlaybackEnabled && isSignedIn) return null;
+  // shuffle, save locally), so keep the button visible. When hidden for
+  // signed-in users without the feature, keep an invisible placeholder of
+  // identical height so the hero below doesn't shift up.
+  if (!isVideoPlaybackEnabled && isSignedIn) {
+    return (
+      <div
+        aria-hidden="true"
+        className="invisible flex h-11 items-center justify-center px-8"
+      >
+        <Button variant="secondary" size="lg" disabled tabIndex={-1}>
+          <FilmIcon className="text-primary mr-1.5 size-4" />
+          <span>What to Watch Today</span>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Dialog

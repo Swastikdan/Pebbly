@@ -134,7 +134,7 @@ const ProviderTile = ({
 };
 
 const LoadingState = () => (
-  <section className="py-3">
+  <section className="min-h-[140px] py-3">
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
@@ -152,6 +152,20 @@ const LoadingState = () => (
               className="size-11 rounded-lg sm:size-12"
             />
           ))}
+        </div>
+      </div>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-5 w-12 rounded" />
+          <div className="flex gap-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton
+                // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+                key={`row2-${i}`}
+                className="size-11 rounded-lg sm:size-12"
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -192,9 +206,11 @@ export const MediaWatchProviders = (props: {
       .sort();
   }, [resultsByRegion]);
 
+  // Stable min-height wrapper avoids CLS between LoadingState (140px)
+  // and the resolved rows (typically 140-200px). Mount gating keeps SSR
+  // and client region consistent without unmounting the placeholder.
   if (isLoading || isError) return <LoadingState />;
 
-  // Wait until mounted so the detected region never disagrees with SSR markup.
   if (!mounted || !resultsByRegion) return <LoadingState />;
   if (availableRegions.length === 0) return null;
 
@@ -216,7 +232,7 @@ export const MediaWatchProviders = (props: {
   }
 
   return (
-    <section className="py-3">
+    <section className="min-h-[160px] py-3">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">

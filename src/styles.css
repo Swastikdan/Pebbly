@@ -2,6 +2,27 @@
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/bricolage-grotesque";
+
+/* Fallback font metrics to reduce CLS from font swap.
+   96% size-adjust keeps the fallback close to Geist/Bricolage metrics
+   so the swap doesn't reflow line breaks. */
+@font-face {
+  font-family: "Geist Fallback";
+  src: local("Arial");
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Bricolage Fallback";
+  src: local("Arial");
+  size-adjust: 100%;
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
 @custom-variant dark (&:where(.dark, .dark *));
 /* Hover styles only apply where real pointers exist; touch devices trigger :hover on tap, which leaves buttons stuck in their hover state. */
 @custom-variant hover {
@@ -13,9 +34,10 @@
 }
 @theme {
   --font-sans:
-    "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
-  --font-display: "Bricolage Grotesque Variable", var(--font-sans);
+    "Geist Variable", "Geist Fallback", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  --font-display:
+    "Bricolage Grotesque Variable", "Bricolage Fallback", var(--font-sans);
   --font-heading: var(--font-display);
   --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-emphatic: cubic-bezier(0.77, 0, 0.175, 1);

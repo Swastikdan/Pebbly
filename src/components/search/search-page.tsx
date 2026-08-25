@@ -138,48 +138,52 @@ export function SearchPage() {
   let content: React.ReactNode;
   if (!query) {
     content = (
-      <>
-        <SearchHistory navigate={navigate} />
+      <div className="min-h-[500px]">
+        <div className="min-h-[48px]">
+          <SearchHistory navigate={navigate} />
+        </div>
         <div className="flex flex-col gap-5 py-6">
           <h2 className="text-lg font-semibold">Trending Now</h2>
-          {isTrendingLoading ? (
-            <MediaGrid>
-              {Array.from({ length: 12 }).map((_, index) => (
-                <MediaCardSkeleton
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-                  key={index}
-                  card_type="horizontal"
-                />
-              ))}
-            </MediaGrid>
-          ) : (
-            <MediaGrid stagger>
-              {trendingData?.map((item, index) => (
-                <MediaCard
-                  key={item.id}
-                  id={item.id}
-                  image={item.poster_path ?? ""}
-                  known_for_department=""
-                  media_type={item.media_type as MediaType}
-                  poster_path={item.poster_path ?? ""}
-                  rating={item.vote_average ?? 0}
-                  release_date={
-                    item.first_air_date ?? item.release_date ?? null
-                  }
-                  title={item.title ?? item.name ?? "Untitled"}
-                  overview={item.overview ?? undefined}
-                  card_type="horizontal"
-                  priority={index < 7}
-                />
-              ))}
-            </MediaGrid>
-          )}
+          <div className="min-h-[420px]">
+            {isTrendingLoading ? (
+              <MediaGrid>
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <MediaCardSkeleton
+                    // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+                    key={index}
+                    card_type="horizontal"
+                  />
+                ))}
+              </MediaGrid>
+            ) : (
+              <MediaGrid stagger>
+                {trendingData?.map((item, index) => (
+                  <MediaCard
+                    key={item.id}
+                    id={item.id}
+                    image={item.poster_path ?? ""}
+                    known_for_department=""
+                    media_type={item.media_type as MediaType}
+                    poster_path={item.poster_path ?? ""}
+                    rating={item.vote_average ?? 0}
+                    release_date={
+                      item.first_air_date ?? item.release_date ?? null
+                    }
+                    title={item.title ?? item.name ?? "Untitled"}
+                    overview={item.overview ?? undefined}
+                    card_type="horizontal"
+                    priority={index < 7}
+                  />
+                ))}
+              </MediaGrid>
+            )}
+          </div>
         </div>
-      </>
+      </div>
     );
   } else if (isLoadingState) {
     content = (
-      <div className="flex h-full flex-col gap-5 py-5">
+      <div className="flex h-full min-h-[500px] flex-col gap-5 py-5">
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
             <Skeleton className="h-7 w-10 rounded-md" />
@@ -191,7 +195,7 @@ export function SearchPage() {
 
           <Skeleton className="ml-auto h-3 w-[70px] rounded" />
         </div>
-        <div className="flex min-h-96 w-full items-center justify-center">
+        <div className="flex min-h-[420px] w-full items-center justify-center">
           <MediaGrid>
             {Array.from({ length: 12 }).map((_, index) => (
               <MediaCardSkeleton
@@ -202,6 +206,7 @@ export function SearchPage() {
             ))}
           </MediaGrid>
         </div>
+        <div className="min-h-[56px]" />
       </div>
     );
   } else if (error) {
@@ -221,32 +226,36 @@ export function SearchPage() {
     );
   } else if (filteredData.length === 0) {
     content = (
-      <>
-        <DefaultEmptyState
-          onReset={() => {
-            if (noResultsDueToFilters) {
-              setType(null);
-              setMinRating("0");
-            } else {
-              navigate({ to: "/search" });
+      <div className="flex min-h-[500px] flex-col gap-5 py-5">
+        <div className="flex min-h-[320px] w-full items-center justify-center">
+          <DefaultEmptyState
+            onReset={() => {
+              if (noResultsDueToFilters) {
+                setType(null);
+                setMinRating("0");
+              } else {
+                navigate({ to: "/search" });
+              }
+            }}
+            message={
+              noResultsDueToFilters
+                ? "No movies or TV shows found with the selected filter"
+                : "No movies or TV shows found matching your search"
             }
-          }}
-          message={
-            noResultsDueToFilters
-              ? "No movies or TV shows found with the selected filter"
-              : "No movies or TV shows found matching your search"
-          }
-        />
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
-      </>
+          />
+        </div>
+        <div className="min-h-[56px]">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      </div>
     );
   } else {
     content = (
-      <div className="flex h-full flex-col gap-5 py-5">
+      <div className="flex h-full min-h-[500px] flex-col gap-5 py-5">
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex h-8 items-center gap-0.5 rounded-lg border p-0.5">
             <Button
@@ -331,7 +340,7 @@ export function SearchPage() {
           </span>
         </div>
 
-        <div className="flex min-h-96 w-full items-center justify-center">
+        <div className="flex min-h-[420px] w-full items-center justify-center">
           <MediaGrid stagger>
             {filteredData.map((item, index) => (
               <MediaCard
@@ -351,13 +360,15 @@ export function SearchPage() {
             ))}
           </MediaGrid>
         </div>
-        {showPagination && (
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        )}
+        <div className="min-h-[56px]">
+          {showPagination && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </div>
       </div>
     );
   }
@@ -391,12 +402,21 @@ function SearchHistory({
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const [history, setHistory] = useState<string[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setHistory(getSearchHistory());
+    setHydrated(true);
   }, []);
 
-  if (history.length === 0) return null;
+  if (!hydrated) {
+    // Reserve height during hydration so Trending Now doesn't shift up
+    // when history appears. Matches the ~48px chip row height.
+    return <div className="min-h-[48px]" aria-hidden="true" />;
+  }
+
+  if (history.length === 0)
+    return <div className="min-h-0" aria-hidden="true" />;
 
   return (
     <div className="flex flex-col gap-2 pt-4 pb-1">

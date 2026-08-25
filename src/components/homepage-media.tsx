@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/react";
 import { memo } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 
@@ -138,15 +137,15 @@ function TrendingWeekMovies() {
 }
 
 function UpcomingMovies() {
-  const { items } = useContinueWatching();
-  const { isSignedIn } = useUser();
-  const showContinueWatching = isSignedIn && items.length > 0;
-  const resolvedCardType = showContinueWatching ? "horizontal" : "vertical";
-
+  // Fixed to horizontal (poster) to avoid CLS: the previous implementation
+  // flipped between horizontal (poster) and vertical (backdrop) based on
+  // whether Continue Watching was visible, which is only known after
+  // client auth hydration. That caused a ~100px height shift on every
+  // signed-in navigation.
   return (
     <MediaSection
       queryType="movies_upcoming"
-      cardTypeOverride={resolvedCardType}
+      cardTypeOverride="horizontal"
       mediaType="movie"
     />
   );

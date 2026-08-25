@@ -35,12 +35,19 @@ export function LazySection({
     return () => observer.disconnect();
   }, [rootMargin]);
 
+  // Keep minHeight always to avoid CLS when the fallback is swapped for
+  // content. `minHeight` is a lower bound so taller content still expands
+  // without collapsing the placeholder that was measured during initial
+  // paint. `content-visibility:auto` with `containIntrinsicSize` keeps the
+  // off-screen cost low without discarding the size reservation.
   return (
     <div
       ref={ref}
       className={className}
       style={{
-        minHeight: hasIntersected ? undefined : minHeight,
+        minHeight,
+        containIntrinsicSize: minHeight,
+        contentVisibility: "auto",
       }}
     >
       {hasIntersected ? children : fallback}

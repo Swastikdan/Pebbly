@@ -379,7 +379,18 @@ export function HomepageRecommendations() {
     [refreshHomepage, toggleWatchlist],
   );
 
-  if (!isLoaded || !canAccessFeature) {
+  if (!isLoaded) {
+    // Reserve the same vertical space as the header + skeleton while Clerk
+    // is hydrating, so eligible users don't see the layout grow after auth.
+    return (
+      <div className="my-6 min-h-[280px]" aria-hidden="true">
+        <RecommendationSectionHeader />
+        <MediaSkeletonList />
+      </div>
+    );
+  }
+
+  if (!canAccessFeature) {
     return null;
   }
 
@@ -407,7 +418,7 @@ export function HomepageRecommendations() {
 
   if (!recommendationsData) {
     return (
-      <div className="my-6">
+      <div className="my-6 min-h-[280px]">
         <RecommendationSectionHeader />
         <MediaSkeletonList />
       </div>
@@ -417,17 +428,20 @@ export function HomepageRecommendations() {
   if (recs.length === 0) {
     if (isGenerating) {
       return (
-        <div className="my-6">
+        <div className="my-6 min-h-[280px]">
           <RecommendationSectionHeader />
           <MediaSkeletonList />
         </div>
       );
     }
-    return null;
+    // Keep the section reserved at zero height would still shift when the
+    // skeleton is replaced. Return a collapsed placeholder with consistent
+    // margin so siblings don't jump.
+    return <div className="my-6 min-h-0" aria-hidden="true" />;
   }
 
   return (
-    <div className="my-6 w-full">
+    <div className="my-6 min-h-[280px] w-full">
       <section className="w-full">
         <RecommendationSectionHeader />
         <ScrollContainer isButtonsVisible={true}>
