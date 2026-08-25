@@ -10,6 +10,7 @@ import { MediaKeywords } from "@/components/media/media-keywords";
 import { MediaPosterTrailerContainer } from "@/components/media/media-poster-trailer-container";
 import { MediaRecommendations } from "@/components/media/media-recommendation";
 import { MediaTitleContainer } from "@/components/media/media-title-container";
+import { MediaWatchProviders } from "@/components/media/media-watch-providers";
 
 type SharedMediaPageData = ReturnType<typeof buildSharedMediaPageData>;
 
@@ -29,6 +30,7 @@ export function MediaDetailPage(props: {
   imdbUrl?: string | null;
   certification: string;
   keywords: { id: number; name: string }[] | null;
+  inTheaters?: boolean;
   hasMoreCastCrew: boolean;
   hasMoreBackdrops: boolean;
   hasMorePosters: boolean;
@@ -70,6 +72,11 @@ export function MediaDetailPage(props: {
         trailervideos={mediaPage.trailervideos}
       />
       <GenreContainer genres={mediaPage.genres} />
+      <MediaWatchProviders
+        id={props.id}
+        type={entity}
+        inTheaters={props.inTheaters}
+      />
       <MediaDescription description={props.overview} />
       <CastSection
         cast={mediaPage.cast}

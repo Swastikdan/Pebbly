@@ -61,7 +61,7 @@ export function TabsList({
       </TabsListContext.Provider>
       <TabsPrimitive.Indicator
         className={cn(
-          "absolute top-0 left-0 transition-[translate,width,height] duration-200 ease-in-out",
+          "ease-emphatic absolute top-0 left-0 transition-[translate,width,height] duration-150",
           variant === "underline"
             ? "bg-primary z-10 data-[orientation=horizontal]:top-auto data-[orientation=horizontal]:bottom-0 data-[orientation=horizontal]:h-0.5 data-[orientation=horizontal]:w-[var(--active-tab-width)] data-[orientation=horizontal]:[translate:var(--active-tab-left)_0] data-[orientation=vertical]:h-[var(--active-tab-height)] data-[orientation=vertical]:w-0.5 data-[orientation=vertical]:[translate:0_var(--active-tab-top)]"
             : "bg-background dark:bg-input -z-1 h-[var(--active-tab-height)] w-[var(--active-tab-width)] [translate:var(--active-tab-left)_var(--active-tab-top)] rounded-md shadow-sm/5",
@@ -85,7 +85,7 @@ export function TabsTab({
   return (
     <TabsPrimitive.Tab
       className={cn(
-        "hover:text-muted-foreground focus-visible:ring-ring data-active:text-foreground relative flex shrink-0 grow cursor-pointer items-center justify-center rounded-md border border-transparent text-base font-medium whitespace-nowrap transition-[color,background-color,box-shadow] outline-none focus-visible:ring-2 data-disabled:pointer-events-none data-disabled:opacity-64 data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start sm:text-sm",
+        "hover:text-muted-foreground focus-visible:ring-ring data-active:text-foreground relative flex shrink-0 grow cursor-pointer items-center justify-center rounded-md border border-transparent text-base font-medium whitespace-nowrap outline-hidden transition-[color,background-color,box-shadow] focus-visible:ring-2 data-disabled:pointer-events-none data-disabled:opacity-64 data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start sm:text-sm",
         segmentedControlItemLayoutClassName,
         segmentedControlItemSizeClassNames[resolvedSize],
         className,
@@ -103,7 +103,7 @@ export function TabsPanel({
 }: TabsPrimitive.Panel.Props): React.ReactElement {
   return (
     <TabsPrimitive.Panel
-      className={cn("flex-1 outline-none", className)}
+      className={cn("flex-1 outline-hidden", className)}
       data-slot="tabs-content"
       {...props}
     />

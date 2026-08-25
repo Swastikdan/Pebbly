@@ -6,7 +6,7 @@ import { defineConfig } from "drizzle-kit";
  *
  *   pnpm db:studio
  *
- * Uses the `d1-http` driver (Cloudflare API) — no local sqlite client needed.
+ * Uses the `d1-http` driver (Cloudflare API); no local sqlite client needed.
  * Credentials come from the environment:
  *   - CLOUDFLARE_API_TOKEN  (API token with "D1 Edit" permission)
  *   - CLOUDFLARE_ACCOUNT_ID (Cloudflare account id)
@@ -29,7 +29,7 @@ function readWranglerDatabaseId(): string {
 
   // wrangler.toml uses TOML array-of-tables syntax (`[[d1_databases]]`).
   // Split the file on each `[[d1_databases]]` header and parse only the
-  // top-level section — `[env.*]` blocks are ignored entirely, so an
+  // top-level section; `[env.*]` blocks are ignored entirely, so an
   // environment-specific D1 cannot shadow the intended database id.
   const sections = raw.split(/^\[\[d1_databases\]\]/m).slice(1);
   if (sections.length === 0) {

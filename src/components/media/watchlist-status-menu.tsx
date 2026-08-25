@@ -321,8 +321,8 @@ function AddToListDialog({
           {!isSignedIn ? (
             <div className="flex flex-col items-center gap-3 px-6 pt-2 pb-6 text-center">
               <p className="text-muted-foreground text-xs">
-                Collections belong to your account, so they stay yours — private
-                by default and shareable when you want.
+                Collections belong to your account. They stay private by default
+                and are shareable when you want.
               </p>
               <SignInButton mode="modal">
                 <Button

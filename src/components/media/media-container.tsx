@@ -208,7 +208,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
           View all videos, backdrops & posters
           <ArrowRightLine
             size={14}
-            className="ml-1 inline-block transition-transform group-hover:translate-x-0.5"
+            className="ml-1 inline-block transition-transform [@media(hover:hover)]:group-hover:translate-x-0.5"
           />
         </Link>
       )}

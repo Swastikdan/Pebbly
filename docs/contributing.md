@@ -45,7 +45,7 @@ exactly, so a change that touches code always touches at least that one doc.
 
 Prefer **cohesive narratives over decision stubs**: when a change introduces
 a new pattern (say, a shared pipeline or a new deployment flow), explain it
-in the layer doc where the code lives — with a short "why" so the next reader
+in the layer doc where the code lives, with a short "why" so the next reader
 understands the intent without archaeology. Keep the story in one place
 rather than scattering it across numbered records.
 

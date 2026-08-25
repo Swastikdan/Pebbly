@@ -260,7 +260,7 @@ export function VideoPlayerModal({
               type="button"
               variant="ghost"
               className={cn(
-                "group/play absolute inset-0 z-10 size-full rounded-none p-0 opacity-0 transition-opacity duration-200 hover:bg-transparent hover:opacity-100 focus-visible:opacity-100",
+                "group/play absolute inset-0 z-10 size-full rounded-xl p-0 opacity-0 transition-opacity duration-200 before:rounded-xl hover:bg-transparent hover:opacity-100 focus-visible:opacity-100",
                 className,
               )}
               aria-label={`Play ${title}`}
@@ -272,7 +272,7 @@ export function VideoPlayerModal({
             />
           }
         >
-          <div className="rounded-full bg-black/60 p-3 shadow-xl backdrop-blur-sm transition-[color,background-color,border-color,transform,opacity] duration-200 group-hover/play:scale-110 group-hover/play:bg-black/80">
+          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 shadow-xl backdrop-blur-sm transition-[color,background-color,border-color,transform,opacity] duration-200 group-hover/play:scale-110 group-hover/play:bg-black/80">
             <Play className="size-6 fill-white text-white" />
           </div>
         </DialogTrigger>
@@ -283,7 +283,7 @@ export function VideoPlayerModal({
               type="button"
               size="lg"
               className={cn(
-                "pressable gap-2 rounded-xl px-5 text-sm font-semibold",
+                "pressable gap-2 rounded-full px-5 text-sm font-semibold before:rounded-full",
                 className,
               )}
               aria-label={`Play ${title}`}
@@ -300,7 +300,7 @@ export function VideoPlayerModal({
               type="button"
               size="lg"
               className={cn(
-                "pressable gap-2.5 rounded-2xl px-7 text-base font-semibold",
+                "pressable gap-2.5 rounded-full px-7 text-base font-semibold before:rounded-full",
                 className,
               )}
               aria-label={`Play ${title}`}

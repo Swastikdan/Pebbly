@@ -1,4 +1,5 @@
 import {
+  ArrowUpDown,
   Globe,
   ListOrdered,
   ListPlus,
@@ -108,8 +109,8 @@ export function CollectionPage({ listId }: { listId: string }) {
     <div className="animate-fade-in space-y-4">
       {/* Top Nav Row: Back (left) and Share (right) */}
       <div className="flex items-center justify-between gap-3">
-        <GoBack title="Back" hideLabelOnMobile />
-        <ShareButton title={list.name} hideLabelOnMobile />
+        <GoBack title="Back" />
+        <ShareButton title={list.name} />
       </div>
 
       {/* Title & Actions Row: Title + Visibility + Badges (left) | Edit + Delete (right) */}
@@ -216,7 +217,7 @@ export function CollectionPage({ listId }: { listId: string }) {
                   onClick={() => setMediaFilter(filter)}
                   aria-pressed={isActive}
                   className={cn(
-                    "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-all",
+                    "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
                     isActive
                       ? "bg-foreground text-background hover:bg-foreground shadow-xs"
                       : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
@@ -231,6 +232,13 @@ export function CollectionPage({ listId }: { listId: string }) {
             })}
           </div>
         </div>
+      )}
+
+      {canManage && isOrdered && items.length > 1 && (
+        <p className="text-muted-foreground/60 flex items-center gap-1.5 text-xs">
+          <ArrowUpDown size={12} className="shrink-0" />
+          Ranked list — use the arrow buttons on each title to rearrange.
+        </p>
       )}
 
       <SilentErrorBoundary>

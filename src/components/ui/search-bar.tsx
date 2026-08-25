@@ -193,20 +193,20 @@ const SearchBar = memo(
             disabled={disabled}
             autoFocus={autoFocus}
             className={cn(
-              "peer bg-card/95 border-border placeholder:text-muted-foreground/70 focus:bg-card focus:border-ring/40 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background h-11 w-full rounded-xl border px-0 ps-11 pr-11 text-[16px] shadow-none transition-[color,background-color,border-color,box-shadow] duration-150 focus:ring-2 md:text-[15px]",
+              "peer bg-card/95 border-border placeholder:text-muted-foreground/70 focus:bg-card focus:border-ring/40 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background h-11 w-full rounded-xl border px-0 ps-11 pe-11 text-[16px] shadow-none transition-[color,background-color,border-color,box-shadow] duration-150 focus:ring-2 md:text-[15px]",
               disabled && "cursor-not-allowed opacity-50",
             )}
             aria-label="Search Input"
             aria-busy={isLoading}
           />
-          <div className="text-muted-foreground/60 pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5 peer-disabled:opacity-50">
+          <div className="text-muted-foreground/60 pointer-events-none absolute inset-y-0 inset-s-0 flex items-center ps-3.5 peer-disabled:opacity-50">
             {icon}
           </div>
           {showClearButton && (
             <button
               type="button"
               onClick={handleClear}
-              className="absolute inset-y-0 end-0 z-20 flex w-11 cursor-pointer items-center justify-center transition-[color,background-color,box-shadow] duration-150 hover:opacity-70 active:scale-90"
+              className="absolute inset-y-0 inset-e-0 z-20 flex w-11 cursor-pointer items-center justify-center transition-[color,background-color,box-shadow] duration-150 hover:opacity-70 active:scale-90"
               aria-label="Clear Search"
             >
               <XCircleIcon size={20} aria-hidden="true" />

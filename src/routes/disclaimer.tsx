@@ -22,7 +22,7 @@ function DisclaimerPage() {
     <div className="animate-fade-in min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl rounded-xl p-4 sm:p-8">
         <div className="mb-6 md:hidden">
-          <GoBack title="Back" hideLabelOnMobile />
+          <GoBack title="Back" />
         </div>
         <div className="stagger-grid space-y-12">
           <div className="text-center">

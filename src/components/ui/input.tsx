@@ -24,9 +24,9 @@ export function Input({
 }: InputProps): React.ReactElement {
   const inputClassName = cn(
     // min-h instead of h: call sites size the wrapper (h-10, h-11, …) and the
-    // native input must grow with it — a fixed height would top-align inside
+    // native input must grow with it; a fixed height would top-align inside
     // the taller wrapper. Browsers center single-line text vertically.
-    "text-foreground placeholder:text-muted-foreground/72 min-h-8.5 w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] leading-8.5 outline-none [transition:background-color_5000000s_ease-in-out_0s] autofill:[-webkit-text-fill-color:var(--foreground)] sm:min-h-7.5 sm:leading-7.5",
+    "text-foreground placeholder:text-muted-foreground/72 min-h-8.5 w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] leading-8.5 outline-hidden [transition:background-color_5000000s_ease-in-out_0s] autofill:[-webkit-text-fill-color:var(--foreground)] sm:min-h-7.5 sm:leading-7.5",
     size === "sm" &&
       "min-h-7.5 px-[calc(--spacing(2.5)-1px)] leading-7.5 sm:min-h-6.5 sm:leading-6.5",
     size === "lg" && "min-h-9.5 leading-9.5 sm:min-h-8.5 sm:leading-8.5",

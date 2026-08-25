@@ -32,7 +32,7 @@ export function useUrlPagedQuery({
   // Pagination clicks happen at the bottom of the page, so the router's
   // scroll restoration remembers that spot and drops the user back at the
   // pagination bar when they navigate back/forward. Force paginated views
-  // to open at the top instead — the effect runs after the router restores,
+  // to open at the top instead; the effect runs after the router restores,
   // so it wins on POP navigations too.
   const lastScrolledPage = useRef<number | null>(page);
   useEffect(() => {

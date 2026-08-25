@@ -115,11 +115,8 @@ function MediaListPage() {
     <section className="flex min-h-screen w-full justify-center">
       <div className="top-0 w-full max-w-screen-xl items-center justify-center p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <GoBack title="Back" hideLabelOnMobile />
-          <ShareButton
-            title={`${subNavItem.name} ${navItem.name}`}
-            hideLabelOnMobile
-          />
+          <GoBack title="Back" />
+          <ShareButton title={`${subNavItem.name} ${navItem.name}`} />
         </div>
         <h1 className="animate-fade-in-up text-start text-2xl font-bold tracking-tight md:text-3xl">
           {subNavItem.name} {navItem.name}

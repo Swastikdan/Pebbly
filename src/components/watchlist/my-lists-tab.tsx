@@ -35,7 +35,7 @@ export function MyListsTab() {
     [customLists],
   );
 
-  // Clerk's isSignedIn is false until the session resolves — wait for it so
+  // Clerk's isSignedIn is false until the session resolves; wait for it so
   // signed-in users don't flash the signed-out CTA on first paint.
   if (!isLoaded) {
     return <DefaultLoader />;
@@ -47,7 +47,7 @@ export function MyListsTab() {
 
   // Collections live on the server (they are the shareable/private objects
   // opened at /c/$id), so signed-out visitors get a sign-in CTA instead of
-  // the creation UI — a localStorage-only list could never be opened or
+  // the creation UI, because a localStorage-only list could never be opened or
   // shared, which read as broken.
   if (!isSignedIn) {
     return (

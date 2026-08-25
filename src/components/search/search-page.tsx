@@ -366,7 +366,7 @@ export function SearchPage() {
     <section className="flex w-full justify-center">
       <div className="mx-auto w-full max-w-screen-xl p-5">
         <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
-          <GoBack title="Back" hideLabelOnMobile />
+          <GoBack title="Back" />
         </div>
         {!query && (
           <div className="mb-6 flex flex-col gap-1">
@@ -439,7 +439,7 @@ function SearchHistory({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-4 cursor-pointer p-0 opacity-0 transition-opacity group-hover:opacity-60 hover:bg-transparent hover:!opacity-100"
+              className="size-4 cursor-pointer p-0 opacity-0 transition-opacity group-hover:opacity-60 hover:bg-transparent hover:opacity-100!"
               onClick={() => {
                 removeFromSearchHistory(item);
                 setHistory((prev) => prev.filter((h) => h !== item));

@@ -197,6 +197,12 @@ export const getImages = typedEndpoint(
   "images",
 );
 
+export const getWatchProviders = typedEndpoint(
+  "getWatchProviders",
+  Schemas.WatchProvidersSchema,
+  "watch/providers?language=en-US",
+);
+
 export async function getDiscoverMovies({
   with_keywords,
   page,

@@ -68,6 +68,24 @@ type ProgressUpdateArgs = {
   progressStatus?: ProgressStatus;
 };
 
+/**
+ * Patch the row matching (tmdbId, mediaType), leaving others untouched. The
+ * patch is computed per matched row so it can react to the row's current
+ * values. Every watchlist-cache applier funnels through here.
+ */
+function patchWatchRow(
+  rows: WatchItemRow[],
+  tmdbId: number,
+  mediaType: MediaType,
+  computePatch: (row: WatchItemRow) => Partial<WatchItemRow>,
+): WatchItemRow[] {
+  return rows.map((row) =>
+    row.tmdbId === tmdbId && row.mediaType === mediaType
+      ? { ...row, ...computePatch(row) }
+      : row,
+  );
+}
+
 function applyMembershipRows(
   rows: WatchItemRow[],
   args: WatchlistMembershipArgs,
@@ -77,9 +95,10 @@ function applyMembershipRows(
       (i) => i.tmdbId === args.tmdbId && i.mediaType === args.mediaType,
     );
     if (existing) {
-      return rows.map((i) =>
-        i === existing ? { ...i, inWatchlist: true, updatedAt: Date.now() } : i,
-      );
+      return patchWatchRow(rows, args.tmdbId, args.mediaType, () => ({
+        inWatchlist: true,
+        updatedAt: Date.now(),
+      }));
     }
     return [
       ...rows,
@@ -101,16 +120,11 @@ function applyMembershipRows(
       } as WatchItemRow,
     ];
   }
-  return rows.map((i) =>
-    i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
-      ? {
-          ...i,
-          inWatchlist: false,
-          progressStatus:
-            i.progressStatus === "watch-later" ? null : i.progressStatus,
-        }
-      : i,
-  );
+  return patchWatchRow(rows, args.tmdbId, args.mediaType, (i) => ({
+    inWatchlist: false,
+    progressStatus:
+      i.progressStatus === "watch-later" ? null : i.progressStatus,
+  }));
 }
 
 function beginMembershipOp(
@@ -132,17 +146,12 @@ function applyProgressStatusRows(
   rows: WatchItemRow[],
   args: ProgressStatusArgs,
 ): WatchItemRow[] {
-  return rows.map((i) =>
-    i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
-      ? {
-          ...i,
-          inWatchlist: true,
-          progressStatus: args.progressStatus,
-          progress: args.progress ?? i.progress,
-          updatedAt: Date.now(),
-        }
-      : i,
-  );
+  return patchWatchRow(rows, args.tmdbId, args.mediaType, (i) => ({
+    inWatchlist: true,
+    progressStatus: args.progressStatus,
+    progress: args.progress ?? i.progress,
+    updatedAt: Date.now(),
+  }));
 }
 
 function beginProgressStatusOp(
@@ -166,37 +175,24 @@ export function applyProgressUpdateRows(
   rows: WatchItemRow[],
   args: ProgressUpdateArgs,
 ): WatchItemRow[] {
-  return rows.map((row) => {
-    if (row.tmdbId !== args.tmdbId || row.mediaType !== args.mediaType) {
-      return row;
-    }
-    const status =
-      args.progressStatus !== undefined
-        ? { progressStatus: args.progressStatus }
-        : {};
-    return {
-      ...row,
-      progress: args.progress ?? row.progress,
-      ...status,
-      updatedAt: Date.now(),
-    };
-  });
+  return patchWatchRow(rows, args.tmdbId, args.mediaType, (row) => ({
+    progress: args.progress ?? row.progress,
+    ...(args.progressStatus !== undefined
+      ? { progressStatus: args.progressStatus }
+      : {}),
+    updatedAt: Date.now(),
+  }));
 }
 
 export function applyProgressResetRows(
   rows: WatchItemRow[],
   args: ProgressResetArgs,
 ): WatchItemRow[] {
-  return rows.map((row) =>
-    row.tmdbId === args.tmdbId && row.mediaType === args.mediaType
-      ? {
-          ...row,
-          progressStatus: row.inWatchlist ? ("watch-later" as const) : null,
-          progress: 0,
-          updatedAt: Date.now(),
-        }
-      : row,
-  );
+  return patchWatchRow(rows, args.tmdbId, args.mediaType, (row) => ({
+    progressStatus: row.inWatchlist ? ("watch-later" as const) : null,
+    progress: 0,
+    updatedAt: Date.now(),
+  }));
 }
 
 const episodeIdOf = (row: EpisodeProgressRow) =>
@@ -276,15 +272,10 @@ function applyReactionRows(
   rows: WatchItemRow[],
   args: SetReactionArgs,
 ): WatchItemRow[] {
-  return rows.map((i) =>
-    i.tmdbId === args.tmdbId && i.mediaType === args.mediaType
-      ? {
-          ...i,
-          reaction: args.clearReaction ? null : (args.reaction ?? null),
-          updatedAt: Date.now(),
-        }
-      : i,
-  );
+  return patchWatchRow(rows, args.tmdbId, args.mediaType, () => ({
+    reaction: args.clearReaction ? null : (args.reaction ?? null),
+    updatedAt: Date.now(),
+  }));
 }
 
 function beginReactionOp(

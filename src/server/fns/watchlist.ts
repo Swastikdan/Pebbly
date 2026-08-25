@@ -629,16 +629,26 @@ export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        const rows = await db
-          .select()
-          .from(episodeProgress)
-          .where(
-            and(
-              eq(episodeProgress.userId, user.id),
-              eq(episodeProgress.tmdbId, data.tmdbId),
-            ),
-          )
-          .limit(500);
+        // Offset-paginate instead of a fixed cap: long-running shows can
+        // carry more than 1000 watched rows, and truncating here makes the
+        // client undercount progress and overwrite a "done" status.
+        const rows: (typeof episodeProgress.$inferSelect)[] = [];
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          const page = await db
+            .select()
+            .from(episodeProgress)
+            .where(
+              and(
+                eq(episodeProgress.userId, user.id),
+                eq(episodeProgress.tmdbId, data.tmdbId),
+              ),
+            )
+            .limit(pageSize)
+            .offset(offset);
+          rows.push(...page);
+          if (page.length < pageSize) break;
+        }
 
         return ok(rows);
       },
@@ -654,11 +664,20 @@ export const getAllEpisodeProgress = createServerFn({ method: "POST" }).handler(
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        const rows = await db
-          .select()
-          .from(episodeProgress)
-          .where(eq(episodeProgress.userId, user.id))
-          .limit(500);
+        // Same pagination rationale as getAllWatchedEpisodes; this feed also
+        // powers watchlist export, where silent truncation loses data.
+        const rows: (typeof episodeProgress.$inferSelect)[] = [];
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          const page = await db
+            .select()
+            .from(episodeProgress)
+            .where(eq(episodeProgress.userId, user.id))
+            .limit(pageSize)
+            .offset(offset);
+          rows.push(...page);
+          if (page.length < pageSize) break;
+        }
 
         return ok(rows);
       },

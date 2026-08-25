@@ -82,9 +82,9 @@ export function NavigationProgressBar({
       )}
     >
       <div
-        className="via-primary h-full bg-gradient-to-r from-blue-500 to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.7)] transition-all duration-200 ease-out"
+        className="via-primary h-full w-full origin-left bg-gradient-to-r from-blue-500 to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.7)] transition-transform duration-200 ease-out"
         style={{
-          width: `${progress}%`,
+          transform: `scaleX(${progress / 100})`,
         }}
       />
     </div>

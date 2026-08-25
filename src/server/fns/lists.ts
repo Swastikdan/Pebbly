@@ -4,9 +4,10 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { Db } from "../db/client";
 import type { ApiResult, ProgressStatus, Reaction } from "../schema/common";
 import type { MediaType } from "@/lib/media-types";
-import { getDb, runBatch } from "../db/client";
+import { getDb, MAX_IDS_PER_IN_CLAUSE, runBatch } from "../db/client";
 import { listItems, lists, watchItems } from "../db/schema";
 import { getEnv } from "../env";
+import { findOwnedRow } from "../helpers/owned-row";
 import { bumpListsRev } from "../helpers/watch-item";
 import { fail, ok } from "../schema/common";
 import {
@@ -132,13 +133,8 @@ export const getListItems = createServerFn({ method: "POST" })
       { mode: "current", guest: () => ok([]) },
       data,
       async ({ db, user }): Promise<ApiResult<EnrichedListItem[]>> => {
-        const list = await db
-          .select()
-          .from(lists)
-          .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
-          .limit(1);
-
-        if (list.length === 0) return ok([]);
+        const list = await findOwnedRow(db, lists, user.id, data.listId);
+        if (!list) return ok([]);
 
         const items = await db
           .select()
@@ -191,7 +187,7 @@ export const getCollectionPage = createServerFn({ method: "POST" })
           return fail("NOT_FOUND", "Collection not found");
         }
 
-        // Privacy-critical: no watch_items join here — the owner's progress
+        // Privacy-critical: no watch_items join here; the owner's progress
         // status and reactions must not leak to public viewers.
         const items = await db
           .select({
@@ -243,9 +239,8 @@ async function enrichItemsWithWatchState(
   // >100 distinct TMDB ids.
   const tmdbIds = [...new Set(items.map((item) => item.tmdbId))];
   const watchItemRows: (typeof watchItems.$inferSelect)[] = [];
-  const IDS_PER_QUERY = 90;
-  for (let i = 0; i < tmdbIds.length; i += IDS_PER_QUERY) {
-    const chunk = tmdbIds.slice(i, i + IDS_PER_QUERY);
+  for (let i = 0; i < tmdbIds.length; i += MAX_IDS_PER_IN_CLAUSE) {
+    const chunk = tmdbIds.slice(i, i + MAX_IDS_PER_IN_CLAUSE);
     const rows = await db
       .select()
       .from(watchItems)
@@ -360,14 +355,8 @@ export const updateCustomList = createServerFn({ method: "POST" })
   .validator(updateCustomListArgsSchema)
   .handler(({ data }) =>
     authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const list = await db
-        .select()
-        .from(lists)
-        .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
-        .limit(1);
-      if (list.length === 0) return fail("NOT_FOUND", "List not found");
-
-      const existing = list[0];
+      const existing = await findOwnedRow(db, lists, user.id, data.listId);
+      if (!existing) return fail("NOT_FOUND", "List not found");
 
       if (data.name !== undefined && data.name !== existing.name) {
         const dup = await db
@@ -404,12 +393,8 @@ export const deleteCustomList = createServerFn({ method: "POST" })
   .validator(deleteCustomListArgsSchema)
   .handler(({ data }) =>
     authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const list = await db
-        .select()
-        .from(lists)
-        .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
-        .limit(1);
-      if (list.length === 0) return fail("NOT_FOUND", "List not found");
+      const list = await findOwnedRow(db, lists, user.id, data.listId);
+      if (!list) return fail("NOT_FOUND", "List not found");
 
       await db.delete(lists).where(eq(lists.id, data.listId));
       await bumpListsRev(db, user.id);
@@ -430,12 +415,8 @@ export const reorderListItems = createServerFn({ method: "POST" })
   .validator(reorderListItemsArgsSchema)
   .handler(({ data }) =>
     authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const list = await db
-        .select({ id: lists.id })
-        .from(lists)
-        .where(and(eq(lists.id, data.listId), eq(lists.userId, user.id)))
-        .limit(1);
-      if (list.length === 0) return fail("NOT_FOUND", "List not found");
+      const list = await findOwnedRow(db, lists, user.id, data.listId);
+      if (!list) return fail("NOT_FOUND", "List not found");
 
       await applyItemOrder(db, data.listId, user.id, data.orderedItems);
       await bumpListsRev(db, user.id);
@@ -525,7 +506,7 @@ export const cloneCustomList = createServerFn({ method: "POST" })
             overview: item.overview,
           }),
         );
-        await runChunkedBatch(db, statements);
+        await runBatch(db, statements);
       }
 
       await bumpListsRev(db, user.id);
@@ -601,12 +582,8 @@ async function toggleListItemInner(
   },
 ): Promise<ApiResult<boolean>> {
   const db = getDb(getEnv());
-  const list = await db
-    .select({ id: lists.id })
-    .from(lists)
-    .where(and(eq(lists.id, args.listId), eq(lists.userId, userId)))
-    .limit(1);
-  if (list.length === 0) return fail("NOT_FOUND", "List not found");
+  const list = await findOwnedRow(db, lists, userId, args.listId);
+  if (!list) return fail("NOT_FOUND", "List not found");
 
   const existing = await db
     .select()
@@ -655,18 +632,9 @@ async function toggleListItemInner(
 }
 
 /**
- * D1 caps statements per batch round trip; chunk any statement list through
- * runBatch so arbitrarily large writes stay within limits.
+ * D1 caps statements per batch round trip; runBatch chunks any statement
+ * list so arbitrarily large writes stay within limits.
  */
-async function runChunkedBatch(
-  db: Db,
-  statements: Parameters<typeof db.batch>[0][number][],
-): Promise<void> {
-  for (let i = 0; i < statements.length; i += 80) {
-    await runBatch(db, statements.slice(i, i + 80));
-  }
-}
-
 async function applyItemOrder(
   db: Db,
   listId: string,
@@ -689,5 +657,5 @@ async function applyItemOrder(
         ),
       ),
   );
-  await runChunkedBatch(db, statements);
+  await runBatch(db, statements);
 }

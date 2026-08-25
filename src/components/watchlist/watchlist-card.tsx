@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
 
 import type { WatchlistItem } from "@/stores/watchlist-store";
 import type { ProgressStatus } from "@/types";
@@ -17,7 +17,9 @@ import { toast } from "@/hooks/use-toast-store";
 import { useRepository } from "@/lib/repository/use-repository";
 import { formatMediaTitle } from "@/lib/utils";
 
-const STATUS_CYCLE: ProgressStatus[] = ["watch-later", "watching", "done"];
+// Status advances one way only: watch-later → watching → done. "done" is
+// terminal on the card — no wrap-around back to watch-later.
+const STATUS_ORDER: ProgressStatus[] = ["watch-later", "watching", "done"];
 
 function handleRemove(
   e: React.MouseEvent,
@@ -62,32 +64,36 @@ export function WatchlistCard({
     overview: item.overview,
   };
 
-  const cycleStatus = (e: React.MouseEvent) => {
+  const statusIndex = STATUS_ORDER.indexOf(progressStatus);
+  const nextStatus =
+    statusIndex >= 0 && statusIndex < STATUS_ORDER.length - 1
+      ? STATUS_ORDER[statusIndex + 1]
+      : null;
+  const nextOption = nextStatus ? getProgressOption(nextStatus) : null;
+
+  const advanceStatus = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const prev = progressStatus;
-    const idx = STATUS_CYCLE.indexOf(progressStatus);
-    const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
-    if (next === prev) return;
+    if (!nextStatus) return;
 
     setProgressStatus(
       String(item.external_id),
       item.type,
-      next,
+      nextStatus,
       metadata,
-      prev,
+      progressStatus,
     );
     toast({
-      title: `Marked as ${getProgressOption(next).label}`,
+      title: `Marked as ${getProgressOption(nextStatus).label}`,
       action: {
         label: "Undo",
         onClick: () =>
           setProgressStatus(
             String(item.external_id),
             item.type,
-            prev,
+            progressStatus,
             metadata,
-            next,
+            nextStatus,
           ),
       },
     });
@@ -134,18 +140,28 @@ export function WatchlistCard({
       overviewClassName="text-muted-foreground/60"
       footer={
         <div className="flex flex-wrap items-center gap-1.5 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={cycleStatus}
-            title={`Status: ${progressOption.label}. Tap to change.`}
-            aria-label={`Status: ${progressOption.label}. Tap to change.`}
-            className="bg-secondary/80 text-secondary-foreground hover:bg-secondary inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium"
-          >
-            <ProgressIcon size={12} />
-            {progressOption.label}
-          </Button>
+          {nextOption ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={advanceStatus}
+              title={`${progressOption.label} — click to move to ${nextOption.label}`}
+              aria-label={`Marked as ${progressOption.label}. Click to move to ${nextOption.label}.`}
+              className="bg-secondary/80 text-secondary-foreground hover:bg-secondary inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium"
+            >
+              <ProgressIcon size={12} />
+              {progressOption.label}
+              <ChevronRight size={10} className="opacity-50" />
+              <span className="text-muted-foreground">{nextOption.label}</span>
+            </Button>
+          ) : (
+            <MediaChip
+              icon={ProgressIcon}
+              label={progressOption.label}
+              title={`Marked as ${progressOption.label}`}
+            />
+          )}
           {isRecommended && (
             <span className="border-info/30 bg-info/15 text-info inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[10px] font-medium">
               <Sparkles size={12} />

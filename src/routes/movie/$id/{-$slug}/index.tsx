@@ -12,7 +12,11 @@ import { MediaDetailPage } from "@/components/media/media-detail-page";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { buildSharedMediaPageData } from "@/lib/media-page";
 import { indexRouteOptions } from "@/lib/media-route-options";
-import { formatRuntime, getMovieCertification } from "@/lib/media-transform";
+import {
+  formatRuntime,
+  getMovieCertification,
+  isInTheatricalWindow,
+} from "@/lib/media-transform";
 import { getMovieDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 
@@ -94,6 +98,7 @@ function MovieHomePage() {
       runtime={formatRuntime(runtime)}
       imdbUrl={imdb_id ? `https://www.imdb.com/title/${imdb_id}` : null}
       certification={getMovieCertification(release_dates?.results)}
+      inTheaters={isInTheatricalWindow(release_date, release_dates?.results)}
       keywords={
         keywords
           ? (keywords.keywords?.map((k) => ({ name: k.name, id: k.id })) ?? [])

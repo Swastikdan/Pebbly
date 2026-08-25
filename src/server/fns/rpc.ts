@@ -16,7 +16,7 @@ import { hasFeature, isAdminByClaims } from "../rbac";
 import { fail } from "../schema/common";
 
 /**
- * Usage — `createServerFn` must stay written out at each site (the TanStack
+ * Usage: `createServerFn` must stay written out at each site (the TanStack
  * Start compiler statically extracts the literal `.handler(fn)` argument to
  * build the RPC endpoint), so `authedFn` produces the awaited handler result:
  *
@@ -51,7 +51,7 @@ export interface AuthedFnConfig {
   /**
    * Response for requests that never reach the handler:
    * anonymous callers in `"current"` mode, or (in `"require"` mode) the
-   * `UNAUTHORIZED` error override — e.g. `getUserFeaturesFn` answering
+   * `UNAUTHORIZED` error override, e.g. `getUserFeaturesFn` answering
    * ok-with-defaults instead of `UNAUTHORIZED`.
    */
   readonly guest?: () => ApiResult<unknown>;
@@ -94,7 +94,7 @@ export type AuthedHandler<C extends AuthedFnConfig, TResult> = (
 /**
  * Executes `handler` behind the configured auth gates. Called from inside
  * `.handler(({ data }) => ...)`; the validated `data` must be forwarded as the
- * second argument. Returns the envelope promise — never a closure — so the
+ * second argument. Returns the envelope promise, never a closure, so the
  * result stays serializable across the TanStack RPC boundary.
  */
 export function authedFn<C extends AuthedFnConfig, TResult>(

@@ -61,7 +61,7 @@ function PageShell({ children }: { children: ReactNode }) {
     <section className="flex min-h-screen w-full justify-center">
       <div className="w-full max-w-7xl p-5">
         <div className="mb-6 flex items-center justify-between gap-3">
-          <GoBack title="Back" hideLabelOnMobile />
+          <GoBack title="Back" />
         </div>
         <h1 className="animate-fade-in-up mb-6 text-start text-2xl font-bold tracking-tight md:text-3xl">
           AI Recommendations

@@ -35,8 +35,8 @@ function WatchlistPage() {
     <section className="flex min-h-screen w-full justify-center">
       <div className="w-full max-w-screen-xl p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <GoBack title="Back" hideLabelOnMobile />
-          <ShareButton title="My Watchlist" hideLabelOnMobile />
+          <GoBack title="Back" />
+          <ShareButton title="My Watchlist" />
         </div>
 
         <div className="mb-4">

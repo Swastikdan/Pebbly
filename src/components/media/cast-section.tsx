@@ -82,7 +82,7 @@ export const CastSection = (props: {
             View full cast & crew
             <ArrowRightLine
               size={14}
-              className="ml-1 inline-block transition-transform group-hover:translate-x-0.5"
+              className="ml-1 inline-block transition-transform [@media(hover:hover)]:group-hover:translate-x-0.5"
             />
           </Link>
         </div>

@@ -396,8 +396,8 @@ const MobileBottomNav = () => {
                 <UserButton
                   appearance={{
                     elements: {
-                      userButtonAvatarBox: "!size-[28px] !rounded-full",
-                      userButtonTrigger: "!h-[28px] !w-[28px] !rounded-full",
+                      userButtonAvatarBox: "size-[28px]! rounded-full!",
+                      userButtonTrigger: "h-[28px]! w-[28px]! rounded-full!",
                     },
                   }}
                 />
@@ -428,7 +428,7 @@ const MobileBottomNav = () => {
         <SheetPopup
           side="bottom"
           viewportClassName="pt-0"
-          className="bg-background/95 z-50 flex h-dvh flex-col p-0 backdrop-blur-2xl outline-none"
+          className="bg-background/95 z-50 flex h-dvh flex-col p-0 outline-hidden backdrop-blur-2xl"
           closeProps={{
             className:
               "top-3 right-3 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 dark:bg-black/60 dark:text-white dark:hover:bg-black/80 border border-white/20 backdrop-blur-md",

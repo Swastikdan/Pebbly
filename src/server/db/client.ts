@@ -23,7 +23,7 @@ export function getDb(env: Env) {
   if (!env.DB) {
     throw new Error(
       "D1 binding 'DB' is missing. `pnpm dev` loads it via " +
-        "server/plugins/dev-bindings.ts (wrangler platform proxy) — check the " +
+        "server/plugins/dev-bindings.ts (wrangler platform proxy); check the " +
         "dev server log for load errors, or use `pnpm preview:cf`.",
     );
   }
@@ -38,6 +38,13 @@ export function getDb(env: Env) {
 
 export type Db = ReturnType<typeof getDb>;
 export { schema };
+
+/**
+ * D1 caps bound parameters per statement at 100. IN-clause filters over
+ * arbitrary id sets must stay under it so the query's other bound params
+ * (userId, pagination) fit in the same statement.
+ */
+export const MAX_IDS_PER_IN_CLAUSE = 90;
 
 /**
  * Execute a list of D1 statements as one transactional round trip.

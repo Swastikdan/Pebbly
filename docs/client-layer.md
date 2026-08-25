@@ -22,8 +22,8 @@ mutation goes to the server or to local storage.
   paint so neither palette ever flashes), `ToastProvider`,
   `NavigationProgressBar`, skip-to-content link, nav bar, footer (with the
   theme picker), mobile bottom nav, `UserSync`, and app CSS. It also
-  registers the service worker in prod (and _unregisters_ any stale one — and
-  purges Cache Storage — in dev), binds `/` as a global shortcut that focuses
+  registers the service worker in prod (in dev it _unregisters_ any stale
+  one and purges Cache Storage), binds `/` as a global shortcut that focuses
   search, and mounts TanStack devtools in dev only.
 - `src/routeTree.gen.ts`, generated route tree (do not edit).
 
@@ -84,14 +84,14 @@ Two more stores live beside their feature code:
 - `useThemeStore` inside `src/hooks/use-theme.ts`, light/dark/system theme
   preference (persisted separately under `pebbly-theme`).
 - Toasts in `src/hooks/use-toast-store.ts`, fire-and-forget `toast()` backed
-  by Base UI's toast manager — call it from anywhere, no provider needed.
+  by Base UI's toast manager. Call it from anywhere, no provider needed.
 
 - `src/lib/utils.ts`, `createLRUStorage()` wraps localStorage with LRU
   eviction (4 MB threshold, evicting down to 60% of the limit) so several
   persisted stores can't blow the quota; `createMemoryStorage()` is the
   SSR-safe fallback. Also: `cn` (clsx + tailwind-merge),
-  `normalizeProgressStatus`, `inferStatusFromProgress` (≥95 → done, >0 →
-  watching — the single home of that rule), `validateId` /
+  `normalizeProgressStatus`, `inferStatusFromProgress` (≥95 → done, >0 → watching; the single home of
+  that rule), `validateId` /
   `parseAndValidateId` (strict TMDB id parsing), and `formatMediaTitle`
   (slug encode/decode with diacritic stripping).
 - `src/lib/text.ts`, tiny pure string helpers shared by prompts and TMDB
@@ -104,8 +104,8 @@ The mutation layer that eliminated the old `if (isSignedIn)` branches:
 - `types.ts`, `WatchlistRepository` + `ListsRepository` interfaces and the
   shared `resolveProgressStatusAction` decision tree (TV vs movie progress
   writes: mark watched, leave completion, episode sync needed, progress value).
-- `status-plan.ts`, `resolveStatusPlan()` — the single decision pipeline both
-  adapters run for progress-status writes. It resolves the TV-vs-movie action
+- `status-plan.ts` holds `resolveStatusPlan()`, the single decision pipeline
+  both adapters run for progress-status writes. It resolves the TV-vs-movie action
   and, when episode rows must follow the new status, kicks off the one TMDB
   season fetch and builds the per-season episode selections. Adapters only
   _execute_ the plan; neither re-implements the semantics.
@@ -162,7 +162,7 @@ The rest of the data layer sits beside it:
   (`beginCreateListOp`, `beginToggleListItemOp`, `beginReorderListItemsOp`,
   `swapListId`, ...).
 - `src/lib/data/watchlist-queries.ts`, TanStack Query fns for watchlist data
-  (list, tracked ids, media state, episodes) — every server response passes
+  (list, tracked ids, media state, episodes). Every server response passes
   through the journal reconciler before entering the cache. Feature hooks
   consume these instead of calling raw fns, which also guarantees the
   recommendations page's custom-list fetches are journal-reconciled.
@@ -259,7 +259,7 @@ Convex's realtime subscriptions are replaced by **version-gated polling**
   pagination), `person.$id.tsx`, `keyword.$id.tsx`,
   `collection.$id.{-$slug}.tsx` (**TMDB franchise** collections).
 - Shared collections: `c.$id.{-$slug}.tsx`, the public page for a
-  **user-created list** — loader fetches `getCollectionPage` (owner vs
+  **user-created list**. The loader fetches `getCollectionPage` (owner vs
   visitor resolved server-side; private/missing → 404) and renders the
   `CollectionPage` component.
 - Detail pages: `movie/$id/{-$slug}/` and `tv/$id/{-$slug}/` are twin trees
@@ -275,8 +275,8 @@ Convex's realtime subscriptions are replaced by **version-gated polling**
 
 ## 9. Components (`src/components/`)
 
-The UI kit is **coss ui on Base UI** (`@base-ui/react`) — the roles match the
-old shadcn/Radix set, the foundation doesn't.
+The UI kit is **coss ui on Base UI** (`@base-ui/react`). The roles match the
+old shadcn/Radix set; the foundation doesn't.
 
 - `ui/` primitives: `button`, `badge`, `dialog`, `menu`, `select`, `sheet`,
   `tabs`, `accordion`, `input`, `label`, `skeleton`, `spinner`, `pagination`,
@@ -295,7 +295,7 @@ old shadcn/Radix set, the foundation doesn't.
   `genre-container.tsx`, `media-keywords.tsx`, `media-lightbox-dialog.tsx`,
   `rating-count.tsx`, `media-description.tsx`, `media-recommendation.tsx`.
 - `watchlist/`: **`watchlist-tab.tsx`** (filters + 30-per-page paginated grid
-  - import/export) and **`my-lists-tab.tsx`** (custom lists + create flow) —
+  - import/export) and **`my-lists-tab.tsx`** (custom lists + create flow),
     the two tabs the watchlist route composes; `watchlist-grid.tsx`,
     `watchlist-card.tsx`, `watchlist-filters.tsx`,
     **`media-row-card-shell.tsx`** (shared row-card chrome + static pills used
@@ -310,7 +310,7 @@ old shadcn/Radix set, the foundation doesn't.
   `admin-dashboard.tsx`, `admin-user-table.tsx` (orchestrator),
   `admin-user-row.tsx`, `admin-role-dialog.tsx`,
   `admin-permission-toggles.tsx`, `use-admin-users.ts` (data hook; polls
-  every 10 s while the admin page is open — the page is admin-gated client-
+  every 10 s while the admin page is open. The page is admin-gated client-
   and server-side, so non-admins never fetch it).
 - Top-level widgets: `paged-media-grid.tsx` (paginated grid wrapper used by
   the list + keyword routes), `media-skeleton-list.tsx` (loading rail;

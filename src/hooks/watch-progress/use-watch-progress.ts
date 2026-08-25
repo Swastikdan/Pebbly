@@ -278,6 +278,11 @@ export function useEpisodeWatched(
     if (!hasMediaState && watchedCount === 0) return;
     if (currentProgressStatus === "dropped") return;
 
+    // Leaving completion is owned by explicit actions too. Our episode
+    // count can be stale or partial (long-running shows, in-flight syncs),
+    // and a low derived percent must never demote a status the user set.
+    if (currentProgressStatus === "done" && derivedStatus !== "done") return;
+
     const shouldWriteProgress =
       !hasMediaState || currentProgress !== derivedProgress;
     const shouldWriteStatus = currentProgressStatus !== derivedStatus;

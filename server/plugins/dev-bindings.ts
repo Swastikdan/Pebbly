@@ -12,7 +12,7 @@ type WorkerEnvHolder = { __env__?: Env };
  * server functions used to fail with "D1 binding 'DB' is missing". This
  * plugin boots wrangler's platform proxy (miniflare using our wrangler.toml
  * + .dev.vars) and publishes its bindings as the worker env, giving `pnpm dev`
- * a real local D1 persisted in `.wrangler/state` — the same store
+ * a real local D1 persisted in `.wrangler/state`, the same store
  * `pnpm preview:cf` uses.
  *
  * Stripped from production builds: `import.meta.dev` is statically false
