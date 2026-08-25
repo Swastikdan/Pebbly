@@ -78,8 +78,8 @@ export function AutoScrollTitle({
               } as React.CSSProperties
             }
           >
-            <span className="inline-block flex-shrink-0">{text}</span>
-            <span className="inline-block flex-shrink-0" aria-hidden="true">
+            <span className="inline-block shrink-0">{text}</span>
+            <span className="inline-block shrink-0" aria-hidden="true">
               {text}
             </span>
           </div>

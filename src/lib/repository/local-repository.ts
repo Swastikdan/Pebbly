@@ -23,7 +23,14 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
         });
     },
 
-    setProgressStatus(id, mediaType, progressStatus, metadata, currentStatus) {
+    setProgressStatus(
+      id,
+      mediaType,
+      progressStatus,
+      metadata,
+      currentStatus,
+      progress,
+    ) {
       const { action, seasonsPromise } = resolveStatusPlan(
         queryClient,
         id,
@@ -66,7 +73,7 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
         return;
       }
 
-      setLocalStatus(id, mediaType, progressStatus, undefined, metadata);
+      setLocalStatus(id, mediaType, progressStatus, progress, metadata);
     },
 
     setReaction(id, mediaType, reaction, metadata) {

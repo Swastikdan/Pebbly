@@ -127,34 +127,43 @@ export const MediaTitleContainer = (props: {
     ).catch(console.error);
   };
 
-  const renderWatchListSection = (className?: string) => (
-    <div className={className}>
-      <WatchlistStatusMenu
-        isOnWatchlist={isOnWatchList}
-        progressStatus={progressStatus}
-        reaction={reaction}
-        mediaType={media_type}
-        tmdbId={id}
-        onAdd={handleAdd}
-        onStatusChange={handleStatusChange}
-        onReactionChange={handleReactionChange}
-        onRemove={handleRemove}
-        metadata={metadata}
-      />
-    </div>
-  );
-
   return (
     <div className="animate-fade-in pt-5 pb-4">
       <div className="space-y-3 pb-4">
         <div className="flex items-center justify-between gap-3">
           <GoBack title="Back" />
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {renderWatchListSection("hidden sm:flex")}
+            <div className="hidden min-h-[36px] min-w-[140px] items-center justify-end sm:flex">
+              <WatchlistStatusMenu
+                isOnWatchlist={isOnWatchList}
+                progressStatus={progressStatus}
+                reaction={reaction}
+                mediaType={media_type}
+                tmdbId={id}
+                onAdd={handleAdd}
+                onStatusChange={handleStatusChange}
+                onReactionChange={handleReactionChange}
+                onRemove={handleRemove}
+                metadata={metadata}
+              />
+            </div>
             <ShareButton title={title} />
           </div>
         </div>
-        {renderWatchListSection("flex justify-end sm:hidden")}
+        <div className="flex min-h-[36px] justify-end sm:hidden">
+          <WatchlistStatusMenu
+            isOnWatchlist={isOnWatchList}
+            progressStatus={progressStatus}
+            reaction={reaction}
+            mediaType={media_type}
+            tmdbId={id}
+            onAdd={handleAdd}
+            onStatusChange={handleStatusChange}
+            onReactionChange={handleReactionChange}
+            onRemove={handleRemove}
+            metadata={metadata}
+          />
+        </div>
         <h1 className="text-h1 lg:px-0">
           {imdb_url ? (
             <a

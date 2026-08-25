@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 import type { ApiResult } from "../schema/common";
@@ -264,17 +264,20 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
           user.id,
           data.tmdbId,
           data.mediaType,
-          (curr) => ({
-            inWatchlist: true,
-            progressStatus:
-              normalizeProgressStatus(curr?.progressStatus) ?? "watch-later",
-            ...(curr ? {} : { progress: 0 }),
-            title: data.title,
-            image: data.image,
-            rating: data.rating,
-            release_date: data.release_date,
-            overview: data.overview,
-          }),
+          (curr) => {
+            const shouldReset = !curr || curr.inWatchlist === false;
+            return {
+              inWatchlist: true,
+              ...(shouldReset
+                ? { progressStatus: "watch-later" as const, progress: 0 }
+                : {}),
+              title: data.title,
+              image: data.image,
+              rating: data.rating,
+              release_date: data.release_date,
+              overview: data.overview,
+            };
+          },
         );
 
         return ok(row ?? null);
@@ -345,17 +348,25 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
             continue;
           }
 
-          const progressStatus =
-            normalizeProgressStatus(existing?.progressStatus) ?? "watch-later";
+          const shouldReset = !existing || existing.inWatchlist === false;
+          const progressStatus = shouldReset
+            ? "watch-later"
+            : (normalizeProgressStatus(existing?.progressStatus) ??
+              "watch-later");
           const metadataPatch = buildMetadataPatch(item, existing ?? undefined);
 
           if (existing) {
-            const patch = {
+            const patch: Record<string, unknown> = {
               inWatchlist: true,
-              progressStatus,
               updatedAt: now,
               ...metadataPatch,
             };
+            if (shouldReset) {
+              patch.progressStatus = progressStatus;
+              patch.progress = 0;
+            } else {
+              patch.progressStatus = progressStatus;
+            }
             statements.push(
               db
                 .update(watchItems)
@@ -629,16 +640,27 @@ export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        const rows = await db
-          .select()
-          .from(episodeProgress)
-          .where(
-            and(
-              eq(episodeProgress.userId, user.id),
-              eq(episodeProgress.tmdbId, data.tmdbId),
-            ),
-          )
-          .limit(500);
+        // Offset-paginate instead of a fixed cap: long-running shows can
+        // carry more than 1000 watched rows, and truncating here makes the
+        // client undercount progress and overwrite a "done" status.
+        const rows: (typeof episodeProgress.$inferSelect)[] = [];
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          const page = await db
+            .select()
+            .from(episodeProgress)
+            .where(
+              and(
+                eq(episodeProgress.userId, user.id),
+                eq(episodeProgress.tmdbId, data.tmdbId),
+              ),
+            )
+            .orderBy(asc(episodeProgress.id))
+            .limit(pageSize)
+            .offset(offset);
+          rows.push(...page);
+          if (page.length < pageSize) break;
+        }
 
         return ok(rows);
       },
@@ -654,11 +676,21 @@ export const getAllEpisodeProgress = createServerFn({ method: "POST" }).handler(
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        const rows = await db
-          .select()
-          .from(episodeProgress)
-          .where(eq(episodeProgress.userId, user.id))
-          .limit(500);
+        // Same pagination rationale as getAllWatchedEpisodes; this feed also
+        // powers watchlist export, where silent truncation loses data.
+        const rows: (typeof episodeProgress.$inferSelect)[] = [];
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          const page = await db
+            .select()
+            .from(episodeProgress)
+            .where(eq(episodeProgress.userId, user.id))
+            .orderBy(asc(episodeProgress.id))
+            .limit(pageSize)
+            .offset(offset);
+          rows.push(...page);
+          if (page.length < pageSize) break;
+        }
 
         return ok(rows);
       },

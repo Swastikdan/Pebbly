@@ -116,7 +116,7 @@ export default defineNitroConfig({
   experimental: {
     tasks: true,
   },
-  // Daily watchlist snapshot at 03:00 UTC — matches the `[triggers]` cron in
+  // Daily watchlist snapshot at 03:00 UTC, matching the `[triggers]` cron in
   // wrangler.toml. The task itself lives in server/tasks/snapshots.ts.
   scheduledTasks: {
     "0 3 * * *": "snapshots",
@@ -125,6 +125,51 @@ export default defineNitroConfig({
     "/assets/**": {
       headers: {
         "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    },
+    // Service workers must revalidate every navigation, otherwise browsers may
+    // serve a stale worker from HTTP cache and delay SW/PWA updates by hours.
+    "/sw.js": {
+      headers: {
+        "Cache-Control": "public, max-age=0, must-revalidate",
+      },
+    },
+    // Unhashed public/ assets: filenames never change between deploys, so
+    // `immutable` would pin old bytes forever. Bounded freshness instead —
+    // clients reuse the copy within the window, then revalidate once.
+    "/manifest.json": {
+      headers: {
+        "Cache-Control": "public, max-age=3600",
+      },
+    },
+    "/robots.txt": {
+      headers: {
+        "Cache-Control": "public, max-age=86400",
+      },
+    },
+    "/favicon*": {
+      headers: {
+        "Cache-Control": "public, max-age=604800",
+      },
+    },
+    "/android-chrome*": {
+      headers: {
+        "Cache-Control": "public, max-age=604800",
+      },
+    },
+    "/apple-touch-icon*": {
+      headers: {
+        "Cache-Control": "public, max-age=604800",
+      },
+    },
+    "/mstile*": {
+      headers: {
+        "Cache-Control": "public, max-age=604800",
+      },
+    },
+    "/logo.svg": {
+      headers: {
+        "Cache-Control": "public, max-age=604800",
       },
     },
     // Baseline security headers for every response. The /assets/** rule above

@@ -151,7 +151,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
           )}
 
           {rating > 0 && (
-            <Badge className="text-meta absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 p-2.5 text-white sm:bg-black/60">
+            <Badge className="text-meta absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-[9px] py-[11px] text-white sm:bg-black/60">
               <Star className="size-4 fill-yellow-400 text-yellow-400" />
               <span className="font-semibold text-white">
                 {rating.toFixed(1)}
@@ -159,7 +159,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             </Badge>
           )}
 
-          <Badge className="text-meta absolute right-2 bottom-2 rounded-md border-0 bg-black/90 p-2.5 text-white sm:bg-black/60">
+          <Badge className="text-meta absolute right-2 bottom-2 rounded-md border-0 bg-black/90 px-[9px] py-[11px] text-white sm:bg-black/60">
             {mediaTypeLabel}
           </Badge>
         </div>
@@ -248,7 +248,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
       imageHeight={450}
       imageSizes="(max-width: 640px) 160px, (max-width: 768px) 176px, 192px"
       mediaTypeLabel={media_type === "movie" ? "Movie" : "TV"}
-      linkClassName="block h-full w-full outline-none ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
+      linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
       actionsClassName="transition-[transform,opacity] duration-200 ease-out"
     >
       <div className="mt-2.5 flex flex-col gap-0.5 overflow-hidden">
@@ -333,7 +333,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
       imageHeight={300}
       imageSizes="(max-width: 640px) 256px, (max-width: 768px) 288px, 320px"
       mediaTypeLabel={media_type === "movie" ? "Movie" : "TV Series"}
-      linkClassName="block h-full w-full outline-none ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
+      linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
       actionsClassName="transition-[color,background-color,transform] duration-300 ease-out"
     >
       <div className="mt-2.5 flex flex-col gap-1 overflow-hidden">
@@ -377,7 +377,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
     <Link
       to="/person/$id"
       params={{ id: String(id) }}
-      className="group ring-offset-background focus-visible:ring-ring pressable relative block w-24 transition-[transform,opacity] duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-offset-2 md:w-28 lg:w-32"
+      className="group ring-offset-background focus-visible:ring-ring pressable relative block w-24 outline-hidden transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 md:w-28 lg:w-32"
     >
       <div className="bg-muted relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-white/10 shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">
         <Image

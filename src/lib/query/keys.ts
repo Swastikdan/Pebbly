@@ -69,6 +69,8 @@ export const queryKeys = {
       ["media_videos", id, mediaType] as const,
     images: (id: number, mediaType: MediaType) =>
       ["media_images", id, mediaType] as const,
+    watchProviders: (id: number, mediaType: MediaType) =>
+      ["media_watch_providers", id, mediaType] as const,
     mediaList: (type: string, page: number) =>
       ["media-list", type, page] as const,
     discoverKeyword: (id: number, page: number) =>

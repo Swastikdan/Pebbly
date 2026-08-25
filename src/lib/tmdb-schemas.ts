@@ -107,6 +107,27 @@ export const MediaImagesSchema = v.looseObject({
 });
 export type MediaImages = v.InferOutput<typeof MediaImagesSchema>;
 
+export const WatchProviderSchema = v.looseObject({
+  display_priority: num(),
+  logo_path: strNull(),
+  provider_id: v.number(),
+  provider_name: str(),
+});
+export type WatchProvider = v.InferOutput<typeof WatchProviderSchema>;
+
+const WatchProviderCountrySchema = v.looseObject({
+  link: strNull(),
+  flatrate: v.nullish(v.array(WatchProviderSchema), () => []),
+  rent: v.nullish(v.array(WatchProviderSchema), () => []),
+  buy: v.nullish(v.array(WatchProviderSchema), () => []),
+});
+
+export const WatchProvidersSchema = v.looseObject({
+  id: numNull(),
+  results: v.record(v.string(), WatchProviderCountrySchema),
+});
+export type WatchProviders = v.InferOutput<typeof WatchProvidersSchema>;
+
 export const VideoResultSchema = v.looseObject({
   iso_639_1: str(),
   iso_3166_1: str(),

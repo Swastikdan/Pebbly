@@ -60,7 +60,7 @@ export const useThemeStore = create<ThemeStore>()((set) => ({
  * Theme state + side effects. Mount once near the app root (the subscription
  * only lives while a caller is mounted).
  *
- * The rendered toggle must never branch on this state directly — drive icon
+ * The rendered toggle must never branch on this state directly; drive icon
  * visibility via CSS (`dark:` variants) so SSR output matches hydration
  * regardless of the resolved theme.
  */

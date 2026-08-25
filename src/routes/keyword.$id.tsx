@@ -84,8 +84,8 @@ function KeywordPage() {
     <section className="flex min-h-screen w-full justify-center">
       <div className="top-0 w-full max-w-screen-xl items-center justify-center p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <GoBack title="Back" hideLabelOnMobile />
-          <ShareButton title={`${keyword.name} Movies`} hideLabelOnMobile />
+          <GoBack title="Back" />
+          <ShareButton title={`${keyword.name} Movies`} />
         </div>
         <h1 className="pb-5 text-start text-2xl font-bold capitalize md:text-3xl lg:text-4xl">
           {keyword.name} Movies

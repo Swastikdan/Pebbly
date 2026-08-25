@@ -86,7 +86,7 @@ export const MediaCreditSection = (props: {
                       {castMember.profile_path ? (
                         <Image
                           alt={castMember.name}
-                          className="bg-foreground/10 aspect-[12/16] h-24 w-auto rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="bg-foreground/10 aspect-[12/16] h-24 w-auto rounded-lg object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105"
                           height={300}
                           loading="eager"
                           src={
@@ -142,7 +142,7 @@ export const MediaCreditSection = (props: {
                               {crewMember.profile_path ? (
                                 <Image
                                   alt={crewMember.name}
-                                  className="bg-foreground/10 aspect-[12/16] h-24 w-auto rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
+                                  className="bg-foreground/10 aspect-[12/16] h-24 w-auto rounded-lg object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105"
                                   height={300}
                                   loading="eager"
                                   src={

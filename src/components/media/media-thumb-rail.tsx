@@ -76,7 +76,7 @@ export function MediaThumbRail<T>({
             // biome-ignore lint/a11y/useSemanticElements: contains nested <button>, cannot use <button> wrapper
             <div
               key={itemKey}
-              className="group focus-visible:ring-ring focus-visible:ring-offset-background relative cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="group focus-visible:ring-ring focus-visible:ring-offset-background relative cursor-pointer rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2"
               role="button"
               tabIndex={0}
               onClick={() => setActiveKey(itemKey)}

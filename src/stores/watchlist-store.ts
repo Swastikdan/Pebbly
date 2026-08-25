@@ -188,15 +188,31 @@ export const useWatchlistStore = create<WatchlistStore>()(
                   progressStatus: "watch-later",
                 };
               },
-              (current) => ({
-                ...current,
-                inWatchlist,
-                progressStatus: inWatchlist
-                  ? (current.progressStatus ?? "watch-later")
-                  : current.progressStatus === "watch-later"
-                    ? null
-                    : current.progressStatus,
-              }),
+              (current) => {
+                if (inWatchlist) {
+                  const shouldReset = !current.inWatchlist;
+                  if (shouldReset) {
+                    return {
+                      ...current,
+                      inWatchlist,
+                      progressStatus: "watch-later",
+                      progress: 0,
+                    };
+                  }
+                  return {
+                    ...current,
+                    inWatchlist,
+                  };
+                }
+                return {
+                  ...current,
+                  inWatchlist,
+                  progressStatus:
+                    current.progressStatus === "watch-later"
+                      ? null
+                      : current.progressStatus,
+                };
+              },
             ),
           };
         }),

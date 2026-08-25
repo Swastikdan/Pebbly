@@ -72,7 +72,7 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
   `buildEpisodeSyncStatements` (update only when watched-state actually
   changed; insert-on-watch with `onConflictDoNothing`),
   `loadEpisodeRowsByKey` (offset pagination in pages of 500 until a short
-  page — long-running shows exceed any fixed cap), and
+  page, because long-running shows exceed any fixed cap), and
   `syncEpisodeProgressRecord` (one read + one batch + rev bump). The
   watchlist fns call into this so a whole-show sync is never N round trips.
 - `helpers/snapshots.ts`, `createWatchlistSnapshot` (records the current
@@ -121,11 +121,11 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 - **Change propagation**: role changes and bans bump the target user's
   `perms_rev`; a global feature-flag toggle bumps `perms_rev` for _every_
   user in one unfiltered UPDATE. Clients see the change on their next version
-  poll (see ADR-015) — there is no separate permissions poll anymore.
+  poll (see ADR-015). There is no separate permissions poll anymore.
 
 ## 6. Server functions (`src/server/fns/`)
 
-### rpc.ts — the shared guard pipeline
+### The shared guard pipeline (`fns/rpc.ts`)
 
 `authedFn(config, data, handler)` replaces the guard ceremony that used to
 open every protected fn (four competing idioms: inline `requireUser`,
@@ -178,7 +178,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
   `getListItems` (owner-only, enriched with watch-item metadata; TMDB-id
   `IN` clauses are chunked at 90 ids because D1 caps bound parameters at
   100), `getItemLists`, and `getCollectionPage` (`authedFn` mode
-  `"anonymous"`) — the payload behind the public `/c/$id` pages. It resolves
+  `"anonymous"`), the payload behind the public `/c/$id` pages. It resolves
   the viewer per request: the owner gets the full editable payload, visitors
   get a sanitized public one; private and missing lists both return
   `NOT_FOUND` (no existence leak), and owner-only fields (`progressStatus`,
@@ -219,7 +219,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 - History writes (`saveRecommendations`, `deleteRecommendation`,
   `updateVerifiedRecommendations`) bump the user's `ai_rev`.
 - Homepage: `getHomepageRecommendations` (filters out disliked/not-interested
-  feedback, computes `needsRefresh` from server time only — 24 h staleness,
+  feedback, computes `needsRefresh` from server time only: 24 h staleness,
   retry suppressed for 1 h after a failure), `generateHomepageRecommendations`
   (own 2-minute limiter via `last_attempted_at`).
 - Generation: `generateRecommendations`, auth + feature gate (via

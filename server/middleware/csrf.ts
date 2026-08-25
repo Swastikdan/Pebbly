@@ -6,8 +6,8 @@
 // cases) by rejecting cross-site requests that carry a session cookie.
 //
 // Allowed without ceremony:
-// - Safe methods (GET/HEAD/OPTIONS) — no state change.
-// - Bearer-token clients — no ambient credentials, so no CSRF risk.
+// - Safe methods (GET/HEAD/OPTIONS) don't change state.
+// - Bearer-token clients carry no ambient credentials, so no CSRF risk.
 // - Requests with no Origin/Sec-Fetch-Site headers at all (curl, server-side
 //   callers). They cannot be reliably attributed and don't carry browser
 //   ambient-credential semantics.

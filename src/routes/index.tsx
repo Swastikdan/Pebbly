@@ -153,13 +153,43 @@ function HomePage() {
 }
 
 function ContinueWatchingSection() {
-  const { isSignedIn } = useUser();
-  const { items } = useContinueWatching();
+  const { isSignedIn, isLoaded } = useUser();
+  const { items, isLoading, isSettled } = useContinueWatching();
 
-  if (!isSignedIn || items.length === 0) return null;
+  // While Clerk hydrates, reserve the same height as the eventual rail so
+  // signed-in users don't see the page grow after the auth check resolves.
+  if (!isLoaded) {
+    return (
+      <section aria-hidden="true" className="min-h-[320px]">
+        <div className="mt-2 flex items-center gap-4">
+          <h2 className="text-h2">Continue Watching</h2>
+        </div>
+        <div>
+          <MediaSkeletonList cardType="vertical" count={6} />
+        </div>
+      </section>
+    );
+  }
+
+  if (!isSignedIn) return null;
+
+  if (isLoading || !isSettled) {
+    return (
+      <section aria-hidden="true" className="min-h-[320px]">
+        <div className="mt-2 flex items-center gap-4">
+          <h2 className="text-h2">Continue Watching</h2>
+        </div>
+        <div>
+          <MediaSkeletonList cardType="vertical" count={6} />
+        </div>
+      </section>
+    );
+  }
+
+  if (items.length === 0) return null;
 
   return (
-    <section>
+    <section className="min-h-[320px]">
       <div className="mt-2 flex items-center gap-4">
         <h2 className="text-h2">Continue Watching</h2>
       </div>

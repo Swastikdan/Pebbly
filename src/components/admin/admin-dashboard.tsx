@@ -9,7 +9,7 @@ export function AdminDashboard() {
   return (
     <div className="animate-fade-in min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6 lg:px-8">
-        <GoBack title="Back" hideLabelOnMobile />
+        <GoBack title="Back" />
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-6 pb-20 sm:px-6 sm:pb-8 lg:px-8">

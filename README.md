@@ -211,9 +211,9 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 Deployment is automated via GitHub Actions:
 
-- **CI** (`ci.yml`) — every PR targeting `cloudflare` runs typecheck, lint, and a build.
-- **Production** (`deploy.yml`) — pushes to the `cloudflare` branch apply D1 migrations and deploy the production Worker.
-- **Preview** (`preview.yml`) — pushes to any `cf-*` branch deploy an isolated preview Worker with its own `pebbly-preview` D1 database.
+- `ci.yml` runs typecheck, lint, and a build on every PR targeting `cloudflare`.
+- On pushes to `cloudflare`, `deploy.yml` applies D1 migrations and deploys the production Worker.
+- On pushes to any `cf-*` branch, `preview.yml` deploys an isolated preview Worker with its own `pebbly-preview` D1 database.
 
 Or deploy manually:
 

@@ -102,12 +102,25 @@ export function SearchPage() {
     });
   }, [data?.results, type, minRating]);
 
+  const movieCount =
+    data?.results?.filter((item) => item.media_type === "movie").length ?? 0;
+  const tvCount =
+    data?.results?.filter((item) => item.media_type === "tv").length ?? 0;
+
   useEffect(() => {
     if (type && filteredData.length === 0 && data?.results?.length) {
       setType(null);
       setMinRating("0");
     }
-  }, [filteredData.length, type, data?.results?.length]);
+    if (type === "movie" && movieCount === 0 && data?.results?.length) {
+      setType(null);
+      setMinRating("0");
+    }
+    if (type === "tv" && tvCount === 0 && data?.results?.length) {
+      setType(null);
+      setMinRating("0");
+    }
+  }, [filteredData.length, type, data?.results?.length, movieCount, tvCount]);
 
   const handleTypeChange = useCallback((newType: FilterType) => {
     setType((prevType) => (prevType === newType ? prevType : newType));
@@ -127,8 +140,7 @@ export function SearchPage() {
   );
 
   const hasResults = !!data?.results?.length;
-  const baselineNonPersonCount =
-    data?.results?.filter((item) => item.media_type !== "person").length ?? 0;
+  const baselineNonPersonCount = movieCount + tvCount;
   const hasActiveFilters = type !== null || Number(minRating) > 0;
   const noResultsDueToFilters =
     filteredData.length === 0 && hasActiveFilters && baselineNonPersonCount > 0;
@@ -138,48 +150,50 @@ export function SearchPage() {
   let content: React.ReactNode;
   if (!query) {
     content = (
-      <>
+      <div className="min-h-[500px]">
         <SearchHistory navigate={navigate} />
         <div className="flex flex-col gap-5 py-6">
           <h2 className="text-lg font-semibold">Trending Now</h2>
-          {isTrendingLoading ? (
-            <MediaGrid>
-              {Array.from({ length: 12 }).map((_, index) => (
-                <MediaCardSkeleton
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-                  key={index}
-                  card_type="horizontal"
-                />
-              ))}
-            </MediaGrid>
-          ) : (
-            <MediaGrid stagger>
-              {trendingData?.map((item, index) => (
-                <MediaCard
-                  key={item.id}
-                  id={item.id}
-                  image={item.poster_path ?? ""}
-                  known_for_department=""
-                  media_type={item.media_type as MediaType}
-                  poster_path={item.poster_path ?? ""}
-                  rating={item.vote_average ?? 0}
-                  release_date={
-                    item.first_air_date ?? item.release_date ?? null
-                  }
-                  title={item.title ?? item.name ?? "Untitled"}
-                  overview={item.overview ?? undefined}
-                  card_type="horizontal"
-                  priority={index < 7}
-                />
-              ))}
-            </MediaGrid>
-          )}
+          <div className="min-h-[420px]">
+            {isTrendingLoading ? (
+              <MediaGrid>
+                {Array.from({ length: 12 }).map((_, index) => (
+                  <MediaCardSkeleton
+                    // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+                    key={index}
+                    card_type="horizontal"
+                  />
+                ))}
+              </MediaGrid>
+            ) : (
+              <MediaGrid stagger>
+                {trendingData?.map((item, index) => (
+                  <MediaCard
+                    key={item.id}
+                    id={item.id}
+                    image={item.poster_path ?? ""}
+                    known_for_department=""
+                    media_type={item.media_type as MediaType}
+                    poster_path={item.poster_path ?? ""}
+                    rating={item.vote_average ?? 0}
+                    release_date={
+                      item.first_air_date ?? item.release_date ?? null
+                    }
+                    title={item.title ?? item.name ?? "Untitled"}
+                    overview={item.overview ?? undefined}
+                    card_type="horizontal"
+                    priority={index < 7}
+                  />
+                ))}
+              </MediaGrid>
+            )}
+          </div>
         </div>
-      </>
+      </div>
     );
   } else if (isLoadingState) {
     content = (
-      <div className="flex h-full flex-col gap-5 py-5">
+      <div className="flex h-full min-h-[500px] flex-col gap-5 py-5">
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
             <Skeleton className="h-7 w-10 rounded-md" />
@@ -191,7 +205,7 @@ export function SearchPage() {
 
           <Skeleton className="ml-auto h-3 w-[70px] rounded" />
         </div>
-        <div className="flex min-h-96 w-full items-center justify-center">
+        <div className="flex min-h-[420px] w-full items-center justify-center">
           <MediaGrid>
             {Array.from({ length: 12 }).map((_, index) => (
               <MediaCardSkeleton
@@ -202,6 +216,7 @@ export function SearchPage() {
             ))}
           </MediaGrid>
         </div>
+        <div className="min-h-[56px]" />
       </div>
     );
   } else if (error) {
@@ -221,32 +236,36 @@ export function SearchPage() {
     );
   } else if (filteredData.length === 0) {
     content = (
-      <>
-        <DefaultEmptyState
-          onReset={() => {
-            if (noResultsDueToFilters) {
-              setType(null);
-              setMinRating("0");
-            } else {
-              navigate({ to: "/search" });
+      <div className="flex min-h-[500px] flex-col gap-5 py-5">
+        <div className="flex min-h-[320px] w-full items-center justify-center">
+          <DefaultEmptyState
+            onReset={() => {
+              if (noResultsDueToFilters) {
+                setType(null);
+                setMinRating("0");
+              } else {
+                navigate({ to: "/search" });
+              }
+            }}
+            message={
+              noResultsDueToFilters
+                ? "No movies or TV shows found with the selected filter"
+                : "No movies or TV shows found matching your search"
             }
-          }}
-          message={
-            noResultsDueToFilters
-              ? "No movies or TV shows found with the selected filter"
-              : "No movies or TV shows found matching your search"
-          }
-        />
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
-      </>
+          />
+        </div>
+        <div className="min-h-[56px]">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      </div>
     );
   } else {
     content = (
-      <div className="flex h-full flex-col gap-5 py-5">
+      <div className="flex h-full min-h-[500px] flex-col gap-5 py-5">
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex h-8 items-center gap-0.5 rounded-lg border p-0.5">
             <Button
@@ -266,40 +285,44 @@ export function SearchPage() {
             >
               All
             </Button>
-            <Button
-              className="h-7 rounded-md px-3 text-xs font-semibold"
-              variant="ghost"
-              onClick={handleMovieClick}
-              data-active={type === "movie"}
-              aria-pressed={type === "movie"}
-              style={
-                type === "movie"
-                  ? {
-                      background: "var(--foreground)",
-                      color: "var(--background)",
-                    }
-                  : undefined
-              }
-            >
-              Movies
-            </Button>
-            <Button
-              className="h-7 rounded-md px-3 text-xs font-semibold"
-              variant="ghost"
-              onClick={handleTVClick}
-              data-active={type === "tv"}
-              aria-pressed={type === "tv"}
-              style={
-                type === "tv"
-                  ? {
-                      background: "var(--foreground)",
-                      color: "var(--background)",
-                    }
-                  : undefined
-              }
-            >
-              Series
-            </Button>
+            {movieCount > 0 && (
+              <Button
+                className="h-7 rounded-md px-3 text-xs font-semibold"
+                variant="ghost"
+                onClick={handleMovieClick}
+                data-active={type === "movie"}
+                aria-pressed={type === "movie"}
+                style={
+                  type === "movie"
+                    ? {
+                        background: "var(--foreground)",
+                        color: "var(--background)",
+                      }
+                    : undefined
+                }
+              >
+                Movies
+              </Button>
+            )}
+            {tvCount > 0 && (
+              <Button
+                className="h-7 rounded-md px-3 text-xs font-semibold"
+                variant="ghost"
+                onClick={handleTVClick}
+                data-active={type === "tv"}
+                aria-pressed={type === "tv"}
+                style={
+                  type === "tv"
+                    ? {
+                        background: "var(--foreground)",
+                        color: "var(--background)",
+                      }
+                    : undefined
+                }
+              >
+                Series
+              </Button>
+            )}
           </div>
 
           <Select
@@ -331,7 +354,7 @@ export function SearchPage() {
           </span>
         </div>
 
-        <div className="flex min-h-96 w-full items-center justify-center">
+        <div className="flex min-h-[420px] w-full items-center justify-center">
           <MediaGrid stagger>
             {filteredData.map((item, index) => (
               <MediaCard
@@ -351,13 +374,15 @@ export function SearchPage() {
             ))}
           </MediaGrid>
         </div>
-        {showPagination && (
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        )}
+        <div className="min-h-[56px]">
+          {showPagination && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </div>
       </div>
     );
   }
@@ -366,7 +391,7 @@ export function SearchPage() {
     <section className="flex w-full justify-center">
       <div className="mx-auto w-full max-w-screen-xl p-5">
         <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
-          <GoBack title="Back" hideLabelOnMobile />
+          <GoBack title="Back" />
         </div>
         {!query && (
           <div className="mb-6 flex flex-col gap-1">
@@ -391,12 +416,21 @@ function SearchHistory({
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const [history, setHistory] = useState<string[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setHistory(getSearchHistory());
+    setHydrated(true);
   }, []);
 
-  if (history.length === 0) return null;
+  if (!hydrated) {
+    // Reserve height during hydration so Trending Now doesn't shift up
+    // when history appears. Matches the ~48px chip row height.
+    return <div className="min-h-[48px]" aria-hidden="true" />;
+  }
+
+  if (history.length === 0)
+    return <div className="min-h-0" aria-hidden="true" />;
 
   return (
     <div className="flex flex-col gap-2 pt-4 pb-1">
@@ -439,7 +473,7 @@ function SearchHistory({
               type="button"
               variant="ghost"
               size="icon"
-              className="size-4 cursor-pointer p-0 opacity-0 transition-opacity group-hover:opacity-60 hover:bg-transparent hover:!opacity-100"
+              className="size-4 cursor-pointer p-0 opacity-0 transition-opacity group-hover:opacity-60 hover:bg-transparent hover:opacity-100!"
               onClick={() => {
                 removeFromSearchHistory(item);
                 setHistory((prev) => prev.filter((h) => h !== item));

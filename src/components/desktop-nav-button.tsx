@@ -95,8 +95,8 @@ const DesktopNavButtons = () => {
               appearance={{
                 elements: {
                   userButtonAvatarBox:
-                    "!size-9 !rounded-full !border-2 !border-secondary",
-                  userButtonTrigger: "!h-9 !w-9 !rounded-full",
+                    "size-9! rounded-full! border-2! border-secondary!",
+                  userButtonTrigger: "h-9! w-9! rounded-full!",
                 },
               }}
             />

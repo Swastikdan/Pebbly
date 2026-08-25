@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
@@ -8,13 +7,10 @@ export const GoBack = (props: {
   title?: string;
   link?: string;
   className?: string;
-  hideLabelOnMobile?: boolean;
 }) => {
   const navigate = useNavigate();
   const router = useRouter();
-  const { isSignedIn } = useUser();
-  const { title, link, className, hideLabelOnMobile = false } = props;
-  const shouldHideLabelOnMobile = hideLabelOnMobile && !!isSignedIn;
+  const { title, link, className } = props;
 
   function goBack() {
     if (link) {
@@ -36,11 +32,7 @@ export const GoBack = (props: {
     >
       <span className="flex w-full items-center gap-1">
         <ArrowLeft size={20} />
-        <span
-          className={shouldHideLabelOnMobile ? "hidden sm:inline" : "inline"}
-        >
-          {title ?? "Go Back"}
-        </span>
+        <span>{title ?? "Go Back"}</span>
       </span>
     </Button>
   );

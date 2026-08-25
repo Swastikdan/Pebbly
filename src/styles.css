@@ -2,16 +2,47 @@
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/bricolage-grotesque";
-@custom-variant dark (&:is(.dark *));
+
+/* Fallback font metrics to reduce CLS from font swap.
+   96% size-adjust keeps the fallback close to Geist/Bricolage metrics
+   so the swap doesn't reflow line breaks. */
+@font-face {
+  font-family: "Geist Fallback";
+  src: local("Arial");
+  size-adjust: 96%;
+  ascent-override: 92%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Bricolage Fallback";
+  src: local("Arial");
+  size-adjust: 100%;
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+@custom-variant dark (&:where(.dark, .dark *));
+/* Hover styles only apply where real pointers exist; touch devices trigger :hover on tap, which leaves buttons stuck in their hover state. */
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+}
 @theme {
   --font-sans:
-    "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
-  --font-display: "Bricolage Grotesque Variable", var(--font-sans);
+    "Geist Variable", "Geist Fallback", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  --font-display:
+    "Bricolage Grotesque Variable", "Bricolage Fallback", var(--font-sans);
   --font-heading: var(--font-display);
   --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-emphatic: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --animate-marquee: marquee var(--marquee-duration, 12s) linear infinite;
   @keyframes marquee {
     from {
@@ -496,28 +527,19 @@
       animation-delay: 0ms;
     }
     .stagger-grid > *:nth-child(2) {
-      animation-delay: 15ms;
+      animation-delay: 40ms;
     }
     .stagger-grid > *:nth-child(3) {
-      animation-delay: 30ms;
+      animation-delay: 80ms;
     }
     .stagger-grid > *:nth-child(4) {
-      animation-delay: 45ms;
+      animation-delay: 120ms;
     }
     .stagger-grid > *:nth-child(5) {
-      animation-delay: 60ms;
+      animation-delay: 160ms;
     }
-    .stagger-grid > *:nth-child(6) {
-      animation-delay: 75ms;
-    }
-    .stagger-grid > *:nth-child(7) {
-      animation-delay: 90ms;
-    }
-    .stagger-grid > *:nth-child(8) {
-      animation-delay: 105ms;
-    }
-    .stagger-grid > *:nth-child(n + 9) {
-      animation-delay: 120ms;
+    .stagger-grid > *:nth-child(n + 6) {
+      animation-delay: 200ms;
     }
   }
   .progress-indeterminate {
@@ -651,7 +673,7 @@
   outline: none;
 }
 .mobile-bottom-nav-tab:active {
-  transform: scale(0.92);
+  transform: scale(0.96);
 }
 .mobile-bottom-nav-tab[data-active="true"] {
   color: var(--foreground);
@@ -666,7 +688,7 @@
   border-radius: 1rem;
   transition:
     background-color 200ms ease,
-    transform 200ms ease;
+    transform 120ms ease-out;
 }
 .mobile-bottom-nav-tab[data-active="true"] .mobile-bottom-nav-tab-icon {
   background-color: var(--secondary);

@@ -141,11 +141,12 @@ export function CustomListMediaCard({
         !readOnly && (
           <div className="flex shrink-0 items-start gap-0.5">
             {onMove !== undefined && (
-              <div className="flex flex-col gap-0 opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
+              <div className="flex flex-col gap-0">
                 <button
                   type="button"
                   onClick={handleMoveClick(-1)}
                   disabled={!canMoveUp}
+                  title="Move up one rank"
                   className={cn(
                     "text-muted-foreground/60 flex size-5 items-center justify-center rounded-md transition-colors",
                     canMoveUp
@@ -160,6 +161,7 @@ export function CustomListMediaCard({
                   type="button"
                   onClick={handleMoveClick(1)}
                   disabled={!canMoveDown}
+                  title="Move down one rank"
                   className={cn(
                     "text-muted-foreground/60 flex size-5 items-center justify-center rounded-md transition-colors",
                     canMoveDown

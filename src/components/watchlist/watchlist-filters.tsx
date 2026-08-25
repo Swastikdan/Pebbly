@@ -149,7 +149,7 @@ export function WatchlistFilters({
                   variant="ghost"
                   onClick={() => setActiveFilter(tab.value)}
                   className={cn(
-                    "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-all",
+                    "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
                     isActive
                       ? "bg-foreground text-background hover:bg-foreground shadow-xs"
                       : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
@@ -173,7 +173,7 @@ export function WatchlistFilters({
                 variant="ghost"
                 onClick={() => setActiveFilter("dropped")}
                 className={cn(
-                  "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-all",
+                  "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
                   activeFilter === "dropped"
                     ? "bg-foreground text-background hover:bg-foreground shadow-xs"
                     : "text-muted-foreground/60 hover:bg-secondary/80 hover:text-foreground",

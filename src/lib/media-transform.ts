@@ -91,9 +91,7 @@ export const mapBackdrops = (backdrops?: MinimalImage[] | null) =>
     .sort(sortByVoteAverage)
     .map((image) => ({
       backdrop_image: `${IMAGE_PREFIX.SD_BACKDROP}${image.file_path}`,
-      // HD (w1280) instead of ORIGINAL: full-res TMDB files can be several
-      // MB and decode to 4K bitmaps, the lightbox never needs more.
-      backdrop_image_raw: `${IMAGE_PREFIX.HD_BACKDROP}${image.file_path}`,
+      backdrop_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
       aspect_ratio: image.aspect_ratio,
     }))
     .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
@@ -104,7 +102,7 @@ export const mapPosters = (posters?: MinimalImage[] | null) =>
     .sort(sortByVoteAverage)
     .map((image) => ({
       poster_image: `${IMAGE_PREFIX.SD_POSTER}${image.file_path}`,
-      poster_image_raw: `${IMAGE_PREFIX.HD_POSTER}${image.file_path}`,
+      poster_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
       aspect_ratio: image.aspect_ratio,
     }))
     .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
@@ -138,6 +136,38 @@ export const getTvCertification = (
   contentRatings?: { iso_3166_1: string; rating?: string }[] | null,
 ) =>
   contentRatings?.find((result) => result.iso_3166_1 === "US")?.rating ?? "NR";
+
+// TMDB release_date types: 1 = premiere, 2 = theatrical (limited),
+// 3 = theatrical (wide). Theatrical runs rarely outlast ~90 days before
+// streaming/digital takes over.
+const THEATRICAL_RELEASE_TYPES = new Set([2, 3]);
+const THEATRICAL_WINDOW_DAYS = 90;
+
+// Anchored to the title's primary release_date, NOT the per-region entries:
+// regional lists carry re-releases (e.g. a 2026 Turkish screening of a 2021
+// film) that would light the badge up years later. The regional scan only
+// confirms the title ever had a theatrical run, so straight-to-digital
+// releases stay excluded.
+export const isInTheatricalWindow = (
+  releaseDate?: string | null,
+  releaseDates?: { release_dates?: { type?: number | null }[] | null }[] | null,
+) => {
+  if (!releaseDate) {
+    return false;
+  }
+  const daysSince = (Date.now() - new Date(releaseDate).getTime()) / 86_400_000;
+  if (!Number.isFinite(daysSince)) {
+    return false;
+  }
+  const isRecent = daysSince >= 0 && daysSince <= THEATRICAL_WINDOW_DAYS;
+  const hadTheatricalRelease =
+    releaseDates?.some((region) =>
+      region.release_dates?.some((entry) =>
+        THEATRICAL_RELEASE_TYPES.has(entry.type ?? 0),
+      ),
+    ) ?? false;
+  return isRecent && hadTheatricalRelease;
+};
 
 export const formatRuntime = (runtime?: number) =>
   runtime ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : null;

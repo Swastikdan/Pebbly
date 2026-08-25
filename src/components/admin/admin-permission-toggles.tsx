@@ -35,7 +35,7 @@ function ToggleSwitch({
       onClick={() => {
         onChange(!enabled);
       }}
-      className={`focus-visible:ring-ring relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+      className={`focus-visible:ring-ring relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden ${
         enabled
           ? "bg-foreground shadow-sm"
           : "bg-muted-foreground/20 ring-border ring-1"

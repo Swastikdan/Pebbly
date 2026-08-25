@@ -242,7 +242,7 @@ export function CustomListDialog({
               onChange={(e) => setDescription(e.target.value.substring(0, 150))}
               maxLength={150}
               className={cn(
-                "bg-card min-h-[64px] w-full resize-none rounded-xl border p-3 text-xs transition-[color,background-color,border-color,box-shadow] duration-200 outline-none",
+                "bg-card min-h-[64px] w-full resize-none rounded-xl border p-3 text-xs outline-hidden transition-[color,background-color,border-color,box-shadow] duration-200",
                 "placeholder:text-muted-foreground/60",
                 "focus-visible:border-ring/60 focus-visible:bg-card focus-visible:ring-ring/30 focus-visible:ring-1",
                 "border-border",

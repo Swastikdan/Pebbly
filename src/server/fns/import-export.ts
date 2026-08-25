@@ -1,8 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq, inArray } from "drizzle-orm";
 
-import type { Db } from "../db/client";
-import { runBatch } from "../db/client";
+import { MAX_IDS_PER_IN_CLAUSE, runBatch } from "../db/client";
 import { episodeProgress, watchItems } from "../db/schema";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
 import {
@@ -14,8 +13,6 @@ import {
 import { ok } from "../schema/common";
 import { importWatchlistArgsSchema } from "../schema/import";
 import { authedFn } from "./rpc";
-
-const IN_CLAUSE_CHUNK = 90;
 
 export const importWatchlist = createServerFn({ method: "POST" })
   .validator(importWatchlistArgsSchema)
@@ -30,14 +27,17 @@ export const importWatchlist = createServerFn({ method: "POST" })
 
       const tmdbIds = [...new Set(data.items.map((item) => item.tmdbId))];
       const existingMap = new Map<string, typeof watchItems.$inferSelect>();
-      for (let i = 0; i < tmdbIds.length; i += IN_CLAUSE_CHUNK) {
+      for (let i = 0; i < tmdbIds.length; i += MAX_IDS_PER_IN_CLAUSE) {
         const rows = await db
           .select()
           .from(watchItems)
           .where(
             and(
               eq(watchItems.userId, user.id),
-              inArray(watchItems.tmdbId, tmdbIds.slice(i, i + IN_CLAUSE_CHUNK)),
+              inArray(
+                watchItems.tmdbId,
+                tmdbIds.slice(i, i + MAX_IDS_PER_IN_CLAUSE),
+              ),
             ),
           );
         for (const row of rows) {
@@ -104,7 +104,7 @@ export const importWatchlist = createServerFn({ method: "POST" })
         }
       }
 
-      await runBoundedBatches(db, watchStatements);
+      await runBatch(db, watchStatements);
 
       const episodeStatements: Parameters<typeof db.batch>[0][number][] = [];
 
@@ -119,7 +119,7 @@ export const importWatchlist = createServerFn({ method: "POST" })
         typeof episodeProgress.$inferSelect
       >();
       const tvIds = [...importedTvIds];
-      for (let i = 0; i < tvIds.length; i += IN_CLAUSE_CHUNK) {
+      for (let i = 0; i < tvIds.length; i += MAX_IDS_PER_IN_CLAUSE) {
         const rows = await db
           .select()
           .from(episodeProgress)
@@ -128,7 +128,7 @@ export const importWatchlist = createServerFn({ method: "POST" })
               eq(episodeProgress.userId, user.id),
               inArray(
                 episodeProgress.tmdbId,
-                tvIds.slice(i, i + IN_CLAUSE_CHUNK),
+                tvIds.slice(i, i + MAX_IDS_PER_IN_CLAUSE),
               ),
             ),
           );
@@ -191,7 +191,7 @@ export const importWatchlist = createServerFn({ method: "POST" })
         }
       }
 
-      await runBoundedBatches(db, episodeStatements);
+      await runBatch(db, episodeStatements);
 
       if (data.final !== false) {
         await createWatchlistSnapshot(db, user.id);
@@ -200,20 +200,3 @@ export const importWatchlist = createServerFn({ method: "POST" })
       return ok({ imported: importedItems.size });
     }),
   );
-
-/**
- * Run a statement list as one or more D1 `db.batch()` calls, capped at
- * `MAX_STATEMENTS_PER_BATCH` per call so a huge import stays within D1's
- * per-call execution budget (the platform requires the whole call to resolve
- * in 30 s). No-op for an empty list.
- */
-async function runBoundedBatches(
-  db: Db,
-  statements: Parameters<typeof db.batch>[0][number][],
-) {
-  if (statements.length === 0) return;
-  const MAX_STATEMENTS_PER_BATCH = 100;
-  for (let i = 0; i < statements.length; i += MAX_STATEMENTS_PER_BATCH) {
-    await runBatch(db, statements.slice(i, i + MAX_STATEMENTS_PER_BATCH));
-  }
-}

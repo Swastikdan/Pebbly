@@ -133,6 +133,9 @@ export function useContinueWatching() {
   });
   const localMediaState = useWatchlistStore((state) => state.mediaState);
 
+  const isLoading = isSignedIn ? remote.isLoading || remote.isFetching : false;
+  const isSettled = isSignedIn ? !!remote.data || remote.isError : true;
+
   const items = useMemo(() => {
     if (isSignedIn) {
       if (!remote.data) return [];
@@ -173,7 +176,7 @@ export function useContinueWatching() {
       .sort((a, b) => b.lastUpdated - a.lastUpdated);
   }, [isSignedIn, remote.data, localMediaState]);
 
-  return { items };
+  return { items, isLoading, isSettled };
 }
 
 export function useRemoveFromContinueWatching() {
@@ -277,6 +280,11 @@ export function useEpisodeWatched(
   useEffect(() => {
     if (!hasMediaState && watchedCount === 0) return;
     if (currentProgressStatus === "dropped") return;
+
+    // Leaving completion is owned by explicit actions too. Our episode
+    // count can be stale or partial (long-running shows, in-flight syncs),
+    // and a low derived percent must never demote a status the user set.
+    if (currentProgressStatus === "done" && derivedStatus !== "done") return;
 
     const shouldWriteProgress =
       !hasMediaState || currentProgress !== derivedProgress;
