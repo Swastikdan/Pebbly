@@ -13,7 +13,7 @@ on:
 # queued run and starts the latest commit. Merge queue uses
 # `merge_group` event, which `push` alone does not cover.
 concurrency:
-  group: deploy-cloudflare-preview-${{ github.ref }}
+  group: deploy-cloudflare-preview-v2-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
