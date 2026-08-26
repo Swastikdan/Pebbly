@@ -28,7 +28,7 @@ import {
   bumpListsRev,
   upsertWatchItem,
 } from "../helpers/watch-item";
-import { hasFeature } from "../rbac";
+import { hasFeature, isAdminByClaims } from "../rbac";
 import {
   gatherGenerationInputs,
   parseStoredRecommendations,
@@ -500,7 +500,7 @@ export const generateRecommendations = createServerFn({ method: "POST" })
     authedFn(
       { mode: "require", feature: "ai-recommendations" },
       data,
-      async ({ db, user }): Promise<ApiResult<GenerateResult>> => {
+      async ({ claims, db, user }): Promise<ApiResult<GenerateResult>> => {
         const genType = data.generationType ?? "watchlist";
 
         if (genType === "list" && !data.listId) {
@@ -525,13 +525,18 @@ export const generateRecommendations = createServerFn({ method: "POST" })
           }
         }
 
-        const { allowed, token } = await tryConsumeRateLimit(
-          db,
-          `${GENERATION_RATE_LIMIT_KEY}:${user.id}`,
-          RATE_LIMIT_MS,
-        );
-        if (!allowed) {
-          return ok({ error: "rate_limited" });
+        const isAdmin = isAdminByClaims(claims);
+        let rateLimitToken: string | undefined;
+        if (!isAdmin) {
+          const { allowed, token } = await tryConsumeRateLimit(
+            db,
+            `${GENERATION_RATE_LIMIT_KEY}:${user.id}`,
+            RATE_LIMIT_MS,
+          );
+          if (!allowed) {
+            return ok({ error: "rate_limited" });
+          }
+          rateLimitToken = token;
         }
 
         const excludeTmdbIds = [
@@ -582,8 +587,8 @@ export const generateRecommendations = createServerFn({ method: "POST" })
         });
         if (!generated.ok) {
           // A failed AI call does not burn the cooldown: release the slot so
-          // the user can retry immediately.
-          await releaseRateLimit(db, token);
+          // the user can retry immediately (admin has no slot).
+          if (rateLimitToken) await releaseRateLimit(db, rateLimitToken);
           return ok({ error: generated.error });
         }
 
@@ -614,20 +619,22 @@ export const generateHomepageRecommendations = createServerFn({
     { mode: "require", feature: "ai-recommendations" },
     undefined,
     async ({
+      claims,
       db,
       user,
     }): Promise<ApiResult<{ success: boolean; error?: string }>> => {
-      // Atomic slot claim (unlike the old read-then-write on
-      // lastAttemptedAt, concurrent triggers cannot both pass and double-fire
-      // expensive Gemini calls). Both success and failure consume the
-      // attempt, matching the previous lastAttemptedAt semantics.
-      const { allowed } = await tryConsumeRateLimit(
-        db,
-        `${HOMEPAGE_RATE_LIMIT_KEY}:${user.id}`,
-        RATE_LIMIT_MS,
-      );
-      if (!allowed) {
-        return ok({ success: false, error: "rate_limited" });
+      // Admins bypass the 2-min ledger (they may regenerate for QA/support)
+      // – regular users still hit the atomic slot claim.
+      const isAdmin = isAdminByClaims(claims);
+      if (!isAdmin) {
+        const { allowed } = await tryConsumeRateLimit(
+          db,
+          `${HOMEPAGE_RATE_LIMIT_KEY}:${user.id}`,
+          RATE_LIMIT_MS,
+        );
+        if (!allowed) {
+          return ok({ success: false, error: "rate_limited" });
+        }
       }
 
       const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
