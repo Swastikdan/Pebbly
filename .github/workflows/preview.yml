@@ -19,7 +19,7 @@ on:
 # (refs/heads/gh-readonly-queue/cloudflare), which would allow
 # concurrent deploys.
 concurrency:
-  group: deploy-cloudflare-preview-v2
+  group: deploy-cloudflare-preview-${{ github.event_name }}-v2
   cancel-in-progress: true
 
 jobs:
