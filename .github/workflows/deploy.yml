@@ -3,10 +3,15 @@ on:
   push:
     branches:
       - master
+  merge_group:
+    branches:
+      - master
   workflow_dispatch:
 
 # Production deploys fire when cloudflare is merged into master. Feature
 # branches never deploy here; they go through preview.yml instead.
+# merge_group is needed for merge-queue (gh-readonly-queue/master/*)
+# which uses merge_group event, not push.
 concurrency:
   group: deploy-cloudflare-prod
   cancel-in-progress: false
@@ -14,7 +19,16 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.event.pusher.name == 'Swastikdan'
+    # Allow merges via PR (pusher Swastikdan), manual dispatch, and
+    # merge-queue (actor github-actions[bot]). Previous
+    # `pusher.name == 'Swastikdan'` blocked merge-queue pushes where
+    # pusher is github-actions[bot] → job skipped and prod never deployed
+    # after 727e3d7 (PR #66).
+    if: >-
+      github.event_name == 'merge_group' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pusher.name == 'Swastikdan' ||
+      github.actor == 'Swastikdan'
     permissions:
       contents: read
     steps:
