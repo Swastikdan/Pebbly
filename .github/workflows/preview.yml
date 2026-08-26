@@ -3,13 +3,24 @@ on:
   push:
     branches:
       - cloudflare
+  merge_group:
+    branches:
+      - cloudflare
   workflow_dispatch:
 
 # Previews fire on every merge into the integration branch (cloudflare).
 # Feature branches do not deploy; PRs are validated by ci.yml instead.
+# cancel-in-progress:true prevents the 1-hour queue seen in #36
+# (8040cd4 queued 52m): a new push on cloudflare cancels the stale
+# queued run and starts the latest commit. Merge queue uses
+# `merge_group` event, which `push` alone does not cover.
+# Uses a fixed group string (no github.ref) because the ref differs
+# between push (refs/heads/cloudflare) and merge_group
+# (refs/heads/gh-readonly-queue/cloudflare), which would allow
+# concurrent deploys.
 concurrency:
-  group: deploy-cloudflare-preview-${{ github.ref }}
-  cancel-in-progress: false
+  group: deploy-cloudflare-preview-v2
+  cancel-in-progress: true
 
 jobs:
   deploy:
