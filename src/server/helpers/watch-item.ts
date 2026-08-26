@@ -1,19 +1,12 @@
 import { and, eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
-import type { MediaType, ProgressStatus, Reaction } from "../schema/common";
+import type { MediaType, Reaction } from "../schema/common";
+import { normalizeProgressStatus } from "@/lib/utils";
 import { users, watchItems } from "../db/schema";
-import { PROGRESS_STATUSES, REACTIONS } from "../schema/common";
+import { REACTIONS } from "../schema/common";
 
-const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set(PROGRESS_STATUSES);
-
-export function normalizeProgressStatus(
-  status?: string | null,
-): ProgressStatus | undefined {
-  if (!status) return undefined;
-  return (VALID_PROGRESS_STATUSES.has(status) ? status : undefined) as
-    ProgressStatus | undefined;
-}
+export { normalizeProgressStatus } from "@/lib/utils";
 
 const VALID_REACTIONS: ReadonlySet<string> = new Set(REACTIONS);
 

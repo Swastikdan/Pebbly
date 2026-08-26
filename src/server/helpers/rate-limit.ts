@@ -21,7 +21,7 @@ import { rateLimitAttempts } from "../db/schema";
  * `pruneStaleRateLimitRows` runs globally from the daily user-maintenance
  * task so rows for keys that are never hit again cannot accumulate forever.
  *
- * Kept out of domain tables on purpose — the previous scheme stored a fake
+ * Kept out of domain tables on purpose: the previous scheme stored a fake
  * `ai_recommendations` row as the cooldown marker, which polluted history
  * data and forced special-case guards around deletion.
  */
@@ -125,7 +125,7 @@ export async function tryConsumeRateLimit(
     }
   }
 
-  // Atomic claim — see the module docstring. A genuine DB failure here
+  // Atomic claim; see the module docstring. A genuine DB failure here
   // propagates (fail loud) rather than masquerading as RATE_LIMITED.
   const token = crypto.randomUUID();
   try {

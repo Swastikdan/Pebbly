@@ -48,6 +48,34 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Centralised error logger shared across repositories, hooks and helpers.
+ * Keeps every "Failed to …" message in one place for easy grep / filtering.
+ */
+export function logError(action: string, error: unknown) {
+  console.error(`Failed to ${action}`, error);
+}
+
+/**
+ * Extract the five media-metadata fields that are spread into watch-item
+ * upserts, optimistic patches, and list operations across the codebase.
+ */
+export function extractMetadataFields(metadata?: {
+  title?: string | null;
+  image?: string | null;
+  rating?: number | null;
+  release_date?: string | null;
+  overview?: string | null;
+}) {
+  return {
+    title: metadata?.title ?? undefined,
+    image: metadata?.image ?? undefined,
+    rating: metadata?.rating ?? undefined,
+    release_date: metadata?.release_date ?? undefined,
+    overview: metadata?.overview ?? undefined,
+  };
+}
+
+/**
  * Creates an LRU-aware localStorage wrapper that evicts the oldest store
  * when total usage approaches the ~5MB quota (threshold: 4MB).
  */

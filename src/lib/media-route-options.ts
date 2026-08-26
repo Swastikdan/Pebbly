@@ -50,54 +50,52 @@ function buildHead(kind: MediaKind, copy: HeadCopy) {
   });
 }
 
-const INDEX_HEAD: Record<MediaKind, HeadCopy> = {
-  movie: {
-    title: (title) => `${title} | Pebbly`,
-    description: (title) =>
-      `Explore detailed information about ${title}, including cast, crew, reviews, and more.`,
-    notFoundDescription: "Explore detailed information about movies on Pebbly.",
-  },
-  tv: {
-    title: (title) => `${title} | Pebbly`,
-    description: (title) =>
-      `Explore detailed information about ${title}, including cast, crew, reviews, and more.`,
-    notFoundDescription:
-      "Explore detailed information about movies and shows on Pebbly.",
-  },
-};
+function buildHeadCopy(
+  titleSuffix: string,
+  description: (title: string) => string,
+  notFoundMovie: string,
+  notFoundTv: string,
+  urlSuffix?: string,
+): Record<MediaKind, HeadCopy> {
+  return {
+    movie: {
+      title: (title) => `${title} ${titleSuffix} | Pebbly`.trim(),
+      description,
+      notFoundDescription: notFoundMovie,
+      urlSuffix,
+    },
+    tv: {
+      title: (title) => `${title} ${titleSuffix} | Pebbly`.trim(),
+      description,
+      notFoundDescription: notFoundTv,
+      urlSuffix,
+    },
+  };
+}
 
-const MEDIA_HEAD: Record<MediaKind, HeadCopy> = {
-  movie: {
-    title: (title) => `${title} - Media | Pebbly`,
-    description: (title) => `Watch the latest videos and images of ${title}.`,
-    notFoundDescription:
-      "Explore the latest movie videos and images on Pebbly.",
-    urlSuffix: "/media",
-  },
-  tv: {
-    title: (title) => `${title} - Media | Pebbly`,
-    description: (title) => `Watch the latest videos and images of ${title}.`,
-    notFoundDescription: "Explore the latest videos and images on Pebbly.",
-    urlSuffix: "/media",
-  },
-};
+const INDEX_HEAD = buildHeadCopy(
+  "",
+  (title) =>
+    `Explore detailed information about ${title}, including cast, crew, reviews, and more.`,
+  "Explore detailed information about movies on Pebbly.",
+  "Explore detailed information about movies and shows on Pebbly.",
+);
 
-const CAST_CREW_HEAD: Record<MediaKind, HeadCopy> = {
-  movie: {
-    title: (title) => `${title} - Cast & Crew | Pebbly`,
-    description: (title) => `Explore the cast and crew of ${title}.`,
-    notFoundDescription:
-      "Discover the cast and crew of your favorite movies on Pebbly.",
-    urlSuffix: "/cast-crew",
-  },
-  tv: {
-    title: (title) => `${title} - Cast & Crew | Pebbly`,
-    description: (title) => `Explore the cast and crew of ${title}.`,
-    notFoundDescription:
-      "Discover the cast and crew of your favorite shows on Pebbly.",
-    urlSuffix: "/cast-crew",
-  },
-};
+const MEDIA_HEAD = buildHeadCopy(
+  "- Media",
+  (title) => `Watch the latest videos and images of ${title}.`,
+  "Explore the latest movie videos and images on Pebbly.",
+  "Explore the latest videos and images on Pebbly.",
+  "/media",
+);
+
+const CAST_CREW_HEAD = buildHeadCopy(
+  "- Cast & Crew",
+  (title) => `Explore the cast and crew of ${title}.`,
+  "Discover the cast and crew of your favorite movies on Pebbly.",
+  "Discover the cast and crew of your favorite shows on Pebbly.",
+  "/cast-crew",
+);
 
 export function indexDetailSearch(search: Record<string, unknown>) {
   return {

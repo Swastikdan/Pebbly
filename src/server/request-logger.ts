@@ -58,20 +58,20 @@ function truncate(value: string): string {
  * seroval modes: `toJSONAsync` (vanilla) for client→server requests and
  * `toCrossJSONStream` (cross) for server→client responses. We try both
  * decoders; with no custom plugins simple payloads still decode, and with
- * plugins we'd need the app's seroval plugins — for logging we accept the
+ * plugins we'd need the app's seroval plugins. For logging we accept the
  * best-effort decode and fall back to the raw parsed value.
  */
 async function tryDecodeSeroval(parsed: unknown): Promise<unknown | null> {
   if (!parsed || typeof parsed !== "object") return null;
   try {
     const { fromJSON, fromCrossJSON } = await import("seroval");
-    // 1) Vanilla wrapper (fromJSON) — used for request bodies.
+    // 1) Vanilla wrapper (fromJSON), used for request bodies.
     try {
       return fromJSON(parsed as never);
     } catch {
       // fall through
     }
-    // 2) Cross mode (fromCrossJSON) — used for response bodies, bare nodes too.
+    // 2) Cross mode (fromCrossJSON), used for response bodies, bare nodes too.
     try {
       return fromCrossJSON(
         parsed as never,
@@ -83,7 +83,7 @@ async function tryDecodeSeroval(parsed: unknown): Promise<unknown | null> {
     } catch {
       // fall through
     }
-    // 3) Bare node wrapped as vanilla — older / edge case.
+    // 3) Bare node wrapped as vanilla, older / edge case.
     if (typeof (parsed as { t?: unknown }).t === "number") {
       try {
         return fromJSON({ t: parsed, f: 0, m: [] } as never);
@@ -92,7 +92,7 @@ async function tryDecodeSeroval(parsed: unknown): Promise<unknown | null> {
       }
     }
   } catch {
-    // seroval not resolvable — fall back to raw
+    // seroval not resolvable; fall back to raw
   }
   return null;
 }
@@ -133,7 +133,7 @@ function renderPayload(value: unknown): string {
     return truncate(compact);
   }
   if (compact.length > LARGE_PAYLOAD_CHARS) {
-    return `(large payload — ${(compact.length / 1024).toFixed(1)} KB — hidden)`;
+    return `(large payload, ${(compact.length / 1024).toFixed(1)} KB, hidden)`;
   }
   return pretty.length > MAX_PAYLOAD_CHARS
     ? `${pretty.slice(0, MAX_PAYLOAD_CHARS)}… (+${pretty.length - MAX_PAYLOAD_CHARS} chars hidden)`
@@ -182,12 +182,12 @@ async function captureResponsePayload(
           const parsed = JSON.parse(jsonStr);
           const decoded = await tryDecodeSeroval(parsed);
           const rendered = renderPayload(decoded ?? parsed);
-          return `(framed stream — first frame shown)\n${rendered}`;
+          return `(framed stream, first frame shown)\n${rendered}`;
         } catch {
           // fall through to raw summary
         }
       }
-      return `(framed streaming response — ${raw.length} bytes, not fully decoded)`;
+      return `(framed streaming response, ${raw.length} bytes, not fully decoded)`;
     }
     return renderPayload(await decodeBody(raw));
   } catch {
@@ -236,7 +236,7 @@ export const requestLogger = createMiddleware({ type: "request" }).server(
     const isServerFn = handlerType === "serverFn";
     const target = isServerFn ? describeServerFn(pathname) : pathname;
     const startedAt = performance.now();
-    // Payload tracing only for RPC calls — SSR bodies are whole HTML documents.
+    // Payload tracing only for RPC calls; SSR bodies are whole HTML documents.
     const tracePayloads = isServerFn && payloadLoggingEnabled();
     try {
       // Clone + read before `next()`: the handler consumes the original body,

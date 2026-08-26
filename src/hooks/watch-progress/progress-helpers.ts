@@ -110,9 +110,7 @@ export function parsePlayerEventPayload(message: unknown) {
   }
 }
 
-export function logWatchProgressError(action: string, error: unknown) {
-  console.error(`Failed to ${action}`, error);
-}
+export { logError as logWatchProgressError } from "@/lib/utils";
 
 export function createOptimisticEpisodeProgress(
   tmdbId: number,

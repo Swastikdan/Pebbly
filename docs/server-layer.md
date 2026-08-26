@@ -97,7 +97,7 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
   for legacy `*|<sub>` formats, max 10 matches), with a short-lived in-memory
   cache (15 s TTL, 500-entry LRU) to avoid duplicate DB hits.
 - Admin helpers, `isAdminByClaims` (reads `public_meta.isAdmin` out of the
-  signed JWT claim — the sole request-path source; the old live Clerk API
+  signed JWT claim, the sole request-path source; the old live Clerk API
   fallback was removed from gates), and `getClerkAdminIds` (paginated
   user-list call, page size 500, offset cap 10,000, display-only, never used
   for access decisions).

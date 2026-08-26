@@ -36,6 +36,7 @@ import {
 } from "@/lib/data/pending-ops";
 import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
+import { extractMetadataFields, logError } from "@/lib/utils";
 import {
   cloneCustomList,
   createCustomList,
@@ -58,10 +59,6 @@ import {
 } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
 import { resolveStatusPlan } from "./status-plan";
-
-function logWatchlistError(action: string, error: unknown) {
-  console.error(`Failed to ${action}`, error);
-}
 
 async function runMutationAsync<T = unknown>(
   queryClient: QueryClient,
@@ -86,7 +83,7 @@ async function runMutationAsync<T = unknown>(
     handle?.resolve();
     return result;
   } catch (error) {
-    logWatchlistError(errorMessage, error);
+    logError(errorMessage, error);
     handle?.remove();
     throw error;
   } finally {
@@ -144,7 +141,7 @@ const watchlistMembershipBatcher = createBatcher<
       }
       return rows;
     } catch (error) {
-      logWatchlistError("batch set watchlist membership", error);
+      logError("batch set watchlist membership", error);
       for (const task of tasks) {
         task.handle?.remove();
       }
@@ -214,11 +211,7 @@ export function createRemoteRepository(
           isWatched: false,
           progressStatus,
           progress: action.progress,
-          title: metadata?.title,
-          image: metadata?.image,
-          rating: metadata?.rating,
-          release_date: metadata?.release_date,
-          overview: metadata?.overview,
+          ...extractMetadataFields(metadata),
         };
         const syncKeys = [
           queryKeys.watchlist.list(),
@@ -252,7 +245,7 @@ export function createRemoteRepository(
               }),
             )
             .catch((error) =>
-              logWatchlistError("sync remote show episode status", error),
+              logError("sync remote show episode status", error),
             );
         } else {
           send({});
@@ -265,11 +258,7 @@ export function createRemoteRepository(
         mediaType,
         progressStatus,
         progress,
-        title: metadata?.title,
-        image: metadata?.image,
-        rating: metadata?.rating,
-        release_date: metadata?.release_date,
-        overview: metadata?.overview,
+        ...extractMetadataFields(metadata),
       };
       runJournaledMutation(queryClient, {
         begin: () =>
@@ -284,11 +273,7 @@ export function createRemoteRepository(
       const payload: SetReactionArgs = {
         tmdbId: Number(id),
         mediaType,
-        title: metadata?.title,
-        image: metadata?.image,
-        rating: metadata?.rating,
-        release_date: metadata?.release_date,
-        overview: metadata?.overview,
+        ...extractMetadataFields(metadata),
       };
       if (reaction) {
         payload.reaction = reaction;

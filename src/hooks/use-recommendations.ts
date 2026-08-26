@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { MediaType } from "@/lib/media-types";
@@ -8,18 +8,16 @@ import { ERA_PRESETS } from "@/components/recommendations/recommendation-filters
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { normalizeTitleKey } from "@/lib/text";
+import { logError as logRecommendationError } from "@/lib/utils";
 import {
   deleteRecommendation,
-  generateRecommendations,
+  getGenerationStatus,
   getRecommendationHistory,
+  startGeneration,
   updateVerifiedRecommendations,
 } from "@/server/fns/recommendations";
 import { unwrap } from "@/server/schema/common";
 import { MAX_EXCLUDE_TMDB_IDS } from "@/server/schema/recommendations";
-
-function logRecommendationError(action: string, error: unknown) {
-  console.error(`Failed to ${action}`, error);
-}
 
 export interface GenerateOptions {
   generationType?: "watchlist" | "list" | "genre";
@@ -47,21 +45,6 @@ export interface RecommendationHistoryEntry {
   genrePreference?: string;
   verified?: boolean;
 }
-
-type GenerateResult =
-  | {
-      recommendations: AIRecommendation[];
-      inputStats: {
-        movieCount: number;
-        tvCount: number;
-        episodesWatched: number;
-        totalItems: number;
-      };
-      generatedAt: number;
-      cached: boolean;
-      listId?: string;
-    }
-  | { error: string };
 
 export interface TrackedContentSets {
   trackedTmdbIds: Set<number>;
@@ -204,11 +187,44 @@ export function useRecommendations() {
     queryFn: () => unwrap(getRecommendationHistory()),
     enabled: !!isSignedIn,
   });
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<Set<string>>(
     new Set(),
   );
+
+  // Poll for active job status
+  const jobQuery = useQuery({
+    queryKey: queryKeys.recommendations.job(activeJobId),
+    queryFn: () =>
+      unwrap(getGenerationStatus({ data: { jobId: activeJobId! } })),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === "completed" || status === "failed") return false;
+      return 3000;
+    },
+    enabled: !!activeJobId,
+  });
+
+  // React to job completion / failure
+  useEffect(() => {
+    if (!activeJobId) return;
+    const status = jobQuery.data?.status;
+    if (status === "completed") {
+      recordOwnMutation("ai");
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.recommendations.history(user?.id),
+      });
+      setActiveJobId(null);
+    } else if (status === "failed" && jobQuery.data) {
+      setError(
+        "error" in jobQuery.data ? jobQuery.data.error : "Generation failed",
+      );
+      setActiveJobId(null);
+    }
+  }, [activeJobId, jobQuery.data, queryClient, user?.id]);
+
+  const isGenerating = activeJobId !== null;
 
   const history: RecommendationHistoryEntry[] = useMemo(
     () =>
@@ -245,30 +261,19 @@ export function useRecommendations() {
     },
   });
 
-  const generate = useCallback(
-    async (options?: GenerateOptions) => {
-      setIsGenerating(true);
-      setError(null);
-      try {
-        const result: GenerateResult = await unwrap(
-          generateRecommendations({ data: options ?? {} }),
-        );
-        if ("error" in result) {
-          setError(result.error);
-        } else {
-          recordOwnMutation("ai");
-          void queryClient.invalidateQueries({
-            queryKey: queryKeys.recommendations.history(user?.id),
-          });
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Unknown error");
-      } finally {
-        setIsGenerating(false);
+  const generate = useCallback(async (options?: GenerateOptions) => {
+    setError(null);
+    try {
+      const result = await unwrap(startGeneration({ data: options ?? {} }));
+      if ("error" in result) {
+        setError(result.error);
+      } else {
+        setActiveJobId(result.jobId);
       }
-    },
-    [queryClient, user?.id],
-  );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+    }
+  }, []);
 
   const generateAgain = useCallback(
     (entry: RecommendationHistoryEntry, context: RepeatGenerateContext) =>

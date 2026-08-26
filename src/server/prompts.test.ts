@@ -32,7 +32,7 @@ function data(): WatchlistData {
     lists: [{ _id: "list-1", name: "Comfort watches" }],
     listItems: [
       { listId: "list-1", tmdbId: 99, mediaType: "movie" },
-      // Same title also tracked on the watchlist — must not duplicate.
+      // Same title also tracked on the watchlist, must not duplicate.
       { listId: "list-1", tmdbId: 42, mediaType: "movie" },
     ],
     inputStats: {

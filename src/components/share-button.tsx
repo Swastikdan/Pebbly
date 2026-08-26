@@ -15,14 +15,7 @@ export const ShareButton = (props: { title?: string }) => {
         await navigator.clipboard.writeText(textToCopy);
         alert("Link copied to clipboard");
       } catch {
-        const textArea = document.createElement("textarea");
-
-        textArea.value = textToCopy;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-        alert("Link copied to clipboard");
+        alert("Failed to copy link");
       }
     }
   }

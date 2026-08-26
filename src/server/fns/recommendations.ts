@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import * as v from "valibot";
 
@@ -17,6 +18,7 @@ import {
   buildWatchlistPrompt,
 } from "@/server/prompts";
 import {
+  aiGenerationJobs,
   aiRecommendations,
   homepageRecommendations,
   recommendationFeedback,
@@ -28,11 +30,13 @@ import {
   bumpListsRev,
   upsertWatchItem,
 } from "../helpers/watch-item";
+import { runAiJobBackground } from "../jobs/run-ai-generation";
 import { hasFeature, isAdminByClaims } from "../rbac";
 import {
   gatherGenerationInputs,
   parseStoredRecommendations,
   runAiGeneration,
+  SYSTEM_INSTRUCTION,
 } from "../recommendation-generation";
 import { fail, ok } from "../schema/common";
 import {
@@ -48,7 +52,6 @@ import { appendToPicksList } from "../services/picks-list";
 import { authedFn } from "./rpc";
 
 const RATE_LIMIT_MS = 2 * 60 * 1000;
-/** Ledger keys for the shared rate-limit primitive (helpers/rate-limit.ts). */
 const GENERATION_RATE_LIMIT_KEY = "ai-gen";
 const HOMEPAGE_RATE_LIMIT_KEY = "ai-homepage";
 
@@ -252,10 +255,6 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
         await bumpAiRev(db, user.id);
 
         if (data.feedback === "like") {
-          // Liking a recommendation re-attaches the title to the watchlist
-          // (with the "recommended" reaction) and files it on the user's
-          // Pebbly Picks list. upsertWatchItem owns the membership semantics
-          // and is race-safe on the (user, tmdb, mediaType) unique key.
           await upsertWatchItem(
             db,
             user.id,
@@ -297,6 +296,7 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
       },
     ),
   );
+
 export const removeRecommendationFeedback = createServerFn({ method: "POST" })
   .validator(removeRecommendationFeedbackArgsSchema)
   .handler(({ data }) =>
@@ -349,9 +349,6 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
         db,
         user,
       }): Promise<ApiResult<HomepageRecommendationsResult>> => {
-        // Only request a refresh when the user actually has the feature.
-        // Otherwise the client would keep firing generateHomepageRecommendations
-        // (which the server rejects with FORBIDDEN) on every refetch, a loop.
         const featureEnabled = await hasFeature(
           claims,
           user,
@@ -391,8 +388,6 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
         const lastUpdatedAt = row?.lastUpdatedAt ?? 0;
         const status = row?.status ?? "none";
 
-        // Refresh gating uses server-derived time exclusively; the client-
-        // supplied `now` is only used for display-related behavior.
         const currentTime = Date.now();
         const isOlderThan24Hours =
           currentTime - lastAttemptedAt > 24 * 60 * 60 * 1000;
@@ -414,7 +409,9 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
     ),
   );
 
-type SaveRecommendationsArgs = {
+// --- Exported helpers for background jobs ---
+
+export type SaveRecommendationsArgs = {
   userId: string;
   recommendations: RecommendationRow[];
   inputStats: {
@@ -429,7 +426,10 @@ type SaveRecommendationsArgs = {
   generationType?: string;
 };
 
-async function saveRecommendations(db: Db, args: SaveRecommendationsArgs) {
+export async function saveRecommendations(
+  db: Db,
+  args: SaveRecommendationsArgs,
+) {
   await db.insert(aiRecommendations).values({
     id: crypto.randomUUID(),
     userId: args.userId,
@@ -444,56 +444,368 @@ async function saveRecommendations(db: Db, args: SaveRecommendationsArgs) {
   await bumpAiRev(db, args.userId);
 }
 
-async function saveHomepageRecommendations(
+async function upsertHomepageRecommendation(
   db: Db,
   userId: string,
-  recommendations: RecommendationRow[],
+  fields: {
+    recommendations?: RecommendationRow[];
+    previousRecommendations?: boolean;
+    lastUpdatedAt?: number;
+    status: "success" | "failed";
+  },
 ) {
   const now = Date.now();
-  // userId-keyed upsert: the previous recommendations are preserved from the
-  // existing row (excluded from the conflict set).
   await db
     .insert(homepageRecommendations)
     .values({
       id: crypto.randomUUID(),
       userId,
-      recommendations,
+      recommendations: fields.recommendations ?? [],
       lastAttemptedAt: now,
-      lastUpdatedAt: now,
-      status: "success",
+      lastUpdatedAt: fields.lastUpdatedAt ?? now,
+      status: fields.status,
     })
     .onConflictDoUpdate({
       target: homepageRecommendations.userId,
       set: {
-        previousRecommendations: sql`${homepageRecommendations.recommendations}`,
-        recommendations,
+        ...(fields.previousRecommendations
+          ? {
+              previousRecommendations: sql`${homepageRecommendations.recommendations}`,
+            }
+          : {}),
+        ...(fields.recommendations
+          ? { recommendations: fields.recommendations }
+          : {}),
         lastAttemptedAt: now,
-        lastUpdatedAt: now,
-        status: "success",
+        ...(fields.lastUpdatedAt !== undefined
+          ? { lastUpdatedAt: fields.lastUpdatedAt }
+          : {}),
+        status: fields.status,
       },
     });
   await bumpAiRev(db, userId);
 }
 
-async function saveHomepageFailure(db: Db, userId: string) {
-  const now = Date.now();
-  await db
-    .insert(homepageRecommendations)
-    .values({
-      id: crypto.randomUUID(),
-      userId,
-      recommendations: [],
-      lastAttemptedAt: now,
-      lastUpdatedAt: 0,
-      status: "failed",
-    })
-    .onConflictDoUpdate({
-      target: homepageRecommendations.userId,
-      set: { lastAttemptedAt: now, status: "failed" },
-    });
-  await bumpAiRev(db, userId);
+export async function saveHomepageRecommendations(
+  db: Db,
+  userId: string,
+  recommendations: RecommendationRow[],
+) {
+  return upsertHomepageRecommendation(db, userId, {
+    recommendations,
+    previousRecommendations: true,
+    lastUpdatedAt: Date.now(),
+    status: "success",
+  });
 }
 
+export async function saveHomepageFailure(db: Db, userId: string) {
+  return upsertHomepageRecommendation(db, userId, {
+    lastUpdatedAt: 0,
+    status: "failed",
+  });
+}
+
+async function getHomepageRecommendationEntry(db: Db, userId: string) {
+  const entry = await db
+    .select()
+    .from(homepageRecommendations)
+    .where(eq(homepageRecommendations.userId, userId))
+    .limit(1);
+  return entry.length > 0 ? entry[0] : null;
+}
+
+// --- Async generation (fire-and-forget + client polling) ---
+
+export type GenerationJobStatus =
+  | { status: "completed"; recommendations: RecommendationRow[]; model: string }
+  | { status: "failed"; error: string }
+  | { status: "pending" | "running" };
+
+export const startGeneration = createServerFn({ method: "POST" })
+  .validator(generateRecommendationsArgsSchema)
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "require", feature: "ai-recommendations" },
+      data,
+      async ({
+        claims,
+        db,
+        user,
+      }): Promise<ApiResult<{ jobId: string } | { error: string }>> => {
+        const genType = data.generationType ?? "watchlist";
+
+        if (genType === "list" && !data.listId) {
+          return fail("BAD_REQUEST", "listId is required for list generation");
+        }
+
+        const existing = await db
+          .select({ id: aiGenerationJobs.id })
+          .from(aiGenerationJobs)
+          .where(
+            and(
+              eq(aiGenerationJobs.userId, user.id),
+              inArray(aiGenerationJobs.status, ["pending", "running"]),
+            ),
+          )
+          .limit(1);
+        if (existing.length > 0) {
+          return ok({ jobId: existing[0].id });
+        }
+
+        const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
+          db,
+          user.id,
+          ["not_interested"],
+        );
+
+        if (genType === "watchlist" && watchlistData.watchItems.length === 0) {
+          return ok({ error: "empty_watchlist" });
+        }
+        if (genType === "list" && data.listId) {
+          if (
+            watchlistData.listItems.filter((li) => li.listId === data.listId)
+              .length === 0
+          ) {
+            return ok({ error: "empty_watchlist" });
+          }
+        }
+
+        const isAdmin = isAdminByClaims(claims);
+        let rateLimitToken: string | undefined;
+        if (!isAdmin) {
+          const { allowed, token } = await tryConsumeRateLimit(
+            db,
+            `${GENERATION_RATE_LIMIT_KEY}:${user.id}`,
+            RATE_LIMIT_MS,
+          );
+          if (!allowed) {
+            return ok({ error: "rate_limited" });
+          }
+          rateLimitToken = token;
+        }
+
+        const excludeTmdbIds = [
+          ...new Set([
+            ...(data.excludeTmdbIds ?? []),
+            ...(feedbackSignals.dislikedTmdbIds ?? []),
+          ]),
+        ];
+
+        const userPrompt =
+          genType === "watchlist"
+            ? buildWatchlistPrompt(
+                watchlistData,
+                data.mediaTypePreference,
+                excludeTmdbIds,
+                data.yearFrom,
+                data.yearTo,
+                data.count,
+                feedbackSignals,
+              )
+            : genType === "list" && data.listId
+              ? buildCustomListPrompt(
+                  watchlistData,
+                  data.listId,
+                  data.mediaTypePreference,
+                  excludeTmdbIds,
+                  data.yearFrom,
+                  data.yearTo,
+                  data.count,
+                  feedbackSignals,
+                )
+              : buildGenrePrompt(
+                  watchlistData,
+                  data.mediaTypePreference,
+                  data.genrePreference,
+                  excludeTmdbIds,
+                  data.yearFrom,
+                  data.yearTo,
+                  data.count,
+                  feedbackSignals,
+                );
+
+        const jobId = crypto.randomUUID();
+        const jobParams = {
+          prompt: userPrompt,
+          systemInstruction: SYSTEM_INSTRUCTION,
+          watchItems: watchlistData.watchItems,
+          excludeTmdbIds,
+          attempts: 1,
+          inputStats: watchlistData.inputStats,
+          generationType: genType,
+          mediaTypePreference: data.mediaTypePreference,
+          genrePreference: data.genrePreference,
+          rateLimitToken,
+        };
+        await db.insert(aiGenerationJobs).values({
+          id: jobId,
+          userId: user.id,
+          status: "pending",
+          params: jobParams,
+          createdAt: Date.now(),
+        });
+
+        const req = getRequest();
+        const waitUntil = (
+          req as unknown as { waitUntil?: (p: Promise<unknown>) => void }
+        ).waitUntil;
+        const bg = runAiJobBackground(db, jobId, jobParams, user.id);
+
+        if (typeof waitUntil === "function") {
+          waitUntil(bg);
+        } else {
+          void bg;
+        }
+
+        return ok({ jobId });
+      },
+    ),
+  );
+
+export const getGenerationStatus = createServerFn({ method: "POST" })
+  .validator(v.object({ jobId: v.string() }))
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "require" },
+      data,
+      async ({ db, user }): Promise<ApiResult<GenerationJobStatus>> => {
+        const [job] = await db
+          .select()
+          .from(aiGenerationJobs)
+          .where(
+            and(
+              eq(aiGenerationJobs.id, data.jobId),
+              eq(aiGenerationJobs.userId, user.id),
+            ),
+          )
+          .limit(1);
+
+        if (!job) return fail("NOT_FOUND", "Job not found");
+
+        if (job.status === "completed") {
+          return ok({
+            status: "completed",
+            recommendations: job.recommendations ?? [],
+            model: job.model ?? "",
+          });
+        }
+        if (job.status === "failed") {
+          return ok({ status: "failed", error: job.error ?? "unknown_error" });
+        }
+
+        return ok({ status: job.status });
+      },
+    ),
+  );
+
+export const startHomepageGeneration = createServerFn({
+  method: "POST",
+}).handler(() =>
+  authedFn(
+    { mode: "require", feature: "ai-recommendations" },
+    undefined,
+    async ({
+      claims,
+      db,
+      user,
+    }): Promise<ApiResult<{ jobId: string } | { error: string }>> => {
+      const existing = await db
+        .select({ id: aiGenerationJobs.id })
+        .from(aiGenerationJobs)
+        .where(
+          and(
+            eq(aiGenerationJobs.userId, user.id),
+            inArray(aiGenerationJobs.status, ["pending", "running"]),
+          ),
+        )
+        .limit(1);
+      if (existing.length > 0) {
+        return ok({ jobId: existing[0].id });
+      }
+
+      const isAdmin = isAdminByClaims(claims);
+      let rateLimitToken: string | undefined;
+      if (!isAdmin) {
+        const { allowed, token } = await tryConsumeRateLimit(
+          db,
+          `${HOMEPAGE_RATE_LIMIT_KEY}:${user.id}`,
+          RATE_LIMIT_MS,
+        );
+        if (!allowed) {
+          return ok({ error: "rate_limited" });
+        }
+        rateLimitToken = token;
+      }
+
+      const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
+        db,
+        user.id,
+        ["not_interested", "dislike"],
+      );
+
+      const homepageEntry = await getHomepageRecommendationEntry(db, user.id);
+      const previous = parseStoredRecommendations(
+        homepageEntry?.recommendations,
+      );
+      const previousTitles = previous?.map((r) => r.title) ?? [];
+      const previousTmdbIds =
+        previous
+          ?.map((r) => r.tmdbId)
+          .filter((id): id is number => typeof id === "number") ?? [];
+
+      const prompt = buildHomepageRecommendationsPrompt(
+        watchlistData,
+        feedbackSignals.likedTitles ?? [],
+        feedbackSignals.dislikedTitles ?? [],
+        [...(feedbackSignals.dislikedTmdbIds ?? []), ...previousTmdbIds],
+        previousTitles,
+      );
+
+      const combinedExcludeIds = [
+        ...new Set([
+          ...(feedbackSignals.dislikedTmdbIds ?? []),
+          ...previousTmdbIds,
+        ]),
+      ];
+
+      const jobId = crypto.randomUUID();
+      const jobParams = {
+        prompt,
+        systemInstruction: SYSTEM_INSTRUCTION,
+        watchItems: watchlistData.watchItems,
+        excludeTmdbIds: combinedExcludeIds,
+        attempts: 2,
+        inputStats: watchlistData.inputStats,
+        generationType: "homepage" as const,
+        rateLimitToken,
+      };
+      await db.insert(aiGenerationJobs).values({
+        id: jobId,
+        userId: user.id,
+        status: "pending",
+        params: jobParams,
+        createdAt: Date.now(),
+      });
+
+      const req = getRequest();
+      const waitUntil = (
+        req as unknown as { waitUntil?: (p: Promise<unknown>) => void }
+      ).waitUntil;
+      const bg = runAiJobBackground(db, jobId, jobParams, user.id);
+
+      if (typeof waitUntil === "function") {
+        waitUntil(bg);
+      } else {
+        void bg;
+      }
+
+      return ok({ jobId });
+    },
+  ),
+);
+
+// Kept for backwards-compat; new callers should use startGeneration + polling.
 export const generateRecommendations = createServerFn({ method: "POST" })
   .validator(generateRecommendationsArgsSchema)
   .handler(({ data }) =>
@@ -586,8 +898,6 @@ export const generateRecommendations = createServerFn({ method: "POST" })
           excludeTmdbIds,
         });
         if (!generated.ok) {
-          // A failed AI call does not burn the cooldown: release the slot so
-          // the user can retry immediately (admin has no slot).
           if (rateLimitToken) await releaseRateLimit(db, rateLimitToken);
           return ok({ error: generated.error });
         }
@@ -623,8 +933,6 @@ export const generateHomepageRecommendations = createServerFn({
       db,
       user,
     }): Promise<ApiResult<{ success: boolean; error?: string }>> => {
-      // Admins bypass the 2-min ledger (they may regenerate for QA/support)
-      // – regular users still hit the atomic slot claim.
       const isAdmin = isAdminByClaims(claims);
       if (!isAdmin) {
         const { allowed } = await tryConsumeRateLimit(
@@ -678,8 +986,6 @@ export const generateHomepageRecommendations = createServerFn({
         return ok({ success: false, error: generated.error });
       }
 
-      // An empty result after filtering is a failed generation, record the
-      // failure so refresh logic can retry instead of saving "success".
       if (generated.recommendations.length === 0) {
         await saveHomepageFailure(db, user.id);
         return ok({ success: false, error: "empty_result" });
@@ -691,12 +997,3 @@ export const generateHomepageRecommendations = createServerFn({
     },
   ),
 );
-
-async function getHomepageRecommendationEntry(db: Db, userId: string) {
-  const entry = await db
-    .select()
-    .from(homepageRecommendations)
-    .where(eq(homepageRecommendations.userId, userId))
-    .limit(1);
-  return entry.length > 0 ? entry[0] : null;
-}

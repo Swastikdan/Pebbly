@@ -127,7 +127,7 @@ const ADMIN_API_TIMEOUT_MS = 5_000;
  * Fetch the Clerk user ids whose public metadata marks them admin, using one
  * paginated API call per page (max page size). Used to render the admin user
  * table without a per-row lookup. Returns an empty set on any failure. This
- * is display-only data and must never be used for access decisions — those
+ * is display-only data and must never be used for access decisions. Those
  * come exclusively from the signed JWT claim (isAdminByClaims), which the
  * Clerk session-claims template populates from `publicMetadata.isAdmin`.
  */
@@ -224,7 +224,7 @@ async function pickBestUserMatch(
   tokenIdentifier: string,
 ): Promise<AuthUser | null> {
   // Deterministic, probe-free choice (legacy duplicate reconciliation moved
-  // to the offline user-maintenance task — see helpers/user-merge.ts).
+  // to the offline user-maintenance task; see helpers/user-merge.ts).
   return pickCanonicalMatch(matches, tokenIdentifier);
 }
 
@@ -310,7 +310,7 @@ export async function requireUser(): Promise<RequireUserResult> {
     invalidateUserCache(claims.sub);
   }
 
-  // Note: legacy duplicate accounts are no longer reconciled here — that work
+  // Note: legacy duplicate accounts are no longer reconciled here. That work
   // moved to the offline `user-maintenance` task (helpers/user-merge.ts).
 
   return { user, claims, error: null };

@@ -4,7 +4,7 @@
  * Callers hand a page loader that must filter `id > cursor`, order by `id`
  * ascending and limit to `pageSize`; this helper loops until a short page
  * ends the scan. Replaces OFFSET pagination, which re-scans every skipped row
- * on each page and degrades quadratically as the cursor advances — the very
+ * on each page and degrades quadratically as the cursor advances. The very
  * datasets these callers read (long-running shows' episode progress) are the
  * ones where that hurts.
  *

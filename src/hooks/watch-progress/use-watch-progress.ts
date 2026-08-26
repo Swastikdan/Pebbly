@@ -387,22 +387,6 @@ export function useEpisodeWatched(
     [repository, tmdbId],
   );
 
-  const isSeasonFullyWatched = useCallback(
-    (season: number, totalEpisodesCount: number) => {
-      if (totalEpisodesCount === 0) return false;
-
-      let count = 0;
-      for (let episode = 1; episode <= totalEpisodesCount; episode++) {
-        if (watchedMap[makeEpisodeKey(tmdbId, season, episode)]) {
-          count++;
-        }
-      }
-
-      return count === totalEpisodesCount;
-    },
-    [tmdbId, watchedMap],
-  );
-
   const getSeasonWatchedCount = useCallback(
     (season: number, totalEpisodesCount: number) => {
       let count = 0;
@@ -415,6 +399,16 @@ export function useEpisodeWatched(
       return count;
     },
     [tmdbId, watchedMap],
+  );
+
+  const isSeasonFullyWatched = useCallback(
+    (season: number, totalEpisodesCount: number) => {
+      if (totalEpisodesCount === 0) return false;
+      return (
+        getSeasonWatchedCount(season, totalEpisodesCount) === totalEpisodesCount
+      );
+    },
+    [getSeasonWatchedCount],
   );
 
   return {

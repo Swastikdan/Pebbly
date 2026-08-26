@@ -90,10 +90,6 @@ const config = defineConfig(({ mode }) => ({
                   test: /node_modules\/lucide-react\//,
                 },
                 {
-                  name: "vendor-convex",
-                  test: /node_modules\/(convex|@convex-dev)\//,
-                },
-                {
                   name: "vendor-date",
                   test: /node_modules\/date-fns\//,
                 },

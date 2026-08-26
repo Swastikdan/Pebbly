@@ -23,7 +23,7 @@ import {
  * the offline `user-maintenance` Nitro task instead.
  *
  * Deliberately conservative: child rows are re-parented onto the canonical
- * user, but duplicate `users` rows themselves are never deleted here — FK
+ * user, but duplicate `users` rows themselves are never deleted here. FK
  * cascades make deletion risky without product-level rules. Starving dupes
  * of writes (requireUser always picks the canonical row) is enough for them
  * to become inert.
@@ -31,8 +31,8 @@ import {
 
 /**
  * Deterministic canonical-row choice shared by `requireUser`: prefer the
- * canonical `clerk|<sub>` token format, then the lowest id. Pure — no DB
- * probing — so the hot path stays O(matches).
+ * canonical `clerk|<sub>` token format, then the lowest id. Pure, so no DB
+ * probing keeps the hot path at O(matches).
  */
 export function pickCanonicalMatch(
   matches: AuthUser[],
@@ -115,7 +115,7 @@ export async function mergeDuplicateUsers(db: Db): Promise<MergeResult> {
 /**
  * Move the dupe's lists (and their items) onto the canonical user. Name
  * conflicts resolve to the canonical record: a dupe list whose name already
- * exists on the canonical side stays behind — moving it would fail on
+ * exists on the canonical side stays behind. Moving it would fail on
  * lists_user_name_uq, and the starving dupe account keeps it out of the way.
  * Items follow their list; their denormalized userId is re-pointed too.
  */

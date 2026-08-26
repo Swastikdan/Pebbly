@@ -13,18 +13,16 @@ todos.json
 .vercel
 .gemini/*
 .pnpm-store
-.commandcode/taste/taste.md
-implementation_plan.md
-.skills-lock.json
 .agents
-skills-lock.json
 
 # Cloudflare / wrangler
 .dev.vars
 .wrangler/
-convex-export/
 
 TODO.md
 REFACTOR_PLAN.md
 plan/
+/plans
+/.commandcode
+/plans
 /plans

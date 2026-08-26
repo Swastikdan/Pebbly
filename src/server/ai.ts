@@ -16,13 +16,9 @@ export interface Recommendation {
   reasoning: string;
 }
 
-export interface GeminiResult {
+export interface OpenRouterResult {
   recommendations: Recommendation[];
 }
-
-// Keep both names — callers historically imported GeminiResult / callGeminiAI.
-// OpenRouterResult is the new canonical type; GeminiResult is an alias.
-export type OpenRouterResult = GeminiResult;
 
 export const MODELS_TO_TRY = ["openrouter/free"] as const;
 
@@ -116,7 +112,7 @@ async function generateContent(
   });
 
   // The SDK exposes streaming via `chat.send` with `chatRequest.stream === true`.
-  // The response is an async iterable of ChatStreamChunk (SSE) — iterate to
+  // The response is an async iterable of ChatStreamChunk (SSE); iterate to
   // collect delta.content and the trailing usage block.
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
@@ -272,9 +268,7 @@ export async function callOpenRouterAI(
   error?: string;
   reasoningTokens?: number;
 }> {
-  // Allow either OPENROUTER_API_KEY (new) or GEMINI_API_KEY (legacy fallback) so
-  // existing deployments keep working during migration.
-  const apiKey = getEnvVar("OPENROUTER_API_KEY") ?? getEnvVar("GEMINI_API_KEY");
+  const apiKey = getEnvVar("OPENROUTER_API_KEY");
   if (!apiKey) {
     console.error("OPENROUTER_API_KEY is not set");
     return { error: "api_unavailable" };
@@ -360,6 +354,3 @@ export async function callOpenRouterAI(
     return { error: "invalid_response" };
   }
 }
-
-// Backwards-compatible alias — existing imports of callGeminiAI continue to work.
-export const callGeminiAI = callOpenRouterAI;

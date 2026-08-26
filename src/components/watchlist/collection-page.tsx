@@ -237,7 +237,7 @@ export function CollectionPage({ listId }: { listId: string }) {
       {canManage && isOrdered && items.length > 1 && (
         <p className="text-muted-foreground/60 flex items-center gap-1.5 text-xs">
           <ArrowUpDown size={12} className="shrink-0" />
-          Ranked list — use the arrow buttons on each title to rearrange.
+          Ranked list. Use the arrow buttons on each title to rearrange.
         </p>
       )}
 

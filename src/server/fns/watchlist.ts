@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, asc, desc, eq, gt } from "drizzle-orm";
 import * as v from "valibot";
 
+import type { Db } from "../db/client";
 import type { ApiResult } from "../schema/common";
+import { extractMetadataFields } from "@/lib/utils";
 import { runBatch } from "../db/client";
 import { episodeProgress, users, watchItems } from "../db/schema";
 import {
@@ -258,11 +260,7 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
               ...(shouldReset
                 ? { progressStatus: "watch-later" as const, progress: 0 }
                 : {}),
-              title: data.title,
-              image: data.image,
-              rating: data.rating,
-              release_date: data.release_date,
-              overview: data.overview,
+              ...extractMetadataFields(data),
             };
           },
         );
@@ -419,11 +417,7 @@ export const setProgressStatus = createServerFn({ method: "POST" })
               inWatchlist: true,
               progressStatus: normalized,
               progress: nextProgress,
-              title: data.title,
-              image: data.image,
-              rating: data.rating,
-              release_date: data.release_date,
-              overview: data.overview,
+              ...extractMetadataFields(data),
             };
           },
         );
@@ -454,11 +448,7 @@ export const setReaction = createServerFn({ method: "POST" })
 
             return {
               reaction,
-              title: data.title,
-              image: data.image,
-              rating: data.rating,
-              release_date: data.release_date,
-              overview: data.overview,
+              ...extractMetadataFields(data),
             };
           },
         );
@@ -604,6 +594,29 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
     ),
   );
 
+async function fetchEpisodeProgress(
+  db: Db,
+  userId: string,
+  options?: { tmdbId?: number },
+) {
+  return collectAllByKeyset(500, (cursor) =>
+    db
+      .select()
+      .from(episodeProgress)
+      .where(
+        and(
+          eq(episodeProgress.userId, userId),
+          options?.tmdbId
+            ? eq(episodeProgress.tmdbId, options.tmdbId)
+            : undefined,
+          cursor ? gt(episodeProgress.id, cursor) : undefined,
+        ),
+      )
+      .orderBy(asc(episodeProgress.id))
+      .limit(500),
+  );
+}
+
 export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
   .validator(v.object({ tmdbId: v.number() }))
   .handler(({ data }) =>
@@ -614,24 +627,9 @@ export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        // Keyset-paginate instead of a fixed cap: long-running shows can
-        // carry more than 1000 watched rows, and truncating here makes the
-        // client undercount progress and overwrite a "done" status.
-        const rows = await collectAllByKeyset(500, (cursor) =>
-          db
-            .select()
-            .from(episodeProgress)
-            .where(
-              and(
-                eq(episodeProgress.userId, user.id),
-                eq(episodeProgress.tmdbId, data.tmdbId),
-                cursor ? gt(episodeProgress.id, cursor) : undefined,
-              ),
-            )
-            .orderBy(asc(episodeProgress.id))
-            .limit(500),
-        );
-
+        const rows = await fetchEpisodeProgress(db, user.id, {
+          tmdbId: data.tmdbId,
+        });
         return ok(rows);
       },
     ),
@@ -646,22 +644,7 @@ export const getAllEpisodeProgress = createServerFn({ method: "POST" }).handler(
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        // Same keyset pagination as getAllWatchedEpisodes; this feed also
-        // powers watchlist export, where silent truncation loses data.
-        const rows = await collectAllByKeyset(500, (cursor) =>
-          db
-            .select()
-            .from(episodeProgress)
-            .where(
-              and(
-                eq(episodeProgress.userId, user.id),
-                cursor ? gt(episodeProgress.id, cursor) : undefined,
-              ),
-            )
-            .orderBy(asc(episodeProgress.id))
-            .limit(500),
-        );
-
+        const rows = await fetchEpisodeProgress(db, user.id);
         return ok(rows);
       },
     ),

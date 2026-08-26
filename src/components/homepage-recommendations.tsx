@@ -18,11 +18,12 @@ import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { cn } from "@/lib/utils";
 import {
-  generateHomepageRecommendations,
+  getGenerationStatus,
   getHomepageRecommendations,
   getRecommendationFeedback,
   removeRecommendationFeedback,
   setRecommendationFeedback,
+  startHomepageGeneration,
 } from "@/server/fns/recommendations";
 import { unwrap } from "@/server/schema/common";
 
@@ -173,11 +174,38 @@ export function HomepageRecommendations() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const isGeneratingRef = useRef(false);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const refreshHomepage = useCallback(() => {
     void recommendationsQuery.refetch();
     void feedbackQuery.refetch();
   }, [recommendationsQuery, feedbackQuery]);
+
+  // Poll for homepage generation job status
+  const jobQuery = useQuery({
+    queryKey: queryKeys.recommendations.job(activeJobId),
+    queryFn: () =>
+      unwrap(getGenerationStatus({ data: { jobId: activeJobId! } })),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === "completed" || status === "failed") return false;
+      return 3000;
+    },
+    enabled: !!activeJobId,
+  });
+
+  // React to homepage job completion
+  useEffect(() => {
+    if (!activeJobId) return;
+    const status = jobQuery.data?.status;
+    if (status === "completed" || status === "failed") {
+      recordOwnMutation("ai");
+      refreshHomepage();
+      setActiveJobId(null);
+      setIsGenerating(false);
+      isGeneratingRef.current = false;
+    }
+  }, [activeJobId, jobQuery.data, refreshHomepage]);
 
   useEffect(() => {
     if (
@@ -187,24 +215,26 @@ export function HomepageRecommendations() {
     ) {
       isGeneratingRef.current = true;
       setIsGenerating(true);
-      generateHomepageRecommendations()
+      startHomepageGeneration()
         .then((result) => {
-          if (result.ok && result.data.success) {
-            // The generation wrote the homepage row and bumped the AI
-            // revision; count it so the poll doesn't refetch redundantly.
-            recordOwnMutation("ai");
-            refreshHomepage();
+          if (result.ok && "jobId" in result.data) {
+            setActiveJobId(result.data.jobId);
+          } else if (result.ok && "error" in result.data) {
+            console.error(
+              "Failed to start homepage generation:",
+              result.data.error,
+            );
+            setIsGenerating(false);
+            isGeneratingRef.current = false;
           }
         })
         .catch((err) => {
-          console.error("Failed to generate homepage recommendations:", err);
-        })
-        .finally(() => {
+          console.error("Failed to start homepage generation:", err);
           setIsGenerating(false);
           isGeneratingRef.current = false;
         });
     }
-  }, [canAccessFeature, recommendationsData?.needsRefresh, refreshHomepage]);
+  }, [canAccessFeature, recommendationsData?.needsRefresh]);
 
   const toggleWatchlist = useToggleWatchlistItem();
 

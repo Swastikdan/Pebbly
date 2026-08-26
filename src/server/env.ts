@@ -12,7 +12,6 @@ export interface Env {
   ASSETS?: Fetcher;
   CLERK_SECRET_KEY?: string;
   CLERK_ISSUER_URL?: string;
-  GEMINI_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
   APP_ENV?: string;
   [key: string]: unknown;
@@ -25,7 +24,6 @@ let validated = false;
 const envSchema = v.object({
   CLERK_SECRET_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
   CLERK_ISSUER_URL: v.optional(v.pipe(v.string(), v.minLength(1))),
-  GEMINI_API_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
   OPENROUTER_API_KEY: v.optional(v.pipe(v.string(), v.minLength(1))),
   APP_ENV: v.optional(v.pipe(v.string(), v.minLength(1))),
 });
@@ -43,15 +41,10 @@ export function validateEnv(env: Env = getEnv()): void {
       console.error(
         "[env] CLERK_SECRET_KEY is missing or empty. Clerk sessions will not verify and every user is treated as a guest. Set it in wrangler secrets (prod) or .dev.vars (local).",
       );
-    } else if (name === "GEMINI_API_KEY" || name === "OPENROUTER_API_KEY") {
-      // AI recommendations accept either key during migration; warn only if
-      // neither is present so fresh installs aren't double-warned.
-      const envAny = env as Env;
-      if (!envAny.OPENROUTER_API_KEY && !envAny.GEMINI_API_KEY) {
-        console.warn(
-          "[env] OPENROUTER_API_KEY (or legacy GEMINI_API_KEY) is missing. AI recommendation features will be unavailable.",
-        );
-      }
+    } else if (name === "OPENROUTER_API_KEY") {
+      console.warn(
+        "[env] OPENROUTER_API_KEY is missing. AI recommendation features will be unavailable.",
+      );
     } else {
       console.warn(`[env] Invalid or missing value for ${name}.`);
     }

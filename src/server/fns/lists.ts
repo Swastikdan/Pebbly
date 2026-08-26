@@ -462,31 +462,21 @@ export const cloneCustomList = createServerFn({ method: "POST" })
         name = `${source.name} (copy ${n})`;
       }
 
-      const now = Date.now();
-      const id = crypto.randomUUID();
-      const maxSort = await nextSortOrder(db, user.id);
-
-      const inserted = await db
-        .insert(lists)
-        .values({
-          id,
-          userId: user.id,
+      const listResult = await createCustomListInner(
+        db,
+        user.id,
+        {
           name,
-          color: source.color,
-          description: source.description,
+          color: source.color ?? undefined,
+          description: source.description ?? undefined,
           visibility: "private",
           listType: "custom",
           sortType: source.sortType ?? "unordered",
-          sortOrder: maxSort,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .onConflictDoNothing()
-        .returning({ id: lists.id });
-
-      if (inserted.length === 0) {
-        return fail("CONFLICT", "Could not clone collection, try again");
-      }
+        },
+        { skipRevBump: true },
+      );
+      if (!listResult.ok) return listResult;
+      const id = listResult.data;
 
       if (sourceItems.length > 0) {
         // Each row is its own statement inside db.batch, so per-statement
@@ -500,7 +490,7 @@ export const cloneCustomList = createServerFn({ method: "POST" })
             tmdbId: item.tmdbId,
             mediaType: item.mediaType,
             position: item.position || index + 1,
-            addedAt: now,
+            addedAt: Date.now(),
             title: item.title,
             image: item.image,
             backdrop: item.backdrop,

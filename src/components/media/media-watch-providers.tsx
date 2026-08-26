@@ -62,7 +62,7 @@ const dedupeProviders = (providers: WatchProvider[]) => {
   });
 };
 
-// Tiles link to TMDB's regional watch link (JustWatch) — the API exposes a
+// Tiles link to TMDB's regional watch link (JustWatch); the API exposes a
 // single link per region rather than per-provider URLs.
 const ProviderTile = ({
   provider,

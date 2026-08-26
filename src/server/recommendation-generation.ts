@@ -13,7 +13,7 @@ import {
   watchItems,
 } from "./db/schema";
 
-const SYSTEM_INSTRUCTION =
+export const SYSTEM_INSTRUCTION =
   "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
 
 export type GenerationInputs = {
@@ -61,7 +61,7 @@ export type AiGenerationResult =
  * already knows (on their watchlist or excluded). Streaming is used so the
  * final chunk's `usage.completionTokensDetails.reasoningTokens` is available
  * for telemetry. Callers own rate limiting before the call and result
- * persistence after. Retains `callGeminiAI` as an alias for backwards compat.
+ * persistence after.
  */
 export async function runAiGeneration(args: {
   prompt: string;
