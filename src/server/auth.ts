@@ -1,10 +1,11 @@
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { getCookie, getRequestHeader } from "@tanstack/react-start/server";
-import { eq, inArray, or, sql } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 
-import { getDb, runBatch } from "./db/client";
-import { users, watchItems } from "./db/schema";
+import { getDb } from "./db/client";
+import { users } from "./db/schema";
 import { getEnv, getEnvVar } from "./env";
+import { pickCanonicalMatch } from "./helpers/user-merge";
 
 /** Canonical `users` row shape (used before `findUserByClaims` is defined). */
 export type AuthUser = typeof users.$inferSelect;
@@ -18,6 +19,8 @@ export interface ClerkSessionClaims {
   iss?: string;
   public_meta?: Record<string, unknown> | string;
   publicMetadata?: Record<string, unknown> | string;
+  /** Legacy Convex-era session-token templates embed public metadata here. */
+  metadata?: Record<string, unknown> | string;
   name?: string | null;
   nickname?: string | null;
   email?: string | null;
@@ -59,7 +62,14 @@ export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
       clockSkewInMs: 10_000,
     });
     return claims as ClerkSessionClaims;
-  } catch {
+  } catch (error) {
+    // Invalid/expired tokens are expected traffic (refresh races, revoked
+    // sessions); log the reason at warn level for production visibility,
+    // never the token itself.
+    console.warn(
+      "[auth] session token verification failed:",
+      error instanceof Error ? error.message : error,
+    );
     return null;
   }
 }
@@ -114,42 +124,12 @@ function getClerkApiClient() {
 const ADMIN_API_TIMEOUT_MS = 5_000;
 
 /**
- * Resolve `isAdmin` from Clerk's public metadata via the backend API.
- *
- * The Clerk JWT does not carry public metadata unless a custom JWT template /
- * session claim adds it, while the client SDK (`useUser`) reads it straight
- * from the user resource. This keeps the server in agreement with the client:
- * Clerk's public metadata is the source of truth for admin status.
- *
- * Deliberately uncached: Workers isolates don't share memory, so an in-memory
- * Map would be both fragmented across isolates and potentially stale. Callers
- * should prefer the signed JWT claim (`isAdminByClaims` / `getAdminFromClaims`)
- * and only fall back here when the claim is absent.
- */
-export async function isAdminFromClerkApi(sub: string): Promise<boolean> {
-  const client = getClerkApiClient();
-  if (!client) return false;
-  try {
-    // Bound the external call so a stalled Clerk API cannot hang the
-    // request. A timeout degrades to `false`, never `true`. The Clerk
-    // client does not accept a per-call signal, so use a deadline race.
-    const clerkUser = await withTimeout(
-      client.users.getUser(sub),
-      ADMIN_API_TIMEOUT_MS,
-      "Clerk admin lookup timed out",
-    );
-    return clerkUser.publicMetadata?.isAdmin === true;
-  } catch (error) {
-    console.error("Failed to fetch Clerk user for admin check:", error);
-    return false;
-  }
-}
-
-/**
  * Fetch the Clerk user ids whose public metadata marks them admin, using one
  * paginated API call per page (max page size). Used to render the admin user
  * table without a per-row lookup. Returns an empty set on any failure. This
- * is display-only data and must never be used for access decisions.
+ * is display-only data and must never be used for access decisions — those
+ * come exclusively from the signed JWT claim (isAdminByClaims), which the
+ * Clerk session-claims template populates from `publicMetadata.isAdmin`.
  */
 export async function getClerkAdminIds(): Promise<Set<string>> {
   const client = getClerkApiClient();
@@ -243,22 +223,9 @@ async function pickBestUserMatch(
   matches: AuthUser[],
   tokenIdentifier: string,
 ): Promise<AuthUser | null> {
-  if (matches.length === 0) return null;
-  if (matches.length === 1) return matches[0];
-
-  const db = getDb(getEnv());
-  for (const candidate of matches) {
-    const hasItems = await db
-      .select({ id: watchItems.id })
-      .from(watchItems)
-      .where(eq(watchItems.userId, candidate.id))
-      .limit(1);
-    if (hasItems.length > 0) return candidate;
-  }
-
-  return (
-    matches.find((u) => u.tokenIdentifier === tokenIdentifier) ?? matches[0]
-  );
+  // Deterministic, probe-free choice (legacy duplicate reconciliation moved
+  // to the offline user-maintenance task — see helpers/user-merge.ts).
+  return pickCanonicalMatch(matches, tokenIdentifier);
 }
 
 export async function findUserByClaims(
@@ -311,8 +278,7 @@ export async function requireUser(): Promise<RequireUserResult> {
   const db = getDb(getEnv());
   const tokenIdentifier = toTokenIdentifier(claims.sub);
 
-  const userMatches = await findUserMatchesByClaims(claims);
-  let user = await pickBestUserMatch(userMatches, tokenIdentifier);
+  let user = await findUserByClaims(claims);
 
   if (!user) {
     const id = crypto.randomUUID();
@@ -339,46 +305,13 @@ export async function requireUser(): Promise<RequireUserResult> {
     if (!user) {
       throw new Error("Failed to create user record after first sign-in");
     }
+    // The pre-create lookup cached a negative entry for this subject; drop it
+    // so subsequent requests resolve the fresh row without re-inserting.
+    invalidateUserCache(claims.sub);
   }
 
-  if (userMatches.length > 1) {
-    const dupUserIds = userMatches
-      .filter((dup) => dup.id !== user.id)
-      .map((dup) => dup.id);
-
-    if (dupUserIds.length > 0) {
-      const dupItems = await db
-        .select()
-        .from(watchItems)
-        .where(inArray(watchItems.userId, dupUserIds))
-        .limit(500);
-
-      const mainItems = await db
-        .select({ tmdbId: watchItems.tmdbId, mediaType: watchItems.mediaType })
-        .from(watchItems)
-        .where(eq(watchItems.userId, user.id))
-        .limit(500);
-      const mainKeys = new Set(
-        mainItems.map((i) => `${i.tmdbId}:${i.mediaType}`),
-      );
-
-      const orphanIds = dupItems
-        .filter((item) => !mainKeys.has(`${item.tmdbId}:${item.mediaType}`))
-        .map((item) => item.id);
-
-      if (orphanIds.length > 0) {
-        await runBatch(
-          db,
-          orphanIds.map((itemId) =>
-            db
-              .update(watchItems)
-              .set({ userId: user.id })
-              .where(eq(watchItems.id, itemId)),
-          ),
-        );
-      }
-    }
-  }
+  // Note: legacy duplicate accounts are no longer reconciled here — that work
+  // moved to the offline `user-maintenance` task (helpers/user-merge.ts).
 
   return { user, claims, error: null };
 }

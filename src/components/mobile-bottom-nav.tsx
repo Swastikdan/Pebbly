@@ -1,11 +1,4 @@
 import {
-  ClerkLoaded,
-  ClerkLoading,
-  Show,
-  SignInButton,
-  UserButton,
-} from "@clerk/react";
-import {
   Bookmark,
   Calendar,
   Clock,
@@ -20,7 +13,14 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 
 import { FooterThemeSelect } from "@/components/footer-theme-select";
@@ -45,6 +45,10 @@ import {
 import { SITE_CONFIG } from "@/constants";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
+
+// Same code-split as the desktop nav: the account tab shows its static icon
+// immediately and Clerk's widgets hydrate into it from a lazy chunk.
+const AccountButton = lazy(() => import("@/components/auth/account-button"));
 
 interface TabItem {
   href: string;
@@ -367,45 +371,18 @@ const MobileBottomNav = () => {
       })}
 
       <div className="mobile-bottom-nav-tab min-h-[44px]" data-active="false">
-        <ClerkLoading>
-          <div className="flex h-full w-full flex-col items-center justify-center">
-            <span className="mobile-bottom-nav-tab-icon">
-              <UserIcon className="size-[24px]" />
-            </span>
-            <span className="mobile-bottom-nav-tab-label">Account</span>
-          </div>
-        </ClerkLoading>
-        <ClerkLoaded>
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <button
-                type="button"
-                aria-label="Sign In"
-                className="flex h-full w-full cursor-pointer flex-col items-center justify-center border-none bg-transparent p-0"
-              >
-                <span className="mobile-bottom-nav-tab-icon">
-                  <UserIcon className="size-[24px]" />
-                </span>
-                <span className="mobile-bottom-nav-tab-label">Account</span>
-              </button>
-            </SignInButton>
-          </Show>
-          <Show when="signed-in">
+        <Suspense
+          fallback={
             <div className="flex h-full w-full flex-col items-center justify-center">
-              <span className="mobile-bottom-nav-tab-icon mobile-bottom-nav-account">
-                <UserButton
-                  appearance={{
-                    elements: {
-                      userButtonAvatarBox: "size-[28px]! rounded-full!",
-                      userButtonTrigger: "h-[28px]! w-[28px]! rounded-full!",
-                    },
-                  }}
-                />
+              <span className="mobile-bottom-nav-tab-icon">
+                <UserIcon className="size-[24px]" />
               </span>
               <span className="mobile-bottom-nav-tab-label">Account</span>
             </div>
-          </Show>
-        </ClerkLoaded>
+          }
+        >
+          <AccountButton variant="mobile" />
+        </Suspense>
       </div>
 
       <Sheet>

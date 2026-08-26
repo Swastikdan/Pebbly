@@ -2,11 +2,40 @@ import * as v from "valibot";
 
 import { mediaTypeSchema, metadataSchema } from "./common";
 
-export const listVisibilitySchema = v.picklist(["public", "private"]);
-export const listTypeSchema = v.picklist(["custom", "pebbly-picks"]);
+// Canonical values; the valibot picklists here and the drizzle column enums /
+// CHECK constraints in server/db/schema.ts derive from these.
+export const LIST_VISIBILITIES = ["public", "private"] as const;
+export const LIST_TYPES = ["custom", "pebbly-picks"] as const;
+
+export type ListVisibility = (typeof LIST_VISIBILITIES)[number];
+export type ListType = (typeof LIST_TYPES)[number];
+
+/**
+ * The system-owned Pebbly Picks list (services/picks-list.ts). Users cannot
+ * create or rename a custom list to this name; appendToPicksList additionally
+ * matches it by listType so a legacy custom list squatting on the name never
+ * receives picks.
+ */
+export const PEBBLY_PICKS_LIST_NAME = "Pebbly Picks";
+
+function isReservedListName(name: string): boolean {
+  return name.trim().toLowerCase() === PEBBLY_PICKS_LIST_NAME.toLowerCase();
+}
+
+const customListNameSchema = v.pipe(
+  v.string(),
+  v.minLength(1),
+  v.maxLength(50),
+  v.check(
+    (name) => !isReservedListName(name),
+    `"${PEBBLY_PICKS_LIST_NAME}" is a reserved list name`,
+  ),
+);
+
+export const listVisibilitySchema = v.picklist([...LIST_VISIBILITIES]);
+export const listTypeSchema = v.picklist([...LIST_TYPES]);
 export const listSortTypeSchema = v.picklist(["unordered", "ordered"]);
 
-const listNameSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(50));
 const listColorSchema = v.pipe(
   v.string(),
   v.maxLength(20),
@@ -15,7 +44,7 @@ const listColorSchema = v.pipe(
 const listDescriptionSchema = v.pipe(v.string(), v.maxLength(150));
 
 const listFields = {
-  name: listNameSchema,
+  name: customListNameSchema,
   color: v.optional(listColorSchema),
   description: v.optional(listDescriptionSchema),
   visibility: v.optional(listVisibilitySchema),
@@ -30,7 +59,9 @@ export type CreateCustomListArgs = v.InferOutput<
 
 export const updateCustomListArgsSchema = v.object({
   listId: v.string(),
-  name: v.optional(listNameSchema),
+  // Renaming to the reserved name is rejected; renaming away from it (a
+  // legacy squatter list) stays allowed because only the NEW value is checked.
+  name: v.optional(customListNameSchema),
   color: v.optional(listColorSchema),
   description: v.optional(listDescriptionSchema),
   visibility: v.optional(listVisibilitySchema),

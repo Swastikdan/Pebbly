@@ -2,7 +2,6 @@ import { and, eq } from "drizzle-orm";
 
 import type { AuthUser, ClerkSessionClaims } from "./auth";
 import type { Db } from "./db/client";
-import { isAdminFromClerkApi } from "./auth";
 import { getDb, runBatch } from "./db/client";
 import { rolePermissions } from "./db/schema";
 import { getEnv } from "./env";
@@ -56,7 +55,15 @@ function parseClerkPublicMeta(
 ): Record<string, unknown> | null {
   if (!identity) return null;
 
-  const candidates = [identity.public_meta, identity.publicMetadata, identity];
+  // Claim key varies by session-token template: the default shape is
+  // `publicMetadata`/`public_meta`; legacy Convex-era templates embed it as
+  // `metadata`. The final candidate handles claims placed at the top level.
+  const candidates = [
+    identity.public_meta,
+    identity.publicMetadata,
+    identity.metadata,
+    identity,
+  ];
 
   for (const candidate of candidates) {
     if (!candidate) continue;
@@ -66,7 +73,12 @@ function parseClerkPublicMeta(
         if (parsed && typeof parsed === "object") {
           return parsed as Record<string, unknown>;
         }
-      } catch {}
+      } catch (error) {
+        console.warn(
+          "[rbac] failed to parse string public_meta:",
+          error instanceof Error ? error.message : error,
+        );
+      }
       continue;
     }
     if (typeof candidate === "object") {
@@ -78,8 +90,8 @@ function parseClerkPublicMeta(
 }
 
 /**
- * True only when the given identity carries an admin `public_meta.isAdmin`
- * claim (from a signed JWT or a Clerk user resource). There is no DB fallback:
+ * True only when the given identity carries an admin `isAdmin` claim inside
+ * its public-metadata block (from a signed JWT or a Clerk user resource). There is no DB fallback:
  * a stored `users.is_admin` flag was removed because it went stale, a user
  * demoted in Clerk kept `isAdmin: true` in the DB forever. Access decisions
  * must come from the live JWT/API, never a stored flag.
@@ -152,10 +164,18 @@ export async function hasFeature(
   if (!claims) return false;
 
   if (user?.isBanned === true) return false;
+  // Request-path admin decisions come solely from the signed JWT claim —
+  // never a live Clerk API call (that would add an external request to every
+  // gate check). Admin status reaches the claim via the Clerk session-claims
+  // template (`publicMetadata.isAdmin`); see isAdminByClaims.
+  //
+  // Revocation latency is bounded by token lifetime, not JWT longevity:
+  // getSessionClaims verifies the token's `exp` via Clerk's verifyToken and
+  // Clerk session tokens are short-lived (reissued continuously), so a
+  // demotion in Clerk lands at the next token refresh — never for the life
+  // of a long-lived credential. Same contract in getUserFeatures and the
+  // authedFn admin gate (fns/rpc.ts).
   if (isAdminByClaims(claims)) {
-    return true;
-  }
-  if (await isAdminFromClerkApi(claims.sub)) {
     return true;
   }
   if (!user) return false;
@@ -190,7 +210,9 @@ export async function getUserFeatures(
     };
   }
 
-  if (isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub))) {
+  // JWT-claim-only admin check, same rationale as hasFeature: staleness of a
+  // revoked admin claim is bounded by the verified token's short lifetime.
+  if (isAdminByClaims(claims)) {
     return {
       roles: [] as string[],
       features: { ...ADMIN_PERMISSIONS },

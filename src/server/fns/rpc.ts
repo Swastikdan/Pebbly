@@ -4,12 +4,7 @@ import type { AuthUser, ClerkSessionClaims, RequireUserResult } from "../auth";
 import type { Db } from "../db/client";
 import type { RbacFeature } from "../rbac";
 import type { ApiResult } from "../schema/common";
-import {
-  findUserByClaims,
-  getSessionClaims,
-  isAdminFromClerkApi,
-  requireUser,
-} from "../auth";
+import { findUserByClaims, getSessionClaims, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { getEnv } from "../env";
 import { hasFeature, isAdminByClaims } from "../rbac";
@@ -121,9 +116,14 @@ export function authedFn<C extends AuthedFnConfig, TResult>(
     }
 
     if (config.admin === true) {
-      const isAdmin = claims
-        ? isAdminByClaims(claims) || (await isAdminFromClerkApi(claims.sub))
-        : false;
+      // JWT-claim-only: the signed claim is the sole request-path source for
+      // admin decisions (a live Clerk API fallback here would put an external
+      // call inside every admin gate). Requires the Clerk session-claims
+      // template to embed `publicMetadata.isAdmin` — see isAdminByClaims.
+      // A revoked admin claim stops working when the short-lived session
+      // token expires and refreshes (verifyToken enforces `exp`); same
+      // bounded-staleness contract as hasFeature/getUserFeatures in rbac.ts.
+      const isAdmin = claims ? isAdminByClaims(claims) : false;
       if (!isAdmin) {
         return fail("FORBIDDEN", "Forbidden: admin access required") as TResult;
       }

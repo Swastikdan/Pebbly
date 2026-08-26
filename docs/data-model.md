@@ -125,24 +125,37 @@ Indexes: `(list_id, tmdb_id, media_type)` **unique** ·
 
 ### ai_recommendations
 
-One row per AI generation; doubles as the rate-limit/cooldown marker.
+One row per AI generation. Rate limiting lives in the separate
+`rate_limit_attempts` ledger (see below), not here.
 
-| Column                                                           | Type            | Notes                                          |
-| :--------------------------------------------------------------- | :-------------- | :--------------------------------------------- |
-| `id`                                                             | text PK         |                                                |
-| `user_id`                                                        | text FK → users | cascade                                        |
-| `recommendations`                                                | text (json)     | final (possibly verified) list                 |
-| `original_recommendations`                                       | text (json)     | pre-verification snapshot                      |
-| `watchlist_hash`                                                 | text            | hash of the input watchlist at generation time |
-| `input_stats`                                                    | text (json)     | movie/tv/episode/total counts                  |
-| `model`                                                          | text            | Gemini model used                              |
-| `media_type_preference` / `genre_preference` / `generation_type` | text            | generation inputs                              |
-| `verified`                                                       | boolean         | TMDB verification completed                    |
-| `created_at`                                                     | integer         |                                                |
+| Column                                                           | Type            | Notes                                        |
+| :--------------------------------------------------------------- | :-------------- | :------------------------------------------- |
+| `id`                                                             | text PK         |                                              |
+| `user_id`                                                        | text FK → users | cascade                                      |
+| `recommendations`                                                | text (json)     | final (possibly verified) list               |
+| `original_recommendations`                                       | text (json)     | pre-verification snapshot                    |
+| `watchlist_hash`                                                 | text            | legacy; no longer written (defaults to `""`) |
+| `input_stats`                                                    | text (json)     | movie/tv/episode/total counts                |
+| `model`                                                          | text            | Gemini model used                            |
+| `media_type_preference` / `genre_preference` / `generation_type` | text            | generation inputs                            |
+| `verified`                                                       | boolean         | TMDB verification completed                  |
+| `created_at`                                                     | integer         |                                              |
 
-Index: `(user_id, created_at)`. A _pending_ generation is inserted with
-`model: "pending"` and `recommendations: []` to reserve the cooldown slot;
-it is updated in place on success or deleted on failure.
+Index: `(user_id, created_at)`.
+
+### rate_limit_attempts
+
+Generic rate-limit ledger keyed by attempt (`ai-gen:<userId>`,
+`ai-homepage:<userId>`). Each row is one consumed attempt slot; rows older
+than the window are pruned on every check. See `helpers/rate-limit.ts`.
+
+| Column       | Type    | Notes                   |
+| :----------- | :------ | :---------------------- |
+| `id`         | text PK | reservation token       |
+| `key`        | text    | limiter key             |
+| `created_at` | integer | ms epoch of the attempt |
+
+Index: `(key, created_at)`.
 
 ### homepage_recommendations
 

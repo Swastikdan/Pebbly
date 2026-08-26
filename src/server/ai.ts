@@ -1,11 +1,12 @@
+import { OpenRouter } from "@openrouter/sdk";
 import * as v from "valibot";
 
 import type { MediaType } from "@/lib/media-types";
 import { getEnvVar } from "./env";
 
-// Gemini is called over REST `fetch` instead of the `@google/genai` SDK (per
-// the Cloudflare plan §6.7: the SDK may misbehave on the Workers runtime; the
-// REST API is a drop-in replacement behind the same `callGeminiAI` signature).
+// OpenRouter is used over REST/fetched SDK. The SDK's `chat.send` streaming
+// path gives access to `usage.completionTokensDetails.reasoningTokens` in the
+// final chunk, which is required for reasoning-token telemetry.
 
 export interface Recommendation {
   title: string;
@@ -19,18 +20,15 @@ export interface GeminiResult {
   recommendations: Recommendation[];
 }
 
-export const MODELS_TO_TRY = [
-  "gemini-3.1-flash-lite",
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-];
+// Keep both names — callers historically imported GeminiResult / callGeminiAI.
+// OpenRouterResult is the new canonical type; GeminiResult is an alias.
+export type OpenRouterResult = GeminiResult;
 
-const GEMINI_REST_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models";
+export const MODELS_TO_TRY = ["openrouter/free"] as const;
 
-type GeminiErrorLike = {
+type OpenRouterErrorLike = {
   status?: number;
+  code?: number;
   message?: string;
 };
 
@@ -39,13 +37,29 @@ export function getErrorMessage(error: unknown) {
 }
 
 export function isHighDemandError(error: unknown) {
-  const candidate = error as GeminiErrorLike;
+  const candidate = error as OpenRouterErrorLike;
   const message = candidate.message?.toLowerCase() ?? "";
 
   return (
     candidate.status === 503 ||
+    candidate.code === 503 ||
+    candidate.status === 529 ||
+    candidate.code === 529 ||
     message.includes("high demand") ||
-    message.includes("503")
+    message.includes("overloaded") ||
+    message.includes("503") ||
+    message.includes("529")
+  );
+}
+
+export function isRateLimitedError(error: unknown) {
+  const candidate = error as OpenRouterErrorLike;
+  const message = candidate.message?.toLowerCase() ?? "";
+  return (
+    candidate.status === 429 ||
+    candidate.code === 429 ||
+    message.includes("rate limit") ||
+    message.includes("429")
   );
 }
 
@@ -53,7 +67,11 @@ export async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const GEMINI_TIMEOUT_MS = 30_000;
+// Free-tier models routed via "openrouter/free" are frequently reasoning
+// models whose thinking phase alone can exceed 30s; measured SDK streams have
+// taken 31s+ for small prompts. 90s leaves headroom without risking the
+// Workers request budget (wall-clock waiting on fetch is not CPU time).
+const OPENROUTER_TIMEOUT_MS = 90_000;
 
 const recommendationElementSchema = v.pipe(
   v.object({
@@ -72,52 +90,90 @@ const recommendationElementSchema = v.pipe(
   })),
 );
 
+/**
+ * Stream a completion from OpenRouter and collect reasoning-token usage.
+ * Uses `stream: true` so the final SSE chunk carries `usage`.
+ */
 async function generateContent(
   apiKey: string,
   model: string,
   userPrompt: string,
   systemInstruction: string,
-): Promise<string> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+): Promise<{ text: string; reasoningTokens?: number }> {
+  const openrouter = new OpenRouter({
+    apiKey,
+  });
 
-  let response: Response;
-  try {
-    response = await fetch(`${GEMINI_REST_URL}/${model}:generateContent`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
+  // The SDK exposes streaming via `chat.send` with `chatRequest.stream === true`.
+  // The response is an async iterable of ChatStreamChunk (SSE) — iterate to
+  // collect delta.content and the trailing usage block.
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(
+      () =>
+        reject(
+          new Error(`OpenRouter timeout after ${OPENROUTER_TIMEOUT_MS}ms`),
+        ),
+      OPENROUTER_TIMEOUT_MS,
+    ),
+  );
+
+  const doStream = async (): Promise<{
+    text: string;
+    reasoningTokens?: number;
+  }> => {
+    const stream = (await openrouter.chat.send({
+      chatRequest: {
+        model,
+        messages: [
+          { role: "system", content: systemInstruction },
+          { role: "user", content: userPrompt },
+        ],
+        stream: true,
+        responseFormat: { type: "json_object" },
+        streamOptions: { includeUsage: true },
       },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: userPrompt }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        generationConfig: { responseMimeType: "application/json" },
-      }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
+    })) as unknown as AsyncIterable<{
+      choices: Array<{ delta?: { content?: string | null } }>;
+      usage?: {
+        completionTokensDetails?: { reasoningTokens?: number | null } | null;
+      } | null;
+      error?: { message?: string; code?: number } | null;
+    }>;
 
-  if (!response.ok) {
-    let message = `Gemini HTTP ${response.status}`;
-    try {
-      const body = (await response.json()) as { error?: { message?: string } };
-      if (body.error?.message) message = body.error.message;
-    } catch {
-      // keep the status-only message
+    let text = "";
+    let reasoningTokens: number | undefined;
+
+    for await (const chunk of stream) {
+      // Surface provider-side errors that appear as an `error` field on the chunk.
+      if (chunk.error) {
+        const err = new Error(
+          chunk.error.message ?? "OpenRouter stream error",
+        ) as OpenRouterErrorLike;
+        err.status = chunk.error.code;
+        err.code = chunk.error.code;
+        throw err;
+      }
+
+      const content = chunk.choices?.[0]?.delta?.content;
+      if (content) text += content;
+
+      if (chunk.usage?.completionTokensDetails?.reasoningTokens != null) {
+        reasoningTokens =
+          chunk.usage.completionTokensDetails.reasoningTokens ?? undefined;
+      }
     }
-    const error = new Error(message) as GeminiErrorLike;
-    error.status = response.status;
-    throw error;
-  }
 
-  const data = (await response.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    if (reasoningTokens != null) {
+      console.log(`[openrouter] reasoning tokens (${model}):`, reasoningTokens);
+    }
+
+    return { text, reasoningTokens };
   };
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  return text;
+
+  // Race the stream against the timeout. The SDK itself also accepts
+  // timeoutMs via request options, but a local race is explicit and works
+  // regardless of SDK internals.
+  return Promise.race([doStream(), timeout]);
 }
 
 async function generateRecommendationResponse(
@@ -126,10 +182,12 @@ async function generateRecommendationResponse(
   systemInstruction: string,
 ) {
   let highDemandError = false;
+  let rateLimited = false;
+  let lastError = "";
 
   for (const [index, model] of MODELS_TO_TRY.entries()) {
     try {
-      const responseText = await generateContent(
+      const { text: responseText, reasoningTokens } = await generateContent(
         apiKey,
         model,
         userPrompt,
@@ -137,11 +195,19 @@ async function generateRecommendationResponse(
       );
 
       if (responseText) {
-        return { responseText, usedModel: model, highDemandError };
+        return {
+          responseText,
+          usedModel: model,
+          highDemandError,
+          rateLimited,
+          reasoningTokens,
+        };
       }
     } catch (error) {
-      console.error(`Gemini model (${model}) error:`, getErrorMessage(error));
+      lastError = getErrorMessage(error);
+      console.error(`OpenRouter model (${model}) error:`, lastError);
       highDemandError = highDemandError || isHighDemandError(error);
+      rateLimited = rateLimited || isRateLimitedError(error);
 
       if (index < MODELS_TO_TRY.length - 1) {
         await delay(1000);
@@ -149,23 +215,39 @@ async function generateRecommendationResponse(
     }
   }
 
-  return { responseText: "", usedModel: MODELS_TO_TRY[0], highDemandError };
+  return {
+    responseText: "",
+    usedModel: MODELS_TO_TRY[0],
+    highDemandError,
+    rateLimited,
+    lastError,
+    reasoningTokens: undefined as number | undefined,
+  };
 }
 
-export async function callGeminiAI(
+export async function callOpenRouterAI(
   prompt: string,
   systemInstruction: string,
   retries: number = 1,
-): Promise<{ result?: GeminiResult; usedModel?: string; error?: string }> {
-  const apiKey = getEnvVar("GEMINI_API_KEY");
+): Promise<{
+  result?: OpenRouterResult;
+  usedModel?: string;
+  error?: string;
+  reasoningTokens?: number;
+}> {
+  // Allow either OPENROUTER_API_KEY (new) or GEMINI_API_KEY (legacy fallback) so
+  // existing deployments keep working during migration.
+  const apiKey = getEnvVar("OPENROUTER_API_KEY") ?? getEnvVar("GEMINI_API_KEY");
   if (!apiKey) {
-    console.error("GEMINI_API_KEY is not set");
+    console.error("OPENROUTER_API_KEY is not set");
     return { error: "api_unavailable" };
   }
 
   let responseText = "";
   let usedModel = MODELS_TO_TRY[0];
   let highDemandError = false;
+  let rateLimited = false;
+  let reasoningTokens: number | undefined;
   let lastError = "";
   let success = false;
 
@@ -180,10 +262,14 @@ export async function callGeminiAI(
         responseText = result.responseText;
         usedModel = result.usedModel;
         highDemandError = result.highDemandError;
+        rateLimited = result.rateLimited;
+        reasoningTokens = result.reasoningTokens;
         success = true;
         break;
       } else {
         highDemandError = highDemandError || result.highDemandError;
+        rateLimited = rateLimited || result.rateLimited;
+        lastError = lastError || result.lastError || "";
       }
     } catch (error) {
       lastError = getErrorMessage(error);
@@ -192,11 +278,19 @@ export async function callGeminiAI(
       }
     }
   }
-
   if (!success || !responseText) {
+    if (rateLimited) return { error: "rate_limited" };
     return {
       error: highDemandError ? "high_demand" : lastError || "api_unavailable",
     };
+  }
+
+  // Log reasoning tokens at the top-level call as well (useful for observability).
+  if (reasoningTokens != null) {
+    console.log(
+      `[openrouter] callOpenRouterAI reasoningTokens:`,
+      reasoningTokens,
+    );
   }
 
   try {
@@ -223,8 +317,12 @@ export async function callGeminiAI(
     return {
       result: { recommendations: validRecommendations },
       usedModel,
+      reasoningTokens,
     };
   } catch {
     return { error: "invalid_response" };
   }
 }
+
+// Backwards-compatible alias — existing imports of callGeminiAI continue to work.
+export const callGeminiAI = callOpenRouterAI;

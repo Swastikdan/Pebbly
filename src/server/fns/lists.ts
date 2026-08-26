@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import type { ApiResult, ProgressStatus, Reaction } from "../schema/common";
+import type { ListType, ListVisibility } from "../schema/lists";
 import type { MediaType } from "@/lib/media-types";
-import { getDb, MAX_IDS_PER_IN_CLAUSE, runBatch } from "../db/client";
+import { MAX_IDS_PER_IN_CLAUSE, runBatch } from "../db/client";
 import { listItems, lists, watchItems } from "../db/schema";
-import { getEnv } from "../env";
 import { findOwnedRow } from "../helpers/owned-row";
 import { bumpListsRev } from "../helpers/watch-item";
 import { fail, ok } from "../schema/common";
@@ -44,32 +44,34 @@ export const getCustomLists = createServerFn({ method: "POST" }).handler(() =>
         .where(eq(lists.userId, user.id))
         .orderBy(asc(lists.sortOrder));
 
-      const allUserListItems = await db
-        .select()
+      // Aggregate previews/counters in SQL instead of loading every item row:
+      // a power user's lists can hold thousands of rows that only ever feed a
+      // 4-image strip and a count.
+      const stats = await db
+        .select({
+          listId: listItems.listId,
+          itemCount: sql<number>`count(*)`,
+          previewStrip: sql<
+            string | null
+          >`group_concat(coalesce(${listItems.backdrop}, ${listItems.image}), '|')`,
+        })
         .from(listItems)
-        .where(eq(listItems.userId, user.id));
+        .where(eq(listItems.userId, user.id))
+        .groupBy(listItems.listId);
 
-      const itemsByList = new Map<string, typeof allUserListItems>();
-      for (const item of allUserListItems) {
-        const existing = itemsByList.get(item.listId);
-        if (existing) {
-          existing.push(item);
-        } else {
-          itemsByList.set(item.listId, [item]);
-        }
-      }
+      const statsByList = new Map(stats.map((s) => [s.listId, s]));
 
       const listsWithPreviews = userLists.map((list) => {
-        const items = itemsByList.get(list.id) ?? [];
-        const previews = items
-          .map((item) => item.backdrop ?? item.image)
+        const listStats = statsByList.get(list.id);
+        const previews = (listStats?.previewStrip ?? "")
+          .split("|")
           .filter((img): img is string => !!img)
           .slice(0, 4);
 
         return {
           ...list,
           previews,
-          itemCount: items.length,
+          itemCount: listStats?.itemCount ?? 0,
         };
       });
 
@@ -302,8 +304,8 @@ export const getItemLists = createServerFn({ method: "POST" })
 export const createCustomList = createServerFn({ method: "POST" })
   .validator(createCustomListArgsSchema)
   .handler(({ data }) =>
-    authedFn({ mode: "require" }, data, async ({ user }) => {
-      const result = await createCustomListInner(user.id, data);
+    authedFn({ mode: "require" }, data, async ({ db, user }) => {
+      const result = await createCustomListInner(db, user.id, data);
       if (!result.ok) return result;
       return ok(result.data);
     }),
@@ -314,6 +316,7 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
   .handler(({ data }) =>
     authedFn({ mode: "require" }, data, async ({ db, user }) => {
       const created = await createCustomListInner(
+        db,
         user.id,
         {
           name: data.name,
@@ -330,7 +333,7 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
       if (!created.ok) return created;
       const id = created.data;
 
-      const itemResult = await toggleListItemInner(user.id, {
+      const itemResult = await toggleListItemInner(db, user.id, {
         listId: id,
         tmdbId: data.tmdbId,
         mediaType: data.mediaType,
@@ -404,8 +407,8 @@ export const deleteCustomList = createServerFn({ method: "POST" })
 export const toggleListItem = createServerFn({ method: "POST" })
   .validator(toggleListItemArgsSchema)
   .handler(({ data }) =>
-    authedFn({ mode: "require" }, data, async ({ user }) => {
-      const result = await toggleListItemInner(user.id, data);
+    authedFn({ mode: "require" }, data, async ({ db, user }) => {
+      const result = await toggleListItemInner(db, user.id, data);
       if (!result.ok) return result;
       return ok(result.data);
     }),
@@ -515,18 +518,18 @@ export const cloneCustomList = createServerFn({ method: "POST" })
   );
 
 async function createCustomListInner(
+  db: Db,
   userId: string,
   args: {
     name: string;
     color?: string;
     description?: string;
-    visibility?: string;
-    listType?: string;
+    visibility?: ListVisibility;
+    listType?: ListType;
     sortType?: "unordered" | "ordered";
   },
   options: { skipRevBump?: boolean } = {},
 ): Promise<ApiResult<string>> {
-  const db = getDb(getEnv());
   const now = Date.now();
   const id = crypto.randomUUID();
 
@@ -568,6 +571,7 @@ async function nextSortOrder(db: Db, userId: string): Promise<number> {
 }
 
 async function toggleListItemInner(
+  db: Db,
   userId: string,
   args: {
     listId: string;
@@ -581,7 +585,6 @@ async function toggleListItemInner(
     overview?: string;
   },
 ): Promise<ApiResult<boolean>> {
-  const db = getDb(getEnv());
   const list = await findOwnedRow(db, lists, userId, args.listId);
   if (!list) return fail("NOT_FOUND", "List not found");
 

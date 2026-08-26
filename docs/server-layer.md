@@ -97,10 +97,10 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
   for legacy `*|<sub>` formats, max 10 matches), with a short-lived in-memory
   cache (15 s TTL, 500-entry LRU) to avoid duplicate DB hits.
 - Admin helpers, `isAdminByClaims` (reads `public_meta.isAdmin` out of the
-  signed JWT claim), `isAdminFromClerkApi` (live Clerk API, deliberately
-  **uncached** and time-boxed to 5 s, degrades to `false`),
-  `getClerkAdminIds` (paginated user-list call, page size 500, offset cap
-  10,000, display-only, never used for access decisions).
+  signed JWT claim — the sole request-path source; the old live Clerk API
+  fallback was removed from gates), and `getClerkAdminIds` (paginated
+  user-list call, page size 500, offset cap 10,000, display-only, never used
+  for access decisions).
 
 ## 5. RBAC (`src/server/rbac.ts`)
 
@@ -209,11 +209,11 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 ### recommendations.ts (10 fns)
 
 - Access/history: `getUserRecommendationAccess`, `getRecommendationHistory`
-  (last 20), `deleteRecommendation` (blocked inside the 2-minute rate window
-  so users can't erase the cooldown marker), `updateVerifiedRecommendations`.
+  (last 20), `deleteRecommendation`, `updateVerifiedRecommendations`.
 - Feedback: `getRecommendationFeedback` (last 100), `setRecommendationFeedback`
   (accepts `like` or `not_interested`; a `like` auto-adds the title to the
-  watchlist with the `recommended` reaction and to the "Pebbly Picks" list,
+  watchlist with the `recommended` reaction and to the "Pebbly Picks" list
+  via `services/picks-list.ts`,
   bumping `ai_rev`, `watchlist_rev` **and** `lists_rev`),
   `removeRecommendationFeedback`.
 - History writes (`saveRecommendations`, `deleteRecommendation`,
@@ -221,13 +221,12 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 - Homepage: `getHomepageRecommendations` (filters out disliked/not-interested
   feedback, computes `needsRefresh` from server time only: 24 h staleness,
   retry suppressed for 1 h after a failure), `generateHomepageRecommendations`
-  (own 2-minute limiter via `last_attempted_at`).
+  (rate limited via the shared `rate_limit_attempts` ledger).
 - Generation: `generateRecommendations`, auth + feature gate (via
-  `authedFn`), empty-input guard, atomic cooldown reservation
-  (`checkAndSetRecommendationCooldown`, a reserved `model: "pending"`
-  `ai_recommendations` row that doubles as the rate-limit marker;
-  `releaseRecommendationCooldown` on failure so failures don't consume the
-  window), `gatherWatchlistData` (one batched read of watch items ≤200,
+  `authedFn`), empty-input guard, atomic rate-limit slot claim
+  (`tryConsumeRateLimit` on the `rate_limit_attempts` ledger;
+  `releaseRateLimit` on AI failure so failures don't consume the window),
+  `gatherWatchlistData` (one batched read of watch items ≤200,
   lists ≤50, list items ≤200, episode progress ≤200), prompt building
   (excluded ids capped at `MAX_EXCLUDE_TMDB_IDS = 1000`, also enforced
   client-side), `callGeminiAI`, filtering (dedupe against existing ids/

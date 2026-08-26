@@ -1,3 +1,4 @@
+import type { SQL } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import {
   check,
@@ -13,6 +14,21 @@ import {
 import type { MediaType } from "@/lib/media-types";
 import { MEDIA_TYPES } from "@/lib/media-types";
 import { PROGRESS_STATUSES, REACTIONS } from "@/server/schema/common";
+import { LIST_TYPES, LIST_VISIBILITIES } from "@/server/schema/lists";
+import { HOMEPAGE_REC_STATUSES } from "@/server/schema/recommendations";
+
+/**
+ * Render a canonical constant list as inline SQL string literals for CHECK
+ * constraints. Table definitions cannot carry bound parameters, so values
+ * must be embedded as literals; the quote-doubling keeps the generated SQL
+ * valid even if a constant ever contains a quote.
+ */
+function enumLiterals(values: readonly string[]): SQL {
+  return sql.join(
+    values.map((value) => sql.raw(`'${value.replaceAll("'", "''")}'`)),
+    sql`, `,
+  );
+}
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -101,8 +117,8 @@ export const lists = sqliteTable(
     name: text("name").notNull(),
     color: text("color"),
     description: text("description"),
-    visibility: text("visibility"),
-    listType: text("list_type"),
+    visibility: text("visibility", { enum: [...LIST_VISIBILITIES] }),
+    listType: text("list_type", { enum: [...LIST_TYPES] }),
     sortType: text("sort_type", {
       enum: ["unordered", "ordered"],
     })
@@ -115,6 +131,14 @@ export const lists = sqliteTable(
   (t) => [
     uniqueIndex("lists_user_name_uq").on(t.userId, t.name),
     index("lists_user_sort_idx").on(t.userId, t.sortOrder),
+    check(
+      "lists_visibility_ck",
+      sql`${t.visibility} in (${enumLiterals(LIST_VISIBILITIES)})`,
+    ),
+    check(
+      "lists_list_type_ck",
+      sql`${t.listType} in (${enumLiterals(LIST_TYPES)})`,
+    ),
   ],
 );
 
@@ -200,22 +224,33 @@ export const aiRecommendations = sqliteTable(
   (t) => [index("ai_recs_user_created_idx").on(t.userId, t.createdAt)],
 );
 
-export const homepageRecommendations = sqliteTable("homepage_recommendations", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .unique()
-    .references(() => users.id, { onDelete: "cascade" }),
-  recommendations: text("recommendations", { mode: "json" })
-    .$type<Recommendation[]>()
-    .notNull(),
-  previousRecommendations: text("previous_recommendations", {
-    mode: "json",
-  }).$type<Recommendation[]>(),
-  lastAttemptedAt: integer("last_attempted_at").notNull().default(0),
-  lastUpdatedAt: integer("last_updated_at").notNull().default(0),
-  status: text("status").notNull().default("none"),
-});
+export const homepageRecommendations = sqliteTable(
+  "homepage_recommendations",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    recommendations: text("recommendations", { mode: "json" })
+      .$type<Recommendation[]>()
+      .notNull(),
+    previousRecommendations: text("previous_recommendations", {
+      mode: "json",
+    }).$type<Recommendation[]>(),
+    lastAttemptedAt: integer("last_attempted_at").notNull().default(0),
+    lastUpdatedAt: integer("last_updated_at").notNull().default(0),
+    status: text("status", { enum: [...HOMEPAGE_REC_STATUSES] })
+      .notNull()
+      .default("none"),
+  },
+  (t) => [
+    check(
+      "homepage_rec_status_ck",
+      sql`${t.status} in (${enumLiterals(HOMEPAGE_REC_STATUSES)})`,
+    ),
+  ],
+);
 
 export const recommendationFeedback = sqliteTable(
   "recommendation_feedback",
@@ -253,6 +288,23 @@ export const rolePermissions = sqliteTable(
     enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
   },
   (t) => [primaryKey({ columns: [t.role, t.feature] })],
+);
+
+/**
+ * Generic rate-limit ledger. Each row is one attempt against a `key`
+ * (e.g. `ai-gen:<userId>`) within its time window; see
+ * helpers/rate-limit.ts. Kept separate from domain tables so cooldown state
+ * never doubles as user-facing data (the previous scheme stored a fake
+ * ai_recommendations row as the marker, forcing special-case guards).
+ */
+export const rateLimitAttempts = sqliteTable(
+  "rate_limit_attempts",
+  {
+    id: text("id").primaryKey(),
+    key: text("key").notNull(),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [index("rate_limit_key_created_idx").on(t.key, t.createdAt)],
 );
 
 export type Recommendation = {

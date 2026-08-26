@@ -100,20 +100,25 @@ privileges in the DB **forever**. The code comments call this out as a
 privilege-escalation hazard.
 
 **Decision:** Delete the `users.is_admin` column (migration `0003`). Admin
-status is resolved from two live sources: the **signed JWT claim**
-(`public_meta.isAdmin`, available when a custom session claim is configured)
-first, then the **live Clerk API** (`isAdminFromClerkApi`, time-boxed, degrades
-to `false`). The `users.roles` column only carries the two _dynamic_ feature
+status is resolved exclusively from the **signed JWT claim**
+(`public_meta.isAdmin`, embedded via the Clerk session-claims template). The
+former live Clerk API fallback was removed from the request path — an external
+call inside every gate check cost latency and Clerk rate-limit budget; access
+decisions must stay local to the verified token. The `users.roles` column only carries the two _dynamic_ feature
 roles (`video-player`, `ai-integrations`), not admin. `listUsers` derives
 admin badges from one paginated Clerk user-list call (display-only).
 
 **Consequences:**
 
-- A demotion in Clerk takes effect immediately.
-- Every admin-gated request pays one extra Clerk API call when the JWT claim
-  is absent. Preferring the signed claim limits how often that happens.
-- The admin table display can briefly disagree with reality if the Clerk API
-  call fails (accepted; it never gates access).
+- Authorization stays local to the verified signed JWT claim: no admin gate
+  on the request path performs any Clerk API call.
+- Demotion is not literally instant: claims are fixed until Clerk reissues
+  the session token, so a demotion lands within one short-lived
+  session-token lifetime (`verifyToken` enforces `exp`) or immediately when
+  the session itself is revoked — bounded by Clerk's token refresh/revocation
+  policy, never by a long-lived stored flag.
+- The admin table display can briefly disagree with reality if its one
+  display-only Clerk API call fails (accepted; it never gates access).
 
 ---
 

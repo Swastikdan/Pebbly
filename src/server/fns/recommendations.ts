@@ -10,7 +10,6 @@ import type {
   HomepageRecommendationsResult,
 } from "../schema/recommendations";
 import type { MediaType } from "@/lib/media-types";
-import { hashString } from "@/lib/text";
 import {
   buildCustomListPrompt,
   buildGenrePrompt,
@@ -20,11 +19,10 @@ import {
 import {
   aiRecommendations,
   homepageRecommendations,
-  listItems,
-  lists,
   recommendationFeedback,
 } from "../db/schema";
 import { findOwnedRow } from "../helpers/owned-row";
+import { releaseRateLimit, tryConsumeRateLimit } from "../helpers/rate-limit";
 import {
   bumpAiRev,
   bumpListsRev,
@@ -46,9 +44,13 @@ import {
   setRecommendationFeedbackArgsSchema,
   updateVerifiedRecommendationsArgsSchema,
 } from "../schema/recommendations";
+import { appendToPicksList } from "../services/picks-list";
 import { authedFn } from "./rpc";
 
 const RATE_LIMIT_MS = 2 * 60 * 1000;
+/** Ledger keys for the shared rate-limit primitive (helpers/rate-limit.ts). */
+const GENERATION_RATE_LIMIT_KEY = "ai-gen";
+const HOMEPAGE_RATE_LIMIT_KEY = "ai-homepage";
 
 export const getUserRecommendationAccess = createServerFn({
   method: "POST",
@@ -122,19 +124,6 @@ export const deleteRecommendation = createServerFn({ method: "POST" })
           )
           .limit(1);
         if (entry.length === 0) return fail("NOT_FOUND", "Not found");
-
-        // The most recent generation row doubles as the cooldown marker for the
-        // rate limiter (checkAndSetRecommendationCooldown). If a user could
-        // delete it, they'd erase the marker and regenerate immediately,
-        // bypassing the cooldown and burning Gemini API calls. Block deletion
-        // of rows still inside the rate window; they become deletable once the
-        // window elapses.
-        if (Date.now() - entry[0].createdAt < RATE_LIMIT_MS) {
-          return fail(
-            "RATE_LIMITED",
-            "Cannot delete a recommendation generated in the last few minutes",
-          );
-        }
 
         await db
           .delete(aiRecommendations)
@@ -425,183 +414,9 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
     ),
   );
 
-function computeHash(
-  items: Array<{
-    tmdbId: number;
-    progressStatus?: string | null;
-    reaction?: string | null;
-  }>,
-  mediaTypePreference?: string,
-  genrePreference?: string,
-): string {
-  const sorted = items
-    .map((i) => `${i.tmdbId}:${i.progressStatus ?? ""}:${i.reaction ?? ""}`)
-    .sort();
-  const str =
-    sorted.join("|") +
-    `|mt:${mediaTypePreference ?? ""}|g:${genrePreference ?? ""}`;
-  return hashString(str).toString(36);
-}
-
-type PicksListItem = {
-  tmdbId: number;
-  mediaType: MediaType;
-  title: string;
-  image?: string | null;
-  backdrop?: string | null;
-  rating?: number | null;
-  release_date?: string | null;
-  overview?: string | null;
-};
-
-/**
- * File a title on the user's Pebbly Picks list, creating the list first when
- * missing. The list insert relies on the (user_id, name) unique index, so
- * concurrent likes cannot produce duplicates; an item already on the list is
- * left alone. Does not bump revisions; the caller decides which domains to
- * touch.
- */
-async function appendToPicksList(db: Db, userId: string, item: PicksListItem) {
-  const now = Date.now();
-  await db
-    .insert(lists)
-    .values({
-      id: crypto.randomUUID(),
-      userId,
-      name: "Pebbly Picks",
-      listType: "pebbly-picks",
-      sortOrder: 0,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .onConflictDoNothing();
-
-  const pebblyList = await db
-    .select()
-    .from(lists)
-    .where(and(eq(lists.userId, userId), eq(lists.name, "Pebbly Picks")))
-    .limit(1);
-  if (pebblyList.length === 0) return;
-
-  const existingItem = await db
-    .select()
-    .from(listItems)
-    .where(
-      and(
-        eq(listItems.listId, pebblyList[0].id),
-        eq(listItems.tmdbId, item.tmdbId),
-        eq(listItems.mediaType, item.mediaType),
-      ),
-    )
-    .limit(1);
-  if (existingItem.length > 0) return;
-
-  await db.insert(listItems).values({
-    id: crypto.randomUUID(),
-    userId,
-    listId: pebblyList[0].id,
-    tmdbId: item.tmdbId,
-    mediaType: item.mediaType,
-    addedAt: now,
-    title: item.title,
-    image: item.image ?? null,
-    backdrop: item.backdrop ?? null,
-    rating: item.rating ?? null,
-    releaseDate: item.release_date ?? null,
-    overview: item.overview ?? null,
-  });
-}
-
-/**
- * Atomically reserve a generation slot: inserts a reserved row (the cooldown
- * marker) and returns its id. The successful generation later updates this
- * same row, so no separate placeholder pollutes the recommendation history;
- * a failed AI call deletes it, releasing the cooldown. The insert itself is
- * atomic so concurrent requests cannot both pass the check.
- */
-async function checkAndSetRecommendationCooldown(
-  db: Db,
-  userId: string,
-): Promise<{ allowed: boolean; reservedId?: string }> {
-  const now = Date.now();
-
-  const reservedId = crypto.randomUUID();
-  const inserted = await db
-    .insert(aiRecommendations)
-    .values({
-      id: reservedId,
-      userId,
-      recommendations: [],
-      watchlistHash: "",
-      inputStats: {
-        movieCount: 0,
-        tvCount: 0,
-        episodesWatched: 0,
-        totalItems: 0,
-      },
-      model: "pending",
-      createdAt: now,
-    })
-    .onConflictDoNothing()
-    .returning({ id: aiRecommendations.id });
-
-  // Rate limit: if the user already has a generation newer than RATE_LIMIT_MS
-  // (either a real one or a pending reservation), reject. The check runs
-  // after the reservation insert so a rapid second request sees the pending
-  // row and is rejected; the reservation row is then removed below.
-  const mostRecent = await db
-    .select()
-    .from(aiRecommendations)
-    .where(eq(aiRecommendations.userId, userId))
-    .orderBy(desc(aiRecommendations.createdAt))
-    .limit(2);
-
-  const freshRow = mostRecent.find((row) => row.id === reservedId);
-  if (!freshRow && inserted.length === 0) {
-    return { allowed: false };
-  }
-
-  const older = mostRecent.find((row) => row.id !== reservedId);
-  if (older && now - older.createdAt < RATE_LIMIT_MS) {
-    await db
-      .delete(aiRecommendations)
-      .where(eq(aiRecommendations.id, reservedId));
-    return { allowed: false };
-  }
-
-  return { allowed: true, reservedId };
-}
-
-async function releaseRecommendationCooldown(db: Db, reservedId: string) {
-  await db
-    .delete(aiRecommendations)
-    .where(eq(aiRecommendations.id, reservedId));
-}
-
-async function getHomepageAttemptInfo(db: Db, userId: string) {
-  const entry = await db
-    .select()
-    .from(homepageRecommendations)
-    .where(eq(homepageRecommendations.userId, userId))
-    .limit(1);
-  return entry.length > 0
-    ? { lastAttemptedAt: entry[0].lastAttemptedAt, status: entry[0].status }
-    : null;
-}
-
-async function getHomepageRecommendationEntryInternal(db: Db, userId: string) {
-  const entry = await db
-    .select()
-    .from(homepageRecommendations)
-    .where(eq(homepageRecommendations.userId, userId))
-    .limit(1);
-  return entry.length > 0 ? entry[0] : null;
-}
-
 type SaveRecommendationsArgs = {
   userId: string;
   recommendations: RecommendationRow[];
-  watchlistHash: string;
   inputStats: {
     movieCount: number;
     tvCount: number;
@@ -614,35 +429,18 @@ type SaveRecommendationsArgs = {
   generationType?: string;
 };
 
-async function saveRecommendations(
-  db: Db,
-  args: SaveRecommendationsArgs,
-  reservedId?: string,
-) {
-  const now = Date.now();
-  const values = {
+async function saveRecommendations(db: Db, args: SaveRecommendationsArgs) {
+  await db.insert(aiRecommendations).values({
+    id: crypto.randomUUID(),
+    userId: args.userId,
     recommendations: args.recommendations,
-    watchlistHash: args.watchlistHash,
     inputStats: args.inputStats,
     model: args.model,
     mediaTypePreference: args.mediaTypePreference,
     genrePreference: args.genrePreference,
     generationType: args.generationType,
-    createdAt: now,
-  };
-
-  if (reservedId) {
-    await db
-      .update(aiRecommendations)
-      .set(values)
-      .where(eq(aiRecommendations.id, reservedId));
-  } else {
-    await db.insert(aiRecommendations).values({
-      id: crypto.randomUUID(),
-      userId: args.userId,
-      ...values,
-    });
-  }
+    createdAt: Date.now(),
+  });
   await bumpAiRev(db, args.userId);
 }
 
@@ -727,9 +525,10 @@ export const generateRecommendations = createServerFn({ method: "POST" })
           }
         }
 
-        const { allowed, reservedId } = await checkAndSetRecommendationCooldown(
+        const { allowed, token } = await tryConsumeRateLimit(
           db,
-          user.id,
+          `${GENERATION_RATE_LIMIT_KEY}:${user.id}`,
+          RATE_LIMIT_MS,
         );
         if (!allowed) {
           return ok({ error: "rate_limited" });
@@ -782,29 +581,21 @@ export const generateRecommendations = createServerFn({ method: "POST" })
           excludeTmdbIds,
         });
         if (!generated.ok) {
-          if (reservedId) await releaseRecommendationCooldown(db, reservedId);
+          // A failed AI call does not burn the cooldown: release the slot so
+          // the user can retry immediately.
+          await releaseRateLimit(db, token);
           return ok({ error: generated.error });
         }
 
-        const watchlistHash = computeHash(
-          watchlistData.watchItems,
-          data.mediaTypePreference,
-          data.genrePreference,
-        );
-        await saveRecommendations(
-          db,
-          {
-            userId: user.id,
-            recommendations: generated.recommendations,
-            watchlistHash,
-            inputStats: watchlistData.inputStats,
-            model: generated.usedModel,
-            mediaTypePreference: data.mediaTypePreference,
-            genrePreference: data.genrePreference,
-            generationType: genType,
-          },
-          reservedId,
-        );
+        await saveRecommendations(db, {
+          userId: user.id,
+          recommendations: generated.recommendations,
+          inputStats: watchlistData.inputStats,
+          model: generated.usedModel,
+          mediaTypePreference: data.mediaTypePreference,
+          genrePreference: data.genrePreference,
+          generationType: genType,
+        });
 
         return ok({
           recommendations: generated.recommendations,
@@ -826,24 +617,26 @@ export const generateHomepageRecommendations = createServerFn({
       db,
       user,
     }): Promise<ApiResult<{ success: boolean; error?: string }>> => {
+      // Atomic slot claim (unlike the old read-then-write on
+      // lastAttemptedAt, concurrent triggers cannot both pass and double-fire
+      // expensive Gemini calls). Both success and failure consume the
+      // attempt, matching the previous lastAttemptedAt semantics.
+      const { allowed } = await tryConsumeRateLimit(
+        db,
+        `${HOMEPAGE_RATE_LIMIT_KEY}:${user.id}`,
+        RATE_LIMIT_MS,
+      );
+      if (!allowed) {
+        return ok({ success: false, error: "rate_limited" });
+      }
+
       const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
         db,
         user.id,
         ["not_interested", "dislike"],
       );
 
-      const attemptInfo = await getHomepageAttemptInfo(db, user.id);
-      if (
-        attemptInfo &&
-        Date.now() - attemptInfo.lastAttemptedAt < RATE_LIMIT_MS
-      ) {
-        return ok({ success: false, error: "rate_limited" });
-      }
-
-      const homepageEntry = await getHomepageRecommendationEntryInternal(
-        db,
-        user.id,
-      );
+      const homepageEntry = await getHomepageRecommendationEntry(db, user.id);
       const previous = parseStoredRecommendations(
         homepageEntry?.recommendations,
       );
@@ -891,3 +684,12 @@ export const generateHomepageRecommendations = createServerFn({
     },
   ),
 );
+
+async function getHomepageRecommendationEntry(db: Db, userId: string) {
+  const entry = await db
+    .select()
+    .from(homepageRecommendations)
+    .where(eq(homepageRecommendations.userId, userId))
+    .limit(1);
+  return entry.length > 0 ? entry[0] : null;
+}

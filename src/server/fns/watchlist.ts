@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gt } from "drizzle-orm";
 import * as v from "valibot";
 
 import type { ApiResult } from "../schema/common";
@@ -10,6 +10,7 @@ import {
   loadEpisodeRowsByKey,
   syncEpisodeProgressRecord,
 } from "../helpers/episode-sync";
+import { collectAllByKeyset } from "../helpers/paginate";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
 import {
   buildMetadataPatch,
@@ -138,62 +139,48 @@ export const updateProgress = createServerFn({ method: "POST" })
       { mode: "require" },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
-        const existing = await getWatchItem(db, user.id, {
-          tmdbId: data.tmdbId,
-          mediaType: data.mediaType,
-        });
+        // Routed through the race-safe upsert: a double-submit that inserts
+        // the same (user, tmdb, mediaType) row concurrently merges into the
+        // winner's row instead of crashing on the unique index.
+        await upsertWatchItem(
+          db,
+          user.id,
+          data.tmdbId,
+          data.mediaType,
+          (existing) => {
+            const nextProgress =
+              data.isWatched === true
+                ? 100
+                : (data.progress ?? existing?.progress ?? 0);
 
-        const now = Date.now();
-        const nextProgress =
-          data.isWatched === true
-            ? 100
-            : (data.progress ?? existing?.progress ?? 0);
+            const currentProgressStatus = normalizeProgressStatus(
+              existing?.progressStatus,
+            );
 
-        const currentProgressStatus = normalizeProgressStatus(
-          existing?.progressStatus,
-        );
+            const inferredProgressStatus =
+              data.isWatched === true
+                ? "done"
+                : nextProgress >= 95
+                  ? "done"
+                  : nextProgress > 0
+                    ? "watching"
+                    : undefined;
 
-        const inferredProgressStatus =
-          data.isWatched === true
-            ? "done"
-            : nextProgress >= 95
-              ? "done"
-              : nextProgress > 0
-                ? "watching"
-                : undefined;
+            const nextProgressStatus =
+              data.isWatched === true
+                ? ("done" as const)
+                : (currentProgressStatus ?? inferredProgressStatus);
 
-        const nextProgressStatus =
-          data.isWatched === true
-            ? "done"
-            : (currentProgressStatus ?? inferredProgressStatus);
-
-        if (existing) {
-          await db
-            .update(watchItems)
-            .set({
-              progress: nextProgress,
-              progressStatus: nextProgressStatus,
+            return {
               inWatchlist: true,
-              updatedAt: now,
+              progress: nextProgress,
+              ...(nextProgressStatus
+                ? { progressStatus: nextProgressStatus }
+                : {}),
               ...buildMetadataPatch(data, existing),
-            })
-            .where(eq(watchItems.id, existing.id));
-          await bumpWatchlistRev(db, user.id);
-          return ok({ ok: true });
-        }
-
-        await db.insert(watchItems).values({
-          id: crypto.randomUUID(),
-          userId: user.id,
-          tmdbId: data.tmdbId,
-          mediaType: data.mediaType,
-          inWatchlist: true,
-          progress: nextProgress,
-          progressStatus: nextProgressStatus,
-          updatedAt: now,
-          ...buildMetadataPatch(data),
-        });
-        await bumpWatchlistRev(db, user.id);
+            };
+          },
+        );
         return ok({ ok: true });
       },
     ),
@@ -543,35 +530,22 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
         const now = Date.now();
 
         if (data.progressStatus !== undefined) {
-          const existing = await getWatchItem(db, user.id, {
-            tmdbId: data.tmdbId,
-            mediaType: data.mediaType,
-          });
-
-          if (existing) {
-            await db
-              .update(watchItems)
-              .set({
-                inWatchlist: true,
-                progressStatus: data.progressStatus,
-                progress: data.progress ?? existing.progress,
-                updatedAt: now,
-                ...buildMetadataPatch(data, existing),
-              })
-              .where(eq(watchItems.id, existing.id));
-          } else {
-            await db.insert(watchItems).values({
-              id: crypto.randomUUID(),
-              userId: user.id,
-              tmdbId: data.tmdbId,
-              mediaType: data.mediaType,
+          // Race-safe upsert (same rationale as updateProgress). The rev bump
+          // is skipped here: the single bump below covers the whole operation
+          // (watch item + episodes), so watchlistRev moves exactly once.
+          await upsertWatchItem(
+            db,
+            user.id,
+            data.tmdbId,
+            data.mediaType,
+            (existing) => ({
               inWatchlist: true,
               progressStatus: data.progressStatus,
-              progress: data.progress ?? 0,
-              updatedAt: now,
-              ...buildMetadataPatch(data),
-            });
-          }
+              progress: data.progress ?? existing?.progress ?? 0,
+              ...buildMetadataPatch(data, existing),
+            }),
+            { skipRevBump: true },
+          );
         }
 
         const existingByKey = await loadEpisodeRowsByKey(
@@ -640,27 +614,23 @@ export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        // Offset-paginate instead of a fixed cap: long-running shows can
+        // Keyset-paginate instead of a fixed cap: long-running shows can
         // carry more than 1000 watched rows, and truncating here makes the
         // client undercount progress and overwrite a "done" status.
-        const rows: (typeof episodeProgress.$inferSelect)[] = [];
-        const pageSize = 500;
-        for (let offset = 0; ; offset += pageSize) {
-          const page = await db
+        const rows = await collectAllByKeyset(500, (cursor) =>
+          db
             .select()
             .from(episodeProgress)
             .where(
               and(
                 eq(episodeProgress.userId, user.id),
                 eq(episodeProgress.tmdbId, data.tmdbId),
+                cursor ? gt(episodeProgress.id, cursor) : undefined,
               ),
             )
             .orderBy(asc(episodeProgress.id))
-            .limit(pageSize)
-            .offset(offset);
-          rows.push(...page);
-          if (page.length < pageSize) break;
-        }
+            .limit(500),
+        );
 
         return ok(rows);
       },
@@ -676,21 +646,21 @@ export const getAllEpisodeProgress = createServerFn({ method: "POST" }).handler(
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        // Same pagination rationale as getAllWatchedEpisodes; this feed also
+        // Same keyset pagination as getAllWatchedEpisodes; this feed also
         // powers watchlist export, where silent truncation loses data.
-        const rows: (typeof episodeProgress.$inferSelect)[] = [];
-        const pageSize = 500;
-        for (let offset = 0; ; offset += pageSize) {
-          const page = await db
+        const rows = await collectAllByKeyset(500, (cursor) =>
+          db
             .select()
             .from(episodeProgress)
-            .where(eq(episodeProgress.userId, user.id))
+            .where(
+              and(
+                eq(episodeProgress.userId, user.id),
+                cursor ? gt(episodeProgress.id, cursor) : undefined,
+              ),
+            )
             .orderBy(asc(episodeProgress.id))
-            .limit(pageSize)
-            .offset(offset);
-          rows.push(...page);
-          if (page.length < pageSize) break;
-        }
+            .limit(500),
+        );
 
         return ok(rows);
       },

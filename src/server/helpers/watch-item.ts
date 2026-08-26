@@ -49,20 +49,23 @@ export type WatchItemRow = typeof watchItems.$inferSelect;
 
 export type UserRevColumn = "watchlistRev" | "listsRev" | "aiRev" | "permsRev";
 
+// SQL increment descriptors are immutable, so one shared instance per column.
+const REV_COLUMN_PATCH: Record<UserRevColumn, Record<string, unknown>> = {
+  watchlistRev: { watchlistRev: sql`${users.watchlistRev} + 1` },
+  listsRev: { listsRev: sql`${users.listsRev} + 1` },
+  aiRev: { aiRev: sql`${users.aiRev} + 1` },
+  permsRev: { permsRev: sql`${users.permsRev} + 1` },
+};
+
 export async function bumpUserRev(
   db: Db,
   userId: string,
   column: UserRevColumn,
 ): Promise<void> {
-  const patch =
-    column === "watchlistRev"
-      ? { watchlistRev: sql`${users.watchlistRev} + 1` }
-      : column === "listsRev"
-        ? { listsRev: sql`${users.listsRev} + 1` }
-        : column === "aiRev"
-          ? { aiRev: sql`${users.aiRev} + 1` }
-          : { permsRev: sql`${users.permsRev} + 1` };
-  await db.update(users).set(patch).where(eq(users.id, userId));
+  await db
+    .update(users)
+    .set(REV_COLUMN_PATCH[column])
+    .where(eq(users.id, userId));
 }
 
 export const bumpWatchlistRev = (db: Db, userId: string) =>
@@ -148,12 +151,22 @@ export type UpsertUpdate =
     ) =>
       (Partial<Omit<WatchItemRow, "id">> & Partial<WatchItemMetadata>) | null);
 
+export interface UpsertWatchItemOptions {
+  /**
+   * Skip the internal watchlistRev bump for callers that write several
+   * domains in one operation and bump exactly once themselves (e.g.
+   * markShowEpisodesAndStatus), so the operation never double-bumps.
+   */
+  skipRevBump?: boolean;
+}
+
 export async function upsertWatchItem(
   db: Db,
   userId: string,
   tmdbId: number,
   mediaType: MediaType,
   updates: UpsertUpdate,
+  options: UpsertWatchItemOptions = {},
 ): Promise<WatchItemRow | undefined> {
   const existing = await getWatchItem(db, userId, { tmdbId, mediaType });
   const finalUpdates =
@@ -186,7 +199,7 @@ export async function upsertWatchItem(
       .update(watchItems)
       .set(patch)
       .where(eq(watchItems.id, existing.id));
-    await bumpWatchlistRev(db, userId);
+    if (!options.skipRevBump) await bumpWatchlistRev(db, userId);
     return { ...existing, ...patch };
   }
 
@@ -246,6 +259,6 @@ export async function upsertWatchItem(
   // On conflict the update may have merged with the winner's metadata, so
   // re-read the authoritative row rather than trusting our pre-insert value.
   const refreshed = await getWatchItem(db, userId, { tmdbId, mediaType });
-  await bumpWatchlistRev(db, userId);
+  if (!options.skipRevBump) await bumpWatchlistRev(db, userId);
   return refreshed ?? row;
 }
