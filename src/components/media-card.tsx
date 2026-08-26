@@ -232,7 +232,12 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
   const { title, image, media_type, release_date, relevanceScore } = props;
 
   const formattedTitle = formatMediaTitle.encode(title);
-  const imageUrl = `${IMAGE_PREFIX.SD_POSTER}${image}`;
+  // Use LQ (w342) as `src` fallback so the initial download on 1x phones
+  // is ~18 KiB not 28 KiB (w500). `srcSet` still offers w500/w780 for 2x+
+  // via `tmdbSrcSet`, so high-DPR screens pick the larger candidate without
+  // penalising 1x. Saves ~10 KiB per poster, 14 KiB reported by Pagespeed
+  // "Improve image delivery" for Mutiny (w300 28.8 KiB → w185 15 KiB).
+  const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${image}`;
   const blurSrc = image ? `${IMAGE_PREFIX.PREVIEW}${image}` : undefined;
   const year = release_date ? new Date(release_date).getFullYear() : "";
 
@@ -310,14 +315,14 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
   const episodeDetail = seasonDetails?.episodes?.find(
     (ep) => ep.episode_number === episode,
   );
-  let imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${image}`;
+  let imageUrl = `${IMAGE_PREFIX.LQ_BACKDROP}${image}`;
   let blurSrc = image ? `${IMAGE_PREFIX.PREVIEW}${image}` : undefined;
   if (isTVContinueWatching) {
     if (episodeDetail?.still_path) {
-      imageUrl = `${IMAGE_PREFIX.SD_BACKDROP}${episodeDetail.still_path}`;
+      imageUrl = `${IMAGE_PREFIX.LQ_BACKDROP}${episodeDetail.still_path}`;
       blurSrc = `${IMAGE_PREFIX.PREVIEW}${episodeDetail.still_path}`;
     } else if (seasonDetails?.poster_path) {
-      imageUrl = `${IMAGE_PREFIX.SD_POSTER}${seasonDetails.poster_path}`;
+      imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${seasonDetails.poster_path}`;
       blurSrc = `${IMAGE_PREFIX.PREVIEW}${seasonDetails.poster_path}`;
     }
   }

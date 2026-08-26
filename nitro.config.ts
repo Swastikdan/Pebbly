@@ -58,7 +58,6 @@ const contentSecurityPolicy = [
     "script-src",
     "'self'",
     "'unsafe-inline'",
-    "https://static.cloudflareinsights.com",
     // @clerk/react injects clerk-js either from its Frontend API origin or
     // the jsdelivr mirror depending on version/proxy mode.
     ...clerkOrigins,
@@ -87,7 +86,6 @@ const contentSecurityPolicy = [
     "'self'",
     ...tmdbApiOrigins,
     ...clerkOrigins,
-    "https://static.cloudflareinsights.com",
     // Clerk SDK telemetry beacon.
     "https://clerk-telemetry.com",
   ].join(" "),

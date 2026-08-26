@@ -62,8 +62,14 @@ const ImageComponent = ({
     [props.sizes, currentSrc, error],
   );
 
+  // Priority images are LCP candidates (first 2 trending cards). They must
+  // be visible immediately for the browser to count LCP when the high-res
+  // resource decodes, not after React flips `loaded` and fades out a
+  // placeholder. Non-priority cards keep the blur/skeleton fade for
+  // perceived polish. See `src/components/homepage-media.tsx:132` where
+  // `priorityCount={2}` is set for the above-the-fold rail.
   const blurStyle =
-    blurSrc && !error
+    blurSrc && !error && !priority
       ? {
           backgroundImage: `url("${blurSrc}")`,
           backgroundSize: "cover",
@@ -83,7 +89,8 @@ const ImageComponent = ({
           style={blurStyle}
         />
       ) : (
-        !loaded && <Skeleton className="absolute inset-0 rounded-none" />
+        !loaded &&
+        !priority && <Skeleton className="absolute inset-0 rounded-none" />
       )}
       <ReactImage
         ref={attachRef}
@@ -91,7 +98,7 @@ const ImageComponent = ({
         className={cn(
           className,
           "transition-opacity duration-300 ease-out",
-          !loaded && "opacity-0",
+          !loaded && !priority && "opacity-0",
         )}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : undefined}

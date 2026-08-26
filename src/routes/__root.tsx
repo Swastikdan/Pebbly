@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import bricolageLatinWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
 import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 import {
@@ -18,11 +18,18 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { Navbar } from "@/components/navbar";
 import { NavigationProgressBar } from "@/components/navigation-progress-bar";
 import { ToastProvider } from "@/components/ui/toast";
-import { UserSync } from "@/components/user-sync";
 import { SITE_CONFIG } from "@/constants";
 import { THEME_STORAGE_KEY, useTheme } from "@/hooks/use-theme";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import appCss from "@/styles.css?url";
+
+// UserSync polls data-version every 30s and syncs Clerk user to DB – not
+// needed for LCP. Lazy-load it so its JS (storeUser, cross-tab sync,
+// realtime-mutations) is not parsed during the critical 2.9s main-thread
+// window (Pagespeed "Minimize main-thread work" 809ms evaluation).
+const UserSync = lazy(() =>
+  import("@/components/user-sync").then((m) => ({ default: m.UserSync })),
+);
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -194,27 +201,36 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         rel: "preconnect",
         href: "https://image.tmdb.org",
+        crossOrigin: "anonymous",
       },
+      // Clerk's 308 KiB browser bundle is the largest unused-JS entry
+      // (236 KiB wasted, Pagespeed mobile) and is not needed for LCP.
+      // Downgrade from `preconnect` to `dns-prefetch` so it doesn't open a
+      // high-priority connection that contends with the LCP image (Motor
+      // City, 780ms resourceLoadDelay) and the render-blocking CSS (27 KiB,
+      // 1145ms). The browser will still resolve DNS early but will not
+      // pre-warm TLS until after idle. Keep image.tmdb.org as true
+      // preconnect with crossorigin (required for the `crossorigin="anonymous"`
+      // image fetch, otherwise the preconnect is unused per audit).
       {
-        rel: "preconnect",
+        rel: "dns-prefetch",
         href:
           import.meta.env.VITE_CLERK_ISSUER_URL ||
           "https://rested-adder-44.clerk.accounts.dev",
-        crossOrigin: "anonymous",
       },
       {
-        rel: "preconnect",
+        rel: "dns-prefetch",
         href: "https://api.themoviedb.org",
-        crossOrigin: "anonymous",
       },
     ],
-    scripts: [
-      {
-        type: "module",
-        src: "https://static.cloudflareinsights.com/beacon.min.js",
-        "data-cf-beacon": '{"token": "cf131605e09945caa1b60fe00a7a919a"}',
-      },
-    ],
+    // Cloudflare Web Analytics (beacon.min.js / cdn-cgi/rum) was the
+    // entire 1,961ms critical path in Pagespeed desktop: it chained
+    // `Initial Nav → beacon → rum → rum` and added 80ms preconnect
+    // candidate. It's tracking-only, not needed for LCP, and the 1d
+    // cache on `beacon.min.js` caused the 4 KiB "Use efficient cache
+    // lifetimes" warning. Removed entirely per request – if analytics
+    // are needed later, load via `partytown` or `requestIdleCallback`.
+    scripts: [],
   }),
 
   notFoundComponent: DefaultNotFoundComponent,
@@ -347,7 +363,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           >
             Skip to main content
           </a>
-          <UserSync />
+          <Suspense fallback={null}>
+            <UserSync />
+          </Suspense>
           <Navbar />
           <main
             id="main-content"
