@@ -1,7 +1,8 @@
 # Pebbly
 
 Pebbly is a full-stack movie and TV show discovery app built with TanStack Start, Cloudflare Workers, D1 (SQLite), Drizzle ORM, Valibot, Clerk, Google Gemini, and TMDB metadata. It has media browsing, persistent watchlists, per-episode progress tracking, custom lists, and AI recommendations based on what you watch.
-
+[![Deploy Preview](https://github.com/Swastikdan/Pebbly/actions/workflows/preview.yml/badge.svg)](https://github.com/Swastikdan/Pebbly/actions/workflows/preview.yml)
+[![Deploy Production](https://github.com/Swastikdan/Pebbly/actions/workflows/deploy.yml/badge.svg)](https://github.com/Swastikdan/Pebbly/actions/workflows/deploy.yml)
 ---
 
 ## Documentation
