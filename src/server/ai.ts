@@ -63,6 +63,17 @@ export function isRateLimitedError(error: unknown) {
   );
 }
 
+export function isAbortError(error: unknown) {
+  const candidate = error as { name?: string; message?: string };
+  const name = candidate.name?.toLowerCase() ?? "";
+  const message = candidate.message?.toLowerCase() ?? "";
+  return (
+    name === "aborterror" ||
+    message.includes("aborted") ||
+    message.includes("signal is aborted")
+  );
+}
+
 export async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -107,15 +118,16 @@ async function generateContent(
   // The SDK exposes streaming via `chat.send` with `chatRequest.stream === true`.
   // The response is an async iterable of ChatStreamChunk (SSE) — iterate to
   // collect delta.content and the trailing usage block.
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(
       () =>
         reject(
           new Error(`OpenRouter timeout after ${OPENROUTER_TIMEOUT_MS}ms`),
         ),
       OPENROUTER_TIMEOUT_MS,
-    ),
-  );
+    );
+  });
 
   const doStream = async (): Promise<{
     text: string;
@@ -143,24 +155,40 @@ async function generateContent(
     let text = "";
     let reasoningTokens: number | undefined;
 
-    for await (const chunk of stream) {
-      // Surface provider-side errors that appear as an `error` field on the chunk.
-      if (chunk.error) {
-        const err = new Error(
-          chunk.error.message ?? "OpenRouter stream error",
-        ) as OpenRouterErrorLike;
-        err.status = chunk.error.code;
-        err.code = chunk.error.code;
-        throw err;
-      }
+    try {
+      for await (const chunk of stream) {
+        // Surface provider-side errors that appear as an `error` field on the chunk.
+        if (chunk.error) {
+          const err = new Error(
+            chunk.error.message ?? "OpenRouter stream error",
+          ) as OpenRouterErrorLike;
+          err.status = chunk.error.code;
+          err.code = chunk.error.code;
+          throw err;
+        }
 
-      const content = chunk.choices?.[0]?.delta?.content;
-      if (content) text += content;
+        const content = chunk.choices?.[0]?.delta?.content;
+        if (content) text += content;
 
-      if (chunk.usage?.completionTokensDetails?.reasoningTokens != null) {
-        reasoningTokens =
-          chunk.usage.completionTokensDetails.reasoningTokens ?? undefined;
+        if (chunk.usage?.completionTokensDetails?.reasoningTokens != null) {
+          reasoningTokens =
+            chunk.usage.completionTokensDetails.reasoningTokens ?? undefined;
+        }
       }
+    } catch (error) {
+      // Workers' fetch can be aborted when the client disconnects or the
+      // Worker is terminated after the response is already buffered.
+      // If we have already collected text (and the stream was aborted
+      // without reason), treat it as a successful completion rather than
+      // a failure – the user still gets the response.
+      if (isAbortError(error) && text) {
+        console.warn(
+          `[openrouter] stream aborted after ${text.length} chars, returning partial`,
+          error,
+        );
+        return { text, reasoningTokens };
+      }
+      throw error;
     }
 
     if (reasoningTokens != null) {
@@ -170,10 +198,19 @@ async function generateContent(
     return { text, reasoningTokens };
   };
 
-  // Race the stream against the timeout. The SDK itself also accepts
-  // timeoutMs via request options, but a local race is explicit and works
-  // regardless of SDK internals.
-  return Promise.race([doStream(), timeout]);
+  // Race the stream against the timeout and ensure the timer is cleared.
+  // Without cleanup the 90s timeout would fire even after success and
+  // keep the Worker alive, and an aborted fetch (client disconnect)
+  // surfaces as "signal is aborted without reason" which should not be
+  // treated as a generation failure when we already have text.
+  try {
+    const result = await Promise.race([doStream(), timeout]);
+    if (timeoutId) clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    if (timeoutId) clearTimeout(timeoutId);
+    throw error;
+  }
 }
 
 async function generateRecommendationResponse(
