@@ -92,7 +92,6 @@ export const Route = createFileRoute("/")({
         imageSrcSet: srcSet,
         imageSizes: "(max-width: 640px) 160px, (max-width: 768px) 176px, 192px",
         href: src,
-        crossOrigin: "anonymous" as const,
         fetchPriority: "high" as const,
       };
     });
@@ -172,10 +171,10 @@ function HomePage() {
           <LazySection
             minHeight="280px"
             className="content-visibility-auto"
-            fallback={<MediaSkeletonList cardType="vertical" count={6} />}
+            fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
           >
             <Suspense
-              fallback={<MediaSkeletonList cardType="vertical" count={6} />}
+              fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
             >
               <UpcomingMovies />
             </Suspense>

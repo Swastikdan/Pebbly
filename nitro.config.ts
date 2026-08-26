@@ -170,13 +170,7 @@ export default defineNitroConfig({
     },
     "/logo.svg": {
       headers: {
-        // Logo is content-hashed via `?url` imports when used as an image,
-        // but the public `/logo.svg` is a static file served at a fixed path
-        // that rarely changes. Use 1y immutable for repeat visits; a new
-        // deploy that changes the logo will still be respected after a hard
-        // refresh. The previous 7d caused a 2 KiB revalidation on every
-        // weekly visit (Pagespeed "Use efficient cache lifetimes").
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=604800",
       },
     },
     // Baseline security headers for every response. The /assets/** rule above
