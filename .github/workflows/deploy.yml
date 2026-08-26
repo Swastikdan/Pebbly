@@ -19,16 +19,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Allow merges via PR (pusher Swastikdan), manual dispatch, and
-    # merge-queue (actor github-actions[bot]). Previous
-    # `pusher.name == 'Swastikdan'` blocked merge-queue pushes where
-    # pusher is github-actions[bot] → job skipped and prod never deployed
-    # after 727e3d7 (PR #66).
-    if: >-
-      github.event_name == 'merge_group' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event.pusher.name == 'Swastikdan' ||
-      github.actor == 'Swastikdan'
+    if: github.actor == 'Swastikdan' || github.event.pusher.name == 'Swastikdan' || github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
     steps:
