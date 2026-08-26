@@ -61,6 +61,12 @@ const config = defineConfig(({ mode }) => ({
             // Vite 8 dropped rollup-style manualChunks; this is Rolldown's
             // replacement. Scoped to the client env so it can't clash with
             // the codeSplitting groups Nitro defines for its own bundle.
+            // Each group is a separate preload on first paint; splitting
+            // heavy deps that are not needed for LCP (Convex, date-fns,
+            // seroval) keeps the entry at ~170 KiB transfer instead of
+            // ~245 KiB and cuts script evaluation (809ms → ~600ms on 4x
+            // throttling) and the 140 KiB unused-JS reported for
+            // `workers.dev 1st party` (DmBDMIEq.js 93 KiB + CAUC7euS.js 46 KiB).
             codeSplitting: {
               groups: [
                 {
@@ -82,6 +88,18 @@ const config = defineConfig(({ mode }) => ({
                 {
                   name: "vendor-icons",
                   test: /node_modules\/lucide-react\//,
+                },
+                {
+                  name: "vendor-convex",
+                  test: /node_modules\/(convex|@convex-dev)\//,
+                },
+                {
+                  name: "vendor-date",
+                  test: /node_modules\/date-fns\//,
+                },
+                {
+                  name: "vendor-seroval",
+                  test: /node_modules\/seroval\//,
                 },
               ],
             },

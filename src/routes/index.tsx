@@ -1,34 +1,102 @@
 import { useUser } from "@clerk/react";
-import { Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { DailyPickButton } from "@/components/daily-pick";
-import {
-  ContinueWatching,
-  PopularMovies,
-  PopularTv,
-  TopRatedMovies,
-  TopRatedTv,
-  TrendingDayMovies,
-  TrendingWeekMovies,
-  UpcomingMovies,
-} from "@/components/homepage-media";
-import { HomepageRecommendations } from "@/components/homepage-recommendations";
+import { TrendingDayMovies } from "@/components/homepage-media";
 import { MediaSkeletonList } from "@/components/media-skeleton-list";
 import { LazySection } from "@/components/ui/lazy-section";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
-import { SITE_CONFIG } from "@/constants";
+import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
 import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
 import { getMedia } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
+import { tmdbSrcSet } from "@/lib/tmdb-image";
+
+// Below-fold homepage rails are the largest contributors to the 96 KiB
+// unused JS in `DmBDMIEq.js` (Pagespeed desktop). They are not needed for
+// LCP (only TrendingDayMovies is above the fold with priority images).
+// Lazy-load them so their JS (MediaCard, query hooks, recommendation
+// logic) is split into separate chunks and only fetched when the
+// `LazySection` intersects or the tab becomes active. This cuts script
+// evaluation (806ms) and the 143 KiB 1st-party unused JS.
+const HomepageRecommendations = lazy(() =>
+  import("@/components/homepage-recommendations").then((m) => ({
+    default: m.HomepageRecommendations,
+  })),
+);
+const TrendingWeekMovies = lazy(() =>
+  import("@/components/homepage-media").then((m) => ({
+    default: m.TrendingWeekMovies,
+  })),
+);
+const UpcomingMovies = lazy(() =>
+  import("@/components/homepage-media").then((m) => ({
+    default: m.UpcomingMovies,
+  })),
+);
+const PopularMovies = lazy(() =>
+  import("@/components/homepage-media").then((m) => ({
+    default: m.PopularMovies,
+  })),
+);
+const PopularTv = lazy(() =>
+  import("@/components/homepage-media").then((m) => ({
+    default: m.PopularTv,
+  })),
+);
+const TopRatedMovies = lazy(() =>
+  import("@/components/homepage-media").then((m) => ({
+    default: m.TopRatedMovies,
+  })),
+);
+const TopRatedTv = lazy(() =>
+  import("@/components/homepage-media").then((m) => ({
+    default: m.TopRatedTv,
+  })),
+);
+const ContinueWatching = lazy(() =>
+  import("@/components/homepage-media").then((m) => ({
+    default: m.ContinueWatching,
+  })),
+);
 
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData({
+    const data = await context.queryClient.ensureQueryData({
       queryKey: queryKeys.tmdb.trendingDay(),
       queryFn: () => getMedia({ type: "trending_day" }),
     });
+    // Return the first 2 poster paths for LCP preload in `head`. These are
+    // the `priorityCount={2}` cards in TrendingDayMovies – the only
+    // above-the-fold images with `loading="eager"` + `fetchPriority="high"`.
+    // Preloading with `imagesrcset`/`imagesizes` cuts `resourceLoadDelay`
+    // (780ms in Pagespeed) by hinting the browser before the body is parsed.
+    const lcpPosters = data
+      .slice(0, 2)
+      .map((m) => m.poster_path)
+      .filter(Boolean) as string[];
+    return { lcpPosters };
+  },
+  head: ({ loaderData }) => {
+    const posters = (loaderData as { lcpPosters?: string[] } | undefined)
+      ?.lcpPosters;
+    if (!posters?.length) return {};
+    const links = posters.map((path) => {
+      const src = `${IMAGE_PREFIX.LQ_POSTER}${path}`;
+      const srcSet = tmdbSrcSet(src);
+      return {
+        rel: "preload" as const,
+        as: "image" as const,
+        imageSrcSet: srcSet,
+        imageSizes: "(max-width: 640px) 160px, (max-width: 768px) 176px, 192px",
+        href: src,
+        crossOrigin: "anonymous" as const,
+        fetchPriority: "high" as const,
+      };
+    });
+    return { links };
   },
   component: HomePage,
 });
@@ -77,7 +145,11 @@ function HomePage() {
               <TrendingDayMovies />
             </TabsPanel>
             <TabsPanel value="trending_week">
-              <TrendingWeekMovies />
+              <Suspense
+                fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+              >
+                <TrendingWeekMovies />
+              </Suspense>
             </TabsPanel>
           </Tabs>
 
@@ -87,7 +159,11 @@ function HomePage() {
             minHeight="300px"
             fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
           >
-            <HomepageRecommendations />
+            <Suspense
+              fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+            >
+              <HomepageRecommendations />
+            </Suspense>
           </LazySection>
 
           <div className="mt-2 flex items-center gap-4">
@@ -98,9 +174,11 @@ function HomePage() {
             className="content-visibility-auto"
             fallback={<MediaSkeletonList cardType="vertical" count={6} />}
           >
-            <div>
+            <Suspense
+              fallback={<MediaSkeletonList cardType="vertical" count={6} />}
+            >
               <UpcomingMovies />
-            </div>
+            </Suspense>
           </LazySection>
 
           <h2 className="text-h2 mt-2">{`What's Popular`}</h2>
@@ -117,10 +195,22 @@ function HomePage() {
                 </TabsList>
               </div>
               <TabsPanel value="popular_movie">
-                <PopularMovies />
+                <Suspense
+                  fallback={
+                    <MediaSkeletonList cardType="horizontal" count={6} />
+                  }
+                >
+                  <PopularMovies />
+                </Suspense>
               </TabsPanel>
               <TabsPanel value="popular_tv">
-                <PopularTv />
+                <Suspense
+                  fallback={
+                    <MediaSkeletonList cardType="horizontal" count={6} />
+                  }
+                >
+                  <PopularTv />
+                </Suspense>
               </TabsPanel>
             </Tabs>
           </LazySection>
@@ -139,10 +229,22 @@ function HomePage() {
                 </TabsList>
               </div>
               <TabsPanel value="top_rated_movies">
-                <TopRatedMovies />
+                <Suspense
+                  fallback={
+                    <MediaSkeletonList cardType="horizontal" count={6} />
+                  }
+                >
+                  <TopRatedMovies />
+                </Suspense>
               </TabsPanel>
               <TabsPanel value="top_rated_tv">
-                <TopRatedTv />
+                <Suspense
+                  fallback={
+                    <MediaSkeletonList cardType="horizontal" count={6} />
+                  }
+                >
+                  <TopRatedTv />
+                </Suspense>
               </TabsPanel>
             </Tabs>
           </LazySection>
@@ -198,7 +300,11 @@ function ContinueWatchingSection() {
           minHeight="280px"
           fallback={<MediaSkeletonList cardType="vertical" count={6} />}
         >
-          <ContinueWatching />
+          <Suspense
+            fallback={<MediaSkeletonList cardType="vertical" count={6} />}
+          >
+            <ContinueWatching />
+          </Suspense>
         </LazySection>
       </div>
     </section>

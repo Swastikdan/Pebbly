@@ -8,10 +8,24 @@ interface NavigationProgressBarProps {
 }
 
 export function NavigationProgressBar({
-  delay = 200,
+  delay = 80,
 }: NavigationProgressBarProps) {
-  const isLoading = useRouterState({
-    select: (s) => s.status === "pending",
+  // Use location vs resolvedLocation for immediate feedback.
+  // `s.status === "pending"` is gated by pendingMs (250 ms) which intentionally
+  // delays the full-screen DefaultLoader to avoid flashing on fast cached
+  // navigations. The progress bar must NOT be gated: users need to see
+  // feedback within ~100 ms of tapping a link, otherwise the app feels
+  // frozen until the new page's loader resolves and then swaps in the fully
+  // rendered page. Comparing `location` (pending URL, updates on navigation
+  // start) vs `resolvedLocation` (committed URL, updates after loaders
+  // commit) gives us an immediate signal, with a pending fallback for
+  // edge cases like redirects where both hrefs briefly align.
+  const isNavigating = useRouterState({
+    select: (s) => {
+      const href = s.location.href;
+      const resolvedHref = s.resolvedLocation?.href ?? href;
+      return href !== resolvedHref || s.status === "pending";
+    },
   });
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -21,7 +35,7 @@ export function NavigationProgressBar({
   const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (isLoading) {
+    if (isNavigating) {
       if (finishTimerRef.current) {
         clearTimeout(finishTimerRef.current);
         finishTimerRef.current = null;
@@ -67,7 +81,7 @@ export function NavigationProgressBar({
       if (timerRef.current) clearInterval(timerRef.current);
       if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
     };
-  }, [isLoading, visible, delay]);
+  }, [isNavigating, visible, delay]);
 
   if (!visible && progress === 0) {
     return null;
