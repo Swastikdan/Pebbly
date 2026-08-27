@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { MediaType } from "@/lib/media-types";
@@ -50,6 +50,13 @@ export interface TrackedContentSets {
   trackedTmdbIds: Set<number>;
   trackedTitles: Set<string>;
 }
+
+// Poll-loop safety rails. The server self-heals stale jobs after
+// JOB_STALE_MS (5 min), and a normal generation completes in well under a
+// minute, so 6 minutes here is generous; past it the UI shows an error
+// instead of spinning forever.
+const MAX_JOB_POLL_MS = 6 * 60 * 1000;
+const MAX_JOB_POLL_FAILURES = 5;
 
 export function isTrackedRecommendation(
   recommendation: AIRecommendation,
@@ -192,6 +199,14 @@ export function useRecommendations() {
   const [optimisticDeletedIds, setOptimisticDeletedIds] = useState<Set<string>>(
     new Set(),
   );
+  const jobStartedAtRef = useRef(0);
+  const jobTimeoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearJobTimeoutTimer = useCallback(() => {
+    if (jobTimeoutTimerRef.current) {
+      clearTimeout(jobTimeoutTimerRef.current);
+      jobTimeoutTimerRef.current = null;
+    }
+  }, []);
 
   // Poll for active job status
   const jobQuery = useQuery({
@@ -201,6 +216,10 @@ export function useRecommendations() {
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       if (status === "completed" || status === "failed") return false;
+      // Hard client-side rails so the spinner can never stick forever even
+      // if every request fails or the server never reaches a terminal state.
+      if (query.state.fetchFailureCount >= MAX_JOB_POLL_FAILURES) return false;
+      if (Date.now() - jobStartedAtRef.current > MAX_JOB_POLL_MS) return false;
       return 3000;
     },
     enabled: !!activeJobId,
@@ -211,18 +230,31 @@ export function useRecommendations() {
     if (!activeJobId) return;
     const status = jobQuery.data?.status;
     if (status === "completed") {
+      clearJobTimeoutTimer();
       recordOwnMutation("ai");
       void queryClient.invalidateQueries({
         queryKey: queryKeys.recommendations.history(user?.id),
       });
       setActiveJobId(null);
     } else if (status === "failed" && jobQuery.data) {
+      clearJobTimeoutTimer();
       setError(
         "error" in jobQuery.data ? jobQuery.data.error : "Generation failed",
       );
       setActiveJobId(null);
+    } else if (jobQuery.isError) {
+      clearJobTimeoutTimer();
+      setError("generation_status_unavailable");
+      setActiveJobId(null);
     }
-  }, [activeJobId, jobQuery.data, queryClient, user?.id]);
+  }, [
+    activeJobId,
+    jobQuery.data,
+    jobQuery.isError,
+    clearJobTimeoutTimer,
+    queryClient,
+    user?.id,
+  ]);
 
   const isGenerating = activeJobId !== null;
 
@@ -261,19 +293,30 @@ export function useRecommendations() {
     },
   });
 
-  const generate = useCallback(async (options?: GenerateOptions) => {
-    setError(null);
-    try {
-      const result = await unwrap(startGeneration({ data: options ?? {} }));
-      if ("error" in result) {
-        setError(result.error);
-      } else {
-        setActiveJobId(result.jobId);
+  const generate = useCallback(
+    async (options?: GenerateOptions) => {
+      setError(null);
+      try {
+        const result = await unwrap(startGeneration({ data: options ?? {} }));
+        if ("error" in result) {
+          setError(result.error);
+        } else {
+          jobStartedAtRef.current = Date.now();
+          clearJobTimeoutTimer();
+          // Last-resort UI guard: stop showing the generating state even if
+          // status polling somehow never reaches a terminal state.
+          jobTimeoutTimerRef.current = setTimeout(() => {
+            setError("generation_timed_out");
+            setActiveJobId(null);
+          }, MAX_JOB_POLL_MS);
+          setActiveJobId(result.jobId);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Unknown error");
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
-    }
-  }, []);
+    },
+    [clearJobTimeoutTimer],
+  );
 
   const generateAgain = useCallback(
     (entry: RecommendationHistoryEntry, context: RepeatGenerateContext) =>

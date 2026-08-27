@@ -27,6 +27,11 @@ import {
 } from "@/server/fns/recommendations";
 import { unwrap } from "@/server/schema/common";
 
+// Hard client-side rails (mirrors use-recommendations.ts) so the loading
+// spinner always converges to an error even if status polling never resolves.
+const MAX_JOB_POLL_MS = 6 * 60 * 1000;
+const MAX_JOB_POLL_FAILURES = 5;
+
 const getDismissKey = (rec: AIRecommendation) =>
   `${rec.mediaType}:${rec.tmdbId ?? ""}:${rec.title}`;
 
@@ -175,6 +180,13 @@ export function HomepageRecommendations() {
   const [isGenerating, setIsGenerating] = useState(false);
   const isGeneratingRef = useRef(false);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const jobStartedAtRef = useRef(0);
+
+  const stopJobTracking = useCallback(() => {
+    setActiveJobId(null);
+    setIsGenerating(false);
+    isGeneratingRef.current = false;
+  }, []);
 
   const refreshHomepage = useCallback(() => {
     void recommendationsQuery.refetch();
@@ -189,6 +201,10 @@ export function HomepageRecommendations() {
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       if (status === "completed" || status === "failed") return false;
+      if (query.state.fetchFailureCount >= MAX_JOB_POLL_FAILURES) return false;
+      if (Date.now() - (jobStartedAtRef.current || 0) > MAX_JOB_POLL_MS) {
+        return false;
+      }
       return 3000;
     },
     enabled: !!activeJobId,
@@ -201,11 +217,20 @@ export function HomepageRecommendations() {
     if (status === "completed" || status === "failed") {
       recordOwnMutation("ai");
       refreshHomepage();
-      setActiveJobId(null);
-      setIsGenerating(false);
-      isGeneratingRef.current = false;
+      stopJobTracking();
+    } else if (jobQuery.isError) {
+      // Status endpoint unreachable: converge to the normal refreshed view
+      // instead of spinning forever (the daily cron reaper is a backstop).
+      refreshHomepage();
+      stopJobTracking();
     }
-  }, [activeJobId, jobQuery.data, refreshHomepage]);
+  }, [
+    activeJobId,
+    jobQuery.data,
+    jobQuery.isError,
+    refreshHomepage,
+    stopJobTracking,
+  ]);
 
   useEffect(() => {
     if (
@@ -215,6 +240,7 @@ export function HomepageRecommendations() {
     ) {
       isGeneratingRef.current = true;
       setIsGenerating(true);
+      jobStartedAtRef.current = Date.now();
       startHomepageGeneration()
         .then((result) => {
           if (result.ok && "jobId" in result.data) {
@@ -224,17 +250,15 @@ export function HomepageRecommendations() {
               "Failed to start homepage generation:",
               result.data.error,
             );
-            setIsGenerating(false);
-            isGeneratingRef.current = false;
+            stopJobTracking();
           }
         })
         .catch((err) => {
           console.error("Failed to start homepage generation:", err);
-          setIsGenerating(false);
-          isGeneratingRef.current = false;
+          stopJobTracking();
         });
     }
-  }, [canAccessFeature, recommendationsData?.needsRefresh]);
+  }, [canAccessFeature, recommendationsData?.needsRefresh, stopJobTracking]);
 
   const toggleWatchlist = useToggleWatchlistItem();
 

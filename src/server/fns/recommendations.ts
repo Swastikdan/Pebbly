@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import * as v from "valibot";
 
@@ -30,7 +29,8 @@ import {
   bumpListsRev,
   upsertWatchItem,
 } from "../helpers/watch-item";
-import { runAiJobBackground } from "../jobs/run-ai-generation";
+import { JOB_STALE_MS, markJobFailed } from "../jobs/job-lifecycle";
+import { driveAiJob } from "../jobs/run-ai-generation";
 import { hasFeature, isAdminByClaims } from "../rbac";
 import {
   gatherGenerationInputs,
@@ -540,7 +540,11 @@ export const startGeneration = createServerFn({ method: "POST" })
         }
 
         const existing = await db
-          .select({ id: aiGenerationJobs.id })
+          .select({
+            id: aiGenerationJobs.id,
+            createdAt: aiGenerationJobs.createdAt,
+            params: aiGenerationJobs.params,
+          })
           .from(aiGenerationJobs)
           .where(
             and(
@@ -550,7 +554,17 @@ export const startGeneration = createServerFn({ method: "POST" })
           )
           .limit(1);
         if (existing.length > 0) {
-          return ok({ jobId: existing[0].id });
+          const staleJob = existing[0];
+          if (Date.now() - staleJob.createdAt < JOB_STALE_MS) {
+            // Fresh in-flight job: piggyback on it instead of duplicating work.
+            return ok({ jobId: staleJob.id });
+          }
+          // Job from an older runtime that lost it mid-flight (e.g. a Worker
+          // terminated during generation). Reap it — releasing its reserved
+          // rate-limit slot — and fall through to start a fresh generation.
+          await markJobFailed(db, staleJob.id, "superseded");
+          const staleToken = staleJob.params?.rateLimitToken;
+          if (staleToken) await releaseRateLimit(db, staleToken);
         }
 
         const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
@@ -646,17 +660,11 @@ export const startGeneration = createServerFn({ method: "POST" })
           createdAt: Date.now(),
         });
 
-        const req = getRequest();
-        const waitUntil = (
-          req as unknown as { waitUntil?: (p: Promise<unknown>) => void }
-        ).waitUntil;
-        const bg = runAiJobBackground(db, jobId, jobParams, user.id);
-
-        if (typeof waitUntil === "function") {
-          waitUntil(bg);
-        } else {
-          void bg;
-        }
+        // No background execution here: the job is picked up and run inside
+        // the client's first `getGenerationStatus` poll (see driveAiJob).
+        // waitUntil() is unsuitable on Cloudflare Workers, which terminate
+        // background tasks ~30s after the response — shorter than a typical
+        // AI generation.
 
         return ok({ jobId });
       },
@@ -670,31 +678,64 @@ export const getGenerationStatus = createServerFn({ method: "POST" })
       { mode: "require" },
       data,
       async ({ db, user }): Promise<ApiResult<GenerationJobStatus>> => {
-        const [job] = await db
-          .select()
-          .from(aiGenerationJobs)
-          .where(
-            and(
-              eq(aiGenerationJobs.id, data.jobId),
-              eq(aiGenerationJobs.userId, user.id),
-            ),
-          )
-          .limit(1);
+        const loadJob = () =>
+          db
+            .select()
+            .from(aiGenerationJobs)
+            .where(
+              and(
+                eq(aiGenerationJobs.id, data.jobId),
+                eq(aiGenerationJobs.userId, user.id),
+              ),
+            )
+            .limit(1);
 
+        let [job] = await loadJob();
         if (!job) return fail("NOT_FOUND", "Job not found");
 
-        if (job.status === "completed") {
-          return ok({
-            status: "completed",
-            recommendations: job.recommendations ?? [],
-            model: job.model ?? "",
-          });
-        }
-        if (job.status === "failed") {
-          return ok({ status: "failed", error: job.error ?? "unknown_error" });
+        const toStatus = (
+          row: typeof aiGenerationJobs.$inferSelect,
+        ): ApiResult<GenerationJobStatus> => {
+          if (row.status === "completed") {
+            return ok({
+              status: "completed",
+              recommendations: row.recommendations ?? [],
+              model: row.model ?? "",
+            });
+          }
+          if (row.status === "failed") {
+            return ok({
+              status: "failed",
+              error: row.error ?? "unknown_error",
+            });
+          }
+          return ok({ status: row.status });
+        };
+
+        if (job.status === "pending" || job.status === "running") {
+          if (Date.now() - job.createdAt > JOB_STALE_MS) {
+            // Hard self-heal: a job still incomplete after the stale window
+            // has lost its executor (worker terminated, crash, deploy).
+            // Reap it so clients always converge to a terminal state instead
+            // of polling forever.
+            await markJobFailed(db, job.id, "generation_timed_out");
+            [job] = await loadJob();
+            if (!job) return fail("NOT_FOUND", "Job not found");
+            return toStatus(job);
+          }
+
+          // Poll-driven execution: this request claims the job (atomic
+          // conditional UPDATE) and runs the generation inline. The client
+          // stays connected, so the request may take up to the job timeout —
+          // that is fine on Workers (no wall-clock limit while the client is
+          // connected). Losers of the claim just observe `running`.
+          await driveAiJob(db, job);
+
+          [job] = await loadJob();
+          if (!job) return fail("NOT_FOUND", "Job not found");
         }
 
-        return ok({ status: job.status });
+        return toStatus(job);
       },
     ),
   );
@@ -711,7 +752,11 @@ export const startHomepageGeneration = createServerFn({
       user,
     }): Promise<ApiResult<{ jobId: string } | { error: string }>> => {
       const existing = await db
-        .select({ id: aiGenerationJobs.id })
+        .select({
+          id: aiGenerationJobs.id,
+          createdAt: aiGenerationJobs.createdAt,
+          params: aiGenerationJobs.params,
+        })
         .from(aiGenerationJobs)
         .where(
           and(
@@ -721,7 +766,13 @@ export const startHomepageGeneration = createServerFn({
         )
         .limit(1);
       if (existing.length > 0) {
-        return ok({ jobId: existing[0].id });
+        const staleJob = existing[0];
+        if (Date.now() - staleJob.createdAt < JOB_STALE_MS) {
+          return ok({ jobId: staleJob.id });
+        }
+        await markJobFailed(db, staleJob.id, "superseded");
+        const staleToken = staleJob.params?.rateLimitToken;
+        if (staleToken) await releaseRateLimit(db, staleToken);
       }
 
       const isAdmin = isAdminByClaims(claims);
@@ -788,17 +839,8 @@ export const startHomepageGeneration = createServerFn({
         createdAt: Date.now(),
       });
 
-      const req = getRequest();
-      const waitUntil = (
-        req as unknown as { waitUntil?: (p: Promise<unknown>) => void }
-      ).waitUntil;
-      const bg = runAiJobBackground(db, jobId, jobParams, user.id);
-
-      if (typeof waitUntil === "function") {
-        waitUntil(bg);
-      } else {
-        void bg;
-      }
+      // No background execution here: the job is picked up and run inside the
+      // client's first `getGenerationStatus` poll (see driveAiJob).
 
       return ok({ jobId });
     },

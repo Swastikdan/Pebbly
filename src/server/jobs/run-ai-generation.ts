@@ -10,27 +10,39 @@ import {
 } from "../fns/recommendations";
 import { releaseRateLimit } from "../helpers/rate-limit";
 import { runAiGeneration } from "../recommendation-generation";
+import { claimAiJob } from "./job-lifecycle";
 
 const JOB_TIMEOUT_MS = 2 * 60 * 1000;
 
 /**
- * Execute an AI generation job in the background. Called via `waitUntil()` so
- * the Cloudflare Worker stays alive even after the client disconnects. The
- * prompt and watch-items snapshot were built eagerly in `startGeneration` and
- * stored in the job's `params` column; this function does not re-query the
- * watchlist, avoiding race conditions with concurrent edits.
+ * Drive an AI generation job from the status-poll request ("poll-driven
+ * execution").
+ *
+ * Cloudflare Workers terminate `waitUntil()` background tasks ~30s after the
+ * response is sent, which is shorter than a real AI generation (31s+ is
+ * typical, 90s is allowed) — that mismatch is what used to strand jobs in
+ * `running` forever. Instead, the generation runs *inside the poll request*:
+ * an incoming HTTP request has unlimited wall time while the client stays
+ * connected, and the client polls every few seconds, so the first poll after
+ * `startGeneration` claims the job (atomic conditional UPDATE) and runs it to
+ * completion. Concurrent pollers (other tabs, refetches) lose the claim and
+ * just observe `running`; if a claimer dies mid-run, the lease expires and a
+ * later poll takes the job over.
  */
-export async function runAiJobBackground(
+export async function driveAiJob(
+  db: Db,
+  job: typeof aiGenerationJobs.$inferSelect,
+): Promise<void> {
+  if (!(await claimAiJob(db, job.id))) return;
+  await executeAiJob(db, job.id, job.userId, job.params);
+}
+
+async function executeAiJob(
   db: Db,
   jobId: string,
-  params: GenerateJobParams,
   userId: string,
+  params: GenerateJobParams,
 ): Promise<void> {
-  await db
-    .update(aiGenerationJobs)
-    .set({ status: "running", startedAt: Date.now() })
-    .where(eq(aiGenerationJobs.id, jobId));
-
   try {
     const result = await Promise.race([
       runAiGeneration({
