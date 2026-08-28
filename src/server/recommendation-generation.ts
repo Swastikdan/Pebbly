@@ -2,9 +2,13 @@ import { desc, eq } from "drizzle-orm";
 
 import type { Recommendation } from "./ai";
 import type { Db } from "./db/client";
-import type { FeedbackSignals, WatchlistData } from "./prompts";
+import type {
+  FeedbackSignals,
+  RecommendationCandidate,
+  WatchlistData,
+} from "./prompts";
 import { normalizeTitleKey } from "@/lib/text";
-import { callGeminiAI, MODELS_TO_TRY } from "./ai";
+import { callGeminiAI, dedupeRecommendations, MODELS_TO_TRY } from "./ai";
 import {
   episodeProgress,
   listItems,
@@ -12,6 +16,8 @@ import {
   recommendationFeedback,
   watchItems,
 } from "./db/schema";
+import { candidateIdentity } from "./recommendation-candidates";
+import { PEBBLY_PICKS_LIST_TYPE } from "./schema/lists";
 
 export const SYSTEM_INSTRUCTION =
   "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
@@ -57,17 +63,19 @@ export type AiGenerationResult =
   | { ok: false; error: string };
 
 /**
- * Call Gemini (free-tier flash models, thinking disabled) and filter out
- * titles the user already knows (on their watchlist or excluded). Structured
- * output + the non-thinking config keep a single call in the low seconds,
- * which is what allows callers to run this synchronously inside the request.
- * Callers own rate limiting before the call and result persistence after.
+ * Call the configured AI provider and filter out titles the user already
+ * knows (on their watchlist or excluded). Structured output keeps a single
+ * call in the low seconds, which allows callers to run it synchronously inside
+ * the request. Callers own rate limiting before the call and result
+ * persistence after.
  */
 export async function runAiGeneration(args: {
   prompt: string;
   attempts: number;
   watchItems: WatchlistData["watchItems"];
   excludeTmdbIds: number[];
+  excludeTitles?: string[];
+  candidateCatalog?: RecommendationCandidate[];
 }): Promise<AiGenerationResult> {
   const aiResult = await callGeminiAI(
     args.prompt,
@@ -78,14 +86,39 @@ export async function runAiGeneration(args: {
     return { ok: false, error: aiResult.error ?? "api_unavailable" };
   }
 
+  const modelRecommendations = args.candidateCatalog?.length
+    ? aiResult.result.recommendations.flatMap((recommendation) => {
+        const tmdbId = recommendation.tmdbId;
+        if (typeof tmdbId !== "number") return [];
+        const candidate = args.candidateCatalog?.find(
+          (item) =>
+            candidateIdentity(item) ===
+            candidateIdentity({
+              mediaType: recommendation.mediaType,
+              tmdbId,
+            }),
+        );
+        if (!candidate) return [];
+        return [
+          {
+            ...recommendation,
+            title: candidate.title,
+            tmdbId: candidate.tmdbId,
+            mediaType: candidate.mediaType,
+          },
+        ];
+      })
+    : aiResult.result.recommendations;
+
   return {
     ok: true,
     usedModel: aiResult.usedModel ?? MODELS_TO_TRY[0],
     reasoningTokens: aiResult.reasoningTokens,
     recommendations: filterKnownRecommendations(
-      aiResult.result.recommendations,
+      dedupeRecommendations(modelRecommendations),
       args.watchItems,
       args.excludeTmdbIds,
+      args.excludeTitles ?? [],
     ),
   };
 }
@@ -100,10 +133,12 @@ export function parseStoredRecommendations(
 ): Recommendation[] | null {
   if (!raw) return null;
   try {
-    const parsed = Array.isArray(raw)
+    const recommendations = Array.isArray(raw)
       ? raw
       : (JSON.parse(String(raw)) as unknown);
-    return Array.isArray(parsed) ? (parsed as Recommendation[]) : null;
+    return Array.isArray(recommendations)
+      ? dedupeRecommendations(recommendations as Recommendation[])
+      : null;
   } catch (e) {
     console.error("Failed to parse stored recommendations", e);
     return null;
@@ -124,14 +159,16 @@ function filterKnownRecommendations<
   recommendations: T[],
   watchItems: Array<{ tmdbId: number; title: string | null }>,
   extraExcludedIds: number[],
+  extraExcludedTitles: string[],
 ): T[] {
   const existingIds = new Set([
     ...watchItems.map((item) => item.tmdbId),
     ...extraExcludedIds,
   ]);
-  const existingTitles = new Set(
-    watchItems.map((item) => normalizeTitleKey(item.title)),
-  );
+  const existingTitles = new Set([
+    ...watchItems.map((item) => normalizeTitleKey(item.title)),
+    ...extraExcludedTitles.map(normalizeTitleKey),
+  ]);
   return recommendations.filter(
     (r) =>
       (r.tmdbId == null || !existingIds.has(r.tmdbId)) &&
@@ -170,6 +207,7 @@ async function gatherWatchlistData(
       .select({
         id: lists.id,
         name: lists.name,
+        listType: lists.listType,
       })
       .from(lists)
       .where(eq(lists.userId, userId))
@@ -200,6 +238,13 @@ async function gatherWatchlistData(
   ).length;
   const tvCount = watchItemRows.filter((i) => i.mediaType === "tv").length;
 
+  const recommendationLists = listRows.filter(
+    (list) => list.listType !== PEBBLY_PICKS_LIST_TYPE,
+  );
+  const recommendationListIds = new Set(
+    recommendationLists.map((list) => list.id),
+  );
+
   return {
     watchItems: watchItemRows.map((i) => ({
       tmdbId: i.tmdbId,
@@ -210,12 +255,14 @@ async function gatherWatchlistData(
       reaction: i.reaction,
       progress: i.progress,
     })),
-    lists: listRows.map((l) => ({ _id: l.id, name: l.name })),
-    listItems: listItemRows.map((li) => ({
-      listId: li.listId,
-      tmdbId: li.tmdbId,
-      mediaType: li.mediaType,
-    })),
+    lists: recommendationLists.map((l) => ({ _id: l.id, name: l.name })),
+    listItems: listItemRows
+      .filter((li) => recommendationListIds.has(li.listId))
+      .map((li) => ({
+        listId: li.listId,
+        tmdbId: li.tmdbId,
+        mediaType: li.mediaType,
+      })),
     inputStats: {
       movieCount,
       tvCount,

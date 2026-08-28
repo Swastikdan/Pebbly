@@ -16,6 +16,7 @@ export type ListType = (typeof LIST_TYPES)[number];
  * matches it by listType so a legacy custom list squatting on the name never
  * receives picks.
  */
+export const PEBBLY_PICKS_LIST_TYPE = "pebbly-picks" as const;
 export const PEBBLY_PICKS_LIST_NAME = "Pebbly Picks";
 
 function isReservedListName(name: string): boolean {

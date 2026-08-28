@@ -3,7 +3,7 @@
 > **Pebbly** is a full-stack movie & TV discovery app: TanStack
 > Start (React 19) + Cloudflare Workers + Cloudflare D1 (SQLite) + Drizzle ORM
 >
-> - Valibot + Clerk + Google Gemini + TMDB.
+> - Valibot + Clerk + Cloudflare Workers AI + TMDB.
 >
 > This documentation describes the overall architecture, every meaningful
 > source file, and the architecture decisions that shaped the codebase.
@@ -13,7 +13,7 @@
 | Document                                                 | What it covers                                                                                              |
 | :------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
 | [architecture.md](./architecture.md)                     | The big picture: tech stack, layers, request/data flows, deployment, cron                                   |
-| [server-layer.md](./server-layer.md)                     | Everything server-side: Nitro, server functions, the `authedFn` guard pipeline, auth, RBAC, Gemini AI       |
+| [server-layer.md](./server-layer.md)                     | Everything server-side: Nitro, server functions, the `authedFn` guard pipeline, auth, RBAC, Workers AI      |
 | [client-layer.md](./client-layer.md)                     | Everything client-side: routing, TanStack Query, Zustand stores, the repository pattern, optimistic updates |
 | [data-model.md](./data-model.md)                         | The D1 database: every table, index, constraint, and migration                                              |
 | [architecture-decisions.md](./architecture-decisions.md) | Architecture Decision Records (ADRs), _why_ the code is shaped this way                                     |
@@ -41,10 +41,10 @@
 - **Clerk owns identity; the DB never stores admin status.** Admin/ban/feature
   decisions come from the signed JWT claim or the live Clerk API, never a
   stored flag that could go stale.
-- **AI recommendations are gated and rate-limited.** Gemini is called over
-  REST with a model fallback chain, prompts are built server-side
-  (`server/prompts.ts`), and every generation is verified against TMDB before
-  it is shown to the user.
+- **AI recommendations are gated and rate-limited.** Production uses the
+  Cloudflare Workers AI binding; local development can optionally fall back to
+  Gemini. Prompts are built server-side (`server/prompts.ts`), and every
+  generation is verified against TMDB before it is shown to the user.
 - **coss ui on Base UI for the interface.** The Radix/shadcn primitive set was
   replaced by Base UI-based components with first-class light/dark/system
   themes resolved before first paint. Movie and TV routes share one

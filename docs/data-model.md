@@ -136,7 +136,7 @@ One row per AI generation. Rate limiting lives in the separate
 | `original_recommendations`                                       | text (json)     | pre-verification snapshot                    |
 | `watchlist_hash`                                                 | text            | legacy; no longer written (defaults to `""`) |
 | `input_stats`                                                    | text (json)     | movie/tv/episode/total counts                |
-| `model`                                                          | text            | Gemini model used                            |
+| `model`                                                          | text            | AI model used for the generation             |
 | `media_type_preference` / `genre_preference` / `generation_type` | text            | generation inputs                            |
 | `verified`                                                       | boolean         | TMDB verification completed                  |
 | `created_at`                                                     | integer         |                                              |

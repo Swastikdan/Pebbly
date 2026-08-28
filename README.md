@@ -1,6 +1,6 @@
 # Pebbly
 
-Pebbly is a full-stack movie and TV show discovery app built with TanStack Start, Cloudflare Workers, D1 (SQLite), Drizzle ORM, Valibot, Clerk, Google Gemini, and TMDB metadata. It has media browsing, persistent watchlists, per-episode progress tracking, custom lists, and AI recommendations based on what you watch.
+Pebbly is a full-stack movie and TV show discovery app built with TanStack Start, Cloudflare Workers, D1 (SQLite), Drizzle ORM, Valibot, Clerk, Cloudflare Workers AI, and TMDB metadata. It has media browsing, persistent watchlists, per-episode progress tracking, custom lists, and AI recommendations based on what you watch.
 ---
 
 [![Deploy Preview](https://github.com/Swastikdan/Pebbly/actions/workflows/preview.yml/badge.svg)](https://github.com/Swastikdan/Pebbly/actions/workflows/preview.yml)
@@ -35,7 +35,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 ### AI recommendations
 
-- Recommendations from Google Gemini models (`gemini-3.1-flash-lite`, `gemini-2.5-flash`) based on your watchlist and interactions.
+- Recommendations from Cloudflare Workers AI (`@cf/meta/llama-3.1-8b-instruct-fast`) based on your watchlist and interactions. Local development can optionally fall back to Gemini.
 - A "Picks For You" homepage row that refreshes twice daily and excludes titles already on your watchlist.
 - Feedback loop: liking a recommendation adds it to your **Pebbly Picks** list; disliking one excludes it from future runs.
 - Filter generation by watchlist, custom list, genre preferences, or era presets (Classics, 80s, 90s, 2000s, 2010s, 2020s).
@@ -45,18 +45,18 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 ## Tech stack
 
-| Layer                | Technology                                                                                                         |
-| :------------------- | :----------------------------------------------------------------------------------------------------------------- |
-| **Framework**        | [TanStack Start](https://tanstack.com/start) + [TanStack Router](https://tanstack.com/router) + React 19           |
-| **Host & Compute**   | [Cloudflare Workers](https://workers.cloudflare.com/) (Nitro `cloudflare_module` preset)                           |
-| **Database**         | [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) via [Drizzle ORM](https://orm.drizzle.team/)       |
-| **Validation**       | [Valibot](https://valibot.dev/) (Lightweight, modular schema validation)                                           |
-| **Authentication**   | [Clerk](https://clerk.com/) (`@clerk/react` + `@clerk/backend` JWT verification)                                   |
-| **AI Engine**        | Google Gemini REST API (`generativelanguage.googleapis.com` via `fetch`, `gemini-3.1-flash-lite` + fallback chain) |
-| **Styling**          | Tailwind CSS 4, [coss ui](https://coss.com/ui) components on Base UI (`@base-ui/react`), light/dark/system themes  |
-| **Data Fetching**    | TanStack Query (React Query)                                                                                       |
-| **State Management** | Zustand                                                                                                            |
-| **Tooling**          | Vite 7, Prettier (formatting) + Biome (linting), TypeScript, Wrangler                                              |
+| Layer                | Technology                                                                                                        |
+| :------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| **Framework**        | [TanStack Start](https://tanstack.com/start) + [TanStack Router](https://tanstack.com/router) + React 19          |
+| **Host & Compute**   | [Cloudflare Workers](https://workers.cloudflare.com/) (Nitro `cloudflare_module` preset)                          |
+| **Database**         | [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite) via [Drizzle ORM](https://orm.drizzle.team/)      |
+| **Validation**       | [Valibot](https://valibot.dev/) (Lightweight, modular schema validation)                                          |
+| **Authentication**   | [Clerk](https://clerk.com/) (`@clerk/react` + `@clerk/backend` JWT verification)                                  |
+| **AI Engine**        | Cloudflare Workers AI binding (`@cf/meta/llama-3.1-8b-instruct-fast`, JSON mode; optional local Gemini fallback)  |
+| **Styling**          | Tailwind CSS 4, [coss ui](https://coss.com/ui) components on Base UI (`@base-ui/react`), light/dark/system themes |
+| **Data Fetching**    | TanStack Query (React Query)                                                                                      |
+| **State Management** | Zustand                                                                                                           |
+| **Tooling**          | Vite 7, Prettier (formatting) + Biome (linting), TypeScript, Wrangler                                             |
 
 ---
 
@@ -75,7 +75,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 │   │   ├── schema/                  # Valibot schemas & typed API result contracts
 │   │   ├── auth.ts                  # Clerk server-side JWT verification & user resolution
 │   │   ├── prompts.ts               # Context-aware prompt builders for AI recommendations
-│   │   ├── ai.ts                    # Gemini AI client with model fallback chain
+│   │   ├── ai.ts                    # Workers AI client with local Gemini fallback
 │   │   └── rbac.ts                  # Role-based access control & feature flags
 │   ├── lib/                         # Core utilities, query keys, TMDB queries
 │   │   ├── data/                    # Optimistic journal, op builders, watchlist queries
@@ -106,8 +106,8 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 - `pnpm` (v10+)
 - A TMDB API Read Access Token
 - A Clerk Application
-- A Google Gemini API Key
-- A Cloudflare Account (with D1 database enabled)
+- A Cloudflare Account (with D1 and Workers AI enabled)
+- A Google Gemini API Key (optional, local-development fallback only)
 
 ### Environment setup
 
@@ -141,7 +141,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
    VITE_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
    VITE_PUBLIC_TMDB_API_URL=https://api.themoviedb.org/3
 
-   # AI Providers (server-only)
+   # Optional local AI fallback (production uses the Workers AI binding)
    GEMINI_API_KEY=your_gemini_key
 
    # Clerk server-side session verification (@clerk/backend)
@@ -252,7 +252,7 @@ pnpm deploy:cf
 
 - Released under the [MIT License](./LICENSE).
 - Movie and TV metadata provided by [TMDB](https://www.themoviedb.org/).
-- AI Recommendations powered by [Google Gemini](https://ai.google.dev/).
+- AI Recommendations powered by [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/).
 - Built with TanStack Start, Cloudflare Workers, D1, Drizzle ORM, Valibot, Clerk, and Tailwind CSS.
 
 Contributions are welcome, see [CONTRIBUTING.md](./CONTRIBUTING.md) and the

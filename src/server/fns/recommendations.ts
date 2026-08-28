@@ -11,11 +11,13 @@ import type {
 } from "../schema/recommendations";
 import type { MediaType } from "@/lib/media-types";
 import {
+  buildCandidateRecommendationPrompt,
   buildCustomListPrompt,
   buildGenrePrompt,
   buildHomepageRecommendationsPrompt,
   buildWatchlistPrompt,
 } from "@/server/prompts";
+import { dedupeRecommendations } from "../ai";
 import {
   aiRecommendations,
   homepageRecommendations,
@@ -29,6 +31,7 @@ import {
   upsertWatchItem,
 } from "../helpers/watch-item";
 import { hasFeature, isAdminByClaims } from "../rbac";
+import { getRecommendationCandidates } from "../recommendation-candidates";
 import {
   gatherGenerationInputs,
   parseStoredRecommendations,
@@ -50,6 +53,65 @@ import { authedFn } from "./rpc";
 const RATE_LIMIT_MS = 2 * 60 * 1000;
 const GENERATION_RATE_LIMIT_KEY = "ai-gen";
 const HOMEPAGE_RATE_LIMIT_KEY = "ai-homepage";
+const RECENT_HISTORY_EXCLUSION_ENTRIES = 10;
+const MAX_RECENT_EXCLUSION_TITLES = 150;
+
+function balanceHomepageRecommendations(
+  recommendations: RecommendationRow[],
+): RecommendationRow[] {
+  const movies = recommendations.filter((item) => item.mediaType === "movie");
+  const shows = recommendations.filter((item) => item.mediaType === "tv");
+  const result: RecommendationRow[] = [];
+  let movieIndex = 0;
+  let showIndex = 0;
+
+  while (
+    result.length < 30 &&
+    (movieIndex < movies.length || showIndex < shows.length)
+  ) {
+    if (movieIndex < Math.min(movies.length, 15)) {
+      result.push(movies[movieIndex++]);
+    }
+    if (result.length >= 30) break;
+    if (showIndex < Math.min(shows.length, 15)) {
+      result.push(shows[showIndex++]);
+    }
+  }
+
+  return result;
+}
+
+async function getRecentRecommendationExclusions(
+  db: Db,
+  userId: string,
+): Promise<{ tmdbIds: number[]; titles: string[] }> {
+  const rows = await db
+    .select({ recommendations: aiRecommendations.recommendations })
+    .from(aiRecommendations)
+    .where(eq(aiRecommendations.userId, userId))
+    .orderBy(desc(aiRecommendations.createdAt))
+    .limit(RECENT_HISTORY_EXCLUSION_ENTRIES);
+
+  const recommendations = rows.flatMap(
+    (row) => parseStoredRecommendations(row.recommendations) ?? [],
+  );
+  const tmdbIds = [
+    ...new Set(
+      recommendations
+        .map((recommendation) => recommendation.tmdbId)
+        .filter((id): id is number => typeof id === "number"),
+    ),
+  ];
+  const titles = [
+    ...new Set(
+      recommendations
+        .map((recommendation) => recommendation.title)
+        .filter((title): title is string => !!title),
+    ),
+  ].slice(0, MAX_RECENT_EXCLUSION_TITLES);
+
+  return { tmdbIds, titles };
+}
 
 export const getUserRecommendationAccess = createServerFn({
   method: "POST",
@@ -100,7 +162,13 @@ export const getRecommendationHistory = createServerFn({
         .orderBy(desc(aiRecommendations.createdAt))
         .limit(20);
 
-      return ok(rows);
+      return ok(
+        rows.map((row) => ({
+          ...row,
+          recommendations:
+            parseStoredRecommendations(row.recommendations) ?? [],
+        })),
+      );
     },
   ),
 );
@@ -168,7 +236,7 @@ export const updateVerifiedRecommendations = createServerFn({ method: "POST" })
         if (!entry) return fail("NOT_FOUND", "Not found");
 
         const patch: Partial<typeof aiRecommendations.$inferSelect> = {
-          recommendations: validated.output,
+          recommendations: dedupeRecommendations(validated.output),
           verified: true,
         };
         if (!entry.originalRecommendations) {
@@ -429,7 +497,7 @@ export async function saveRecommendations(
   await db.insert(aiRecommendations).values({
     id: crypto.randomUUID(),
     userId: args.userId,
-    recommendations: args.recommendations,
+    recommendations: dedupeRecommendations(args.recommendations),
     inputStats: args.inputStats,
     model: args.model,
     mediaTypePreference: args.mediaTypePreference,
@@ -488,7 +556,7 @@ export async function saveHomepageRecommendations(
   recommendations: RecommendationRow[],
 ) {
   return upsertHomepageRecommendation(db, userId, {
-    recommendations,
+    recommendations: dedupeRecommendations(recommendations),
     previousRecommendations: true,
     lastUpdatedAt: Date.now(),
     status: "success",
@@ -513,11 +581,9 @@ async function getHomepageRecommendationEntry(db: Db, userId: string) {
 
 // --- Synchronous generation ---
 //
-// The Gemini call runs inline inside the request. Non-thinking structured
-// requests complete in the low seconds, and an incoming HTTP request has
-// unlimited wall-clock while the client stays connected (Cloudflare Workers'
-// ~30s waitUntil() limit only applies to background tasks, not to an open
-// request) - so no job table or status polling is needed.
+// The AI call runs inline inside the request. Structured requests complete in
+// the low seconds, and an incoming HTTP request stays open while the client is
+// connected, so no job table or status polling is needed.
 
 export const startGeneration = createServerFn({ method: "POST" })
   .validator(generateRecommendationsArgsSchema)
@@ -564,15 +630,80 @@ export const startGeneration = createServerFn({ method: "POST" })
           rateLimitToken = token;
         }
 
+        const recentExclusions = await getRecentRecommendationExclusions(
+          db,
+          user.id,
+        );
         const excludeTmdbIds = [
           ...new Set([
             ...(data.excludeTmdbIds ?? []),
             ...(feedbackSignals.dislikedTmdbIds ?? []),
+            ...recentExclusions.tmdbIds,
           ]),
         ];
+        const excludeTitles = [
+          ...new Set([
+            ...(feedbackSignals.dislikedTitles ?? []),
+            ...recentExclusions.titles,
+          ]),
+        ];
+        const generationFeedback = {
+          ...feedbackSignals,
+          previousTitles: [
+            ...(feedbackSignals.previousTitles ?? []),
+            ...recentExclusions.titles,
+          ],
+        };
 
-        const userPrompt =
-          genType === "watchlist"
+        const candidateCatalog = await getRecommendationCandidates({
+          watchItems: watchlistData.watchItems,
+          seedItems:
+            genType === "list" && data.listId
+              ? watchlistData.listItems
+                  .filter((item) => item.listId === data.listId)
+                  .map((item) =>
+                    item.mediaType === "movie" || item.mediaType === "tv"
+                      ? { tmdbId: item.tmdbId, mediaType: item.mediaType }
+                      : null,
+                  )
+                  .filter(
+                    (item): item is { tmdbId: number; mediaType: MediaType } =>
+                      item !== null,
+                  )
+              : undefined,
+          mediaTypePreference: data.mediaTypePreference,
+          excludeTmdbIds,
+          excludeTitles,
+          yearFrom: data.yearFrom,
+          yearTo: data.yearTo,
+          limit: 40,
+          balanced: true,
+        });
+        const likedCandidateTitles = [
+          ...(feedbackSignals.likedTitles ?? []),
+          ...watchlistData.watchItems
+            .filter(
+              (item) => item.reaction === "loved" || item.reaction === "liked",
+            )
+            .map((item) => item.title)
+            .filter((title): title is string => !!title),
+        ];
+
+        const userPrompt = candidateCatalog.length
+          ? buildCandidateRecommendationPrompt({
+              candidates: candidateCatalog,
+              likedTitles: likedCandidateTitles,
+              dislikedTitles: feedbackSignals.dislikedTitles ?? [],
+              previousTitles: generationFeedback.previousTitles ?? [],
+              mediaTypePreference: data.mediaTypePreference,
+              genrePreference: data.genrePreference,
+              count: Math.min(Math.max(data.count ?? 10, 1), 30),
+              goal:
+                genType === "list"
+                  ? "Prefer candidates that match the themes, genres, cast, creators, and tone of the selected custom list."
+                  : "Prefer candidates that match the user's strongest positive viewing signals while keeping the results varied.",
+            })
+          : genType === "watchlist"
             ? buildWatchlistPrompt(
                 watchlistData,
                 data.mediaTypePreference,
@@ -580,7 +711,7 @@ export const startGeneration = createServerFn({ method: "POST" })
                 data.yearFrom,
                 data.yearTo,
                 data.count,
-                feedbackSignals,
+                generationFeedback,
               )
             : genType === "list" && data.listId
               ? buildCustomListPrompt(
@@ -591,7 +722,7 @@ export const startGeneration = createServerFn({ method: "POST" })
                   data.yearFrom,
                   data.yearTo,
                   data.count,
-                  feedbackSignals,
+                  generationFeedback,
                 )
               : buildGenrePrompt(
                   watchlistData,
@@ -601,7 +732,7 @@ export const startGeneration = createServerFn({ method: "POST" })
                   data.yearFrom,
                   data.yearTo,
                   data.count,
-                  feedbackSignals,
+                  generationFeedback,
                 );
 
         const generated = await runAiGeneration({
@@ -609,6 +740,10 @@ export const startGeneration = createServerFn({ method: "POST" })
           attempts: 1,
           watchItems: watchlistData.watchItems,
           excludeTmdbIds,
+          excludeTitles,
+          candidateCatalog: candidateCatalog.length
+            ? candidateCatalog
+            : undefined,
         });
         if (!generated.ok) {
           if (rateLimitToken) await releaseRateLimit(db, rateLimitToken);
@@ -666,19 +801,20 @@ export const startHomepageGeneration = createServerFn({
       const previous = parseStoredRecommendations(
         homepageEntry?.recommendations,
       );
-      const previousTitles = previous?.map((r) => r.title) ?? [];
-      const previousTmdbIds =
-        previous
-          ?.map((r) => r.tmdbId)
-          .filter((id): id is number => typeof id === "number") ?? [];
-
-      const prompt = buildHomepageRecommendationsPrompt(
-        watchlistData,
-        feedbackSignals.likedTitles ?? [],
-        feedbackSignals.dislikedTitles ?? [],
-        [...(feedbackSignals.dislikedTmdbIds ?? []), ...previousTmdbIds],
-        previousTitles,
+      const recentExclusions = await getRecentRecommendationExclusions(
+        db,
+        user.id,
       );
+      const previousTitles = [
+        ...(previous?.map((r) => r.title) ?? []),
+        ...recentExclusions.titles,
+      ];
+      const previousTmdbIds = [
+        ...(previous
+          ?.map((r) => r.tmdbId)
+          .filter((id): id is number => typeof id === "number") ?? []),
+        ...recentExclusions.tmdbIds,
+      ];
 
       const combinedExcludeIds = [
         ...new Set([
@@ -686,28 +822,64 @@ export const startHomepageGeneration = createServerFn({
           ...previousTmdbIds,
         ]),
       ];
+      const combinedExcludeTitles = [
+        ...new Set([
+          ...(feedbackSignals.dislikedTitles ?? []),
+          ...previousTitles,
+        ]),
+      ];
+      const candidateCatalog = await getRecommendationCandidates({
+        watchItems: watchlistData.watchItems,
+        excludeTmdbIds: combinedExcludeIds,
+        excludeTitles: combinedExcludeTitles,
+        limit: 60,
+        balanced: true,
+      });
+      const homepagePrompt = candidateCatalog.length
+        ? buildCandidateRecommendationPrompt({
+            candidates: candidateCatalog,
+            likedTitles: feedbackSignals.likedTitles ?? [],
+            dislikedTitles: feedbackSignals.dislikedTitles ?? [],
+            previousTitles,
+            count: 30,
+            goal: "Choose a balanced homepage mix with the strongest 15 movie and 15 TV matches when enough candidates exist.",
+          })
+        : buildHomepageRecommendationsPrompt(
+            watchlistData,
+            feedbackSignals.likedTitles ?? [],
+            feedbackSignals.dislikedTitles ?? [],
+            combinedExcludeIds,
+            previousTitles,
+          );
 
       // Synchronous in-request generation (see the comment above
       // `startGeneration`).
       const generated = await runAiGeneration({
-        prompt,
+        prompt: homepagePrompt,
         attempts: 2,
         watchItems: watchlistData.watchItems,
         excludeTmdbIds: combinedExcludeIds,
+        excludeTitles: combinedExcludeTitles,
+        candidateCatalog: candidateCatalog.length
+          ? candidateCatalog
+          : undefined,
       });
       if (!generated.ok) {
         if (rateLimitToken) await releaseRateLimit(db, rateLimitToken);
         await saveHomepageFailure(db, user.id);
         return ok({ error: generated.error });
       }
-      if (generated.recommendations.length === 0) {
+      const homepageRecommendations = balanceHomepageRecommendations(
+        generated.recommendations,
+      );
+      if (homepageRecommendations.length === 0) {
         await saveHomepageFailure(db, user.id);
         return ok({ error: "empty_result" });
       }
-      await saveHomepageRecommendations(db, user.id, generated.recommendations);
+      await saveHomepageRecommendations(db, user.id, homepageRecommendations);
 
       return ok({
-        recommendations: generated.recommendations,
+        recommendations: homepageRecommendations,
         inputStats: watchlistData.inputStats,
         generatedAt: Date.now(),
         cached: false,

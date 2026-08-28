@@ -132,7 +132,7 @@ export const RBAC_FEATURES = {
   "ai-recommendations": {
     label: "AI Recommendations",
     description:
-      "AI-powered personalized movie and TV recommendations via Gemini",
+      "AI-powered personalized movie and TV recommendations built from your viewing history.",
   },
 } as const;
 export type RbacFeature = keyof typeof RBAC_FEATURES;

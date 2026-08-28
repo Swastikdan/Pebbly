@@ -15,7 +15,7 @@
 # touch prod data. Runtime secrets are set per-Worker:
 #   wrangler secret put CLERK_SECRET_KEY --config wrangler.preview.toml
 #   wrangler secret put CLERK_ISSUER_URL --config wrangler.preview.toml
-#   wrangler secret put GEMINI_API_KEY --config wrangler.preview.toml
+# Workers AI is provided by the [ai] binding below; Gemini is optional locally.
 
 name = "pebbly-preview"
 main = ".output/server/index.mjs"
@@ -23,6 +23,9 @@ compatibility_date = "2026-08-08"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 upload_source_maps = true
+
+[ai]
+binding = "AI"
 
 # Nitro pre-bundles the entry; tell Wrangler not to re-bundle it. Production
 # gets these fields from the generated redirected config, but --config bypasses

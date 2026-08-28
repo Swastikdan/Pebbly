@@ -21,10 +21,12 @@ import {
   useRecommendations,
 } from "@/hooks/use-recommendations";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { describeGenerationError } from "@/lib/generation-errors";
 import { queryKeys } from "@/lib/query/keys";
 import { normalizeTitleKey } from "@/lib/text";
 import { getTrackedTmdbIds } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
+import { PEBBLY_PICKS_LIST_TYPE } from "@/server/schema/lists";
 
 export const Route = createLazyFileRoute("/recommendations")({
   component: RecommendationsPage,
@@ -188,7 +190,9 @@ function RecommendationsContent({
     queryFn: () => fetchCustomLists(queryClient, user?.id),
     enabled: !!isSignedIn,
   });
-  const customLists = customListsQuery.data ?? [];
+  const customLists = (customListsQuery.data ?? []).filter(
+    (list) => list.listType !== PEBBLY_PICKS_LIST_TYPE,
+  );
 
   const handleGenerate = () => {
     if (genMode === "watchlist" && watchlist.length === 0) return;
@@ -230,19 +234,6 @@ function RecommendationsContent({
     filteredHistory[0] ??
     null;
 
-  const errorMessages: Record<string, string> = {
-    empty_watchlist:
-      "Add some movies or TV shows to your watchlist first to get recommendations.",
-    api_unavailable:
-      "The AI service is temporarily unavailable. Please try again later.",
-    invalid_response:
-      "The AI returned an unexpected response. Please try again.",
-    rate_limited:
-      "Please wait a couple minutes before generating new recommendations.",
-    high_demand:
-      "The AI model is currently experiencing high demand. Please try again later.",
-  };
-
   return (
     <div className="space-y-8">
       <RecommendationFilters
@@ -269,7 +260,7 @@ function RecommendationsContent({
 
       {error && (
         <div className="border-destructive/50 bg-destructive/10 text-destructive animate-in fade-in slide-in-from-top-1 rounded-lg border p-4 text-sm">
-          {errorMessages[error as string] ?? error}
+          {describeGenerationError(error)}
         </div>
       )}
 

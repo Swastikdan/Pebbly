@@ -1,15 +1,13 @@
 import * as v from "valibot";
 
 import type { MediaType } from "@/lib/media-types";
-import { getEnvVar } from "./env";
+import { normalizeTitleKey } from "@/lib/text";
+import { getEnv, getEnvVar } from "./env";
 
-// Google Gemini over REST (generativelanguage.googleapis.com). No SDK: the
-// `generateContent` endpoint is a single POST, and structured output
-// (`responseMimeType: "application/json"` + `responseSchema`) makes the model
-// emit exactly the recommendation JSON shape. `thinkingBudget: 0` skips the
-// thinking phase, which is what makes a fully synchronous in-request
-// generation viable (a few seconds typical instead of the 30s+ reasoning
-// phases that forced the old poll-driven job design).
+// Cloudflare Workers AI is the production provider. It is accessed through
+// the native `AI` binding with JSON mode, so deployed Workers do not depend on
+// Gemini's API region availability. Gemini REST remains as a local-development
+// fallback when no Workers AI binding is present.
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -27,6 +25,8 @@ export const MODELS_TO_TRY = [
 // covers tail latency without approaching Workers request budgets (wall-clock
 // waiting on fetch is not CPU time).
 const GEMINI_TIMEOUT_MS = 45_000;
+const WORKERS_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+const WORKERS_AI_TIMEOUT_MS = 30_000;
 
 export interface Recommendation {
   title: string;
@@ -34,6 +34,59 @@ export interface Recommendation {
   mediaType: MediaType;
   relevanceScore: number;
   reasoning: string;
+}
+
+type RecommendationIdentity = {
+  title?: string | null;
+  tmdbId?: number | null;
+  mediaType: MediaType;
+  relevanceScore: number;
+};
+
+/**
+ * Keep one recommendation per title/media type or TMDB identity. Models can
+ * repeat a title with and without a TMDB ID, so both identities are checked.
+ * When duplicates differ, keep the higher-scored entry while preserving the
+ * original ranking position.
+ */
+export function dedupeRecommendations<T extends RecommendationIdentity>(
+  recommendations: T[],
+): T[] {
+  const result: T[] = [];
+  const indexesByIdentity = new Map<string, number>();
+
+  for (const recommendation of recommendations) {
+    const mediaKey = recommendation.mediaType;
+    const title = normalizeTitleKey(recommendation.title);
+    const titleKey = title ? `${mediaKey}:title:${title}` : null;
+    const idKey =
+      typeof recommendation.tmdbId === "number"
+        ? `${mediaKey}:id:${recommendation.tmdbId}`
+        : null;
+    const existingIndex =
+      (titleKey ? indexesByIdentity.get(titleKey) : undefined) ??
+      (idKey ? indexesByIdentity.get(idKey) : undefined);
+
+    if (existingIndex === undefined) {
+      const index = result.length;
+      result.push(recommendation);
+      if (titleKey) indexesByIdentity.set(titleKey, index);
+      if (idKey) indexesByIdentity.set(idKey, index);
+      continue;
+    }
+
+    // Preserve every identity alias seen for a duplicate, even when the
+    // lower-scored entry is discarded. A later title with that discarded ID
+    // must still be recognized as the same recommendation.
+    if (titleKey) indexesByIdentity.set(titleKey, existingIndex);
+    if (idKey) indexesByIdentity.set(idKey, existingIndex);
+
+    if (recommendation.relevanceScore > result[existingIndex].relevanceScore) {
+      result[existingIndex] = recommendation;
+    }
+  }
+
+  return result;
 }
 
 export interface GeminiResult {
@@ -76,6 +129,20 @@ export function isRateLimitedError(error: unknown) {
   );
 }
 
+/**
+ * Gemini returns this as a 400 when the API key/account cannot be used from
+ * the request's region. It is a configuration/provider restriction, not a
+ * transient model failure, so trying other models or retrying is pointless.
+ */
+export function isLocationUnsupportedError(error: unknown) {
+  const candidate = error as GeminiErrorLike;
+  const message = candidate.message?.toLowerCase() ?? "";
+  return (
+    (message.includes("user location") && message.includes("not supported")) ||
+    message.includes("location is not supported for the api")
+  );
+}
+
 export async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -97,9 +164,9 @@ const recommendationElementSchema = v.pipe(
   })),
 );
 
-// OpenAPI-style subset accepted by Gemini's `responseSchema`. Structured
-// output guarantees the JSON shape (and the mediaType enum), so the valibot
-// pass below is only a defensive net.
+// Shared JSON Schema used by both Workers AI JSON mode and the local Gemini
+// fallback. Structured output helps guarantee the shape, while the Valibot
+// pass below remains the final defensive validation layer.
 const GEMINI_RESPONSE_SCHEMA = {
   type: "object",
   properties: {
@@ -135,6 +202,113 @@ interface GeminiResponseBody {
   }>;
   promptFeedback?: { blockReason?: string };
   usageMetadata?: { thoughtsTokenCount?: number };
+}
+
+type WorkersAiBinding = {
+  run(
+    model: string,
+    inputs: Record<string, unknown>,
+    options?: { signal?: AbortSignal },
+  ): Promise<unknown>;
+};
+
+const WORKERS_AI_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: GEMINI_RESPONSE_SCHEMA,
+};
+
+function extractWorkersAiText(response: unknown): string {
+  if (!response || typeof response !== "object") return "";
+  const body = response as Record<string, unknown>;
+
+  if (typeof body.response === "string") return body.response;
+  if (typeof body.text === "string") return body.text;
+
+  const choices = body.choices;
+  if (!Array.isArray(choices)) return "";
+  const message = choices[0] as Record<string, unknown> | undefined;
+  const messageBody = message?.message as Record<string, unknown> | undefined;
+  return typeof messageBody?.content === "string" ? messageBody.content : "";
+}
+
+function parseRecommendationResponse(
+  responseText: string,
+  usedModel: string,
+): {
+  result?: GeminiResult;
+  usedModel?: string;
+  error?: string;
+} {
+  try {
+    const parsed = JSON.parse(responseText) as unknown;
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !("recommendations" in parsed)
+    ) {
+      return { error: "invalid_response" };
+    }
+    const rawRecommendations = (parsed as { recommendations: unknown })
+      .recommendations;
+    if (!Array.isArray(rawRecommendations)) {
+      return { error: "invalid_response" };
+    }
+
+    const validRecommendations: Recommendation[] = [];
+    for (const entry of rawRecommendations) {
+      const validated = v.safeParse(recommendationElementSchema, entry);
+      if (validated.success) validRecommendations.push(validated.output);
+    }
+
+    return {
+      result: { recommendations: dedupeRecommendations(validRecommendations) },
+      usedModel,
+    };
+  } catch {
+    return { error: "invalid_response" };
+  }
+}
+
+async function callWorkersAI(
+  prompt: string,
+  systemInstruction: string,
+  retries: number,
+): Promise<{
+  result?: GeminiResult;
+  usedModel?: string;
+  error?: string;
+}> {
+  const ai = getEnv().AI as WorkersAiBinding | undefined;
+  if (!ai) return { error: "api_unavailable" };
+
+  let rateLimited = false;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await ai.run(
+        WORKERS_AI_MODEL,
+        {
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: prompt },
+          ],
+          response_format: WORKERS_AI_RESPONSE_FORMAT,
+          temperature: 0.2,
+          max_tokens: 2048,
+        },
+        { signal: AbortSignal.timeout(WORKERS_AI_TIMEOUT_MS) },
+      );
+      const responseText = extractWorkersAiText(response);
+      if (!responseText) throw new Error("Workers AI returned no content");
+
+      return parseRecommendationResponse(responseText, WORKERS_AI_MODEL);
+    } catch (error) {
+      console.error("Workers AI error:", getErrorMessage(error));
+      rateLimited = rateLimited || isRateLimitedError(error);
+      if (attempt < retries) await delay(500);
+    }
+  }
+
+  return { error: rateLimited ? "rate_limited" : "api_unavailable" };
 }
 
 function buildRequestBody(
@@ -191,7 +365,7 @@ async function parseErrorResponse(response: Response): Promise<Error> {
 /**
  * One non-streaming generateContent call. `thinkingConfig` (thinking disabled)
  * is sent first; some model revisions reject the field with a generic 400
- * INVALID_ARGUMENT, so any 400 is retried once without it.
+ * INVALID_ARGUMENT, so non-location 400s are retried once without it.
  */
 async function generateContent(
   apiKey: string,
@@ -208,8 +382,12 @@ async function generateContent(
   );
 
   if (response.status === 400) {
-    // Drain the failed body before reusing the connection.
-    await response.text().catch(() => "");
+    // Parse the failed body before retrying. A location restriction is a
+    // permanent account/provider configuration error, so retrying the same
+    // request without thinking would only add latency.
+    const firstError = await parseErrorResponse(response);
+    if (isLocationUnsupportedError(firstError)) throw firstError;
+
     response = await requestGeneration(
       apiKey,
       model,
@@ -260,6 +438,7 @@ async function generateRecommendationResponse(
 ) {
   let highDemandError = false;
   let rateLimited = false;
+  let locationUnsupported = false;
   let lastError = "";
 
   for (const [index, model] of MODELS_TO_TRY.entries()) {
@@ -277,6 +456,7 @@ async function generateRecommendationResponse(
           usedModel: model,
           highDemandError,
           rateLimited,
+          locationUnsupported,
           reasoningTokens,
         };
       }
@@ -285,6 +465,12 @@ async function generateRecommendationResponse(
       console.error(`Gemini model (${model}) error:`, lastError);
       highDemandError = highDemandError || isHighDemandError(error);
       rateLimited = rateLimited || isRateLimitedError(error);
+      locationUnsupported =
+        locationUnsupported || isLocationUnsupportedError(error);
+
+      // Location restrictions are permanent for this API key/account and do
+      // not benefit from another model or another attempt.
+      if (locationUnsupported) break;
 
       if (index < MODELS_TO_TRY.length - 1) {
         await delay(1000);
@@ -297,6 +483,7 @@ async function generateRecommendationResponse(
     usedModel: MODELS_TO_TRY[0],
     highDemandError,
     rateLimited,
+    locationUnsupported,
     lastError,
     reasoningTokens: undefined as number | undefined,
   };
@@ -312,9 +499,18 @@ export async function callGeminiAI(
   error?: string;
   reasoningTokens?: number;
 }> {
+  // Cloudflare Workers AI is the production provider. Keeping this check at
+  // the shared entry point means deployed Workers never send requests to
+  // Gemini, avoiding Gemini's region restriction entirely.
+  if (getEnv().AI) {
+    return callWorkersAI(prompt, systemInstruction, retries);
+  }
+
+  // Local Vite development has no Workers AI binding, so retain Gemini as a
+  // convenient fallback when a local GEMINI_API_KEY is configured.
   const apiKey = getEnvVar("GEMINI_API_KEY");
   if (!apiKey) {
-    console.error("GEMINI_API_KEY is not set");
+    console.error("Neither the Workers AI binding nor GEMINI_API_KEY is set");
     return { error: "api_unavailable" };
   }
 
@@ -322,8 +518,8 @@ export async function callGeminiAI(
   let usedModel: (typeof MODELS_TO_TRY)[number] = MODELS_TO_TRY[0];
   let highDemandError = false;
   let rateLimited = false;
+  let locationUnsupported = false;
   let reasoningTokens: number | undefined;
-  let lastError = "";
   let success = false;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -338,26 +534,34 @@ export async function callGeminiAI(
         usedModel = result.usedModel;
         highDemandError = result.highDemandError;
         rateLimited = result.rateLimited;
+        locationUnsupported = result.locationUnsupported;
         reasoningTokens = result.reasoningTokens;
         success = true;
         break;
       } else {
         highDemandError = highDemandError || result.highDemandError;
         rateLimited = rateLimited || result.rateLimited;
-        lastError = lastError || result.lastError || "";
+        locationUnsupported = locationUnsupported || result.locationUnsupported;
       }
     } catch (error) {
-      lastError = getErrorMessage(error);
-      if (attempt < retries) {
+      console.error(
+        "Gemini generation orchestration error:",
+        getErrorMessage(error),
+      );
+      locationUnsupported =
+        locationUnsupported || isLocationUnsupportedError(error);
+      if (attempt < retries && !locationUnsupported) {
         await delay(1000);
       }
     }
   }
   if (!success || !responseText) {
+    // Never expose provider response text to the client. In particular, the
+    // Gemini location message is actionable only as a classified error code;
+    // all other unexpected provider failures stay behind a generic message.
+    if (locationUnsupported) return { error: "location_unsupported" };
     if (rateLimited) return { error: "rate_limited" };
-    return {
-      error: highDemandError ? "high_demand" : lastError || "api_unavailable",
-    };
+    return { error: highDemandError ? "high_demand" : "api_unavailable" };
   }
 
   // Log reasoning tokens at the top-level call as well (useful for observability).
@@ -387,7 +591,7 @@ export async function callGeminiAI(
     }
 
     return {
-      result: { recommendations: validRecommendations },
+      result: { recommendations: dedupeRecommendations(validRecommendations) },
       usedModel,
       reasoningTokens,
     };

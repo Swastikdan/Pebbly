@@ -3,7 +3,10 @@ import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client";
 import type { MediaType } from "@/lib/media-types";
 import { listItems, lists } from "../db/schema";
-import { PEBBLY_PICKS_LIST_NAME } from "../schema/lists";
+import {
+  PEBBLY_PICKS_LIST_NAME,
+  PEBBLY_PICKS_LIST_TYPE,
+} from "../schema/lists";
 
 export type PicksListItem = {
   tmdbId: number;
@@ -42,7 +45,7 @@ export async function appendToPicksList(
       id: crypto.randomUUID(),
       userId,
       name: PEBBLY_PICKS_LIST_NAME,
-      listType: "pebbly-picks",
+      listType: PEBBLY_PICKS_LIST_TYPE,
       sortOrder: 0,
       createdAt: now,
       updatedAt: now,
@@ -56,7 +59,7 @@ export async function appendToPicksList(
       and(
         eq(lists.userId, userId),
         eq(lists.name, PEBBLY_PICKS_LIST_NAME),
-        eq(lists.listType, "pebbly-picks"),
+        eq(lists.listType, PEBBLY_PICKS_LIST_TYPE),
       ),
     )
     .limit(1);

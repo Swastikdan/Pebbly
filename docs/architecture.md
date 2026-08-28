@@ -2,19 +2,19 @@
 
 ## 1. Tech stack
 
-| Layer          | Technology                                                                                             | Where it lives                                                   |
-| :------------- | :----------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| Framework      | TanStack Start (file-based routing) + TanStack Router + React 19                                       | `src/router.tsx`, `src/start.ts`, `src/routes/`                  |
-| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset)                                                  | `wrangler.toml`, `nitro.config.ts`                               |
-| Database       | Cloudflare D1 (SQLite) via Drizzle ORM                                                                 | `src/server/db/`, `drizzle/`                                     |
-| Validation     | Valibot (schemas shared between client and server fns)                                                 | `src/server/schema/`, `src/lib/tmdb-schemas.ts`                  |
-| Auth           | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification)                                       | `src/server/auth.ts`, `src/start.ts`                             |
-| AI             | Google Gemini over REST (`generativelanguage.googleapis.com`)                                          | `src/server/ai.ts`, `src/server/prompts.ts`                      |
-| Media metadata | TMDB REST API (`@better-fetch/fetch` client)                                                           | `src/lib/tmdb.ts`, `src/lib/queries.ts`                          |
-| Client data    | TanStack Query (React Query)                                                                           | `src/lib/query/`                                                 |
-| Client state   | Zustand (persisted to localStorage with LRU eviction)                                                  | `src/stores/`                                                    |
-| Styling        | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts` |
-| Tooling        | Vite 7, Prettier (formatting) + Biome (linting only), TypeScript strict, Wrangler                      | root config files                                                |
+| Layer          | Technology                                                                                                | Where it lives                                                   |
+| :------------- | :-------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| Framework      | TanStack Start (file-based routing) + TanStack Router + React 19                                          | `src/router.tsx`, `src/start.ts`, `src/routes/`                  |
+| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset)                                                     | `wrangler.toml`, `nitro.config.ts`                               |
+| Database       | Cloudflare D1 (SQLite) via Drizzle ORM                                                                    | `src/server/db/`, `drizzle/`                                     |
+| Validation     | Valibot (schemas shared between client and server fns)                                                    | `src/server/schema/`, `src/lib/tmdb-schemas.ts`                  |
+| Auth           | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification)                                          | `src/server/auth.ts`, `src/start.ts`                             |
+| AI             | Cloudflare Workers AI binding (`@cf/meta/llama-3.1-8b-instruct-fast`) with optional local Gemini fallback | `src/server/ai.ts`, `src/server/prompts.ts`                      |
+| Media metadata | TMDB REST API (`@better-fetch/fetch` client)                                                              | `src/lib/tmdb.ts`, `src/lib/queries.ts`                          |
+| Client data    | TanStack Query (React Query)                                                                              | `src/lib/query/`                                                 |
+| Client state   | Zustand (persisted to localStorage with LRU eviction)                                                     | `src/stores/`                                                    |
+| Styling        | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes    | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts` |
+| Tooling        | Vite 7, Prettier (formatting) + Biome (linting only), TypeScript strict, Wrangler                         | root config files                                                |
 
 Formatting is owned by **Prettier** (`.prettierrc`: import sorting +
 `prettier-plugin-tailwindcss`); Biome's formatter is disabled and it runs as a
@@ -44,7 +44,7 @@ linter only (`pnpm lint`). The pre-commit hook runs both via `lint-staged`.
                                      │         recommendations, import)    │
                                      │ db/    (Drizzle client + schema)    │
                                      └───────┬───────────────────┬─────────┘
-                                             │ D1 (SQLite)       │ Clerk API / Gemini REST / TMDB
+                                             │ D1 (SQLite)       │ Clerk API / Workers AI / TMDB
                                              ▼                   ▼
                                       Cloudflare D1       External services
 ```
@@ -149,14 +149,13 @@ Server functions are:
   `buildHomepageRecommendationsPrompt`) sharing one sectioned builder
   underneath. They live server-side because their single consumer is the
   recommendation fns.
-- `src/server/ai.ts`, `callGeminiAI()`: REST call with per-attempt timeout,
-  model fallback chain (`gemini-3.1-flash-lite` → `gemini-2.5-flash` →
-  `gemini-2.0-flash` → `gemini-1.5-flash`), retries, and per-element Valibot
-  validation of the JSON response.
+- `src/server/ai.ts`, `callGeminiAI()`: uses the Cloudflare Workers AI binding
+  with JSON mode in production, with a local Gemini REST fallback when no
+  binding is available. All output is validated with Valibot.
 - `src/server/fns/recommendations.ts`, generation orchestration: auth +
   feature gate (via `authedFn`), rate limiting (atomic slot claim on the
   `rate_limit_attempts` ledger via `helpers/rate-limit.ts`),
-  watchlist data gathering, prompt building, Gemini call, de-duplication/
+  watchlist data gathering, prompt building, Workers AI call, de-duplication/
   filtering against existing titles, and persistence.
 - Client side, TMDB verification of AI-suggested titles is hook-based:
   `src/hooks/use-tmdb-verification.ts` (direct fetch by id + title-search

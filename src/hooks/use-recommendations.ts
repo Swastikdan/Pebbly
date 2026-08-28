@@ -50,9 +50,9 @@ export interface TrackedContentSets {
   trackedTitles: Set<string>;
 }
 
-// Generation is fully synchronous: `startGeneration` runs the Gemini call
-// inline and returns the recommendations in the same response, so the client
-// needs no job polling.
+// Generation is fully synchronous: `startGeneration` runs the AI call inline
+// and returns the recommendations in the same response, so the client needs no
+// job polling.
 export function isTrackedRecommendation(
   recommendation: AIRecommendation,
   tracked: TrackedContentSets,

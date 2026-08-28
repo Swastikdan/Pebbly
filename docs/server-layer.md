@@ -34,13 +34,14 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 
 ## 2. Environment (`src/server/env.ts`)
 
-- `Env` interface mirrors the Worker bindings (`DB`, `ASSETS`,
-  `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL`, `GEMINI_API_KEY`, `APP_ENV`).
+- `Env` interface mirrors the Worker bindings (`DB`, `ASSETS`, `AI`,
+  `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL`, optional `GEMINI_API_KEY`, `APP_ENV`).
 - `getEnv()` reads `globalThis.__env__` (set by Nitro on the Worker) with a
   `process.env` fallback for Node dev.
 - `validateEnv()` runs once per isolate/process and validates string vars with
   Valibot. A missing `CLERK_SECRET_KEY` is a loud `console.error` (it silently
-  degrades everyone to guest), while a missing `GEMINI_API_KEY` is a warning.
+  degrades everyone to guest). A missing `GEMINI_API_KEY` only warns when the
+  Workers AI binding is also absent.
 - `isPreview()` / `isProduction()` read the optional `APP_ENV` var (the
   preview Worker sets `APP_ENV=preview`) for environment-specific behavior.
 - The `DB` binding is validated separately in `getDb` with an actionable error
@@ -252,7 +253,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 - `storeUser`, upserts identity fields from the verified Clerk session
   (admin is deliberately not part of the payload). Used by `UserSync`.
 
-## 7. Prompts (`src/server/prompts.ts`) & Gemini AI (`src/server/ai.ts`)
+## 7. Prompts (`src/server/prompts.ts`) & AI (`src/server/ai.ts`)
 
 Prompts are pure, dependency-free builders living server-side (their only
 consumer is the recommendation fns):
@@ -267,18 +268,16 @@ consumer is the recommendation fns):
   counts to 1..30. Outputs are verified byte-identical against golden-file
   fixtures.
 
-Gemini access:
+AI access:
 
-- `callGeminiAI(prompt, systemInstruction, retries)`, the single entry point.
-- REST `fetch` to `generateContent` with the key in the `x-goog-api-key`
-  header (never the URL), 30 s per-attempt timeout, `responseMimeType: json`.
-- Model fallback chain (`gemini-3.1-flash-lite` → `gemini-2.5-flash` →
-  `gemini-2.0-flash` → `gemini-1.5-flash`) with 1 s backoff between models;
-  generation callers pass `retries: 1` (homepage: 2).
-- Response parsing is **validated per element** with Valibot, malformed
-  entries are dropped, never trusted as-is.
-- `getErrorMessage` / `isHighDemandError` (HTTP 503 or "high demand") /
-  `delay` are exported for reuse.
+- `callGeminiAI(prompt, systemInstruction, retries)` remains the shared entry
+  point for compatibility with the generation callers.
+- In Cloudflare, it calls the native Workers AI `AI` binding using
+  `@cf/meta/llama-3.1-8b-instruct-fast` and JSON mode.
+- Local Vite development can fall back to the Gemini REST client when
+  `GEMINI_API_KEY` is configured; deployed Workers do not require that secret.
+- Responses are validated per element with Valibot, and provider failures are
+  mapped to safe application error codes.
 
 ## 8. Shared contracts (`src/server/schema/`)
 

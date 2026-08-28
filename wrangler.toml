@@ -7,6 +7,9 @@ workers_dev = true
 # stack traces are de-minified) - nothing becomes publicly fetchable.
 upload_source_maps = true
 
+[ai]
+binding = "AI"
+
 [assets]
 directory = ".output/public"
 binding = "ASSETS"

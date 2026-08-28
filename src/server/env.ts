@@ -10,6 +10,13 @@ import type { D1Database, Fetcher } from "@cloudflare/workers-types";
 export interface Env {
   DB: D1Database;
   ASSETS?: Fetcher;
+  AI?: {
+    run(
+      model: string,
+      inputs: Record<string, unknown>,
+      options?: { signal?: AbortSignal },
+    ): Promise<unknown>;
+  };
   CLERK_SECRET_KEY?: string;
   CLERK_ISSUER_URL?: string;
   GEMINI_API_KEY?: string;
@@ -41,9 +48,9 @@ export function validateEnv(env: Env = getEnv()): void {
       console.error(
         "[env] CLERK_SECRET_KEY is missing or empty. Clerk sessions will not verify and every user is treated as a guest. Set it in wrangler secrets (prod) or .dev.vars (local).",
       );
-    } else if (name === "GEMINI_API_KEY") {
+    } else if (name === "GEMINI_API_KEY" && !env.AI) {
       console.warn(
-        "[env] GEMINI_API_KEY is missing. AI recommendation features will be unavailable.",
+        "[env] GEMINI_API_KEY is missing and no Workers AI binding is configured. AI recommendation features will be unavailable.",
       );
     } else {
       console.warn(`[env] Invalid or missing value for ${name}.`);

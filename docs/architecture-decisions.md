@@ -183,7 +183,7 @@ It is used for:
 **Status:** Accepted
 
 **Context:** The app passes untrusted data across three boundaries: browser →
-server fn, TMDB → client, Gemini → server. Unvalidated data caused crashes
+server fn, TMDB → client, AI provider → server. Unvalidated data caused crashes
 deep in call stacks and made errors unreadable.
 
 **Decision:** Use Valibot (lightweight, tree-shakeable, TS-first) at every
@@ -193,7 +193,7 @@ boundary:
   (output) with a finite error-code set (`UNAUTHORIZED`, `FORBIDDEN`,
   `NOT_FOUND`, `RATE_LIMITED`, `CONFLICT`, `BAD_REQUEST`).
 - TMDB responses are validated against `src/lib/tmdb-schemas.ts` (~670 lines).
-- Gemini output is validated **per element**, malformed entries are dropped,
+- AI output is validated **per element**, malformed entries are dropped,
   never trusted.
 - Domain enums (`progressStatus`, `reaction`, `feedback`, `mediaType`) are
   defined once in `src/server/schema/common.ts`: the `PROGRESS_STATUSES` /
@@ -208,28 +208,29 @@ boundary:
 
 ---
 
-## ADR-008: Gemini over REST with a model fallback chain
+## ADR-008: Cloudflare Workers AI for production recommendations
 
 **Status:** Accepted
 
-**Context:** AI recommendations need to be reliable on the Workers runtime.
-The `@google/genai` SDK was suspected of misbehaving on Workers, and a single
-model can be unavailable or "high demand".
+**Context:** AI recommendations must run reliably inside the Cloudflare Worker.
+The production provider must avoid region restrictions, keep credentials out of
+client code, support structured JSON, and respond quickly enough for the
+synchronous server-function flow.
 
-**Decision:** Call Gemini's REST API directly (`generateContent`) with:
-
-- the API key in the `x-goog-api-key` header (never the URL),
-- a 30 s per-attempt timeout,
-- a model fallback chain: `gemini-3.1-flash-lite` → `gemini-2.5-flash` →
-  `gemini-2.0-flash` → `gemini-1.5-flash` (1 s backoff between models),
-- JSON response mode + per-element Valibot validation,
-- retries with 503/"high demand" detection surfaced as `high_demand` errors.
+**Decision:** Use the native Cloudflare Workers AI `AI` binding in production
+with `@cf/meta/llama-3.1-8b-instruct-fast` and JSON mode. Keep the existing Gemini
+REST client only as an optional local-development fallback when no Workers AI
+binding is available. Validate every generated recommendation with Valibot
+before it reaches filtering or persistence.
 
 **Consequences:**
 
-- Recommendations survive transient Gemini outages.
-- Cost/quality tradeoff: the cheapest fast model is tried first.
-- Server-side only: the key never reaches the client.
+- Deployed Workers do not depend on Gemini API regional availability.
+- The provider requires no separate API key in the Worker; access is through
+  the configured Cloudflare binding.
+- The free Workers plan includes a daily Workers AI allocation, subject to
+  Cloudflare's current quotas and model availability.
+- Local Vite development can still use Gemini with `GEMINI_API_KEY`.
 
 ---
 
@@ -320,7 +321,7 @@ isolate/process with a Valibot schema:
 
 - missing `CLERK_SECRET_KEY` → `console.error` (loud; every user degrades to
   guest),
-- missing `GEMINI_API_KEY` → warning (feature-gated degradation),
+- missing `GEMINI_API_KEY` → warning only when the Workers AI binding is absent (feature-gated degradation),
 - missing D1 binding → fail-fast in `getDb` with a message explaining that
   `pnpm dev:web` is UI-only and `pnpm dev:cf` provides D1 + secrets.
 
@@ -335,7 +336,7 @@ isolate/process with a Valibot schema:
 
 **Status:** Accepted
 
-**Context:** Gemini can hallucinate titles or return near-misses. Showing an
+**Context:** AI models can hallucinate titles or return near-misses. Showing an
 invented poster/title is worse than not showing the pick at all.
 
 **Decision:** AI suggestions are verified against TMDB before rendering

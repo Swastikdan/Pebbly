@@ -14,6 +14,7 @@ import {
   useAllMediaStates,
   useToggleWatchlistItem,
 } from "@/hooks/use-watchlist";
+import { describeGenerationError } from "@/lib/generation-errors";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { cn } from "@/lib/utils";
@@ -143,6 +144,17 @@ function RecommendationSectionHeader() {
   );
 }
 
+function GenerationErrorNotice({ error }: { error: string }) {
+  return (
+    <div className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-xs">
+      {describeGenerationError(error, {
+        rate_limited:
+          "Please wait a couple minutes before refreshing personalized recommendations.",
+      })}
+    </div>
+  );
+}
+
 export function HomepageRecommendations() {
   const { isSignedIn, isLoaded, user } = useUser();
   const { hasFeature } = usePermissions();
@@ -172,6 +184,7 @@ export function HomepageRecommendations() {
   const feedbackList = feedbackQuery.data;
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const isGeneratingRef = useRef(false);
   const homepageAttemptRef = useRef(false);
 
@@ -200,15 +213,21 @@ export function HomepageRecommendations() {
     }
     isGeneratingRef.current = true;
     setIsGenerating(true);
+    setGenerationError(null);
     homepageAttemptRef.current = true;
     startHomepageGeneration()
       .then((result) => {
         if (result.ok && "error" in result.data) {
           console.error("Homepage generation failed:", result.data.error);
+          setGenerationError(result.data.error);
+        } else if (!result.ok) {
+          console.error("Homepage generation failed:", result.message);
+          setGenerationError("api_unavailable");
         }
       })
-      .catch((err) => {
-        console.error("Homepage generation failed:", err);
+      .catch((error) => {
+        console.error("Homepage generation failed:", error);
+        setGenerationError("api_unavailable");
       })
       .finally(() => {
         isGeneratingRef.current = false;
@@ -427,6 +446,7 @@ export function HomepageRecommendations() {
           Add some movies or TV shows to your watchlist to start receiving
           personalized recommendations refreshed twice a day.
         </p>
+        {generationError && <GenerationErrorNotice error={generationError} />}
       </section>
     );
   }
@@ -452,11 +472,20 @@ export function HomepageRecommendations() {
     // Collapsed state: the parent flex column's `gap-10` already provides
     // consistent spacing between siblings, so returning nothing keeps the
     // gap between "Continue Watching" and the next rail uniform.
+    if (generationError) {
+      return (
+        <section className="w-full space-y-2">
+          <RecommendationSectionHeader />
+          <GenerationErrorNotice error={generationError} />
+        </section>
+      );
+    }
     return null;
   }
 
   return (
     <div className="min-h-[280px] w-full">
+      {generationError && <GenerationErrorNotice error={generationError} />}
       <section className="w-full">
         <RecommendationSectionHeader />
         <ScrollContainer isButtonsVisible={true}>
