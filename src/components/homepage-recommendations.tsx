@@ -18,7 +18,6 @@ import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { cn } from "@/lib/utils";
 import {
-  getGenerationStatus,
   getHomepageRecommendations,
   getRecommendationFeedback,
   removeRecommendationFeedback,
@@ -26,11 +25,6 @@ import {
   startHomepageGeneration,
 } from "@/server/fns/recommendations";
 import { unwrap } from "@/server/schema/common";
-
-// Hard client-side rails (mirrors use-recommendations.ts) so the loading
-// spinner always converges to an error even if status polling never resolves.
-const MAX_JOB_POLL_MS = 6 * 60 * 1000;
-const MAX_JOB_POLL_FAILURES = 5;
 
 const getDismissKey = (rec: AIRecommendation) =>
   `${rec.mediaType}:${rec.tmdbId ?? ""}:${rec.title}`;
@@ -144,7 +138,7 @@ const HomepageRecommendationCard = memo(
 function RecommendationSectionHeader() {
   return (
     <div className="mb-1 flex items-center justify-between px-4 md:px-0">
-      <h2 className="text-lg font-semibold md:text-xl">Picks For You</h2>
+      <h2 className="text-h2">Picks For You</h2>
     </div>
   );
 }
@@ -179,86 +173,50 @@ export function HomepageRecommendations() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const isGeneratingRef = useRef(false);
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const jobStartedAtRef = useRef(0);
-
-  const stopJobTracking = useCallback(() => {
-    setActiveJobId(null);
-    setIsGenerating(false);
-    isGeneratingRef.current = false;
-  }, []);
+  const homepageAttemptRef = useRef(false);
 
   const refreshHomepage = useCallback(() => {
     void recommendationsQuery.refetch();
     void feedbackQuery.refetch();
   }, [recommendationsQuery, feedbackQuery]);
 
-  // Poll for homepage generation job status
-  const jobQuery = useQuery({
-    queryKey: queryKeys.recommendations.job(activeJobId),
-    queryFn: () =>
-      unwrap(getGenerationStatus({ data: { jobId: activeJobId! } })),
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      if (status === "completed" || status === "failed") return false;
-      if (query.state.fetchFailureCount >= MAX_JOB_POLL_FAILURES) return false;
-      if (Date.now() - (jobStartedAtRef.current || 0) > MAX_JOB_POLL_MS) {
-        return false;
-      }
-      return 3000;
-    },
-    enabled: !!activeJobId,
-  });
-
-  // React to homepage job completion
+  // Auto-generate when the server says the rail needs a refresh. Generation is
+  // fully synchronous: the request resolves after the result is already
+  // persisted, so we only refresh afterwards - no job tracking. The attempt
+  // ref guarantees one attempt per needs-refresh window even if this effect
+  // re-runs while `needsRefresh` is still true (e.g. after a rate-limited
+  // response, which does not clear the server-side flag).
   useEffect(() => {
-    if (!activeJobId) return;
-    const status = jobQuery.data?.status;
-    if (status === "completed" || status === "failed") {
-      recordOwnMutation("ai");
-      refreshHomepage();
-      stopJobTracking();
-    } else if (jobQuery.isError) {
-      // Status endpoint unreachable: converge to the normal refreshed view
-      // instead of spinning forever (the daily cron reaper is a backstop).
-      refreshHomepage();
-      stopJobTracking();
+    if (!recommendationsData?.needsRefresh) {
+      homepageAttemptRef.current = false;
     }
-  }, [
-    activeJobId,
-    jobQuery.data,
-    jobQuery.isError,
-    refreshHomepage,
-    stopJobTracking,
-  ]);
-
-  useEffect(() => {
     if (
-      canAccessFeature &&
-      recommendationsData?.needsRefresh &&
-      !isGeneratingRef.current
+      !canAccessFeature ||
+      !recommendationsData?.needsRefresh ||
+      isGeneratingRef.current ||
+      homepageAttemptRef.current
     ) {
-      isGeneratingRef.current = true;
-      setIsGenerating(true);
-      jobStartedAtRef.current = Date.now();
-      startHomepageGeneration()
-        .then((result) => {
-          if (result.ok && "jobId" in result.data) {
-            setActiveJobId(result.data.jobId);
-          } else if (result.ok && "error" in result.data) {
-            console.error(
-              "Failed to start homepage generation:",
-              result.data.error,
-            );
-            stopJobTracking();
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to start homepage generation:", err);
-          stopJobTracking();
-        });
+      return;
     }
-  }, [canAccessFeature, recommendationsData?.needsRefresh, stopJobTracking]);
+    isGeneratingRef.current = true;
+    setIsGenerating(true);
+    homepageAttemptRef.current = true;
+    startHomepageGeneration()
+      .then((result) => {
+        if (result.ok && "error" in result.data) {
+          console.error("Homepage generation failed:", result.data.error);
+        }
+      })
+      .catch((err) => {
+        console.error("Homepage generation failed:", err);
+      })
+      .finally(() => {
+        isGeneratingRef.current = false;
+        setIsGenerating(false);
+        recordOwnMutation("ai");
+        refreshHomepage();
+      });
+  }, [canAccessFeature, recommendationsData?.needsRefresh, refreshHomepage]);
 
   const toggleWatchlist = useToggleWatchlistItem();
 
@@ -437,7 +395,10 @@ export function HomepageRecommendations() {
     // Reserve the same vertical space as the header + skeleton while Clerk
     // is hydrating, so eligible users don't see the layout grow after auth.
     return (
-      <div className="my-6 min-h-[280px]" aria-hidden="true">
+      // No vertical margin here: the homepage flex column already spaces
+      // sections with `gap-10`, so extra `my-*` margins double the gap
+      // between "Continue Watching" and this rail.
+      <div className="min-h-[280px]" aria-hidden="true">
         <RecommendationSectionHeader />
         <MediaSkeletonList />
       </div>
@@ -455,7 +416,7 @@ export function HomepageRecommendations() {
 
   if (hasNoWatchHistory) {
     return (
-      <section className="border-border/40 bg-card/40 my-6 w-full rounded-xl border px-4 py-4 text-left">
+      <section className="border-border/40 bg-card/40 w-full rounded-xl border px-4 py-4 text-left">
         <div className="text-muted-foreground mb-2 flex items-center gap-2">
           <Sparkles size={16} className="text-primary" />
           <h3 className="text-sm font-semibold">
@@ -472,7 +433,7 @@ export function HomepageRecommendations() {
 
   if (!recommendationsData) {
     return (
-      <div className="my-6 min-h-[280px]">
+      <div className="min-h-[280px]">
         <RecommendationSectionHeader />
         <MediaSkeletonList />
       </div>
@@ -482,20 +443,20 @@ export function HomepageRecommendations() {
   if (recs.length === 0) {
     if (isGenerating) {
       return (
-        <div className="my-6 min-h-[280px]">
+        <div className="min-h-[280px]">
           <RecommendationSectionHeader />
           <MediaSkeletonList />
         </div>
       );
     }
-    // Keep the section reserved at zero height would still shift when the
-    // skeleton is replaced. Return a collapsed placeholder with consistent
-    // margin so siblings don't jump.
-    return <div className="my-6 min-h-0" aria-hidden="true" />;
+    // Collapsed state: the parent flex column's `gap-10` already provides
+    // consistent spacing between siblings, so returning nothing keeps the
+    // gap between "Continue Watching" and the next rail uniform.
+    return null;
   }
 
   return (
-    <div className="my-6 min-h-[280px] w-full">
+    <div className="min-h-[280px] w-full">
       <section className="w-full">
         <RecommendationSectionHeader />
         <ScrollContainer isButtonsVisible={true}>

@@ -1,6 +1,6 @@
 // Minimal service worker: keeps the app installable as a PWA without caching
-// anything in Cache Storage. On activation every cache is purged — including
-// oversized stores left behind by older versions of this worker — so browser
+// anything in Cache Storage. On activation every cache is purged - including
+// oversized stores left behind by older versions of this worker - so browser
 // storage usage drops to zero. All requests fall through to the network.
 self.addEventListener('install', () => {
   self.skipWaiting();

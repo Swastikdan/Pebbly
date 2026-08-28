@@ -136,7 +136,7 @@ export default defineNitroConfig({
       },
     },
     // Unhashed public/ assets: filenames never change between deploys, so
-    // `immutable` would pin old bytes forever. Bounded freshness instead —
+    // `immutable` would pin old bytes forever. Bounded freshness instead -
     // clients reuse the copy within the window, then revalidate once.
     "/manifest.json": {
       headers: {

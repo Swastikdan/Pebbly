@@ -1,12 +1,32 @@
-import { OpenRouter } from "@openrouter/sdk";
 import * as v from "valibot";
 
 import type { MediaType } from "@/lib/media-types";
 import { getEnvVar } from "./env";
 
-// OpenRouter is used over REST/fetched SDK. The SDK's `chat.send` streaming
-// path gives access to `usage.completionTokensDetails.reasoningTokens` in the
-// final chunk, which is required for reasoning-token telemetry.
+// Google Gemini over REST (generativelanguage.googleapis.com). No SDK: the
+// `generateContent` endpoint is a single POST, and structured output
+// (`responseMimeType: "application/json"` + `responseSchema`) makes the model
+// emit exactly the recommendation JSON shape. `thinkingBudget: 0` skips the
+// thinking phase, which is what makes a fully synchronous in-request
+// generation viable (a few seconds typical instead of the 30s+ reasoning
+// phases that forced the old poll-driven job design).
+
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
+
+// Free-tier models, tried in order: 2.5 Flash for quality, the
+// flash-lite-latest alias as a faster fallback (the pinned
+// `gemini-2.5-flash-lite` is no longer available to new API projects). Each
+// free tier allows ~10 RPM / ~250 RPD, which pairs safely with the app's
+// per-user generation rate limit.
+export const MODELS_TO_TRY = [
+  "gemini-2.5-flash",
+  "gemini-flash-lite-latest",
+] as const;
+
+// A non-thinking structured request normally completes in under 10s; 45s
+// covers tail latency without approaching Workers request budgets (wall-clock
+// waiting on fetch is not CPU time).
+const GEMINI_TIMEOUT_MS = 45_000;
 
 export interface Recommendation {
   title: string;
@@ -16,15 +36,12 @@ export interface Recommendation {
   reasoning: string;
 }
 
-export interface OpenRouterResult {
+export interface GeminiResult {
   recommendations: Recommendation[];
 }
 
-export const MODELS_TO_TRY = ["openrouter/free"] as const;
-
-type OpenRouterErrorLike = {
+type GeminiErrorLike = {
   status?: number;
-  code?: number;
   message?: string;
 };
 
@@ -32,16 +49,15 @@ export function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+// Gemini signals capacity issues with 503 ("The model is overloaded") and
+// auth/quota problems with 429 (RESOURCE_EXHAUSTED).
 export function isHighDemandError(error: unknown) {
-  const candidate = error as OpenRouterErrorLike;
+  const candidate = error as GeminiErrorLike;
   const message = candidate.message?.toLowerCase() ?? "";
 
   return (
     candidate.status === 503 ||
-    candidate.code === 503 ||
     candidate.status === 529 ||
-    candidate.code === 529 ||
-    message.includes("high demand") ||
     message.includes("overloaded") ||
     message.includes("503") ||
     message.includes("529")
@@ -49,36 +65,20 @@ export function isHighDemandError(error: unknown) {
 }
 
 export function isRateLimitedError(error: unknown) {
-  const candidate = error as OpenRouterErrorLike;
+  const candidate = error as GeminiErrorLike;
   const message = candidate.message?.toLowerCase() ?? "";
   return (
     candidate.status === 429 ||
-    candidate.code === 429 ||
     message.includes("rate limit") ||
+    message.includes("resource_exhausted") ||
+    message.includes("quota") ||
     message.includes("429")
-  );
-}
-
-export function isAbortError(error: unknown) {
-  const candidate = error as { name?: string; message?: string };
-  const name = candidate.name?.toLowerCase() ?? "";
-  const message = candidate.message?.toLowerCase() ?? "";
-  return (
-    name === "aborterror" ||
-    message.includes("aborted") ||
-    message.includes("signal is aborted")
   );
 }
 
 export async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-// Free-tier models routed via "openrouter/free" are frequently reasoning
-// models whose thinking phase alone can exceed 30s; measured SDK streams have
-// taken 31s+ for small prompts. 90s leaves headroom without risking the
-// Workers request budget (wall-clock waiting on fetch is not CPU time).
-const OPENROUTER_TIMEOUT_MS = 90_000;
 
 const recommendationElementSchema = v.pipe(
   v.object({
@@ -97,9 +97,101 @@ const recommendationElementSchema = v.pipe(
   })),
 );
 
+// OpenAPI-style subset accepted by Gemini's `responseSchema`. Structured
+// output guarantees the JSON shape (and the mediaType enum), so the valibot
+// pass below is only a defensive net.
+const GEMINI_RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    recommendations: {
+      type: "array",
+      minItems: 1,
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          tmdbId: { type: "number", nullable: true },
+          mediaType: { type: "string", enum: ["movie", "tv"] },
+          relevanceScore: { type: "number" },
+          reasoning: { type: "string" },
+        },
+        required: [
+          "title",
+          "tmdbId",
+          "mediaType",
+          "relevanceScore",
+          "reasoning",
+        ],
+      },
+    },
+  },
+  required: ["recommendations"],
+} as const;
+
+interface GeminiResponseBody {
+  candidates?: Array<{
+    content?: { parts?: Array<{ text?: string }> };
+    finishReason?: string;
+  }>;
+  promptFeedback?: { blockReason?: string };
+  usageMetadata?: { thoughtsTokenCount?: number };
+}
+
+function buildRequestBody(
+  userPrompt: string,
+  systemInstruction: string,
+  disableThinking: boolean,
+) {
+  return {
+    systemInstruction: { parts: [{ text: systemInstruction }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: GEMINI_RESPONSE_SCHEMA,
+      // Disabling thinking keeps synchronous generations in the 2-6s range.
+      ...(disableThinking ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+    },
+  };
+}
+
+async function requestGeneration(
+  apiKey: string,
+  model: string,
+  userPrompt: string,
+  systemInstruction: string,
+  disableThinking: boolean,
+): Promise<Response> {
+  return fetch(`${GEMINI_BASE_URL}/models/${model}:generateContent`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    },
+    body: JSON.stringify(
+      buildRequestBody(userPrompt, systemInstruction, disableThinking),
+    ),
+    signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+  });
+}
+
+async function parseErrorResponse(response: Response): Promise<Error> {
+  const raw = await response.text().catch(() => "");
+  let message = `Gemini HTTP ${response.status}`;
+  try {
+    const parsed = JSON.parse(raw) as { error?: { message?: string } };
+    if (parsed?.error?.message) message = parsed.error.message;
+  } catch {
+    // Non-JSON error body; keep the generic message.
+  }
+  const error = new Error(message) as Error & GeminiErrorLike;
+  error.status = response.status;
+  return error;
+}
+
 /**
- * Stream a completion from OpenRouter and collect reasoning-token usage.
- * Uses `stream: true` so the final SSE chunk carries `usage`.
+ * One non-streaming generateContent call. `thinkingConfig` (thinking disabled)
+ * is sent first; some model revisions reject the field with a generic 400
+ * INVALID_ARGUMENT, so any 400 is retried once without it.
  */
 async function generateContent(
   apiKey: string,
@@ -107,106 +199,58 @@ async function generateContent(
   userPrompt: string,
   systemInstruction: string,
 ): Promise<{ text: string; reasoningTokens?: number }> {
-  const openrouter = new OpenRouter({
+  let response = await requestGeneration(
     apiKey,
-  });
+    model,
+    userPrompt,
+    systemInstruction,
+    false,
+  );
 
-  // The SDK exposes streaming via `chat.send` with `chatRequest.stream === true`.
-  // The response is an async iterable of ChatStreamChunk (SSE); iterate to
-  // collect delta.content and the trailing usage block.
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(
-      () =>
-        reject(
-          new Error(`OpenRouter timeout after ${OPENROUTER_TIMEOUT_MS}ms`),
-        ),
-      OPENROUTER_TIMEOUT_MS,
+  if (response.status === 400) {
+    // Drain the failed body before reusing the connection.
+    await response.text().catch(() => "");
+    response = await requestGeneration(
+      apiKey,
+      model,
+      userPrompt,
+      systemInstruction,
+      true,
     );
-  });
+  }
 
-  const doStream = async (): Promise<{
-    text: string;
-    reasoningTokens?: number;
-  }> => {
-    const stream = (await openrouter.chat.send({
-      chatRequest: {
-        model,
-        messages: [
-          { role: "system", content: systemInstruction },
-          { role: "user", content: userPrompt },
-        ],
-        stream: true,
-        responseFormat: { type: "json_object" },
-        streamOptions: { includeUsage: true },
-      },
-    })) as unknown as AsyncIterable<{
-      choices: Array<{ delta?: { content?: string | null } }>;
-      usage?: {
-        completionTokensDetails?: { reasoningTokens?: number | null } | null;
-      } | null;
-      error?: { message?: string; code?: number } | null;
-    }>;
+  if (!response.ok) {
+    throw await parseErrorResponse(response);
+  }
 
-    let text = "";
-    let reasoningTokens: number | undefined;
+  const data = (await response.json()) as GeminiResponseBody;
 
-    try {
-      for await (const chunk of stream) {
-        // Surface provider-side errors that appear as an `error` field on the chunk.
-        if (chunk.error) {
-          const err = new Error(
-            chunk.error.message ?? "OpenRouter stream error",
-          ) as OpenRouterErrorLike;
-          err.status = chunk.error.code;
-          err.code = chunk.error.code;
-          throw err;
-        }
-
-        const content = chunk.choices?.[0]?.delta?.content;
-        if (content) text += content;
-
-        if (chunk.usage?.completionTokensDetails?.reasoningTokens != null) {
-          reasoningTokens =
-            chunk.usage.completionTokensDetails.reasoningTokens ?? undefined;
-        }
-      }
-    } catch (error) {
-      // Workers' fetch can be aborted when the client disconnects or the
-      // Worker is terminated after the response is already buffered.
-      // If we have already collected text (and the stream was aborted
-      // without reason), treat it as a successful completion rather than
-      // a failure – the user still gets the response.
-      if (isAbortError(error) && text) {
-        console.warn(
-          `[openrouter] stream aborted after ${text.length} chars, returning partial`,
-          error,
-        );
-        return { text, reasoningTokens };
-      }
-      throw error;
-    }
-
-    if (reasoningTokens != null) {
-      console.log(`[openrouter] reasoning tokens (${model}):`, reasoningTokens);
-    }
-
-    return { text, reasoningTokens };
-  };
-
-  // Race the stream against the timeout and ensure the timer is cleared.
-  // Without cleanup the 90s timeout would fire even after success and
-  // keep the Worker alive, and an aborted fetch (client disconnect)
-  // surfaces as "signal is aborted without reason" which should not be
-  // treated as a generation failure when we already have text.
-  try {
-    const result = await Promise.race([doStream(), timeout]);
-    if (timeoutId) clearTimeout(timeoutId);
-    return result;
-  } catch (error) {
-    if (timeoutId) clearTimeout(timeoutId);
+  const blockReason = data.promptFeedback?.blockReason;
+  if (blockReason) {
+    const error = new Error(`blocked_${blockReason}`) as GeminiErrorLike;
+    error.status = 400;
     throw error;
   }
+
+  const finishReason = data.candidates?.[0]?.finishReason;
+  const text = (data.candidates?.[0]?.content?.parts ?? [])
+    .map((part) => part.text ?? "")
+    .join("");
+
+  if (!text) {
+    const error = new Error(
+      `Gemini returned no content (finishReason: ${finishReason ?? "unknown"})`,
+    ) as GeminiErrorLike;
+    error.status = 502;
+    throw error;
+  }
+
+  const reasoningTokens = data.usageMetadata?.thoughtsTokenCount;
+  return {
+    text,
+    reasoningTokens:
+      typeof reasoningTokens === "number" ? reasoningTokens : undefined,
+  };
 }
 
 async function generateRecommendationResponse(
@@ -238,7 +282,7 @@ async function generateRecommendationResponse(
       }
     } catch (error) {
       lastError = getErrorMessage(error);
-      console.error(`OpenRouter model (${model}) error:`, lastError);
+      console.error(`Gemini model (${model}) error:`, lastError);
       highDemandError = highDemandError || isHighDemandError(error);
       rateLimited = rateLimited || isRateLimitedError(error);
 
@@ -258,24 +302,24 @@ async function generateRecommendationResponse(
   };
 }
 
-export async function callOpenRouterAI(
+export async function callGeminiAI(
   prompt: string,
   systemInstruction: string,
   retries: number = 1,
 ): Promise<{
-  result?: OpenRouterResult;
+  result?: GeminiResult;
   usedModel?: string;
   error?: string;
   reasoningTokens?: number;
 }> {
-  const apiKey = getEnvVar("OPENROUTER_API_KEY");
+  const apiKey = getEnvVar("GEMINI_API_KEY");
   if (!apiKey) {
-    console.error("OPENROUTER_API_KEY is not set");
+    console.error("GEMINI_API_KEY is not set");
     return { error: "api_unavailable" };
   }
 
   let responseText = "";
-  let usedModel = MODELS_TO_TRY[0];
+  let usedModel: (typeof MODELS_TO_TRY)[number] = MODELS_TO_TRY[0];
   let highDemandError = false;
   let rateLimited = false;
   let reasoningTokens: number | undefined;
@@ -318,10 +362,7 @@ export async function callOpenRouterAI(
 
   // Log reasoning tokens at the top-level call as well (useful for observability).
   if (reasoningTokens != null) {
-    console.log(
-      `[openrouter] callOpenRouterAI reasoningTokens:`,
-      reasoningTokens,
-    );
+    console.log(`[gemini] callGeminiAI reasoningTokens:`, reasoningTokens);
   }
 
   try {

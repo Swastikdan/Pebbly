@@ -166,9 +166,12 @@ export function WatchlistCard({
             />
           )}
           {isRecommended && (
-            <span className="border-info/30 bg-info/15 text-info inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[10px] font-medium">
+            <span
+              title="Recommended"
+              aria-label="Recommended"
+              className="border-info/30 bg-info/15 text-info inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
+            >
               <Sparkles size={12} />
-              Recommended
             </span>
           )}
           {reactionOption && (

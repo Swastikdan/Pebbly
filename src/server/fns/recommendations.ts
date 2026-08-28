@@ -17,7 +17,6 @@ import {
   buildWatchlistPrompt,
 } from "@/server/prompts";
 import {
-  aiGenerationJobs,
   aiRecommendations,
   homepageRecommendations,
   recommendationFeedback,
@@ -29,14 +28,11 @@ import {
   bumpListsRev,
   upsertWatchItem,
 } from "../helpers/watch-item";
-import { JOB_STALE_MS, markJobFailed } from "../jobs/job-lifecycle";
-import { driveAiJob } from "../jobs/run-ai-generation";
 import { hasFeature, isAdminByClaims } from "../rbac";
 import {
   gatherGenerationInputs,
   parseStoredRecommendations,
   runAiGeneration,
-  SYSTEM_INSTRUCTION,
 } from "../recommendation-generation";
 import { fail, ok } from "../schema/common";
 import {
@@ -515,340 +511,15 @@ async function getHomepageRecommendationEntry(db: Db, userId: string) {
   return entry.length > 0 ? entry[0] : null;
 }
 
-// --- Async generation (fire-and-forget + client polling) ---
-
-export type GenerationJobStatus =
-  | { status: "completed"; recommendations: RecommendationRow[]; model: string }
-  | { status: "failed"; error: string }
-  | { status: "pending" | "running" };
+// --- Synchronous generation ---
+//
+// The Gemini call runs inline inside the request. Non-thinking structured
+// requests complete in the low seconds, and an incoming HTTP request has
+// unlimited wall-clock while the client stays connected (Cloudflare Workers'
+// ~30s waitUntil() limit only applies to background tasks, not to an open
+// request) - so no job table or status polling is needed.
 
 export const startGeneration = createServerFn({ method: "POST" })
-  .validator(generateRecommendationsArgsSchema)
-  .handler(({ data }) =>
-    authedFn(
-      { mode: "require", feature: "ai-recommendations" },
-      data,
-      async ({
-        claims,
-        db,
-        user,
-      }): Promise<ApiResult<{ jobId: string } | { error: string }>> => {
-        const genType = data.generationType ?? "watchlist";
-
-        if (genType === "list" && !data.listId) {
-          return fail("BAD_REQUEST", "listId is required for list generation");
-        }
-
-        const existing = await db
-          .select({
-            id: aiGenerationJobs.id,
-            createdAt: aiGenerationJobs.createdAt,
-            params: aiGenerationJobs.params,
-          })
-          .from(aiGenerationJobs)
-          .where(
-            and(
-              eq(aiGenerationJobs.userId, user.id),
-              inArray(aiGenerationJobs.status, ["pending", "running"]),
-            ),
-          )
-          .limit(1);
-        if (existing.length > 0) {
-          const staleJob = existing[0];
-          if (Date.now() - staleJob.createdAt < JOB_STALE_MS) {
-            // Fresh in-flight job: piggyback on it instead of duplicating work.
-            return ok({ jobId: staleJob.id });
-          }
-          // Job from an older runtime that lost it mid-flight (e.g. a Worker
-          // terminated during generation). Reap it — releasing its reserved
-          // rate-limit slot — and fall through to start a fresh generation.
-          await markJobFailed(db, staleJob.id, "superseded");
-          const staleToken = staleJob.params?.rateLimitToken;
-          if (staleToken) await releaseRateLimit(db, staleToken);
-        }
-
-        const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
-          db,
-          user.id,
-          ["not_interested"],
-        );
-
-        if (genType === "watchlist" && watchlistData.watchItems.length === 0) {
-          return ok({ error: "empty_watchlist" });
-        }
-        if (genType === "list" && data.listId) {
-          if (
-            watchlistData.listItems.filter((li) => li.listId === data.listId)
-              .length === 0
-          ) {
-            return ok({ error: "empty_watchlist" });
-          }
-        }
-
-        const isAdmin = isAdminByClaims(claims);
-        let rateLimitToken: string | undefined;
-        if (!isAdmin) {
-          const { allowed, token } = await tryConsumeRateLimit(
-            db,
-            `${GENERATION_RATE_LIMIT_KEY}:${user.id}`,
-            RATE_LIMIT_MS,
-          );
-          if (!allowed) {
-            return ok({ error: "rate_limited" });
-          }
-          rateLimitToken = token;
-        }
-
-        const excludeTmdbIds = [
-          ...new Set([
-            ...(data.excludeTmdbIds ?? []),
-            ...(feedbackSignals.dislikedTmdbIds ?? []),
-          ]),
-        ];
-
-        const userPrompt =
-          genType === "watchlist"
-            ? buildWatchlistPrompt(
-                watchlistData,
-                data.mediaTypePreference,
-                excludeTmdbIds,
-                data.yearFrom,
-                data.yearTo,
-                data.count,
-                feedbackSignals,
-              )
-            : genType === "list" && data.listId
-              ? buildCustomListPrompt(
-                  watchlistData,
-                  data.listId,
-                  data.mediaTypePreference,
-                  excludeTmdbIds,
-                  data.yearFrom,
-                  data.yearTo,
-                  data.count,
-                  feedbackSignals,
-                )
-              : buildGenrePrompt(
-                  watchlistData,
-                  data.mediaTypePreference,
-                  data.genrePreference,
-                  excludeTmdbIds,
-                  data.yearFrom,
-                  data.yearTo,
-                  data.count,
-                  feedbackSignals,
-                );
-
-        const jobId = crypto.randomUUID();
-        const jobParams = {
-          prompt: userPrompt,
-          systemInstruction: SYSTEM_INSTRUCTION,
-          watchItems: watchlistData.watchItems,
-          excludeTmdbIds,
-          attempts: 1,
-          inputStats: watchlistData.inputStats,
-          generationType: genType,
-          mediaTypePreference: data.mediaTypePreference,
-          genrePreference: data.genrePreference,
-          rateLimitToken,
-        };
-        await db.insert(aiGenerationJobs).values({
-          id: jobId,
-          userId: user.id,
-          status: "pending",
-          params: jobParams,
-          createdAt: Date.now(),
-        });
-
-        // No background execution here: the job is picked up and run inside
-        // the client's first `getGenerationStatus` poll (see driveAiJob).
-        // waitUntil() is unsuitable on Cloudflare Workers, which terminate
-        // background tasks ~30s after the response — shorter than a typical
-        // AI generation.
-
-        return ok({ jobId });
-      },
-    ),
-  );
-
-export const getGenerationStatus = createServerFn({ method: "POST" })
-  .validator(v.object({ jobId: v.string() }))
-  .handler(({ data }) =>
-    authedFn(
-      { mode: "require" },
-      data,
-      async ({ db, user }): Promise<ApiResult<GenerationJobStatus>> => {
-        const loadJob = () =>
-          db
-            .select()
-            .from(aiGenerationJobs)
-            .where(
-              and(
-                eq(aiGenerationJobs.id, data.jobId),
-                eq(aiGenerationJobs.userId, user.id),
-              ),
-            )
-            .limit(1);
-
-        let [job] = await loadJob();
-        if (!job) return fail("NOT_FOUND", "Job not found");
-
-        const toStatus = (
-          row: typeof aiGenerationJobs.$inferSelect,
-        ): ApiResult<GenerationJobStatus> => {
-          if (row.status === "completed") {
-            return ok({
-              status: "completed",
-              recommendations: row.recommendations ?? [],
-              model: row.model ?? "",
-            });
-          }
-          if (row.status === "failed") {
-            return ok({
-              status: "failed",
-              error: row.error ?? "unknown_error",
-            });
-          }
-          return ok({ status: row.status });
-        };
-
-        if (job.status === "pending" || job.status === "running") {
-          if (Date.now() - job.createdAt > JOB_STALE_MS) {
-            // Hard self-heal: a job still incomplete after the stale window
-            // has lost its executor (worker terminated, crash, deploy).
-            // Reap it so clients always converge to a terminal state instead
-            // of polling forever.
-            await markJobFailed(db, job.id, "generation_timed_out");
-            [job] = await loadJob();
-            if (!job) return fail("NOT_FOUND", "Job not found");
-            return toStatus(job);
-          }
-
-          // Poll-driven execution: this request claims the job (atomic
-          // conditional UPDATE) and runs the generation inline. The client
-          // stays connected, so the request may take up to the job timeout —
-          // that is fine on Workers (no wall-clock limit while the client is
-          // connected). Losers of the claim just observe `running`.
-          await driveAiJob(db, job);
-
-          [job] = await loadJob();
-          if (!job) return fail("NOT_FOUND", "Job not found");
-        }
-
-        return toStatus(job);
-      },
-    ),
-  );
-
-export const startHomepageGeneration = createServerFn({
-  method: "POST",
-}).handler(() =>
-  authedFn(
-    { mode: "require", feature: "ai-recommendations" },
-    undefined,
-    async ({
-      claims,
-      db,
-      user,
-    }): Promise<ApiResult<{ jobId: string } | { error: string }>> => {
-      const existing = await db
-        .select({
-          id: aiGenerationJobs.id,
-          createdAt: aiGenerationJobs.createdAt,
-          params: aiGenerationJobs.params,
-        })
-        .from(aiGenerationJobs)
-        .where(
-          and(
-            eq(aiGenerationJobs.userId, user.id),
-            inArray(aiGenerationJobs.status, ["pending", "running"]),
-          ),
-        )
-        .limit(1);
-      if (existing.length > 0) {
-        const staleJob = existing[0];
-        if (Date.now() - staleJob.createdAt < JOB_STALE_MS) {
-          return ok({ jobId: staleJob.id });
-        }
-        await markJobFailed(db, staleJob.id, "superseded");
-        const staleToken = staleJob.params?.rateLimitToken;
-        if (staleToken) await releaseRateLimit(db, staleToken);
-      }
-
-      const isAdmin = isAdminByClaims(claims);
-      let rateLimitToken: string | undefined;
-      if (!isAdmin) {
-        const { allowed, token } = await tryConsumeRateLimit(
-          db,
-          `${HOMEPAGE_RATE_LIMIT_KEY}:${user.id}`,
-          RATE_LIMIT_MS,
-        );
-        if (!allowed) {
-          return ok({ error: "rate_limited" });
-        }
-        rateLimitToken = token;
-      }
-
-      const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
-        db,
-        user.id,
-        ["not_interested", "dislike"],
-      );
-
-      const homepageEntry = await getHomepageRecommendationEntry(db, user.id);
-      const previous = parseStoredRecommendations(
-        homepageEntry?.recommendations,
-      );
-      const previousTitles = previous?.map((r) => r.title) ?? [];
-      const previousTmdbIds =
-        previous
-          ?.map((r) => r.tmdbId)
-          .filter((id): id is number => typeof id === "number") ?? [];
-
-      const prompt = buildHomepageRecommendationsPrompt(
-        watchlistData,
-        feedbackSignals.likedTitles ?? [],
-        feedbackSignals.dislikedTitles ?? [],
-        [...(feedbackSignals.dislikedTmdbIds ?? []), ...previousTmdbIds],
-        previousTitles,
-      );
-
-      const combinedExcludeIds = [
-        ...new Set([
-          ...(feedbackSignals.dislikedTmdbIds ?? []),
-          ...previousTmdbIds,
-        ]),
-      ];
-
-      const jobId = crypto.randomUUID();
-      const jobParams = {
-        prompt,
-        systemInstruction: SYSTEM_INSTRUCTION,
-        watchItems: watchlistData.watchItems,
-        excludeTmdbIds: combinedExcludeIds,
-        attempts: 2,
-        inputStats: watchlistData.inputStats,
-        generationType: "homepage" as const,
-        rateLimitToken,
-      };
-      await db.insert(aiGenerationJobs).values({
-        id: jobId,
-        userId: user.id,
-        status: "pending",
-        params: jobParams,
-        createdAt: Date.now(),
-      });
-
-      // No background execution here: the job is picked up and run inside the
-      // client's first `getGenerationStatus` poll (see driveAiJob).
-
-      return ok({ jobId });
-    },
-  ),
-);
-
-// Kept for backwards-compat; new callers should use startGeneration + polling.
-export const generateRecommendations = createServerFn({ method: "POST" })
   .validator(generateRecommendationsArgsSchema)
   .handler(({ data }) =>
     authedFn(
@@ -964,27 +635,25 @@ export const generateRecommendations = createServerFn({ method: "POST" })
     ),
   );
 
-export const generateHomepageRecommendations = createServerFn({
+export const startHomepageGeneration = createServerFn({
   method: "POST",
 }).handler(() =>
   authedFn(
     { mode: "require", feature: "ai-recommendations" },
     undefined,
-    async ({
-      claims,
-      db,
-      user,
-    }): Promise<ApiResult<{ success: boolean; error?: string }>> => {
+    async ({ claims, db, user }): Promise<ApiResult<GenerateResult>> => {
       const isAdmin = isAdminByClaims(claims);
+      let rateLimitToken: string | undefined;
       if (!isAdmin) {
-        const { allowed } = await tryConsumeRateLimit(
+        const { allowed, token } = await tryConsumeRateLimit(
           db,
           `${HOMEPAGE_RATE_LIMIT_KEY}:${user.id}`,
           RATE_LIMIT_MS,
         );
         if (!allowed) {
-          return ok({ success: false, error: "rate_limited" });
+          return ok({ error: "rate_limited" });
         }
+        rateLimitToken = token;
       }
 
       const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
@@ -1017,6 +686,9 @@ export const generateHomepageRecommendations = createServerFn({
           ...previousTmdbIds,
         ]),
       ];
+
+      // Synchronous in-request generation (see the comment above
+      // `startGeneration`).
       const generated = await runAiGeneration({
         prompt,
         attempts: 2,
@@ -1024,18 +696,22 @@ export const generateHomepageRecommendations = createServerFn({
         excludeTmdbIds: combinedExcludeIds,
       });
       if (!generated.ok) {
+        if (rateLimitToken) await releaseRateLimit(db, rateLimitToken);
         await saveHomepageFailure(db, user.id);
-        return ok({ success: false, error: generated.error });
+        return ok({ error: generated.error });
       }
-
       if (generated.recommendations.length === 0) {
         await saveHomepageFailure(db, user.id);
-        return ok({ success: false, error: "empty_result" });
+        return ok({ error: "empty_result" });
       }
-
       await saveHomepageRecommendations(db, user.id, generated.recommendations);
 
-      return ok({ success: true });
+      return ok({
+        recommendations: generated.recommendations,
+        inputStats: watchlistData.inputStats,
+        generatedAt: Date.now(),
+        cached: false,
+      });
     },
   ),
 );

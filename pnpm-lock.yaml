@@ -33,9 +33,6 @@ importers:
       '@fontsource-variable/geist':
         specifier: ^5.3.0
         version: 5.3.0
-      '@openrouter/sdk':
-        specifier: ^1.2.67
-        version: 1.2.67
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
@@ -1320,9 +1317,6 @@ packages:
   '@oozcitak/util@10.0.0':
     resolution: {integrity: sha512-hAX0pT/73190NLqBPPWSdBVGtbY6VOhWYK3qqHqtXQ1gK7kS2yz4+ivsN07hpJ6I3aeMtKP6J6npsEKOAzuTLA==}
     engines: {node: '>=20.0'}
-
-  '@openrouter/sdk@1.2.67':
-    resolution: {integrity: sha512-DYvSXRzJQkN0du3dwB8UnkAXPoIdR9r7tJ9WkDRki+0eGw5Y96J6wV1U35Vp6L+vobGtiY5HDDv16WAsDv3M1Q==}
 
   '@oxc-project/types@0.146.0':
     resolution: {integrity: sha512-XC0QsnnhVe7sLIWmYmdPw7x5P0h4W8vUU3Nv1ySgWXtvCz8NizoAEpGXA0sOYoJQV2Rl13LgURAHQ5cI5ILCSA==}
@@ -6283,10 +6277,6 @@ snapshots:
       '@oozcitak/util': 10.0.0
 
   '@oozcitak/util@10.0.0': {}
-
-  '@openrouter/sdk@1.2.67':
-    dependencies:
-      zod: 4.4.3
 
   '@oxc-project/types@0.146.0': {}
 

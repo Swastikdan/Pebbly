@@ -4,7 +4,7 @@ compatibility_date = "2026-08-08"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 # Upload server-bundle sourcemaps to Cloudflare privately (tail/dashboard
-# stack traces are de-minified) — nothing becomes publicly fetchable.
+# stack traces are de-minified) - nothing becomes publicly fetchable.
 upload_source_maps = true
 
 [assets]
@@ -18,8 +18,8 @@ database_id = "cf94e4ee-291d-499f-b463-ef61ee9d9e1d"
 migrations_dir = "drizzle"
 
 [triggers]
-# 03:00 UTC — daily watchlist snapshots (Nitro task "snapshots")
-# 03:30 UTC — legacy duplicate-user consolidation (Nitro task "user-maintenance")
+# 03:00 UTC - daily watchlist snapshots (Nitro task "snapshots")
+# 03:30 UTC - legacy duplicate-user consolidation (Nitro task "user-maintenance")
 crons = ["0 3 * * *", "30 3 * * *"]
 
 [observability.logs]
@@ -30,7 +30,7 @@ invocation_logs = true
 enabled = true
 
 # Non-secret server vars only. Secrets: wrangler secret put <NAME>.
-# Client VITE_* vars are inlined at build time from .env — they do NOT go here.
+# Client VITE_* vars are inlined at build time from .env - they do NOT go here.
 
 # Preview deploys (cf-* branches) use a separate, flattened config at
 # wrangler.preview.toml deployed with `wrangler deploy --config ...`.

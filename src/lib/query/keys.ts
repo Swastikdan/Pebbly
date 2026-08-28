@@ -46,8 +46,6 @@ export const queryKeys = {
       ["recommendations", "homepage", userId ?? "anonymous"] as const,
     feedback: (userId?: string) =>
       ["recommendations", "feedback", userId ?? "anonymous"] as const,
-    job: (jobId: string | null) =>
-      ["recommendations", "job", jobId ?? "none"] as const,
   },
   /**
    * TMDB content caches. Every raw-literal content key lives here so

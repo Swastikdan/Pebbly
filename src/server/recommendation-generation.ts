@@ -4,7 +4,7 @@ import type { Recommendation } from "./ai";
 import type { Db } from "./db/client";
 import type { FeedbackSignals, WatchlistData } from "./prompts";
 import { normalizeTitleKey } from "@/lib/text";
-import { callOpenRouterAI, MODELS_TO_TRY } from "./ai";
+import { callGeminiAI, MODELS_TO_TRY } from "./ai";
 import {
   episodeProgress,
   listItems,
@@ -57,11 +57,11 @@ export type AiGenerationResult =
   | { ok: false; error: string };
 
 /**
- * Call OpenRouter (model `openrouter/free`) and filter out titles the user
- * already knows (on their watchlist or excluded). Streaming is used so the
- * final chunk's `usage.completionTokensDetails.reasoningTokens` is available
- * for telemetry. Callers own rate limiting before the call and result
- * persistence after.
+ * Call Gemini (free-tier flash models, thinking disabled) and filter out
+ * titles the user already knows (on their watchlist or excluded). Structured
+ * output + the non-thinking config keep a single call in the low seconds,
+ * which is what allows callers to run this synchronously inside the request.
+ * Callers own rate limiting before the call and result persistence after.
  */
 export async function runAiGeneration(args: {
   prompt: string;
@@ -69,7 +69,7 @@ export async function runAiGeneration(args: {
   watchItems: WatchlistData["watchItems"];
   excludeTmdbIds: number[];
 }): Promise<AiGenerationResult> {
-  const aiResult = await callOpenRouterAI(
+  const aiResult = await callGeminiAI(
     args.prompt,
     SYSTEM_INSTRUCTION,
     args.attempts,

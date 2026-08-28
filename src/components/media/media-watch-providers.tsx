@@ -38,6 +38,8 @@ const REGION_OPTIONS = [
 
 const PROVIDER_GROUPS = [
   { key: "flatrate", label: "Stream" },
+  { key: "free", label: "Free" },
+  { key: "ads", label: "Ads" },
   { key: "rent", label: "Rent" },
   { key: "buy", label: "Buy" },
 ] as const;
@@ -129,20 +131,6 @@ const LoadingState = () => (
           ))}
         </div>
       </div>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-5 w-12 rounded" />
-          <div className="flex gap-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton
-                // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-                key={`row2-${i}`}
-                className="size-11 rounded-lg sm:size-12"
-              />
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 );
@@ -174,6 +162,8 @@ export const MediaWatchProviders = (props: {
         const region = resultsByRegion[code];
         return (
           (region.flatrate?.length ?? 0) > 0 ||
+          (region.free?.length ?? 0) > 0 ||
+          (region.ads?.length ?? 0) > 0 ||
           (region.rent?.length ?? 0) > 0 ||
           (region.buy?.length ?? 0) > 0
         );
@@ -191,9 +181,18 @@ export const MediaWatchProviders = (props: {
   if (!resultsByRegion) return isError ? null : <LoadingState />;
   if (availableRegions.length === 0) return null;
 
+  // When the detected region has no data, fall back to a curated region
+  // (US, GB, IN, ...) in the listed order instead of the alphabetically
+  // first available one - alphabetically-first regions (AD, AL, ...) tend
+  // to carry sparse JustWatch data, often a single streaming service,
+  // which makes the section look like it only has a "Stream" row.
+  const curatedFallback = REGION_OPTIONS.map((option) => option.value).find(
+    (value) => availableRegions.includes(value),
+  );
+  const fallbackRegion = curatedFallback ?? (availableRegions[0] ?? "US");
   const effectiveRegion = availableRegions.includes(region)
     ? region
-    : (availableRegions[0] ?? "US");
+    : fallbackRegion;
   const countryData = resultsByRegion[effectiveRegion];
 
   const rows = PROVIDER_GROUPS.map((group) => ({

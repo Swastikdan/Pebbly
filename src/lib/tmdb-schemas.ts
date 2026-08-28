@@ -118,6 +118,8 @@ export type WatchProvider = v.InferOutput<typeof WatchProviderSchema>;
 const WatchProviderCountrySchema = v.looseObject({
   link: strNull(),
   flatrate: v.nullish(v.array(WatchProviderSchema), () => []),
+  free: v.nullish(v.array(WatchProviderSchema), () => []),
+  ads: v.nullish(v.array(WatchProviderSchema), () => []),
   rent: v.nullish(v.array(WatchProviderSchema), () => []),
   buy: v.nullish(v.array(WatchProviderSchema), () => []),
 });
