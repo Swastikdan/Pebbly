@@ -597,7 +597,7 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
 async function fetchEpisodeProgress(
   db: Db,
   userId: string,
-  options?: { tmdbId?: number },
+  options?: { tmdbId?: number; isWatched?: boolean },
 ) {
   return collectAllByKeyset(500, (cursor) =>
     db
@@ -606,8 +606,11 @@ async function fetchEpisodeProgress(
       .where(
         and(
           eq(episodeProgress.userId, userId),
-          options?.tmdbId
+          options?.tmdbId !== undefined
             ? eq(episodeProgress.tmdbId, options.tmdbId)
+            : undefined,
+          options?.isWatched !== undefined
+            ? eq(episodeProgress.isWatched, options.isWatched)
             : undefined,
           cursor ? gt(episodeProgress.id, cursor) : undefined,
         ),
@@ -629,6 +632,7 @@ export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
         const rows = await fetchEpisodeProgress(db, user.id, {
           tmdbId: data.tmdbId,
+          isWatched: true,
         });
         return ok(rows);
       },

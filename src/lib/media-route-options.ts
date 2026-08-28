@@ -57,15 +57,16 @@ function buildHeadCopy(
   notFoundTv: string,
   urlSuffix?: string,
 ): Record<MediaKind, HeadCopy> {
+  const suffixPart = titleSuffix ? ` ${titleSuffix}` : "";
   return {
     movie: {
-      title: (title) => `${title} ${titleSuffix} | Pebbly`.trim(),
+      title: (title) => `${title}${suffixPart} | Pebbly`.trim(),
       description,
       notFoundDescription: notFoundMovie,
       urlSuffix,
     },
     tv: {
-      title: (title) => `${title} ${titleSuffix} | Pebbly`.trim(),
+      title: (title) => `${title}${suffixPart} | Pebbly`.trim(),
       description,
       notFoundDescription: notFoundTv,
       urlSuffix,
