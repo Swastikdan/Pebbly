@@ -168,7 +168,6 @@ export function WatchlistCard({
           {isRecommended && (
             <span
               title="Recommended"
-              aria-label="Recommended"
               className="border-info/30 bg-info/15 text-info inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
             >
               <Sparkles size={12} />
