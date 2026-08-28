@@ -8,7 +8,7 @@ import type {
   WatchlistData,
 } from "./prompts";
 import { normalizeTitleKey } from "@/lib/text";
-import { callGeminiAI, dedupeRecommendations, MODELS_TO_TRY } from "./ai";
+import { dedupeRecommendations, generateRecommendations } from "./ai";
 import {
   episodeProgress,
   listItems,
@@ -77,11 +77,11 @@ export async function runAiGeneration(args: {
   excludeTitles?: string[];
   candidateCatalog?: RecommendationCandidate[];
 }): Promise<AiGenerationResult> {
-  const aiResult = await callGeminiAI(
-    args.prompt,
-    SYSTEM_INSTRUCTION,
-    args.attempts,
-  );
+  const aiResult = await generateRecommendations({
+    prompt: args.prompt,
+    systemInstruction: SYSTEM_INSTRUCTION,
+    retries: args.attempts,
+  });
   if (aiResult.error || !aiResult.result) {
     return { ok: false, error: aiResult.error ?? "api_unavailable" };
   }
@@ -112,7 +112,7 @@ export async function runAiGeneration(args: {
 
   return {
     ok: true,
-    usedModel: aiResult.usedModel ?? MODELS_TO_TRY[0],
+    usedModel: aiResult.usedModel ?? "unknown",
     reasoningTokens: aiResult.reasoningTokens,
     recommendations: filterKnownRecommendations(
       dedupeRecommendations(modelRecommendations),

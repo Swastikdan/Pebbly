@@ -212,6 +212,17 @@ async function findUserMatchesByClaims(
     return exactMatches;
   }
 
+  // Legacy LIKE fallback: matches accounts whose token_identifier predates the
+  // canonical `clerk:<sub>` format (Convex-era migration). Runs only when the
+  // exact-index seek misses, which for genuinely new users means a full table
+  // scan on first request. The background user-maintenance task owns legacy
+  // duplicate convergence, so once its migration window has closed, set
+  // DISABLE_LEGACY_TOKEN_LOOKUP=true in production to skip the scan entirely
+  // (see ADR-004 / architecture-hardening-plan item 4).
+  if (getEnvVar("DISABLE_LEGACY_TOKEN_LOOKUP") === "true") {
+    return [];
+  }
+
   return db
     .select()
     .from(users)

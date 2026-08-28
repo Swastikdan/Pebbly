@@ -21,6 +21,12 @@ export interface Env {
   CLERK_ISSUER_URL?: string;
   GEMINI_API_KEY?: string;
   APP_ENV?: string;
+  /**
+   * When "true", skips the legacy tokenIdentifier LIKE fallback scan in
+   * findUserMatchesByClaims (see auth.ts). Set once the duplicate-account
+   * migration window from ADR-004 closes.
+   */
+  DISABLE_LEGACY_TOKEN_LOOKUP?: string;
   [key: string]: unknown;
 }
 

@@ -96,7 +96,7 @@ export const toggleListItemArgsSchema = v.object({
   listId: v.string(),
   tmdbId: v.number(),
   mediaType: mediaTypeSchema,
-  backdrop: v.optional(v.string()),
+  backdrop: v.optional(v.pipe(v.string(), v.maxLength(512))),
 });
 export type ToggleListItemArgs = v.InferOutput<typeof toggleListItemArgsSchema>;
 
@@ -105,7 +105,7 @@ export const createCustomListAndAddItemArgsSchema = v.object({
   ...metadataSchema.entries,
   tmdbId: v.number(),
   mediaType: mediaTypeSchema,
-  backdrop: v.optional(v.string()),
+  backdrop: v.optional(v.pipe(v.string(), v.maxLength(512))),
 });
 export type CreateCustomListAndAddItemArgs = v.InferOutput<
   typeof createCustomListAndAddItemArgsSchema

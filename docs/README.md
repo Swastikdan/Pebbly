@@ -33,11 +33,13 @@
 - **A repository pattern hides remote-vs-local.** `useRepository()` picks a
   remote (server-fn + optimistic journal) or local (Zustand + localStorage)
   implementation based on auth state, so mutation hooks never branch on
-  `isSignedIn`. Both adapters share one decision pipeline (`status-plan.ts`)
+  `isSignedIn`. Both adapters share one decision pipeline (`repository/types.ts`)
   for progress-status writes.
-- **Optimistic UI with a replayable journal.** Every write is applied to the
-  query cache immediately through `lib/data/pending-ops.ts`, then reconciled
-  against server snapshots so a refetch can never clobber in-flight state.
+- **Optimistic UI with two recovery layers.** Every write is applied to the
+  query cache immediately through `lib/data/pending-ops.ts`. Signed-in remote
+  writes also enter the localStorage mutation outbox and replay sequentially on
+  the next boot, while server snapshots are reconciled so refetches cannot
+  clobber in-flight state.
 - **Clerk owns identity; the DB never stores admin status.** Admin/ban/feature
   decisions come from the signed JWT claim or the live Clerk API, never a
   stored flag that could go stale.

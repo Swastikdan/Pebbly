@@ -1,7 +1,10 @@
+import * as v from "valibot";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import type { MediaType } from "@/lib/media-types";
+import type { PersistedStateSanitizer } from "@/stores/guest-store-kit";
+import { mediaTypeSchema } from "@/lib/media-types";
 import {
   guestPersistOptions,
   localId,
@@ -99,6 +102,54 @@ interface LocalListsStore {
 
   cloneList: (sourceListId: string) => string;
 }
+
+const localListSchema = v.object({
+  _id: v.string(),
+  name: v.string(),
+  color: v.optional(v.string()),
+  description: v.optional(v.string()),
+  visibility: v.optional(v.string()),
+  listType: v.optional(v.string()),
+  sortType: v.optional(v.picklist(["unordered", "ordered"])),
+  sortOrder: v.number(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+});
+
+const localListItemSchema = v.object({
+  _id: v.string(),
+  listId: v.string(),
+  tmdbId: v.number(),
+  mediaType: mediaTypeSchema,
+  position: v.optional(v.number()),
+  addedAt: v.number(),
+  title: v.optional(v.string()),
+  image: v.optional(v.string()),
+  backdrop: v.optional(v.string()),
+  rating: v.optional(v.number()),
+  release_date: v.optional(v.string()),
+  overview: v.optional(v.string()),
+});
+
+const sanitizeLocalListsState: PersistedStateSanitizer<LocalListsStore> = (
+  persisted,
+) => {
+  if (!persisted || typeof persisted !== "object") return null;
+  const source = persisted as { lists?: unknown; listItems?: unknown };
+  const lists = Array.isArray(source.lists)
+    ? source.lists.flatMap((item) => {
+        const parsed = v.safeParse(localListSchema, item);
+        return parsed.success ? [parsed.output] : [];
+      })
+    : [];
+  const listItems = Array.isArray(source.listItems)
+    ? source.listItems.flatMap((item) => {
+        const parsed = v.safeParse(localListItemSchema, item);
+        return parsed.success ? [parsed.output] : [];
+      })
+    : [];
+  return { lists, listItems };
+};
 
 function buildLocalListItem(
   args: {
@@ -315,6 +366,10 @@ export const useLocalListsStore = create<LocalListsStore>()(
         return newId;
       },
     }),
-    guestPersistOptions<LocalListsStore>("local-lists-store"),
+    guestPersistOptions<LocalListsStore>(
+      "local-lists-store",
+      "lru",
+      sanitizeLocalListsState,
+    ),
   ),
 );

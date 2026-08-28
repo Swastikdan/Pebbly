@@ -22,7 +22,7 @@ export const MediaKeywords = (props: {
               className="pressable-small"
             >
               <Badge
-                className="[a&]:hover:bg-primary h-8 cursor-pointer rounded-md px-4 text-xs capitalize sm:h-8 md:text-sm"
+                className="[a&]:hover:bg-primary h-8 cursor-pointer rounded-md px-4 text-xs capitalize sm:h-8"
                 variant="secondary"
               >
                 {keyword.name.charAt(0).toUpperCase() + keyword.name.slice(1)}

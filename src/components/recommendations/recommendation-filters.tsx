@@ -199,7 +199,7 @@ export function RecommendationFilters({
                   className={cn(
                     "h-8 shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150",
                     selectedEras.includes(era.label)
-                      ? "bg-primary text-primary-foreground border-transparent hover:scale-105"
+                      ? "bg-primary text-primary-foreground border-transparent"
                       : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60 hover:text-foreground border",
                   )}
                   onClick={() => toggleEra(era.label)}
@@ -268,7 +268,7 @@ export function RecommendationFilters({
                 className={cn(
                   "h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150",
                   selectedGenres.includes(genre.name)
-                    ? "bg-primary text-primary-foreground border-transparent hover:scale-105"
+                    ? "bg-primary text-primary-foreground border-transparent"
                     : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60 hover:text-foreground border",
                 )}
                 onClick={() => toggleGenre(genre.name)}

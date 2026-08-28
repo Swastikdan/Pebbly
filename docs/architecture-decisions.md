@@ -454,3 +454,60 @@ path rather than the first step.
   storage accumulation, no realistic overflow.
 
 ---
+
+## ADR-016: Public list UUIDs are permanent bearer capabilities
+
+**Status:** Accepted
+
+**Context:** `getCollectionPage` (and the share flow) exposes a custom list
+without authentication: anyone holding the `listId` UUID can read the list and
+its items. This is a deliberate design (sharing a watchlist by link), not a
+leak.
+
+**Decision:** A list's UUID is its capability token. Readers are never
+enumerated; the only way to know a list exists is to hold its id. Nothing
+identifiable is derivable from the id, and item rows only leave via the public
+getters. Do not add an auth wall to the anonymous collection page, and do not
+log full collection UUIDs server-side.
+
+**Consequences:**
+
+- A leaked link is a permanent read grant for that list's current contents;
+  there is no re-issue mechanism. Revocation = delete the list or (future) a
+  "regenerate id" admin action.
+- Pagination and item hydration for anonymous readers must stay keyed on the
+  id and never accept an out-of-band owner check (an owner check would make
+  the seam require auth again).
+
+---
+
+## ADR-017: TMDB token stays client-side; no Worker proxy for anonymous reads
+
+**Status:** Accepted
+
+**Context:** `VITE_PUBLIC_TMDB_ACCESS_TOKEN` ships in the client bundle and the
+browser calls TMDB directly for posters/search/browsing; the Worker is not in
+that path. Anyone can extract the token and scrape TMDB with it, burning the
+app's quota. The hardening plan listed two mitigations: a Cloudflare WAF rule
+on the deployed domain, and a long-term "proxy cached TMDB reads through the
+Worker so the token never ships."
+
+**Decision:** Do **not** proxy TMDB reads through the Worker in the anonymous /
+not-signed-in path. Routing every poster load through the server adds cost,
+load, and latency for those users with no benefit to them, and the
+non-authenticated browsing path must stay server-free. The worker-side token
+is an accepted, bounded exposure: the token is a read-only TMDB access token
+(no account-mutating scope), and the primary mitigation is the Cloudflare WAF
+rule restricting non-browser UAs/origins on the deployed domain, plus TMDB
+quota monitoring. If abuse is ever observed, revisit a cached-proxy for
+**signed-in** users only.
+
+**Consequences:**
+
+- Anonymous TMDB reads keep flowing browser → TMDB directly; no code change.
+- The token remains extractable; protection is operational (WAF + monitoring),
+  not architectural.
+- A future cached-proxy is explicitly scoped to authenticated users only, and
+  would ship behind a flag before any rollout.
+
+---

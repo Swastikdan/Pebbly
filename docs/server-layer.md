@@ -221,18 +221,14 @@ All fns return `ApiResult<T>` and validate input with Valibot.
   `updateVerifiedRecommendations`) bump the user's `ai_rev`.
 - Homepage: `getHomepageRecommendations` (filters out disliked/not-interested
   feedback, computes `needsRefresh` from server time only: 24 h staleness,
-  retry suppressed for 1 h after a failure), `generateHomepageRecommendations`
-  (rate limited via the shared `rate_limit_attempts` ledger).
-- Generation: `generateRecommendations`, auth + feature gate (via
-  `authedFn`), empty-input guard, atomic rate-limit slot claim
-  (`tryConsumeRateLimit` on the `rate_limit_attempts` ledger;
-  `releaseRateLimit` on AI failure so failures don't consume the window),
-  `gatherWatchlistData` (one batched read of watch items ≤200,
-  lists ≤50, list items ≤200, episode progress ≤200), prompt building
-  (excluded ids capped at `MAX_EXCLUDE_TMDB_IDS = 1000`, also enforced
-  client-side), `callGeminiAI`, filtering (dedupe against existing ids/
-  titles, drop disliked), and persistence (`saveRecommendations` updates the
-  reservation row in place so history never shows a placeholder).
+  retry suppressed for 1 h after a failure), `startHomepageGeneration`
+  (thin adapter into `recommendation-pipeline.ts`, rate limited via the shared
+  `rate_limit_attempts` ledger).
+- Generation: `startGeneration` and `startHomepageGeneration` authenticate and
+  feature-gate through `authedFn`; `recommendation-pipeline.ts` owns the shared
+  empty-input guard, atomic rate-limit reservation/release, batched watchlist
+  data gathering, exclusions, candidate catalog, prompt building, provider
+  call, deduplication/filtering, and persistence.
 
 ### admin.ts (6 fns)
 
@@ -270,14 +266,17 @@ consumer is the recommendation fns):
 
 AI access:
 
-- `callGeminiAI(prompt, systemInstruction, retries)` remains the shared entry
-  point for compatibility with the generation callers.
-- In Cloudflare, it calls the native Workers AI `AI` binding using
-  `@cf/meta/llama-3.1-8b-instruct-fast` and JSON mode.
-- Local Vite development can fall back to the Gemini REST client when
-  `GEMINI_API_KEY` is configured; deployed Workers do not require that secret.
-- Responses are validated per element with Valibot, and provider failures are
-  mapped to safe application error codes.
+- `generateRecommendations(prompt, systemInstruction, retries)` is the
+  provider-neutral entry point. In Cloudflare it calls the native Workers AI
+  `AI` binding using `@cf/meta/llama-3.1-8b-instruct-fast` and JSON mode.
+- Local Vite development can fall back to the private `ai-gemini.ts` adapter
+  when `GEMINI_API_KEY` is configured; that module owns Gemini REST requests,
+  model fallback, and Gemini-specific error classification. Deployed Workers
+  do not require that secret.
+- Responses are validated per element with Valibot, and provider-specific
+  failures are mapped to safe application error codes.
+- `recommendation-pipeline.ts` owns the shared history/homepage generation
+  choreography; `fns/recommendations.ts` exposes thin authenticated adapters.
 
 ## 8. Shared contracts (`src/server/schema/`)
 

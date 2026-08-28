@@ -292,6 +292,7 @@ export function beginToggleListItemOp(
   queryClient: QueryClient,
   args: ToggleListItemArgs,
   userId: string | undefined,
+  addingOverride?: boolean,
 ): { handle: OpHandle; adding: boolean } {
   const itemListsKey = queryKeys.lists.itemLists(
     args.tmdbId,
@@ -301,7 +302,7 @@ export function beginToggleListItemOp(
   const itemsKey = queryKeys.lists.items(args.listId, userId);
   const currentItemLists = (queryClient.getQueryData<string[]>(itemListsKey) ??
     []) as string[];
-  const adding = !currentItemLists.includes(args.listId);
+  const adding = addingOverride ?? !currentItemLists.includes(args.listId);
 
   const entries: PendingOpEntry<MixedListRow>[] = [
     {
@@ -325,7 +326,12 @@ export function beginToggleListItemOp(
     },
   ];
 
-  return { handle: beginOp(queryClient, entries, { domain: "lists" }), adding };
+  return {
+    handle: beginOp(queryClient, entries, {
+      domain: addingOverride === undefined ? "lists" : undefined,
+    }),
+    adding,
+  };
 }
 
 export function applyToggleInverse(
@@ -334,37 +340,10 @@ export function applyToggleInverse(
   adding: boolean,
   userId: string | undefined,
 ) {
-  const inverse = !adding;
-  const itemListsKey = queryKeys.lists.itemLists(
-    args.tmdbId,
-    args.mediaType,
-    userId,
-  );
-  const itemsKey = queryKeys.lists.items(args.listId, userId);
-
-  const itemLists = (queryClient.getQueryData<string[]>(itemListsKey) ??
-    []) as string[];
-  queryClient.setQueryData<string[]>(
-    itemListsKey,
-    applyItemListsToggle(itemLists, args, inverse),
-  );
-
-  const items = (queryClient.getQueryData<ListItemRow[]>(itemsKey) ??
-    []) as ListItemRow[];
-  queryClient.setQueryData<ListItemRow[]>(
-    itemsKey,
-    applyItemsToggle(items, args, inverse),
-  );
-
-  const lists = (queryClient.getQueryData<CustomListRow[]>(
-    queryKeys.lists.all(userId),
-  ) ?? []) as CustomListRow[] | undefined;
-  if (lists) {
-    queryClient.setQueryData<CustomListRow[]>(
-      queryKeys.lists.all(userId),
-      applyListCountToggle(lists, args, inverse),
-    );
-  }
+  // Reuse the same journal entries and cache patches as the optimistic
+  // operation. Resolve immediately because this is a local correction to the
+  // already-confirmed server response, not another server mutation.
+  beginToggleListItemOp(queryClient, args, userId, !adding).handle.resolve();
 }
 
 export type ReorderItemsArgs = {

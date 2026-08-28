@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import type { ApiResult } from "../schema/common";
@@ -20,7 +20,7 @@ import {
   setUserRolesArgsSchema,
 } from "../schema/admin";
 import { fail, ok } from "../schema/common";
-import { authedFn } from "./rpc";
+import { authedFn, WRITE_RATE_LIMIT } from "./rpc";
 
 async function findUserByTokenIdentifier(db: Db, tokenIdentifier: string) {
   const rows = await db
@@ -72,71 +72,106 @@ export const getRolePermissions = createServerFn({ method: "POST" }).handler(
 export const setRolePermission = createServerFn({ method: "POST" })
   .validator(setRolePermissionArgsSchema)
   .handler(({ data }) =>
-    authedFn({ admin: true }, data, async ({ db }) => {
-      await syncRolePermissions(db, true);
+    authedFn(
+      { admin: true, rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db }) => {
+        await syncRolePermissions(db, true);
 
-      await db
-        .insert(rolePermissions)
-        .values({
-          role: "global",
-          feature: data.feature,
-          enabled: data.enabled,
-        })
-        .onConflictDoUpdate({
-          target: [rolePermissions.role, rolePermissions.feature],
-          set: { enabled: data.enabled },
-        });
+        // Read the current global value first: if the toggle is a no-op
+        // (same value), no user's effective permissions change, so skip the
+        // per-row revision bump entirely (0 D1 row writes instead of N).
+        const existing = await db
+          .select({ enabled: rolePermissions.enabled })
+          .from(rolePermissions)
+          .where(
+            and(
+              eq(rolePermissions.role, "global"),
+              eq(rolePermissions.feature, data.feature),
+            ),
+          )
+          .limit(1);
 
-      // Global feature flags affect every user, so all permission revisions
-      // move together (cheap at this scale, keeps clients off a fixed poll).
-      await db.update(users).set({ permsRev: sql`${users.permsRev} + 1` });
+        await db
+          .insert(rolePermissions)
+          .values({
+            role: "global",
+            feature: data.feature,
+            enabled: data.enabled,
+          })
+          .onConflictDoUpdate({
+            target: [rolePermissions.role, rolePermissions.feature],
+            set: { enabled: data.enabled },
+          });
 
-      return ok({ ok: true });
-    }),
+        // A real global flag change affects every user, so all permission
+        // revisions move together (cheap at this scale, keeps clients off a
+        // fixed poll). The no-op guard above is what bounds D1 write cost.
+        if (existing.length === 0 || existing[0].enabled !== data.enabled) {
+          await db.update(users).set({ permsRev: sql`${users.permsRev} + 1` });
+        }
+
+        return ok({ ok: true });
+      },
+    ),
   );
 
 export const setUserRoles = createServerFn({ method: "POST" })
   .validator(setUserRolesArgsSchema)
   .handler(({ data }) =>
-    authedFn({ admin: true }, data, async ({ db }) => {
-      const target = await findUserByTokenIdentifier(db, data.tokenIdentifier);
+    authedFn(
+      { admin: true, rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db }) => {
+        const target = await findUserByTokenIdentifier(
+          db,
+          data.tokenIdentifier,
+        );
 
-      if (!target) return fail("NOT_FOUND", "User not found");
+        if (!target) return fail("NOT_FOUND", "User not found");
 
-      await db
-        .update(users)
-        .set({
-          roles: data.roles.length > 0 ? data.roles : [],
-        })
-        .where(eq(users.id, target.id));
+        await db
+          .update(users)
+          .set({
+            roles: data.roles.length > 0 ? data.roles : [],
+          })
+          .where(eq(users.id, target.id));
 
-      await bumpPermsRev(db, target.id);
-      invalidateUserCache(target.tokenIdentifier);
-      return ok({ ok: true });
-    }),
+        await bumpPermsRev(db, target.id);
+        invalidateUserCache(target.tokenIdentifier);
+        return ok({ ok: true });
+      },
+    ),
   );
 
 export const setUserBanned = createServerFn({ method: "POST" })
   .validator(setUserBannedArgsSchema)
   .handler(({ data }) =>
-    authedFn({ admin: true }, data, async ({ db, user }) => {
-      const target = await findUserByTokenIdentifier(db, data.tokenIdentifier);
+    authedFn(
+      { admin: true, rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db, user }) => {
+        const target = await findUserByTokenIdentifier(
+          db,
+          data.tokenIdentifier,
+        );
 
-      if (!target) return fail("NOT_FOUND", "User not found");
+        if (!target) return fail("NOT_FOUND", "User not found");
 
-      if (user.id === target.id) {
-        return fail("BAD_REQUEST", "Cannot ban yourself");
-      }
+        if (user.id === target.id) {
+          return fail("BAD_REQUEST", "Cannot ban yourself");
+        }
 
-      await db
-        .update(users)
-        .set({ isBanned: data.banned })
-        .where(eq(users.id, target.id));
+        await db
+          .update(users)
+          .set({ isBanned: data.banned })
+          .where(eq(users.id, target.id));
 
-      await bumpPermsRev(db, target.id);
-      invalidateUserCache(target.tokenIdentifier);
-      return ok({ ok: true });
-    }),
+        await bumpPermsRev(db, target.id);
+        invalidateUserCache(target.tokenIdentifier);
+        return ok({ ok: true });
+      },
+    ),
   );
 
 export const listUsers = createServerFn({ method: "POST" })

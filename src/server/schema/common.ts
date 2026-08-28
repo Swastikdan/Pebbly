@@ -32,11 +32,11 @@ export const feedbackSchema = v.picklist(["like", "not_interested", "dislike"]);
 export type Feedback = v.InferOutput<typeof feedbackSchema>;
 
 export const metadataSchema = v.object({
-  title: v.optional(v.string()),
-  image: v.optional(v.string()),
-  rating: v.optional(v.number()),
-  release_date: v.optional(v.string()),
-  overview: v.optional(v.string()),
+  title: v.optional(v.pipe(v.string(), v.maxLength(500))),
+  image: v.optional(v.pipe(v.string(), v.maxLength(2048))),
+  rating: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(10))),
+  release_date: v.optional(v.pipe(v.string(), v.maxLength(32))),
+  overview: v.optional(v.pipe(v.string(), v.maxLength(5000))),
 });
 export type MediaMetadata = v.InferOutput<typeof metadataSchema>;
 

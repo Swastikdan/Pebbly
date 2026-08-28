@@ -22,7 +22,7 @@ import {
   toggleListItemArgsSchema,
   updateCustomListArgsSchema,
 } from "../schema/lists";
-import { authedFn } from "./rpc";
+import { authedFn, WRITE_RATE_LIMIT } from "./rpc";
 
 export const getCustomLists = createServerFn({ method: "POST" }).handler(() =>
   authedFn(
@@ -304,207 +304,235 @@ export const getItemLists = createServerFn({ method: "POST" })
 export const createCustomList = createServerFn({ method: "POST" })
   .validator(createCustomListArgsSchema)
   .handler(({ data }) =>
-    authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const result = await createCustomListInner(db, user.id, data);
-      if (!result.ok) return result;
-      return ok(result.data);
-    }),
+    authedFn(
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db, user }) => {
+        const result = await createCustomListInner(db, user.id, data);
+        if (!result.ok) return result;
+        return ok(result.data);
+      },
+    ),
   );
 
 export const createCustomListAndAddItem = createServerFn({ method: "POST" })
   .validator(createCustomListAndAddItemArgsSchema)
   .handler(({ data }) =>
-    authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const created = await createCustomListInner(
-        db,
-        user.id,
-        {
-          name: data.name,
-          color: data.color,
-          description: data.description,
-          visibility: data.visibility,
-          listType: data.listType,
-          sortType: data.sortType,
-        },
-        // The item toggle below bumps listsRev once for the whole
-        // operation, keeping the rev delta explainable to UserSync.
-        { skipRevBump: true },
-      );
-      if (!created.ok) return created;
-      const id = created.data;
+    authedFn(
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db, user }) => {
+        const created = await createCustomListInner(
+          db,
+          user.id,
+          {
+            name: data.name,
+            color: data.color,
+            description: data.description,
+            visibility: data.visibility,
+            listType: data.listType,
+            sortType: data.sortType,
+          },
+          // The item toggle below bumps listsRev once for the whole
+          // operation, keeping the rev delta explainable to UserSync.
+          { skipRevBump: true },
+        );
+        if (!created.ok) return created;
+        const id = created.data;
 
-      const itemResult = await toggleListItemInner(db, user.id, {
-        listId: id,
-        tmdbId: data.tmdbId,
-        mediaType: data.mediaType,
-        title: data.title,
-        image: data.image,
-        backdrop: data.backdrop,
-        rating: data.rating,
-        release_date: data.release_date,
-        overview: data.overview,
-      });
+        const itemResult = await toggleListItemInner(db, user.id, {
+          listId: id,
+          tmdbId: data.tmdbId,
+          mediaType: data.mediaType,
+          title: data.title,
+          image: data.image,
+          backdrop: data.backdrop,
+          rating: data.rating,
+          release_date: data.release_date,
+          overview: data.overview,
+        });
 
-      if (!itemResult.ok) {
-        await db.delete(lists).where(eq(lists.id, id));
-        return itemResult;
-      }
+        if (!itemResult.ok) {
+          await db.delete(lists).where(eq(lists.id, id));
+          return itemResult;
+        }
 
-      return ok(id);
-    }),
+        return ok(id);
+      },
+    ),
   );
 
 export const updateCustomList = createServerFn({ method: "POST" })
   .validator(updateCustomListArgsSchema)
   .handler(({ data }) =>
-    authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const existing = await findOwnedRow(db, lists, user.id, data.listId);
-      if (!existing) return fail("NOT_FOUND", "List not found");
+    authedFn(
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db, user }) => {
+        const existing = await findOwnedRow(db, lists, user.id, data.listId);
+        if (!existing) return fail("NOT_FOUND", "List not found");
 
-      if (data.name !== undefined && data.name !== existing.name) {
-        const dup = await db
-          .select({ id: lists.id })
-          .from(lists)
-          .where(and(eq(lists.userId, user.id), eq(lists.name, data.name)))
-          .limit(1);
-        if (dup.length > 0)
-          return fail("CONFLICT", "A list with this name already exists");
-      }
+        if (data.name !== undefined && data.name !== existing.name) {
+          const dup = await db
+            .select({ id: lists.id })
+            .from(lists)
+            .where(and(eq(lists.userId, user.id), eq(lists.name, data.name)))
+            .limit(1);
+          if (dup.length > 0)
+            return fail("CONFLICT", "A list with this name already exists");
+        }
 
-      await db
-        .update(lists)
-        .set({
-          ...(data.name !== undefined ? { name: data.name } : {}),
-          ...(data.color !== undefined ? { color: data.color } : {}),
-          ...(data.description !== undefined
-            ? { description: data.description }
-            : {}),
-          ...(data.visibility !== undefined
-            ? { visibility: data.visibility }
-            : {}),
-          ...(data.listType !== undefined ? { listType: data.listType } : {}),
-          ...(data.sortType !== undefined ? { sortType: data.sortType } : {}),
-          updatedAt: Date.now(),
-        })
-        .where(eq(lists.id, existing.id));
+        await db
+          .update(lists)
+          .set({
+            ...(data.name !== undefined ? { name: data.name } : {}),
+            ...(data.color !== undefined ? { color: data.color } : {}),
+            ...(data.description !== undefined
+              ? { description: data.description }
+              : {}),
+            ...(data.visibility !== undefined
+              ? { visibility: data.visibility }
+              : {}),
+            ...(data.listType !== undefined ? { listType: data.listType } : {}),
+            ...(data.sortType !== undefined ? { sortType: data.sortType } : {}),
+            updatedAt: Date.now(),
+          })
+          .where(eq(lists.id, existing.id));
 
-      await bumpListsRev(db, user.id);
-      return ok({ ok: true });
-    }),
+        await bumpListsRev(db, user.id);
+        return ok({ ok: true });
+      },
+    ),
   );
 export const deleteCustomList = createServerFn({ method: "POST" })
   .validator(deleteCustomListArgsSchema)
   .handler(({ data }) =>
-    authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const list = await findOwnedRow(db, lists, user.id, data.listId);
-      if (!list) return fail("NOT_FOUND", "List not found");
+    authedFn(
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db, user }) => {
+        const list = await findOwnedRow(db, lists, user.id, data.listId);
+        if (!list) return fail("NOT_FOUND", "List not found");
 
-      await db.delete(lists).where(eq(lists.id, data.listId));
-      await bumpListsRev(db, user.id);
-      return ok({ ok: true });
-    }),
+        await db.delete(lists).where(eq(lists.id, data.listId));
+        await bumpListsRev(db, user.id);
+        return ok({ ok: true });
+      },
+    ),
   );
 export const toggleListItem = createServerFn({ method: "POST" })
   .validator(toggleListItemArgsSchema)
   .handler(({ data }) =>
-    authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const result = await toggleListItemInner(db, user.id, data);
-      if (!result.ok) return result;
-      return ok(result.data);
-    }),
+    authedFn(
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db, user }) => {
+        const result = await toggleListItemInner(db, user.id, data);
+        if (!result.ok) return result;
+        return ok(result.data);
+      },
+    ),
   );
 
 export const reorderListItems = createServerFn({ method: "POST" })
   .validator(reorderListItemsArgsSchema)
   .handler(({ data }) =>
-    authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const list = await findOwnedRow(db, lists, user.id, data.listId);
-      if (!list) return fail("NOT_FOUND", "List not found");
+    authedFn(
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db, user }) => {
+        const list = await findOwnedRow(db, lists, user.id, data.listId);
+        if (!list) return fail("NOT_FOUND", "List not found");
 
-      await applyItemOrder(db, data.listId, user.id, data.orderedItems);
-      await bumpListsRev(db, user.id);
-      return ok({ ok: true });
-    }),
+        await applyItemOrder(db, data.listId, user.id, data.orderedItems);
+        await bumpListsRev(db, user.id);
+        return ok({ ok: true });
+      },
+    ),
   );
 
 export const cloneCustomList = createServerFn({ method: "POST" })
   .validator(cloneCustomListArgsSchema)
   .handler(({ data }) =>
-    authedFn({ mode: "require" }, data, async ({ db, user }) => {
-      const sourceRows = await db
-        .select()
-        .from(lists)
-        .where(eq(lists.id, data.sourceListId))
-        .limit(1);
-      if (sourceRows.length === 0) {
-        return fail("NOT_FOUND", "Collection not found");
-      }
-      const source = sourceRows[0];
-
-      if (source.userId !== user.id && source.visibility !== "public") {
-        return fail("NOT_FOUND", "Collection not found");
-      }
-
-      const sourceItems = await db
-        .select()
-        .from(listItems)
-        .where(eq(listItems.listId, source.id))
-        .orderBy(asc(listItems.position), asc(listItems.addedAt));
-
-      let name = `${source.name} (copy)`;
-      for (let n = 2; ; n++) {
-        const dup = await db
-          .select({ id: lists.id })
+    authedFn(
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db, user }) => {
+        const sourceRows = await db
+          .select()
           .from(lists)
-          .where(and(eq(lists.userId, user.id), eq(lists.name, name)))
+          .where(eq(lists.id, data.sourceListId))
           .limit(1);
-        if (dup.length === 0) break;
-        name = `${source.name} (copy ${n})`;
-      }
+        if (sourceRows.length === 0) {
+          return fail("NOT_FOUND", "Collection not found");
+        }
+        const source = sourceRows[0];
 
-      const listResult = await createCustomListInner(
-        db,
-        user.id,
-        {
-          name,
-          color: source.color ?? undefined,
-          description: source.description ?? undefined,
-          visibility: "private",
-          listType: "custom",
-          sortType: source.sortType ?? "unordered",
-        },
-        { skipRevBump: true },
-      );
-      if (!listResult.ok) return listResult;
-      const id = listResult.data;
+        if (source.userId !== user.id && source.visibility !== "public") {
+          return fail("NOT_FOUND", "Collection not found");
+        }
 
-      if (sourceItems.length > 0) {
-        // Each row is its own statement inside db.batch, so per-statement
-        // bound params stay at 12 (D1 caps at 100); the chunk only limits
-        // statements per round trip.
-        const statements = sourceItems.map((item, index) =>
-          db.insert(listItems).values({
-            id: crypto.randomUUID(),
-            userId: user.id,
-            listId: id,
-            tmdbId: item.tmdbId,
-            mediaType: item.mediaType,
-            position: item.position || index + 1,
-            addedAt: Date.now(),
-            title: item.title,
-            image: item.image,
-            backdrop: item.backdrop,
-            rating: item.rating,
-            releaseDate: item.releaseDate,
-            overview: item.overview,
-          }),
+        const sourceItems = await db
+          .select()
+          .from(listItems)
+          .where(eq(listItems.listId, source.id))
+          .orderBy(asc(listItems.position), asc(listItems.addedAt));
+
+        let name = `${source.name} (copy)`;
+        for (let n = 2; ; n++) {
+          const dup = await db
+            .select({ id: lists.id })
+            .from(lists)
+            .where(and(eq(lists.userId, user.id), eq(lists.name, name)))
+            .limit(1);
+          if (dup.length === 0) break;
+          name = `${source.name} (copy ${n})`;
+        }
+
+        const listResult = await createCustomListInner(
+          db,
+          user.id,
+          {
+            name,
+            color: source.color ?? undefined,
+            description: source.description ?? undefined,
+            visibility: "private",
+            listType: "custom",
+            sortType: source.sortType ?? "unordered",
+          },
+          { skipRevBump: true },
         );
-        await runBatch(db, statements);
-      }
+        if (!listResult.ok) return listResult;
+        const id = listResult.data;
 
-      await bumpListsRev(db, user.id);
-      return ok(id);
-    }),
+        if (sourceItems.length > 0) {
+          // Each row is its own statement inside db.batch, so per-statement
+          // bound params stay at 12 (D1 caps at 100); the chunk only limits
+          // statements per round trip.
+          const statements = sourceItems.map((item, index) =>
+            db.insert(listItems).values({
+              id: crypto.randomUUID(),
+              userId: user.id,
+              listId: id,
+              tmdbId: item.tmdbId,
+              mediaType: item.mediaType,
+              position: item.position || index + 1,
+              addedAt: Date.now(),
+              title: item.title,
+              image: item.image,
+              backdrop: item.backdrop,
+              rating: item.rating,
+              releaseDate: item.releaseDate,
+              overview: item.overview,
+            }),
+          );
+          await runBatch(db, statements);
+        }
+
+        await bumpListsRev(db, user.id);
+        return ok(id);
+      },
+    ),
   );
 
 async function createCustomListInner(

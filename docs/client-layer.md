@@ -71,13 +71,15 @@ All persisted guest stores live in **`src/stores/`**:
 | `useWatchlistStore`     | `src/stores/watchlist-store.ts`      | Guest watchlist (`mediaState`), persisted to localStorage with LRU eviction; mutators `setWatchlistMembershipLocal`, `setProgressStatusLocal`, `setReactionLocal`, `setProgressLocal`, `importWatchlistLocal` |
 | `useLocalListsStore`    | `src/stores/local-lists-store.ts`    | Guest custom lists                                                                                                                                                                                            |
 | `useLocalProgressStore` | `src/stores/local-progress-store.ts` | Guest episode/progress state (`lastPlayed`, watched episodes)                                                                                                                                                 |
-| `useDailyPickStore`     | `src/stores/daily-pick-store.ts`     | Daily-pick offline cache (last trending/popular payloads + per-title backdrop/poster paths, ~100-entry detail cache)                                                                                          |
+| `useDailyPickStore`     | `src/stores/daily-pick-store.ts`     | Bounded persisted per-title backdrop/poster metadata cache; trending/popular catalogs remain in React Query                                                                                                   |
 
 All guest stores share their persist plumbing via
-`src/stores/guest-store-kit.ts`: `guestPersistOptions()` (LRU-capped storage
-on the client, plain memory during SSR), plus small helpers (`localId` for
-collision-free local ids, `nextRank` for append-position,
-`mergeDefinedFields` for sparse patches).
+`src/stores/guest-store-kit.ts`: `guestPersistOptions()` and `guardedMerge()`
+provide versioned, SSR-safe persistence with optional per-store sanitizers.
+Valibot-backed sanitizers discard malformed persisted entries while retaining
+valid siblings; primitive/array payloads fall back to fresh state. Small
+helpers include `localId` for collision-free local ids, `nextRank` for
+append-position, and `mergeDefinedFields` for sparse patches.
 
 Two more stores live beside their feature code:
 
@@ -104,8 +106,8 @@ The mutation layer that eliminated the old `if (isSignedIn)` branches:
 - `types.ts`, `WatchlistRepository` + `ListsRepository` interfaces and the
   shared `resolveProgressStatusAction` decision tree (TV vs movie progress
   writes: mark watched, leave completion, episode sync needed, progress value).
-- `status-plan.ts` holds `resolveStatusPlan()`, the single decision pipeline
-  both adapters run for progress-status writes. It resolves the TV-vs-movie action
+- `types.ts` holds `resolveStatusPlan()`, the single decision pipeline both
+  adapters run for progress-status writes. It resolves the TV-vs-movie action
   and, when episode rows must follow the new status, kicks off the one TMDB
   season fetch and builds the per-season episode selections. Adapters only
   _execute_ the plan; neither re-implements the semantics.
@@ -187,10 +189,11 @@ The rest of the data layer sits beside it:
   poster), fall back to search; pass `enabled: false` for entries already
   backed by verified cached data.
 - `use-daily-pick.ts`, orchestrates "Tonight's Pick": two gated trending/
-  popular-TV queries (persisted to `daily-pick-store` for offline), candidate
-  building, and date-seeded stable selection via the pure engine in
-  `src/lib/daily-pick-engine.ts`. Detail lookups reuse the canonical
-  `movieDetails`/`tvDetails` cache entries.
+  popular-TV queries from canonical React Query keys, candidate building, and
+  date-seeded stable selection via the pure engine in
+  `src/lib/daily-pick-engine.ts`. Only the bounded image-detail metadata cache
+  persists locally; detail lookups reuse canonical `movieDetails`/`tvDetails`
+  cache entries.
 - `use-remove-with-undo.ts`, removes a watchlist item immediately and offers
   an Undo toast that performs the inverse toggle (deliberately distinct from
   `use-destructive-toast`, which defers the mutation until countdown expiry).

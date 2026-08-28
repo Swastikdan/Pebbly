@@ -4,7 +4,7 @@ import { logError } from "@/lib/utils";
 import { useLocalListsStore } from "@/stores/local-lists-store";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
 import { useWatchlistStore } from "@/stores/watchlist-store";
-import { resolveStatusPlan } from "./status-plan";
+import { resolveStatusPlan } from "./types";
 
 export function createLocalRepository(queryClient: QueryClient): Repository {
   const watchlist: WatchlistRepository = {

@@ -35,7 +35,7 @@ import {
   setWatchlistMembershipArgsSchema,
   updateProgressArgsSchema,
 } from "../schema/watchlist";
-import { authedFn } from "./rpc";
+import { authedFn, WRITE_RATE_LIMIT } from "./rpc";
 
 export const getWatchlist = createServerFn({ method: "POST" })
   .validator(getWatchlistArgsSchema)
@@ -138,7 +138,7 @@ export const updateProgress = createServerFn({ method: "POST" })
   .validator(updateProgressArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         // Routed through the race-safe upsert: a double-submit that inserts
@@ -192,7 +192,7 @@ export const removeFromContinueWatching = createServerFn({ method: "POST" })
   .validator(mediaIdentityArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         const existing = await getWatchItem(db, user.id, data);
@@ -217,7 +217,7 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
   .validator(setWatchlistMembershipArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({
         db,
@@ -274,7 +274,7 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
   .validator(batchSetWatchlistMembershipArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({
         db,
@@ -396,7 +396,7 @@ export const setProgressStatus = createServerFn({ method: "POST" })
   .validator(setProgressStatusArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         await upsertWatchItem(
@@ -431,7 +431,7 @@ export const setReaction = createServerFn({ method: "POST" })
   .validator(setReactionArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         await upsertWatchItem(
@@ -462,7 +462,7 @@ export const markEpisodeWatched = createServerFn({ method: "POST" })
   .validator(markEpisodeWatchedArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         await syncEpisodeProgressRecord(db, user.id, data, Date.now());
@@ -475,7 +475,7 @@ export const markSeasonEpisodesWatched = createServerFn({ method: "POST" })
   .validator(markSeasonEpisodesWatchedArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         const now = Date.now();
@@ -514,7 +514,7 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
   .validator(markShowEpisodesAndStatusArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         const now = Date.now();

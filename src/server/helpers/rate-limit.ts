@@ -177,3 +177,52 @@ export async function releaseRateLimit(
     throw error;
   }
 }
+
+/**
+ * Counting budget variant of `tryConsumeRateLimit`: allows up to `max`
+ * attempts per rolling `windowMs` under `key` instead of one. Used for the
+ * per-user write budget enforced by `authedFn` (see `WRITE_RATE_LIMIT`).
+ *
+ * Admission is a single atomic guarded INSERT: the guard counts this key's
+ * rows inside the window and admits only below `max`, so SQLite/D1 write
+ * serialization makes the check race-free (unlike a count-then-insert).
+ * Admitted rows accumulate (up to `max` per window per key) and are pruned
+ * by the stale delete below and the daily global prune. Slots are never
+ * released: failed writes keep their budget slot so a tight retry loop
+ * cannot hammer the DB.
+ */
+export async function consumeRateLimitBudget(
+  db: Db,
+  key: string,
+  windowMs: number,
+  max: number,
+): Promise<RateLimitReservation> {
+  const now = Date.now();
+  const claim = () => sql`
+    insert into ${rateLimitAttempts} ("id", "key", "created_at")
+    select ${crypto.randomUUID()}, ${key}, ${now}
+    where (
+      select count(*)
+      from ${rateLimitAttempts}
+      where ${rateLimitAttempts.key} = ${key}
+        and ${rateLimitAttempts.createdAt} > ${now - windowMs}
+    ) < ${max}
+  `;
+
+  try {
+    await db.run(sql`
+      delete from ${rateLimitAttempts}
+      where ${rateLimitAttempts.key} = ${key}
+        and ${rateLimitAttempts.createdAt} < ${now - windowMs}
+    `);
+    const result = await db.run(claim());
+    return result.meta.changes === 1 ? { allowed: true } : { allowed: false };
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      await ensureRateLimitTable(db);
+      const result = await db.run(claim());
+      return result.meta.changes === 1 ? { allowed: true } : { allowed: false };
+    }
+    throw error;
+  }
+}
