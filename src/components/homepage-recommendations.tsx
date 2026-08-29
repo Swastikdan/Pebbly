@@ -1,7 +1,7 @@
 import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { memo } from "react";
 
-import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
+import type { AIRecommendation } from "@/domain/recommendations";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { MediaSkeletonList } from "@/components/media-skeleton-list";
 import { ScrollContainer } from "@/components/scroll-container";

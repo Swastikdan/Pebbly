@@ -1,4 +1,4 @@
-import type { MediaType } from "@/types";
+import type { MediaType } from "@/domain/media";
 
 export const queryKeys = {
   watchlist: {

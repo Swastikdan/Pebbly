@@ -1,11 +1,15 @@
+import type { MediaType } from "@/domain/media";
+import type {
+  MediaMetadata,
+  ProgressStatus,
+  ReactionStatus,
+} from "@/domain/watchlist";
 import type {
   CreateListAndAddArgs,
   CreateListArgs,
   ToggleListItemArgs,
   UpdateListArgs,
 } from "@/lib/data/optimistic/list-optimistic";
-import type { MediaMetadata, MediaType } from "@/stores/watchlist-store";
-import type { ProgressStatus, ReactionStatus } from "@/types";
 import type { QueryClient } from "@tanstack/react-query";
 import { watchlistOptimistic } from "@/lib/data/optimistic/watchlist-optimistic";
 import { getTvDetails } from "@/lib/queries";

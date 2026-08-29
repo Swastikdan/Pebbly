@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 
 import type { Db } from "../db/client";
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { listItems, lists } from "../db/schema";
 import {
   PEBBLY_PICKS_LIST_NAME,

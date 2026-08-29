@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
+import type { AIRecommendation } from "@/domain/recommendations";
 import {
   filterRenderedRecommendations,
   getDismissKey,

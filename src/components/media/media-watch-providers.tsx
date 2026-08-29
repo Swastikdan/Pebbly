@@ -189,7 +189,7 @@ export const MediaWatchProviders = (props: {
   const curatedFallback = REGION_OPTIONS.map((option) => option.value).find(
     (value) => availableRegions.includes(value),
   );
-  const fallbackRegion = curatedFallback ?? (availableRegions[0] ?? "US");
+  const fallbackRegion = curatedFallback ?? availableRegions[0] ?? "US";
   const effectiveRegion = availableRegions.includes(region)
     ? region
     : fallbackRegion;

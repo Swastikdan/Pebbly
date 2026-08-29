@@ -140,10 +140,10 @@ function HomePage() {
                 <TabsTab value="trending_week">This Week</TabsTab>
               </TabsList>
             </div>
-            <TabsPanel value="trending_day">
+            <TabsPanel keepMounted value="trending_day">
               <TrendingDayMovies />
             </TabsPanel>
-            <TabsPanel value="trending_week">
+            <TabsPanel keepMounted value="trending_week">
               <Suspense
                 fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
               >
@@ -180,7 +180,6 @@ function HomePage() {
             </Suspense>
           </LazySection>
 
-          <h2 className="text-h2 mt-2">{`What's Popular`}</h2>
           <LazySection
             minHeight="360px"
             className="content-visibility-auto"
@@ -188,6 +187,7 @@ function HomePage() {
           >
             <Tabs defaultValue="popular_movie">
               <div className="flex items-center gap-4">
+                <h2 className="text-h2">What's Popular</h2>
                 <TabsList>
                   <TabsTab value="popular_movie">Theaters</TabsTab>
                   <TabsTab value="popular_tv">On TV</TabsTab>
@@ -214,7 +214,6 @@ function HomePage() {
             </Tabs>
           </LazySection>
 
-          <h2 className="text-h2 mt-2">Top Rated</h2>
           <LazySection
             minHeight="360px"
             className="content-visibility-auto"
@@ -222,6 +221,7 @@ function HomePage() {
           >
             <Tabs defaultValue="top_rated_movies">
               <div className="flex items-center gap-4">
+                <h2 className="text-h2">Top Rated</h2>
                 <TabsList>
                   <TabsTab value="top_rated_movies">Movies</TabsTab>
                   <TabsTab value="top_rated_tv">TV Shows</TabsTab>

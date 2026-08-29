@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { normalizeTitleKey } from "@/lib/text";
 import { generateGeminiRecommendations } from "./ai-gemini";
 import { getEnv, getEnvVar } from "./env";

@@ -2,8 +2,8 @@ import { useUser } from "@clerk/react";
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import type { AIRecommendation } from "@/domain/recommendations";
 import type { MediaType } from "@/lib/media-types";
-import type { AIRecommendation } from "@/types";
 import { ERA_PRESETS } from "@/components/recommendations/recommendation-filters";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";

@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { useRepository } from "@/lib/repository/use-repository";
-import { useLocalProgressStore } from "@/stores/local-progress-store";
 import {
   logWatchProgressError,
   parsePlayerEventPayload,
-} from "./progress-helpers";
+} from "@/lib/watch-progress";
+import { useLocalProgressStore } from "@/stores/local-progress-store";
 
 export function usePlayerProgressListener(
   activeContext?: {

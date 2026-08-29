@@ -10,12 +10,6 @@ import type {
 import type { OpHandle } from "@/lib/data/pending-ops";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
-import { toast } from "@/hooks/use-toast-store";
-import {
-  episodeRowIdOf,
-  toggleEpisodeRows,
-  toggleSeasonRows,
-} from "@/hooks/watch-progress/progress-helpers";
 import { createBatcher } from "@/lib/batcher";
 import {
   enqueueMutation,
@@ -42,9 +36,15 @@ import {
   beginOp,
   scheduleSync,
 } from "@/lib/data/pending-ops";
+import { toast } from "@/lib/notifications";
 import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { extractMetadataFields, logError } from "@/lib/utils";
+import {
+  episodeRowIdOf,
+  toggleEpisodeRows,
+  toggleSeasonRows,
+} from "@/lib/watch-progress";
 import {
   cloneCustomList,
   createCustomList,
@@ -76,46 +76,8 @@ import {
   setWatchlistMembershipArgsSchema,
   updateProgressArgsSchema,
 } from "@/server/schema/watchlist";
+import { runMutationAsync } from "./mutation-runner";
 import { resolveStatusPlan } from "./types";
-
-async function runMutationAsync<T = unknown>(
-  queryClient: QueryClient,
-  {
-    begin,
-    run,
-    syncKeys,
-    errorMessage,
-    onSuccess,
-    outbox,
-  }: {
-    begin: () => OpHandle | undefined;
-    run: () => Promise<T>;
-    syncKeys: readonly (readonly unknown[])[];
-    errorMessage: string;
-    onSuccess?: (result: T) => void;
-    outbox?: { userId: string; kind: string; payload: unknown };
-  },
-): Promise<T> {
-  const handle = begin();
-  const outboxId = outbox
-    ? enqueueMutation(outbox.userId, outbox.kind, outbox.payload)
-    : undefined;
-  try {
-    const result = await run();
-    onSuccess?.(result);
-    handle?.resolve();
-    if (outboxId) removeMutation(outboxId);
-    return result;
-  } catch (error) {
-    logError(errorMessage, error);
-    handle?.remove();
-    // Keep the record for the next boot. The optimistic state is rolled back
-    // now, while the idempotent server write can still be retried later.
-    throw error;
-  } finally {
-    scheduleSync(queryClient, syncKeys);
-  }
-}
 
 /**
  * Fire-and-forget mutation runner used by the side-effect write paths

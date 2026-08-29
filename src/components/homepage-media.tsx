@@ -47,7 +47,7 @@ const MediaList = memo(
               poster_path={item.poster_path}
               media_type={
                 props.defaultMediatype ??
-                (item.media_type as unknown as MediaType)
+                (item.media_type === "tv" ? "tv" : "movie")
               }
               release_date={item.first_air_date ?? item.release_date ?? null}
               is_on_watchlist_page={item.is_on_watchlist_page}
@@ -81,7 +81,10 @@ const useMediaQuery = (
   },
 ) => {
   const { data, isFetching, error } = useQuery({
-    queryKey: queryKeys.tmdb.homepageMedia(type),
+    queryKey:
+      type === "trending_day"
+        ? queryKeys.tmdb.trendingDay()
+        : queryKeys.tmdb.homepageMedia(type),
     queryFn: () => getMedia({ type }),
   });
 

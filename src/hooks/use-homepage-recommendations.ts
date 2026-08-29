@@ -2,7 +2,7 @@ import { useUser } from "@clerk/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
+import type { AIRecommendation } from "@/domain/recommendations";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
   useAllMediaStates,

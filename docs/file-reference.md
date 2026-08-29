@@ -9,7 +9,7 @@ counts are approximate (as of 2026-08-23). Entries are grouped by directory.
 
 | File                                | What it is                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `package.json`                      | App metadata + scripts (`dev`, `build`, `db:*`, `deploy:cf`, `lint`, `format`, `format:check`, `typecheck`), deps (TanStack Start/Router/Query, React 19, Base UI, Drizzle, Valibot, Clerk, h3, Nitro, Tailwind 4, Zustand, better-fetch, lucide) and dev deps (Vite 7, Wrangler, Biome, Prettier, drizzle-kit, husky). `packageManager: pnpm@10.6.1`. lint-staged runs Prettier (write) + Biome (check --fix) on staged files. |
+| `package.json`                      | App metadata + scripts (`dev`, `build`, `db:*`, `deploy:cf`, `lint`, `format`, `format:check`, `typecheck`), deps (TanStack Start/Router/Query, React 19, Base UI, Drizzle, Valibot, Clerk, h3, Nitro, Tailwind 4, Zustand, better-fetch, lucide) and dev deps (Vite 8, Wrangler, Biome, Prettier, drizzle-kit, husky). `packageManager: pnpm@10.6.1`. lint-staged runs Prettier (write) + Biome (check --fix) on staged files. |
 | `pnpm-workspace.yaml`               | Workspace + supply-chain policy: dependency trust allowlist (packages that may run install scripts, e.g. `esbuild`, `@clerk/shared`), `minimumReleaseAge`, no-downgrade trust policy.                                                                                                                                                                                                                                           |
 | `pnpm-lock.yaml`                    | Lockfile for reproducible installs.                                                                                                                                                                                                                                                                                                                                                                                             |
 | `tsconfig.json`                     | Strict TS config (`strict`, `noUnusedLocals/Parameters`, `noFallthroughCasesInSwitch`), bundler module resolution, `@/*` → `./src/*` path alias, `noEmit` (Vite builds).                                                                                                                                                                                                                                                        |
@@ -69,7 +69,7 @@ Other `.github/` files: issue templates (`bug_report.yml`, `feature_request.yml`
 | `router.tsx`             | `getRouter()` builds the TanStack Router: routeTree, ClerkProvider + QueryProvider wrappers (`Wrap`), SSR↔query integration, defaults (intent preloading, pendingMs 250, staleTime 30 s, pending/not-found/error components, scroll restoration). |
 | `routeTree.gen.ts`       | **Generated** route tree (TanStack router plugin). Do not edit.                                                                                                                                                                                   |
 | `styles.css`             | Tailwind v4 global styles + design tokens (~700 lines; dead tokens pruned in the wave-5 CSS cleanup).                                                                                                                                             |
-| `types.d.ts`             | Pebbly domain types: `MediaType`, `MediaQuery`/`MediaListQuery`, `ProgressStatus`, `ReactionStatus`, `AIRecommendation`.                                                                                                                          |
+| `types.d.ts`             | Compatibility type re-exports; query-shape declarations live in `src/domain/media-query.ts` and other shared contracts live under `src/domain/`.                                                                                                  |
 | `constants.ts`           | `SITE_CONFIG` (name, URL, nav), `MEDIA_PAGE_SLUGS`, `GENRE_LIST`, `IMAGE_PREFIX` (TMDB image size URLs), `MAX_PAGINATION_LIMIT = 500`, RBAC labels, placeholder image.                                                                            |
 | `constants/watchlist.ts` | Watchlist-specific constants (status/reaction label/icon maps).                                                                                                                                                                                   |
 
@@ -112,6 +112,16 @@ Other `.github/` files: issue templates (`bug_report.yml`, `feature_request.yml`
 | `local-progress-store.ts` | Zustand guest progress store (persisted; includes `lastPlayed` and per-episode watched state).                                                                                                        |
 | `daily-pick-store.ts`     | Persisted bounded per-title backdrop/poster metadata cache for daily pick; trending and popular-TV catalogs come from React Query.                                                                    |
 | `guest-store-kit.ts`      | Shared persistence plumbing: `guestPersistOptions`/`guardedMerge` with optional per-store sanitizers, LRU storage on client, memory during SSR, plus `localId`, `nextRank`, and `mergeDefinedFields`. |
+
+## `src/domain/`: dependency-free shared contracts
+
+| File                 | What it is                                                                           |
+| :------------------- | :----------------------------------------------------------------------------------- |
+| `media.ts`           | Canonical media types, runtime values, type guard, and route-slug mappings.          |
+| `watchlist.ts`       | Watchlist progress/reaction values, metadata contracts, and watchlist identity keys. |
+| `recommendations.ts` | Shared AI recommendation contract.                                                   |
+| `notifications.ts`   | Shared toast/notifier option types.                                                  |
+| `object.ts`          | Pure generic object helpers such as `mergeDefinedFields`.                            |
 
 ## `src/lib/`: client/shared utilities
 
@@ -178,7 +188,8 @@ modules live here, hooks live in `src/hooks/`.
 | `use-toast-store.ts`                    | Fire-and-forget `toast()` backed by Base UI's toast manager (no provider needed at call sites).                                       |
 | `watch-progress/use-watch-progress.ts`  | Watch/player progress orchestration (~450 lines): data fetching, progress calculations, mutations.                                    |
 | `watch-progress/use-player-listener.ts` | postMessage listener for player progress (origin-verified, DOM-scan fallback).                                                        |
-| `watch-progress/progress-helpers.ts`    | Pure progress math + types + `buildPlayerUrl`.                                                                                        |
+| `lib/watch-progress.ts`                 | Dependency-free progress/player contracts, validation, optimistic episode helpers, and `buildPlayerUrl`.                              |
+| `watch-progress/progress-helpers.ts`    | Compatibility re-export of `lib/watch-progress.ts`.                                                                                   |
 
 ## `src/components/`: UI
 

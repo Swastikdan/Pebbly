@@ -1,7 +1,7 @@
 import { ChevronRight, Sparkles } from "lucide-react";
 
+import type { ProgressStatus } from "@/domain/watchlist";
 import type { WatchlistItem } from "@/stores/watchlist-store";
-import type { ProgressStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";

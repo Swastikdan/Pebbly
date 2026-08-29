@@ -2,28 +2,28 @@ import { useUser } from "@clerk/react";
 import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
+import type { MediaType } from "@/domain/media";
+import type { ProgressStatus } from "@/domain/watchlist";
 import type {
   EpisodeWatchedMap,
   ShowMetadata,
   WatchProgressData,
-} from "./progress-helpers";
-import type { MediaType } from "@/lib/media-types";
-import type { ProgressStatus } from "@/types";
+} from "@/lib/watch-progress";
 import {
   fetchWatchedEpisodes,
   fetchWatchlistListFiltered,
 } from "@/lib/data/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
+import { logWatchProgressError, makeEpisodeKey } from "@/lib/watch-progress";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
 import { useMediaState, useWatchlistStore } from "../use-watchlist";
-import { logWatchProgressError, makeEpisodeKey } from "./progress-helpers";
 
 export type {
   EpisodeWatchedMap,
   ShowMetadata,
   WatchProgressData,
-} from "./progress-helpers";
+} from "@/lib/watch-progress";
 
 export function useWatchProgress(id: string | number, mediaType: MediaType) {
   const mediaState = useMediaState(String(id), mediaType);

@@ -1,7 +1,7 @@
 // Pure prompt-building helpers for the recommendation engine. Kept dependency-free
 // (no server imports) so they are trivially testable and reusable anywhere.
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 
 export interface WatchItemSummary {
   tmdbId: number;

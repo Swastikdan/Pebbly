@@ -4,7 +4,7 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import type { ApiResult, ProgressStatus, Reaction } from "../schema/common";
 import type { ListType, ListVisibility } from "../schema/lists";
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { MAX_IDS_PER_IN_CLAUSE, runBatch } from "../db/client";
 import { listItems, lists, watchItems } from "../db/schema";
 import { findOwnedRow } from "../helpers/owned-row";

@@ -2,9 +2,13 @@ import * as v from "valibot";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
+import type {
+  MediaMetadata,
+  ProgressStatus,
+  ReactionStatus,
+} from "@/domain/watchlist";
 import type { PersistedStateSanitizer } from "@/stores/guest-store-kit";
-import type { ProgressStatus, ReactionStatus } from "@/types";
 import { inferStatusFromProgress, normalizeProgressStatus } from "@/lib/utils";
 import {
   mediaTypeSchema,
@@ -13,15 +17,7 @@ import {
 } from "@/server/schema/common";
 import { guestPersistOptions } from "@/stores/guest-store-kit";
 
-export type { MediaType };
-
-export type MediaMetadata = {
-  title?: string;
-  image?: string;
-  rating?: number;
-  release_date?: string;
-  overview?: string;
-};
+export type { MediaMetadata, MediaType };
 
 export type WatchlistItem = {
   title: string;

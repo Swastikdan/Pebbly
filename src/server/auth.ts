@@ -1,5 +1,5 @@
-import { createClerkClient, verifyToken } from "@clerk/backend";
 import { getCookie, getRequestHeader } from "@tanstack/react-start/server";
+import { createClerkClient, verifyToken } from "@clerk/backend";
 import { eq, or, sql } from "drizzle-orm";
 
 import { getDb } from "./db/client";

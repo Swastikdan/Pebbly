@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 
+import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
 import type { MediaType } from "@/lib/media-types";
-import type { ProgressStatus, ReactionStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";

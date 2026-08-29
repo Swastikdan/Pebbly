@@ -6,7 +6,7 @@ import type {
   GenerateRecommendationsArgs,
   GenerateResult,
 } from "./schema/recommendations";
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { dedupeRecommendations } from "./ai";
 import { aiRecommendations, homepageRecommendations } from "./db/schema";
 import { releaseRateLimit, tryConsumeRateLimit } from "./helpers/rate-limit";

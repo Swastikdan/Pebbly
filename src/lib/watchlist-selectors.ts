@@ -1,4 +1,4 @@
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 
 /**
  * Pure watchlist derivations shared by every watchlist hook. They are the

@@ -2,7 +2,7 @@ import type { ClassValue } from "clsx";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-import type { ProgressStatus } from "@/types";
+import type { ProgressStatus } from "@/domain/watchlist";
 
 const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set([
   "watch-later",

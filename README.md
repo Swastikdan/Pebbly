@@ -56,7 +56,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 | **Styling**          | Tailwind CSS 4, [coss ui](https://coss.com/ui) components on Base UI (`@base-ui/react`), light/dark/system themes |
 | **Data Fetching**    | TanStack Query (React Query)                                                                                      |
 | **State Management** | Zustand                                                                                                           |
-| **Tooling**          | Vite 7, Prettier (formatting) + Biome (linting), TypeScript, Wrangler                                             |
+| **Tooling**          | Vite 8, Prettier (formatting) + Biome (linting), TypeScript, Wrangler                                             |
 
 ---
 
@@ -89,7 +89,8 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 │   ├── stores/                      # Zustand guest/local stores (watchlist, lists, progress, daily pick)
 │   ├── hooks/                       # Custom hooks (watchlist, watch progress, theme, recommendations, RBAC)
 │   ├── routes/                      # TanStack file-based routes (incl. public /c/$id list pages)
-│   └── types.d.ts                   # TypeScript declarations & domain types
+│   ├── domain/                      # Dependency-free shared domain contracts
+│   └── types.d.ts                   # Query-shape declarations
 ├── wrangler.toml                    # Cloudflare Workers & D1 configuration
 ├── wrangler.preview.toml            # Preview Worker config for cf-* branches
 ├── drizzle.config.ts                # Drizzle Kit migration generator config

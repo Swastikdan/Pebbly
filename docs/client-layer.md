@@ -58,9 +58,9 @@ mutation goes to the server or to local storage.
   (~670 lines). Query functions validate responses against these.
 - `src/lib/server-types.ts`, client-side aliases of D1 row types
   (`WatchItemRow`, `EpisodeProgressRow`, `CustomListRow`, ...).
-- `src/lib/media-types.ts`, the canonical `MediaType` module: the
-  `"movie" | "tv"` union, its Valibot schema, a type guard, and route-slug
-  mappings. Everything else imports from here instead of redefining the union.
+- `src/domain/media.ts`, the dependency-free canonical `MediaType` contract,
+  Valibot-independent type guard, and route-slug map. `src/lib/media-types.ts`
+  re-exports the compatibility schema and domain helpers for existing callers.
 
 ## 3. State management (Zustand → `src/stores/`)
 
@@ -221,8 +221,9 @@ The rest of the data layer sits beside it:
 - `use-watch-progress` (`src/hooks/watch-progress/`), player progress
   tracking: `use-watch-progress.ts` (~450 lines), `use-player-listener.ts`
   (postMessage listener that trusts sources by origin, with a DOM-scan
-  fallback), `progress-helpers.ts` (pure progress math + types incl.
-  `buildPlayerUrl`).
+  fallback). Pure player/progress contracts and helpers live in
+  `src/lib/watch-progress.ts`; the old `progress-helpers.ts` path is a
+  compatibility re-export for hook-local callers.
 - `data-version.ts`, `fetchDataVersion`, the client fetch for the combined
   per-user revision counters (`watchlistRev`, `listsRev`, `aiRev`,
   `permsRev`).
@@ -355,5 +356,9 @@ old shadcn/Radix set; the foundation doesn't.
   (TMDB image size URLs), `MAX_PAGINATION_LIMIT`, RBAC labels, placeholder
   image.
 - `src/constants/watchlist.ts`, watchlist-specific constants.
-- `src/types.d.ts`, Pebbly-specific domain types (`MediaType`,
-  `MediaQuery`, `ProgressStatus`, `ReactionStatus`, `AIRecommendation`).
+- `src/domain/`, dependency-free shared contracts for media identity,
+  watchlist statuses/metadata, recommendations, notifications, and pure
+  object helpers.
+- `src/domain/media-query.ts`, dependency-free `MediaQuery` and
+  `MediaListQuery` contracts used by TMDB queries and list routes.
+- `src/types.d.ts`, compatibility type re-exports for legacy consumers.

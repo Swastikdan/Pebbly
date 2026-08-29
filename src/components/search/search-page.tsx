@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
+import type { MediaType } from "@/domain/media";
 import type { SearchResultsEntity } from "@/lib/tmdb-schemas";
-import type { MediaType } from "@/types";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { GoBack } from "@/components/go-back";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";

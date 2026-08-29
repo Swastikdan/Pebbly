@@ -1,5 +1,5 @@
+import type { AIRecommendation } from "@/domain/recommendations";
 import type { NormalizedTmdbData } from "@/hooks/use-tmdb-verification";
-import type { AIRecommendation } from "@/types";
 import {
   titlesMatch,
   useTmdbData,

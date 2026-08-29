@@ -1,4 +1,4 @@
-import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
+import type { AIRecommendation } from "@/domain/recommendations";
 
 /**
  * Stable identifier for a recommendation row in the local dismiss cache.

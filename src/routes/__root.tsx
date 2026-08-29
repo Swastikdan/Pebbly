@@ -1,12 +1,12 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import bricolageLatinWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
-import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
   useRouter,
 } from "@tanstack/react-router";
+import bricolageLatinWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
+import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 
 import type { QueryClient } from "@tanstack/react-query";
 import {

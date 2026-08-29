@@ -6,8 +6,8 @@ import type {
   SearchResults,
   TvSeasonDetail,
 } from "./tmdb-schemas";
-import type { MediaType } from "@/lib/media-types";
-import type { MediaListQuery, MediaQuery } from "@/types";
+import type { MediaType } from "@/domain/media";
+import type { MediaListQuery, MediaQuery } from "@/domain/media-query";
 import { getTmdbFetch } from "./tmdb";
 import * as Schemas from "./tmdb-schemas";
 import { validateId } from "./utils";

@@ -11,8 +11,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-import type { MediaType } from "@/lib/media-types";
-import { MEDIA_TYPES } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
+import { MEDIA_TYPES } from "@/domain/media";
 import { PROGRESS_STATUSES, REACTIONS } from "@/server/schema/common";
 import { LIST_TYPES, LIST_VISIBILITIES } from "@/server/schema/lists";
 import { HOMEPAGE_REC_STATUSES } from "@/server/schema/recommendations";
