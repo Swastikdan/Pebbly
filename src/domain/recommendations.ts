@@ -6,6 +6,7 @@ export interface AIRecommendation {
   mediaType: MediaType;
   relevanceScore: number;
   reasoning: string;
+  validationAttempted?: boolean;
   verifiedTmdbId?: number | null;
   verifiedTitle?: string;
   posterPath?: string | null;

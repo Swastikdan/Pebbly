@@ -15,7 +15,9 @@ export type GenerationErrorCode =
   | "invalid_response"
   | "rate_limited"
   | "high_demand"
-  | "empty_watchlist";
+  | "empty_watchlist"
+  | "empty_result"
+  | "genre_required";
 
 const generationErrorMessages = {
   api_unavailable:
@@ -29,6 +31,10 @@ const generationErrorMessages = {
     "The AI model is currently experiencing high demand. Please try again later.",
   empty_watchlist:
     "Add some movies or TV shows to your watchlist first to get recommendations.",
+  empty_result:
+    "The AI could not find enough valid recommendations. Please try again with different options.",
+  genre_required:
+    "Select at least one genre before generating recommendations.",
 } satisfies Record<GenerationErrorCode, string>;
 
 export function describeGenerationError(

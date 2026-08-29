@@ -25,7 +25,10 @@ export interface CustomListItemSummary {
 }
 
 export interface WatchlistData {
+  /** Bounded context sent as taste signals to keep prompts predictable. */
   watchItems: WatchItemSummary[];
+  /** Full library identity set used only for exclusions. */
+  excludedWatchItems?: Array<{ tmdbId: number; title: string | null }>;
   lists: CustomListSummary[];
   listItems: CustomListItemSummary[];
   inputStats: {
@@ -329,7 +332,6 @@ export function buildGenrePrompt(
   yearFrom?: number,
   yearTo?: number,
   count?: number,
-  feedback?: FeedbackSignals,
 ): string {
   const { existingIds, existingTitles } = buildWatchlistContext(
     data,
@@ -352,7 +354,9 @@ export function buildGenrePrompt(
       yearTo,
       existingIds,
       existingTitles,
-      feedback,
+      // Genre mode is intentionally not personalized from watchlist feedback;
+      // the catalog/genre constraints are the only positive signal.
+      feedback: undefined,
       watchlistText: " (already in my watchlist)",
     },
   });

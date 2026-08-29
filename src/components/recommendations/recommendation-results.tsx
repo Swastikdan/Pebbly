@@ -55,7 +55,15 @@ function RecommendationCardGrid({
   updateVerified: (id: string, recs: AIRecommendation[]) => Promise<void>;
 }) {
   const verifiedMapRef = useRef<Map<number, AIRecommendation>>(new Map());
-  const totalCount = entry.recommendations.length;
+  const pendingIndexes = entry.recommendations
+    .map((recommendation, index) => {
+      const hasLegacyResolvedData =
+        entry.verified && typeof recommendation.verifiedTmdbId === "number";
+      return recommendation.validationAttempted || hasLegacyResolvedData
+        ? null
+        : index;
+    })
+    .filter((index): index is number => index !== null);
   const resolvedCountRef = useRef(0);
   const hasPushedRef = useRef(false);
 
@@ -70,37 +78,26 @@ function RecommendationCardGrid({
 
   const onCardResolved = useCallback(
     (index: number, verifiedRec: AIRecommendation) => {
+      if (!pendingIndexes.includes(index)) return;
       verifiedMapRef.current.set(index, verifiedRec);
-      resolvedCountRef.current += 1;
+      resolvedCountRef.current = verifiedMapRef.current.size;
 
       if (
         !hasPushedRef.current &&
-        !entry.verified &&
-        resolvedCountRef.current >= totalCount
+        pendingIndexes.length > 0 &&
+        resolvedCountRef.current >= pendingIndexes.length
       ) {
         hasPushedRef.current = true;
 
-        const hasAnyVerified = Array.from(verifiedMapRef.current.values()).some(
-          (r) => !!r.verifiedTmdbId,
-        );
-
-        if (hasAnyVerified) {
-          const updatedRecs = entry.recommendations.map((rec, i) => {
-            const verified = verifiedMapRef.current.get(i);
-            if (verified?.verifiedTmdbId) return verified;
-            return rec;
-          });
-          updateVerified(entryId, updatedRecs);
-        }
+        const updatedRecs = entry.recommendations.map((rec, i) => {
+          const resolved = verifiedMapRef.current.get(i);
+          if (!resolved) return rec;
+          return { ...resolved, validationAttempted: true };
+        });
+        updateVerified(entryId, updatedRecs);
       }
     },
-    [
-      entryId,
-      entry.verified,
-      entry.recommendations,
-      totalCount,
-      updateVerified,
-    ],
+    [entryId, entry.recommendations, pendingIndexes, updateVerified],
   );
 
   return (
@@ -119,7 +116,7 @@ function RecommendationCardGrid({
 
 function RecommendationCard({
   recommendation,
-  isEntryVerified,
+  isEntryVerified: _isEntryVerified,
   onResolved,
 }: {
   recommendation: AIRecommendation;
@@ -130,14 +127,18 @@ function RecommendationCard({
   const navigate = useNavigate();
   const hasReportedRef = useRef(false);
 
-  const usesCachedData = isEntryVerified && !!recommendation.verifiedTmdbId;
+  const hasCachedResolvedData =
+    typeof recommendation.verifiedTmdbId === "number" &&
+    (recommendation.validationAttempted === true || _isEntryVerified);
+  const hasCachedValidation =
+    recommendation.validationAttempted === true || hasCachedResolvedData;
   const { resolvedData, isResolving } = useResolvedRecommendation(
     recommendation,
-    { enabled: !usesCachedData },
+    { enabled: !hasCachedValidation },
   );
 
   useEffect(() => {
-    if (usesCachedData || hasReportedRef.current || isResolving) return;
+    if (hasCachedValidation || hasReportedRef.current || isResolving) return;
     hasReportedRef.current = true;
 
     if (resolvedData && onResolved) {
@@ -154,9 +155,15 @@ function RecommendationCard({
       // Keep unresolved cards in the batch so backend verification can finish.
       onResolved(recommendation);
     }
-  }, [usesCachedData, isResolving, resolvedData, recommendation, onResolved]);
+  }, [
+    hasCachedValidation,
+    isResolving,
+    resolvedData,
+    recommendation,
+    onResolved,
+  ]);
 
-  if (usesCachedData) {
+  if (hasCachedResolvedData) {
     return (
       <MediaCard
         card_type="horizontal"

@@ -168,7 +168,8 @@ export function RecommendationFilters({
                 (genMode === "watchlist" &&
                   !watchlistLoading &&
                   watchlist.length === 0) ||
-                (genMode === "list" && !listId)
+                (genMode === "list" && !listId) ||
+                (genMode === "genre" && selectedGenres.length === 0)
               }
               variant="secondary"
               className="border-border h-10 w-full gap-2 rounded-xl border px-5 shadow-none transition-[color,background-color,border-color,transform] duration-150 hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
@@ -257,25 +258,32 @@ export function RecommendationFilters({
           )}
 
         {genMode === "genre" && (
-          <div className="border-border/40 mt-3 flex flex-wrap gap-2 border-t pt-4">
-            {POPULAR_GENRES.map((genre) => (
-              <Button
-                key={genre.id}
-                type="button"
-                variant={
-                  selectedGenres.includes(genre.name) ? "default" : "ghost"
-                }
-                className={cn(
-                  "h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150",
-                  selectedGenres.includes(genre.name)
-                    ? "bg-primary text-primary-foreground border-transparent"
-                    : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60 hover:text-foreground border",
-                )}
-                onClick={() => toggleGenre(genre.name)}
-              >
-                {genre.name}
-              </Button>
-            ))}
+          <div className="border-border/40 mt-3 border-t pt-4">
+            <div className="flex flex-wrap gap-2">
+              {POPULAR_GENRES.map((genre) => (
+                <Button
+                  key={genre.id}
+                  type="button"
+                  variant={
+                    selectedGenres.includes(genre.name) ? "default" : "ghost"
+                  }
+                  className={cn(
+                    "h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150",
+                    selectedGenres.includes(genre.name)
+                      ? "bg-primary text-primary-foreground border-transparent"
+                      : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60 hover:text-foreground border",
+                  )}
+                  onClick={() => toggleGenre(genre.name)}
+                >
+                  {genre.name}
+                </Button>
+              ))}
+            </div>
+            {selectedGenres.length === 0 && (
+              <p className="text-muted-foreground mt-2 text-xs">
+                Select at least one genre to enable generation.
+              </p>
+            )}
           </div>
         )}
       </div>

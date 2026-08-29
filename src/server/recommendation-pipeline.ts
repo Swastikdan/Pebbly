@@ -108,9 +108,10 @@ async function saveRecommendations(
   options: GenerateRecommendationsArgs,
   generationType: string,
   model: string,
-) {
+): Promise<string> {
+  const id = crypto.randomUUID();
   await db.insert(aiRecommendations).values({
-    id: crypto.randomUUID(),
+    id,
     userId,
     recommendations: dedupeRecommendations(recommendations),
     inputStats,
@@ -121,6 +122,7 @@ async function saveRecommendations(
     createdAt: Date.now(),
   });
   await bumpAiRev(db, userId);
+  return id;
 }
 
 async function saveHomepage(
@@ -191,6 +193,9 @@ async function runHistoryPipeline(
   options: GenerateRecommendationsArgs,
 ): Promise<GenerateResult> {
   const generationType = options.generationType ?? "watchlist";
+  if (generationType === "genre" && !options.genreIds?.length) {
+    return { error: "genre_required" };
+  }
   if (generationType === "list" && !options.listId) {
     return { error: "listId is required for list generation" };
   }
@@ -241,6 +246,9 @@ async function runHistoryPipeline(
 
   const candidateCatalog = await getRecommendationCandidates({
     watchItems: watchlistData.watchItems,
+    excludedWatchItems: watchlistData.excludedWatchItems,
+    useWatchlistSeeds: generationType !== "genre",
+    genreIds: options.genreIds,
     seedItems:
       generationType === "list" && options.listId
         ? watchlistData.listItems
@@ -263,27 +271,36 @@ async function runHistoryPipeline(
     limit: 40,
     balanced: true,
   });
-  const likedTitles = [
-    ...(feedbackSignals.likedTitles ?? []),
-    ...watchlistData.watchItems
-      .filter((item) => item.reaction === "loved" || item.reaction === "liked")
-      .map((item) => item.title)
-      .filter((title): title is string => !!title),
-  ];
+  const likedTitles =
+    generationType === "genre"
+      ? []
+      : [
+          ...(feedbackSignals.likedTitles ?? []),
+          ...watchlistData.watchItems
+            .filter(
+              (item) => item.reaction === "loved" || item.reaction === "liked",
+            )
+            .map((item) => item.title)
+            .filter((title): title is string => !!title),
+        ];
+  const dislikedTitles =
+    generationType === "genre" ? [] : (feedbackSignals.dislikedTitles ?? []);
 
   const prompt = candidateCatalog.length
     ? buildCandidateRecommendationPrompt({
         candidates: candidateCatalog,
         likedTitles,
-        dislikedTitles: feedbackSignals.dislikedTitles ?? [],
+        dislikedTitles,
         previousTitles,
         mediaTypePreference: options.mediaTypePreference,
         genrePreference: options.genrePreference,
         count: Math.min(Math.max(options.count ?? 10, 1), 30),
         goal:
-          generationType === "list"
-            ? "Prefer candidates that match the themes, genres, cast, creators, and tone of the selected custom list."
-            : "Prefer candidates that match the user's strongest positive viewing signals while keeping the results varied.",
+          generationType === "genre"
+            ? "Rank the strongest popular, highly-rated matches for the requested genres. Do not personalize from the watchlist."
+            : generationType === "list"
+              ? "Prefer candidates that match the themes, genres, cast, creators, and tone of the selected custom list."
+              : "Prefer candidates that match the user's strongest positive viewing signals while keeping the results varied.",
       })
     : generationType === "watchlist"
       ? buildWatchlistPrompt(
@@ -314,13 +331,15 @@ async function runHistoryPipeline(
             options.yearFrom,
             options.yearTo,
             options.count,
-            { ...feedbackSignals, previousTitles },
           );
 
+  const targetCount = Math.min(Math.max(options.count ?? 10, 1), 30);
   const generated = await runAiGeneration({
     prompt,
     attempts: 1,
+    targetCount,
     watchItems: watchlistData.watchItems,
+    excludedWatchItems: watchlistData.excludedWatchItems,
     excludeTmdbIds,
     excludeTitles,
     candidateCatalog: candidateCatalog.length ? candidateCatalog : undefined,
@@ -330,7 +349,7 @@ async function runHistoryPipeline(
     return { error: generated.error };
   }
 
-  await saveRecommendations(
+  const generationId = await saveRecommendations(
     context.db,
     context.userId,
     generated.recommendations,
@@ -344,6 +363,7 @@ async function runHistoryPipeline(
     inputStats: watchlistData.inputStats,
     generatedAt: Date.now(),
     cached: false,
+    generationId,
   };
 }
 
@@ -391,6 +411,7 @@ async function runHomepagePipeline(
   ];
   const candidateCatalog = await getRecommendationCandidates({
     watchItems: watchlistData.watchItems,
+    excludedWatchItems: watchlistData.excludedWatchItems,
     excludeTmdbIds: excludeIds,
     excludeTitles,
     limit: 60,
@@ -416,7 +437,9 @@ async function runHomepagePipeline(
   const generated = await runAiGeneration({
     prompt,
     attempts: 2,
+    targetCount: 30,
     watchItems: watchlistData.watchItems,
+    excludedWatchItems: watchlistData.excludedWatchItems,
     excludeTmdbIds: excludeIds,
     excludeTitles,
     candidateCatalog: candidateCatalog.length ? candidateCatalog : undefined,

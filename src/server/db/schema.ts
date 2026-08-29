@@ -313,6 +313,13 @@ export type Recommendation = {
   mediaType: MediaType;
   relevanceScore: number;
   reasoning: string;
+  validationAttempted?: boolean;
+  verifiedTmdbId?: number | null;
+  verifiedTitle?: string;
+  posterPath?: string | null;
+  rating?: number;
+  releaseDate?: string | null;
+  overview?: string;
 };
 
 export type InputStats = {

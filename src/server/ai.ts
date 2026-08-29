@@ -19,6 +19,7 @@ export interface Recommendation {
   mediaType: MediaType;
   relevanceScore: number;
   reasoning: string;
+  validationAttempted?: boolean;
 }
 
 type RecommendationIdentity = {

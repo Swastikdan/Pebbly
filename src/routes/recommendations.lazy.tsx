@@ -17,13 +17,11 @@ import { fetchCustomLists } from "@/hooks/use-custom-lists";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
   buildGenerateOptions,
-  selectUntrackedHistory,
   useRecommendations,
 } from "@/hooks/use-recommendations";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { describeGenerationError } from "@/lib/generation-errors";
 import { queryKeys } from "@/lib/query/keys";
-import { normalizeTitleKey } from "@/lib/text";
 import { getTrackedTmdbIds } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
 import { PEBBLY_PICKS_LIST_TYPE } from "@/server/schema/lists";
@@ -112,23 +110,7 @@ function RecommendationsContent({
     () => new Set((trackedTmdbIdsQuery.data ?? []) as number[]),
     [trackedTmdbIdsQuery.data],
   );
-  const trackedTitleSet = useMemo(
-    () =>
-      new Set(
-        watchlist.map((item) => normalizeTitleKey(item.title)).filter(Boolean),
-      ),
-    [watchlist],
-  );
-
-  const filteredHistory = useMemo(
-    () =>
-      selectUntrackedHistory(
-        history,
-        { trackedTmdbIds: trackedIdSet, trackedTitles: trackedTitleSet },
-        !watchlistLoading,
-      ),
-    [history, trackedIdSet, trackedTitleSet, watchlistLoading],
-  );
+  const filteredHistory = useMemo(() => history, [history]);
 
   const navigate = Route.useNavigate();
 
@@ -194,11 +176,12 @@ function RecommendationsContent({
     (list) => list.listType !== PEBBLY_PICKS_LIST_TYPE,
   );
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (genMode === "watchlist" && watchlist.length === 0) return;
     if (genMode === "list" && !listId) return;
+    if (genMode === "genre" && selectedGenres.length === 0) return;
 
-    generate(
+    const id = await generate(
       buildGenerateOptions(
         {
           generationType: genMode,
@@ -211,17 +194,23 @@ function RecommendationsContent({
         trackedIdSet,
       ),
     );
-    setActiveId(null);
+    if (id) setActiveId(id);
   };
 
-  const handleGenerateAgain = (entry: RecommendationHistoryEntry) => {
-    generateAgain(entry, { count, trackedTmdbIds: trackedIdSet });
-    setActiveId(null);
+  const handleGenerateAgain = async (entry: RecommendationHistoryEntry) => {
+    const id = await generateAgain(entry, {
+      count,
+      trackedTmdbIds: trackedIdSet,
+    });
+    if (id) setActiveId(id);
   };
 
-  const handleGenerateMore = (entry: RecommendationHistoryEntry) => {
-    generateMore(entry, { count, trackedTmdbIds: trackedIdSet });
-    setActiveId(null);
+  const handleGenerateMore = async (entry: RecommendationHistoryEntry) => {
+    const id = await generateMore(entry, {
+      count,
+      trackedTmdbIds: trackedIdSet,
+    });
+    if (id) setActiveId(id);
   };
 
   const handleDelete = async (id: string) => {
