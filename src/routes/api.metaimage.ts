@@ -6,8 +6,15 @@ import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
 import { isValidId } from "@/lib/utils";
 
 const ERROR_HEADERS = { "Cache-Control": "no-cache" } as const;
-const DEFAULT_HEADERS = {
+// Real TMDB image URLs are content-addressed and immutable, so the redirect
+// to them can be cached for a year.
+const IMAGE_REDIRECT_HEADERS = {
   "Cache-Control": "public, max-age=31536000, immutable",
+} as const;
+// Placeholder redirects embed the media title in the URL, which changes when
+// TMDB renames a title — cache them only briefly so renames propagate.
+const PLACEHOLDER_REDIRECT_HEADERS = {
+  "Cache-Control": "public, max-age=300",
 } as const;
 
 const FALLBACK_TITLE = "Pebbly";
@@ -25,7 +32,7 @@ async function getImageRedirect(
     return new Response(null, {
       status: 302,
       headers: {
-        ...DEFAULT_HEADERS,
+        ...PLACEHOLDER_REDIRECT_HEADERS,
         Location: getPlaceholderWithText(),
       },
     });
@@ -46,7 +53,7 @@ async function getImageRedirect(
     return new Response(null, {
       status: 302,
       headers: {
-        ...DEFAULT_HEADERS,
+        ...IMAGE_REDIRECT_HEADERS,
         Location: imageUrl,
       },
     });
@@ -57,7 +64,7 @@ async function getImageRedirect(
   return new Response(null, {
     status: 302,
     headers: {
-      ...DEFAULT_HEADERS,
+      ...PLACEHOLDER_REDIRECT_HEADERS,
       Location: getPlaceholderWithText(title || FALLBACK_TITLE),
     },
   });
@@ -82,7 +89,7 @@ export const Route = createFileRoute("/api/metaimage")({
           return new Response(null, {
             status: 302,
             headers: {
-              ...DEFAULT_HEADERS,
+              ...PLACEHOLDER_REDIRECT_HEADERS,
               Location: getPlaceholderWithText(),
             },
           });

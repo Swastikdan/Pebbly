@@ -34,11 +34,11 @@ describe("normalizeProgressStatus", () => {
     expect(normalizeProgressStatus("done")).toBe("done");
   });
 
-  it("maps invalid or missing values to undefined", () => {
-    expect(normalizeProgressStatus("bogus")).toBeUndefined();
-    expect(normalizeProgressStatus("")).toBeUndefined();
-    expect(normalizeProgressStatus(null)).toBeUndefined();
-    expect(normalizeProgressStatus(undefined)).toBeUndefined();
+  it("maps invalid or missing values to null", () => {
+    expect(normalizeProgressStatus("bogus")).toBeNull();
+    expect(normalizeProgressStatus("")).toBeNull();
+    expect(normalizeProgressStatus(null)).toBeNull();
+    expect(normalizeProgressStatus(undefined)).toBeNull();
   });
 });
 

@@ -18,11 +18,7 @@ import { useDailyPickStore } from "@/stores/daily-pick-store";
 export type { PickItem };
 
 export function useDailyPick(open: boolean) {
-  const cachedTrending = useDailyPickStore((s) => s.trendingMedia);
-  const cachedPopularTv = useDailyPickStore((s) => s.popularTv);
   const cachedDetails = useDailyPickStore((s) => s.details);
-  const setTrending = useDailyPickStore((s) => s.setTrending);
-  const setPopularTv = useDailyPickStore((s) => s.setPopularTv);
   const setDetail = useDailyPickStore((s) => s.setDetail);
 
   const { watchlist } = useWatchlist();
@@ -45,7 +41,7 @@ export function useDailyPick(open: boolean) {
   }, [allMediaStates]);
 
   const { data: trendingMedia, isLoading: isLoadingTrending } = useQuery({
-    queryKey: queryKeys.tmdb.dailyPickTrending(),
+    queryKey: queryKeys.tmdb.trendingDay(),
     queryFn: async () => {
       const items = await getMedia({ type: "trending_day", page: 1 });
       return items;
@@ -55,7 +51,7 @@ export function useDailyPick(open: boolean) {
   });
 
   const { data: popularTv, isLoading: isLoadingTv } = useQuery({
-    queryKey: queryKeys.tmdb.dailyPickPopularTv(),
+    queryKey: queryKeys.tmdb.homepageMedia("tv-shows_popular"),
     queryFn: async () => {
       const items = await getMedia({ type: "tv-shows_popular", page: 1 });
       return items;
@@ -64,19 +60,11 @@ export function useDailyPick(open: boolean) {
     enabled: open,
   });
 
-  useEffect(() => {
-    if (trendingMedia && trendingMedia.length > 0) {
-      setTrending(trendingMedia);
-    }
-  }, [trendingMedia, setTrending]);
-  useEffect(() => {
-    if (popularTv && popularTv.length > 0) {
-      setPopularTv(popularTv);
-    }
-  }, [popularTv, setPopularTv]);
-
-  const effectiveTrending = trendingMedia ?? cachedTrending;
-  const effectivePopularTv = popularTv ?? cachedPopularTv;
+  // Source of truth for catalog data is the React Query cache above. We only
+  // persist derived image metadata (via `details` / `cachedDetails`), not the
+  // trending/popular lists themselves.
+  const effectiveTrending = trendingMedia;
+  const effectivePopularTv = popularTv;
 
   const isDataLoading =
     open &&

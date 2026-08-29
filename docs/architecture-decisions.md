@@ -102,7 +102,7 @@ privilege-escalation hazard.
 **Decision:** Delete the `users.is_admin` column (migration `0003`). Admin
 status is resolved exclusively from the **signed JWT claim**
 (`public_meta.isAdmin`, embedded via the Clerk session-claims template). The
-former live Clerk API fallback was removed from the request path — an external
+former live Clerk API fallback was removed from the request path. An external
 call inside every gate check cost latency and Clerk rate-limit budget; access
 decisions must stay local to the verified token. The `users.roles` column only carries the two _dynamic_ feature
 roles (`video-player`, `ai-integrations`), not admin. `listUsers` derives
@@ -115,7 +115,7 @@ admin badges from one paginated Clerk user-list call (display-only).
 - Demotion is not literally instant: claims are fixed until Clerk reissues
   the session token, so a demotion lands within one short-lived
   session-token lifetime (`verifyToken` enforces `exp`) or immediately when
-  the session itself is revoked — bounded by Clerk's token refresh/revocation
+  the session itself is revoked, bounded by Clerk's token refresh/revocation
   policy, never by a long-lived stored flag.
 - The admin table display can briefly disagree with reality if its one
   display-only Clerk API call fails (accepted; it never gates access).
@@ -183,7 +183,7 @@ It is used for:
 **Status:** Accepted
 
 **Context:** The app passes untrusted data across three boundaries: browser →
-server fn, TMDB → client, Gemini → server. Unvalidated data caused crashes
+server fn, TMDB → client, AI provider → server. Unvalidated data caused crashes
 deep in call stacks and made errors unreadable.
 
 **Decision:** Use Valibot (lightweight, tree-shakeable, TS-first) at every
@@ -193,7 +193,7 @@ boundary:
   (output) with a finite error-code set (`UNAUTHORIZED`, `FORBIDDEN`,
   `NOT_FOUND`, `RATE_LIMITED`, `CONFLICT`, `BAD_REQUEST`).
 - TMDB responses are validated against `src/lib/tmdb-schemas.ts` (~670 lines).
-- Gemini output is validated **per element**, malformed entries are dropped,
+- AI output is validated **per element**, malformed entries are dropped,
   never trusted.
 - Domain enums (`progressStatus`, `reaction`, `feedback`, `mediaType`) are
   defined once in `src/server/schema/common.ts`: the `PROGRESS_STATUSES` /
@@ -208,28 +208,29 @@ boundary:
 
 ---
 
-## ADR-008: Gemini over REST with a model fallback chain
+## ADR-008: Cloudflare Workers AI for production recommendations
 
 **Status:** Accepted
 
-**Context:** AI recommendations need to be reliable on the Workers runtime.
-The `@google/genai` SDK was suspected of misbehaving on Workers, and a single
-model can be unavailable or "high demand".
+**Context:** AI recommendations must run reliably inside the Cloudflare Worker.
+The production provider must avoid region restrictions, keep credentials out of
+client code, support structured JSON, and respond quickly enough for the
+synchronous server-function flow.
 
-**Decision:** Call Gemini's REST API directly (`generateContent`) with:
-
-- the API key in the `x-goog-api-key` header (never the URL),
-- a 30 s per-attempt timeout,
-- a model fallback chain: `gemini-3.1-flash-lite` → `gemini-2.5-flash` →
-  `gemini-2.0-flash` → `gemini-1.5-flash` (1 s backoff between models),
-- JSON response mode + per-element Valibot validation,
-- retries with 503/"high demand" detection surfaced as `high_demand` errors.
+**Decision:** Use the native Cloudflare Workers AI `AI` binding in production
+with `@cf/meta/llama-3.1-8b-instruct-fast` and JSON mode. Keep the existing Gemini
+REST client only as an optional local-development fallback when no Workers AI
+binding is available. Validate every generated recommendation with Valibot
+before it reaches filtering or persistence.
 
 **Consequences:**
 
-- Recommendations survive transient Gemini outages.
-- Cost/quality tradeoff: the cheapest fast model is tried first.
-- Server-side only: the key never reaches the client.
+- Deployed Workers do not depend on Gemini API regional availability.
+- The provider requires no separate API key in the Worker; access is through
+  the configured Cloudflare binding.
+- The free Workers plan includes a daily Workers AI allocation, subject to
+  Cloudflare's current quotas and model availability.
+- Local Vite development can still use Gemini with `GEMINI_API_KEY`.
 
 ---
 
@@ -320,7 +321,7 @@ isolate/process with a Valibot schema:
 
 - missing `CLERK_SECRET_KEY` → `console.error` (loud; every user degrades to
   guest),
-- missing `GEMINI_API_KEY` → warning (feature-gated degradation),
+- missing `GEMINI_API_KEY` → warning only when the Workers AI binding is absent (feature-gated degradation),
 - missing D1 binding → fail-fast in `getDb` with a message explaining that
   `pnpm dev:web` is UI-only and `pnpm dev:cf` provides D1 + secrets.
 
@@ -335,7 +336,7 @@ isolate/process with a Valibot schema:
 
 **Status:** Accepted
 
-**Context:** Gemini can hallucinate titles or return near-misses. Showing an
+**Context:** AI models can hallucinate titles or return near-misses. Showing an
 invented poster/title is worse than not showing the pick at all.
 
 **Decision:** AI suggestions are verified against TMDB before rendering
@@ -451,5 +452,62 @@ path rather than the first step.
   the upgrade path.
 - Revision counters grow forever but are single integers updated in place: no
   storage accumulation, no realistic overflow.
+
+---
+
+## ADR-016: Public list UUIDs are permanent bearer capabilities
+
+**Status:** Accepted
+
+**Context:** `getCollectionPage` (and the share flow) exposes a custom list
+without authentication: anyone holding the `listId` UUID can read the list and
+its items. This is a deliberate design (sharing a watchlist by link), not a
+leak.
+
+**Decision:** A list's UUID is its capability token. Readers are never
+enumerated; the only way to know a list exists is to hold its id. Nothing
+identifiable is derivable from the id, and item rows only leave via the public
+getters. Do not add an auth wall to the anonymous collection page, and do not
+log full collection UUIDs server-side.
+
+**Consequences:**
+
+- A leaked link is a permanent read grant for that list's current contents;
+  there is no re-issue mechanism. Revocation = delete the list or (future) a
+  "regenerate id" admin action.
+- Pagination and item hydration for anonymous readers must stay keyed on the
+  id and never accept an out-of-band owner check (an owner check would make
+  the seam require auth again).
+
+---
+
+## ADR-017: TMDB token stays client-side; no Worker proxy for anonymous reads
+
+**Status:** Accepted
+
+**Context:** `VITE_PUBLIC_TMDB_ACCESS_TOKEN` ships in the client bundle and the
+browser calls TMDB directly for posters/search/browsing; the Worker is not in
+that path. Anyone can extract the token and scrape TMDB with it, burning the
+app's quota. The hardening plan listed two mitigations: a Cloudflare WAF rule
+on the deployed domain, and a long-term "proxy cached TMDB reads through the
+Worker so the token never ships."
+
+**Decision:** Do **not** proxy TMDB reads through the Worker in the anonymous /
+not-signed-in path. Routing every poster load through the server adds cost,
+load, and latency for those users with no benefit to them, and the
+non-authenticated browsing path must stay server-free. The worker-side token
+is an accepted, bounded exposure: the token is a read-only TMDB access token
+(no account-mutating scope), and the primary mitigation is the Cloudflare WAF
+rule restricting non-browser UAs/origins on the deployed domain, plus TMDB
+quota monitoring. If abuse is ever observed, revisit a cached-proxy for
+**signed-in** users only.
+
+**Consequences:**
+
+- Anonymous TMDB reads keep flowing browser → TMDB directly; no code change.
+- The token remains extractable; protection is operational (WAF + monitoring),
+  not architectural.
+- A future cached-proxy is explicitly scoped to authenticated users only, and
+  would ship behind a flag before any rollout.
 
 ---

@@ -1,7 +1,7 @@
 import { ChevronRight, Sparkles } from "lucide-react";
 
+import type { ProgressStatus } from "@/domain/watchlist";
 import type { WatchlistItem } from "@/stores/watchlist-store";
-import type { ProgressStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
@@ -18,7 +18,7 @@ import { useRepository } from "@/lib/repository/use-repository";
 import { formatMediaTitle } from "@/lib/utils";
 
 // Status advances one way only: watch-later → watching → done. "done" is
-// terminal on the card — no wrap-around back to watch-later.
+// terminal on the card, no wrap-around back to watch-later.
 const STATUS_ORDER: ProgressStatus[] = ["watch-later", "watching", "done"];
 
 function handleRemove(
@@ -149,7 +149,7 @@ export function WatchlistCard({
               variant="ghost"
               size="sm"
               onClick={advanceStatus}
-              title={`${progressOption.label} — click to move to ${nextOption.label}`}
+              title={`${progressOption.label}. Click to move to ${nextOption.label}`}
               aria-label={`Marked as ${progressOption.label}. Click to move to ${nextOption.label}.`}
               className="bg-secondary/80 text-secondary-foreground hover:bg-secondary inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium"
             >
@@ -166,9 +166,11 @@ export function WatchlistCard({
             />
           )}
           {isRecommended && (
-            <span className="border-info/30 bg-info/15 text-info inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[10px] font-medium">
+            <span
+              title="Recommended"
+              className="border-info/30 bg-info/15 text-info inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
+            >
               <Sparkles size={12} />
-              Recommended
             </span>
           )}
           {reactionOption && (

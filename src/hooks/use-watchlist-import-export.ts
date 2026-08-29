@@ -3,8 +3,8 @@ import { useUser } from "@clerk/react";
 import { useCallback, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
+import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
 import type { EpisodeProgressRow } from "@/lib/server-types";
-import type { ProgressStatus, ReactionStatus } from "@/types";
 import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
 import { fetchAllEpisodeProgress } from "@/lib/data/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";

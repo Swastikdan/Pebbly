@@ -1,4 +1,4 @@
-# Cloudflare Workers + D1 — PREVIEW environment (cf-* branches)
+# Cloudflare Workers + D1 - PREVIEW environment (cf-* branches)
 # ---------------------------------------------------------------------------
 # This is a standalone, fully-flattened Wrangler config for preview deploys.
 # It must NOT use Wrangler `[env.*]` environments: Nitro's Cloudflare preset
@@ -15,7 +15,7 @@
 # touch prod data. Runtime secrets are set per-Worker:
 #   wrangler secret put CLERK_SECRET_KEY --config wrangler.preview.toml
 #   wrangler secret put CLERK_ISSUER_URL --config wrangler.preview.toml
-#   wrangler secret put GEMINI_API_KEY --config wrangler.preview.toml
+# Workers AI is provided by the [ai] binding below; Gemini is optional locally.
 
 name = "pebbly-preview"
 main = ".output/server/index.mjs"
@@ -23,6 +23,9 @@ compatibility_date = "2026-08-08"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 upload_source_maps = true
+
+[ai]
+binding = "AI"
 
 # Nitro pre-bundles the entry; tell Wrangler not to re-bundle it. Production
 # gets these fields from the generated redirected config, but --config bypasses
@@ -44,7 +47,7 @@ database_name = "pebbly-preview"
 database_id = "5b4796fa-e49e-4802-a4bc-19c1596cf303"
 migrations_dir = "drizzle"
 
-# No cron triggers in preview — branch deploys must not run the daily
+# No cron triggers in preview - branch deploys must not run the daily
 # watchlist snapshot job against the preview D1 database.
 
 [observability.logs]
@@ -59,4 +62,4 @@ enabled = true
 APP_ENV = "preview"
 
 # Non-secret server vars only. Secrets: wrangler secret put <NAME> --config wrangler.preview.toml.
-# Client VITE_* vars are inlined at build time from .env — they do NOT go here.
+# Client VITE_* vars are inlined at build time from .env - they do NOT go here.

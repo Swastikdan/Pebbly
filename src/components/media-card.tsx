@@ -141,8 +141,8 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             priority={priority}
             sizes={imageSizes}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/0 to-black/0" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
           {isRecommended && (
             <Badge className="absolute top-2 left-2 rounded-md border-0 bg-blue-600/90 px-2 py-1 text-[10px] font-bold text-white shadow-md">
@@ -151,7 +151,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
           )}
 
           {rating > 0 && (
-            <Badge className="text-meta absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-[9px] py-[11px] text-white sm:bg-black/60">
+            <Badge className="text-meta absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-[8px] py-[11px] text-white sm:bg-black/60">
               <Star className="size-4 fill-yellow-400 text-yellow-400" />
               <span className="font-semibold text-white">
                 {rating.toFixed(1)}
@@ -159,7 +159,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             </Badge>
           )}
 
-          <Badge className="text-meta absolute right-2 bottom-2 rounded-md border-0 bg-black/90 px-[9px] py-[11px] text-white sm:bg-black/60">
+          <Badge className="text-meta absolute right-2 bottom-2 rounded-md border-0 bg-black/90 px-[8px] py-[11px] text-white sm:bg-black/60">
             {mediaTypeLabel}
           </Badge>
         </div>

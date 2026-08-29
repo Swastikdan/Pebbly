@@ -1,6 +1,8 @@
+import * as v from "valibot";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import type { PersistedStateSanitizer } from "@/stores/guest-store-kit";
 import { guestPersistOptions } from "@/stores/guest-store-kit";
 
 interface LocalProgressStore {
@@ -27,6 +29,37 @@ interface LocalProgressStore {
 
   setLastPlayed: (id: string, season: number, episode: number) => void;
 }
+
+const lastPlayedEntrySchema = v.object({
+  season: v.number(),
+  episode: v.number(),
+});
+
+const sanitizeLocalProgressState: PersistedStateSanitizer<
+  LocalProgressStore
+> = (persisted) => {
+  if (!persisted || typeof persisted !== "object") return null;
+  const source = persisted as {
+    watchedEpisodes?: unknown;
+    lastPlayed?: unknown;
+  };
+  const watchedEpisodes: Record<string, boolean> = {};
+  if (source.watchedEpisodes && typeof source.watchedEpisodes === "object") {
+    for (const [key, value] of Object.entries(source.watchedEpisodes)) {
+      if (typeof key === "string" && value === true) {
+        watchedEpisodes[key] = true;
+      }
+    }
+  }
+  const lastPlayed: Record<string, { season: number; episode: number }> = {};
+  if (source.lastPlayed && typeof source.lastPlayed === "object") {
+    for (const [key, value] of Object.entries(source.lastPlayed)) {
+      const parsed = v.safeParse(lastPlayedEntrySchema, value);
+      if (parsed.success) lastPlayed[key] = parsed.output;
+    }
+  }
+  return { watchedEpisodes, lastPlayed };
+};
 
 export const useLocalProgressStore = create<LocalProgressStore>()(
   persist(
@@ -75,6 +108,10 @@ export const useLocalProgressStore = create<LocalProgressStore>()(
           return { watchedEpisodes: newEpisodes };
         }),
     }),
-    guestPersistOptions("local-progress-store", "localStorage"),
+    guestPersistOptions(
+      "local-progress-store",
+      "localStorage",
+      sanitizeLocalProgressState,
+    ),
   ),
 );

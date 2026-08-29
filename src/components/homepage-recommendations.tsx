@@ -1,33 +1,16 @@
-import { useUser } from "@clerk/react";
 import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { memo } from "react";
 
-import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
+import type { AIRecommendation } from "@/domain/recommendations";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { MediaSkeletonList } from "@/components/media-skeleton-list";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
-import { usePermissions } from "@/hooks/use-permissions";
+import { useHomepageRecommendations } from "@/hooks/use-homepage-recommendations";
 import { useResolvedRecommendation } from "@/hooks/use-resolved-recommendation";
-import {
-  useAllMediaStates,
-  useToggleWatchlistItem,
-} from "@/hooks/use-watchlist";
-import { queryKeys } from "@/lib/query/keys";
-import { recordOwnMutation } from "@/lib/realtime-mutations";
+import { describeGenerationError } from "@/lib/generation-errors";
+import { getDismissKey } from "@/lib/recommendation-options";
 import { cn } from "@/lib/utils";
-import {
-  generateHomepageRecommendations,
-  getHomepageRecommendations,
-  getRecommendationFeedback,
-  removeRecommendationFeedback,
-  setRecommendationFeedback,
-} from "@/server/fns/recommendations";
-import { unwrap } from "@/server/schema/common";
-
-const getDismissKey = (rec: AIRecommendation) =>
-  `${rec.mediaType}:${rec.tmdbId ?? ""}:${rec.title}`;
 
 const HomepageRecommendationCard = memo(
   ({
@@ -53,13 +36,8 @@ const HomepageRecommendationCard = memo(
     const { resolvedData, isResolving } =
       useResolvedRecommendation(recommendation);
 
-    if (isResolving) {
-      return <MediaCardSkeleton card_type="horizontal" />;
-    }
-
-    if (!resolvedData) {
-      return null;
-    }
+    if (isResolving) return <MediaCardSkeleton card_type="horizontal" />;
+    if (!resolvedData) return null;
 
     const isLiked = likedKeys.has(`${mediaType}:${resolvedData.id}`);
 
@@ -80,8 +58,6 @@ const HomepageRecommendationCard = memo(
           hideWatchlistButton={true}
         />
 
-        {/* Always visible on touch devices (no hover to reveal); on
-            hover-capable screens they fade in with the card hover. */}
         <div className="absolute top-2 right-2 z-20 flex gap-1.5 opacity-100 transition-opacity duration-200 ease-out [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/rec-card:opacity-100">
           <Button
             variant="secondary"
@@ -92,9 +68,9 @@ const HomepageRecommendationCard = memo(
                 ? "border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-700"
                 : "border-neutral-700 bg-neutral-900/90 text-white hover:bg-neutral-800",
             )}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
+            onClick={(event) => {
+              event.stopPropagation();
+              event.preventDefault();
               onFeedback(
                 recommendation,
                 resolvedData.id,
@@ -120,9 +96,9 @@ const HomepageRecommendationCard = memo(
             variant="secondary"
             size="icon"
             className="pressable h-8 w-8 cursor-pointer rounded-lg border border-neutral-700 bg-neutral-900/90 text-white shadow-md transition-[color,background-color,border-color,transform] duration-150 hover:border-red-600 hover:bg-red-900/90 hover:text-red-200 active:scale-95 [@media(hover:hover)]:hover:scale-105"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
+            onClick={(event) => {
+              event.stopPropagation();
+              event.preventDefault();
               onFeedback(recommendation, resolvedData.id, "dislike");
             }}
             title="Dislike"
@@ -138,261 +114,44 @@ const HomepageRecommendationCard = memo(
 function RecommendationSectionHeader() {
   return (
     <div className="mb-1 flex items-center justify-between px-4 md:px-0">
-      <h2 className="text-lg font-semibold md:text-xl">Picks For You</h2>
+      <h2 className="text-h2">Picks For You</h2>
+    </div>
+  );
+}
+
+function GenerationErrorNotice({ error }: { error: string }) {
+  return (
+    <div className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-xs">
+      {describeGenerationError(error, {
+        rate_limited:
+          "Please wait a couple minutes before refreshing personalized recommendations.",
+      })}
     </div>
   );
 }
 
 export function HomepageRecommendations() {
-  const { isSignedIn, isLoaded, user } = useUser();
-  const { hasFeature } = usePermissions();
-  const [localDismissedKeys, setLocalDismissedKeys] = useState<Set<string>>(
-    new Set(),
-  );
-  const [localLikedKeys, setLocalLikedKeys] = useState<Set<string>>(new Set());
-
-  const canAccessFeature = isSignedIn && hasFeature("ai-recommendations");
-
-  // The query key is per-user so keepPreviousData can never surface another
-  // user's cached recommendations during sign-in/out transitions.
-  const recommendationsQuery = useQuery({
-    queryKey: queryKeys.recommendations.homepage(user?.id),
-    queryFn: () => unwrap(getHomepageRecommendations({ data: {} })),
-    enabled: canAccessFeature,
-    placeholderData: keepPreviousData,
-  });
-  const recommendationsData = recommendationsQuery.data;
-
-  const feedbackQuery = useQuery({
-    queryKey: queryKeys.recommendations.feedback(user?.id),
-    queryFn: () => unwrap(getRecommendationFeedback()),
-    enabled: canAccessFeature,
-    placeholderData: keepPreviousData,
-  });
-  const feedbackList = feedbackQuery.data;
-
-  const [isGenerating, setIsGenerating] = useState(false);
-  const isGeneratingRef = useRef(false);
-
-  const refreshHomepage = useCallback(() => {
-    void recommendationsQuery.refetch();
-    void feedbackQuery.refetch();
-  }, [recommendationsQuery, feedbackQuery]);
-
-  useEffect(() => {
-    if (
-      canAccessFeature &&
-      recommendationsData?.needsRefresh &&
-      !isGeneratingRef.current
-    ) {
-      isGeneratingRef.current = true;
-      setIsGenerating(true);
-      generateHomepageRecommendations()
-        .then((result) => {
-          if (result.ok && result.data.success) {
-            // The generation wrote the homepage row and bumped the AI
-            // revision; count it so the poll doesn't refetch redundantly.
-            recordOwnMutation("ai");
-            refreshHomepage();
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to generate homepage recommendations:", err);
-        })
-        .finally(() => {
-          setIsGenerating(false);
-          isGeneratingRef.current = false;
-        });
-    }
-  }, [canAccessFeature, recommendationsData?.needsRefresh, refreshHomepage]);
-
-  const toggleWatchlist = useToggleWatchlistItem();
-
-  const likedKeys = useMemo(() => {
-    const set = new Set<string>(localLikedKeys);
-    for (const f of feedbackList ?? []) {
-      if (f.feedback === "like") {
-        set.add(`${f.mediaType}:${f.tmdbId}`);
-      }
-    }
-    return set;
-  }, [feedbackList, localLikedKeys]);
-
-  const dislikedKeys = useMemo(() => {
-    const set = new Set<string>();
-    for (const f of feedbackList ?? []) {
-      if (f.feedback === "not_interested") {
-        set.add(`${f.mediaType}:${f.tmdbId}`);
-      }
-    }
-    return set;
-  }, [feedbackList]);
-
-  const { allMediaStates } = useAllMediaStates();
-  const watchlistKeys = useMemo(() => {
-    const set = new Set<string>();
-    for (const item of allMediaStates) {
-      if (
-        item.inWatchlist ||
-        item.progressStatus === "watching" ||
-        (item.progress ?? 0) > 0
-      ) {
-        set.add(`${item.type}:${item.external_id}`);
-      }
-    }
-    return set;
-  }, [allMediaStates]);
-
-  const recs = useMemo(() => {
-    if (!recommendationsData?.recommendations) return [];
-    return recommendationsData.recommendations.filter((r) => {
-      if (localDismissedKeys.has(getDismissKey(r))) return false;
-      if (r.tmdbId !== null && r.tmdbId !== undefined) {
-        const key = `${r.mediaType}:${r.tmdbId}`;
-        if (dislikedKeys.has(key)) return false;
-        if (watchlistKeys.has(key) && !likedKeys.has(key)) return false;
-      }
-      return true;
-    });
-  }, [
-    recommendationsData?.recommendations,
-    localDismissedKeys,
-    watchlistKeys,
+  const {
+    canAccessFeature,
+    isLoaded,
+    recommendationsData,
+    isGenerating,
+    generationError,
+    recs,
     likedKeys,
-    dislikedKeys,
-  ]);
-
-  const handleFeedback = useCallback(
-    async (
-      rec: AIRecommendation,
-      resolvedId: number,
-      feedback: "dislike" | "like" | "unlike",
-      metadata?: {
-        image?: string;
-        rating?: number;
-        release_date?: string;
-        overview?: string;
-      },
-    ) => {
-      const key = getDismissKey(rec);
-
-      const mediaKey = `${rec.mediaType}:${resolvedId}`;
-
-      if (feedback === "dislike") {
-        setLocalDismissedKeys((prev) => {
-          const next = new Set(prev);
-          next.add(key);
-          return next;
-        });
-      } else if (feedback === "like") {
-        setLocalLikedKeys((prev) => {
-          const next = new Set(prev);
-          next.add(mediaKey);
-          return next;
-        });
-      } else if (feedback === "unlike") {
-        setLocalLikedKeys((prev) => {
-          const next = new Set(prev);
-          next.delete(mediaKey);
-          return next;
-        });
-      }
-
-      if (feedback === "like") {
-        toggleWatchlist(
-          {
-            id: String(resolvedId),
-            title: rec.title,
-            media_type: rec.mediaType,
-            rating: metadata?.rating ?? 0,
-            image: metadata?.image ?? "",
-            release_date: metadata?.release_date ?? "",
-            overview: metadata?.overview,
-          },
-          false,
-        ).catch(console.error);
-      } else if (feedback === "unlike") {
-        toggleWatchlist(
-          {
-            id: String(resolvedId),
-            title: rec.title,
-            media_type: rec.mediaType,
-            rating: metadata?.rating ?? 0,
-            image: metadata?.image ?? "",
-            release_date: metadata?.release_date ?? "",
-            overview: metadata?.overview,
-          },
-          true,
-        ).catch(console.error);
-      }
-
-      try {
-        if (feedback === "unlike") {
-          await unwrap(
-            removeRecommendationFeedback({
-              data: { tmdbId: resolvedId, mediaType: rec.mediaType },
-            }),
-          );
-        } else {
-          await unwrap(
-            setRecommendationFeedback({
-              data: {
-                tmdbId: resolvedId,
-                mediaType: rec.mediaType,
-                title: rec.title,
-                feedback: feedback === "dislike" ? "not_interested" : "like",
-                image: metadata?.image,
-                rating: metadata?.rating,
-                release_date: metadata?.release_date,
-                overview: metadata?.overview,
-              },
-            }),
-          );
-        }
-        // The write bumped the AI revision server-side; counting it keeps
-        // UserSync from treating our own write as an external change.
-        recordOwnMutation("ai");
-        refreshHomepage();
-      } catch (err) {
-        console.error("Failed to update recommendation feedback:", err);
-        if (feedback === "dislike") {
-          setLocalDismissedKeys((prev) => {
-            const next = new Set(prev);
-            next.delete(key);
-            return next;
-          });
-        } else if (feedback === "like") {
-          setLocalLikedKeys((prev) => {
-            const next = new Set(prev);
-            next.delete(mediaKey);
-            return next;
-          });
-        } else if (feedback === "unlike") {
-          setLocalLikedKeys((prev) => {
-            const next = new Set(prev);
-            next.add(mediaKey);
-            return next;
-          });
-        }
-      }
-    },
-    [refreshHomepage, toggleWatchlist],
-  );
+    handleFeedback,
+  } = useHomepageRecommendations();
 
   if (!isLoaded) {
-    // Reserve the same vertical space as the header + skeleton while Clerk
-    // is hydrating, so eligible users don't see the layout grow after auth.
     return (
-      <div className="my-6 min-h-[280px]" aria-hidden="true">
+      <div className="min-h-[280px]" aria-hidden="true">
         <RecommendationSectionHeader />
         <MediaSkeletonList />
       </div>
     );
   }
 
-  if (!canAccessFeature) {
-    return null;
-  }
+  if (!canAccessFeature) return null;
 
   const hasNoWatchHistory =
     recommendationsData?.status === "failed" &&
@@ -401,7 +160,7 @@ export function HomepageRecommendations() {
 
   if (hasNoWatchHistory) {
     return (
-      <section className="border-border/40 bg-card/40 my-6 w-full rounded-xl border px-4 py-4 text-left">
+      <section className="border-border/40 bg-card/40 w-full rounded-xl border px-4 py-4 text-left">
         <div className="text-muted-foreground mb-2 flex items-center gap-2">
           <Sparkles size={16} className="text-primary" />
           <h3 className="text-sm font-semibold">
@@ -412,13 +171,14 @@ export function HomepageRecommendations() {
           Add some movies or TV shows to your watchlist to start receiving
           personalized recommendations refreshed twice a day.
         </p>
+        {generationError && <GenerationErrorNotice error={generationError} />}
       </section>
     );
   }
 
   if (!recommendationsData) {
     return (
-      <div className="my-6 min-h-[280px]">
+      <div className="min-h-[280px]">
         <RecommendationSectionHeader />
         <MediaSkeletonList />
       </div>
@@ -428,20 +188,26 @@ export function HomepageRecommendations() {
   if (recs.length === 0) {
     if (isGenerating) {
       return (
-        <div className="my-6 min-h-[280px]">
+        <div className="min-h-[280px]">
           <RecommendationSectionHeader />
           <MediaSkeletonList />
         </div>
       );
     }
-    // Keep the section reserved at zero height would still shift when the
-    // skeleton is replaced. Return a collapsed placeholder with consistent
-    // margin so siblings don't jump.
-    return <div className="my-6 min-h-0" aria-hidden="true" />;
+    if (generationError) {
+      return (
+        <section className="w-full space-y-2">
+          <RecommendationSectionHeader />
+          <GenerationErrorNotice error={generationError} />
+        </section>
+      );
+    }
+    return null;
   }
 
   return (
-    <div className="my-6 min-h-[280px] w-full">
+    <div className="min-h-[280px] w-full">
+      {generationError && <GenerationErrorNotice error={generationError} />}
       <section className="w-full">
         <RecommendationSectionHeader />
         <ScrollContainer isButtonsVisible={true}>

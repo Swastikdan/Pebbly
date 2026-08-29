@@ -1,5 +1,7 @@
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import type { EpisodeProgressRow } from "@/lib/server-types";
+
+export { logError as logWatchProgressError } from "@/lib/utils";
 
 export interface WatchProgressData {
   id: string;
@@ -8,10 +10,7 @@ export interface WatchProgressData {
   percent: number;
   duration: number;
   lastUpdated: number;
-  context?: {
-    season?: number;
-    episode?: number;
-  };
+  context?: { season?: number; episode?: number };
 }
 
 export interface EpisodeWatchedMap {
@@ -41,41 +40,25 @@ export interface PlayerEventPayload {
   };
 }
 
-export function makeEpisodeKey(
-  tvId: number | string,
-  season: number,
-  episode: number,
-): string {
-  return `${tvId}:${season}:${episode}`;
-}
-
 function isNonNegativeIntegerLike(value: unknown): boolean {
   if (typeof value === "number") return Number.isInteger(value) && value >= 0;
-  if (typeof value !== "string") return false;
-  if (!/^\d+$/.test(value)) return false;
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return false;
   const parsed = Number(value);
   return Number.isFinite(parsed) && Number.isInteger(parsed) && parsed >= 0;
 }
 
 function isFiniteIntegerString(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  if (!/^\d+$/.test(value)) return false;
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return false;
   const parsed = Number(value);
   return Number.isFinite(parsed) && Number.isInteger(parsed);
 }
 
-/**
- * Validate the postMessage payload shape from the player iframe. The embed
- * host is third-party, so every field is type-checked before it is trusted.
- */
 export function isPlayerEventPayload(
   value: unknown,
 ): value is PlayerEventPayload {
   if (!value || typeof value !== "object") return false;
-
   const payload = value as Partial<PlayerEventPayload>;
   const data = payload.data;
-
   if (
     payload.type !== "PLAYER_EVENT" ||
     !data ||
@@ -84,24 +67,19 @@ export function isPlayerEventPayload(
     (data.mediaType !== "movie" && data.mediaType !== "tv") ||
     typeof data.currentTime !== "number" ||
     typeof data.progress !== "number"
-  ) {
+  )
     return false;
-  }
-
-  if (data.season !== undefined && !isNonNegativeIntegerLike(data.season)) {
+  if (data.season !== undefined && !isNonNegativeIntegerLike(data.season))
     return false;
-  }
-
-  if (data.episode !== undefined && !isNonNegativeIntegerLike(data.episode)) {
+  if (data.episode !== undefined && !isNonNegativeIntegerLike(data.episode))
     return false;
-  }
-
   return true;
 }
 
-export function parsePlayerEventPayload(message: unknown) {
+export function parsePlayerEventPayload(
+  message: unknown,
+): PlayerEventPayload | null {
   if (typeof message !== "string") return null;
-
   try {
     const parsed = JSON.parse(message) as unknown;
     return isPlayerEventPayload(parsed) ? parsed : null;
@@ -110,9 +88,16 @@ export function parsePlayerEventPayload(message: unknown) {
   }
 }
 
-export function logWatchProgressError(action: string, error: unknown) {
-  console.error(`Failed to ${action}`, error);
+export function makeEpisodeKey(
+  tvId: number | string,
+  season: number,
+  episode: number,
+): string {
+  return `${tvId}:${season}:${episode}`;
 }
+
+export const episodeRowIdOf = (row: EpisodeProgressRow) =>
+  `${row.tmdbId}:${row.season}:${row.episode}`;
 
 export function createOptimisticEpisodeProgress(
   tmdbId: number,
@@ -132,9 +117,6 @@ export function createOptimisticEpisodeProgress(
   };
 }
 
-export const episodeRowIdOf = (row: EpisodeProgressRow) =>
-  `${row.tmdbId}:${row.season}:${row.episode}`;
-
 export function toggleEpisodeRows(
   rows: EpisodeProgressRow[],
   args: { tmdbId: number; season: number; episode: number; isWatched: boolean },
@@ -145,11 +127,13 @@ export function toggleEpisodeRows(
         !(episode.season === args.season && episode.episode === args.episode),
     );
   }
-  const already = rows.some(
-    (episode) =>
-      episode.season === args.season && episode.episode === args.episode,
-  );
-  if (already) return rows;
+  if (
+    rows.some(
+      (episode) =>
+        episode.season === args.season && episode.episode === args.episode,
+    )
+  )
+    return rows;
   const now = Date.now();
   return [
     ...rows,
@@ -181,16 +165,18 @@ export function toggleSeasonRows(
   );
   if (!args.isWatched) return filtered;
   const now = Date.now();
-  const newEpisodes = args.episodes.map((episode) =>
-    createOptimisticEpisodeProgress(
-      args.tmdbId,
-      args.season,
-      episode,
-      `${now}_${episode}`,
-      now,
+  return [
+    ...filtered,
+    ...args.episodes.map((episode) =>
+      createOptimisticEpisodeProgress(
+        args.tmdbId,
+        args.season,
+        episode,
+        `${now}_${episode}`,
+        now,
+      ),
     ),
-  );
-  return [...filtered, ...newEpisodes];
+  ];
 }
 
 export function buildPlayerUrl(opts: {
@@ -200,23 +186,16 @@ export function buildPlayerUrl(opts: {
   episode?: number;
   savedProgress?: number;
 }): string {
-  const { type, tmdbId, season, episode, savedProgress } = opts;
   const videoUrl = import.meta.env.VITE_PUBLIC_VIDEO_URL;
-  if (!videoUrl) {
-    throw new Error("Video URL not set");
-  }
-  const params = new URLSearchParams();
-  params.set("autoPlay", "true");
-  params.set("nextEpisode", "true");
-  params.set("episodeSelector", "true");
-
-  if (savedProgress && savedProgress > 10) {
-    params.set("progress", String(Math.floor(savedProgress)));
-  }
-
-  if (type === "movie") {
-    return `${videoUrl}/embed/movie/${tmdbId}?${params.toString()}`;
-  }
-
-  return `${videoUrl}/embed/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}?${params.toString()}`;
+  if (!videoUrl) throw new Error("Video URL not set");
+  const params = new URLSearchParams({
+    autoPlay: "true",
+    nextEpisode: "true",
+    episodeSelector: "true",
+  });
+  if (opts.savedProgress && opts.savedProgress > 10)
+    params.set("progress", String(Math.floor(opts.savedProgress)));
+  return opts.type === "movie"
+    ? `${videoUrl}/embed/movie/${opts.tmdbId}?${params}`
+    : `${videoUrl}/embed/tv/${opts.tmdbId}/${opts.season ?? 1}/${opts.episode ?? 1}?${params}`;
 }

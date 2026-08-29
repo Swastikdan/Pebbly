@@ -6,6 +6,26 @@ export type BatcherOptions<TItem> = {
   flushOnPageHide?: boolean;
 };
 
+/**
+ * Coalesces synchronous bursts of work into deferred batch calls.
+ *
+ * Behaviour contracts (pinned by unit tests — do not change silently):
+ *
+ * - **Dedupe resolution.** When `getKey` is set, re-scheduling an item with a
+ *   key already in the queue REPLACES the queued item, and resolves BOTH the
+ *   original caller and the new caller with the result of the NEWEST item.
+ *   The batch that runs therefore contains one entry per key (latest intent
+ *   wins), mirroring the server's per-item deduplication semantics.
+ * - **Batch failure.** If `batchFn` rejects or returns a mismatched length,
+ *   every caller in the batch is rejected with the same error; nothing is
+ *   partially applied. Callers rely on their query's refetch to reconcile.
+ * - **Flush triggers.** The batch runs when the queue reaches `maxBatchSize`,
+ *   when `delayMs` elapses since scheduling, or when `maxWaitMs` elapses since
+ *   the FIRST item in the queue (whichever comes first). `flush()` may also be
+ *   called manually; a flush on an empty queue is a no-op.
+ * - **Fresh promise, same resolve.** Once flushed, queued callers are
+ *   untracked; the timer state resets on flush and clear().
+ */
 export class RequestBatcher<TItem, TResult = unknown> {
   private queue: Array<{
     item: TItem;

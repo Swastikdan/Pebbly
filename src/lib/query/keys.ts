@@ -1,4 +1,4 @@
-import type { MediaType } from "@/types";
+import type { MediaType } from "@/domain/media";
 
 export const queryKeys = {
   watchlist: {
@@ -53,35 +53,34 @@ export const queryKeys = {
    * payload (and a rename stays a one-place change).
    */
   tmdb: {
-    movieDetails: (id: number) => ["movie_details", id] as const,
-    tvDetails: (id: number) => ["tv_details", id] as const,
-    basicMovieDetails: (id: number) => ["basic_movie_details", id] as const,
-    basicTvDetails: (id: number) => ["basic_tv_details", id] as const,
+    movieDetails: (id: number) => ["media-movie-details", id] as const,
+    tvDetails: (id: number) => ["media-tv-details", id] as const,
+    basicMovieDetails: (id: number) =>
+      ["media-basic-movie-details", id] as const,
+    basicTvDetails: (id: number) => ["media-basic-tv-details", id] as const,
     seasonDetails: (tvId: number, season: number) =>
-      ["tv_season_details", tvId, season] as const,
-    personDetails: (id: number) => ["person_details", id] as const,
-    collection: (id: number) => ["collection", id] as const,
+      ["media-tv-season-details", tvId, season] as const,
+    personDetails: (id: number) => ["media-person-details", id] as const,
+    collection: (id: number) => ["media-collection", id] as const,
     recommendations: (mediaType: MediaType, id: number) =>
-      [`${mediaType}_recommendations`, id] as const,
+      [`media-${mediaType}-recommendations`, id] as const,
     credits: (id: number, mediaType: MediaType) =>
       ["media-credits", id, mediaType] as const,
     videos: (id: number, mediaType: MediaType) =>
-      ["media_videos", id, mediaType] as const,
+      ["media-videos", id, mediaType] as const,
     images: (id: number, mediaType: MediaType) =>
-      ["media_images", id, mediaType] as const,
+      ["media-images", id, mediaType] as const,
     watchProviders: (id: number, mediaType: MediaType) =>
-      ["media_watch_providers", id, mediaType] as const,
+      ["media-watch-providers", id, mediaType] as const,
     mediaList: (type: string, page: number) =>
       ["media-list", type, page] as const,
     discoverKeyword: (id: number, page: number) =>
       ["discover-movies-keyword", id, page] as const,
     search: (query: string, page: number) => ["search", query, page] as const,
     searchFallback: (title: string, mediaType: MediaType) =>
-      ["tmdb_search_fallback", title, mediaType] as const,
-    trendingDay: () => ["trending_day"] as const,
+      ["tmdb-search-fallback", title, mediaType] as const,
+    trendingDay: () => ["trending-day"] as const,
     homepageMedia: (type: string) => [type] as const,
-    dailyPickTrending: () => ["daily-pick-trending"] as const,
-    dailyPickPopularTv: () => ["daily-pick-popular-tv"] as const,
   },
 } as const;
 

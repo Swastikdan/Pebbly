@@ -1,7 +1,7 @@
 // Pure prompt-building helpers for the recommendation engine. Kept dependency-free
 // (no server imports) so they are trivially testable and reusable anywhere.
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 
 export interface WatchItemSummary {
   tmdbId: number;
@@ -43,6 +43,15 @@ export interface FeedbackSignals {
   previousTitles?: string[];
 }
 
+export interface RecommendationCandidate {
+  tmdbId: number;
+  mediaType: MediaType;
+  title: string;
+  year: number | null;
+  rating: number;
+  voteCount: number;
+}
+
 function formatStats(inputStats: {
   movieCount: number;
   tvCount: number;
@@ -74,7 +83,11 @@ const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
       "reasoning": "string - 1-2 sentence explanation"
     }
   ]
-}`;
+}
+
+Before returning, verify that every recommendation is unique by media type and
+official title. Never return the same movie or TV show twice, even if one entry
+has a TMDB ID and another does not.`;
 
 function mediaLabel(mediaTypePreference?: string): string {
   return mediaTypePreference === "movie"
@@ -389,6 +402,60 @@ export function buildCustomListPrompt(
       recommendationGoal: `Based on these titles, recommend exactly ${titleCount} ${mediaLabel(mediaTypePreference)} I would likely enjoy.\nFind movies/shows that share similar themes, genres, directors, actors, or vibe as the ones in the list.\n\n`,
     },
   });
+}
+
+export function buildCandidateRecommendationPrompt(args: {
+  candidates: RecommendationCandidate[];
+  likedTitles: string[];
+  dislikedTitles: string[];
+  previousTitles: string[];
+  mediaTypePreference?: string;
+  genrePreference?: string;
+  count: number;
+  goal?: string;
+}): string {
+  const candidateCatalog = args.candidates
+    .map(
+      (candidate) =>
+        `- ${candidate.mediaType}:${candidate.tmdbId} | ${candidate.title} | ${candidate.year ?? "unknown year"} | rating ${candidate.rating}/10 | votes ${candidate.voteCount}`,
+    )
+    .join("\n");
+  const liked = args.likedTitles.length
+    ? `Liked titles: ${args.likedTitles.join(", ")}\n`
+    : "";
+  const disliked = args.dislikedTitles.length
+    ? `Avoid titles/styles related to: ${args.dislikedTitles.join(", ")}\n`
+    : "";
+  const previous = args.previousTitles.length
+    ? `Do not repeat these previously shown titles: ${args.previousTitles.join(", ")}\n`
+    : "";
+  const typeRule =
+    args.mediaTypePreference === "movie"
+      ? "Select movies only."
+      : args.mediaTypePreference === "tv"
+        ? "Select TV shows only."
+        : "Select movies and TV shows.";
+
+  return `You are ranking a current TMDB candidate catalog for personalized recommendations.
+You may ONLY select candidates from the catalog below. Never invent a title, TMDB ID, or media type. Return exactly ${args.count} recommendations when enough candidates exist. ${typeRule}
+${liked}${disliked}${previous}${args.genrePreference ? `Preferred genres: ${args.genrePreference}\n` : ""}${args.goal ?? "Choose the strongest, most varied matches for the user's taste."}
+
+Candidate catalog:
+${candidateCatalog}
+
+Return this exact JSON shape:
+{
+  "recommendations": [
+    {
+      "title": "copy the candidate title exactly",
+      "tmdbId": 123,
+      "mediaType": "movie or tv",
+      "relevanceScore": "number from 0 to 100",
+      "reasoning": "brief explanation based on the user's preferences"
+    }
+  ]
+}
+Every returned recommendation must match one catalog entry exactly. Do not return duplicates.`;
 }
 
 export function buildHomepageRecommendationsPrompt(

@@ -10,6 +10,7 @@ import type {
 import { fetchWatchlistList } from "@/lib/data/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
+import { findMediaState, selectInWatchlist } from "@/lib/watchlist-selectors";
 import {
   mapWatchlistRowToItem,
   useWatchlistStore,
@@ -48,15 +49,10 @@ export function useWatchlist() {
 
     if (isSignedIn) {
       if (!remote.data) return [];
-      return remote.data
-        .map((item) => mapWatchlistRowToItem(item))
-        .filter((item) => item.inWatchlist)
-        .sort((a, b) => b.updated_at - a.updated_at);
+      return selectInWatchlist(remote.data.map(mapWatchlistRowToItem));
     }
 
-    return [...localMediaState]
-      .filter((item) => item.inWatchlist)
-      .sort((a, b) => b.updated_at - a.updated_at);
+    return selectInWatchlist(localMediaState);
   }, [isLoaded, isSignedIn, remote.data, localMediaState]);
 
   const loading = !isLoaded || (isSignedIn && remote.isPending);
@@ -72,7 +68,7 @@ export function useAllMediaStates() {
   const allMediaStates: WatchlistItem[] = useMemo(() => {
     if (isSignedIn) {
       if (!remote.data) return [];
-      return remote.data
+      return [...remote.data]
         .map((item) => mapWatchlistRowToItem(item))
         .sort((a, b) => b.updated_at - a.updated_at);
     }
@@ -88,7 +84,6 @@ export function useAllMediaStates() {
 export function useMediaState(id: string, mediaType: MediaType) {
   const { isSignedIn } = useUser();
   const localMediaState = useWatchlistStore((state) => state.mediaState);
-  const tmdbId = Number(id);
   // Derive per-item state from the single shared watchlist query instead of
   // firing one `getMediaState` RPC per item. A grid of N cards used to trigger
   // N backend calls (every WatchlistButton on every card); now they all share
@@ -97,20 +92,14 @@ export function useMediaState(id: string, mediaType: MediaType) {
 
   return useMemo(() => {
     if (!isSignedIn) {
-      return (
-        localMediaState.find(
-          (item) => item.external_id === id && item.type === mediaType,
-        ) ?? null
-      );
+      return findMediaState(localMediaState, id, mediaType) ?? null;
     }
 
     if (!remote.data) return null;
-    const row = remote.data.find(
-      (item) => item.tmdbId === tmdbId && item.mediaType === mediaType,
-    );
+    const row = findMediaState(remote.data, id, mediaType);
     if (!row) return null;
     return mapWatchlistRowToItem(row);
-  }, [isSignedIn, localMediaState, id, mediaType, tmdbId, remote.data]);
+  }, [isSignedIn, localMediaState, id, mediaType, remote.data]);
 }
 
 export function useToggleWatchlistItem() {

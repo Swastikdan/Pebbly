@@ -2,24 +2,21 @@ import { useUser } from "@clerk/react";
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import type { AIRecommendation } from "@/domain/recommendations";
 import type { MediaType } from "@/lib/media-types";
-import type { AIRecommendation } from "@/types";
 import { ERA_PRESETS } from "@/components/recommendations/recommendation-filters";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { normalizeTitleKey } from "@/lib/text";
+import { logError as logRecommendationError } from "@/lib/utils";
 import {
   deleteRecommendation,
-  generateRecommendations,
   getRecommendationHistory,
+  startGeneration,
   updateVerifiedRecommendations,
 } from "@/server/fns/recommendations";
 import { unwrap } from "@/server/schema/common";
 import { MAX_EXCLUDE_TMDB_IDS } from "@/server/schema/recommendations";
-
-function logRecommendationError(action: string, error: unknown) {
-  console.error(`Failed to ${action}`, error);
-}
 
 export interface GenerateOptions {
   generationType?: "watchlist" | "list" | "genre";
@@ -48,26 +45,14 @@ export interface RecommendationHistoryEntry {
   verified?: boolean;
 }
 
-type GenerateResult =
-  | {
-      recommendations: AIRecommendation[];
-      inputStats: {
-        movieCount: number;
-        tvCount: number;
-        episodesWatched: number;
-        totalItems: number;
-      };
-      generatedAt: number;
-      cached: boolean;
-      listId?: string;
-    }
-  | { error: string };
-
 export interface TrackedContentSets {
   trackedTmdbIds: Set<number>;
   trackedTitles: Set<string>;
 }
 
+// Generation is fully synchronous: `startGeneration` runs the AI call inline
+// and returns the recommendations in the same response, so the client needs no
+// job polling.
 export function isTrackedRecommendation(
   recommendation: AIRecommendation,
   tracked: TrackedContentSets,
@@ -247,12 +232,10 @@ export function useRecommendations() {
 
   const generate = useCallback(
     async (options?: GenerateOptions) => {
-      setIsGenerating(true);
       setError(null);
+      setIsGenerating(true);
       try {
-        const result: GenerateResult = await unwrap(
-          generateRecommendations({ data: options ?? {} }),
-        );
+        const result = await unwrap(startGeneration({ data: options ?? {} }));
         if ("error" in result) {
           setError(result.error);
         } else {

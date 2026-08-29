@@ -1,11 +1,19 @@
+import type { MediaType } from "@/domain/media";
+import type {
+  MediaMetadata,
+  ProgressStatus,
+  ReactionStatus,
+} from "@/domain/watchlist";
 import type {
   CreateListAndAddArgs,
   CreateListArgs,
   ToggleListItemArgs,
   UpdateListArgs,
 } from "@/lib/data/optimistic/list-optimistic";
-import type { MediaMetadata, MediaType } from "@/stores/watchlist-store";
-import type { ProgressStatus, ReactionStatus } from "@/types";
+import type { QueryClient } from "@tanstack/react-query";
+import { watchlistOptimistic } from "@/lib/data/optimistic/watchlist-optimistic";
+import { getTvDetails } from "@/lib/queries";
+import { queryKeys } from "@/lib/query/keys";
 
 export interface WatchlistToggleItem {
   title: string;
@@ -133,4 +141,54 @@ export function resolveProgressStatusAction(
     needsEpisodeUpdate,
     progress,
   };
+}
+
+export interface SeasonSelection {
+  season: number;
+  episodes: number[];
+}
+
+export interface StatusPlan {
+  action: ProgressStatusAction;
+  seasonsPromise: Promise<SeasonSelection[]> | null;
+}
+
+/**
+ * Resolves what a status change means (per `resolveProgressStatusAction`)
+ * and, for TV completions/exits, the season/episode selections that must
+ * follow — warming them from the TMDB details query when needed. Both
+ * repository adapters (local + remote) share this plan so the progress
+ * semantics stay in one module.
+ */
+export function resolveStatusPlan(
+  queryClient: QueryClient,
+  id: string,
+  mediaType: MediaType,
+  progressStatus: ProgressStatus,
+  currentStatus?: ProgressStatus | null,
+): StatusPlan {
+  const action = resolveProgressStatusAction(
+    mediaType,
+    progressStatus,
+    currentStatus,
+  );
+
+  if (action.type !== "tv") return { action, seasonsPromise: null };
+
+  const clearAllEpisodes =
+    action.isLeavingCompletion && !action.shouldMarkWatched;
+  const needsSeasons = action.needsEpisodeUpdate && !clearAllEpisodes;
+
+  const seasonsPromise = needsSeasons
+    ? queryClient
+        .ensureQueryData({
+          queryKey: queryKeys.tmdb.tvDetails(Number(id)),
+          queryFn: () => getTvDetails({ id: Number(id) }),
+        })
+        .then((details) =>
+          watchlistOptimistic.buildSeasonEpisodeSelections(details),
+        )
+    : null;
+
+  return { action, seasonsPromise };
 }

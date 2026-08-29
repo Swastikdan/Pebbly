@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { number, object, optional } from "valibot";
 
-import type { MediaType } from "@/types";
+import type { MediaType } from "@/domain/media";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { GoBack } from "@/components/go-back";
 import { MediaCard } from "@/components/media-card";

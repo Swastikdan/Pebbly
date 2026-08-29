@@ -34,13 +34,14 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 
 ## 2. Environment (`src/server/env.ts`)
 
-- `Env` interface mirrors the Worker bindings (`DB`, `ASSETS`,
-  `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL`, `GEMINI_API_KEY`, `APP_ENV`).
+- `Env` interface mirrors the Worker bindings (`DB`, `ASSETS`, `AI`,
+  `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL`, optional `GEMINI_API_KEY`, `APP_ENV`).
 - `getEnv()` reads `globalThis.__env__` (set by Nitro on the Worker) with a
   `process.env` fallback for Node dev.
 - `validateEnv()` runs once per isolate/process and validates string vars with
   Valibot. A missing `CLERK_SECRET_KEY` is a loud `console.error` (it silently
-  degrades everyone to guest), while a missing `GEMINI_API_KEY` is a warning.
+  degrades everyone to guest). A missing `GEMINI_API_KEY` only warns when the
+  Workers AI binding is also absent.
 - `isPreview()` / `isProduction()` read the optional `APP_ENV` var (the
   preview Worker sets `APP_ENV=preview`) for environment-specific behavior.
 - The `DB` binding is validated separately in `getDb` with an actionable error
@@ -97,7 +98,7 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
   for legacy `*|<sub>` formats, max 10 matches), with a short-lived in-memory
   cache (15 s TTL, 500-entry LRU) to avoid duplicate DB hits.
 - Admin helpers, `isAdminByClaims` (reads `public_meta.isAdmin` out of the
-  signed JWT claim — the sole request-path source; the old live Clerk API
+  signed JWT claim, the sole request-path source; the old live Clerk API
   fallback was removed from gates), and `getClerkAdminIds` (paginated
   user-list call, page size 500, offset cap 10,000, display-only, never used
   for access decisions).
@@ -220,18 +221,14 @@ All fns return `ApiResult<T>` and validate input with Valibot.
   `updateVerifiedRecommendations`) bump the user's `ai_rev`.
 - Homepage: `getHomepageRecommendations` (filters out disliked/not-interested
   feedback, computes `needsRefresh` from server time only: 24 h staleness,
-  retry suppressed for 1 h after a failure), `generateHomepageRecommendations`
-  (rate limited via the shared `rate_limit_attempts` ledger).
-- Generation: `generateRecommendations`, auth + feature gate (via
-  `authedFn`), empty-input guard, atomic rate-limit slot claim
-  (`tryConsumeRateLimit` on the `rate_limit_attempts` ledger;
-  `releaseRateLimit` on AI failure so failures don't consume the window),
-  `gatherWatchlistData` (one batched read of watch items ≤200,
-  lists ≤50, list items ≤200, episode progress ≤200), prompt building
-  (excluded ids capped at `MAX_EXCLUDE_TMDB_IDS = 1000`, also enforced
-  client-side), `callGeminiAI`, filtering (dedupe against existing ids/
-  titles, drop disliked), and persistence (`saveRecommendations` updates the
-  reservation row in place so history never shows a placeholder).
+  retry suppressed for 1 h after a failure), `startHomepageGeneration`
+  (thin adapter into `recommendation-pipeline.ts`, rate limited via the shared
+  `rate_limit_attempts` ledger).
+- Generation: `startGeneration` and `startHomepageGeneration` authenticate and
+  feature-gate through `authedFn`; `recommendation-pipeline.ts` owns the shared
+  empty-input guard, atomic rate-limit reservation/release, batched watchlist
+  data gathering, exclusions, candidate catalog, prompt building, provider
+  call, deduplication/filtering, and persistence.
 
 ### admin.ts (6 fns)
 
@@ -252,7 +249,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 - `storeUser`, upserts identity fields from the verified Clerk session
   (admin is deliberately not part of the payload). Used by `UserSync`.
 
-## 7. Prompts (`src/server/prompts.ts`) & Gemini AI (`src/server/ai.ts`)
+## 7. Prompts (`src/server/prompts.ts`) & AI (`src/server/ai.ts`)
 
 Prompts are pure, dependency-free builders living server-side (their only
 consumer is the recommendation fns):
@@ -267,18 +264,19 @@ consumer is the recommendation fns):
   counts to 1..30. Outputs are verified byte-identical against golden-file
   fixtures.
 
-Gemini access:
+AI access:
 
-- `callGeminiAI(prompt, systemInstruction, retries)`, the single entry point.
-- REST `fetch` to `generateContent` with the key in the `x-goog-api-key`
-  header (never the URL), 30 s per-attempt timeout, `responseMimeType: json`.
-- Model fallback chain (`gemini-3.1-flash-lite` → `gemini-2.5-flash` →
-  `gemini-2.0-flash` → `gemini-1.5-flash`) with 1 s backoff between models;
-  generation callers pass `retries: 1` (homepage: 2).
-- Response parsing is **validated per element** with Valibot, malformed
-  entries are dropped, never trusted as-is.
-- `getErrorMessage` / `isHighDemandError` (HTTP 503 or "high demand") /
-  `delay` are exported for reuse.
+- `generateRecommendations(prompt, systemInstruction, retries)` is the
+  provider-neutral entry point. In Cloudflare it calls the native Workers AI
+  `AI` binding using `@cf/meta/llama-3.1-8b-instruct-fast` and JSON mode.
+- Local Vite development can fall back to the private `ai-gemini.ts` adapter
+  when `GEMINI_API_KEY` is configured; that module owns Gemini REST requests,
+  model fallback, and Gemini-specific error classification. Deployed Workers
+  do not require that secret.
+- Responses are validated per element with Valibot, and provider-specific
+  failures are mapped to safe application error codes.
+- `recommendation-pipeline.ts` owns the shared history/homepage generation
+  choreography; `fns/recommendations.ts` exposes thin authenticated adapters.
 
 ## 8. Shared contracts (`src/server/schema/`)
 

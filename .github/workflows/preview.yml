@@ -67,5 +67,5 @@ jobs:
           # .output/server/wrangler.json + .wrangler/deploy/config.json.
           # Wrangler reads wrangler.preview.toml directly (redirected: false),
           # so the "redirected configs cannot include environments" error does
-          # not apply — there is no env indirection to resolve.
+          # not apply, there is no env indirection to resolve.
           command: deploy --config wrangler.preview.toml

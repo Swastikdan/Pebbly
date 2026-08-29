@@ -3,7 +3,7 @@
 > **Pebbly** is a full-stack movie & TV discovery app: TanStack
 > Start (React 19) + Cloudflare Workers + Cloudflare D1 (SQLite) + Drizzle ORM
 >
-> - Valibot + Clerk + Google Gemini + TMDB.
+> - Valibot + Clerk + Cloudflare Workers AI + TMDB.
 >
 > This documentation describes the overall architecture, every meaningful
 > source file, and the architecture decisions that shaped the codebase.
@@ -13,7 +13,7 @@
 | Document                                                 | What it covers                                                                                              |
 | :------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
 | [architecture.md](./architecture.md)                     | The big picture: tech stack, layers, request/data flows, deployment, cron                                   |
-| [server-layer.md](./server-layer.md)                     | Everything server-side: Nitro, server functions, the `authedFn` guard pipeline, auth, RBAC, Gemini AI       |
+| [server-layer.md](./server-layer.md)                     | Everything server-side: Nitro, server functions, the `authedFn` guard pipeline, auth, RBAC, Workers AI      |
 | [client-layer.md](./client-layer.md)                     | Everything client-side: routing, TanStack Query, Zustand stores, the repository pattern, optimistic updates |
 | [data-model.md](./data-model.md)                         | The D1 database: every table, index, constraint, and migration                                              |
 | [architecture-decisions.md](./architecture-decisions.md) | Architecture Decision Records (ADRs), _why_ the code is shaped this way                                     |
@@ -33,18 +33,20 @@
 - **A repository pattern hides remote-vs-local.** `useRepository()` picks a
   remote (server-fn + optimistic journal) or local (Zustand + localStorage)
   implementation based on auth state, so mutation hooks never branch on
-  `isSignedIn`. Both adapters share one decision pipeline (`status-plan.ts`)
+  `isSignedIn`. Both adapters share one decision pipeline (`repository/types.ts`)
   for progress-status writes.
-- **Optimistic UI with a replayable journal.** Every write is applied to the
-  query cache immediately through `lib/data/pending-ops.ts`, then reconciled
-  against server snapshots so a refetch can never clobber in-flight state.
+- **Optimistic UI with two recovery layers.** Every write is applied to the
+  query cache immediately through `lib/data/pending-ops.ts`. Signed-in remote
+  writes also enter the localStorage mutation outbox and replay sequentially on
+  the next boot, while server snapshots are reconciled so refetches cannot
+  clobber in-flight state.
 - **Clerk owns identity; the DB never stores admin status.** Admin/ban/feature
   decisions come from the signed JWT claim or the live Clerk API, never a
   stored flag that could go stale.
-- **AI recommendations are gated and rate-limited.** Gemini is called over
-  REST with a model fallback chain, prompts are built server-side
-  (`server/prompts.ts`), and every generation is verified against TMDB before
-  it is shown to the user.
+- **AI recommendations are gated and rate-limited.** Production uses the
+  Cloudflare Workers AI binding; local development can optionally fall back to
+  Gemini. Prompts are built server-side (`server/prompts.ts`), and every
+  generation is verified against TMDB before it is shown to the user.
 - **coss ui on Base UI for the interface.** The Radix/shadcn primitive set was
   replaced by Base UI-based components with first-class light/dark/system
   themes resolved before first paint. Movie and TV routes share one

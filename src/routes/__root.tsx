@@ -1,12 +1,12 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import bricolageLatinWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
-import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
   useRouter,
 } from "@tanstack/react-router";
+import bricolageLatinWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
+import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 
 import type { QueryClient } from "@tanstack/react-query";
 import {
@@ -71,30 +71,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: SITE_CONFIG.name,
       },
       {
-        name: "msapplication-TileColor",
-        content: "#0b0a08",
-      },
-      {
-        name: "msapplication-TileImage",
-        content: "/mstile-144x144.png",
-      },
-      {
-        name: "msapplication-square70x70logo",
-        content: "/mstile-70x70.png",
-      },
-      {
-        name: "msapplication-square150x150logo",
-        content: "/mstile-150x150.png",
-      },
-      {
-        name: "msapplication-wide310x150logo",
-        content: "/mstile-310x150.png",
-      },
-      {
-        name: "msapplication-square310x310logo",
-        content: "/mstile-310x310.png",
-      },
-      {
         name: "keywords",
         content:
           "movie database, film reviews, TV show information, movie ratings, entertainment",
@@ -128,12 +104,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         name: "theme-color",
         media: "(prefers-color-scheme: dark)",
         content: "#161616",
-      },
-      // Intentionally kept for older Chrome for Android compatibility.
-      // Modern PWA behavior is controlled via manifest.json display: "standalone".
-      {
-        name: "mobile-web-app-capable",
-        content: "yes",
       },
       {
         name: "apple-mobile-web-app-capable",

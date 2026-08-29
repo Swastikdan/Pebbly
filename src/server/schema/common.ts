@@ -1,29 +1,16 @@
 import * as v from "valibot";
 
-import { mediaTypeSchema } from "@/lib/media-types";
+import { MEDIA_TYPES } from "@/domain/media";
+import { PROGRESS_STATUSES, REACTIONS } from "@/domain/watchlist";
 
-export { mediaTypeSchema };
+export const mediaTypeSchema = v.picklist([...MEDIA_TYPES]);
+export { PROGRESS_STATUSES, REACTIONS };
 export type MediaType = v.InferOutput<typeof mediaTypeSchema>;
 
-// Canonical enum values; the valibot picklists, the runtime validation Sets
-// in server helpers and the drizzle column enums all derive from these.
-export const PROGRESS_STATUSES = [
-  "watch-later",
-  "watching",
-  "done",
-  "dropped",
-] as const;
-
+// Runtime schemas derive from the domain contract so client and server use the
+// same values without importing server code into the client domain.
 export const progressStatusSchema = v.picklist([...PROGRESS_STATUSES]);
 export type ProgressStatus = v.InferOutput<typeof progressStatusSchema>;
-
-export const REACTIONS = [
-  "loved",
-  "liked",
-  "mixed",
-  "not-for-me",
-  "recommended",
-] as const;
 
 export const reactionSchema = v.picklist([...REACTIONS]);
 export type Reaction = v.InferOutput<typeof reactionSchema>;
@@ -32,11 +19,11 @@ export const feedbackSchema = v.picklist(["like", "not_interested", "dislike"]);
 export type Feedback = v.InferOutput<typeof feedbackSchema>;
 
 export const metadataSchema = v.object({
-  title: v.optional(v.string()),
-  image: v.optional(v.string()),
-  rating: v.optional(v.number()),
-  release_date: v.optional(v.string()),
-  overview: v.optional(v.string()),
+  title: v.optional(v.pipe(v.string(), v.maxLength(500))),
+  image: v.optional(v.pipe(v.string(), v.maxLength(2048))),
+  rating: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(10))),
+  release_date: v.optional(v.pipe(v.string(), v.maxLength(32))),
+  overview: v.optional(v.pipe(v.string(), v.maxLength(5000))),
 });
 export type MediaMetadata = v.InferOutput<typeof metadataSchema>;
 

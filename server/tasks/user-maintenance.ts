@@ -6,8 +6,9 @@
 // path); it now runs here, on a schedule, where the extra queries cannot add
 // request latency.
 //
-// The scan is one aggregate GROUP BY query — a no-op once every duplicate
-// group has been merged — so the daily run is cheap even at steady state.
+// The scan is one aggregate GROUP BY query, so it is a no-op once every
+// duplicate group has been merged and the daily run stays cheap at steady
+// state.
 import { defineTask } from "nitro/task";
 
 import { getDb } from "../../src/server/db/client";
@@ -19,7 +20,7 @@ export default defineTask({
   meta: {
     name: "user-maintenance",
     description:
-      "Re-parent watch/episode/feedback rows from legacy duplicate users onto their canonical account, and prune stale rate-limit ledger rows",
+      "Re-parent watch/episode/feedback rows from legacy duplicate users onto their canonical account and prune stale rate-limit rows",
   },
   async run() {
     const db = getDb(getEnv());

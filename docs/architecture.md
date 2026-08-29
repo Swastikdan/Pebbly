@@ -2,19 +2,19 @@
 
 ## 1. Tech stack
 
-| Layer          | Technology                                                                                             | Where it lives                                                   |
-| :------------- | :----------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| Framework      | TanStack Start (file-based routing) + TanStack Router + React 19                                       | `src/router.tsx`, `src/start.ts`, `src/routes/`                  |
-| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset)                                                  | `wrangler.toml`, `nitro.config.ts`                               |
-| Database       | Cloudflare D1 (SQLite) via Drizzle ORM                                                                 | `src/server/db/`, `drizzle/`                                     |
-| Validation     | Valibot (schemas shared between client and server fns)                                                 | `src/server/schema/`, `src/lib/tmdb-schemas.ts`                  |
-| Auth           | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification)                                       | `src/server/auth.ts`, `src/start.ts`                             |
-| AI             | Google Gemini over REST (`generativelanguage.googleapis.com`)                                          | `src/server/ai.ts`, `src/server/prompts.ts`                      |
-| Media metadata | TMDB REST API (`@better-fetch/fetch` client)                                                           | `src/lib/tmdb.ts`, `src/lib/queries.ts`                          |
-| Client data    | TanStack Query (React Query)                                                                           | `src/lib/query/`                                                 |
-| Client state   | Zustand (persisted to localStorage with LRU eviction)                                                  | `src/stores/`                                                    |
-| Styling        | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts` |
-| Tooling        | Vite 7, Prettier (formatting) + Biome (linting only), TypeScript strict, Wrangler                      | root config files                                                |
+| Layer          | Technology                                                                                                | Where it lives                                                         |
+| :------------- | :-------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| Framework      | TanStack Start (file-based routing) + TanStack Router + React 19                                          | `src/router.tsx`, `src/start.ts`, `src/routes/`                        |
+| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset)                                                     | `wrangler.toml`, `nitro.config.ts`                                     |
+| Database       | Cloudflare D1 (SQLite) via Drizzle ORM                                                                    | `src/server/db/`, `drizzle/`                                           |
+| Validation     | Valibot (schemas shared between client and server fns)                                                    | `src/server/schema/`, `src/lib/tmdb-schemas.ts`                        |
+| Auth           | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification)                                          | `src/server/auth.ts`, `src/start.ts`                                   |
+| AI             | Cloudflare Workers AI binding (`@cf/meta/llama-3.1-8b-instruct-fast`) with optional local Gemini fallback | `src/server/ai.ts`, `src/server/ai-gemini.ts`, `src/server/prompts.ts` |
+| Media metadata | TMDB REST API (`@better-fetch/fetch` client)                                                              | `src/lib/tmdb.ts`, `src/lib/queries.ts`                                |
+| Client data    | TanStack Query (React Query)                                                                              | `src/lib/query/`                                                       |
+| Client state   | Zustand (persisted to localStorage with LRU eviction)                                                     | `src/stores/`                                                          |
+| Styling        | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes    | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts`       |
+| Tooling        | Vite 8, Prettier (formatting) + Biome (linting only), TypeScript strict, Wrangler                         | root config files                                                      |
 
 Formatting is owned by **Prettier** (`.prettierrc`: import sorting +
 `prettier-plugin-tailwindcss`); Biome's formatter is disabled and it runs as a
@@ -44,7 +44,7 @@ linter only (`pnpm lint`). The pre-commit hook runs both via `lint-staged`.
                                      │         recommendations, import)    │
                                      │ db/    (Drizzle client + schema)    │
                                      └───────┬───────────────────┬─────────┘
-                                             │ D1 (SQLite)       │ Clerk API / Gemini REST / TMDB
+                                             │ D1 (SQLite)       │ Clerk API / Workers AI / TMDB
                                              ▼                   ▼
                                       Cloudflare D1       External services
 ```
@@ -54,7 +54,17 @@ The same Worker serves both the static frontend (via the `ASSETS` binding,
 
 ## 3. The layers
 
-### 3.1 Routing & app shell (`src/router.tsx`, `src/start.ts`, `src/routes/`)
+### 3.1 Domain contracts (`src/domain/`)
+
+- `media.ts`, `watchlist.ts`, and `recommendations.ts` contain dependency-free
+  shared contracts and runtime-safe constants for media identity, watchlist
+  status/reaction values, metadata, and AI recommendations.
+- `object.ts` contains generic pure object helpers shared by optimistic and
+  persisted-state code.
+- Server Valibot schemas derive their enum values from this layer; client
+  hooks, repositories, stores, and server code import domain types directly.
+
+### 3.2 Routing & app shell (`src/router.tsx`, `src/start.ts`, `src/routes/`)
 
 - `src/router.tsx` builds the TanStack Router with a ClerkProvider wrapper, a
   TanStack Query provider, SSR↔query integration, and default loader /
@@ -149,22 +159,24 @@ Server functions are:
   `buildHomepageRecommendationsPrompt`) sharing one sectioned builder
   underneath. They live server-side because their single consumer is the
   recommendation fns.
-- `src/server/ai.ts`, `callGeminiAI()`: REST call with per-attempt timeout,
-  model fallback chain (`gemini-3.1-flash-lite` → `gemini-2.5-flash` →
-  `gemini-2.0-flash` → `gemini-1.5-flash`), retries, and per-element Valibot
-  validation of the JSON response.
-- `src/server/fns/recommendations.ts`, generation orchestration: auth +
-  feature gate (via `authedFn`), rate limiting (atomic slot claim on the
-  `rate_limit_attempts` ledger via `helpers/rate-limit.ts`),
-  watchlist data gathering, prompt building, Gemini call, de-duplication/
-  filtering against existing titles, and persistence.
+- `src/server/ai.ts`, `generateRecommendations()`: provider-neutral seam over
+  the Cloudflare Workers AI binding in production and the optional local
+  adapter. JSON-mode responses are validated with Valibot and provider-
+  specific failures are mapped to safe application error codes.
+- `src/server/ai-gemini.ts`, private local Gemini adapter: REST request/response
+  handling, fallback model order, and Gemini-specific error classification.
+- `src/server/recommendation-pipeline.ts`, shared generation orchestration for
+  history and homepage intents: rate-limit reservation, watchlist/feedback
+  gathering, exclusions, candidate catalog, prompt construction, AI call,
+  failure release, deduplication, and persistence. The public server functions
+  remain thin authenticated adapters.
 - Client side, TMDB verification of AI-suggested titles is hook-based:
   `src/hooks/use-tmdb-verification.ts` (direct fetch by id + title-search
   fallback with normalized matching) and
   `src/hooks/use-resolved-recommendation.ts` (the resolution machine used by
   recommendation cards).
 
-### 3.6 Client state & mutations
+### 3.7 Client state & mutations
 
 - **TanStack Query** owns server data. Query keys are centralized in
   `src/lib/query/keys.ts` (user-scoped to avoid cross-account leaks).
@@ -172,28 +184,32 @@ Server functions are:
   mutations. `useRepository()` returns `createRemoteRepository(...)` when
   signed in (server fns + optimistic journal + request batching) or
   `createLocalRepository(...)` when signed out (Zustand + localStorage).
-  Both adapters share one decision pipeline (`status-plan.ts`) for
+  Both adapters share one decision pipeline in `repository/types.ts` for
   progress-status writes, so "what happens when you mark a show as done"
   is defined exactly once.
-- **Optimistic journal** (`src/lib/data/pending-ops.ts`), every write
-  registers a _replayable_ op against the query cache; server snapshots are
-  merged through the journal so refetches can't clobber in-flight optimistic
-  state. Its op builders live beside it in `src/lib/data/optimistic/`
-  (watchlist + lists), and the journal-reconciled watchlist query fns live in
-  `src/lib/data/watchlist-queries.ts`.
+- **Optimistic journal** (`src/lib/data/pending-ops.ts`) applies every write
+  immediately and replays it over fresh server snapshots so refetches cannot
+  clobber in-flight state. Signed-in remote writes also enter the persistent
+  `src/lib/data/mutation-outbox.ts`, which validates and replays idempotent
+  mutations sequentially on the next boot. Op builders live beside the journal
+  in `src/lib/data/optimistic/`, and watchlist queries pass through its
+  reconciler.
 - **Zustand stores** persist guest/local state from `src/stores/`:
   `watchlist-store`, `local-lists-store`, `local-progress-store`,
   `daily-pick-store` (all sharing `guest-store-kit` plumbing), plus the theme
-  store in `use-theme.ts` and toasts in `use-toast-store.ts`.
+  store in `use-theme.ts`. Shared toast dispatch lives in `src/lib/notifications.ts`
+  and is re-exported for hook consumers.
 - **Request batching** (`src/lib/batcher.ts`), a generic debounce/max-wait
   batcher used to coalesce watchlist membership writes and per-card season
   detail fetches.
 
-Layering rule: `src/lib/` never imports from `src/hooks/`. Pure data-layer
-modules (journal, op builders, query hooks) live under `lib/data/`, state
-lives under `stores/`, and only genuine React hooks live in `hooks/`.
+Layering rule: `src/domain/` is dependency-free; `src/lib/` and `src/server/`
+may depend on domain contracts but never on React hooks. Pure data-layer
+modules (journal, op builders, shared progress, notifications) live under
+`lib/`, state lives under `stores/`, and only genuine React hooks live in
+`hooks/`.
 
-### 3.7 UI components & theming
+### 3.8 UI components & theming
 
 - `src/components/ui/`, **coss ui** primitives built on Base UI
   (`@base-ui/react`): button, dialog, menu, tabs, select, sheet, toast,
@@ -206,9 +222,10 @@ lives under `stores/`, and only genuine React hooks live in `hooks/`.
   palette); `src/hooks/use-theme.ts` owns the preference (Zustand +
   localStorage) and applies it to `<html>`. Switching themes uses a short
   View Transitions crossfade when the browser supports it.
-- Toasts are fire-and-forget: any module can call `toast()` from
-  `use-toast-store.ts` (backed by Base UI's toast manager); no provider
-  plumbing needed at call sites.
+- Toasts are fire-and-forget: shared code calls `toast()` from
+  `src/lib/notifications.ts` (backed by Base UI's toast manager), while
+  `use-toast-store.ts` remains a compatibility re-export for hook consumers.
+  No provider plumbing is needed at call sites.
 - **Shared page bodies** keep the movie/TV twins thin:
   - `src/components/media/media-detail-page.tsx`, the full detail-page layout
     shared by both index routes (kind-specific bits like certification,

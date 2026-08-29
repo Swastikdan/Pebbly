@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { WatchlistData } from "./prompts";
 import {
+  buildCandidateRecommendationPrompt,
   buildGenrePrompt,
   buildHomepageRecommendationsPrompt,
   buildWatchlistPrompt,
@@ -32,7 +33,7 @@ function data(): WatchlistData {
     lists: [{ _id: "list-1", name: "Comfort watches" }],
     listItems: [
       { listId: "list-1", tmdbId: 99, mediaType: "movie" },
-      // Same title also tracked on the watchlist — must not duplicate.
+      // Same title also tracked on the watchlist, must not duplicate.
       { listId: "list-1", tmdbId: 42, mediaType: "movie" },
     ],
     inputStats: {
@@ -91,5 +92,35 @@ describe("buildHomepageRecommendationsPrompt", () => {
     expect(prompt).toContain("Previously Shown");
     expect(prompt).toContain("Title Liked");
     expect(prompt).toContain("Title Disliked");
+  });
+});
+
+describe("buildCandidateRecommendationPrompt", () => {
+  it("includes only the compact current candidate catalog and strict ID rules", () => {
+    const prompt = buildCandidateRecommendationPrompt({
+      candidates: [
+        {
+          tmdbId: 550,
+          mediaType: "movie",
+          title: "Fight Club",
+          year: 1999,
+          rating: 8.4,
+          voteCount: 28000,
+        },
+      ],
+      likedTitles: ["The Nice Guys"],
+      dislikedTitles: ["A disliked title"],
+      previousTitles: ["Previously Shown"],
+      count: 5,
+      goal: "Prefer smart crime stories.",
+    });
+
+    expect(prompt).toContain("movie:550");
+    expect(prompt).toContain("Fight Club");
+    expect(prompt).toContain('"tmdbId": 123');
+    expect(prompt).toContain("ONLY select candidates from the catalog");
+    expect(prompt).toContain("Never invent a title, TMDB ID, or media type");
+    expect(prompt).toContain("smart crime stories");
+    expect(prompt).not.toContain("The Nice Guys (TMDB ID:");
   });
 });

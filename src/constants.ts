@@ -11,7 +11,8 @@ export const IS_DEV_BUILD = !IS_PREVIEW_BUILD && import.meta.env.DEV === true;
 
 export const SITE_CONFIG = {
   name: "Pebbly",
-  description: "Explore a vast collection of movies and TV shows with Pebbly.",
+  description:
+    "Track what you watch and keep custom lists, with AI recommendations built from your viewing history.",
   url: IS_PREVIEW_BUILD
     ? "https://pebbly-preview.swastik.workers.dev/"
     : "https://pebbly.swastik.workers.dev/",
@@ -131,7 +132,7 @@ export const RBAC_FEATURES = {
   "ai-recommendations": {
     label: "AI Recommendations",
     description:
-      "AI-powered personalized movie and TV recommendations via Gemini",
+      "AI-powered personalized movie and TV recommendations built from your viewing history.",
   },
 } as const;
 export type RbacFeature = keyof typeof RBAC_FEATURES;

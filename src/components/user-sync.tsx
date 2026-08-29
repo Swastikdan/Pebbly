@@ -13,6 +13,7 @@ import {
   hasRecentOwnMutation,
   takeOwnMutationCounts,
 } from "@/lib/realtime-mutations";
+import { replayRemoteMutations } from "@/lib/repository/remote-repository";
 import { storeUser } from "@/server/fns/users";
 import { unwrap } from "@/server/schema/common";
 
@@ -48,6 +49,22 @@ export const UserSync = () => {
 
   // Drop journal state (pending optimistic ops, server bases, sync timers)
   // when the session ends so nothing leaks into the next signed-in user.
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+
+    // Replay only idempotent watchlist writes left by an interrupted request.
+    // The dispatcher is user-scoped and sequential, so one failed record does
+    // not reorder later intent; failures remain for the next boot.
+    void replayRemoteMutations(user.id).then(() => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.watchlist.list(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.watchlist.allEpisodes(),
+      });
+    });
+  }, [isLoaded, user, queryClient]);
+
   useEffect(() => {
     if (isLoaded && !user) {
       clearPendingOps(queryClient);

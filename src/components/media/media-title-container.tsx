@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 
+import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
 import type { MediaType } from "@/lib/media-types";
-import type { ProgressStatus, ReactionStatus } from "@/types";
 import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
 import { WatchlistStatusMenu } from "@/components/media/watchlist-status-menu";

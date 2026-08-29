@@ -1,13 +1,10 @@
 import type { ListsRepository, Repository, WatchlistRepository } from "./types";
 import type { QueryClient } from "@tanstack/react-query";
+import { logError } from "@/lib/utils";
 import { useLocalListsStore } from "@/stores/local-lists-store";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
 import { useWatchlistStore } from "@/stores/watchlist-store";
-import { resolveStatusPlan } from "./status-plan";
-
-function logLocalError(action: string, error: unknown) {
-  console.error(`Failed to ${action}`, error);
-}
+import { resolveStatusPlan } from "./types";
 
 export function createLocalRepository(queryClient: QueryClient): Repository {
   const watchlist: WatchlistRepository = {
@@ -67,7 +64,7 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
               }
             })
             .catch((error) =>
-              logLocalError("sync local show episode status", error),
+              logError("sync local show episode status", error),
             );
         }
         return;

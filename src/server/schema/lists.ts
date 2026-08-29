@@ -16,6 +16,7 @@ export type ListType = (typeof LIST_TYPES)[number];
  * matches it by listType so a legacy custom list squatting on the name never
  * receives picks.
  */
+export const PEBBLY_PICKS_LIST_TYPE = "pebbly-picks" as const;
 export const PEBBLY_PICKS_LIST_NAME = "Pebbly Picks";
 
 function isReservedListName(name: string): boolean {
@@ -95,7 +96,7 @@ export const toggleListItemArgsSchema = v.object({
   listId: v.string(),
   tmdbId: v.number(),
   mediaType: mediaTypeSchema,
-  backdrop: v.optional(v.string()),
+  backdrop: v.optional(v.pipe(v.string(), v.maxLength(512))),
 });
 export type ToggleListItemArgs = v.InferOutput<typeof toggleListItemArgsSchema>;
 
@@ -104,7 +105,7 @@ export const createCustomListAndAddItemArgsSchema = v.object({
   ...metadataSchema.entries,
   tmdbId: v.number(),
   mediaType: mediaTypeSchema,
-  backdrop: v.optional(v.string()),
+  backdrop: v.optional(v.pipe(v.string(), v.maxLength(512))),
 });
 export type CreateCustomListAndAddItemArgs = v.InferOutput<
   typeof createCustomListAndAddItemArgsSchema

@@ -1,20 +1,23 @@
+import * as v from "valibot";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import type { MediaType } from "@/lib/media-types";
-import type { ProgressStatus, ReactionStatus } from "@/types";
+import type { MediaType } from "@/domain/media";
+import type {
+  MediaMetadata,
+  ProgressStatus,
+  ReactionStatus,
+} from "@/domain/watchlist";
+import type { PersistedStateSanitizer } from "@/stores/guest-store-kit";
 import { inferStatusFromProgress, normalizeProgressStatus } from "@/lib/utils";
+import {
+  mediaTypeSchema,
+  progressStatusSchema,
+  reactionSchema,
+} from "@/server/schema/common";
 import { guestPersistOptions } from "@/stores/guest-store-kit";
 
-export type { MediaType };
-
-export type MediaMetadata = {
-  title?: string;
-  image?: string;
-  rating?: number;
-  release_date?: string;
-  overview?: string;
-};
+export type { MediaMetadata, MediaType };
 
 export type WatchlistItem = {
   title: string;
@@ -70,6 +73,36 @@ interface WatchlistStore {
   ) => void;
   importWatchlistLocal: (items: LocalWatchlistImportItem[]) => void;
 }
+
+const watchlistItemSchema = v.object({
+  title: v.string(),
+  type: mediaTypeSchema,
+  external_id: v.string(),
+  image: v.string(),
+  rating: v.number(),
+  release_date: v.string(),
+  overview: v.optional(v.string()),
+  updated_at: v.number(),
+  created_at: v.number(),
+  inWatchlist: v.boolean(),
+  progressStatus: v.nullable(progressStatusSchema),
+  reaction: v.nullable(reactionSchema),
+  progress: v.optional(v.number()),
+});
+
+const sanitizeWatchlistState: PersistedStateSanitizer<WatchlistStore> = (
+  persisted,
+) => {
+  if (!persisted || typeof persisted !== "object") return null;
+  const source = persisted as { mediaState?: unknown };
+  const mediaState = Array.isArray(source.mediaState)
+    ? source.mediaState.flatMap((item) => {
+        const parsed = v.safeParse(watchlistItemSchema, item);
+        return parsed.success ? [parsed.output] : [];
+      })
+    : [];
+  return { mediaState };
+};
 
 function isSameItem(item: WatchlistItem, id: string, type: MediaType) {
   return item.external_id === id && item.type === type;
@@ -343,6 +376,6 @@ export const useWatchlistStore = create<WatchlistStore>()(
           return { mediaState: nextItems };
         }),
     }),
-    guestPersistOptions("watchlist-storage"),
+    guestPersistOptions("watchlist-storage", "lru", sanitizeWatchlistState),
   ),
 );

@@ -1,6 +1,6 @@
 import viteReact from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 
@@ -88,10 +88,6 @@ const config = defineConfig(({ mode }) => ({
                 {
                   name: "vendor-icons",
                   test: /node_modules\/lucide-react\//,
-                },
-                {
-                  name: "vendor-convex",
-                  test: /node_modules\/(convex|@convex-dev)\//,
                 },
                 {
                   name: "vendor-date",

@@ -11,8 +11,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-import type { MediaType } from "@/lib/media-types";
-import { MEDIA_TYPES } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
+import { MEDIA_TYPES } from "@/domain/media";
 import { PROGRESS_STATUSES, REACTIONS } from "@/server/schema/common";
 import { LIST_TYPES, LIST_VISIBILITIES } from "@/server/schema/lists";
 import { HOMEPAGE_REC_STATUSES } from "@/server/schema/recommendations";
@@ -321,3 +321,61 @@ export type InputStats = {
   episodesWatched: number;
   totalItems: number;
 };
+
+/**
+ * Stored parameters for a background AI generation job. The prompt and
+ * watch-items snapshot are built eagerly in `startGeneration` so the
+ * background worker does not need to re-query the watchlist (which could
+ * have changed by then).
+ */
+export type GenerateJobParams = {
+  prompt: string;
+  systemInstruction: string;
+  watchItems: Array<{
+    tmdbId: number;
+    title: string | null;
+    mediaType: MediaType;
+    rating: number | null;
+    progressStatus: string | null;
+    reaction: string | null;
+    progress: number | null;
+  }>;
+  excludeTmdbIds: number[];
+  attempts: number;
+  inputStats: InputStats;
+  generationType?: string;
+  mediaTypePreference?: MediaType;
+  genrePreference?: string;
+  rateLimitToken?: string;
+};
+
+export const aiGenerationJobs = sqliteTable(
+  "ai_generation_jobs",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status", {
+      enum: ["pending", "running", "completed", "failed"],
+    })
+      .notNull()
+      .default("pending"),
+    params: text("params", { mode: "json" })
+      .$type<GenerateJobParams>()
+      .notNull(),
+    recommendations: text("recommendations", { mode: "json" }).$type<
+      Recommendation[]
+    >(),
+    inputStats: text("input_stats", { mode: "json" }).$type<InputStats>(),
+    model: text("model"),
+    error: text("error"),
+    createdAt: integer("created_at").notNull(),
+    startedAt: integer("started_at"),
+    completedAt: integer("completed_at"),
+  },
+  (t) => [
+    index("gen_jobs_user_created_idx").on(t.userId, t.createdAt),
+    index("gen_jobs_status_idx").on(t.status),
+  ],
+);

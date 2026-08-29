@@ -2,8 +2,8 @@ import { ArrowUpRight } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import type { AIRecommendation } from "@/domain/recommendations";
 import type { RecommendationHistoryEntry } from "@/hooks/use-recommendations";
-import type { AIRecommendation } from "@/hooks/use-tmdb-verification";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { formatTimestamp } from "@/components/recommendations/recommendation-utils";
 import { Badge } from "@/components/ui/badge";

@@ -1,9 +1,12 @@
 import { and, eq } from "drizzle-orm";
 
 import type { Db } from "../db/client";
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { listItems, lists } from "../db/schema";
-import { PEBBLY_PICKS_LIST_NAME } from "../schema/lists";
+import {
+  PEBBLY_PICKS_LIST_NAME,
+  PEBBLY_PICKS_LIST_TYPE,
+} from "../schema/lists";
 
 export type PicksListItem = {
   tmdbId: number;
@@ -20,14 +23,14 @@ export type PicksListItem = {
  * File a title on the user's Pebbly Picks list, creating the list first when
  * missing. The list insert relies on the (user_id, name) unique index, so
  * concurrent likes cannot produce duplicates; an item already on the list is
- * left alone — the item INSERT is conflict-safe too (see below), so two rapid
+ * left alone; the item INSERT is conflict-safe too (see below), so two rapid
  * likes of the same title can never fail the request after the watch-item
  * upsert has already committed. Does not bump revisions; the caller decides
  * which domains to touch.
  *
  * "Pebbly Picks" is reserved (schema/lists.ts rejects it for custom lists),
  * and the lookup below also requires listType "pebbly-picks": a legacy
- * custom list squatting on the name keeps its rows untouched — the insert is
+ * custom list squatting on the name keeps its rows untouched: the insert is
  * a no-op against the unique index and the lookup simply misses it.
  */
 export async function appendToPicksList(
@@ -42,7 +45,7 @@ export async function appendToPicksList(
       id: crypto.randomUUID(),
       userId,
       name: PEBBLY_PICKS_LIST_NAME,
-      listType: "pebbly-picks",
+      listType: PEBBLY_PICKS_LIST_TYPE,
       sortOrder: 0,
       createdAt: now,
       updatedAt: now,
@@ -56,7 +59,7 @@ export async function appendToPicksList(
       and(
         eq(lists.userId, userId),
         eq(lists.name, PEBBLY_PICKS_LIST_NAME),
-        eq(lists.listType, "pebbly-picks"),
+        eq(lists.listType, PEBBLY_PICKS_LIST_TYPE),
       ),
     )
     .limit(1);

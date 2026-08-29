@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, asc, desc, eq, gt } from "drizzle-orm";
 import * as v from "valibot";
 
+import type { Db } from "../db/client";
 import type { ApiResult } from "../schema/common";
+import { extractMetadataFields } from "@/lib/utils";
 import { runBatch } from "../db/client";
 import { episodeProgress, users, watchItems } from "../db/schema";
 import {
@@ -33,7 +35,7 @@ import {
   setWatchlistMembershipArgsSchema,
   updateProgressArgsSchema,
 } from "../schema/watchlist";
-import { authedFn } from "./rpc";
+import { authedFn, WRITE_RATE_LIMIT } from "./rpc";
 
 export const getWatchlist = createServerFn({ method: "POST" })
   .validator(getWatchlistArgsSchema)
@@ -136,7 +138,7 @@ export const updateProgress = createServerFn({ method: "POST" })
   .validator(updateProgressArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         // Routed through the race-safe upsert: a double-submit that inserts
@@ -190,7 +192,7 @@ export const removeFromContinueWatching = createServerFn({ method: "POST" })
   .validator(mediaIdentityArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         const existing = await getWatchItem(db, user.id, data);
@@ -215,7 +217,7 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
   .validator(setWatchlistMembershipArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({
         db,
@@ -258,11 +260,7 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
               ...(shouldReset
                 ? { progressStatus: "watch-later" as const, progress: 0 }
                 : {}),
-              title: data.title,
-              image: data.image,
-              rating: data.rating,
-              release_date: data.release_date,
-              overview: data.overview,
+              ...extractMetadataFields(data),
             };
           },
         );
@@ -276,7 +274,7 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
   .validator(batchSetWatchlistMembershipArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({
         db,
@@ -398,7 +396,7 @@ export const setProgressStatus = createServerFn({ method: "POST" })
   .validator(setProgressStatusArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         await upsertWatchItem(
@@ -419,11 +417,7 @@ export const setProgressStatus = createServerFn({ method: "POST" })
               inWatchlist: true,
               progressStatus: normalized,
               progress: nextProgress,
-              title: data.title,
-              image: data.image,
-              rating: data.rating,
-              release_date: data.release_date,
-              overview: data.overview,
+              ...extractMetadataFields(data),
             };
           },
         );
@@ -437,7 +431,7 @@ export const setReaction = createServerFn({ method: "POST" })
   .validator(setReactionArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         await upsertWatchItem(
@@ -454,11 +448,7 @@ export const setReaction = createServerFn({ method: "POST" })
 
             return {
               reaction,
-              title: data.title,
-              image: data.image,
-              rating: data.rating,
-              release_date: data.release_date,
-              overview: data.overview,
+              ...extractMetadataFields(data),
             };
           },
         );
@@ -472,7 +462,7 @@ export const markEpisodeWatched = createServerFn({ method: "POST" })
   .validator(markEpisodeWatchedArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         await syncEpisodeProgressRecord(db, user.id, data, Date.now());
@@ -485,7 +475,7 @@ export const markSeasonEpisodesWatched = createServerFn({ method: "POST" })
   .validator(markSeasonEpisodesWatchedArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         const now = Date.now();
@@ -524,7 +514,7 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
   .validator(markShowEpisodesAndStatusArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
         const now = Date.now();
@@ -604,6 +594,32 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
     ),
   );
 
+async function fetchEpisodeProgress(
+  db: Db,
+  userId: string,
+  options?: { tmdbId?: number; isWatched?: boolean },
+) {
+  return collectAllByKeyset(500, (cursor) =>
+    db
+      .select()
+      .from(episodeProgress)
+      .where(
+        and(
+          eq(episodeProgress.userId, userId),
+          options?.tmdbId !== undefined
+            ? eq(episodeProgress.tmdbId, options.tmdbId)
+            : undefined,
+          options?.isWatched !== undefined
+            ? eq(episodeProgress.isWatched, options.isWatched)
+            : undefined,
+          cursor ? gt(episodeProgress.id, cursor) : undefined,
+        ),
+      )
+      .orderBy(asc(episodeProgress.id))
+      .limit(500),
+  );
+}
+
 export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
   .validator(v.object({ tmdbId: v.number() }))
   .handler(({ data }) =>
@@ -614,24 +630,10 @@ export const getAllWatchedEpisodes = createServerFn({ method: "POST" })
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        // Keyset-paginate instead of a fixed cap: long-running shows can
-        // carry more than 1000 watched rows, and truncating here makes the
-        // client undercount progress and overwrite a "done" status.
-        const rows = await collectAllByKeyset(500, (cursor) =>
-          db
-            .select()
-            .from(episodeProgress)
-            .where(
-              and(
-                eq(episodeProgress.userId, user.id),
-                eq(episodeProgress.tmdbId, data.tmdbId),
-                cursor ? gt(episodeProgress.id, cursor) : undefined,
-              ),
-            )
-            .orderBy(asc(episodeProgress.id))
-            .limit(500),
-        );
-
+        const rows = await fetchEpisodeProgress(db, user.id, {
+          tmdbId: data.tmdbId,
+          isWatched: true,
+        });
         return ok(rows);
       },
     ),
@@ -646,22 +648,7 @@ export const getAllEpisodeProgress = createServerFn({ method: "POST" }).handler(
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        // Same keyset pagination as getAllWatchedEpisodes; this feed also
-        // powers watchlist export, where silent truncation loses data.
-        const rows = await collectAllByKeyset(500, (cursor) =>
-          db
-            .select()
-            .from(episodeProgress)
-            .where(
-              and(
-                eq(episodeProgress.userId, user.id),
-                cursor ? gt(episodeProgress.id, cursor) : undefined,
-              ),
-            )
-            .orderBy(asc(episodeProgress.id))
-            .limit(500),
-        );
-
+        const rows = await fetchEpisodeProgress(db, user.id);
         return ok(rows);
       },
     ),

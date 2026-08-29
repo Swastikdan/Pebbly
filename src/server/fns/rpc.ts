@@ -7,6 +7,7 @@ import type { ApiResult } from "../schema/common";
 import { findUserByClaims, getSessionClaims, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { getEnv } from "../env";
+import { consumeRateLimitBudget } from "../helpers/rate-limit";
 import { hasFeature, isAdminByClaims } from "../rbac";
 import { fail } from "../schema/common";
 
@@ -53,7 +54,26 @@ export interface AuthedFnConfig {
   readonly feature?: RbacFeature;
   readonly featureDenied?: "fail" | "guest";
   readonly admin?: boolean;
+  /**
+   * Per-user write budget for mutating fns. Enforced inside `authedFn`
+   * after the auth gates pass, against one shared bucket per user
+   * (`fnw:<user.id>`) across every fn that opts in — so the budget bounds
+   * a user's TOTAL write rate, not per-fn rates. Read fns must not set it.
+   * The consumed slot is never released (failed writes keep counting, so a
+   * retry loop cannot hammer the DB), which is why the expensive AI
+   * generation fns keep their own releasing cooldown instead.
+   */
+  readonly rateLimit?: { readonly windowMs: number; readonly max: number };
 }
+
+/**
+ * Default write budget for mutating server fns: a shared 120
+ * writes/minute/user across every fn that opts in (`rateLimit:
+ * WRITE_RATE_LIMIT`). Deliberately generous — it caps D1 write-cost abuse,
+ * it does not throttle real usage (the client's batcher coalesces
+ * optimistic ops, so realistic write rates are far below this).
+ */
+export const WRITE_RATE_LIMIT = { windowMs: 60_000, max: 120 } as const;
 
 type ModeOf<C> = C extends {
   readonly mode: infer M extends AuthMode;
@@ -119,13 +139,28 @@ export function authedFn<C extends AuthedFnConfig, TResult>(
       // JWT-claim-only: the signed claim is the sole request-path source for
       // admin decisions (a live Clerk API fallback here would put an external
       // call inside every admin gate). Requires the Clerk session-claims
-      // template to embed `publicMetadata.isAdmin` — see isAdminByClaims.
+      // template to embed `publicMetadata.isAdmin`. See isAdminByClaims.
       // A revoked admin claim stops working when the short-lived session
       // token expires and refreshes (verifyToken enforces `exp`); same
       // bounded-staleness contract as hasFeature/getUserFeatures in rbac.ts.
       const isAdmin = claims ? isAdminByClaims(claims) : false;
       if (!isAdmin) {
         return fail("FORBIDDEN", "Forbidden: admin access required") as TResult;
+      }
+    }
+
+    if (config.rateLimit && user) {
+      const reservation = await consumeRateLimitBudget(
+        getDb(getEnv()),
+        `fnw:${user.id}`,
+        config.rateLimit.windowMs,
+        config.rateLimit.max,
+      );
+      if (!reservation.allowed) {
+        return fail(
+          "RATE_LIMITED",
+          "Too many requests. Please slow down and try again shortly.",
+        ) as TResult;
       }
     }
 

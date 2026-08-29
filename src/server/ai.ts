@@ -1,12 +1,17 @@
-import { OpenRouter } from "@openrouter/sdk";
 import * as v from "valibot";
 
-import type { MediaType } from "@/lib/media-types";
-import { getEnvVar } from "./env";
+import type { MediaType } from "@/domain/media";
+import { normalizeTitleKey } from "@/lib/text";
+import { generateGeminiRecommendations } from "./ai-gemini";
+import { getEnv, getEnvVar } from "./env";
 
-// OpenRouter is used over REST/fetched SDK. The SDK's `chat.send` streaming
-// path gives access to `usage.completionTokensDetails.reasoningTokens` in the
-// final chunk, which is required for reasoning-token telemetry.
+// Cloudflare Workers AI is the production provider. It is accessed through
+// the native `AI` binding with JSON mode, so deployed Workers do not depend on
+// Gemini's API region availability. Gemini REST remains a local-development
+// fallback behind the private adapter in `ai-gemini.ts`.
+
+const WORKERS_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+const WORKERS_AI_TIMEOUT_MS = 30_000;
 
 export interface Recommendation {
   title: string;
@@ -16,73 +21,77 @@ export interface Recommendation {
   reasoning: string;
 }
 
-export interface GeminiResult {
+type RecommendationIdentity = {
+  title?: string | null;
+  tmdbId?: number | null;
+  mediaType: MediaType;
+  relevanceScore: number;
+};
+
+/**
+ * Keep one recommendation per title/media type or TMDB identity. Models can
+ * repeat a title with and without a TMDB ID, so both identities are checked.
+ * When duplicates differ, keep the higher-scored entry while preserving the
+ * original ranking position.
+ */
+export function dedupeRecommendations<T extends RecommendationIdentity>(
+  recommendations: T[],
+): T[] {
+  const result: T[] = [];
+  const indexesByIdentity = new Map<string, number>();
+
+  for (const recommendation of recommendations) {
+    const mediaKey = recommendation.mediaType;
+    const title = normalizeTitleKey(recommendation.title);
+    const titleKey = title ? `${mediaKey}:title:${title}` : null;
+    const idKey =
+      typeof recommendation.tmdbId === "number"
+        ? `${mediaKey}:id:${recommendation.tmdbId}`
+        : null;
+    const existingIndex =
+      (titleKey ? indexesByIdentity.get(titleKey) : undefined) ??
+      (idKey ? indexesByIdentity.get(idKey) : undefined);
+
+    if (existingIndex === undefined) {
+      const index = result.length;
+      result.push(recommendation);
+      if (titleKey) indexesByIdentity.set(titleKey, index);
+      if (idKey) indexesByIdentity.set(idKey, index);
+      continue;
+    }
+
+    // Preserve every identity alias seen for a duplicate, even when the
+    // lower-scored entry is discarded. A later title with that discarded ID
+    // must still be recognized as the same recommendation.
+    if (titleKey) indexesByIdentity.set(titleKey, existingIndex);
+    if (idKey) indexesByIdentity.set(idKey, existingIndex);
+
+    if (recommendation.relevanceScore > result[existingIndex].relevanceScore) {
+      result[existingIndex] = recommendation;
+    }
+  }
+
+  return result;
+}
+
+export interface RecommendationResult {
   recommendations: Recommendation[];
 }
 
-// Keep both names — callers historically imported GeminiResult / callGeminiAI.
-// OpenRouterResult is the new canonical type; GeminiResult is an alias.
-export type OpenRouterResult = GeminiResult;
-
-export const MODELS_TO_TRY = ["openrouter/free"] as const;
-
-type OpenRouterErrorLike = {
-  status?: number;
-  code?: number;
-  message?: string;
-};
+export interface GenerateRecommendationsResult {
+  result?: RecommendationResult;
+  usedModel?: string;
+  error?: string;
+  reasoningTokens?: number;
+}
 
 export function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-export function isHighDemandError(error: unknown) {
-  const candidate = error as OpenRouterErrorLike;
-  const message = candidate.message?.toLowerCase() ?? "";
-
-  return (
-    candidate.status === 503 ||
-    candidate.code === 503 ||
-    candidate.status === 529 ||
-    candidate.code === 529 ||
-    message.includes("high demand") ||
-    message.includes("overloaded") ||
-    message.includes("503") ||
-    message.includes("529")
-  );
-}
-
-export function isRateLimitedError(error: unknown) {
-  const candidate = error as OpenRouterErrorLike;
-  const message = candidate.message?.toLowerCase() ?? "";
-  return (
-    candidate.status === 429 ||
-    candidate.code === 429 ||
-    message.includes("rate limit") ||
-    message.includes("429")
-  );
-}
-
-export function isAbortError(error: unknown) {
-  const candidate = error as { name?: string; message?: string };
-  const name = candidate.name?.toLowerCase() ?? "";
-  const message = candidate.message?.toLowerCase() ?? "";
-  return (
-    name === "aborterror" ||
-    message.includes("aborted") ||
-    message.includes("signal is aborted")
-  );
-}
-
 export async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-// Free-tier models routed via "openrouter/free" are frequently reasoning
-// models whose thinking phase alone can exceed 30s; measured SDK streams have
-// taken 31s+ for small prompts. 90s leaves headroom without risking the
-// Workers request budget (wall-clock waiting on fetch is not CPU time).
-const OPENROUTER_TIMEOUT_MS = 90_000;
 
 const recommendationElementSchema = v.pipe(
   v.object({
@@ -101,231 +110,263 @@ const recommendationElementSchema = v.pipe(
   })),
 );
 
-/**
- * Stream a completion from OpenRouter and collect reasoning-token usage.
- * Uses `stream: true` so the final SSE chunk carries `usage`.
- */
-async function generateContent(
-  apiKey: string,
-  model: string,
-  userPrompt: string,
-  systemInstruction: string,
-): Promise<{ text: string; reasoningTokens?: number }> {
-  const openrouter = new OpenRouter({
-    apiKey,
-  });
-
-  // The SDK exposes streaming via `chat.send` with `chatRequest.stream === true`.
-  // The response is an async iterable of ChatStreamChunk (SSE) — iterate to
-  // collect delta.content and the trailing usage block.
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(
-      () =>
-        reject(
-          new Error(`OpenRouter timeout after ${OPENROUTER_TIMEOUT_MS}ms`),
-        ),
-      OPENROUTER_TIMEOUT_MS,
-    );
-  });
-
-  const doStream = async (): Promise<{
-    text: string;
-    reasoningTokens?: number;
-  }> => {
-    const stream = (await openrouter.chat.send({
-      chatRequest: {
-        model,
-        messages: [
-          { role: "system", content: systemInstruction },
-          { role: "user", content: userPrompt },
+// Shared JSON Schema used by both Workers AI JSON mode and the local Gemini
+// fallback. Structured output helps guarantee the shape, while the Valibot
+// pass below remains the final defensive validation layer.
+const GEMINI_RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    recommendations: {
+      type: "array",
+      minItems: 1,
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          tmdbId: { type: "number", nullable: true },
+          mediaType: { type: "string", enum: ["movie", "tv"] },
+          relevanceScore: { type: "number" },
+          reasoning: { type: "string" },
+        },
+        required: [
+          "title",
+          "tmdbId",
+          "mediaType",
+          "relevanceScore",
+          "reasoning",
         ],
-        stream: true,
-        responseFormat: { type: "json_object" },
-        streamOptions: { includeUsage: true },
       },
-    })) as unknown as AsyncIterable<{
-      choices: Array<{ delta?: { content?: string | null } }>;
-      usage?: {
-        completionTokensDetails?: { reasoningTokens?: number | null } | null;
-      } | null;
-      error?: { message?: string; code?: number } | null;
-    }>;
+    },
+  },
+  required: ["recommendations"],
+} as const;
 
-    let text = "";
-    let reasoningTokens: number | undefined;
+type WorkersAiBinding = {
+  run(
+    model: string,
+    inputs: Record<string, unknown>,
+    options?: { signal?: AbortSignal },
+  ): Promise<unknown>;
+};
 
-    try {
-      for await (const chunk of stream) {
-        // Surface provider-side errors that appear as an `error` field on the chunk.
-        if (chunk.error) {
-          const err = new Error(
-            chunk.error.message ?? "OpenRouter stream error",
-          ) as OpenRouterErrorLike;
-          err.status = chunk.error.code;
-          err.code = chunk.error.code;
-          throw err;
-        }
+const WORKERS_AI_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: GEMINI_RESPONSE_SCHEMA,
+};
 
-        const content = chunk.choices?.[0]?.delta?.content;
-        if (content) text += content;
+function extractWorkersAiText(response: unknown): string {
+  if (!response || typeof response !== "object") return "";
+  const body = response as Record<string, unknown>;
 
-        if (chunk.usage?.completionTokensDetails?.reasoningTokens != null) {
-          reasoningTokens =
-            chunk.usage.completionTokensDetails.reasoningTokens ?? undefined;
-        }
-      }
-    } catch (error) {
-      // Workers' fetch can be aborted when the client disconnects or the
-      // Worker is terminated after the response is already buffered.
-      // If we have already collected text (and the stream was aborted
-      // without reason), treat it as a successful completion rather than
-      // a failure – the user still gets the response.
-      if (isAbortError(error) && text) {
-        console.warn(
-          `[openrouter] stream aborted after ${text.length} chars, returning partial`,
-          error,
-        );
-        return { text, reasoningTokens };
-      }
-      throw error;
-    }
+  if (typeof body.response === "string") return body.response;
+  if (typeof body.text === "string") return body.text;
 
-    if (reasoningTokens != null) {
-      console.log(`[openrouter] reasoning tokens (${model}):`, reasoningTokens);
-    }
-
-    return { text, reasoningTokens };
-  };
-
-  // Race the stream against the timeout and ensure the timer is cleared.
-  // Without cleanup the 90s timeout would fire even after success and
-  // keep the Worker alive, and an aborted fetch (client disconnect)
-  // surfaces as "signal is aborted without reason" which should not be
-  // treated as a generation failure when we already have text.
-  try {
-    const result = await Promise.race([doStream(), timeout]);
-    if (timeoutId) clearTimeout(timeoutId);
-    return result;
-  } catch (error) {
-    if (timeoutId) clearTimeout(timeoutId);
-    throw error;
-  }
+  const choices = body.choices;
+  if (!Array.isArray(choices)) return "";
+  const message = choices[0] as Record<string, unknown> | undefined;
+  const messageBody = message?.message as Record<string, unknown> | undefined;
+  return typeof messageBody?.content === "string" ? messageBody.content : "";
 }
 
-async function generateRecommendationResponse(
-  apiKey: string,
-  userPrompt: string,
-  systemInstruction: string,
-) {
-  let highDemandError = false;
-  let rateLimited = false;
-  let lastError = "";
-
-  for (const [index, model] of MODELS_TO_TRY.entries()) {
-    try {
-      const { text: responseText, reasoningTokens } = await generateContent(
-        apiKey,
-        model,
-        userPrompt,
-        systemInstruction,
-      );
-
-      if (responseText) {
-        return {
-          responseText,
-          usedModel: model,
-          highDemandError,
-          rateLimited,
-          reasoningTokens,
-        };
-      }
-    } catch (error) {
-      lastError = getErrorMessage(error);
-      console.error(`OpenRouter model (${model}) error:`, lastError);
-      highDemandError = highDemandError || isHighDemandError(error);
-      rateLimited = rateLimited || isRateLimitedError(error);
-
-      if (index < MODELS_TO_TRY.length - 1) {
-        await delay(1000);
-      }
-    }
-  }
-
-  return {
-    responseText: "",
-    usedModel: MODELS_TO_TRY[0],
-    highDemandError,
-    rateLimited,
-    lastError,
-    reasoningTokens: undefined as number | undefined,
-  };
-}
-
-export async function callOpenRouterAI(
-  prompt: string,
-  systemInstruction: string,
-  retries: number = 1,
-): Promise<{
-  result?: OpenRouterResult;
+function parseRecommendationResponse(
+  responseText: string,
+  usedModel: string,
+): {
+  result?: RecommendationResult;
   usedModel?: string;
   error?: string;
-  reasoningTokens?: number;
+} {
+  try {
+    const parsed = JSON.parse(responseText) as unknown;
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !("recommendations" in parsed)
+    ) {
+      return { error: "invalid_response" };
+    }
+    const rawRecommendations = (parsed as { recommendations: unknown })
+      .recommendations;
+    if (!Array.isArray(rawRecommendations)) {
+      return { error: "invalid_response" };
+    }
+
+    const validRecommendations: Recommendation[] = [];
+    for (const entry of rawRecommendations) {
+      const validated = v.safeParse(recommendationElementSchema, entry);
+      if (validated.success) validRecommendations.push(validated.output);
+    }
+
+    return {
+      result: { recommendations: dedupeRecommendations(validRecommendations) },
+      usedModel,
+    };
+  } catch {
+    return { error: "invalid_response" };
+  }
+}
+
+async function callWorkersAI(
+  prompt: string,
+  systemInstruction: string,
+  retries: number,
+): Promise<{
+  result?: RecommendationResult;
+  usedModel?: string;
+  error?: string;
 }> {
-  // Allow either OPENROUTER_API_KEY (new) or GEMINI_API_KEY (legacy fallback) so
-  // existing deployments keep working during migration.
-  const apiKey = getEnvVar("OPENROUTER_API_KEY") ?? getEnvVar("GEMINI_API_KEY");
+  const ai = getEnv().AI as WorkersAiBinding | undefined;
+  if (!ai) return { error: "api_unavailable" };
+
+  // The Workers AI binding surfaces its own error shapes (Cloudflare error
+  // codes / HTTP-style statuses), not the Gemini REST shapes the helper
+  // classifiers match. Classify here so the shared Result error set
+  // (rate_limited / high_demand / api_unavailable) means the same thing
+  // regardless of provider (see architecture-hardening-plan item 17).
+  let errorKind: "rate_limited" | "high_demand" | "api_unavailable" =
+    "api_unavailable";
+
+  const classify = (error: unknown) => {
+    const err = error as { status?: number; code?: string; message?: string };
+    const status = err?.status;
+    const code = String(err?.code ?? "").toLowerCase();
+    const message = String(err?.message ?? "").toLowerCase();
+    if (
+      status === 429 ||
+      code.includes("rate") ||
+      message.includes("rate limit")
+    ) {
+      return "rate_limited" as const;
+    }
+    if (
+      status === 503 ||
+      status === 529 ||
+      code.includes("overload") ||
+      message.includes("overload") ||
+      message.includes("high demand") ||
+      message.includes("busy") ||
+      message.includes("capacity")
+    ) {
+      return "high_demand" as const;
+    }
+    return "api_unavailable" as const;
+  };
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await ai.run(
+        WORKERS_AI_MODEL,
+        {
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: prompt },
+          ],
+          response_format: WORKERS_AI_RESPONSE_FORMAT,
+          temperature: 0.2,
+          max_tokens: 2048,
+        },
+        { signal: AbortSignal.timeout(WORKERS_AI_TIMEOUT_MS) },
+      );
+      const responseText = extractWorkersAiText(response);
+      if (!responseText) throw new Error("Workers AI returned no content");
+
+      return parseRecommendationResponse(responseText, WORKERS_AI_MODEL);
+    } catch (error) {
+      console.error("Workers AI error:", getErrorMessage(error));
+      // Prefer the most actionable classification we have seen so far.
+      const kind = classify(error);
+      if (kind === "rate_limited") errorKind = "rate_limited";
+      else if (kind === "high_demand" && errorKind !== "rate_limited") {
+        errorKind = "high_demand";
+      }
+      if (attempt < retries) await delay(500);
+    }
+  }
+
+  return { error: errorKind };
+}
+
+/**
+ * Run the configured provider (Workers AI binding in production, Gemini REST
+ * as the local fallback) and return parsed, deduplicated recommendations.
+ * Provider choice, model fallback, timeouts, parsing and error classification
+ * are all implementation; callers see one small interface.
+ */
+export async function generateRecommendations({
+  prompt,
+  systemInstruction,
+  retries = 1,
+}: {
+  prompt: string;
+  systemInstruction: string;
+  retries?: number;
+}): Promise<GenerateRecommendationsResult> {
+  // Cloudflare Workers AI is the production provider. Keeping this check at
+  // the shared entry point means deployed Workers never send requests to
+  // Gemini, avoiding Gemini's region restriction entirely.
+  if (getEnv().AI) {
+    return callWorkersAI(prompt, systemInstruction, retries);
+  }
+
+  // Local Vite development has no Workers AI binding, so retain Gemini as a
+  // convenient fallback when a local GEMINI_API_KEY is configured.
+  const apiKey = getEnvVar("GEMINI_API_KEY");
   if (!apiKey) {
-    console.error("OPENROUTER_API_KEY is not set");
+    console.error("Neither the Workers AI binding nor GEMINI_API_KEY is set");
     return { error: "api_unavailable" };
   }
 
   let responseText = "";
-  let usedModel = MODELS_TO_TRY[0];
+  let usedModel = "unknown";
   let highDemandError = false;
   let rateLimited = false;
+  let locationUnsupported = false;
   let reasoningTokens: number | undefined;
-  let lastError = "";
   let success = false;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const result = await generateRecommendationResponse(
+      const result = await generateGeminiRecommendations({
         apiKey,
         prompt,
         systemInstruction,
-      );
+        responseSchema: GEMINI_RESPONSE_SCHEMA,
+      });
       if (result.responseText) {
         responseText = result.responseText;
         usedModel = result.usedModel;
         highDemandError = result.highDemandError;
         rateLimited = result.rateLimited;
+        locationUnsupported = result.locationUnsupported;
         reasoningTokens = result.reasoningTokens;
         success = true;
         break;
-      } else {
-        highDemandError = highDemandError || result.highDemandError;
-        rateLimited = rateLimited || result.rateLimited;
-        lastError = lastError || result.lastError || "";
       }
+
+      highDemandError = highDemandError || result.highDemandError;
+      rateLimited = rateLimited || result.rateLimited;
+      locationUnsupported = locationUnsupported || result.locationUnsupported;
     } catch (error) {
-      lastError = getErrorMessage(error);
-      if (attempt < retries) {
-        await delay(1000);
-      }
+      console.error(
+        "Gemini generation orchestration error:",
+        getErrorMessage(error),
+      );
+      if (attempt < retries) await delay(1000);
     }
   }
   if (!success || !responseText) {
+    // Never expose provider response text to the client. In particular, the
+    // Gemini location message is actionable only as a classified error code;
+    // all other unexpected provider failures stay behind a generic message.
+    if (locationUnsupported) return { error: "location_unsupported" };
     if (rateLimited) return { error: "rate_limited" };
-    return {
-      error: highDemandError ? "high_demand" : lastError || "api_unavailable",
-    };
+    return { error: highDemandError ? "high_demand" : "api_unavailable" };
   }
 
   // Log reasoning tokens at the top-level call as well (useful for observability).
   if (reasoningTokens != null) {
     console.log(
-      `[openrouter] callOpenRouterAI reasoningTokens:`,
+      `[ai] generateRecommendations reasoningTokens:`,
       reasoningTokens,
     );
   }
@@ -352,7 +393,7 @@ export async function callOpenRouterAI(
     }
 
     return {
-      result: { recommendations: validRecommendations },
+      result: { recommendations: dedupeRecommendations(validRecommendations) },
       usedModel,
       reasoningTokens,
     };
@@ -360,6 +401,3 @@ export async function callOpenRouterAI(
     return { error: "invalid_response" };
   }
 }
-
-// Backwards-compatible alias — existing imports of callGeminiAI continue to work.
-export const callGeminiAI = callOpenRouterAI;

@@ -14,9 +14,9 @@ import {
 import { Play, XIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
-import { buildPlayerUrl } from "@/hooks/watch-progress/progress-helpers";
 import { usePlayerProgressListener } from "@/hooks/watch-progress/use-player-listener";
 import { cn } from "@/lib/utils";
+import { buildPlayerUrl } from "@/lib/watch-progress";
 
 const INACTIVITY_HIDE_DELAY = 3000;
 
