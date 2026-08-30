@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
+import type { MediaType } from "@/domain/media";
 import type { buildSharedMediaPageData } from "@/lib/media-page";
-import type { MediaType } from "@/lib/media-types";
 import { CastSection } from "@/components/media/cast-section";
 import { GenreContainer } from "@/components/media/genre-container";
 import { MediaContainer } from "@/components/media/media-container";

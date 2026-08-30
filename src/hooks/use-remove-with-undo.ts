@@ -1,8 +1,9 @@
 import { useCallback } from "react";
 
 import type { WatchlistItem } from "@/hooks/use-watchlist";
-import { toast } from "@/hooks/use-toast-store";
 import { useToggleWatchlistItem } from "@/hooks/use-watchlist";
+import { toast } from "@/lib/notifications";
+import { logError } from "@/lib/utils";
 
 export function useRemoveFromWatchlistWithUndo() {
   const toggleWatchlist = useToggleWatchlistItem();
@@ -19,14 +20,18 @@ export function useRemoveFromWatchlistWithUndo() {
         overview: item.overview,
       };
 
-      toggleWatchlist(payload, true).catch(console.error);
+      toggleWatchlist(payload, true).catch((error) =>
+        logError("toggle watchlist", error),
+      );
       toast({
         title: "Removed from watchlist",
         description: item.title,
         action: {
           label: "Undo",
           onClick: () => {
-            toggleWatchlist(payload, false).catch(console.error);
+            toggleWatchlist(payload, false).catch((error) =>
+              logError("toggle watchlist", error),
+            );
           },
         },
       });

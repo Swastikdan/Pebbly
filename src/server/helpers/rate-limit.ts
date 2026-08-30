@@ -71,30 +71,38 @@ function isMissingTableError(error: unknown): boolean {
 }
 
 /**
+ * Run a ledger query with self-healing: if the deployment is missing the
+ * `rate_limit_attempts` migration, create the table and retry once. Every
+ * ledger read/write below funnels through this wrapper so the
+ * try/catch -> ensure -> retry boilerplate exists in exactly one place.
+ */
+async function withSelfHealingLedger<T>(
+  db: Db,
+  query: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await query();
+  } catch (error) {
+    if (!isMissingTableError(error)) throw error;
+    await ensureRateLimitTable(db);
+    return await query();
+  }
+}
+
+/**
  * Delete every ledger row older than the longest supported window,
  * independently of key. One bounded statement; safe to run daily from the
  * user-maintenance task.
  */
 export async function pruneStaleRateLimitRows(db: Db): Promise<number> {
-  try {
-    const result = await db.run(
+  const result = await withSelfHealingLedger(db, () =>
+    db.run(
       sql`delete from ${rateLimitAttempts} where ${rateLimitAttempts.createdAt} < ${
         Date.now() - MAX_RATE_LIMIT_WINDOW_MS
       }`,
-    );
-    return result.meta.changes;
-  } catch (error) {
-    if (isMissingTableError(error)) {
-      await ensureRateLimitTable(db);
-      const result = await db.run(
-        sql`delete from ${rateLimitAttempts} where ${rateLimitAttempts.createdAt} < ${
-          Date.now() - MAX_RATE_LIMIT_WINDOW_MS
-        }`,
-      );
-      return result.meta.changes;
-    }
-    throw error;
-  }
+    ),
+  );
+  return result.meta.changes;
 }
 
 export async function tryConsumeRateLimit(
@@ -103,65 +111,37 @@ export async function tryConsumeRateLimit(
   windowMs: number,
 ): Promise<RateLimitReservation> {
   const now = Date.now();
+  const token = crypto.randomUUID();
 
   // Stale rows can no longer influence the claim below; clear them first so
   // the ledger stays bounded per key.
-  try {
-    await db.run(sql`
-    delete from ${rateLimitAttempts}
-    where ${rateLimitAttempts.key} = ${key}
-      and ${rateLimitAttempts.createdAt} < ${now - windowMs}
-  `);
-  } catch (error) {
-    if (isMissingTableError(error)) {
-      await ensureRateLimitTable(db);
-      await db.run(sql`
-    delete from ${rateLimitAttempts}
-    where ${rateLimitAttempts.key} = ${key}
-      and ${rateLimitAttempts.createdAt} < ${now - windowMs}
-  `);
-    } else {
-      throw error;
-    }
-  }
+  await withSelfHealingLedger(db, () =>
+    db.run(sql`
+      delete from ${rateLimitAttempts}
+      where ${rateLimitAttempts.key} = ${key}
+        and ${rateLimitAttempts.createdAt} < ${now - windowMs}
+    `),
+  );
 
   // Atomic claim; see the module docstring. A genuine DB failure here
-  // propagates (fail loud) rather than masquerading as RATE_LIMITED.
-  const token = crypto.randomUUID();
-  try {
-    const result = await db.run(sql`
-    insert into ${rateLimitAttempts} ("id", "key", "created_at")
-    select ${token}, ${key}, ${now}
-    where not exists (
-      select 1
-      from ${rateLimitAttempts}
-      where ${rateLimitAttempts.key} = ${key}
-        and ${rateLimitAttempts.createdAt} > ${now - windowMs}
-    )
-  `);
+  // propagates (fail loud) rather than masquerading as RATE_LIMITED. The
+  // token is fixed outside the closure so the retry claims the same slot.
+  const result = await withSelfHealingLedger(db, () =>
+    db.run(sql`
+      insert into ${rateLimitAttempts} ("id", "key", "created_at")
+      select ${token}, ${key}, ${now}
+      where not exists (
+        select 1
+        from ${rateLimitAttempts}
+        where ${rateLimitAttempts.key} = ${key}
+          and ${rateLimitAttempts.createdAt} > ${now - windowMs}
+      )
+    `),
+  );
 
-    return result.meta.changes === 1
-      ? { allowed: true, token }
-      : { allowed: false };
-  } catch (error) {
-    if (isMissingTableError(error)) {
-      await ensureRateLimitTable(db);
-      const result = await db.run(sql`
-    insert into ${rateLimitAttempts} ("id", "key", "created_at")
-    select ${token}, ${key}, ${now}
-    where not exists (
-      select 1
-      from ${rateLimitAttempts}
-      where ${rateLimitAttempts.key} = ${key}
-        and ${rateLimitAttempts.createdAt} > ${now - windowMs}
-    )
-  `);
-      return result.meta.changes === 1
-        ? { allowed: true, token }
-        : { allowed: false };
-    }
-    throw error;
-  }
+  return result.meta.changes === 1
+    ? { allowed: true, token }
+    : { allowed: false };
 }
 
 /** Undo a consumed slot (the attempt did not happen / should not count). */
@@ -170,12 +150,9 @@ export async function releaseRateLimit(
   token: string | undefined,
 ): Promise<void> {
   if (!token) return;
-  try {
-    await db.delete(rateLimitAttempts).where(eq(rateLimitAttempts.id, token));
-  } catch (error) {
-    if (isMissingTableError(error)) return;
-    throw error;
-  }
+  await withSelfHealingLedger(db, () =>
+    db.delete(rateLimitAttempts).where(eq(rateLimitAttempts.id, token)),
+  );
 }
 
 /**
@@ -198,31 +175,27 @@ export async function consumeRateLimitBudget(
   max: number,
 ): Promise<RateLimitReservation> {
   const now = Date.now();
-  const claim = () => sql`
-    insert into ${rateLimitAttempts} ("id", "key", "created_at")
-    select ${crypto.randomUUID()}, ${key}, ${now}
-    where (
-      select count(*)
-      from ${rateLimitAttempts}
-      where ${rateLimitAttempts.key} = ${key}
-        and ${rateLimitAttempts.createdAt} > ${now - windowMs}
-    ) < ${max}
-  `;
+  const claim = () =>
+    db.run(sql`
+      insert into ${rateLimitAttempts} ("id", "key", "created_at")
+      select ${crypto.randomUUID()}, ${key}, ${now}
+      where (
+        select count(*)
+        from ${rateLimitAttempts}
+        where ${rateLimitAttempts.key} = ${key}
+          and ${rateLimitAttempts.createdAt} > ${now - windowMs}
+      ) < ${max}
+    `);
 
-  try {
+  const result = await withSelfHealingLedger(db, async () => {
+    // Clear this key's stale rows so the guard's count only sees the window.
     await db.run(sql`
       delete from ${rateLimitAttempts}
       where ${rateLimitAttempts.key} = ${key}
         and ${rateLimitAttempts.createdAt} < ${now - windowMs}
     `);
-    const result = await db.run(claim());
-    return result.meta.changes === 1 ? { allowed: true } : { allowed: false };
-  } catch (error) {
-    if (isMissingTableError(error)) {
-      await ensureRateLimitTable(db);
-      const result = await db.run(claim());
-      return result.meta.changes === 1 ? { allowed: true } : { allowed: false };
-    }
-    throw error;
-  }
+    return claim();
+  });
+
+  return result.meta.changes === 1 ? { allowed: true } : { allowed: false };
 }

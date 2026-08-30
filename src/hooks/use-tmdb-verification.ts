@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
+import type { MediaType } from "@/domain/media";
 import type { AIRecommendation } from "@/domain/recommendations";
-import type { MediaType } from "@/lib/media-types";
 import type { BasicMovie, BasicTv } from "@/lib/tmdb-schemas";
 import {
   getBasicMovieDetails,

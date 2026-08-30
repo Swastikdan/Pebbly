@@ -1,8 +1,8 @@
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 
+import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
 import type { WatchlistItem } from "@/hooks/use-watchlist";
-import type { MediaType } from "@/lib/media-types";
 
 export type WatchlistFilter = "all" | ProgressStatus;
 export type WatchlistMediaFilter = "all" | MediaType;

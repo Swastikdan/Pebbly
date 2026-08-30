@@ -12,6 +12,10 @@ import {
 } from "drizzle-orm/sqlite-core";
 
 import type { MediaType } from "@/domain/media";
+import type {
+  InputStats,
+  Recommendation,
+} from "@/server/schema/recommendations";
 import { MEDIA_TYPES } from "@/domain/media";
 import { PROGRESS_STATUSES, REACTIONS } from "@/server/schema/common";
 import { LIST_TYPES, LIST_VISIBILITIES } from "@/server/schema/lists";
@@ -307,27 +311,8 @@ export const rateLimitAttempts = sqliteTable(
   (t) => [index("rate_limit_key_created_idx").on(t.key, t.createdAt)],
 );
 
-export type Recommendation = {
-  title: string;
-  tmdbId: number | null;
-  mediaType: MediaType;
-  relevanceScore: number;
-  reasoning: string;
-  validationAttempted?: boolean;
-  verifiedTmdbId?: number | null;
-  verifiedTitle?: string;
-  posterPath?: string | null;
-  rating?: number;
-  releaseDate?: string | null;
-  overview?: string;
-};
-
-export type InputStats = {
-  movieCount: number;
-  tvCount: number;
-  episodesWatched: number;
-  totalItems: number;
-};
+// Recommendation / InputStats are defined once in schema/recommendations.ts
+// (Valibot-inferred) and consumed here for the json-mode column types.
 
 /**
  * Stored parameters for a background AI generation job. The prompt and

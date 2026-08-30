@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 
+import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
-import type { MediaType } from "@/lib/media-types";
 import { Button } from "@/components/ui/button";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
@@ -13,9 +13,9 @@ import {
   resolvePosterSrc,
 } from "@/components/watchlist/media-row-card-shell";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
-import { toast } from "@/hooks/use-toast-store";
+import { toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
-import { cn, formatMediaTitle } from "@/lib/utils";
+import { cn, formatMediaTitle, logError } from "@/lib/utils";
 
 export function CustomListMediaCard({
   item,
@@ -87,12 +87,12 @@ export function CustomListMediaCard({
                 rating: item.rating,
                 release_date: item.release_date,
                 overview: item.overview,
-              }).catch(console.error);
+              }).catch((error) => logError("toggle list item", error));
             },
           },
         });
       })
-      .catch(console.error);
+      .catch((error) => logError("toggle list item", error));
   };
 
   const handleMoveClick = (dir: -1 | 1) => (e: React.MouseEvent) => {

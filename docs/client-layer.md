@@ -59,8 +59,8 @@ mutation goes to the server or to local storage.
 - `src/lib/server-types.ts`, client-side aliases of D1 row types
   (`WatchItemRow`, `EpisodeProgressRow`, `CustomListRow`, ...).
 - `src/domain/media.ts`, the dependency-free canonical `MediaType` contract,
-  Valibot-independent type guard, and route-slug map. `src/lib/media-types.ts`
-  re-exports the compatibility schema and domain helpers for existing callers.
+  Valibot-independent type guard, and route-slug map; server code derives its
+  Valibot `mediaTypeSchema` from these values in `src/server/schema/common.ts`.
 
 ## 3. State management (Zustand → `src/stores/`)
 
@@ -85,7 +85,7 @@ Two more stores live beside their feature code:
 
 - `useThemeStore` inside `src/hooks/use-theme.ts`, light/dark/system theme
   preference (persisted separately under `pebbly-theme`).
-- Toasts in `src/hooks/use-toast-store.ts`, fire-and-forget `toast()` backed
+- Toasts via `src/lib/notifications.ts`, fire-and-forget `toast()` backed
   by Base UI's toast manager. Call it from anywhere, no provider needed.
 
 - `src/lib/utils.ts`, `createLRUStorage()` wraps localStorage with LRU

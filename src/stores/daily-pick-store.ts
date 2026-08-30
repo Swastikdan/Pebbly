@@ -1,12 +1,11 @@
 import * as v from "valibot";
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import type { PersistedStateSanitizer } from "@/stores/guest-store-kit";
-import { mediaTypeSchema } from "@/lib/media-types";
-import { createLRUStorage, createMemoryStorage } from "@/lib/utils";
-import { guardedMerge } from "@/stores/guest-store-kit";
+import { mediaTypeSchema } from "@/server/schema/common";
+import { guestPersistOptions } from "@/stores/guest-store-kit";
 
 export interface DailyPickCachedDetail {
   backdrop_path?: string | null;
@@ -55,9 +54,6 @@ const sanitizeDailyPickState: PersistedStateSanitizer<DailyPickStore> = (
   return { details };
 };
 
-const lruStorage = createLRUStorage();
-const memoryStorage = createMemoryStorage();
-
 export const useDailyPickStore = create<DailyPickStore>()(
   persist(
     (set) => ({
@@ -77,14 +73,13 @@ export const useDailyPickStore = create<DailyPickStore>()(
 
       clear: () => set({ details: {} }),
     }),
-    {
-      name: "daily-pick-storage",
-      version: 2,
-      merge: (persisted, current) =>
-        guardedMerge(persisted, current, sanitizeDailyPickState),
-      storage: createJSONStorage(() =>
-        typeof window !== "undefined" ? lruStorage : memoryStorage,
-      ),
-    },
+    // Version 2 must be preserved: zustand discards persisted state on a
+    // version mismatch, and the detail cache predates the shared helper.
+    guestPersistOptions<DailyPickStore>(
+      "daily-pick-storage",
+      "lru",
+      sanitizeDailyPickState,
+      2,
+    ),
   ),
 );

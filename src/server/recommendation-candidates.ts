@@ -41,13 +41,16 @@ export type CandidateGenerationOptions = {
   balanced?: boolean;
 };
 
+const MIN_TMDB_YEAR = 1800;
 const MAX_SEED_TITLES = 2;
 const DEFAULT_CANDIDATE_LIMIT = 40;
 const HOMEPAGE_CANDIDATE_LIMIT = 60;
 
 function yearOf(date: string): number | null {
   const year = Number.parseInt(date.slice(0, 4), 10);
-  return Number.isInteger(year) && year >= 1800 ? year : null;
+  // Oldest titles in the TMDB catalog predate the cutoff by a safe margin;
+  // anything earlier is a model hallucination, not a real release year.
+  return Number.isInteger(year) && year >= MIN_TMDB_YEAR ? year : null;
 }
 
 function candidateKey(mediaType: MediaType, tmdbId: number) {

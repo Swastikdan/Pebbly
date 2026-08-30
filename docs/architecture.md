@@ -58,9 +58,10 @@ The same Worker serves both the static frontend (via the `ASSETS` binding,
 
 - `media.ts`, `watchlist.ts`, and `recommendations.ts` contain dependency-free
   shared contracts and runtime-safe constants for media identity, watchlist
-  status/reaction values, metadata, and AI recommendations.
-- `object.ts` contains generic pure object helpers shared by optimistic and
-  persisted-state code.
+  status/reaction values, metadata, and AI recommendations (the recommendation
+  shape itself is a type-only re-export of the server schema).
+- Generic pure object helpers (e.g. `mergeDefinedFields`) live in
+  `src/lib/utils.ts`, shared by optimistic and persisted-state code.
 - Server Valibot schemas derive their enum values from this layer; client
   hooks, repositories, stores, and server code import domain types directly.
 
@@ -223,8 +224,7 @@ modules (journal, op builders, shared progress, notifications) live under
   localStorage) and applies it to `<html>`. Switching themes uses a short
   View Transitions crossfade when the browser supports it.
 - Toasts are fire-and-forget: shared code calls `toast()` from
-  `src/lib/notifications.ts` (backed by Base UI's toast manager), while
-  `use-toast-store.ts` remains a compatibility re-export for hook consumers.
+  `src/lib/notifications.ts` (backed by Base UI's toast manager).
   No provider plumbing is needed at call sites.
 - **Shared page bodies** keep the movie/TV twins thin:
   - `src/components/media/media-detail-page.tsx`, the full detail-page layout

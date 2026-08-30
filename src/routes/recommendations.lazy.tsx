@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
 
+import type { MediaType } from "@/domain/media";
 import type { RecommendationHistoryEntry } from "@/hooks/use-recommendations";
-import type { MediaType } from "@/lib/media-types";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";

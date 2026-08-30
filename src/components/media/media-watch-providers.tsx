@@ -2,7 +2,7 @@ import { ExternalLinkIcon, TicketIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import type { WatchProvider } from "@/lib/tmdb-schemas";
 import { Badge } from "@/components/ui/badge";
 import { Image } from "@/components/ui/image";

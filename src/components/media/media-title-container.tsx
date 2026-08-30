@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 
+import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
-import type { MediaType } from "@/lib/media-types";
 import { GoBack } from "@/components/go-back";
 import { RatingCount } from "@/components/media/rating-count";
 import { WatchlistStatusMenu } from "@/components/media/watchlist-status-menu";
@@ -12,6 +12,7 @@ import {
   useWatchlistItem,
 } from "@/hooks/use-watchlist";
 import { useRepository } from "@/lib/repository/use-repository";
+import { logError } from "@/lib/utils";
 
 export const MediaTitleContainer = (props: {
   title: string;
@@ -105,7 +106,7 @@ export const MediaTitleContainer = (props: {
         media_type,
       },
       false,
-    ).catch(console.error);
+    ).catch((error) => logError("toggle watchlist", error));
   };
 
   const handleStatusChange = (status: ProgressStatus) => {
@@ -124,7 +125,7 @@ export const MediaTitleContainer = (props: {
         media_type,
       },
       true,
-    ).catch(console.error);
+    ).catch((error) => logError("toggle watchlist", error));
   };
 
   return (

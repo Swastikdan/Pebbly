@@ -1,10 +1,10 @@
 import { desc, eq, sql } from "drizzle-orm";
 
 import type { Db } from "./db/client";
-import type { Recommendation as RecommendationRow } from "./db/schema";
 import type {
   GenerateRecommendationsArgs,
   GenerateResult,
+  Recommendation as RecommendationRow,
 } from "./schema/recommendations";
 import type { MediaType } from "@/domain/media";
 import { dedupeRecommendations } from "./ai";

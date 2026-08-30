@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq, inArray } from "drizzle-orm";
 
-import { MAX_IDS_PER_IN_CLAUSE, runBatch } from "../db/client";
+import { chunkedQuery, runBatch } from "../db/client";
 import { episodeProgress, watchItems } from "../db/schema";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
 import {
@@ -29,23 +29,20 @@ export const importWatchlist = createServerFn({ method: "POST" })
         }
 
         const tmdbIds = [...new Set(data.items.map((item) => item.tmdbId))];
-        const existingMap = new Map<string, typeof watchItems.$inferSelect>();
-        for (let i = 0; i < tmdbIds.length; i += MAX_IDS_PER_IN_CLAUSE) {
-          const rows = await db
+        const existingRows = await chunkedQuery(tmdbIds, (chunk) =>
+          db
             .select()
             .from(watchItems)
             .where(
               and(
                 eq(watchItems.userId, user.id),
-                inArray(
-                  watchItems.tmdbId,
-                  tmdbIds.slice(i, i + MAX_IDS_PER_IN_CLAUSE),
-                ),
+                inArray(watchItems.tmdbId, chunk),
               ),
-            );
-          for (const row of rows) {
-            existingMap.set(`${row.mediaType}:${row.tmdbId}`, row);
-          }
+            ),
+        );
+        const existingMap = new Map<string, typeof watchItems.$inferSelect>();
+        for (const row of existingRows) {
+          existingMap.set(`${row.mediaType}:${row.tmdbId}`, row);
         }
 
         const watchStatements: Parameters<typeof db.batch>[0][number][] = [];
@@ -117,30 +114,24 @@ export const importWatchlist = createServerFn({ method: "POST" })
             .map((item) => item.tmdbId),
         );
 
-        const existingEpisodeMap = new Map<
-          string,
-          typeof episodeProgress.$inferSelect
-        >();
         const tvIds = [...importedTvIds];
-        for (let i = 0; i < tvIds.length; i += MAX_IDS_PER_IN_CLAUSE) {
-          const rows = await db
+        const existingEpisodeRows = await chunkedQuery(tvIds, (chunk) =>
+          db
             .select()
             .from(episodeProgress)
             .where(
               and(
                 eq(episodeProgress.userId, user.id),
-                inArray(
-                  episodeProgress.tmdbId,
-                  tvIds.slice(i, i + MAX_IDS_PER_IN_CLAUSE),
-                ),
+                inArray(episodeProgress.tmdbId, chunk),
               ),
-            );
-          for (const ep of rows) {
-            existingEpisodeMap.set(
-              `${ep.tmdbId}:${ep.season}:${ep.episode}`,
-              ep,
-            );
-          }
+            ),
+        );
+        const existingEpisodeMap = new Map<
+          string,
+          typeof episodeProgress.$inferSelect
+        >();
+        for (const ep of existingEpisodeRows) {
+          existingEpisodeMap.set(`${ep.tmdbId}:${ep.season}:${ep.episode}`, ep);
         }
 
         const episodeKeys = new Set<string>();

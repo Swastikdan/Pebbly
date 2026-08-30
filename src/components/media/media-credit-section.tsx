@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, notFound } from "@tanstack/react-router";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import type { CrewMember } from "@/lib/tmdb-schemas";
 import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";

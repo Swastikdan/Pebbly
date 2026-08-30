@@ -51,10 +51,12 @@ export function guestPersistOptions<S extends object>(
   name: string,
   backend: "lru" | "localStorage" = "lru",
   sanitize?: PersistedStateSanitizer<S>,
+  // Bump per store when the persisted shape changes (e.g. daily-pick v2).
+  version = 1,
 ): Pick<PersistOptions<S>, "name" | "storage" | "version" | "merge"> {
   return {
     name,
-    version: 1,
+    version,
     merge: (persisted, current) =>
       guardedMerge<S>(persisted, current, sanitize),
     storage: createJSONStorage(() =>
@@ -80,4 +82,4 @@ export function nextRank(
     : fallback;
 }
 
-export { mergeDefinedFields } from "@/domain/object";
+export { mergeDefinedFields } from "@/lib/utils";

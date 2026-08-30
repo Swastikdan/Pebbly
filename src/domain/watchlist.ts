@@ -19,12 +19,14 @@ export const REACTIONS = [
 ] as const;
 export type ReactionStatus = (typeof REACTIONS)[number];
 
+// Fields tolerate `null` (not just `undefined`) so the same shape covers both
+// the client-side metadata builders and the nullable server/DB write paths.
 export interface MediaMetadata {
-  title?: string;
-  image?: string;
-  rating?: number;
-  release_date?: string;
-  overview?: string;
+  title?: string | null;
+  image?: string | null;
+  rating?: number | null;
+  release_date?: string | null;
+  overview?: string | null;
 }
 
 export type WatchlistItemKey = `${MediaType}:${number}`;

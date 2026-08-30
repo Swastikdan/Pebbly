@@ -2,7 +2,7 @@ import { Maximize2, Minimize } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

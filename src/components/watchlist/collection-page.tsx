@@ -12,7 +12,7 @@ import { lazy, Suspense, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
@@ -23,8 +23,8 @@ import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundar
 import { destructiveToast } from "@/hooks/use-destructive-toast";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
-import { cn } from "@/lib/utils";
-import { getCollectionPage } from "@/server/fns/lists";
+import { cn, logError } from "@/lib/utils";
+import { getCollectionPage } from "@/server/fns/list-collections";
 import { unwrap } from "@/server/schema/common";
 
 const CustomListDialog = lazy(() =>
@@ -91,7 +91,7 @@ export function CollectionPage({ listId }: { listId: string }) {
       })),
     })
       .then(refreshPage)
-      .catch(console.error);
+      .catch((error) => logError("reorder list items", error));
   };
 
   const handleDelete = () => {

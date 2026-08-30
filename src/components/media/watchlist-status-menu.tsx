@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
-import type { MediaType } from "@/lib/media-types";
 import { CustomListDialog } from "@/components/custom-list-dialog";
 import { Button } from "@/components/ui/button";
 import {

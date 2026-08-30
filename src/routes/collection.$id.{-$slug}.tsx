@@ -45,10 +45,10 @@ export const Route = createFileRoute("/collection/$id/{-$slug}")({
     ],
   }),
 
-  component: MovieCollnetionPage,
+  component: MovieCollectionPage,
 });
 
-function MovieCollnetionPage() {
+function MovieCollectionPage() {
   const { id, slug } = Route.useLoaderData();
   const { data, error, isLoading } = useQuery<Collection>({
     queryKey: queryKeys.tmdb.movieDetails(Number(id)),

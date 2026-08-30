@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
 import { Star, XIcon } from "@/components/ui/icons";
@@ -10,11 +10,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { IMAGE_PREFIX } from "@/constants";
 import { useSeasonDetails } from "@/hooks/use-season-details";
-import { toast } from "@/hooks/use-toast-store";
 import {
   useRemoveFromContinueWatching,
   useWatchProgress,
 } from "@/hooks/watch-progress/use-watch-progress";
+import { toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle } from "@/lib/utils";
 

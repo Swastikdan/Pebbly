@@ -2,14 +2,11 @@ import type { ClassValue } from "clsx";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-import type { ProgressStatus } from "@/domain/watchlist";
+import type { MediaMetadata, ProgressStatus } from "@/domain/watchlist";
+import { PROGRESS_STATUSES } from "@/domain/watchlist";
 
-const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set([
-  "watch-later",
-  "watching",
-  "done",
-  "dropped",
-]);
+// Derived from the domain constant so the two lists can never drift apart.
+const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set(PROGRESS_STATUSES);
 
 export function normalizeProgressStatus(
   status?: string | null,
@@ -59,13 +56,7 @@ export function logError(action: string, error: unknown) {
  * Extract the five media-metadata fields that are spread into watch-item
  * upserts, optimistic patches, and list operations across the codebase.
  */
-export function extractMetadataFields(metadata?: {
-  title?: string | null;
-  image?: string | null;
-  rating?: number | null;
-  release_date?: string | null;
-  overview?: string | null;
-}) {
+export function extractMetadataFields(metadata?: MediaMetadata) {
   return {
     title: metadata?.title ?? undefined,
     image: metadata?.image ?? undefined,
@@ -273,3 +264,20 @@ export const formatMediaTitle = {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   },
 };
+
+/**
+ * Merge a sparse patch into an object, skipping `undefined` values so a
+ * partial update never clears fields it does not mention.
+ */
+export function mergeDefinedFields<T extends object>(
+  row: T,
+  patch: Partial<T>,
+): T {
+  const merged = { ...row };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined) {
+      (merged as Record<string, unknown>)[key] = value;
+    }
+  }
+  return merged;
+}
