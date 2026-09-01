@@ -1,5 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import type { AIRecommendation } from "@/domain/recommendations";
@@ -55,71 +55,120 @@ function RecommendationCardGrid({
   updateVerified: (id: string, recs: AIRecommendation[]) => Promise<void>;
 }) {
   const verifiedMapRef = useRef<Map<number, AIRecommendation>>(new Map());
-  const totalCount = entry.recommendations.length;
+  const pendingIndexes = entry.recommendations
+    .map((recommendation, index) => {
+      const hasLegacyResolvedData =
+        entry.verified && typeof recommendation.verifiedTmdbId === "number";
+      return recommendation.validationAttempted || hasLegacyResolvedData
+        ? null
+        : index;
+    })
+    .filter((index): index is number => index !== null);
   const resolvedCountRef = useRef(0);
   const hasPushedRef = useRef(false);
+  const completedRecommendationsRef = useRef<AIRecommendation[] | null>(null);
+  const isSavingRef = useRef(false);
+  const activeEntryIdRef = useRef(entry.id);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   const entryId = entry.id;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: entryId is intentionally used to reset refs when the entry changes
+  const persistVerified = useCallback(
+    async (recommendations: AIRecommendation[]) => {
+      if (hasPushedRef.current || isSavingRef.current) return;
+
+      isSavingRef.current = true;
+      setIsSaving(true);
+      setSaveFailed(false);
+      try {
+        await updateVerified(entryId, recommendations);
+        if (activeEntryIdRef.current === entryId) {
+          hasPushedRef.current = true;
+          completedRecommendationsRef.current = null;
+        }
+      } catch {
+        if (activeEntryIdRef.current === entryId) setSaveFailed(true);
+      } finally {
+        if (activeEntryIdRef.current === entryId) {
+          isSavingRef.current = false;
+          setIsSaving(false);
+        }
+      }
+    },
+    [entryId, updateVerified],
+  );
+
   useEffect(() => {
+    activeEntryIdRef.current = entryId;
     verifiedMapRef.current = new Map();
     resolvedCountRef.current = 0;
     hasPushedRef.current = false;
+    completedRecommendationsRef.current = null;
+    isSavingRef.current = false;
+    setIsSaving(false);
+    setSaveFailed(false);
   }, [entryId]);
 
   const onCardResolved = useCallback(
     (index: number, verifiedRec: AIRecommendation) => {
+      if (!pendingIndexes.includes(index)) return;
       verifiedMapRef.current.set(index, verifiedRec);
-      resolvedCountRef.current += 1;
+      resolvedCountRef.current = verifiedMapRef.current.size;
 
       if (
         !hasPushedRef.current &&
-        !entry.verified &&
-        resolvedCountRef.current >= totalCount
+        pendingIndexes.length > 0 &&
+        resolvedCountRef.current >= pendingIndexes.length
       ) {
-        hasPushedRef.current = true;
-
-        const hasAnyVerified = Array.from(verifiedMapRef.current.values()).some(
-          (r) => !!r.verifiedTmdbId,
-        );
-
-        if (hasAnyVerified) {
-          const updatedRecs = entry.recommendations.map((rec, i) => {
-            const verified = verifiedMapRef.current.get(i);
-            if (verified?.verifiedTmdbId) return verified;
-            return rec;
-          });
-          updateVerified(entryId, updatedRecs);
-        }
+        const updatedRecs = entry.recommendations.map((rec, i) => {
+          const resolved = verifiedMapRef.current.get(i);
+          if (!resolved) return rec;
+          return { ...resolved, validationAttempted: true };
+        });
+        completedRecommendationsRef.current = updatedRecs;
+        void persistVerified(updatedRecs);
       }
     },
-    [
-      entryId,
-      entry.verified,
-      entry.recommendations,
-      totalCount,
-      updateVerified,
-    ],
+    [entry.recommendations, pendingIndexes, persistVerified],
   );
 
   return (
-    <MediaGrid stagger>
-      {entry.recommendations.map((rec, i) => (
-        <RecommendationCard
-          key={rec.tmdbId ?? rec.title}
-          recommendation={rec}
-          isEntryVerified={!!entry.verified}
-          onResolved={(verifiedRec) => onCardResolved(i, verifiedRec)}
-        />
-      ))}
-    </MediaGrid>
+    <>
+      <MediaGrid stagger>
+        {entry.recommendations.map((rec, i) => (
+          <RecommendationCard
+            key={rec.tmdbId ?? rec.title}
+            recommendation={rec}
+            isEntryVerified={!!entry.verified}
+            onResolved={(verifiedRec) => onCardResolved(i, verifiedRec)}
+          />
+        ))}
+      </MediaGrid>
+      {saveFailed && completedRecommendationsRef.current && (
+        <div className="text-muted-foreground flex items-center justify-end gap-2 text-xs">
+          <span>Could not save validation results.</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            loading={isSaving}
+            onClick={() => {
+              const recommendations = completedRecommendationsRef.current;
+              if (recommendations) void persistVerified(recommendations);
+            }}
+          >
+            Retry
+          </Button>
+        </div>
+      )}
+    </>
   );
 }
 
 function RecommendationCard({
   recommendation,
-  isEntryVerified,
+  isEntryVerified: _isEntryVerified,
   onResolved,
 }: {
   recommendation: AIRecommendation;
@@ -130,14 +179,18 @@ function RecommendationCard({
   const navigate = useNavigate();
   const hasReportedRef = useRef(false);
 
-  const usesCachedData = isEntryVerified && !!recommendation.verifiedTmdbId;
+  const hasCachedResolvedData =
+    typeof recommendation.verifiedTmdbId === "number" &&
+    (recommendation.validationAttempted === true || _isEntryVerified);
+  const hasCachedValidation =
+    recommendation.validationAttempted === true || hasCachedResolvedData;
   const { resolvedData, isResolving } = useResolvedRecommendation(
     recommendation,
-    { enabled: !usesCachedData },
+    { enabled: !hasCachedValidation },
   );
 
   useEffect(() => {
-    if (usesCachedData || hasReportedRef.current || isResolving) return;
+    if (hasCachedValidation || hasReportedRef.current || isResolving) return;
     hasReportedRef.current = true;
 
     if (resolvedData && onResolved) {
@@ -154,9 +207,15 @@ function RecommendationCard({
       // Keep unresolved cards in the batch so backend verification can finish.
       onResolved(recommendation);
     }
-  }, [usesCachedData, isResolving, resolvedData, recommendation, onResolved]);
+  }, [
+    hasCachedValidation,
+    isResolving,
+    resolvedData,
+    recommendation,
+    onResolved,
+  ]);
 
-  if (usesCachedData) {
+  if (hasCachedResolvedData) {
     return (
       <MediaCard
         card_type="horizontal"

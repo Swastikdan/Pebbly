@@ -14,6 +14,7 @@ import {
   filterRenderedRecommendations,
   getDismissKey,
 } from "@/lib/recommendation-options";
+import { logError } from "@/lib/utils";
 import {
   getHomepageRecommendations,
   getRecommendationFeedback,
@@ -202,7 +203,7 @@ export function useHomepageRecommendations() {
             overview: metadata?.overview,
           },
           false,
-        ).catch(console.error);
+        ).catch((error) => logError("update recommendation feedback", error));
       } else if (feedback === "unlike") {
         toggleWatchlist(
           {
@@ -215,7 +216,7 @@ export function useHomepageRecommendations() {
             overview: metadata?.overview,
           },
           true,
-        ).catch(console.error);
+        ).catch((error) => logError("update recommendation feedback", error));
       }
 
       try {

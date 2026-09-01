@@ -1,7 +1,7 @@
 import { Check, Copy, Globe, List, ListOrdered, Lock } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

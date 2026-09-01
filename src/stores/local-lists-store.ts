@@ -2,9 +2,9 @@ import * as v from "valibot";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import type { PersistedStateSanitizer } from "@/stores/guest-store-kit";
-import { mediaTypeSchema } from "@/lib/media-types";
+import { mediaTypeSchema } from "@/server/schema/common";
 import {
   guestPersistOptions,
   localId,

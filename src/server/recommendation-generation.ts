@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gt } from "drizzle-orm";
 
 import type { Recommendation } from "./ai";
 import type { Db } from "./db/client";
@@ -16,6 +16,7 @@ import {
   recommendationFeedback,
   watchItems,
 } from "./db/schema";
+import { collectAllByKeyset } from "./helpers/paginate";
 import { candidateIdentity } from "./recommendation-candidates";
 import { PEBBLY_PICKS_LIST_TYPE } from "./schema/lists";
 
@@ -72,7 +73,9 @@ export type AiGenerationResult =
 export async function runAiGeneration(args: {
   prompt: string;
   attempts: number;
+  targetCount: number;
   watchItems: WatchlistData["watchItems"];
+  excludedWatchItems?: WatchlistData["excludedWatchItems"];
   excludeTmdbIds: number[];
   excludeTitles?: string[];
   candidateCatalog?: RecommendationCandidate[];
@@ -110,16 +113,25 @@ export async function runAiGeneration(args: {
       })
     : aiResult.result.recommendations;
 
+  const recommendations = filterKnownRecommendations(
+    dedupeRecommendations(modelRecommendations),
+    args.excludedWatchItems ?? args.watchItems,
+    args.excludeTmdbIds,
+    args.excludeTitles ?? [],
+  ).slice(0, args.targetCount);
+
+  // An empty response is never useful and must not become a misleading
+  // history entry. A short response is retained and reported as-is: the UI
+  // shows the actual number returned rather than claiming the requested count.
+  if (recommendations.length === 0) {
+    return { ok: false, error: "empty_result" };
+  }
+
   return {
     ok: true,
     usedModel: aiResult.usedModel ?? "unknown",
     reasoningTokens: aiResult.reasoningTokens,
-    recommendations: filterKnownRecommendations(
-      dedupeRecommendations(modelRecommendations),
-      args.watchItems,
-      args.excludeTmdbIds,
-      args.excludeTitles ?? [],
-    ),
+    recommendations,
   };
 }
 
@@ -188,49 +200,58 @@ async function gatherWatchlistData(
   db: Db,
   userId: string,
 ): Promise<WatchlistData> {
-  const [watchItemRows, listRows, listItemRows, episodeRows] = await db.batch([
-    db
-      .select({
-        tmdbId: watchItems.tmdbId,
-        mediaType: watchItems.mediaType,
-        title: watchItems.title,
-        rating: watchItems.rating,
-        progressStatus: watchItems.progressStatus,
-        reaction: watchItems.reaction,
-        progress: watchItems.progress,
-      })
-      .from(watchItems)
-      .where(eq(watchItems.userId, userId))
-      .orderBy(desc(watchItems.updatedAt))
-      .limit(200),
-    db
-      .select({
-        id: lists.id,
-        name: lists.name,
-        listType: lists.listType,
-      })
-      .from(lists)
-      .where(eq(lists.userId, userId))
-      .limit(50),
-    db
-      .select({
-        listId: listItems.listId,
-        tmdbId: listItems.tmdbId,
-        mediaType: listItems.mediaType,
-      })
-      .from(listItems)
-      .where(eq(listItems.userId, userId))
-      .orderBy(desc(listItems.addedAt))
-      .limit(200),
-    db
-      .select({
-        isWatched: episodeProgress.isWatched,
-      })
-      .from(episodeProgress)
-      .where(eq(episodeProgress.userId, userId))
-      .orderBy(desc(episodeProgress.updatedAt))
-      .limit(200),
-  ]);
+  const [watchItemRows, [listRows, listItemRows, episodeRows]] =
+    await Promise.all([
+      collectAllByKeyset(500, (cursor) => {
+        const filters = [eq(watchItems.userId, userId)];
+        if (cursor) filters.push(gt(watchItems.id, cursor));
+        return db
+          .select({
+            id: watchItems.id,
+            tmdbId: watchItems.tmdbId,
+            mediaType: watchItems.mediaType,
+            title: watchItems.title,
+            rating: watchItems.rating,
+            progressStatus: watchItems.progressStatus,
+            reaction: watchItems.reaction,
+            progress: watchItems.progress,
+            updatedAt: watchItems.updatedAt,
+          })
+          .from(watchItems)
+          .where(and(...filters))
+          .orderBy(asc(watchItems.id))
+          .limit(500);
+      }),
+      db.batch([
+        db
+          .select({
+            id: lists.id,
+            name: lists.name,
+            listType: lists.listType,
+          })
+          .from(lists)
+          .where(eq(lists.userId, userId))
+          .limit(50),
+        db
+          .select({
+            listId: listItems.listId,
+            tmdbId: listItems.tmdbId,
+            mediaType: listItems.mediaType,
+          })
+          .from(listItems)
+          .where(eq(listItems.userId, userId))
+          .orderBy(desc(listItems.addedAt))
+          .limit(200),
+        db
+          .select({
+            isWatched: episodeProgress.isWatched,
+          })
+          .from(episodeProgress)
+          .where(eq(episodeProgress.userId, userId))
+          .orderBy(desc(episodeProgress.updatedAt))
+          .limit(200),
+      ]),
+    ]);
 
   const watchedEpisodes = episodeRows.filter((e) => e.isWatched).length;
   const movieCount = watchItemRows.filter(
@@ -245,8 +266,14 @@ async function gatherWatchlistData(
     recommendationLists.map((list) => list.id),
   );
 
+  const sortedWatchItemRows = [...watchItemRows].sort(
+    (a, b) => b.updatedAt - a.updatedAt,
+  );
+
   return {
-    watchItems: watchItemRows.map((i) => ({
+    // Keep prompt context bounded; the full snapshot remains authoritative for
+    // exclusions and is shown through inputStats in the saved history entry.
+    watchItems: sortedWatchItemRows.slice(0, 200).map((i) => ({
       tmdbId: i.tmdbId,
       mediaType: i.mediaType,
       title: i.title,
@@ -254,6 +281,10 @@ async function gatherWatchlistData(
       progressStatus: i.progressStatus,
       reaction: i.reaction,
       progress: i.progress,
+    })),
+    excludedWatchItems: watchItemRows.map((i) => ({
+      tmdbId: i.tmdbId,
+      title: i.title,
     })),
     lists: recommendationLists.map((l) => ({ _id: l.id, name: l.name })),
     listItems: listItemRows

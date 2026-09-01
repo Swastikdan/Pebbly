@@ -2,12 +2,13 @@ import { useUser } from "@clerk/react";
 import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import type { CustomListRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
 import { reconcileListFetch } from "@/lib/data/pending-ops";
 import { queryKeys } from "@/lib/query/keys";
-import { getCustomLists, getItemLists } from "@/server/fns/lists";
+import { getItemLists } from "@/server/fns/list-collections";
+import { getCustomLists } from "@/server/fns/lists";
 import { unwrap } from "@/server/schema/common";
 import { useLocalListsStore } from "@/stores/local-lists-store";
 

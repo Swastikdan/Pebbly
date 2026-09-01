@@ -2,9 +2,10 @@ import { useUser } from "@clerk/react";
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import type { MediaType } from "@/domain/media";
 import type { AIRecommendation } from "@/domain/recommendations";
-import type { MediaType } from "@/lib/media-types";
 import { ERA_PRESETS } from "@/components/recommendations/recommendation-filters";
+import { GENRE_LIST } from "@/constants";
 import { queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { normalizeTitleKey } from "@/lib/text";
@@ -23,6 +24,7 @@ export interface GenerateOptions {
   listId?: string;
   mediaTypePreference?: MediaType;
   genrePreference?: string;
+  genreIds?: number[];
   excludeTmdbIds?: number[];
   yearFrom?: number;
   yearTo?: number;
@@ -114,8 +116,13 @@ export function buildGenerateOptions(
 
   if (input.mediaTypePreference)
     options.mediaTypePreference = input.mediaTypePreference;
-  if (input.generationType === "genre" && input.selectedGenres?.length)
+  if (input.generationType === "genre" && input.selectedGenres?.length) {
     options.genrePreference = input.selectedGenres.join(", ");
+    options.genreIds = input.selectedGenres
+      .map((name) => GENRE_LIST.find((genre) => genre.name === name)?.id)
+      .filter((id): id is number => id !== undefined)
+      .slice(0, 10);
+  }
 
   if (input.selectedEras && input.selectedEras.length > 0) {
     const matchedEras = ERA_PRESETS.filter((e) =>
@@ -147,7 +154,14 @@ function buildRepeatBaseOptions(
   };
   if (entry.mediaTypePreference)
     options.mediaTypePreference = entry.mediaTypePreference as MediaType;
-  if (entry.genrePreference) options.genrePreference = entry.genrePreference;
+  if (entry.genrePreference) {
+    options.genrePreference = entry.genrePreference;
+    options.genreIds = entry.genrePreference
+      .split(",")
+      .map((name) => GENRE_LIST.find((genre) => genre.name === name.trim())?.id)
+      .filter((id): id is number => id !== undefined)
+      .slice(0, 10);
+  }
 
   const exclusions = cappedTrackedExclusions(trackedTmdbIds);
   if (exclusions) options.excludeTmdbIds = exclusions;
@@ -231,21 +245,24 @@ export function useRecommendations() {
   });
 
   const generate = useCallback(
-    async (options?: GenerateOptions) => {
+    async (options?: GenerateOptions): Promise<string | null> => {
       setError(null);
       setIsGenerating(true);
       try {
         const result = await unwrap(startGeneration({ data: options ?? {} }));
         if ("error" in result) {
           setError(result.error);
-        } else {
-          recordOwnMutation("ai");
-          void queryClient.invalidateQueries({
-            queryKey: queryKeys.recommendations.history(user?.id),
-          });
+          return null;
         }
+
+        recordOwnMutation("ai");
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.recommendations.history(user?.id),
+        });
+        return result.generationId ?? null;
       } catch (e) {
         setError(e instanceof Error ? e.message : "Unknown error");
+        return null;
       } finally {
         setIsGenerating(false);
       }
@@ -280,15 +297,18 @@ export function useRecommendations() {
   const updateVerified = useCallback(
     async (id: string, recommendations: AIRecommendation[]) => {
       try {
-        await updateVerifiedRecommendations({
-          data: { id, recommendations: JSON.stringify(recommendations) },
-        });
+        await unwrap(
+          updateVerifiedRecommendations({
+            data: { id, recommendations: JSON.stringify(recommendations) },
+          }),
+        );
         recordOwnMutation("ai");
-        void queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
           queryKey: queryKeys.recommendations.history(user?.id),
         });
       } catch (error) {
         logRecommendationError("update verified recommendations", error);
+        throw error;
       }
     },
     [queryClient, user?.id],

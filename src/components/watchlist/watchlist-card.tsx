@@ -13,7 +13,7 @@ import {
 } from "@/components/watchlist/media-row-card-shell";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
-import { toast } from "@/hooks/use-toast-store";
+import { toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { formatMediaTitle } from "@/lib/utils";
 

@@ -120,7 +120,7 @@ function buildFallbackItem(
     image: metadata?.image ?? "",
     rating: metadata?.rating ?? 0,
     release_date: metadata?.release_date ?? "",
-    overview: metadata?.overview,
+    overview: metadata?.overview ?? undefined,
     updated_at: Date.now(),
     created_at: Date.now(),
     inWatchlist: false,

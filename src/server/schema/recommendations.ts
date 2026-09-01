@@ -8,6 +8,13 @@ export const recommendationSchema = v.object({
   mediaType: mediaTypeSchema,
   relevanceScore: v.number(),
   reasoning: v.string(),
+  validationAttempted: v.optional(v.boolean()),
+  verifiedTmdbId: v.optional(v.nullable(v.number())),
+  verifiedTitle: v.optional(v.string()),
+  posterPath: v.optional(v.nullable(v.string())),
+  rating: v.optional(v.number()),
+  releaseDate: v.optional(v.nullable(v.string())),
+  overview: v.optional(v.string()),
 });
 
 export const recommendationsArraySchema = v.array(recommendationSchema);
@@ -38,6 +45,7 @@ export const generateRecommendationsArgsSchema = v.object({
   listId: v.optional(v.string()),
   mediaTypePreference: v.optional(mediaTypeSchema),
   genrePreference: v.optional(v.string()),
+  genreIds: v.optional(v.pipe(v.array(v.number()), v.maxLength(10))),
   excludeTmdbIds: v.optional(
     v.pipe(v.array(v.number()), v.maxLength(MAX_EXCLUDE_TMDB_IDS)),
   ),
@@ -61,6 +69,7 @@ export type GenerateResult =
       inputStats: InputStats;
       generatedAt: number;
       cached: boolean;
+      generationId?: string;
     }
   | { error: string };
 

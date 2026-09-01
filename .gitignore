@@ -21,8 +21,9 @@ todos.json
 
 TODO.md
 REFACTOR_PLAN.md
-plan/
 /plans
 /.commandcode
-/plans
-/plans
+
+# Local-only stress-test harness (kept untracked on purpose)
+/stress-test.mjs
+AGENT.md

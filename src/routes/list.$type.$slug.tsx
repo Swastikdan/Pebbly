@@ -17,8 +17,8 @@ import { PagedMediaGrid } from "@/components/paged-media-grid";
 import { ShareButton } from "@/components/share-button";
 import { Pagination } from "@/components/ui/pagination";
 import { MEDIA_PAGE_SLUGS, SITE_CONFIG } from "@/constants";
+import { mediaTypeToSlug, slugToMediaType } from "@/domain/media";
 import { useUrlPagedQuery } from "@/hooks/use-url-paged-query";
-import { mediaTypeToSlug, slugToMediaType } from "@/lib/media-types";
 import { getMediaList } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 

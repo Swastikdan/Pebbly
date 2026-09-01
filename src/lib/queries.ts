@@ -205,16 +205,42 @@ export const getWatchProviders = typedEndpoint(
 
 export async function getDiscoverMovies({
   with_keywords,
+  with_genres,
   page,
 }: {
-  with_keywords: number;
+  with_keywords?: number;
+  with_genres?: string;
   page?: number;
 }): Promise<SearchResults> {
   const pageNumber = page ?? 1;
-  const url = `/discover/movie?with_keywords=${with_keywords}&language=en-US&page=${pageNumber}`;
+  const params = new URLSearchParams({
+    language: "en-US",
+    page: String(pageNumber),
+  });
+  if (with_keywords !== undefined)
+    params.set("with_keywords", String(with_keywords));
+  if (with_genres) params.set("with_genres", with_genres);
+  const url = `/discover/movie?${params.toString()}`;
 
   return await safeFetch<SearchResults>(
     "getDiscoverMovies",
+    url,
+    Schemas.SearchResultsSchema,
+  );
+}
+
+export async function getDiscoverTv({
+  with_genres,
+  page,
+}: {
+  with_genres: string;
+  page?: number;
+}): Promise<SearchResults> {
+  const pageNumber = page ?? 1;
+  const url = `/discover/tv?with_genres=${encodeURIComponent(with_genres)}&language=en-US&page=${pageNumber}`;
+
+  return await safeFetch<SearchResults>(
+    "getDiscoverTv",
     url,
     Schemas.SearchResultsSchema,
   );

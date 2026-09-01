@@ -62,50 +62,57 @@ export const splitVideos = (videos?: MinimalVideo[] | null) => {
   return { allVideos, trailervideos, youtubeclips };
 };
 
-export const mapCast = (cast?: MinimalPerson[] | null) =>
-  cast
-    ?.map((person) => ({
-      id: person.id,
-      name: person.name,
-      profile_path: person.profile_path ?? undefined,
-      character: person.character ?? "",
-    }))
-    .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
-
-export const mapCrew = (crew?: MinimalPerson[] | null) =>
-  crew
-    ?.map((person) => ({
-      id: person.id,
-      name: person.name,
-      profile_path: person.profile_path ?? undefined,
-      job: person.job ?? "",
-    }))
-    .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
-
 const sortByVoteAverage = (a: MinimalImage, b: MinimalImage) =>
   (b.vote_average ?? 0) - (a.vote_average ?? 0);
 
+// Cast/crew and backdrop/poster lists share the same shape-up pipeline
+// (bound the list, sort images by TMDB's vote score); only the final
+// per-item projection differs, so the shared part lives here once.
+const featuredPeople = (people?: MinimalPerson[] | null) =>
+  people?.slice(0, FEATURED_ITEMS_LIMIT) ?? [];
+
+const featuredImages = (images?: MinimalImage[] | null) =>
+  images?.slice().sort(sortByVoteAverage).slice(0, FEATURED_ITEMS_LIMIT) ?? [];
+
+export const mapCast = (cast?: MinimalPerson[] | null) =>
+  featuredPeople(cast).map((person) => ({
+    id: person.id,
+    name: person.name,
+    profile_path: person.profile_path ?? undefined,
+    character: person.character ?? "",
+  }));
+
+export const mapCrew = (crew?: MinimalPerson[] | null) =>
+  featuredPeople(crew).map((person) => ({
+    id: person.id,
+    name: person.name,
+    profile_path: person.profile_path ?? undefined,
+    job: person.job ?? "",
+  }));
+
 export const mapBackdrops = (backdrops?: MinimalImage[] | null) =>
-  backdrops
-    ?.slice()
-    .sort(sortByVoteAverage)
-    .map((image) => ({
-      backdrop_image: `${IMAGE_PREFIX.SD_BACKDROP}${image.file_path}`,
-      backdrop_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
-      aspect_ratio: image.aspect_ratio,
-    }))
-    .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
+  featuredImages(backdrops).map((image) => ({
+    backdrop_image: `${IMAGE_PREFIX.SD_BACKDROP}${image.file_path}`,
+    backdrop_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
+    aspect_ratio: image.aspect_ratio,
+  }));
 
 export const mapPosters = (posters?: MinimalImage[] | null) =>
-  posters
-    ?.slice()
-    .sort(sortByVoteAverage)
-    .map((image) => ({
-      poster_image: `${IMAGE_PREFIX.SD_POSTER}${image.file_path}`,
-      poster_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
-      aspect_ratio: image.aspect_ratio,
-    }))
-    .slice(0, FEATURED_ITEMS_LIMIT) ?? [];
+  featuredImages(posters).map((image) => ({
+    poster_image: `${IMAGE_PREFIX.SD_POSTER}${image.file_path}`,
+    poster_image_raw: `${IMAGE_PREFIX.ORIGINAL}${image.file_path}`,
+    aspect_ratio: image.aspect_ratio,
+  }));
+
+// Both certification lookups find the US entry and extract a rating,
+// defaulting to "NR" when the entry or the value is missing.
+function findUSCertification<T extends { iso_3166_1: string }>(
+  items: T[] | null | undefined,
+  extract: (item: T) => string | undefined,
+): string {
+  const us = items?.find((item) => item.iso_3166_1 === "US");
+  return (us ? extract(us) : undefined) ?? "NR";
+}
 
 export const getMovieCertification = (
   releaseDates?:
@@ -114,28 +121,19 @@ export const getMovieCertification = (
         release_dates?: { certification?: string }[] | null;
       }[]
     | null,
-) => {
-  const usRelease = releaseDates?.find(
-    (release) => release.iso_3166_1 === "US",
-  );
-
-  if (!usRelease?.release_dates) {
-    return "NR";
-  }
-
-  for (const releaseDate of usRelease.release_dates) {
-    if (releaseDate?.certification) {
-      return releaseDate.certification;
+) =>
+  findUSCertification(releaseDates, (us) => {
+    for (const releaseDate of us.release_dates ?? []) {
+      if (releaseDate?.certification) {
+        return releaseDate.certification;
+      }
     }
-  }
-
-  return "NR";
-};
+    return undefined;
+  });
 
 export const getTvCertification = (
   contentRatings?: { iso_3166_1: string; rating?: string }[] | null,
-) =>
-  contentRatings?.find((result) => result.iso_3166_1 === "US")?.rating ?? "NR";
+) => findUSCertification(contentRatings, (us) => us.rating);
 
 // TMDB release_date types: 1 = premiere, 2 = theatrical (limited),
 // 3 = theatrical (wide). Theatrical runs rarely outlast ~90 days before

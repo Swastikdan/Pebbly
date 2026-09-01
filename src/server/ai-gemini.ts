@@ -1,3 +1,14 @@
+import type { ProviderErrorLike } from "./ai-utils";
+import {
+  delay,
+  getErrorMessage,
+  HTTP_BAD_GATEWAY,
+  HTTP_BAD_REQUEST,
+  HTTP_SERVER_OVERLOADED,
+  HTTP_SERVICE_UNAVAILABLE,
+  HTTP_TOO_MANY_REQUESTS,
+} from "./ai-utils";
+
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
 // Free-tier models, tried in order by the local Gemini REST fallback only.
@@ -7,11 +18,6 @@ export const GEMINI_FALLBACK_MODELS = [
 ] as const;
 
 const GEMINI_TIMEOUT_MS = 45_000;
-
-type ProviderErrorLike = {
-  status?: number;
-  message?: string;
-};
 
 interface GeminiResponseBody {
   candidates?: Array<{
@@ -32,10 +38,6 @@ export interface GeminiGenerationResult {
   reasoningTokens?: number;
 }
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
-
 // Gemini signals capacity issues with 503/529 and auth/quota problems with
 // 429 (RESOURCE_EXHAUSTED). These classifiers intentionally stay inside the
 // Gemini adapter; the public AI seam exposes only normalized error codes.
@@ -43,8 +45,8 @@ function isHighDemandError(error: unknown) {
   const candidate = error as ProviderErrorLike;
   const message = candidate.message?.toLowerCase() ?? "";
   return (
-    candidate.status === 503 ||
-    candidate.status === 529 ||
+    candidate.status === HTTP_SERVICE_UNAVAILABLE ||
+    candidate.status === HTTP_SERVER_OVERLOADED ||
     message.includes("overloaded") ||
     message.includes("503") ||
     message.includes("529")
@@ -55,7 +57,7 @@ function isRateLimitedError(error: unknown) {
   const candidate = error as ProviderErrorLike;
   const message = candidate.message?.toLowerCase() ?? "";
   return (
-    candidate.status === 429 ||
+    candidate.status === HTTP_TOO_MANY_REQUESTS ||
     message.includes("rate limit") ||
     message.includes("resource_exhausted") ||
     message.includes("quota") ||
@@ -75,10 +77,6 @@ function isLocationUnsupportedError(error: unknown) {
     (message.includes("user location") && message.includes("not supported")) ||
     message.includes("location is not supported for the api")
   );
-}
-
-async function delay(ms: number) {
-  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function buildRequestBody(
@@ -160,7 +158,7 @@ async function generateContent(
     false,
   );
 
-  if (response.status === 400) {
+  if (response.status === HTTP_BAD_REQUEST) {
     const firstError = await parseErrorResponse(response);
     if (isLocationUnsupportedError(firstError)) throw firstError;
 
@@ -182,7 +180,7 @@ async function generateContent(
   const blockReason = data.promptFeedback?.blockReason;
   if (blockReason) {
     const error = new Error(`blocked_${blockReason}`) as ProviderErrorLike;
-    error.status = 400;
+    error.status = HTTP_BAD_REQUEST;
     throw error;
   }
 
@@ -194,7 +192,7 @@ async function generateContent(
     const error = new Error(
       `Gemini returned no content (finishReason: ${finishReason ?? "unknown"})`,
     ) as ProviderErrorLike;
-    error.status = 502;
+    error.status = HTTP_BAD_GATEWAY;
     throw error;
   }
 

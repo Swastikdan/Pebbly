@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { CustomListCard } from "@/components/watchlist/custom-list-card";
 import { useCustomLists } from "@/hooks/use-custom-lists";
 import { destructiveToast } from "@/hooks/use-destructive-toast";
-import { toast } from "@/hooks/use-toast-store";
+import { toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
+import { logError } from "@/lib/utils";
 
 const CustomListDialog = lazy(() =>
   import("@/components/custom-list-dialog").then((m) => ({
@@ -106,7 +107,7 @@ export function MyListsTab() {
           description: `"${list.name} (copy)" was added to your collections.`,
         }),
       )
-      .catch(console.error);
+      .catch((error) => logError("clone list", error));
   };
 
   return (

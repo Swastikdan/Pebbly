@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import { MediaCard } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";

@@ -3,14 +3,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WatchlistData } from "./prompts";
 import { getRecommendationCandidates } from "./recommendation-candidates";
 
-const { getMediaMock, getMovieRecommendationsMock, getTvRecommendationsMock } =
-  vi.hoisted(() => ({
-    getMediaMock: vi.fn(),
-    getMovieRecommendationsMock: vi.fn(),
-    getTvRecommendationsMock: vi.fn(),
-  }));
+const {
+  getDiscoverMoviesMock,
+  getDiscoverTvMock,
+  getMediaMock,
+  getMovieRecommendationsMock,
+  getTvRecommendationsMock,
+} = vi.hoisted(() => ({
+  getDiscoverMoviesMock: vi.fn(),
+  getDiscoverTvMock: vi.fn(),
+  getMediaMock: vi.fn(),
+  getMovieRecommendationsMock: vi.fn(),
+  getTvRecommendationsMock: vi.fn(),
+}));
 
 vi.mock("@/lib/queries", () => ({
+  getDiscoverMovies: getDiscoverMoviesMock,
+  getDiscoverTv: getDiscoverTvMock,
   getMedia: getMediaMock,
   getMovieRecommendations: getMovieRecommendationsMock,
   getTvSeriesRecommendations: getTvRecommendationsMock,
@@ -140,20 +149,40 @@ describe("getRecommendationCandidates", () => {
     expect(candidates).toHaveLength(40);
   });
 
-  it("uses list seeds but limits similarity calls to two titles", async () => {
-    await getRecommendationCandidates({
-      watchItems: [],
-      seedItems: [
-        { tmdbId: 101, mediaType: "movie" },
-        { tmdbId: 102, mediaType: "movie" },
-        { tmdbId: 103, mediaType: "movie" },
+  it("uses genre discovery without watchlist or trending seed calls", async () => {
+    getDiscoverMoviesMock.mockResolvedValue({
+      results: [
+        item({
+          id: 21,
+          title: "Genre Movie",
+          original_title: "Genre Movie",
+          genre_ids: [18],
+        }),
       ],
+    });
+    getDiscoverTvMock.mockResolvedValue({ results: [] });
+
+    const candidates = await getRecommendationCandidates({
+      watchItems: [
+        {
+          ...watchlistData.watchItems[0],
+          reaction: "loved",
+        },
+      ],
+      genreIds: [18],
+      useWatchlistSeeds: false,
       mediaTypePreference: "movie",
       excludeTmdbIds: [],
       excludeTitles: [],
       limit: 20,
     });
 
-    expect(getMovieRecommendationsMock).toHaveBeenCalledTimes(2);
+    expect(candidates.map((candidate) => candidate.tmdbId)).toContain(21);
+    expect(getDiscoverMoviesMock).toHaveBeenCalledWith({
+      with_genres: "18",
+      page: 1,
+    });
+    expect(getMediaMock).not.toHaveBeenCalled();
+    expect(getMovieRecommendationsMock).not.toHaveBeenCalled();
   });
 });

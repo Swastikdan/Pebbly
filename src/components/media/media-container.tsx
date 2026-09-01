@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useSearch } from "@tanstack/react-router";
 
+import type { MediaType } from "@/domain/media";
 import type { MediaDialogSearch } from "@/lib/media-dialog-helpers";
-import type { MediaType } from "@/lib/media-types";
 import {
   PlayOverlay,
   YouTubeEmbed,

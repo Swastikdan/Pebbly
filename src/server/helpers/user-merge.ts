@@ -2,7 +2,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 
 import type { AuthUser } from "../auth";
 import type { Db } from "../db/client";
-import { MAX_IDS_PER_IN_CLAUSE, runBatch } from "../db/client";
+import { chunkedQuery, runBatch } from "../db/client";
 import {
   episodeProgress,
   homepageRecommendations,
@@ -144,16 +144,15 @@ async function reparentLists(
   if (movableIds.length === 0) return 0;
 
   const statements: unknown[] = [];
-  for (let i = 0; i < movableIds.length; i += MAX_IDS_PER_IN_CLAUSE) {
+  await chunkedQuery(movableIds, (chunk) => {
     statements.push(
       db
         .update(lists)
         .set({ userId: canonicalUserId })
-        .where(
-          inArray(lists.id, movableIds.slice(i, i + MAX_IDS_PER_IN_CLAUSE)),
-        ),
+        .where(inArray(lists.id, chunk)),
     );
-  }
+    return Promise.resolve([]);
+  });
   for (const listId of movableIds) {
     statements.push(
       db

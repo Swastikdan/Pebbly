@@ -1,9 +1,19 @@
 import * as v from "valibot";
 
+import type { Recommendation } from "./schema/recommendations";
 import type { MediaType } from "@/domain/media";
 import { normalizeTitleKey } from "@/lib/text";
 import { generateGeminiRecommendations } from "./ai-gemini";
+import {
+  delay,
+  getErrorMessage,
+  HTTP_SERVER_OVERLOADED,
+  HTTP_SERVICE_UNAVAILABLE,
+  HTTP_TOO_MANY_REQUESTS,
+} from "./ai-utils";
 import { getEnv, getEnvVar } from "./env";
+
+export type { Recommendation };
 
 // Cloudflare Workers AI is the production provider. It is accessed through
 // the native `AI` binding with JSON mode, so deployed Workers do not depend on
@@ -12,14 +22,6 @@ import { getEnv, getEnvVar } from "./env";
 
 const WORKERS_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const WORKERS_AI_TIMEOUT_MS = 30_000;
-
-export interface Recommendation {
-  title: string;
-  tmdbId: number | null;
-  mediaType: MediaType;
-  relevanceScore: number;
-  reasoning: string;
-}
 
 type RecommendationIdentity = {
   title?: string | null;
@@ -83,14 +85,6 @@ export interface GenerateRecommendationsResult {
   usedModel?: string;
   error?: string;
   reasoningTokens?: number;
-}
-
-export function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
-
-export async function delay(ms: number) {
-  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 const recommendationElementSchema = v.pipe(
@@ -171,10 +165,12 @@ function extractWorkersAiText(response: unknown): string {
 function parseRecommendationResponse(
   responseText: string,
   usedModel: string,
+  reasoningTokens?: number,
 ): {
   result?: RecommendationResult;
   usedModel?: string;
   error?: string;
+  reasoningTokens?: number;
 } {
   try {
     const parsed = JSON.parse(responseText) as unknown;
@@ -200,6 +196,7 @@ function parseRecommendationResponse(
     return {
       result: { recommendations: dedupeRecommendations(validRecommendations) },
       usedModel,
+      reasoningTokens,
     };
   } catch {
     return { error: "invalid_response" };
@@ -232,15 +229,15 @@ async function callWorkersAI(
     const code = String(err?.code ?? "").toLowerCase();
     const message = String(err?.message ?? "").toLowerCase();
     if (
-      status === 429 ||
+      status === HTTP_TOO_MANY_REQUESTS ||
       code.includes("rate") ||
       message.includes("rate limit")
     ) {
       return "rate_limited" as const;
     }
     if (
-      status === 503 ||
-      status === 529 ||
+      status === HTTP_SERVICE_UNAVAILABLE ||
+      status === HTTP_SERVER_OVERLOADED ||
       code.includes("overload") ||
       message.includes("overload") ||
       message.includes("high demand") ||
@@ -371,33 +368,5 @@ export async function generateRecommendations({
     );
   }
 
-  try {
-    const parsed = JSON.parse(responseText) as unknown;
-    if (
-      !parsed ||
-      typeof parsed !== "object" ||
-      !("recommendations" in parsed)
-    ) {
-      return { error: "invalid_response" };
-    }
-    const rawRecommendations = (parsed as { recommendations: unknown })
-      .recommendations;
-    if (!Array.isArray(rawRecommendations)) {
-      return { error: "invalid_response" };
-    }
-
-    const validRecommendations: Recommendation[] = [];
-    for (const entry of rawRecommendations) {
-      const validated = v.safeParse(recommendationElementSchema, entry);
-      if (validated.success) validRecommendations.push(validated.output);
-    }
-
-    return {
-      result: { recommendations: dedupeRecommendations(validRecommendations) },
-      usedModel,
-      reasoningTokens,
-    };
-  } catch {
-    return { error: "invalid_response" };
-  }
+  return parseRecommendationResponse(responseText, usedModel, reasoningTokens);
 }

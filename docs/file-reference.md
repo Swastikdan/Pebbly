@@ -121,7 +121,6 @@ Other `.github/` files: issue templates (`bug_report.yml`, `feature_request.yml`
 | `watchlist.ts`       | Watchlist progress/reaction values, metadata contracts, and watchlist identity keys. |
 | `recommendations.ts` | Shared AI recommendation contract.                                                   |
 | `notifications.ts`   | Shared toast/notifier option types.                                                  |
-| `object.ts`          | Pure generic object helpers such as `mergeDefinedFields`.                            |
 
 ## `src/lib/`: client/shared utilities
 
@@ -133,7 +132,6 @@ Other `.github/` files: issue templates (`bug_report.yml`, `feature_request.yml`
 | `batcher.ts`                              | Generic `RequestBatcher`: debounce/max-wait/max-batch-size/dedupe-by-key, optional flush-on-page-hide + dispose.                                                                                                                         |
 | `realtime-mutations.ts`                   | Per-domain own-mutation counters (`watchlist`/`lists`/`ai`) recorded on successful server writes, lets `user-sync.tsx` skip redundant refetches for the client's own changes (see ADR-015).                                              |
 | `cross-tab-sync.ts`                       | BroadcastChannel (`pebbly-sync`) fan-out: sibling tabs invalidate each other's query groups instantly, no server round trip.                                                                                                             |
-| `media-types.ts`                          | Canonical `MediaType` module: `"movie" \| "tv"` union, Valibot schema, type guard, route-slug map.                                                                                                                                       |
 | `text.ts`                                 | Tiny pure string helpers (`normalizeTitleKey`, `hashString`) shared by prompts and TMDB verification.                                                                                                                                    |
 | `daily-pick-engine.ts`                    | Pure "Tonight's Pick" selection engine (seeded by date; interleaving + scoring); no React/clocks/network; consumed by `use-daily-pick.ts`.                                                                                               |
 | `segmented-control.ts`                    | Shared helpers/styles for segmented filter controls.                                                                                                                                                                                     |
@@ -185,7 +183,6 @@ modules live here, hooks live in `src/hooks/`.
 | `use-canonical-slug-redirect.ts`        | Client redirect to the canonical `/{type}/{id}/{slug}` URL (moved here from lib; it's a hook).                                        |
 | `use-theme.ts`                          | Light/dark/system theme: preference store, pre-paint DOM application, View Transitions crossfade, `toggleTheme`.                      |
 | `use-destructive-toast.ts`              | Confirmation toast that defers destructive actions until countdown expiry unless undone.                                              |
-| `use-toast-store.ts`                    | Fire-and-forget `toast()` backed by Base UI's toast manager (no provider needed at call sites).                                       |
 | `watch-progress/use-watch-progress.ts`  | Watch/player progress orchestration (~450 lines): data fetching, progress calculations, mutations.                                    |
 | `watch-progress/use-player-listener.ts` | postMessage listener for player progress (origin-verified, DOM-scan fallback).                                                        |
 | `lib/watch-progress.ts`                 | Dependency-free progress/player contracts, validation, optimistic episode helpers, and `buildPlayerUrl`.                              |

@@ -1,13 +1,15 @@
 import type { RecommendationCandidate, WatchlistData } from "./prompts";
 import type { MediaType } from "@/domain/media";
 import {
+  getDiscoverMovies,
+  getDiscoverTv,
   getMedia,
   getMovieRecommendations,
   getTvSeriesRecommendations,
 } from "@/lib/queries";
 import { normalizeTitleKey } from "@/lib/text";
 
-type CandidateSource = "popular" | "seed" | "trending";
+type CandidateSource = "popular" | "seed" | "trending" | "genre";
 
 type RawCandidate = {
   tmdbId: number;
@@ -24,7 +26,12 @@ type RawCandidate = {
 
 export type CandidateGenerationOptions = {
   watchItems: WatchlistData["watchItems"];
+  /** Full tracked library used for exclusions; prompt context may be capped. */
+  excludedWatchItems?: Array<{ tmdbId: number; title: string | null }>;
+  /** Genre discovery is catalog-driven and must not use watchlist titles as seeds. */
+  useWatchlistSeeds?: boolean;
   mediaTypePreference?: MediaType;
+  genreIds?: number[];
   excludeTmdbIds: number[];
   excludeTitles: string[];
   seedItems?: Array<{ tmdbId: number; mediaType: MediaType }>;
@@ -34,13 +41,16 @@ export type CandidateGenerationOptions = {
   balanced?: boolean;
 };
 
+const MIN_TMDB_YEAR = 1800;
 const MAX_SEED_TITLES = 2;
 const DEFAULT_CANDIDATE_LIMIT = 40;
 const HOMEPAGE_CANDIDATE_LIMIT = 60;
 
 function yearOf(date: string): number | null {
   const year = Number.parseInt(date.slice(0, 4), 10);
-  return Number.isInteger(year) && year >= 1800 ? year : null;
+  // Oldest titles in the TMDB catalog predate the cutoff by a safe margin;
+  // anything earlier is a model hallucination, not a real release year.
+  return Number.isInteger(year) && year >= MIN_TMDB_YEAR ? year : null;
 }
 
 function candidateKey(mediaType: MediaType, tmdbId: number) {
@@ -49,18 +59,18 @@ function candidateKey(mediaType: MediaType, tmdbId: number) {
 
 type TmdbCandidateItem = {
   id: number;
-  title?: string;
-  original_title?: string;
-  name?: string;
-  original_name?: string;
-  release_date?: string;
-  first_air_date?: string;
+  title?: string | null;
+  original_title?: string | null;
+  name?: string | null;
+  original_name?: string | null;
+  release_date?: string | null;
+  first_air_date?: string | null;
   poster_path: string | null;
-  vote_average: number;
-  vote_count: number;
+  vote_average: number | null;
+  vote_count: number | null;
   popularity: number;
-  media_type?: string;
-  genre_ids?: number[] | null;
+  media_type?: string | null;
+  genre_ids?: Array<number | null> | null;
 };
 
 function toMovieCandidate(
@@ -68,7 +78,14 @@ function toMovieCandidate(
   source: CandidateSource,
 ): RawCandidate | null {
   const title = item.title ?? item.original_title ?? "";
-  if (!title || !item.id || !item.poster_path || item.vote_average <= 0) {
+  if (
+    !title ||
+    !item.id ||
+    !item.poster_path ||
+    item.vote_average == null ||
+    item.vote_average <= 0 ||
+    item.vote_count == null
+  ) {
     return null;
   }
   return {
@@ -80,7 +97,7 @@ function toMovieCandidate(
     voteCount: item.vote_count,
     popularity: item.popularity,
     posterPath: item.poster_path,
-    genreIds: item.genre_ids ?? [],
+    genreIds: (item.genre_ids ?? []).filter((id): id is number => id !== null),
     source,
   };
 }
@@ -90,7 +107,14 @@ function toTvCandidate(
   source: CandidateSource,
 ): RawCandidate | null {
   const title = item.name ?? item.original_name ?? "";
-  if (!title || !item.id || !item.poster_path || item.vote_average <= 0) {
+  if (
+    !title ||
+    !item.id ||
+    !item.poster_path ||
+    item.vote_average == null ||
+    item.vote_average <= 0 ||
+    item.vote_count == null
+  ) {
     return null;
   }
   return {
@@ -102,7 +126,7 @@ function toTvCandidate(
     voteCount: item.vote_count,
     popularity: item.popularity,
     posterPath: item.poster_path,
-    genreIds: item.genre_ids ?? [],
+    genreIds: (item.genre_ids ?? []).filter((id): id is number => id !== null),
     source,
   };
 }
@@ -185,36 +209,62 @@ export async function getRecommendationCandidates(
         ? ["tv-shows_popular"]
         : ["movies_popular", "tv-shows_popular"];
 
-  const [popularResults, trendingResults] = await Promise.all([
-    Promise.all(
-      mediaTypes.map(async (type) => {
-        try {
-          return await getMedia({ type, page: 1 });
-        } catch (error) {
+  const [popularResults, trendingResults] = options.genreIds?.length
+    ? [[], []]
+    : await Promise.all([
+        Promise.all(
+          mediaTypes.map(async (type) => {
+            try {
+              return await getMedia({ type, page: 1 });
+            } catch (error) {
+              console.warn(
+                `[recommendations] TMDB ${type} candidates failed`,
+                error,
+              );
+              return [];
+            }
+          }),
+        ),
+        getMedia({ type: "trending_week", page: 1 }).catch((error) => {
           console.warn(
-            `[recommendations] TMDB ${type} candidates failed`,
+            "[recommendations] TMDB trending candidates failed",
             error,
           );
           return [];
-        }
-      }),
-    ),
-    getMedia({ type: "trending_week", page: 1 }).catch((error) => {
-      console.warn("[recommendations] TMDB trending candidates failed", error);
-      return [];
-    }),
-  ]);
+        }),
+      ]);
+
+  const genreResults = options.genreIds?.length
+    ? await Promise.all(
+        mediaTypes.map(async (type) => {
+          try {
+            const genreQuery = options.genreIds?.join(",") ?? "";
+            return type === "movies_popular"
+              ? await getDiscoverMovies({ with_genres: genreQuery, page: 1 })
+              : await getDiscoverTv({ with_genres: genreQuery, page: 1 });
+          } catch (error) {
+            console.warn(
+              `[recommendations] TMDB ${type} genre candidates failed`,
+              error,
+            );
+            return { results: [] };
+          }
+        }),
+      )
+    : [];
 
   const seeds = [
     ...(options.seedItems ?? []),
-    ...options.watchItems
-      .filter(
-        (item) =>
-          item.reaction === "loved" ||
-          item.reaction === "liked" ||
-          item.reaction === "recommended",
-      )
-      .map((item) => ({ tmdbId: item.tmdbId, mediaType: item.mediaType })),
+    ...(options.useWatchlistSeeds === false
+      ? []
+      : options.watchItems
+          .filter(
+            (item) =>
+              item.reaction === "loved" ||
+              item.reaction === "liked" ||
+              item.reaction === "recommended",
+          )
+          .map((item) => ({ tmdbId: item.tmdbId, mediaType: item.mediaType }))),
   ]
     .filter(
       (seed) =>
@@ -266,6 +316,16 @@ export async function getRecommendationCandidates(
     }
   }
 
+  for (const [index, result] of genreResults.entries()) {
+    for (const item of result.results ?? []) {
+      const candidate =
+        mediaTypes[index] === "movies_popular"
+          ? toMovieCandidate(item, "genre")
+          : toTvCandidate(item, "genre");
+      if (candidate) rawCandidates.push(candidate);
+    }
+  }
+
   for (const item of trendingResults) {
     const trendingType =
       item.media_type === "movie" || item.media_type === "tv"
@@ -285,14 +345,15 @@ export async function getRecommendationCandidates(
     if (candidate) rawCandidates.push(candidate);
   }
 
+  const trackedItems = options.excludedWatchItems ?? options.watchItems;
   const excludedIds = new Set([
     ...options.excludeTmdbIds,
-    ...options.watchItems.map((item) => item.tmdbId),
+    ...trackedItems.map((item) => item.tmdbId),
   ]);
   const excludedTitles = new Set(
     [
       ...options.excludeTitles,
-      ...options.watchItems
+      ...trackedItems
         .map((item) => item.title)
         .filter((title): title is string => !!title),
     ].map(normalizeTitleKey),

@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import type { MediaType, Reaction } from "../schema/common";
+import type { MediaMetadata } from "@/domain/watchlist";
 import { normalizeProgressStatus } from "@/lib/utils";
 import { users, watchItems } from "../db/schema";
 import { REACTIONS } from "../schema/common";
@@ -22,14 +23,12 @@ export interface MediaIdentity {
   mediaType: MediaType;
 }
 
-export type WatchItemMetadata = {
-  title?: string | null;
-  image?: string | null;
-  rating?: number | null;
-  release_date?: string | null;
-  overview?: string | null;
-};
+// The canonical 5-field metadata shape (see @/domain/watchlist). Its nullable
+// fields cover both read payloads and the raw upsert input.
+export type WatchItemMetadata = MediaMetadata;
 
+// camelCase projection written into the DB (note release_date -> releaseDate);
+// values are non-null because nulls are resolved against the existing row.
 type MetadataDbPatch = {
   title?: string;
   image?: string;

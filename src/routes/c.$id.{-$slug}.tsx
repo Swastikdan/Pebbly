@@ -2,7 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 
 import { CollectionPage } from "@/components/watchlist/collection-page";
 import { queryKeys } from "@/lib/query/keys";
-import { getCollectionPage } from "@/server/fns/lists";
+import { getCollectionPage } from "@/server/fns/list-collections";
 import { ApiError, unwrap } from "@/server/schema/common";
 
 export const Route = createFileRoute("/c/$id/{-$slug}")({

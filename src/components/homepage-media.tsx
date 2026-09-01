@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 
-import type { MediaType } from "@/lib/media-types";
+import type { MediaType } from "@/domain/media";
 import type {
   BasicMovie,
   BasicTv,

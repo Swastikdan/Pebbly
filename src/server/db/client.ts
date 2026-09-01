@@ -47,6 +47,28 @@ export { schema };
 export const MAX_IDS_PER_IN_CLAUSE = 90;
 
 /**
+ * Run `queryChunk` over `ids` in bounded chunks and concatenate the results.
+ * D1 caps bound parameters per statement, so IN-clause filters over arbitrary
+ * id sets must be split; every caller used to re-implement the same slicing
+ * loop. Pass a smaller `chunkSize` when the statement binds other parameters.
+ */
+export async function chunkedQuery<Id, T>(
+  ids: readonly Id[],
+  queryChunk: (chunk: Id[]) => Promise<T[]>,
+  chunkSize = MAX_IDS_PER_IN_CLAUSE,
+): Promise<T[]> {
+  if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
+    throw new Error("chunkSize must be a positive integer");
+  }
+
+  const results: T[] = [];
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    results.push(...(await queryChunk(ids.slice(i, i + chunkSize))));
+  }
+  return results;
+}
+
+/**
  * Execute a list of D1 statements as one transactional round trip.
  *
  * Drizzle's `db.batch` requires a non-empty tuple type at compile time, so a
