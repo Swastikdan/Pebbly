@@ -156,9 +156,11 @@ function RecommendationsContent({
   }, [isGenerating]);
 
   const toggleGenre = (name: string) => {
-    setSelectedGenres((prev) =>
-      prev.includes(name) ? prev.filter((g) => g !== name) : [...prev, name],
-    );
+    setSelectedGenres((prev) => {
+      if (prev.includes(name)) return prev.filter((g) => g !== name);
+      if (prev.length >= 10) return prev;
+      return [...prev, name];
+    });
   };
 
   const toggleEra = (label: string) => {

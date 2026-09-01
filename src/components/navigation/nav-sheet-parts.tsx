@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   Bookmark,
   Calendar,
@@ -22,7 +23,7 @@ export interface NavLinkItem {
   name: string;
   url: string;
   subtext: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   isExternal?: boolean;
 }
 

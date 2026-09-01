@@ -57,6 +57,10 @@ export async function chunkedQuery<Id, T>(
   queryChunk: (chunk: Id[]) => Promise<T[]>,
   chunkSize = MAX_IDS_PER_IN_CLAUSE,
 ): Promise<T[]> {
+  if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
+    throw new Error("chunkSize must be a positive integer");
+  }
+
   const results: T[] = [];
   for (let i = 0; i < ids.length; i += chunkSize) {
     results.push(...(await queryChunk(ids.slice(i, i + chunkSize))));

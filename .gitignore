@@ -26,3 +26,4 @@ REFACTOR_PLAN.md
 
 # Local-only stress-test harness (kept untracked on purpose)
 /stress-test.mjs
+AGENT.md

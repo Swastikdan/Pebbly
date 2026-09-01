@@ -120,7 +120,8 @@ export function buildGenerateOptions(
     options.genrePreference = input.selectedGenres.join(", ");
     options.genreIds = input.selectedGenres
       .map((name) => GENRE_LIST.find((genre) => genre.name === name)?.id)
-      .filter((id): id is number => id !== undefined);
+      .filter((id): id is number => id !== undefined)
+      .slice(0, 10);
   }
 
   if (input.selectedEras && input.selectedEras.length > 0) {
@@ -158,7 +159,8 @@ function buildRepeatBaseOptions(
     options.genreIds = entry.genrePreference
       .split(",")
       .map((name) => GENRE_LIST.find((genre) => genre.name === name.trim())?.id)
-      .filter((id): id is number => id !== undefined);
+      .filter((id): id is number => id !== undefined)
+      .slice(0, 10);
   }
 
   const exclusions = cappedTrackedExclusions(trackedTmdbIds);
@@ -254,7 +256,7 @@ export function useRecommendations() {
         }
 
         recordOwnMutation("ai");
-        void queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
           queryKey: queryKeys.recommendations.history(user?.id),
         });
         return result.generationId ?? null;
@@ -295,15 +297,18 @@ export function useRecommendations() {
   const updateVerified = useCallback(
     async (id: string, recommendations: AIRecommendation[]) => {
       try {
-        await updateVerifiedRecommendations({
-          data: { id, recommendations: JSON.stringify(recommendations) },
-        });
+        await unwrap(
+          updateVerifiedRecommendations({
+            data: { id, recommendations: JSON.stringify(recommendations) },
+          }),
+        );
         recordOwnMutation("ai");
-        void queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
           queryKey: queryKeys.recommendations.history(user?.id),
         });
       } catch (error) {
         logRecommendationError("update verified recommendations", error);
+        throw error;
       }
     },
     [queryClient, user?.id],

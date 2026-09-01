@@ -198,8 +198,8 @@ Server functions are:
 - **Zustand stores** persist guest/local state from `src/stores/`:
   `watchlist-store`, `local-lists-store`, `local-progress-store`,
   `daily-pick-store` (all sharing `guest-store-kit` plumbing), plus the theme
-  store in `use-theme.ts`. Shared toast dispatch lives in `src/lib/notifications.ts`
-  and is re-exported for hook consumers.
+  store in `use-theme.ts`. Shared toast dispatch is directly imported from
+  `src/lib/notifications.ts` and backed by Base UI's toast manager.
 - **Request batching** (`src/lib/batcher.ts`), a generic debounce/max-wait
   batcher used to coalesce watchlist membership writes and per-card season
   detail fetches.

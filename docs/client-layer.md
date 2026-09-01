@@ -85,8 +85,9 @@ Two more stores live beside their feature code:
 
 - `useThemeStore` inside `src/hooks/use-theme.ts`, light/dark/system theme
   preference (persisted separately under `pebbly-theme`).
-- Toasts via `src/lib/notifications.ts`, fire-and-forget `toast()` backed
-  by Base UI's toast manager. Call it from anywhere, no provider needed.
+- Toasts via `src/lib/notifications.ts`: fire-and-forget `toast()` calls need no
+  provider plumbing at the call site. The application root still mounts
+  `ToastProvider`, which renders the toast UI, backed by Base UI's toast manager.
 
 - `src/lib/utils.ts`, `createLRUStorage()` wraps localStorage with LRU
   eviction (4 MB threshold, evicting down to 60% of the limit) so several
