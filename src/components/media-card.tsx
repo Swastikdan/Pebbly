@@ -127,7 +127,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
         <div
           data-media-poster
           className={cn(
-            "surface-raised interactive-raised bg-muted relative w-full overflow-hidden rounded-2xl",
+            "surface-raised interactive-raised bg-muted relative w-full overflow-hidden rounded-lg",
             imageContainerClassName,
           )}
         >
@@ -145,7 +145,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
           <div className="absolute inset-0 bg-linear-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
           {isRecommended && (
-            <Badge className="absolute top-2 left-2 rounded-md border-0 bg-blue-600/90 px-2 py-1 text-[10px] font-bold text-white shadow-md">
+            <Badge className="absolute top-2 left-2 rounded-md border-0 bg-blue-600/90 px-2 py-1 text-[10px] font-medium text-white">
               Recommended
             </Badge>
           )}
@@ -221,7 +221,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             release_date={release_date ?? ""}
             title={title}
             overview={overview}
-            className="h-8 w-8 rounded-lg shadow-md hover:scale-105"
+            className="h-8 w-8 rounded-md shadow-none hover:scale-105"
           />
         )}
       </div>
@@ -384,7 +384,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
       params={{ id: String(id) }}
       className="group ring-offset-background focus-visible:ring-ring pressable relative block w-24 outline-hidden transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 md:w-28 lg:w-32"
     >
-      <div className="bg-muted relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-white/10 shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">
+      <div className="bg-muted border-border group-hover:border-foreground/25 relative aspect-[2/3] w-full overflow-hidden rounded-lg border transition-[border-color] duration-200">
         <Image
           alt={name}
           src={imageUrl}

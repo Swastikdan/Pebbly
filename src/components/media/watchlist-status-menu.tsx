@@ -102,10 +102,10 @@ export function WatchlistStatusMenu({
           </MenuTrigger>
           <MenuPopup
             align="end"
-            className="border-border bg-popover w-80 rounded-xl border p-0 shadow-xl"
+            className="border-border bg-popover w-80 rounded-lg border p-0 shadow-none"
           >
             <div className="border-border flex items-center justify-between border-b px-4 py-3">
-              <span className="text-muted-foreground text-xs font-bold tracking-wider">
+              <span className="text-muted-foreground text-xs font-semibold">
                 Watchlist Status
               </span>
             </div>
@@ -173,7 +173,7 @@ export function WatchlistStatusMenu({
 
             <div className="border-border space-y-2 border-t p-3">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground/60 text-[10px] font-bold tracking-wider uppercase">
+                <span className="text-muted-foreground/60 text-[10px] font-medium">
                   Reaction
                 </span>
               </div>
@@ -185,7 +185,7 @@ export function WatchlistStatusMenu({
                       key={option.value}
                       type="button"
                       className={cn(
-                        "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border px-1 py-2 transition-[color,background-color,border-color] duration-150",
+                        "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-1 py-2 transition-[color,background-color,border-color] duration-150",
                         isSelected
                           ? "bg-primary/10 border-primary/40 text-primary"
                           : "bg-secondary/20 border-border/30 hover:border-border/60 hover:bg-secondary/50 text-muted-foreground hover:text-foreground",
@@ -263,7 +263,7 @@ function StatusButton({
     <button
       type="button"
       className={cn(
-        "border-border flex w-full cursor-pointer items-center gap-2.5 rounded-xl border p-3 text-left text-xs font-semibold transition-[color,background-color,border-color] duration-200",
+        "border-border flex w-full cursor-pointer items-center gap-2.5 rounded-lg border p-3 text-left text-xs font-semibold transition-[color,background-color,border-color] duration-200",
         active
           ? "bg-primary/10 text-primary border-primary/30 font-bold"
           : "hover:bg-secondary/40 text-muted-foreground hover:text-foreground",
@@ -387,7 +387,7 @@ function AddToListDialog({
                           </div>
                           {list.color && (
                             <span
-                              className="size-2.5 shrink-0 rounded-full shadow-sm"
+                              className="size-2.5 shrink-0 rounded-full"
                               style={{ backgroundColor: list.color }}
                             />
                           )}

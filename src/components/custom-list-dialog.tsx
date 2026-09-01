@@ -45,7 +45,7 @@ function SegmentedButton({
       className={cn(
         "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-[10.5px] transition-[color,background-color,border-color,box-shadow]",
         active
-          ? "bg-card text-foreground border-border font-semibold shadow-sm dark:shadow-none"
+          ? "bg-card text-foreground border-border font-semibold"
           : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border-transparent bg-transparent",
       )}
       aria-pressed={active}
@@ -274,7 +274,7 @@ export function CustomListDialog({
                     {isSelected && (
                       <Check
                         size={12}
-                        className="absolute inset-0 m-auto text-white drop-shadow-sm"
+                        className="absolute inset-0 m-auto text-white"
                         strokeWidth={3}
                       />
                     )}

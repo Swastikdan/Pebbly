@@ -95,7 +95,7 @@ function HistoryAccordionItem({
     <AccordionItem
       value={entry.id}
       className={cn(
-        "border-border bg-card overflow-hidden rounded-2xl border shadow-none transition-colors",
+        "border-border bg-card overflow-hidden rounded-lg border transition-colors",
         isActive && "ring-border ring-1",
       )}
     >

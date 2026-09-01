@@ -86,10 +86,10 @@ export const MediaVideoImageContainer = (props: {
           renderTileOverlay={(video) => (
             <>
               <div className="absolute top-3 left-3 flex max-w-[80%] items-center gap-1.5">
-                <span className="text-foreground bg-background/90 dark:bg-foreground/90 dark:text-background truncate rounded-lg px-2 py-0.5 text-sm backdrop-blur-sm">
+                <span className="text-foreground bg-background/90 dark:bg-foreground/90 dark:text-background truncate rounded-lg px-2 py-0.5 text-sm">
                   {video.name}
                 </span>
-                <span className="shrink-0 rounded-md bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-white/90 uppercase backdrop-blur-sm">
+                <span className="shrink-0 rounded-md bg-black/40 px-1.5 py-0.5 text-[10px] font-medium text-white/90">
                   {video.type}
                 </span>
               </div>
@@ -99,7 +99,7 @@ export const MediaVideoImageContainer = (props: {
           getLightboxTitle={(video) => video.name}
           prevLabel="Previous video"
           nextLabel="Next video"
-          lightboxOverlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
+          lightboxOverlayClassName="bg-white/40 dark:bg-black/70"
           lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]"
           renderLightboxBody={(video) => (
             <div className="bg-foreground/10 size-full overflow-hidden rounded-xl">
@@ -124,8 +124,8 @@ export const MediaVideoImageContainer = (props: {
             getLightboxTitle={(image) => `${image.file_path} Backdrop Image`}
             prevLabel="Previous backdrop"
             nextLabel="Next backdrop"
-            lightboxOverlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
-            lightboxContentClassName="bg-secondary aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-2xl border-0 p-0 ring-0 sm:max-w-[90vw]"
+            lightboxOverlayClassName="bg-white/10 dark:bg-black/70"
+            lightboxContentClassName="bg-secondary aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:max-w-[90vw]"
             renderLightboxBody={(image) => (
               <div className="bg-secondary size-full overflow-hidden rounded-2xl">
                 <Image
@@ -151,8 +151,8 @@ export const MediaVideoImageContainer = (props: {
             getLightboxTitle={(image) => `${image.file_path} Poster Image`}
             prevLabel="Previous poster"
             nextLabel="Next poster"
-            lightboxOverlayClassName="bg-white/40 backdrop-blur-lg dark:bg-black/70"
-            lightboxContentClassName="bg-secondary aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] gap-0 overflow-hidden rounded-2xl border-0 p-0 ring-0 sm:h-full sm:w-auto"
+            lightboxOverlayClassName="bg-white/40 dark:bg-black/70"
+            lightboxContentClassName="bg-secondary aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:h-full sm:w-auto"
             renderLightboxBody={(image) => (
               <div className="bg-secondary size-full overflow-hidden rounded-2xl">
                 <Image

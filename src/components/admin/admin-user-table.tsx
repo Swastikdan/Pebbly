@@ -72,13 +72,13 @@ export function AdminUserTable() {
             placeholder="Search users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 rounded-xl pl-9 text-sm"
+            className="h-9 rounded-md pl-9 text-sm"
           />
         </div>
         <div
           role="tablist"
           aria-label="User filter tabs"
-          className="bg-muted/40 grid w-full shrink-0 grid-cols-3 gap-1 rounded-xl border p-1 sm:flex sm:w-auto"
+          className="bg-muted/40 grid w-full shrink-0 grid-cols-3 gap-1 rounded-md border p-1 sm:flex sm:w-auto"
         >
           {filterTabs.map((ft) => (
             <button
@@ -89,7 +89,7 @@ export function AdminUserTable() {
               onClick={() => setFilterTab(ft.id)}
               className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
                 filterTab === ft.id
-                  ? "bg-background text-foreground shadow-sm"
+                  ? "bg-background text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -108,21 +108,21 @@ export function AdminUserTable() {
         </div>
       </div>
 
-      <div className="hidden overflow-hidden rounded-xl border md:block">
+      <div className="hidden overflow-hidden rounded-lg border md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted/40 border-b">
-                <th className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase">
+                <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
                   User
                 </th>
-                <th className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase">
+                <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
                   Status
                 </th>
-                <th className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold tracking-wider uppercase">
+                <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
                   Roles
                 </th>
-                <th className="text-muted-foreground px-4 py-3 text-right text-xs font-semibold tracking-wider uppercase">
+                <th className="text-muted-foreground px-4 py-3 text-right text-xs font-medium">
                   Actions
                 </th>
               </tr>
@@ -161,7 +161,7 @@ export function AdminUserTable() {
 
       <div className="space-y-3 md:hidden">
         {filteredUsers.length === 0 ? (
-          <div className="text-muted-foreground rounded-xl border py-10 text-center text-sm">
+          <div className="text-muted-foreground rounded-lg border py-10 text-center text-sm">
             No users found
           </div>
         ) : (

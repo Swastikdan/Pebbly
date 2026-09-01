@@ -129,7 +129,7 @@ function MovieCollectionPage() {
                 </span>
               </Badge>
             )}
-            <span className="text-sm uppercase">{original_language}</span>
+            <span className="text-sm">{original_language}</span>
             {` • `}
             <span className="text-sm">{part_count} Movies</span>
           </div>

@@ -87,7 +87,7 @@ export function MediaPosterTrailerContainer(props: {
           getLightboxTitle={(video) => video.name}
           prevLabel="Previous trailer"
           nextLabel="Next trailer"
-          lightboxOverlayClassName="bg-black/80 backdrop-blur-md"
+          lightboxOverlayClassName="bg-black/80"
           lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]"
           renderLightboxBody={(video) => (
             <div className="bg-foreground/10 relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">

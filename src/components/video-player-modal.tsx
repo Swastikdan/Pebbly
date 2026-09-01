@@ -272,7 +272,7 @@ export function VideoPlayerModal({
             />
           }
         >
-          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 shadow-xl backdrop-blur-sm transition-[color,background-color,border-color,transform,opacity] duration-200 group-hover/play:scale-110 group-hover/play:bg-black/80">
+          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-200 group-hover/play:scale-110 group-hover/play:bg-black/80">
             <Play className="size-6 fill-white text-white" />
           </div>
         </DialogTrigger>
@@ -367,7 +367,7 @@ export function VideoPlayerModal({
             aria-label="Close"
             onClick={() => handleOpenChange(false)}
             className={cn(
-              "pressable absolute z-[70] flex items-center justify-center rounded-lg bg-white p-3.5 text-black shadow-xl transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-95 sm:p-3",
+              "pressable absolute z-[70] flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-95 sm:p-3",
               "top-[max(0.75rem,_env(safe-area-inset-top))] right-[max(0.75rem,_env(safe-area-inset-right))]",
               controlsVisible ? "opacity-100" : "pointer-events-none opacity-0",
             )}
@@ -379,7 +379,7 @@ export function VideoPlayerModal({
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             onClick={handleFullscreen}
             className={cn(
-              "pressable absolute z-[70] flex items-center justify-center rounded-lg bg-white p-3.5 text-black shadow-xl transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-95 sm:p-3",
+              "pressable absolute z-[70] flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-95 sm:p-3",
               "top-[max(0.75rem,_env(safe-area-inset-top))] right-[calc(max(0.75rem,_env(safe-area-inset-right))+4rem)]",
               controlsVisible ? "opacity-100" : "pointer-events-none opacity-0",
             )}

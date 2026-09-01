@@ -90,7 +90,7 @@ function TvSeasonsPage() {
             to={`/tv/${id}/${urltitle}/season/${season.season_number}`}
             className="pressable-small block"
           >
-            <div className="border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 hover: flex items-start gap-5 rounded-3xl border-2 p-3 transition-[color,background-color,border-color,box-shadow] duration-150 md:p-5">
+            <div className="border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 relative flex items-start gap-5 rounded-lg border p-3 transition-[color,background-color,border-color] duration-150 md:p-5">
               <div className="min-w-[7rem] md:min-w-[9rem]">
                 {/* Season posters render at ~144px wide, so w500 (SD) is plenty;
 							    w780 (HD) decodes to ~3.6 MB per poster for no visible gain. */}

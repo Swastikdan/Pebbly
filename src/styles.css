@@ -1,11 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
-@import "@fontsource-variable/bricolage-grotesque";
 
-/* Fallback font metrics to reduce CLS from font swap.
-   96% size-adjust keeps the fallback close to Geist/Bricolage metrics
-   so the swap doesn't reflow line breaks. */
+/* Fallback font metrics to reduce CLS from font swap. */
 @font-face {
   font-family: "Geist Fallback";
   src: local("Arial");
@@ -15,14 +12,6 @@
   line-gap-override: 0%;
 }
 
-@font-face {
-  font-family: "Bricolage Fallback";
-  src: local("Arial");
-  size-adjust: 100%;
-  ascent-override: 90%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
 @custom-variant dark (&:where(.dark, .dark *));
 /* Hover styles only apply where real pointers exist; touch devices trigger :hover on tap, which leaves buttons stuck in their hover state. */
 @custom-variant hover {
@@ -36,9 +25,8 @@
   --font-sans:
     "Geist Variable", "Geist Fallback", -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, sans-serif;
-  --font-display:
-    "Bricolage Grotesque Variable", "Bricolage Fallback", var(--font-sans);
-  --font-heading: var(--font-display);
+  --font-display: var(--font-sans);
+  --font-heading: var(--font-sans);
   --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-emphatic: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
@@ -273,23 +261,15 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-display);
-    font-weight: 700;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
     font-optical-sizing: auto;
     font-style: normal;
-    background-image: radial-gradient(
-      circle 800px at 50% -250px,
-      color-mix(in oklab, var(--primary) 6.5%, transparent) 0%,
-      color-mix(in oklab, var(--primary) 4.5%, transparent) 25%,
-      color-mix(in oklab, var(--primary) 2.5%, transparent) 50%,
-      color-mix(in oklab, var(--primary) 0.8%, transparent) 75%,
-      transparent 100%
-    );
-    background-repeat: no-repeat;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
@@ -394,25 +374,25 @@
 }
 @layer utilities {
   .text-display {
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 1.5rem + 2.5vw, 4.5rem);
-    line-height: clamp(2.25rem, 1.8rem + 2.25vw, 3.625rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-family: var(--font-sans);
+    font-size: clamp(2rem, 1.5rem + 2.5vw, 4rem);
+    line-height: clamp(2.25rem, 1.8rem + 2.25vw, 3.5rem);
+    font-weight: 600;
+    letter-spacing: -0.04em;
   }
   .text-h1 {
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: 2rem;
     line-height: 2.375rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-weight: 600;
+    letter-spacing: -0.03em;
   }
   .text-h2 {
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
     font-size: 1.5rem;
     line-height: 1.875rem;
-    font-weight: 650;
-    letter-spacing: -0.015em;
+    font-weight: 600;
+    letter-spacing: -0.025em;
   }
   .text-body {
     font-family: var(--font-sans);
@@ -428,11 +408,10 @@
   }
   .text-label {
     font-family: var(--font-sans);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     line-height: 1rem;
-    font-weight: 650;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-weight: 550;
+    letter-spacing: 0;
   }
   .text-meta {
     font-family: var(--font-sans);
@@ -449,38 +428,23 @@
   }
   .surface-raised {
     background: var(--surface-2);
-    border: 1px solid color-mix(in oklab, var(--foreground) 9%, transparent);
-    box-shadow:
-      0 1px 2px rgb(0 0 0 / 6%),
-      0 8px 24px rgb(0 0 0 / 5%);
+    border: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
+    box-shadow: none;
   }
   .dark .surface-raised {
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, white 6%, transparent),
-      0 1px 2px rgb(0 0 0 / 14%),
-      0 8px 24px rgb(0 0 0 / 10%);
+    box-shadow: none;
   }
   .interactive-raised {
     transition:
-      transform 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      border-color 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      box-shadow 150ms cubic-bezier(0.23, 1, 0.32, 1);
+      border-color 150ms ease,
+      opacity 150ms ease;
   }
   @media (hover: hover) and (pointer: fine) {
     .interactive-raised:hover {
-      transform: translateY(-2px);
-      box-shadow:
-        0 3px 7px rgb(0 0 0 / 8%),
-        0 16px 36px rgb(0 0 0 / 8%);
-    }
-    .dark .interactive-raised:hover {
-      box-shadow:
-        inset 0 1px 0 color-mix(in oklab, white 8%, transparent),
-        0 3px 7px rgb(0 0 0 / 18%),
-        0 16px 36px rgb(0 0 0 / 14%);
+      border-color: color-mix(in oklab, var(--foreground) 22%, transparent);
     }
     .interactive-raised:active {
-      transform: translateY(0) scale(0.985);
+      opacity: 0.8;
     }
     .pressable:active {
       transform: scale(0.98);
@@ -635,12 +599,9 @@
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   background: var(--background);
-  box-shadow: 0 -4px 24px rgb(0 0 0 / 10%);
+  border-top: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
   transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
-}
-.dark .mobile-bottom-nav {
-  box-shadow: 0 -4px 24px rgb(0 0 0 / 40%);
 }
 @media (min-width: 768px) {
   .mobile-bottom-nav {
@@ -683,9 +644,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3.5rem;
-  height: 2.125rem;
-  border-radius: 1rem;
+  width: 2.75rem;
+  height: 2rem;
+  border-radius: 0.5rem;
   transition:
     background-color 200ms ease,
     transform 120ms ease-out;
@@ -696,8 +657,8 @@
 .mobile-bottom-nav-tab-label {
   font-size: 0.6875rem;
   line-height: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 @media (max-width: 767px) {
   .mobile-nav-spacer {

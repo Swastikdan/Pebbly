@@ -86,10 +86,10 @@ export function DailyPickButton() {
         <span>What to Watch Today</span>
       </DialogTrigger>
       <DialogPopup
-        className="bg-background/95 max-w-[92vw] overflow-hidden rounded-2xl border-white/10 p-0 shadow-2xl backdrop-blur-xl sm:max-w-lg"
+        className="bg-background/95 border-border max-w-[92vw] overflow-hidden rounded-lg border p-0 shadow-none sm:max-w-lg"
         closeProps={{
           className:
-            "top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white dark:bg-black/60 dark:hover:bg-black/80 dark:text-white border border-white/20 backdrop-blur-md z-30",
+            "border-border bg-background text-foreground hover:bg-muted top-3 right-3 z-30 rounded-md border p-2",
         }}
       >
         {pick.isDataLoading ? (
@@ -118,7 +118,7 @@ export function DailyPickButton() {
 
               <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 pr-12">
                 {pick.selectedItem.isCurrentlyWatching ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-green-500/90 px-2.5 py-0.5 text-[11px] font-bold text-black shadow-md backdrop-blur-md">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-green-500/90 px-2.5 py-0.5 text-[11px] font-medium text-black">
                     <Eye className="size-3" />
                     Watching
                     {pick.selectedItem.watchProgress
@@ -126,12 +126,12 @@ export function DailyPickButton() {
                       : ""}
                   </span>
                 ) : pick.selectedItem.isFromWatchlist ? (
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md backdrop-blur-md">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-medium text-white">
                     <BookMarkIcon className="size-3 fill-white" />
                     From Your Watchlist
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-lg border border-blue-500/25 bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-blue-400 backdrop-blur-md">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-blue-500/25 bg-black/75 px-2.5 py-0.5 text-[11px] font-medium text-blue-400">
                     <SparklesIcon className="size-3 fill-blue-400" />
                     Today's Pick
                   </span>
@@ -145,7 +145,7 @@ export function DailyPickButton() {
                   <Link
                     to={pick.targetPath}
                     onClick={() => setIsOpen(false)}
-                    className="border-background/60 bg-muted group/poster relative aspect-[2/3] w-20 shrink-0 overflow-hidden rounded-xl border-2 shadow-xl transition-opacity sm:w-24 [@media(hover:hover)]:hover:opacity-90"
+                    className="border-background/60 bg-muted group/poster relative aspect-[2/3] w-20 shrink-0 overflow-hidden rounded-lg border-2 transition-opacity sm:w-24 [@media(hover:hover)]:hover:opacity-90"
                     title={`View ${pick.title}`}
                   >
                     <Image
@@ -172,7 +172,7 @@ export function DailyPickButton() {
                   <div className="text-meta text-muted-foreground flex flex-wrap items-center gap-1.5">
                     {pick.year && <span>{pick.year}</span>}
                     {pick.year && <span>•</span>}
-                    <span className="text-[11px] font-semibold uppercase">
+                    <span className="text-[11px] font-medium">
                       {pick.mediaType === "tv" ? "TV Series" : "Movie"}
                     </span>
                     {pick.rating > 0 && (
@@ -204,7 +204,7 @@ export function DailyPickButton() {
                         className="flex-1"
                       >
                         {" "}
-                        <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-xl text-xs font-semibold shadow-md sm:h-11 sm:text-sm">
+                        <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-md text-xs font-medium sm:h-11 sm:text-sm">
                           ▶ Watch Now
                         </Button>
                       </Link>

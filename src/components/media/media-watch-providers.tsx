@@ -267,7 +267,7 @@ export const MediaWatchProviders = (props: {
           <div className="flex flex-col gap-4">
             {rows.map((row) => (
               <div key={row.label} className="flex items-center gap-3 sm:gap-4">
-                <span className="text-muted-foreground w-12 shrink-0 text-xs font-medium tracking-wide uppercase sm:w-14 sm:text-sm">
+                <span className="text-muted-foreground w-12 shrink-0 text-xs font-medium sm:w-14 sm:text-sm">
                   {row.label}
                 </span>
                 <div className="flex flex-wrap items-center gap-2">

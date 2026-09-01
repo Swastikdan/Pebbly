@@ -185,10 +185,10 @@ const MobileBottomNav = () => {
         <SheetPopup
           side="bottom"
           viewportClassName="pt-0"
-          className="bg-background/95 z-50 flex h-dvh flex-col p-0 outline-hidden backdrop-blur-2xl"
+          className="bg-background z-50 flex h-dvh flex-col p-0 outline-hidden"
           closeProps={{
             className:
-              "top-3 right-3 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 dark:bg-black/60 dark:text-white dark:hover:bg-black/80 border border-white/20 backdrop-blur-md",
+              "border-border bg-background text-foreground hover:bg-muted top-3 right-3 rounded-md border p-2",
           }}
         >
           <SheetHeader className="border-border/40 shrink-0 border-b px-5 pt-1 pb-3 text-left">
@@ -202,7 +202,7 @@ const MobileBottomNav = () => {
           </SheetHeader>
 
           <div className="border-border/40 flex shrink-0 items-center justify-between border-b px-5 py-1.5">
-            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            <span className="text-muted-foreground text-xs font-medium">
               Theme
             </span>
             <FooterThemeSelect />
@@ -211,7 +211,7 @@ const MobileBottomNav = () => {
           <div className="min-h-0 flex-1 scrollbar-none space-y-5 overflow-y-auto px-4 py-4 pb-10">
             {(isAdmin || hasAiRecommendations) && (
               <div className="space-y-2">
-                <div className="text-muted-foreground px-1 text-xs font-semibold tracking-wider uppercase">
+                <div className="text-muted-foreground px-1 text-xs font-medium">
                   Featured
                 </div>
                 <div className="grid grid-cols-1 gap-2">

@@ -80,7 +80,7 @@ export function RecommendationFilters({
   ];
 
   return (
-    <div className="border-border bg-card rounded-[calc(var(--radius-2xl)+4px)] border p-3">
+    <div className="border-border bg-card rounded-lg border p-3">
       <div className="space-y-3">
         <div className="flex flex-col flex-wrap items-start gap-2 sm:flex-row sm:items-center">
           <Select
@@ -97,7 +97,7 @@ export function RecommendationFilters({
               }
             }}
           >
-            <SelectTrigger className="text-foreground bg-secondary/20 border-border hover:bg-secondary/40 h-10 w-auto rounded-xl border px-4 text-xs font-semibold shadow-none transition-colors">
+            <SelectTrigger className="text-foreground bg-secondary/20 border-border hover:bg-secondary/40 h-10 w-auto rounded-md border px-4 text-xs font-semibold shadow-none transition-colors">
               <SelectValue placeholder="From Watchlist" />
             </SelectTrigger>
             <SelectPopup
@@ -123,7 +123,7 @@ export function RecommendationFilters({
           </Select>
 
           <div className="flex w-full items-center gap-2 sm:w-auto">
-            <div className="bg-secondary/20 border-border flex h-10 flex-1 items-center gap-1 rounded-xl border p-1 sm:flex-none">
+            <div className="bg-secondary/20 border-border flex h-10 flex-1 items-center gap-1 rounded-md border p-1 sm:flex-none">
               <Button
                 className="h-8 flex-1 rounded-lg px-4 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 sm:flex-none"
                 variant={!mediaType ? "default" : "ghost"}
@@ -154,7 +154,7 @@ export function RecommendationFilters({
             <Button
               type="button"
               variant={showAdvancedOptions ? "outline" : "ghost"}
-              className="border-border bg-card/40 hover:bg-secondary/40 h-10 w-10 shrink-0 justify-center gap-1.5 rounded-xl border text-xs shadow-none transition-colors"
+              className="border-border bg-card/40 hover:bg-secondary/40 h-10 w-10 shrink-0 justify-center gap-1.5 rounded-md border text-xs shadow-none transition-colors"
               onClick={() => setShowAdvancedOptions((prev) => !prev)}
             >
               <SlidersHorizontal className="size-3.5" />
@@ -172,7 +172,7 @@ export function RecommendationFilters({
                 (genMode === "genre" && selectedGenres.length === 0)
               }
               variant="secondary"
-              className="border-border h-10 w-full gap-2 rounded-xl border px-5 shadow-none transition-[color,background-color,border-color,transform] duration-150 hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
+              className="border-border h-10 w-full gap-2 rounded-md border px-5 shadow-none transition-[color,background-color,border-color,transform] duration-150 hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
             >
               {isGenerating ? (
                 <RefreshCw className="size-4 animate-spin" />

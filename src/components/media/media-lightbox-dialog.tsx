@@ -15,7 +15,7 @@ const NAV_BUTTON_CLASS =
 export function PlayOverlay() {
   return (
     <div className="absolute inset-0 flex items-center justify-center">
-      <div className="flex size-12 items-center justify-center rounded-full bg-black/60 shadow-xl backdrop-blur-sm transition-[color,background-color,transform] duration-200 [@media(hover:hover)]:group-hover:scale-110">
+      <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-200 [@media(hover:hover)]:group-hover:scale-110">
         <Play className="size-6 fill-white text-white" />
       </div>
     </div>
@@ -96,8 +96,8 @@ export function MediaLightboxDialog({
   hasNext,
   onPrev,
   onNext,
-  overlayClassName = "bg-white/40 backdrop-blur-lg dark:bg-black/70",
-  contentClassName = "aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-2xl border-0 bg-transparent p-0 ring-0 overflow-hidden",
+  overlayClassName = "bg-white/40 dark:bg-black/70",
+  contentClassName = "aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-lg border-0 bg-transparent p-0 ring-0 overflow-hidden",
   prevLabel = "Previous item",
   nextLabel = "Next item",
   children,

@@ -98,7 +98,7 @@ export function WatchlistFilters({
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search saved titles"
             aria-label="Search watchlist"
-            className="bg-card h-9 rounded-xl pr-10 pl-9 text-sm"
+            className="bg-card h-9 rounded-md pr-10 pl-9 text-sm"
           />
           {searchQuery && (
             <Button
@@ -121,7 +121,7 @@ export function WatchlistFilters({
           }
           size="sm"
           className={cn(
-            "border-border/40 dark:border-border/20 h-9 shrink-0 justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold",
+            "border-border/40 dark:border-border/20 h-9 shrink-0 justify-center gap-1.5 rounded-md border px-3 text-xs font-semibold",
             filtersOpen || activeSecondaryCount > 0
               ? "bg-foreground text-background hover:bg-foreground/90"
               : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
@@ -151,7 +151,7 @@ export function WatchlistFilters({
                   className={cn(
                     "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
                     isActive
-                      ? "bg-foreground text-background hover:bg-foreground shadow-xs"
+                      ? "bg-foreground text-background hover:bg-foreground"
                       : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
                   )}
                 >
@@ -175,7 +175,7 @@ export function WatchlistFilters({
                 className={cn(
                   "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
                   activeFilter === "dropped"
-                    ? "bg-foreground text-background hover:bg-foreground shadow-xs"
+                    ? "bg-foreground text-background hover:bg-foreground"
                     : "text-muted-foreground/60 hover:bg-secondary/80 hover:text-foreground",
                 )}
               >
@@ -207,11 +207,11 @@ export function WatchlistFilters({
         >
           <SelectTrigger
             size="sm"
-            className="bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-xl border-none px-3 text-xs"
+            className="bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-md border-none px-3 text-xs"
           >
             <SelectValue placeholder="Type" />
           </SelectTrigger>
-          <SelectPopup className="rounded-xl">
+          <SelectPopup className="rounded-md">
             {MEDIA_TYPE_FILTER_ITEMS.map((item) => (
               <SelectItem key={item.value} value={item.value}>
                 {item.label}
@@ -229,11 +229,11 @@ export function WatchlistFilters({
         >
           <SelectTrigger
             size="sm"
-            className="bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-xl border-none px-3 text-xs"
+            className="bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-md border-none px-3 text-xs"
           >
             <SelectValue placeholder="Mood" />
           </SelectTrigger>
-          <SelectPopup className="rounded-xl">
+          <SelectPopup className="rounded-md">
             {REACTION_FILTER_ITEMS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
@@ -249,11 +249,11 @@ export function WatchlistFilters({
         >
           <SelectTrigger
             size="sm"
-            className="bg-secondary/50 w-auto min-w-[120px] gap-1.5 rounded-xl border-none px-3 text-xs"
+            className="bg-secondary/50 w-auto min-w-[120px] gap-1.5 rounded-md border-none px-3 text-xs"
           >
             <SelectValue />
           </SelectTrigger>
-          <SelectPopup className="rounded-xl">
+          <SelectPopup className="rounded-md">
             {SORT_ITEMS.map((item) => (
               <SelectItem key={item.value} value={item.value}>
                 {item.label}

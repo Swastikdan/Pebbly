@@ -349,7 +349,7 @@ export function SearchPage() {
             </SelectPopup>
           </Select>
 
-          <span className="text-muted-foreground ml-auto text-[10px] tracking-wider">
+          <span className="text-muted-foreground ml-auto text-[10px]">
             {data?.total_results ?? 0} results
           </span>
         </div>

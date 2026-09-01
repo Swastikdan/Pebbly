@@ -35,7 +35,7 @@ function RoleToggleButtons({
             }
             className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
               isActive
-                ? "bg-secondary text-foreground border-border shadow-xs"
+                ? "bg-secondary text-foreground border-border"
                 : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
             }`}
           >
@@ -213,10 +213,10 @@ export function AdminUserRow({
 
   return (
     <div
-      className={`rounded-2xl border p-4 transition-colors ${
+      className={`rounded-lg border p-4 transition-colors ${
         isBanned
           ? "bg-destructive/5 border-destructive/20"
-          : "bg-card/90 border-border/60 shadow-xs"
+          : "bg-card border-border"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -240,7 +240,7 @@ export function AdminUserRow({
 
       <div className="border-border/40 mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-muted-foreground mr-0.5 text-[11px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground mr-0.5 text-[11px] font-medium">
             Roles:
           </span>
           {ROLE_CONFIGS.map((config) => {
@@ -251,9 +251,9 @@ export function AdminUserRow({
                 type="button"
                 onClick={() => onToggleRole(config.value)}
                 disabled={isBanned || isRolePending}
-                className={`flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
+                className={`flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-md border px-3.5 py-2 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
                   isActive
-                    ? "bg-secondary text-foreground border-border/80 shadow-xs"
+                    ? "bg-secondary text-foreground border-border/80"
                     : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
                 }`}
               >
@@ -268,7 +268,7 @@ export function AdminUserRow({
           <Button
             variant={isBanned ? "outline" : "destructive"}
             size="sm"
-            className={`ml-auto h-9 min-h-[36px] rounded-xl px-3.5 text-xs font-semibold ${
+            className={`ml-auto h-9 min-h-[36px] rounded-md px-3.5 text-xs font-semibold ${
               isBanned
                 ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
                 : ""

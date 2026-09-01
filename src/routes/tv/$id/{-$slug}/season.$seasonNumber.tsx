@@ -117,7 +117,7 @@ function TvSeasonDetailPage() {
             key={s.id}
             // @ts-expect-error - correct link
             to={`/tv/${id}/${urltitle}/season/${s.season_number}`}
-            className={`pressable-small rounded-xl px-4 py-2 text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow] duration-150 ${
+            className={`pressable-small rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color] duration-150 ${
               s.season_number === seasonNumber
                 ? "bg-foreground text-background"
                 : "bg-secondary/50 text-foreground hover:bg-secondary"
@@ -132,7 +132,7 @@ function TvSeasonDetailPage() {
         {episodes.map((episode, index) => (
           <div
             key={episode.id}
-            className="group border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 hover: relative overflow-hidden rounded-2xl border-2 transition-[color,background-color,border-color,box-shadow] duration-150"
+            className="group border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 relative overflow-hidden rounded-lg border transition-[color,background-color,border-color] duration-150"
           >
             <div className="flex flex-col gap-4 p-3 sm:flex-row sm:items-start md:p-4">
               <div className="relative shrink-0">
@@ -165,7 +165,7 @@ function TvSeasonDetailPage() {
               <div className="flex flex-1 flex-col gap-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col gap-1">
-                    <span className="text-muted-foreground text-xs font-medium uppercase">
+                    <span className="text-muted-foreground text-xs font-medium">
                       Episode {episode.episode_number}
                     </span>
                     <h3 className="line-clamp-1 text-lg font-bold md:text-xl">

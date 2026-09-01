@@ -4,8 +4,7 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 
 const imgClass = "size-full object-cover transition-transform duration-500";
-const frameClass =
-  "overflow-hidden rounded-xl shadow-sm bg-border/20 ring-1 ring-inset ring-black/5 dark:ring-white/10";
+const frameClass = "overflow-hidden rounded-lg bg-border/20";
 
 export function ListCollage({
   previews,
@@ -24,7 +23,7 @@ export function ListCollage({
         className="flex size-full items-center justify-center rounded-xl ring-1 ring-black/5 transition-colors duration-300 ring-inset dark:ring-white/10"
         style={{ background: fallbackBg }}
       >
-        <span className="bg-background/70 flex size-12 items-center justify-center rounded-2xl shadow-sm backdrop-blur-sm">
+        <span className="bg-background/80 border-border flex size-11 items-center justify-center rounded-lg border">
           <ListPlus
             size={22}
             className="text-muted-foreground/60 transition-transform duration-300 group-hover/card:scale-110"

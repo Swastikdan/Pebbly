@@ -116,7 +116,7 @@ export function InlineEpisodeBrowser({
                       {s.episode_count} ep{s.episode_count !== 1 ? "s" : ""}
                     </Badge>
                     {s.air_date && (
-                      <span className="text-muted-foreground text-[10px] tracking-wider">
+                      <span className="text-muted-foreground text-[10px] font-medium">
                         {new Date(s.air_date).getFullYear()}
                       </span>
                     )}
@@ -308,7 +308,7 @@ function EpisodeCard({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-muted-foreground text-[10px] tracking-widest uppercase">
+            <span className="text-muted-foreground text-[10px] font-medium">
               E{String(episode.episode_number).padStart(2, "0")}
             </span>
             <h3 className="truncate text-sm font-bold md:text-base">
@@ -393,7 +393,7 @@ function EpisodeCard({
             </Badge>
           )}
           {episode.air_date && (
-            <span className="text-muted-foreground text-[10px] tracking-wider">
+            <span className="text-muted-foreground text-[10px] font-medium">
               {new Date(episode.air_date).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
@@ -402,7 +402,7 @@ function EpisodeCard({
             </span>
           )}
           {episode.runtime && (
-            <span className="text-muted-foreground text-[10px] tracking-wider">
+            <span className="text-muted-foreground text-[10px] font-medium">
               {episode.runtime}m
             </span>
           )}

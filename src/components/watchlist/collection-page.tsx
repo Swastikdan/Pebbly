@@ -132,13 +132,13 @@ export function CollectionPage({ listId }: { listId: string }) {
             {isPublic ? <Globe size={14} /> : <Lock size={14} />}
           </span>
           {isPebblyPicks && (
-            <span className="bg-foreground text-background inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+            <span className="bg-foreground text-background inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium">
               <Sparkles size={10} />
               AI Curated
             </span>
           )}
           {isOrdered && (
-            <span className="bg-secondary text-secondary-foreground inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+            <span className="bg-secondary text-secondary-foreground inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium">
               <ListOrdered size={10} />
               Ranked
             </span>
@@ -219,7 +219,7 @@ export function CollectionPage({ listId }: { listId: string }) {
                   className={cn(
                     "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
                     isActive
-                      ? "bg-foreground text-background hover:bg-foreground shadow-xs"
+                      ? "bg-foreground text-background hover:bg-foreground"
                       : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
                   )}
                 >

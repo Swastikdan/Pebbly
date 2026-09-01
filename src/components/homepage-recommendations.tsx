@@ -63,7 +63,7 @@ const HomepageRecommendationCard = memo(
             variant="secondary"
             size="icon"
             className={cn(
-              "pressable h-8 w-8 cursor-pointer rounded-lg border shadow-md transition-[color,background-color,border-color,transform] duration-150 active:scale-95 [@media(hover:hover)]:hover:scale-105",
+              "pressable h-8 w-8 cursor-pointer rounded-md border transition-[color,background-color,border-color,transform] duration-150 active:scale-95 [@media(hover:hover)]:hover:scale-105",
               isLiked
                 ? "border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-700"
                 : "border-neutral-700 bg-neutral-900/90 text-white hover:bg-neutral-800",
@@ -95,7 +95,7 @@ const HomepageRecommendationCard = memo(
           <Button
             variant="secondary"
             size="icon"
-            className="pressable h-8 w-8 cursor-pointer rounded-lg border border-neutral-700 bg-neutral-900/90 text-white shadow-md transition-[color,background-color,border-color,transform] duration-150 hover:border-red-600 hover:bg-red-900/90 hover:text-red-200 active:scale-95 [@media(hover:hover)]:hover:scale-105"
+            className="pressable h-8 w-8 cursor-pointer rounded-md border border-neutral-700 bg-neutral-900/90 text-white transition-[color,background-color,border-color,transform] duration-150 hover:border-red-600 hover:bg-red-900/90 hover:text-red-200 active:scale-95 [@media(hover:hover)]:hover:scale-105"
             onClick={(event) => {
               event.stopPropagation();
               event.preventDefault();
@@ -160,7 +160,7 @@ export function HomepageRecommendations() {
 
   if (hasNoWatchHistory) {
     return (
-      <section className="border-border/40 bg-card/40 w-full rounded-xl border px-4 py-4 text-left">
+      <section className="border-border/40 bg-card/40 w-full rounded-lg border px-4 py-4 text-left">
         <div className="text-muted-foreground mb-2 flex items-center gap-2">
           <Sparkles size={16} className="text-primary" />
           <h3 className="text-sm font-semibold">

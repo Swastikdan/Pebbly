@@ -108,25 +108,25 @@ export function CustomListMediaCard({
           ? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
           : `/${item.mediaType}/${item.tmdbId}`
       }
-      className="rounded-xl"
+      className="rounded-lg"
       poster={
         <>
           {hasMetadata && imageUrl ? (
             <Image
               alt={item.title ?? ""}
-              className="bg-muted h-[160px] w-[107px] rounded-xl object-cover sm:h-[140px] sm:w-[93px]"
+              className="bg-muted h-[160px] w-[107px] rounded-lg object-cover sm:h-[140px] sm:w-[93px]"
               height={210}
               src={imageUrl}
               width={140}
               priority={priority}
             />
           ) : (
-            <div className="bg-secondary text-muted-foreground flex h-[160px] w-[107px] shrink-0 animate-pulse items-center justify-center rounded-xl text-xs font-semibold uppercase sm:h-[140px] sm:w-[93px]">
+            <div className="bg-secondary text-muted-foreground flex h-[160px] w-[107px] shrink-0 animate-pulse items-center justify-center rounded-lg text-xs font-medium sm:h-[140px] sm:w-[93px]">
               {item.mediaType === "movie" ? "MOV" : "TV"}
             </div>
           )}
           {rank !== undefined && (
-            <span className="bg-foreground text-background ring-card absolute -top-1.5 -left-1.5 flex size-6 items-center justify-center rounded-lg text-[11px] font-extrabold tabular-nums shadow-md ring-2">
+            <span className="bg-foreground text-background border-card absolute -top-1.5 -left-1.5 flex size-6 items-center justify-center rounded-md border-2 text-[11px] font-bold tabular-nums">
               {rank}
             </span>
           )}
@@ -194,7 +194,7 @@ export function CustomListMediaCard({
           year={year}
           rating={item.rating}
           className="text-muted-foreground/90 dark:text-muted-foreground/75 text-[11px]"
-          labelClassName="font-semibold tracking-wide uppercase"
+          labelClassName="font-medium"
         />
       }
       overview={item.overview}

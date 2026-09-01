@@ -104,14 +104,15 @@ function HomePage() {
   return (
     <section className="flex flex-col items-center justify-center">
       <div className="relative w-full overflow-hidden">
-        <div className="mx-auto max-w-5xl px-4 py-8 pt-6 pb-6 text-center sm:px-6 md:pt-12 md:pb-8 lg:px-8">
-          <div className="animate-fade-in-up py-4">
+        <div className="mx-auto max-w-4xl px-4 py-10 text-center sm:px-6 md:py-16 lg:px-8">
+          <div className="animate-fade-in-up">
             <h1 className="text-display items-center justify-center">
-              Welcome to
-              <span className="px-2 text-blue-500">{SITE_CONFIG.name}</span>
+              Find something worth watching.
+              <span className="sr-only">{SITE_CONFIG.name}</span>
             </h1>
-            <p className="text-body text-muted-foreground mt-2 mb-4">
-              Millions of movies, TV shows, and people to discover.
+            <p className="text-body text-muted-foreground mx-auto mt-3 mb-6 max-w-xl">
+              Explore movies, TV shows, and people, then keep the ones you want
+              to come back to.
             </p>
           </div>
 

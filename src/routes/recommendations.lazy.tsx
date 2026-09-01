@@ -259,7 +259,7 @@ function RecommendationsContent({
 
       {isGenerating && (
         <div className="animate-in fade-in space-y-4 duration-300">
-          <div className="border-border bg-card flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm shadow-none">
+          <div className="border-border bg-card flex items-center gap-3 rounded-lg border px-4 py-3.5 text-sm shadow-none">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10">
               <BrainCircuit className="size-4 text-blue-500" />
             </div>

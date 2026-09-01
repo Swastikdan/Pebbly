@@ -151,8 +151,8 @@ export const MediaContainer = (props: MediaContainerProps) => {
               getThumbSrc={(image) => image.backdrop_image ?? ""}
               getThumbAlt={() => title}
               imageClassName="bg-foreground/10 aspect-video h-44 w-auto rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-              lightboxOverlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
-              lightboxContentClassName="aspect-video w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
+              lightboxOverlayClassName="bg-white/10 dark:bg-black/70"
+              lightboxContentClassName="aspect-video w-full max-w-[90vw] rounded-lg border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
               getLightboxTitle={() => `${title} Backdrop Image`}
               renderLightboxBody={(image) => (
                 <div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
@@ -178,7 +178,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
               getThumbSrc={(image) => image.poster_image ?? ""}
               getThumbAlt={() => title}
               imageClassName="bg-foreground/10 aspect-[2/3] h-44 w-auto rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-              lightboxOverlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
+              lightboxOverlayClassName="bg-white/10 dark:bg-black/70"
               lightboxContentClassName="aspect-[2/3] w-[85vw] max-h-[90vh] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden sm:w-auto sm:h-[90vh] sm:max-h-none"
               getLightboxTitle={() => `${title} Poster Image`}
               renderLightboxBody={(image) => (
