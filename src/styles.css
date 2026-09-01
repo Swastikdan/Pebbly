@@ -251,6 +251,9 @@
   }
 }
 @layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
   * {
     @apply border-border outline-ring/50;
     -webkit-tap-highlight-color: transparent;

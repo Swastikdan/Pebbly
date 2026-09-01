@@ -46,7 +46,7 @@ function WatchlistPage() {
               onValueChange={handleTabChange}
               className="w-full"
             >
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center justify-start sm:justify-start">
                 <TabsList className="w-full max-w-sm sm:w-fit">
                   <TabsTab value="watchlist">
                     <Bookmark size={15} />

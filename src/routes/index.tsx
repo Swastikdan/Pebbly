@@ -106,11 +106,11 @@ function HomePage() {
       <div className="relative w-full overflow-hidden">
         <div className="mx-auto max-w-4xl px-4 py-10 text-center sm:px-6 md:py-16 lg:px-8">
           <div className="animate-fade-in-up">
-            <h1 className="text-display items-center justify-center">
+            <h1 className="text-lg leading-tight font-semibold tracking-tight whitespace-nowrap sm:text-2xl md:text-4xl">
               Find something worth watching.
               <span className="sr-only">{SITE_CONFIG.name}</span>
             </h1>
-            <p className="text-body text-muted-foreground mx-auto mt-3 mb-6 max-w-xl">
+            <p className="text-body text-muted-foreground mx-auto mt-3 mb-6 text-[11px] whitespace-nowrap sm:text-sm md:text-base">
               Explore movies, TV shows, and people, then keep the ones you want
               to come back to.
             </p>
@@ -258,22 +258,9 @@ function ContinueWatchingSection() {
   const { isSignedIn, isLoaded } = useUser();
   const { items, isLoading, isSettled } = useContinueWatching();
 
-  // While Clerk hydrates, reserve the same height as the eventual rail so
-  // signed-in users don't see the page grow after the auth check resolves.
-  if (!isLoaded) {
-    return (
-      <section aria-hidden="true" className="min-h-[320px]">
-        <div className="mt-2 flex items-center gap-4">
-          <h2 className="text-h2">Continue Watching</h2>
-        </div>
-        <div>
-          <MediaSkeletonList cardType="vertical" count={6} />
-        </div>
-      </section>
-    );
-  }
-
-  if (!isSignedIn) return null;
+  // Do not reserve a placeholder for signed-out visitors. Continue Watching
+  // is a private, user-specific rail and should not leave an empty gap.
+  if (!isLoaded || !isSignedIn) return null;
 
   if (isLoading || !isSettled) {
     return (

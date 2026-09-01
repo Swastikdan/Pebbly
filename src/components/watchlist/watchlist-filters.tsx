@@ -98,7 +98,7 @@ export function WatchlistFilters({
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search saved titles"
             aria-label="Search watchlist"
-            className="bg-card h-9 rounded-md pr-10 pl-9 text-sm"
+            className="border-border/70 bg-card h-9 rounded-md border pr-10 pl-9 text-sm dark:border-white/10"
           />
           {searchQuery && (
             <Button
@@ -121,7 +121,7 @@ export function WatchlistFilters({
           }
           size="sm"
           className={cn(
-            "border-border/40 dark:border-border/20 h-9 shrink-0 justify-center gap-1.5 rounded-md border px-3 text-xs font-semibold",
+            "border-border/60 h-9 shrink-0 justify-center gap-1.5 rounded-md border px-3 text-xs font-semibold dark:border-white/10",
             filtersOpen || activeSecondaryCount > 0
               ? "bg-foreground text-background hover:bg-foreground/90"
               : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
@@ -138,8 +138,8 @@ export function WatchlistFilters({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="scrollbar-hidden flex flex-1 overflow-x-auto">
-          <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
+        <div className="scrollbar-hidden flex min-w-0 flex-1 overflow-x-auto">
+          <div className="bg-secondary/50 border-border/60 dark:bg-secondary/30 flex shrink-0 gap-0.5 rounded-lg border p-0.5 dark:border-white/10">
             {PRIMARY_TABS.map((tab) => {
               const isActive = activeFilter === tab.value;
               return (
@@ -194,85 +194,89 @@ export function WatchlistFilters({
 
       <div
         className={cn(
-          "scrollbar-hidden flex-1 items-center gap-2 overflow-x-auto",
-          filtersOpen ? "flex" : "hidden",
+          "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out",
+          filtersOpen
+            ? "grid-rows-[1fr] opacity-100"
+            : "pointer-events-none grid-rows-[0fr] opacity-0",
         )}
       >
-        <Select
-          items={MEDIA_TYPE_FILTER_ITEMS}
-          value={mediaFilter}
-          onValueChange={(value) =>
-            setMediaFilter(value as WatchlistMediaFilter)
-          }
-        >
-          <SelectTrigger
-            size="sm"
-            className="bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-md border-none px-3 text-xs"
+        <div className="scrollbar-hidden flex min-h-0 items-center gap-2 overflow-x-auto">
+          <Select
+            items={MEDIA_TYPE_FILTER_ITEMS}
+            value={mediaFilter}
+            onValueChange={(value) =>
+              setMediaFilter(value as WatchlistMediaFilter)
+            }
           >
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectPopup className="rounded-md">
-            {MEDIA_TYPE_FILTER_ITEMS.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectPopup>
-        </Select>
+            <SelectTrigger
+              size="sm"
+              className="border-border/60 bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
+            >
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectPopup className="rounded-md">
+              {MEDIA_TYPE_FILTER_ITEMS.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
 
-        <Select
-          items={REACTION_FILTER_ITEMS}
-          value={reactionFilter}
-          onValueChange={(value) =>
-            setReactionFilter(value as WatchlistReactionFilter)
-          }
-        >
-          <SelectTrigger
-            size="sm"
-            className="bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-md border-none px-3 text-xs"
+          <Select
+            items={REACTION_FILTER_ITEMS}
+            value={reactionFilter}
+            onValueChange={(value) =>
+              setReactionFilter(value as WatchlistReactionFilter)
+            }
           >
-            <SelectValue placeholder="Mood" />
-          </SelectTrigger>
-          <SelectPopup className="rounded-md">
-            {REACTION_FILTER_ITEMS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectPopup>
-        </Select>
+            <SelectTrigger
+              size="sm"
+              className="border-border/60 bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
+            >
+              <SelectValue placeholder="Mood" />
+            </SelectTrigger>
+            <SelectPopup className="rounded-md">
+              {REACTION_FILTER_ITEMS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
 
-        <Select
-          items={SORT_ITEMS}
-          value={sortBy}
-          onValueChange={(value) => setSortBy(value as WatchlistSort)}
-        >
-          <SelectTrigger
-            size="sm"
-            className="bg-secondary/50 w-auto min-w-[120px] gap-1.5 rounded-md border-none px-3 text-xs"
+          <Select
+            items={SORT_ITEMS}
+            value={sortBy}
+            onValueChange={(value) => setSortBy(value as WatchlistSort)}
           >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectPopup className="rounded-md">
-            {SORT_ITEMS.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectPopup>
-        </Select>
+            <SelectTrigger
+              size="sm"
+              className="border-border/60 bg-secondary/50 w-auto min-w-[120px] gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPopup className="rounded-md">
+              {SORT_ITEMS.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
 
-        {activeSecondaryCount > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={resetSecondaryFilters}
-            className="text-muted-foreground hover:text-foreground h-auto items-center gap-1 px-2.5 py-1.5 text-xs transition-colors hover:bg-transparent"
-          >
-            <X size={12} />
-            Reset
-          </Button>
-        )}
+          {activeSecondaryCount > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={resetSecondaryFilters}
+              className="text-muted-foreground hover:text-foreground h-auto shrink-0 items-center gap-1 px-2.5 py-1.5 text-xs transition-colors hover:bg-transparent"
+            >
+              <X size={12} />
+              Reset
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

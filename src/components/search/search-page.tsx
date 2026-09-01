@@ -266,8 +266,8 @@ export function SearchPage() {
   } else {
     content = (
       <div className="flex h-full min-h-[500px] flex-col gap-5 py-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex h-8 items-center gap-0.5 rounded-lg border p-0.5">
+        <div className="flex min-h-8 flex-wrap items-center gap-2">
+          <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex h-8 shrink-0 items-center gap-0.5 rounded-lg border p-0.5">
             <Button
               className="h-7 rounded-md px-3 text-xs font-semibold"
               variant="ghost"
@@ -332,11 +332,11 @@ export function SearchPage() {
           >
             <SelectTrigger
               size="sm"
-              className="border-border/60 bg-secondary/30 w-auto gap-2 rounded-lg px-3 text-xs font-medium"
+              className="border-border/60 bg-secondary/30 h-8 min-h-8 w-auto gap-2 rounded-lg px-3 text-xs font-medium"
             >
               <SelectValue />
             </SelectTrigger>
-            <SelectPopup className="rounded-xl">
+            <SelectPopup className="rounded-lg">
               {MIN_RATING_ITEMS.map((item) => (
                 <SelectItem
                   key={item.value}
