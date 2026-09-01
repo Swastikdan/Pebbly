@@ -188,7 +188,7 @@ const MobileBottomNav = () => {
           className="bg-background z-50 flex h-dvh flex-col p-0 outline-hidden"
           closeProps={{
             className:
-              "border-border bg-background text-foreground hover:bg-muted top-3 right-3 rounded-md border p-2",
+              "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-3 right-3 rounded-md border p-2",
           }}
         >
           <SheetHeader className="border-border/40 shrink-0 border-b px-5 pt-1 pb-3 text-left">
