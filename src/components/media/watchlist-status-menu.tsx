@@ -304,7 +304,7 @@ function AddToListDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogPopup className="overflow-hidden rounded-xl p-0 sm:max-w-[380px]">
+        <DialogPopup className="overflow-hidden rounded-xl p-0 sm:max-w-95">
           <div className="px-6 pt-6 pb-2">
             <DialogHeader className="space-y-1">
               <DialogTitle className="text-base font-semibold tracking-tight">

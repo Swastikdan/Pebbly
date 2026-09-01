@@ -168,14 +168,14 @@ function PersonPage() {
     : null;
 
   return (
-    <section className="animate-fade-in mx-auto block max-w-screen-xl items-center px-4 py-5">
+    <section className="animate-fade-in mx-auto block max-w-7xl items-center px-4 py-5">
       <div className="mb-5 flex items-center justify-between gap-3">
         <GoBack title="Back" />
         <ShareButton title={name} />
       </div>
       <div className="flex flex-col gap-8 md:flex-row md:items-start">
         <div className="flex flex-col items-center gap-4 md:sticky md:top-16 md:w-1/3 md:items-start">
-          <div className="ring-border/40 relative aspect-[2/3] w-64 max-w-sm overflow-hidden rounded-xl ring-1 md:w-full dark:ring-white/[0.06]">
+          <div className="ring-border/40 relative aspect-2/3 w-64 max-w-sm overflow-hidden rounded-xl ring-1 md:w-full dark:ring-white/6">
             {imageUrl ? (
               <Image
                 src={imageUrl}
@@ -270,7 +270,7 @@ function PersonPage() {
                 {knownForCredits.map((credit) => (
                   <div
                     key={`${credit.media_type}-${credit.id}`}
-                    className="min-h-[300px]"
+                    className="min-h-75"
                   >
                     <MediaCard
                       id={credit.id}

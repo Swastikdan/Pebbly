@@ -1,7 +1,8 @@
 import { useUser } from "@clerk/react";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { CommandPalette } from "@/components/command-palette";
 import { DailyPickButton } from "@/components/daily-pick";
 import { TrendingDayMovies } from "@/components/homepage-media";
 import { MediaSkeletonList } from "@/components/media-skeleton-list";
@@ -101,156 +102,195 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typingInInput =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandOpen((open) => !open);
+        return;
+      }
+
+      if (
+        !typingInInput &&
+        (event.key === "/" ||
+          ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f"))
+      ) {
+        event.preventDefault();
+        setCommandOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
-    <section className="flex flex-col items-center justify-center">
-      <div className="relative w-full overflow-hidden">
-        <div className="mx-auto max-w-4xl px-4 py-10 text-center sm:px-6 md:py-16 lg:px-8">
-          <div className="animate-fade-in-up">
-            <h1 className="text-lg leading-tight font-semibold tracking-tight whitespace-nowrap sm:text-2xl md:text-4xl">
-              Find something worth watching.
-              <span className="sr-only">{SITE_CONFIG.name}</span>
-            </h1>
-            <p className="text-body text-muted-foreground mx-auto mt-3 mb-6 text-[11px] leading-4 whitespace-normal sm:text-sm sm:leading-5 sm:whitespace-nowrap md:text-base">
-              Explore movies, TV shows, and people, then keep the ones you want
-              to come back to.
-            </p>
-          </div>
+    <>
+      <section className="flex flex-col items-center justify-center">
+        <div className="relative w-full overflow-hidden">
+          <div className="mx-auto max-w-4xl px-4 py-10 text-center sm:px-6 md:py-16 lg:px-8">
+            <div className="motion-safe:animate-fade-in-up">
+              <h1 className="text-xl leading-tight font-semibold tracking-tight whitespace-normal sm:text-2xl sm:whitespace-nowrap md:text-4xl">
+                Find your next favourite.
+                <span className="sr-only">{SITE_CONFIG.name}</span>
+              </h1>
+              <p className="text-body text-muted-foreground mx-auto mt-3 mb-6 text-[10px] leading-4 whitespace-normal sm:text-sm sm:leading-5 sm:whitespace-nowrap md:text-base">
+                Browse movies and TV shows, then keep the ones you want to come
+                back to.
+              </p>
+            </div>
 
-          <div className="animate-fade-in" style={{ animationDelay: "150ms" }}>
-            <Suspense fallback={<SearchBarSkeleton />}>
-              <SearchBar />
-            </Suspense>
-          </div>
+            <div
+              className="animate-fade-in"
+              style={{ animationDelay: "150ms" }}
+            >
+              <Suspense fallback={<SearchBarSkeleton />}>
+                <SearchBar onCommandOpen={() => setCommandOpen(true)} />
+              </Suspense>
+            </div>
 
-          <div
-            className="animate-fade-in mt-4 flex justify-center"
-            style={{ animationDelay: "250ms" }}
-          >
-            <DailyPickButton />
+            <div
+              className="animate-fade-in mt-4 flex justify-center"
+              style={{ animationDelay: "250ms" }}
+            >
+              <DailyPickButton />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mx-auto flex w-full max-w-screen-xl px-5 py-6 md:pt-10 md:pb-8">
-        <div className="flex w-full flex-col gap-10">
-          <Tabs defaultValue="trending_day">
-            <div className="mt-2 flex items-center gap-4">
-              <h2 className="text-h2">Trending</h2>
-              <TabsList>
-                <TabsTab value="trending_day">Today</TabsTab>
-                <TabsTab value="trending_week">This Week</TabsTab>
-              </TabsList>
-            </div>
-            <TabsPanel keepMounted value="trending_day">
-              <TrendingDayMovies />
-            </TabsPanel>
-            <TabsPanel keepMounted value="trending_week">
+        <div className="mx-auto flex w-full max-w-7xl px-5 py-6 md:pt-10 md:pb-8">
+          <div className="flex w-full flex-col gap-10">
+            <Tabs defaultValue="trending_day">
+              <div className="mt-2 flex items-center gap-4">
+                <h2 className="text-h2">Trending</h2>
+                <TabsList>
+                  <TabsTab value="trending_day">Today</TabsTab>
+                  <TabsTab value="trending_week">This Week</TabsTab>
+                </TabsList>
+              </div>
+              <TabsPanel keepMounted value="trending_day">
+                <TrendingDayMovies />
+              </TabsPanel>
+              <TabsPanel keepMounted value="trending_week">
+                <Suspense
+                  fallback={
+                    <MediaSkeletonList cardType="horizontal" count={6} />
+                  }
+                >
+                  <TrendingWeekMovies />
+                </Suspense>
+              </TabsPanel>
+            </Tabs>
+
+            <ContinueWatchingSection />
+
+            <LazySection
+              minHeight="300px"
+              fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+            >
               <Suspense
                 fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
               >
-                <TrendingWeekMovies />
+                <HomepageRecommendations />
               </Suspense>
-            </TabsPanel>
-          </Tabs>
+            </LazySection>
 
-          <ContinueWatchingSection />
-
-          <LazySection
-            minHeight="300px"
-            fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
-          >
-            <Suspense
+            <div className="mt-2 flex items-center gap-4">
+              <h2 className="text-h2">Upcoming Movies</h2>
+            </div>
+            <LazySection
+              minHeight="280px"
+              className="content-visibility-auto"
               fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
             >
-              <HomepageRecommendations />
-            </Suspense>
-          </LazySection>
+              <Suspense
+                fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+              >
+                <UpcomingMovies />
+              </Suspense>
+            </LazySection>
 
-          <div className="mt-2 flex items-center gap-4">
-            <h2 className="text-h2">Upcoming Movies</h2>
+            <LazySection
+              minHeight="360px"
+              className="content-visibility-auto"
+              fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+            >
+              <Tabs defaultValue="popular_movie">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-h2">Most Popular</h2>
+                  <TabsList>
+                    <TabsTab value="popular_movie">Theaters</TabsTab>
+                    <TabsTab value="popular_tv">On TV</TabsTab>
+                  </TabsList>
+                </div>
+                <TabsPanel value="popular_movie">
+                  <Suspense
+                    fallback={
+                      <MediaSkeletonList cardType="horizontal" count={6} />
+                    }
+                  >
+                    <PopularMovies />
+                  </Suspense>
+                </TabsPanel>
+                <TabsPanel value="popular_tv">
+                  <Suspense
+                    fallback={
+                      <MediaSkeletonList cardType="horizontal" count={6} />
+                    }
+                  >
+                    <PopularTv />
+                  </Suspense>
+                </TabsPanel>
+              </Tabs>
+            </LazySection>
+
+            <LazySection
+              minHeight="360px"
+              className="content-visibility-auto"
+              fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+            >
+              <Tabs defaultValue="top_rated_movies">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-h2">Top Rated</h2>
+                  <TabsList>
+                    <TabsTab value="top_rated_movies">Movies</TabsTab>
+                    <TabsTab value="top_rated_tv">TV Shows</TabsTab>
+                  </TabsList>
+                </div>
+                <TabsPanel value="top_rated_movies">
+                  <Suspense
+                    fallback={
+                      <MediaSkeletonList cardType="horizontal" count={6} />
+                    }
+                  >
+                    <TopRatedMovies />
+                  </Suspense>
+                </TabsPanel>
+                <TabsPanel value="top_rated_tv">
+                  <Suspense
+                    fallback={
+                      <MediaSkeletonList cardType="horizontal" count={6} />
+                    }
+                  >
+                    <TopRatedTv />
+                  </Suspense>
+                </TabsPanel>
+              </Tabs>
+            </LazySection>
           </div>
-          <LazySection
-            minHeight="280px"
-            className="content-visibility-auto"
-            fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
-          >
-            <Suspense
-              fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
-            >
-              <UpcomingMovies />
-            </Suspense>
-          </LazySection>
-
-          <LazySection
-            minHeight="360px"
-            className="content-visibility-auto"
-            fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
-          >
-            <Tabs defaultValue="popular_movie">
-              <div className="flex items-center gap-4">
-                <h2 className="text-h2">What's Popular</h2>
-                <TabsList>
-                  <TabsTab value="popular_movie">Theaters</TabsTab>
-                  <TabsTab value="popular_tv">On TV</TabsTab>
-                </TabsList>
-              </div>
-              <TabsPanel value="popular_movie">
-                <Suspense
-                  fallback={
-                    <MediaSkeletonList cardType="horizontal" count={6} />
-                  }
-                >
-                  <PopularMovies />
-                </Suspense>
-              </TabsPanel>
-              <TabsPanel value="popular_tv">
-                <Suspense
-                  fallback={
-                    <MediaSkeletonList cardType="horizontal" count={6} />
-                  }
-                >
-                  <PopularTv />
-                </Suspense>
-              </TabsPanel>
-            </Tabs>
-          </LazySection>
-
-          <LazySection
-            minHeight="360px"
-            className="content-visibility-auto"
-            fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
-          >
-            <Tabs defaultValue="top_rated_movies">
-              <div className="flex items-center gap-4">
-                <h2 className="text-h2">Top Rated</h2>
-                <TabsList>
-                  <TabsTab value="top_rated_movies">Movies</TabsTab>
-                  <TabsTab value="top_rated_tv">TV Shows</TabsTab>
-                </TabsList>
-              </div>
-              <TabsPanel value="top_rated_movies">
-                <Suspense
-                  fallback={
-                    <MediaSkeletonList cardType="horizontal" count={6} />
-                  }
-                >
-                  <TopRatedMovies />
-                </Suspense>
-              </TabsPanel>
-              <TabsPanel value="top_rated_tv">
-                <Suspense
-                  fallback={
-                    <MediaSkeletonList cardType="horizontal" count={6} />
-                  }
-                >
-                  <TopRatedTv />
-                </Suspense>
-              </TabsPanel>
-            </Tabs>
-          </LazySection>
         </div>
-      </div>
-    </section>
+      </section>
+      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+    </>
   );
 }
 
@@ -264,7 +304,7 @@ function ContinueWatchingSection() {
 
   if (isLoading || !isSettled) {
     return (
-      <section aria-hidden="true" className="min-h-[320px]">
+      <section aria-hidden="true" className="min-h-80">
         <div className="mt-2 flex items-center gap-4">
           <h2 className="text-h2">Continue Watching</h2>
         </div>
@@ -278,7 +318,7 @@ function ContinueWatchingSection() {
   if (items.length === 0) return null;
 
   return (
-    <section className="min-h-[320px]">
+    <section className="min-h-80">
       <div className="mt-2 flex items-center gap-4">
         <h2 className="text-h2">Continue Watching</h2>
       </div>

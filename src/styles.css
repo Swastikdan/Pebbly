@@ -42,7 +42,7 @@
   }
 }
 :root {
-  --radius: 0.625rem;
+  --radius: 0.825rem;
   --background: var(--color-neutral-50);
   --foreground: var(--color-neutral-800);
   --card: var(--color-white);

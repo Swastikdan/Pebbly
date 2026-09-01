@@ -242,7 +242,7 @@ export function CustomListDialog({
               onChange={(e) => setDescription(e.target.value.substring(0, 150))}
               maxLength={150}
               className={cn(
-                "bg-card min-h-[64px] w-full resize-none rounded-xl border p-3 text-xs outline-hidden transition-[color,background-color,border-color,box-shadow] duration-200",
+                "bg-card min-h-16 w-full resize-none rounded-xl border p-3 text-xs outline-hidden transition-[color,background-color,border-color,box-shadow] duration-200",
                 "placeholder:text-muted-foreground/60",
                 "focus-visible:border-ring/60 focus-visible:bg-card focus-visible:ring-ring/30 focus-visible:ring-1",
                 "border-border",
@@ -303,7 +303,7 @@ export function CustomListDialog({
                   label="Public"
                 />
               </div>
-              <p className="text-muted-foreground/80 min-h-[28px] text-[10px] leading-snug">
+              <p className="text-muted-foreground/80 min-h-7 text-[10px] leading-snug">
                 {visibility === "private"
                   ? "Only you can see this collection."
                   : "Anyone with the link can view it."}
@@ -338,7 +338,7 @@ export function CustomListDialog({
                   label="Ranked"
                 />
               </div>
-              <p className="text-muted-foreground/80 min-h-[28px] text-[10px] leading-snug">
+              <p className="text-muted-foreground/80 min-h-7 text-[10px] leading-snug">
                 {sortType === "unordered"
                   ? "A simple list of titles."
                   : "Titles are numbered #1, #2, … and can be reordered."}

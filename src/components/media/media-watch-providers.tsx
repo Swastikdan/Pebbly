@@ -111,7 +111,7 @@ const ProviderTile = ({
 };
 
 const LoadingState = () => (
-  <section className="min-h-[140px] py-3">
+  <section className="min-h-35 py-3">
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
@@ -208,7 +208,7 @@ export const MediaWatchProviders = (props: {
   }
 
   return (
-    <section className="min-h-[160px] py-3">
+    <section className="min-h-40 py-3">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">

@@ -258,7 +258,7 @@ function RecommendationCard({
       <Button
         type="button"
         variant="ghost"
-        className="bg-muted ring-border/40 hover:bg-muted relative aspect-[2/3] h-auto w-full overflow-hidden rounded-xl p-0 text-left ring-1 transition-[box-shadow,border-color] duration-200"
+        className="bg-muted ring-border/40 hover:bg-muted relative aspect-2/3 h-auto w-full overflow-hidden rounded-xl p-0 text-left ring-1 transition-[box-shadow,border-color] duration-200"
         onClick={() => navigate({ to: "/search", search: { query: title } })}
       >
         <div className="absolute top-0 right-0 left-0 z-10 flex items-start justify-end p-2.5">

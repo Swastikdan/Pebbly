@@ -251,7 +251,7 @@ export function AdminUserRow({
                 type="button"
                 onClick={() => onToggleRole(config.value)}
                 disabled={isBanned || isRolePending}
-                className={`flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-md border px-3.5 py-2 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
+                className={`flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md border px-3.5 py-2 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
                   isActive
                     ? "bg-secondary text-foreground border-border/80"
                     : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
@@ -268,7 +268,7 @@ export function AdminUserRow({
           <Button
             variant={isBanned ? "outline" : "destructive"}
             size="sm"
-            className={`ml-auto h-9 min-h-[36px] rounded-md px-3.5 text-xs font-semibold ${
+            className={`ml-auto h-9 min-h-9 rounded-md px-3.5 text-xs font-semibold ${
               isBanned
                 ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
                 : ""

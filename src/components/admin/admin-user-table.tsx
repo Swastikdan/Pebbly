@@ -111,6 +111,7 @@ export function AdminUserTable() {
       <div className="hidden overflow-hidden rounded-lg border md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
+            <caption className="sr-only">Users</caption>
             <thead>
               <tr className="bg-muted/40 border-b">
                 <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">

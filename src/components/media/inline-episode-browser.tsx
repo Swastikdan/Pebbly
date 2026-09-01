@@ -103,7 +103,7 @@ export function InlineEpisodeBrowser({
               value={`season-${s.season_number}`}
               className="border-default/40 bg-card mb-3 overflow-hidden rounded-xl border"
             >
-              <AccordionTrigger className="hover:bg-secondary/10 [&[data-panel-open]]:bg-secondary/10 px-4 py-3.5 text-sm font-semibold transition-colors hover:no-underline">
+              <AccordionTrigger className="hover:bg-secondary/10 data-panel-open:bg-secondary/10 px-4 py-3.5 text-sm font-semibold transition-colors hover:no-underline">
                 <div className="flex flex-1 items-center justify-between pr-2">
                   <div className="flex items-center gap-3">
                     <span className="text-base font-bold">

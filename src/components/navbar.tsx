@@ -71,7 +71,7 @@ const Navbar = () => {
   return (
     <header className="border-border/60 bg-background/95 sticky top-0 z-50 mx-auto hidden w-full flex-col items-center border-b md:flex">
       <nav
-        className="flex h-16 w-full max-w-screen-xl items-center justify-between px-4 md:px-6"
+        className="flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-6"
         aria-label="Main Navigation"
       >
         <Link

@@ -50,7 +50,7 @@ export function MediaGalleryPage(props: {
     return <DefaultNotFoundComponent />;
   }
   return (
-    <section className="mx-auto block max-w-screen-xl items-center px-4">
+    <section className="mx-auto block max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
           <GoBack link={`/${entity}/${id}/${slug}`} title="Back to main" />

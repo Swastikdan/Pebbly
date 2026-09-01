@@ -94,7 +94,7 @@ function MovieCollectionPage() {
   const part_count = parts ? parts.length : 0;
 
   return (
-    <section className="mx-auto block max-w-screen-xl items-center px-4 py-5">
+    <section className="mx-auto block max-w-7xl items-center px-4 py-5">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
           <GoBack title="Back" />
@@ -105,7 +105,7 @@ function MovieCollectionPage() {
         <div className="flex w-full justify-center sm:w-auto">
           <Image
             alt={name}
-            className="h-[280px] w-[200px] shrink-0 rounded-xl object-cover sm:h-52 sm:w-36"
+            className="h-70 w-50 shrink-0 rounded-xl object-cover sm:h-52 sm:w-36"
             height={300}
             src={IMAGE_PREFIX.HD_POSTER + poster_path}
             width={200}

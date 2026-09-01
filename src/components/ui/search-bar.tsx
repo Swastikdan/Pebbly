@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 
 import { SearchIcon, XCircleIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -30,6 +31,8 @@ interface SearchBarProps {
   autoFocus?: boolean;
   disabled?: boolean;
   updateUrlOnChange?: boolean;
+  /** When provided, shows a clickable ⌘K hint on the right that opens the command palette. */
+  onCommandOpen?: () => void;
 }
 
 const SearchBar = memo(
@@ -46,6 +49,7 @@ const SearchBar = memo(
     autoFocus = false,
     disabled = false,
     updateUrlOnChange = false,
+    onCommandOpen,
   }: SearchBarProps) => {
     const searchId = useId();
     const navigate = useNavigate();
@@ -210,6 +214,16 @@ const SearchBar = memo(
               aria-label="Clear Search"
             >
               <XCircleIcon size={20} aria-hidden="true" />
+            </button>
+          )}
+          {!showClearButton && onCommandOpen && !disabled && !isLoading && (
+            <button
+              type="button"
+              onClick={onCommandOpen}
+              className="text-muted-foreground/60 hover:text-muted-foreground absolute inset-y-0 inset-e-0 z-10 flex cursor-pointer items-center justify-center pe-3 transition-opacity"
+              aria-label="Open command menu (Command K)"
+            >
+              <Kbd>⌘K</Kbd>
             </button>
           )}
         </div>

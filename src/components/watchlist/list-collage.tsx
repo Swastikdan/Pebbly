@@ -42,7 +42,7 @@ export function ListCollage({
           layout="fullWidth"
           className={`${imgClass} group-hover/card:scale-[1.04]`}
         />
-        <div className="from-background/40 absolute inset-0 bg-gradient-to-t to-transparent" />
+        <div className="from-background/40 absolute inset-0 bg-linear-to-t to-transparent" />
       </div>
     );
   }

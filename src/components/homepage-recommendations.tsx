@@ -144,7 +144,7 @@ export function HomepageRecommendations() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-[280px]" aria-hidden="true">
+      <div className="min-h-70" aria-hidden="true">
         <RecommendationSectionHeader />
         <MediaSkeletonList />
       </div>
@@ -178,7 +178,7 @@ export function HomepageRecommendations() {
 
   if (!recommendationsData) {
     return (
-      <div className="min-h-[280px]">
+      <div className="min-h-70">
         <RecommendationSectionHeader />
         <MediaSkeletonList />
       </div>
@@ -188,7 +188,7 @@ export function HomepageRecommendations() {
   if (recs.length === 0) {
     if (isGenerating) {
       return (
-        <div className="min-h-[280px]">
+        <div className="min-h-70">
           <RecommendationSectionHeader />
           <MediaSkeletonList />
         </div>
@@ -206,7 +206,7 @@ export function HomepageRecommendations() {
   }
 
   return (
-    <div className="min-h-[280px] w-full">
+    <div className="min-h-70 w-full">
       {generationError && <GenerationErrorNotice error={generationError} />}
       <section className="w-full">
         <RecommendationSectionHeader />

@@ -109,7 +109,7 @@ export function WatchlistCard({
       poster={
         <Image
           alt={item.title}
-          className="bg-muted h-[140px] w-[93px] rounded-xl object-cover"
+          className="bg-muted h-35 w-23.25 rounded-xl object-cover"
           height={210}
           src={imageUrl}
           blurSrc={blurSrc}
@@ -189,7 +189,7 @@ export function WatchlistCard({
 export function WatchlistCardSkeleton() {
   return (
     <div className="border-border bg-card relative flex animate-pulse gap-3.5 rounded-lg border p-3.5">
-      <div className="bg-muted h-[140px] w-[93px] shrink-0 rounded-xl" />
+      <div className="bg-muted h-35 w-23.25 shrink-0 rounded-xl" />
       <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
         <div>
           <div className="bg-muted mb-2 h-4 w-3/4 rounded" />

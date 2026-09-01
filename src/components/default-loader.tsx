@@ -7,7 +7,7 @@ export function DefaultLoader(props: React.ComponentProps<"output">) {
       aria-label="Loading content"
       aria-busy="true"
       className={cn(
-        "animate-fade-in grid min-h-[100dvh] w-full min-w-[320px] place-items-center py-8 md:min-h-[calc(100dvh-5rem)]",
+        "animate-fade-in grid min-h-dvh w-full min-w-[320px] place-items-center py-8 md:min-h-[calc(100dvh-5rem)]",
         props.className,
       )}
       {...props}

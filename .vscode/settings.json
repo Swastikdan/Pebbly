@@ -32,5 +32,7 @@
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit"
   },
-  "markdown.validate.enabled": true
+  "markdown.validate.enabled": true,
+  "tailwindCSS.lint.suggestCanonicalClasses": "warning",
+  "tailwindCanonicalClasses.fixOnSave": true
 }

@@ -52,21 +52,21 @@ const MAIN_TABS: TabItem[] = [
   {
     href: "/",
     label: "Home",
-    icon: <HomeIcon className="size-[24px]" />,
-    activeIcon: <HomeFilledIcon className="size-[24px]" />,
+    icon: <HomeIcon className="size-6" />,
+    activeIcon: <HomeFilledIcon className="size-6" />,
     matchExact: true,
   },
   {
     href: "/search",
     label: "Search",
-    icon: <SearchIcon className="size-[24px]" />,
-    activeIcon: <SearchFilledIcon className="size-[24px]" />,
+    icon: <SearchIcon className="size-6" />,
+    activeIcon: <SearchFilledIcon className="size-6" />,
   },
   {
     href: "/watchlist",
     label: "Watchlist",
-    icon: <BookMarkIcon className="size-[24px]" />,
-    activeIcon: <BookMarkFilledIcon className="size-[24px]" />,
+    icon: <BookMarkIcon className="size-6" />,
+    activeIcon: <BookMarkFilledIcon className="size-6" />,
   },
 ];
 
@@ -150,12 +150,12 @@ const MobileBottomNav = () => {
         );
       })}
 
-      <div className="mobile-bottom-nav-tab min-h-[44px]" data-active="false">
+      <div className="mobile-bottom-nav-tab min-h-11" data-active="false">
         <Suspense
           fallback={
             <div className="flex h-full w-full flex-col items-center justify-center">
               <span className="mobile-bottom-nav-tab-icon">
-                <UserIcon className="size-[24px]" />
+                <UserIcon className="size-6" />
               </span>
               <span className="mobile-bottom-nav-tab-label">Account</span>
             </div>
@@ -177,7 +177,7 @@ const MobileBottomNav = () => {
           }
         >
           <span className="mobile-bottom-nav-tab-icon">
-            <Grid className="size-[22px]" />
+            <Grid className="size-5.5" />
           </span>
           <span className="mobile-bottom-nav-tab-label">More</span>
         </SheetTrigger>

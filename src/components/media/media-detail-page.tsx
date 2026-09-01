@@ -39,7 +39,7 @@ export function MediaDetailPage(props: {
 }) {
   const { entity, mediaPage } = props;
   return (
-    <section className="mx-auto block max-w-screen-xl items-center px-4">
+    <section className="mx-auto block max-w-7xl items-center px-4">
       <MediaTitleContainer
         runtime={props.runtime ?? null}
         description={`${props.overview?.slice(0, 100)}...`}

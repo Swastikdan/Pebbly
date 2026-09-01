@@ -72,7 +72,7 @@ function TvSeasonsPage() {
   const urltitle = formatMediaTitle.encode(showName);
 
   return (
-    <section className="mx-auto block min-h-[90vh] max-w-screen-xl items-center px-4">
+    <section className="mx-auto block min-h-[90vh] max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
           <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
@@ -91,7 +91,7 @@ function TvSeasonsPage() {
             className="pressable-small block"
           >
             <div className="border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 relative flex items-start gap-5 rounded-lg border p-3 transition-[color,background-color,border-color] duration-150 md:p-5">
-              <div className="min-w-[7rem] md:min-w-[9rem]">
+              <div className="min-w-28 md:min-w-36">
                 {/* Season posters render at ~144px wide, so w500 (SD) is plenty;
 							    w780 (HD) decodes to ~3.6 MB per poster for no visible gain. */}
                 <Image

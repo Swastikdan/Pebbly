@@ -32,11 +32,11 @@ export const CastSection = (props: {
     <div className="pb-5">
       <div className="flex flex-col gap-3">
         <Link
-          aria-label="View full cast and crew"
+          aria-label="View top billed cast"
           className="font-heading w-fit text-lg font-semibold transition-opacity hover:opacity-70 md:text-xl"
           to={castCrewHref}
         >
-          Cast / Crew
+          Top Billed Cast
         </Link>
         <div className="flex flex-col gap-3">
           <ScrollContainer>
@@ -48,16 +48,6 @@ export const CastSection = (props: {
                   known_for_department={cast.character}
                   name={cast.name}
                   profile_path={cast.profile_path ?? ""}
-                  card_type="person"
-                />
-              ))}
-              {crew.map((crew) => (
-                <MediaCard
-                  key={crew.id}
-                  id={crew.id}
-                  known_for_department={crew.job}
-                  name={crew.name}
-                  profile_path={crew.profile_path ?? ""}
                   card_type="person"
                 />
               ))}

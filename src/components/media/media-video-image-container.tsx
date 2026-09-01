@@ -99,11 +99,15 @@ export const MediaVideoImageContainer = (props: {
           getLightboxTitle={(video) => video.name}
           prevLabel="Previous video"
           nextLabel="Next video"
-          lightboxOverlayClassName="bg-white/40 dark:bg-black/70"
+          lightboxOverlayClassName="bg-black"
           lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]"
           renderLightboxBody={(video) => (
-            <div className="bg-foreground/10 size-full overflow-hidden rounded-xl">
-              <YouTubeEmbed videoKey={video.key} title={video.name} />
+            <div className="bg-secondary size-full overflow-hidden rounded-xl">
+              <YouTubeEmbed
+                videoKey={video.key}
+                title={video.name}
+                className="size-full rounded-xl"
+              />
             </div>
           )}
         />
@@ -124,7 +128,7 @@ export const MediaVideoImageContainer = (props: {
             getLightboxTitle={(image) => `${image.file_path} Backdrop Image`}
             prevLabel="Previous backdrop"
             nextLabel="Next backdrop"
-            lightboxOverlayClassName="bg-white/10 dark:bg-black/70"
+            lightboxOverlayClassName="bg-black"
             lightboxContentClassName="bg-secondary aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:max-w-[90vw]"
             renderLightboxBody={(image) => (
               <div className="bg-secondary size-full overflow-hidden rounded-2xl">
@@ -151,13 +155,13 @@ export const MediaVideoImageContainer = (props: {
             getLightboxTitle={(image) => `${image.file_path} Poster Image`}
             prevLabel="Previous poster"
             nextLabel="Next poster"
-            lightboxOverlayClassName="bg-white/40 dark:bg-black/70"
+            lightboxOverlayClassName="bg-black"
             lightboxContentClassName="bg-secondary aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:h-full sm:w-auto"
             renderLightboxBody={(image) => (
               <div className="bg-secondary size-full overflow-hidden rounded-2xl">
                 <Image
                   alt={image.file_path}
-                  className="aspect-[11/16] h-auto w-full rounded-2xl object-center"
+                  className="aspect-11/16 h-auto w-full rounded-2xl object-center"
                   height={300}
                   src={IMAGE_PREFIX.ORIGINAL + image.file_path}
                   width={450}

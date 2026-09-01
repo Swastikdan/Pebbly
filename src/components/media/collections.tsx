@@ -22,7 +22,7 @@ export const Collections = (props: { id: number }) => {
           className="h-48 w-full rounded-lg md:h-52 lg:h-60"
         />
       ) : (
-        <div className="bg-secondary relative h-48 w-full overflow-hidden rounded-lg border border-black/[0.08] md:h-52 lg:h-60 dark:border-white/[0.08]">
+        <div className="bg-secondary relative h-48 w-full overflow-hidden rounded-lg border border-black/8 md:h-52 lg:h-60 dark:border-white/8">
           <div
             aria-hidden="true"
             className="absolute inset-0 bg-cover bg-center"
@@ -35,7 +35,7 @@ export const Collections = (props: { id: number }) => {
           {/* Extra scrim behind text for black/dark images */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent"
+            className="absolute inset-0 bg-linear-to-r from-black/30 via-transparent to-transparent"
           />
 
           <div className="relative flex h-full flex-col items-start justify-center p-5">

@@ -114,14 +114,14 @@ export function CustomListMediaCard({
           {hasMetadata && imageUrl ? (
             <Image
               alt={item.title ?? ""}
-              className="bg-muted h-[160px] w-[107px] rounded-lg object-cover sm:h-[140px] sm:w-[93px]"
+              className="bg-muted h-40 w-26.75 rounded-lg object-cover sm:h-35 sm:w-23.25"
               height={210}
               src={imageUrl}
               width={140}
               priority={priority}
             />
           ) : (
-            <div className="bg-secondary text-muted-foreground flex h-[160px] w-[107px] shrink-0 animate-pulse items-center justify-center rounded-lg text-xs font-medium sm:h-[140px] sm:w-[93px]">
+            <div className="bg-secondary text-muted-foreground flex h-40 w-26.75 shrink-0 animate-pulse items-center justify-center rounded-lg text-xs font-medium sm:h-35 sm:w-23.25">
               {item.mediaType === "movie" ? "MOV" : "TV"}
             </div>
           )}

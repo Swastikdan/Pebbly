@@ -99,7 +99,7 @@ function FeatureRow({
       </div>
       <div className="flex shrink-0 items-center gap-3">
         <span
-          className={`min-w-[3.5rem] text-right text-xs font-semibold ${
+          className={`min-w-14 text-right text-xs font-semibold ${
             enabled ? "text-foreground" : "text-muted-foreground"
           }`}
         >

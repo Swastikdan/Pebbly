@@ -9,7 +9,7 @@ const Footer = () => {
 
   return (
     <footer className="border-border/60 mx-auto flex w-full items-center justify-center border-t">
-      <section className="text-muted-foreground flex w-full max-w-screen-xl flex-col items-center justify-between gap-3 px-5 py-6 text-xs md:flex-row md:px-6">
+      <section className="text-muted-foreground flex w-full max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 text-xs md:flex-row md:px-6">
         <p>Pebbly by Swastik Dan</p>
         <nav className="flex items-center gap-1" aria-label="Footer">
           {isSignedIn && isAdmin && (

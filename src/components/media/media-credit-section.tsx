@@ -46,7 +46,7 @@ export const MediaCreditSection = (props: {
   );
 
   return (
-    <section className="mx-auto block max-w-screen-xl items-center px-4">
+    <section className="mx-auto block max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
           <GoBack link={`/${type}/${id}/${slug}`} title="Back to main" />
@@ -86,7 +86,7 @@ export const MediaCreditSection = (props: {
                       {castMember.profile_path ? (
                         <Image
                           alt={castMember.name}
-                          className="bg-foreground/10 aspect-[12/16] h-24 w-auto rounded-lg object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105"
+                          className="bg-foreground/10 aspect-12/16 h-24 w-auto rounded-lg object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105"
                           height={300}
                           loading="eager"
                           src={
@@ -95,7 +95,7 @@ export const MediaCreditSection = (props: {
                           width={200}
                         />
                       ) : (
-                        <div className="bg-muted text-muted-foreground flex aspect-[12/16] h-24 w-auto min-w-[72px] items-center justify-center rounded-lg px-2 text-center text-xs">
+                        <div className="bg-muted text-muted-foreground flex aspect-12/16 h-24 w-auto min-w-18 items-center justify-center rounded-lg px-2 text-center text-xs">
                           No image
                         </div>
                       )}
@@ -142,7 +142,7 @@ export const MediaCreditSection = (props: {
                               {crewMember.profile_path ? (
                                 <Image
                                   alt={crewMember.name}
-                                  className="bg-foreground/10 aspect-[12/16] h-24 w-auto rounded-lg object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105"
+                                  className="bg-foreground/10 aspect-12/16 h-24 w-auto rounded-lg object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105"
                                   height={300}
                                   loading="eager"
                                   src={
@@ -152,7 +152,7 @@ export const MediaCreditSection = (props: {
                                   width={200}
                                 />
                               ) : (
-                                <div className="bg-muted text-muted-foreground flex aspect-[12/16] h-24 w-auto min-w-[72px] items-center justify-center rounded-lg px-2 text-center text-xs">
+                                <div className="bg-muted text-muted-foreground flex aspect-12/16 h-24 w-auto min-w-18 items-center justify-center rounded-lg px-2 text-center text-xs">
                                   No image
                                 </div>
                               )}

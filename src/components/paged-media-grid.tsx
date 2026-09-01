@@ -24,7 +24,7 @@ export function PagedMediaGrid({
 }: PagedMediaGridProps) {
   return (
     <section className="flex h-full flex-col">
-      <div className="flex min-h-[420px] w-full items-center justify-center">
+      <div className="flex min-h-105 w-full items-center justify-center">
         {isLoading ? (
           <section className="flex h-full w-full flex-col">
             <MediaGrid>
@@ -38,18 +38,18 @@ export function PagedMediaGrid({
             </MediaGrid>
           </section>
         ) : showError && error ? (
-          <div className="flex min-h-[320px] w-full items-center justify-center">
+          <div className="flex min-h-80 w-full items-center justify-center">
             {error}
           </div>
         ) : showEmpty && empty ? (
-          <div className="flex min-h-[320px] w-full items-center justify-center">
+          <div className="flex min-h-80 w-full items-center justify-center">
             {empty}
           </div>
         ) : (
           <MediaGrid stagger>{children}</MediaGrid>
         )}
       </div>
-      <div className="min-h-[56px]">{footer}</div>
+      <div className="min-h-14">{footer}</div>
     </section>
   );
 }

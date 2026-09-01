@@ -86,7 +86,7 @@ export function DailyPickButton() {
         <span>What to Watch Today</span>
       </DialogTrigger>
       <DialogPopup
-        className="bg-background/95 border-border max-w-[92vw] overflow-hidden rounded-lg border p-0 shadow-none sm:max-w-lg"
+        className="bg-background border-border max-w-[92vw] overflow-hidden rounded-lg border p-0 shadow-none sm:max-w-lg"
         closeProps={{
           className:
             "border-border bg-background text-foreground hover:bg-muted top-3 right-3 z-30 rounded-md border p-2",
@@ -110,11 +110,11 @@ export function DailyPickButton() {
                   height={350}
                 />
               ) : (
-                <div className="h-full w-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-800 dark:to-neutral-950" />
+                <div className="h-full w-full bg-linear-to-br from-neutral-200 to-neutral-300 dark:from-neutral-800 dark:to-neutral-950" />
               )}
-              <div className="from-background via-background/40 absolute inset-0 hidden bg-gradient-to-t to-transparent dark:block" />
+              <div className="from-background via-background/40 absolute inset-0 hidden bg-linear-to-t to-transparent dark:block" />
               <div className="absolute inset-0 bg-black/15 dark:hidden" />
-              <div className="from-background via-background/60 absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t to-transparent dark:hidden" />
+              <div className="from-background via-background/60 absolute inset-x-0 bottom-0 h-16 bg-linear-to-t to-transparent dark:hidden" />
 
               <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 pr-12">
                 {pick.selectedItem.isCurrentlyWatching ? (
@@ -145,7 +145,7 @@ export function DailyPickButton() {
                   <Link
                     to={pick.targetPath}
                     onClick={() => setIsOpen(false)}
-                    className="border-background/60 bg-muted group/poster relative aspect-[2/3] w-20 shrink-0 overflow-hidden rounded-lg border-2 transition-opacity sm:w-24 [@media(hover:hover)]:hover:opacity-90"
+                    className="border-background/60 bg-muted group/poster relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition-opacity sm:w-24 [@media(hover:hover)]:hover:opacity-90"
                     title={`View ${pick.title}`}
                   >
                     <Image
@@ -288,7 +288,7 @@ export function DailyPickButton() {
             </div>
           </div>
         ) : (
-          <div className="flex min-h-[250px] flex-col items-center justify-center p-8 text-center">
+          <div className="flex min-h-62.5 flex-col items-center justify-center p-8 text-center">
             <FilmIcon className="text-muted-foreground/40 mb-3 size-10" />
             <h4 className="text-foreground text-base font-semibold">
               No picks available

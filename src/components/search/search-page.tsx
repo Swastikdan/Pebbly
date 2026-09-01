@@ -150,11 +150,11 @@ export function SearchPage() {
   let content: React.ReactNode;
   if (!query) {
     content = (
-      <div className="min-h-[500px]">
+      <div className="min-h-125">
         <SearchHistory navigate={navigate} />
         <div className="flex flex-col gap-5 py-6">
           <h2 className="text-lg font-semibold">Trending Now</h2>
-          <div className="min-h-[420px]">
+          <div className="min-h-105">
             {isTrendingLoading ? (
               <MediaGrid>
                 {Array.from({ length: 12 }).map((_, index) => (
@@ -193,7 +193,7 @@ export function SearchPage() {
     );
   } else if (isLoadingState) {
     content = (
-      <div className="flex h-full min-h-[500px] flex-col gap-5 py-5">
+      <div className="flex h-full min-h-125 flex-col gap-5 py-5">
         <div className="flex flex-wrap items-center gap-2">
           <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
             <Skeleton className="h-7 w-10 rounded-md" />
@@ -201,11 +201,11 @@ export function SearchPage() {
             <Skeleton className="h-7 w-14 rounded-md" />
           </div>
 
-          <Skeleton className="h-8 w-[100px] rounded-lg" />
+          <Skeleton className="h-8 w-25 rounded-lg" />
 
-          <Skeleton className="ml-auto h-3 w-[70px] rounded" />
+          <Skeleton className="ml-auto h-3 w-17.5 rounded" />
         </div>
-        <div className="flex min-h-[420px] w-full items-center justify-center">
+        <div className="flex min-h-105 w-full items-center justify-center">
           <MediaGrid>
             {Array.from({ length: 12 }).map((_, index) => (
               <MediaCardSkeleton
@@ -216,7 +216,7 @@ export function SearchPage() {
             ))}
           </MediaGrid>
         </div>
-        <div className="min-h-[56px]" />
+        <div className="min-h-14" />
       </div>
     );
   } else if (error) {
@@ -236,8 +236,8 @@ export function SearchPage() {
     );
   } else if (filteredData.length === 0) {
     content = (
-      <div className="flex min-h-[500px] flex-col gap-5 py-5">
-        <div className="flex min-h-[320px] w-full items-center justify-center">
+      <div className="flex min-h-125 flex-col gap-5 py-5">
+        <div className="flex min-h-80 w-full items-center justify-center">
           <DefaultEmptyState
             onReset={() => {
               if (noResultsDueToFilters) {
@@ -254,7 +254,7 @@ export function SearchPage() {
             }
           />
         </div>
-        <div className="min-h-[56px]">
+        <div className="min-h-14">
           <Pagination
             currentPage={page}
             totalPages={totalPages}
@@ -265,7 +265,7 @@ export function SearchPage() {
     );
   } else {
     content = (
-      <div className="flex h-full min-h-[500px] flex-col gap-5 py-5">
+      <div className="flex h-full min-h-125 flex-col gap-5 py-5">
         <div className="flex min-h-8 flex-wrap items-center gap-2">
           <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex h-8 min-h-8 shrink-0 items-center gap-0.5 rounded-lg border p-0.5">
             <Button
@@ -354,7 +354,7 @@ export function SearchPage() {
           </span>
         </div>
 
-        <div className="flex min-h-[420px] w-full items-center justify-center">
+        <div className="flex min-h-105 w-full items-center justify-center">
           <MediaGrid stagger>
             {filteredData.map((item, index) => (
               <MediaCard
@@ -374,7 +374,7 @@ export function SearchPage() {
             ))}
           </MediaGrid>
         </div>
-        <div className="min-h-[56px]">
+        <div className="min-h-14">
           {showPagination && (
             <Pagination
               currentPage={page}
@@ -389,7 +389,7 @@ export function SearchPage() {
 
   return (
     <section className="flex w-full justify-center">
-      <div className="mx-auto w-full max-w-screen-xl p-5">
+      <div className="mx-auto w-full max-w-7xl p-5">
         <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
           <GoBack title="Back" />
         </div>
@@ -426,7 +426,7 @@ function SearchHistory({
   if (!hydrated) {
     // Reserve height during hydration so Trending Now doesn't shift up
     // when history appears. Matches the ~48px chip row height.
-    return <div className="min-h-[48px]" aria-hidden="true" />;
+    return <div className="min-h-12" aria-hidden="true" />;
   }
 
   if (history.length === 0)

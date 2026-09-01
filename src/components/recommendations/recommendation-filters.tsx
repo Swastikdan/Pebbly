@@ -100,10 +100,7 @@ export function RecommendationFilters({
             <SelectTrigger className="text-foreground bg-secondary/20 border-border hover:bg-secondary/40 h-10 w-auto rounded-md border px-4 text-xs font-semibold shadow-none transition-colors">
               <SelectValue placeholder="From Watchlist" />
             </SelectTrigger>
-            <SelectPopup
-              align="start"
-              className="max-h-[300px] overflow-y-auto"
-            >
+            <SelectPopup align="start" className="max-h-75 overflow-y-auto">
               <SelectItem value="watchlist" className="text-xs">
                 From Watchlist
               </SelectItem>
@@ -224,11 +221,11 @@ export function RecommendationFilters({
               >
                 <SelectTrigger
                   size="sm"
-                  className="bg-secondary/40 border-border hover:bg-secondary/60 h-8 w-[70px] shrink-0 rounded-lg border px-2.5 text-xs font-semibold shadow-none transition-colors"
+                  className="bg-secondary/40 border-border hover:bg-secondary/60 h-8 w-17.5 shrink-0 rounded-lg border px-2.5 text-xs font-semibold shadow-none transition-colors"
                 >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectPopup className="min-w-[4rem]">
+                <SelectPopup className="min-w-16">
                   {COUNT_OPTIONS.map((c) => (
                     <SelectItem key={c} value={String(c)} className="text-xs">
                       {c}

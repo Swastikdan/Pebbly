@@ -95,7 +95,7 @@ function TvSeasonDetailPage() {
   const urltitle = formatMediaTitle.encode(showName);
 
   return (
-    <section className="mx-auto block min-h-[90vh] max-w-screen-xl items-center px-4">
+    <section className="mx-auto block min-h-[90vh] max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
           <GoBack link={`/tv/${id}/${slug}/seasons`} title="All Seasons" />

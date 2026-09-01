@@ -42,7 +42,7 @@ const FooterThemeSelect = () => {
       <SelectTrigger
         size="sm"
         aria-label={`Theme. Current: ${theme}`}
-        className="text-muted-foreground hover:text-foreground w-auto min-w-0 gap-1 rounded-md border-none bg-transparent px-2 py-1 text-sm shadow-none [&_[data-slot=select-icon]]:hidden"
+        className="text-muted-foreground hover:text-foreground w-auto min-w-0 gap-1 rounded-md border-none bg-transparent px-2 py-1 text-sm shadow-none **:data-[slot=select-icon]:hidden"
       >
         <SelectValue />
       </SelectTrigger>

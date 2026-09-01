@@ -193,6 +193,7 @@ export function WatchlistFilters({
       </div>
 
       <div
+        inert={!filtersOpen}
         className={cn(
           "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out",
           filtersOpen
@@ -210,7 +211,7 @@ export function WatchlistFilters({
           >
             <SelectTrigger
               size="sm"
-              className="border-border/60 bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
+              className="border-border/60 bg-secondary/50 w-auto min-w-25 gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
             >
               <SelectValue placeholder="Type" />
             </SelectTrigger>
@@ -232,7 +233,7 @@ export function WatchlistFilters({
           >
             <SelectTrigger
               size="sm"
-              className="border-border/60 bg-secondary/50 w-auto min-w-[100px] gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
+              className="border-border/60 bg-secondary/50 w-auto min-w-25 gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
             >
               <SelectValue placeholder="Mood" />
             </SelectTrigger>
@@ -252,7 +253,7 @@ export function WatchlistFilters({
           >
             <SelectTrigger
               size="sm"
-              className="border-border/60 bg-secondary/50 w-auto min-w-[120px] gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
+              className="border-border/60 bg-secondary/50 w-auto min-w-30 gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
             >
               <SelectValue />
             </SelectTrigger>
