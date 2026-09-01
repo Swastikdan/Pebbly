@@ -54,7 +54,7 @@ export function CustomListCard({
       <div className="relative">
         <Link
           to={href}
-          className="relative block aspect-16/10 w-full overflow-hidden rounded-xl text-left"
+          className="relative block aspect-16/10 w-full overflow-hidden rounded-lg text-left"
           aria-label={`Open ${list.name}`}
         >
           <ListCollage previews={previews} color={list.color} />
@@ -97,7 +97,7 @@ export function CustomListCard({
         </div>
 
         {!isPebblyPicks && (
-          <div className="from-background/90 via-background/55 absolute inset-x-0 bottom-0 z-10 flex translate-y-0 justify-end gap-1.5 rounded-b-xl bg-linear-to-t to-transparent p-2.5 pt-8 opacity-100 transition-[opacity,transform] duration-200 md:pointer-events-none md:translate-y-1 md:opacity-0 md:group-focus-within/card:pointer-events-auto md:group-focus-within/card:translate-y-0 md:group-focus-within/card:opacity-100 md:group-hover/card:pointer-events-auto md:group-hover/card:translate-y-0 md:group-hover/card:opacity-100">
+          <div className="from-background/90 via-background/55 absolute inset-x-0 bottom-0 z-10 flex translate-y-0 justify-end gap-1.5 rounded-b-lg bg-linear-to-t to-transparent p-2.5 pt-8 opacity-100 transition-[opacity,transform] duration-200 md:pointer-events-none md:translate-y-1 md:opacity-0 md:group-focus-within/card:pointer-events-auto md:group-focus-within/card:translate-y-0 md:group-focus-within/card:opacity-100 md:group-hover/card:pointer-events-auto md:group-hover/card:translate-y-0 md:group-hover/card:opacity-100">
             <button
               type="button"
               onClick={(e) => {

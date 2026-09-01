@@ -172,7 +172,12 @@ export function AutocompleteList({
   ...props
 }: AutocompletePrimitive.List.Props): React.ReactElement {
   return (
-    <ScrollArea overscrollContain scrollbarGutter scrollFade>
+    <ScrollArea
+      className="min-h-0 flex-1"
+      overscrollContain
+      scrollbarGutter
+      scrollFade
+    >
       <AutocompletePrimitive.List
         className={cn(
           "not-empty:scroll-py-1 not-empty:p-1 in-data-has-overflow-y:pe-3",

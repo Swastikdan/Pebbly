@@ -9,7 +9,6 @@ import {
 } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 
-import { FooterThemeSelect } from "@/components/footer-theme-select";
 import {
   MOVIE_LINKS,
   NavCard,
@@ -17,6 +16,7 @@ import {
   QUICK_LINKS,
   TV_LINKS,
 } from "@/components/navigation/nav-sheet-parts";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
   BookMarkFilledIcon,
   BookMarkIcon,
@@ -201,11 +201,11 @@ const MobileBottomNav = () => {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="border-border/40 flex shrink-0 items-center justify-between border-b px-5 py-1.5">
+          <div className="border-border/40 flex shrink-0 items-center justify-between border-b px-5 py-2">
             <span className="text-muted-foreground text-xs font-medium">
               Theme
             </span>
-            <FooterThemeSelect />
+            <ThemeSwitcher />
           </div>
 
           <div className="min-h-0 flex-1 scrollbar-none space-y-5 overflow-y-auto px-4 py-4 pb-10">

@@ -31,7 +31,7 @@ export function DefaultErrorComponent() {
   return (
     <div className="grid h-full min-h-[calc(100vh-200px)] place-content-center items-center justify-center px-6">
       <div className="animate-fade-in-up flex max-w-md flex-col items-center justify-center gap-6 text-center">
-        <div className="bg-destructive/10 dark:bg-destructive/20 flex size-16 items-center justify-center rounded-xl">
+        <div className="bg-destructive/10 dark:bg-destructive/20 flex size-16 items-center justify-center rounded-lg">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"

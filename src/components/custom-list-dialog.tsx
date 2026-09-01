@@ -194,7 +194,7 @@ export function CustomListDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPopup className="overflow-hidden rounded-xl p-0 sm:max-w-lg">
+      <DialogPopup className="overflow-hidden rounded-lg p-0 sm:max-w-lg">
         <div className="space-y-5 px-6 py-5">
           <DialogHeader className="relative">
             <DialogTitle className="font-heading pr-6 text-left text-lg font-semibold tracking-tight">
@@ -222,7 +222,7 @@ export function CustomListDialog({
               maxLength={50}
               autoFocus
               className={cn(
-                "bg-card h-10 w-full rounded-xl border px-3.5 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
+                "bg-card h-10 w-full rounded-lg border px-3.5 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
                 "placeholder:text-muted-foreground/60",
                 "focus-visible:border-ring/60 focus-visible:bg-card focus-visible:ring-ring/30 focus-visible:ring-1",
                 error ? "border-destructive/50" : "border-border",
@@ -242,7 +242,7 @@ export function CustomListDialog({
               onChange={(e) => setDescription(e.target.value.substring(0, 150))}
               maxLength={150}
               className={cn(
-                "bg-card min-h-16 w-full resize-none rounded-xl border p-3 text-xs outline-hidden transition-[color,background-color,border-color,box-shadow] duration-200",
+                "bg-card min-h-16 w-full resize-none rounded-lg border p-3 text-xs outline-hidden transition-[color,background-color,border-color,box-shadow] duration-200",
                 "placeholder:text-muted-foreground/60",
                 "focus-visible:border-ring/60 focus-visible:bg-card focus-visible:ring-ring/30 focus-visible:ring-1",
                 "border-border",
@@ -289,7 +289,7 @@ export function CustomListDialog({
               <Label className="text-muted-foreground text-xs font-medium">
                 Visibility
               </Label>
-              <div className="bg-muted/70 border-border/50 flex rounded-xl border p-1">
+              <div className="bg-muted/70 border-border/50 flex rounded-lg border p-1">
                 <SegmentedButton
                   active={visibility === "private"}
                   onClick={() => setVisibility("private")}
@@ -324,7 +324,7 @@ export function CustomListDialog({
               <Label className="text-muted-foreground text-xs font-medium">
                 Ordering
               </Label>
-              <div className="bg-muted/70 border-border/50 flex rounded-xl border p-1">
+              <div className="bg-muted/70 border-border/50 flex rounded-lg border p-1">
                 <SegmentedButton
                   active={sortType === "unordered"}
                   onClick={() => setSortType("unordered")}
@@ -347,7 +347,7 @@ export function CustomListDialog({
           </div>
 
           {error && (
-            <p className="bg-destructive/10 text-destructive rounded-xl px-3 py-2 text-xs">
+            <p className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs">
               {error}
             </p>
           )}

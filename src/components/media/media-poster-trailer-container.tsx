@@ -46,7 +46,7 @@ export function MediaPosterTrailerContainer(props: {
       <div className="surface-raised group relative w-full shrink-0 overflow-hidden rounded-xl sm:w-auto">
         <Image
           alt={title}
-          className="bg-secondary aspect-2/3 h-full w-full rounded-xl object-cover sm:h-56 sm:w-auto md:h-70 lg:h-80"
+          className="bg-secondary aspect-[2/3] h-full w-full rounded-xl object-cover sm:h-56 sm:w-auto md:h-[17.5rem] lg:h-80"
           height={450}
           src={image}
           width={300}
@@ -59,7 +59,7 @@ export function MediaPosterTrailerContainer(props: {
             type={type}
             title={title}
             variant="card"
-            className="bg-black opacity-100 transition-colors hover:bg-black"
+            className="bg-black/20 opacity-100 transition-colors hover:bg-black/30"
             season={defaultSeason}
             episode={defaultEpisode}
           />
@@ -78,7 +78,7 @@ export function MediaPosterTrailerContainer(props: {
           imageClassName="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
           renderTileOverlay={(video) => (
             <>
-              <span className="bg-background text-foreground dark:bg-foreground dark:text-background absolute top-4 left-4 w-min max-w-50 truncate rounded-lg px-2 py-1 text-sm sm:max-w-62.5">
+              <span className="bg-background text-foreground dark:bg-foreground dark:text-background absolute top-4 left-4 w-min max-w-[200px] truncate rounded-lg px-2 py-1 text-sm sm:max-w-[250px]">
                 {video.name}
               </span>
               <PlayOverlay />
@@ -87,10 +87,10 @@ export function MediaPosterTrailerContainer(props: {
           getLightboxTitle={(video) => video.name}
           prevLabel="Previous trailer"
           nextLabel="Next trailer"
-          lightboxOverlayClassName="bg-black"
+          lightboxOverlayClassName="bg-black/45 backdrop-blur-[2px] dark:bg-black/60"
           lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]"
           renderLightboxBody={(video) => (
-            <div className="bg-foreground/10 relative isolate z-1 size-full h-full overflow-hidden rounded-xl p-0">
+            <div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
               <YouTubeEmbed videoKey={video.key} title={video.name} />
             </div>
           )}

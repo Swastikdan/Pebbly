@@ -7,7 +7,7 @@ import type { BasicMovie, BasicTv } from "@/lib/tmdb-schemas";
 import type { QueryClient } from "@tanstack/react-query";
 import type { RouteComponent } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
-import { VITE_PUBLIC_APP_URL } from "@/constants";
+import { SITE_CONFIG } from "@/constants";
 import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { detailHead, loadMediaRouteData } from "@/lib/route-helpers";
@@ -45,7 +45,7 @@ function buildHead(kind: MediaKind, copy: HeadCopy) {
       url:
         loaderData?.id &&
         loaderData?.title &&
-        `${VITE_PUBLIC_APP_URL}/${kind}/${loaderData.id}/${encodeURIComponent(loaderData.title)}${copy.urlSuffix ?? ""}`,
+        `${SITE_CONFIG.url}/${kind}/${loaderData.id}/${encodeURIComponent(loaderData.title)}${copy.urlSuffix ?? ""}`,
     }),
   });
 }

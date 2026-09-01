@@ -9,6 +9,10 @@ import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-n
 
 import type { QueryClient } from "@tanstack/react-query";
 import {
+  COMMAND_PALETTE_OPEN_EVENT,
+  CommandPalette,
+} from "@/components/command-palette";
+import {
   DefaultErrorComponent,
   DefaultNotFoundComponent,
 } from "@/components/default-not-found";
@@ -201,7 +205,28 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
+  const [commandOpen, setCommandOpen] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const openCommandPalette = () => setCommandOpen(true);
+    const handleGlobalShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    };
+
+    window.addEventListener(COMMAND_PALETTE_OPEN_EVENT, openCommandPalette);
+    window.addEventListener("keydown", handleGlobalShortcut);
+    return () => {
+      window.removeEventListener(
+        COMMAND_PALETTE_OPEN_EVENT,
+        openCommandPalette,
+      );
+      window.removeEventListener("keydown", handleGlobalShortcut);
+    };
+  }, []);
 
   // Keeps the OS-preference subscription alive for the whole app.
   useTheme();
@@ -337,6 +362,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </main>
           <Footer />
           <MobileBottomNav />
+          <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
           {devtoolsPlugin}
         </ToastProvider>
         <Scripts />

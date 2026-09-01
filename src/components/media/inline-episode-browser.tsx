@@ -101,7 +101,7 @@ export function InlineEpisodeBrowser({
             <AccordionItem
               key={s.id}
               value={`season-${s.season_number}`}
-              className="border-default/40 bg-card mb-3 overflow-hidden rounded-xl border"
+              className="border-default/40 bg-card mb-3 overflow-hidden rounded-lg border"
             >
               <AccordionTrigger className="hover:bg-secondary/10 data-panel-open:bg-secondary/10 px-4 py-3.5 text-sm font-semibold transition-colors hover:no-underline">
                 <div className="flex flex-1 items-center justify-between pr-2">
@@ -173,7 +173,7 @@ export function InlineEpisodeBrowser({
           type="button"
           variant="outline"
           onClick={() => setShowAllSeasons(true)}
-          className="text-muted-foreground hover:bg-secondary/5 hover:text-foreground mt-3 h-auto w-full rounded-xl border-dashed py-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow]"
+          className="text-muted-foreground hover:bg-secondary/5 hover:text-foreground mt-3 h-auto w-full rounded-lg border-dashed py-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow]"
         >
           {`View all ${allSeasons.length} seasons`}
         </Button>

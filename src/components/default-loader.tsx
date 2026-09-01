@@ -12,7 +12,7 @@ export function DefaultLoader(props: React.ComponentProps<"output">) {
       )}
       {...props}
     >
-      <div className="grid size-12 place-items-center rounded-xl">
+      <div className="grid size-12 place-items-center rounded-lg">
         <Spinner className="text-foreground/70 size-6" />
       </div>
       <span className="sr-only">Loading content</span>

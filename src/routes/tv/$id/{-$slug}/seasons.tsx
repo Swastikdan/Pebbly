@@ -9,7 +9,7 @@ import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
-import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
       url:
         loaderData?.id &&
         loaderData.title &&
-        `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${loaderData.slug}/seasons`,
+        `${SITE_CONFIG.url}/tv/${loaderData.id}/${loaderData.slug}/seasons`,
     }),
   }),
   component: TvSeasonsPage,
@@ -96,7 +96,7 @@ function TvSeasonsPage() {
 							    w780 (HD) decodes to ~3.6 MB per poster for no visible gain. */}
                 <Image
                   alt={season.name}
-                  className="h-40 w-28 shrink-0 rounded-xl object-cover md:h-52 md:w-36"
+                  className="h-40 w-28 shrink-0 rounded-lg object-cover md:h-52 md:w-36"
                   height={300}
                   src={IMAGE_PREFIX.SD_POSTER + season.poster_path}
                   width={200}

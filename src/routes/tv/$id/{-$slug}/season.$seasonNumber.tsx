@@ -9,7 +9,7 @@ import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
-import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { fetchSeasonDetails } from "@/hooks/use-season-details";
 import { getTvDetails } from "@/lib/queries";
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
       url:
         loaderData?.id &&
         loaderData.title &&
-        `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
+        `${SITE_CONFIG.url}/tv/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
     }),
   }),
   component: TvSeasonDetailPage,
@@ -138,7 +138,7 @@ function TvSeasonDetailPage() {
               <div className="relative shrink-0">
                 <Image
                   alt={episode.name}
-                  className="bg-foreground/10 h-36 w-full rounded-xl object-cover sm:h-28 sm:w-48 md:h-32 md:w-56"
+                  className="bg-foreground/10 h-36 w-full rounded-lg object-cover sm:h-28 sm:w-48 md:h-32 md:w-56"
                   height={180}
                   src={
                     episode.still_path

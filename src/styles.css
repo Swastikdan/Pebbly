@@ -42,7 +42,8 @@
   }
 }
 :root {
-  --radius: 0.825rem;
+  /* Base surface radius: 12px. All radius utilities derive from this scale. */
+  --radius: 0.75rem;
   --background: var(--color-neutral-50);
   --foreground: var(--color-neutral-800);
   --card: var(--color-white);
@@ -187,8 +188,8 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
   --animate-skeleton: skeleton 2s -1s infinite linear;
   --animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
   --animate-toast-success-odd: toast-success 0.32s cubic-bezier(0.5, 1, 0.89, 1);

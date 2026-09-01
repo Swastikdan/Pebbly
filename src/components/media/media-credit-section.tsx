@@ -58,7 +58,7 @@ export const MediaCreditSection = (props: {
       </div>
       <div className="my-5 mb-40 grid justify-between gap-3 space-y-10 md:grid-cols-2 md:space-y-0">
         {hasNoCredits ? (
-          <div className="text-muted-foreground col-span-full rounded-xl border border-dashed p-6 text-center text-sm">
+          <div className="text-muted-foreground col-span-full rounded-lg border border-dashed p-6 text-center text-sm">
             No cast or crew data is available for this title yet.
           </div>
         ) : (

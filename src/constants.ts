@@ -14,8 +14,8 @@ export const SITE_CONFIG = {
   description:
     "Track what you watch and keep custom lists, with AI recommendations built from your viewing history.",
   url: IS_PREVIEW_BUILD
-    ? "https://pebbly-preview.swastik.workers.dev/"
-    : "https://pebbly.swastik.workers.dev/",
+    ? "https://pebbly-preview.swastik.workers.dev"
+    : "https://pebbly.swastik.workers.dev",
   defaultMetaImage:
     "https://ik.imagekit.io/swastikdan/Film-Fanatic/public/ogimage.webp",
   navItems: [
@@ -62,10 +62,6 @@ export const SITE_CONFIG = {
     disclaimer: "/disclaimer",
   },
 };
-
-export const VITE_PUBLIC_APP_URL =
-  (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined) ??
-  SITE_CONFIG.url;
 
 export const NAV_ITEMS = SITE_CONFIG.navItems;
 

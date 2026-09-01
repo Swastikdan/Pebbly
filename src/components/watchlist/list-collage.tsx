@@ -20,7 +20,7 @@ export function ListCollage({
   if (previews.length === 0) {
     return (
       <div
-        className="flex size-full items-center justify-center rounded-xl ring-1 ring-black/5 transition-colors duration-300 ring-inset dark:ring-white/10"
+        className="flex size-full items-center justify-center rounded-lg ring-1 ring-black/5 transition-colors duration-300 ring-inset dark:ring-white/10"
         style={{ background: fallbackBg }}
       >
         <span className="bg-background/80 border-border flex size-11 items-center justify-center rounded-lg border">

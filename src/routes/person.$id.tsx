@@ -292,7 +292,7 @@ function PersonPage() {
           )}
 
           {biographyParagraphs.length === 0 && knownForCredits.length === 0 && (
-            <div className="text-muted-foreground rounded-xl border border-dashed p-6 text-sm">
+            <div className="text-muted-foreground rounded-lg border border-dashed p-6 text-sm">
               No additional details are available for this person yet.
             </div>
           )}

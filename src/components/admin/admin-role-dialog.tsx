@@ -32,11 +32,11 @@ export function AdminRoleDialog({
         <DialogHeader className="space-y-2">
           <div className="flex items-center gap-3">
             {selectedUser?.isBanned ? (
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
                 <ShieldCheck className="size-5" />
               </div>
             ) : (
-              <div className="bg-destructive/10 text-destructive flex size-11 shrink-0 items-center justify-center rounded-xl">
+              <div className="bg-destructive/10 text-destructive flex size-11 shrink-0 items-center justify-center rounded-lg">
                 <Ban className="size-5" />
               </div>
             )}

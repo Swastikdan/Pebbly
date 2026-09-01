@@ -94,7 +94,7 @@ export function DailyPickButton() {
       >
         {pick.isDataLoading ? (
           <div className="flex h-72 flex-col items-center justify-center gap-3 p-6 text-center">
-            <div className="grid size-12 place-items-center rounded-xl">
+            <div className="grid size-12 place-items-center rounded-lg">
               <Spinner className="text-foreground/70 size-6" />
             </div>
           </div>
@@ -221,7 +221,7 @@ export function DailyPickButton() {
                         }
                         title={pick.title}
                         overview={pick.selectedItem.overview}
-                        className="h-10 w-10 shrink-0 rounded-xl sm:h-11 sm:w-11"
+                        className="h-10 w-10 shrink-0 rounded-lg sm:h-11 sm:w-11"
                       />
                     </div>
 
@@ -230,7 +230,7 @@ export function DailyPickButton() {
                         variant="outline"
                         onClick={pick.handleDislike}
                         title="Dislike / Not for me (Removes from picks)"
-                        className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-9 rounded-xl px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
+                        className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
                       >
                         <ThumbsDown className="mr-1.5 size-3.5" />
                         <span>Dislike</span>
@@ -240,7 +240,7 @@ export function DailyPickButton() {
                         variant="outline"
                         onClick={pick.handleShuffle}
                         title="Pick Another"
-                        className="border-border hover:bg-accent active:bg-accent h-9 rounded-xl px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
+                        className="border-border hover:bg-accent active:bg-accent h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
                       >
                         🎲 Another
                       </Button>
@@ -261,14 +261,14 @@ export function DailyPickButton() {
                       title={pick.title}
                       overview={pick.selectedItem.overview}
                       showLabel
-                      className="h-10 w-full rounded-xl text-xs font-semibold sm:h-11 sm:text-sm"
+                      className="h-10 w-full rounded-lg text-xs font-semibold sm:h-11 sm:text-sm"
                     />
 
                     <Button
                       variant="outline"
                       onClick={pick.handleDislike}
                       title="Dislike / Not for me (Removes from picks)"
-                      className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-10 w-full rounded-xl px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
+                      className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
                     >
                       <ThumbsDown className="mr-1.5 size-3.5" />
                       <span>Dislike</span>
@@ -278,7 +278,7 @@ export function DailyPickButton() {
                       variant="outline"
                       onClick={pick.handleShuffle}
                       title="Pick Another"
-                      className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-xl px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
+                      className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
                     >
                       🎲 Another
                     </Button>

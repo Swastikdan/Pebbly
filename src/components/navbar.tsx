@@ -2,6 +2,7 @@ import { Image } from "@unpic/react";
 import { Link } from "@tanstack/react-router";
 
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
 import {
   Menu,
@@ -103,6 +104,7 @@ const Navbar = () => {
             ))}
           </ul>
           <div className="hidden md:flex md:items-center md:gap-1.5">
+            <ThemeSwitcher />
             <DesktopNavButtons />
           </div>
         </section>

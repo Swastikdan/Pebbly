@@ -9,6 +9,97 @@ import { ErrorBanner } from "@/components/ui/feedback";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const SKELETON_ROWS = ["sk-r1", "sk-r2", "sk-r3", "sk-r4", "sk-r5"];
+const SKELETON_CARDS = ["sk-c1", "sk-c2", "sk-c3", "sk-c4"];
+
+export function AdminUserTableSkeleton() {
+  return (
+    <div className="space-y-4">
+      {/* Search & filter tabs skeleton */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Skeleton className="h-9 w-full rounded-md" />
+        </div>
+        <Skeleton className="h-9 w-full rounded-md sm:w-64" />
+      </div>
+
+      {/* Desktop Table skeleton */}
+      <div className="hidden overflow-hidden rounded-lg border md:block">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/40 border-b">
+                <th className="px-4 py-3 text-left">
+                  <Skeleton className="h-4 w-12" />
+                </th>
+                <th className="px-4 py-3 text-left">
+                  <Skeleton className="h-4 w-14" />
+                </th>
+                <th className="px-4 py-3 text-left">
+                  <Skeleton className="h-4 w-12" />
+                </th>
+                <th className="px-4 py-3 text-right">
+                  <Skeleton className="ml-auto h-4 w-16" />
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {SKELETON_ROWS.map((key) => (
+                <tr key={key} className="h-16">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="size-8 shrink-0 rounded-full" />
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-3.5 w-28 rounded" />
+                        <Skeleton className="h-3 w-40 rounded" />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <Skeleton className="h-6 w-20 rounded-md" />
+                      <Skeleton className="h-6 w-24 rounded-md" />
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Skeleton className="ml-auto h-7 w-16 rounded-md" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile Card skeleton */}
+      <div className="space-y-3 md:hidden">
+        {SKELETON_CARDS.map((key) => (
+          <div key={key} className="space-y-3 rounded-lg border p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-9 rounded-full" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-3.5 w-28 rounded" />
+                  <Skeleton className="h-3 w-36 rounded" />
+                </div>
+              </div>
+              <Skeleton className="h-5 w-14 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 border-t pt-2">
+              <Skeleton className="h-6 w-20 rounded-md" />
+              <Skeleton className="h-6 w-20 rounded-md" />
+              <Skeleton className="ml-auto h-7 w-14 rounded-md" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AdminUserTable() {
   const {
     users,
@@ -33,17 +124,7 @@ export function AdminUserTable() {
   } = useAdminUsers();
 
   if (loading || users === undefined) {
-    return (
-      <div className="space-y-2">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton
-            // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
-            key={`user-skeleton-${i}`}
-            className="h-20 w-full rounded-xl"
-          />
-        ))}
-      </div>
-    );
+    return <AdminUserTableSkeleton />;
   }
 
   return (
@@ -72,7 +153,7 @@ export function AdminUserTable() {
             placeholder="Search users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 rounded-md pl-9 text-sm"
+            className="h-9 rounded-md text-sm [&>input]:ps-8.5"
           />
         </div>
         <div

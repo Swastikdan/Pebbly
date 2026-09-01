@@ -29,7 +29,7 @@ function SheetBackdrop({
   return (
     <SheetPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 bg-black transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0 dark:bg-black/60",
         className,
       )}
       data-slot="sheet-backdrop"
@@ -119,7 +119,7 @@ export function SheetPopup({
               aria-label="Close"
               {...closeRest}
               className={cn(
-                "bg-muted text-foreground hover:bg-muted/80 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90 absolute top-4 right-4 z-50 cursor-pointer rounded-lg p-3 transition-[color,background-color,box-shadow,transform] duration-150 ease-out active:scale-90",
+                "text-foreground hover:bg-foreground/10 dark:hover:bg-foreground/12 border-border/60 absolute top-4 right-4 z-50 cursor-pointer rounded-lg border bg-transparent p-3 transition-[color,background-color,box-shadow,transform] duration-150 ease-out active:scale-90",
                 typeof closeClassName === "string" ? closeClassName : undefined,
               )}
             >

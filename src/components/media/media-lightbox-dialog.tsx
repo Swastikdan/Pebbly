@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -96,12 +97,29 @@ export function MediaLightboxDialog({
   hasNext,
   onPrev,
   onNext,
-  overlayClassName = "bg-black",
+  overlayClassName = "bg-black/50 backdrop-blur-sm",
   contentClassName = "aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-lg border-0  p-0 ring-0 overflow-hidden",
   prevLabel = "Previous item",
   nextLabel = "Next item",
   children,
 }: MediaLightboxDialogProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft" && hasPrev) {
+        event.preventDefault();
+        onPrev();
+      } else if (event.key === "ArrowRight" && hasNext) {
+        event.preventDefault();
+        onNext();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hasNext, hasPrev, isOpen, onNext, onPrev]);
+
   return (
     <Dialog
       open={isOpen}

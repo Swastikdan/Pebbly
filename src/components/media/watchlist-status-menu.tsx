@@ -304,7 +304,7 @@ function AddToListDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogPopup className="overflow-hidden rounded-xl p-0 sm:max-w-95">
+        <DialogPopup className="overflow-hidden rounded-lg p-0 sm:max-w-95">
           <div className="px-6 pt-6 pb-2">
             <DialogHeader className="space-y-1">
               <DialogTitle className="text-base font-semibold tracking-tight">
@@ -353,7 +353,7 @@ function AddToListDialog({
                           key={list._id}
                           type="button"
                           className={cn(
-                            "flex w-full items-center justify-between rounded-xl border border-transparent px-4 py-3 text-sm transition-[color,background-color,border-color] duration-200",
+                            "flex w-full items-center justify-between rounded-lg border border-transparent px-4 py-3 text-sm transition-[color,background-color,border-color] duration-200",
                             isInList
                               ? "bg-primary/[0.03] border-primary/10 text-foreground font-semibold"
                               : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",

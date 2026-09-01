@@ -197,7 +197,7 @@ const SearchBar = memo(
             disabled={disabled}
             autoFocus={autoFocus}
             className={cn(
-              "peer bg-card border-border placeholder:text-muted-foreground/70 focus:bg-card focus:border-ring/40 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background h-11 w-full rounded-lg border px-0 ps-11 pe-11 text-[16px] shadow-none transition-[color,background-color,border-color,box-shadow] duration-150 focus:ring-2 md:text-[15px]",
+              "peer bg-card border-border placeholder:text-muted-foreground/70 focus:bg-card focus:border-ring/40 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background h-11 w-full rounded-lg border px-0 ps-8 pe-11 text-[16px] shadow-none transition-[color,background-color,border-color,box-shadow] duration-150 focus:ring-2 md:text-[15px]",
               disabled && "cursor-not-allowed opacity-50",
             )}
             aria-label="Search Input"
@@ -235,7 +235,7 @@ const SearchBar = memo(
 SearchBar.displayName = "SearchBar";
 
 const SearchBarSkeleton = memo(function SearchBarSkeleton() {
-  return <Skeleton className="h-11 w-full rounded-xl" />;
+  return <Skeleton className="h-11 w-full rounded-lg" />;
 });
 
 SearchBarSkeleton.displayName = "SearchBarSkeleton";

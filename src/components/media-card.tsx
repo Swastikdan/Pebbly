@@ -414,8 +414,8 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
   if (props.card_type === "horizontal") {
     return (
       <div className="w-40 md:w-44 lg:w-48">
-        <div className="relative aspect-2/3 w-full overflow-hidden rounded-xl">
-          <Skeleton className="absolute inset-0 rounded-xl" />
+        <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg">
+          <Skeleton className="absolute inset-0 rounded-lg" />
           <div className="absolute bottom-2 left-2">
             <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
@@ -433,8 +433,8 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
   if (props.card_type === "vertical") {
     return (
       <div className="w-64 md:w-72 lg:w-80">
-        <div className="relative aspect-video w-full overflow-hidden rounded-xl">
-          <Skeleton className="absolute inset-0 rounded-xl" />
+        <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+          <Skeleton className="absolute inset-0 rounded-lg" />
           <div className="absolute bottom-2 left-2">
             <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
@@ -452,7 +452,7 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
 
   return (
     <div className="w-24 md:w-28 lg:w-32">
-      <Skeleton className="aspect-2/3 w-full rounded-xl" />
+      <Skeleton className="aspect-2/3 w-full rounded-lg" />
       <div className="mt-2 flex flex-col items-start gap-1">
         <Skeleton className="h-3.5 w-full rounded-md" />
         <Skeleton className="h-3 w-3/4 rounded-md" />

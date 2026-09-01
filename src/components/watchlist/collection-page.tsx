@@ -244,7 +244,7 @@ export function CollectionPage({ listId }: { listId: string }) {
       <SilentErrorBoundary>
         {items.length === 0 ? (
           <div className="text-muted-foreground animate-fade-in-up flex flex-col items-center justify-center gap-4 py-20 text-center">
-            <div className="bg-secondary/60 flex size-14 items-center justify-center rounded-xl">
+            <div className="bg-secondary/60 flex size-14 items-center justify-center rounded-lg">
               <ListPlus className="text-muted-foreground/80 size-6" />
             </div>
             <div>
