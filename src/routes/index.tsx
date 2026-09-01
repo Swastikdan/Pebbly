@@ -110,7 +110,7 @@ function HomePage() {
               Find something worth watching.
               <span className="sr-only">{SITE_CONFIG.name}</span>
             </h1>
-            <p className="text-body text-muted-foreground mx-auto mt-3 mb-6 text-[11px] whitespace-nowrap sm:text-sm md:text-base">
+            <p className="text-body text-muted-foreground mx-auto mt-3 mb-6 text-[11px] leading-4 whitespace-normal sm:text-sm sm:leading-5 sm:whitespace-nowrap md:text-base">
               Explore movies, TV shows, and people, then keep the ones you want
               to come back to.
             </p>
