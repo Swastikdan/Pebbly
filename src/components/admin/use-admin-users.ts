@@ -97,9 +97,10 @@ export function useAdminUsers() {
   };
 
   const lowerSearch = search.toLowerCase().trim();
+  const hasValidSearch = lowerSearch.length >= 2;
   const filteredUsers = (users ?? []).filter((user) => {
     const matchesSearch =
-      !lowerSearch ||
+      !hasValidSearch ||
       user.name.toLowerCase().includes(lowerSearch) ||
       user.email.toLowerCase().includes(lowerSearch);
 

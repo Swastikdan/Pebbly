@@ -79,11 +79,12 @@ const SearchBar = memo(
           }
 
           if (updateUrlOnChange) {
-            if (newValue.trim()) {
-              addToSearchHistory(newValue.trim());
+            const trimmedValue = newValue.trim();
+            if (trimmedValue.length >= 2) {
+              addToSearchHistory(trimmedValue);
               navigate({
                 to: "/search",
-                search: { query: newValue.trim() },
+                search: { query: trimmedValue },
                 replace: true,
               });
             } else {
@@ -130,24 +131,27 @@ const SearchBar = memo(
           clearTimeout(debounceTimeoutRef.current);
         }
 
-        if (!value.trim()) {
-          navigate({
-            to: "/search",
-            search: {},
-            replace: true,
-          });
+        const trimmedValue = value.trim();
+        if (trimmedValue.length < 2) {
+          if (!trimmedValue) {
+            navigate({
+              to: "/search",
+              search: {},
+              replace: true,
+            });
+          }
           return;
         }
 
-        addToSearchHistory(value.trim());
+        addToSearchHistory(trimmedValue);
 
         if (onSubmit) {
-          onSubmit(value.trim());
+          onSubmit(trimmedValue);
         }
 
         navigate({
           to: "/search",
-          search: { query: value.trim() },
+          search: { query: trimmedValue },
           replace: true,
         });
       },

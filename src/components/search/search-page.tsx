@@ -46,15 +46,17 @@ export function SearchPage() {
   });
 
   const query = searchQuery ?? "";
+  const trimmedQuery = query.trim();
+  const hasValidQuery = trimmedQuery.length >= 2;
   const [type, setType] = useState<FilterType>(null);
   const [minRating, setMinRating] = useState("0");
 
   const urlPage = pageNumber ?? 1;
 
   const { data, error, isFetching, isLoading } = useQuery({
-    queryKey: queryKeys.tmdb.search(query, urlPage),
-    queryFn: () => getSearchResult({ query, page: urlPage }),
-    enabled: typeof window !== "undefined" && !!query,
+    queryKey: queryKeys.tmdb.search(trimmedQuery, urlPage),
+    queryFn: () => getSearchResult({ query: trimmedQuery, page: urlPage }),
+    enabled: typeof window !== "undefined" && hasValidQuery,
     staleTime: 1000 * 60 * 60 * 24,
     // Keep search results bounded in memory; data is still considered
     // fresh for a day (staleTime above), only unused copies are evicted.
@@ -71,7 +73,7 @@ export function SearchPage() {
     gcTime: 1000 * 60 * 30,
     retry: 2,
     refetchOnWindowFocus: false,
-    enabled: typeof window !== "undefined" && !query,
+    enabled: typeof window !== "undefined" && !hasValidQuery,
   });
 
   const { page, isPending, totalPages, handlePageChange } = useUrlPagedQuery({
@@ -83,7 +85,7 @@ export function SearchPage() {
       navigate({
         to: "/search",
         search: {
-          query,
+          query: hasValidQuery ? trimmedQuery : undefined,
           page: newPage,
         },
       });
@@ -148,7 +150,7 @@ export function SearchPage() {
   const isLoadingState = isLoading || isPending || isFetching;
 
   let content: React.ReactNode;
-  if (!query) {
+  if (!hasValidQuery) {
     content = (
       <div className="min-h-125">
         <SearchHistory navigate={navigate} />
@@ -393,7 +395,7 @@ export function SearchPage() {
         <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
           <GoBack title="Back" />
         </div>
-        {!query && (
+        {!hasValidQuery && (
           <div className="mb-6 flex flex-col gap-1">
             <h1 className="animate-fade-in text-2xl font-bold tracking-tight md:text-3xl">
               Search
@@ -403,7 +405,7 @@ export function SearchPage() {
             </p>
           </div>
         )}
-        <SearchBar query={query} updateUrlOnChange autoFocus={!query} />
+        <SearchBar query={query} updateUrlOnChange autoFocus={!hasValidQuery} />
         {content}
       </div>
     </section>

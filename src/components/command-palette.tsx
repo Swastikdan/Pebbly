@@ -72,10 +72,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const trimmed = query.trim();
   const normalizedQuery = trimmed.toLocaleLowerCase();
 
+  const isSearching = trimmed.length >= 2;
+
   const { data, isFetching } = useQuery({
     queryKey: queryKeys.tmdb.search(trimmed, 1),
     queryFn: () => getSearchResult({ query: trimmed, page: 1 }),
-    enabled: open && trimmed.length > 0,
+    enabled: open && isSearching,
     staleTime: 1000 * 60 * 60 * 24,
     gcTime: 1000 * 60 * 30,
     retry: 1,
@@ -90,13 +92,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         label: "Home",
         icon: <Home aria-hidden="true" className="text-muted-foreground" />,
         onSelect: () => navigate({ to: "/" }),
-      },
-      {
-        value: "search",
-        label: "Search catalog",
-        icon: <Search aria-hidden="true" className="text-muted-foreground" />,
-        shortcut: "Find titles",
-        onSelect: () => navigate({ to: "/search" }),
       },
       {
         value: "watchlist",
@@ -152,11 +147,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       });
     }
 
-    const matchingAppItems = normalizedQuery
+    const matchingAppItems = isSearching
       ? appItems.filter((item) =>
           item.label.toLocaleLowerCase().includes(normalizedQuery),
         )
-      : appItems.slice(0, 3);
+      : appItems.slice(0, 5);
 
     const resultItems = (data?.results ?? []).filter(
       (item) => item.media_type === "movie" || item.media_type === "tv",
@@ -189,7 +184,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       nextGroups.push({ value: "Quick actions", items: matchingAppItems });
     }
 
-    if (trimmed && isFetching && titleItems.length === 0) {
+    if (isSearching && isFetching && titleItems.length === 0) {
       nextGroups.push({
         value: "Searching…",
         items: Array.from({ length: 4 }, (_, index) => ({
@@ -200,11 +195,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           onSelect: () => {},
         })),
       });
-    } else if (trimmed && titleItems.length > 0) {
+    } else if (isSearching && titleItems.length > 0) {
       nextGroups.push({ value: "Titles", items: titleItems });
     }
 
-    if (trimmed) {
+    if (isSearching) {
       nextGroups.push({
         value: "Search",
         items: [
@@ -228,6 +223,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     hasAiRecommendations,
     isAdmin,
     isFetching,
+    isSearching,
     navigate,
     normalizedQuery,
     trimmed,
@@ -253,7 +249,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <CommandEmpty>
               <span className="text-muted-foreground flex flex-col items-center gap-2 py-2 text-sm">
                 <Search aria-hidden="true" className="size-5 opacity-60" />
-                {trimmed.length === 0
+                {!isSearching
                   ? "Search titles or choose an action."
                   : `No results for “${trimmed}”.`}
               </span>

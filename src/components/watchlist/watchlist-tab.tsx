@@ -155,7 +155,7 @@ export function WatchlistTab() {
         errorMessage={error ? error.message : null}
         hasActiveFilters={
           activeFilter !== "all" ||
-          searchQuery.trim().length > 0 ||
+          searchQuery.trim().length >= 2 ||
           mediaFilter !== "all" ||
           reactionFilter !== "all"
         }
