@@ -224,7 +224,7 @@ const SearchBar = memo(
             <button
               type="button"
               onClick={onCommandOpen}
-              className="text-muted-foreground/60 hover:text-muted-foreground absolute inset-y-0 inset-e-0 z-10 flex cursor-pointer items-center justify-center pe-3 transition-opacity"
+              className="text-muted-foreground/60 hover:text-muted-foreground absolute inset-y-0 inset-e-0 z-10 hidden cursor-pointer items-center justify-center pe-3 transition-opacity sm:flex"
               aria-label="Open command menu (Command K)"
             >
               <Kbd>⌘K</Kbd>
