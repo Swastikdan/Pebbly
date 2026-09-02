@@ -79,6 +79,7 @@ function TvHomePage() {
 
   return (
     <MediaDetailPage
+      key={id}
       entity="tv"
       mediaPage={mediaPage}
       id={id}

@@ -120,7 +120,7 @@ export function indexRouteOptions(kind: MediaKind, component: RouteComponent) {
   return {
     loader: buildLoader({
       mediaType: kind,
-      level: "full",
+      level: "basic",
       titleFallback: kind === "movie" ? "Movie Page" : "Tv Page",
     }),
     head: buildHead(kind, INDEX_HEAD[kind]),
