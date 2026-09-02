@@ -91,12 +91,12 @@ export function NavigationProgressBar({
     <div
       aria-hidden="true"
       className={cn(
-        "pointer-events-none fixed inset-x-0 top-0 z-[9999] h-[3px] transition-opacity duration-200",
+        "pointer-events-none fixed inset-x-0 top-0 z-9999 h-0.75 transition-opacity duration-200",
         visible ? "opacity-100" : "opacity-0",
       )}
     >
       <div
-        className="via-primary h-full w-full origin-left bg-gradient-to-r from-blue-500 to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.7)] transition-transform duration-200 ease-out"
+        className="via-primary h-full w-full origin-left bg-linear-to-r from-blue-500 to-blue-400 transition-transform duration-200 ease-out"
         style={{
           transform: `scaleX(${progress / 100})`,
         }}

@@ -1,25 +1,11 @@
+import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import type { Theme } from "@/hooks/use-theme";
-import {
-  Select,
-  SelectItem,
-  SelectPopup,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { setThemeWithTransition, useThemeStore } from "@/hooks/use-theme";
 
-const THEME_OPTIONS: Array<{ value: Theme; label: string }> = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
-];
-
 /**
- * Text-only theme switcher for the footer. Renders a static placeholder on
- * the server and first paint, then swaps in the real value after mount so
- * SSR markup can never disagree with the persisted preference.
+ * Text/icon theme toggle button for the footer or anywhere.
+ * Directly toggles theme on click with no dropdown.
  */
 const FooterThemeSelect = () => {
   const theme = useThemeStore((s) => s.theme);
@@ -28,32 +14,31 @@ const FooterThemeSelect = () => {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return <span className="text-muted-foreground px-2 py-1">Theme</span>;
+    return (
+      <span className="text-muted-foreground px-2 py-1 text-sm">Theme</span>
+    );
   }
 
+  const isDark =
+    theme === "dark" ||
+    (theme === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  const toggleTheme = () => {
+    setThemeWithTransition(isDark ? "light" : "dark");
+  };
+
   return (
-    <Select
-      items={THEME_OPTIONS}
-      value={theme}
-      onValueChange={(next) => {
-        if (next) setThemeWithTransition(next as Theme);
-      }}
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={`Toggle theme. Current: ${theme}`}
+      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors"
     >
-      <SelectTrigger
-        size="sm"
-        aria-label={`Theme. Current: ${theme}`}
-        className="text-muted-foreground hover:text-foreground w-auto min-w-0 gap-1 rounded-md border-none bg-transparent px-2 py-1 text-sm shadow-none [&_[data-slot=select-icon]]:hidden"
-      >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectPopup className="min-w-0">
-        {THEME_OPTIONS.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectPopup>
-    </Select>
+      {isDark ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
+      <span className="capitalize">{theme}</span>
+    </button>
   );
 };
 

@@ -105,11 +105,11 @@ export function WatchlistCard({
   return (
     <MediaRowCardShell
       to={`/${item.type}/${item.external_id}/${formattedTitle}`}
-      className="rounded-2xl transition-[border-color,transform] duration-150 [@media(hover:hover)]:hover:-translate-y-0.5"
+      className="[@media(hover:hover)]:hover:border-foreground/20 rounded-lg transition-[border-color,opacity] duration-150"
       poster={
         <Image
           alt={item.title}
-          className="bg-muted h-[140px] w-[93px] rounded-xl object-cover"
+          className="bg-muted h-35 w-23.25 rounded-lg object-cover"
           height={210}
           src={imageUrl}
           blurSrc={blurSrc}
@@ -136,7 +136,7 @@ export function WatchlistCard({
           year={year}
           rating={item.rating}
           className="text-muted-foreground/90 dark:text-muted-foreground/75 text-[11px]"
-          labelClassName="font-semibold tracking-wide uppercase"
+          labelClassName="font-medium"
         />
       }
       overview={item.overview}
@@ -188,8 +188,8 @@ export function WatchlistCard({
 
 export function WatchlistCardSkeleton() {
   return (
-    <div className="border-border/60 bg-card dark:border-border/40 relative flex animate-pulse gap-3.5 rounded-2xl border p-3.5 shadow-xs dark:shadow-none">
-      <div className="bg-muted h-[140px] w-[93px] shrink-0 rounded-xl" />
+    <div className="border-border bg-card relative flex animate-pulse gap-3.5 rounded-lg border p-3.5">
+      <div className="bg-muted h-35 w-23.25 shrink-0 rounded-lg" />
       <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
         <div>
           <div className="bg-muted mb-2 h-4 w-3/4 rounded" />

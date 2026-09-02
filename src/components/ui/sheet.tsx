@@ -29,7 +29,7 @@ function SheetBackdrop({
   return (
     <SheetPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 bg-black/32 backdrop-blur-sm transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0 dark:bg-black/60",
         className,
       )}
       data-slot="sheet-backdrop"
@@ -97,7 +97,7 @@ export function SheetPopup({
       >
         <SheetPrimitive.Popup
           className={cn(
-            "bg-popover text-popover-foreground ease-drawer relative flex max-h-full min-h-0 w-full min-w-0 flex-col shadow-lg/5 transition-[opacity,translate] duration-200 will-change-transform not-dark:bg-clip-padding before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:opacity-0 data-starting-style:opacity-0 max-sm:before:hidden dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+            "bg-popover text-popover-foreground ease-drawer relative flex max-h-full min-h-0 w-full min-w-0 flex-col transition-[opacity,translate] duration-200 will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0",
             side === "bottom" &&
               "row-start-2 border-t data-ending-style:translate-y-8 data-starting-style:translate-y-8",
             side === "top" &&
@@ -107,7 +107,7 @@ export function SheetPopup({
             side === "right" &&
               "col-start-2 w-[calc(100%-(--spacing(12)))] max-w-md border-s data-ending-style:translate-x-8 data-starting-style:translate-x-8",
             variant === "inset" &&
-              "before:hidden sm:rounded-2xl sm:border sm:before:rounded-[calc(var(--radius-2xl)-1px)] sm:**:data-[slot=sheet-footer]:rounded-b-[calc(var(--radius-2xl)-1px)]",
+              "before:hidden sm:rounded-lg sm:border sm:**:data-[slot=sheet-footer]:rounded-b-lg",
             className,
           )}
           data-slot="sheet-popup"
@@ -119,7 +119,7 @@ export function SheetPopup({
               aria-label="Close"
               {...closeRest}
               className={cn(
-                "bg-muted text-foreground hover:bg-muted/80 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90 absolute top-4 right-4 z-50 cursor-pointer rounded-lg p-3 transition-[color,background-color,box-shadow,transform] duration-150 ease-out active:scale-90",
+                "text-muted-foreground hover:text-foreground bg-background hover:bg-accent/50 border-border/60 absolute top-4 right-4 z-50 cursor-pointer rounded-lg border p-2 shadow-xs transition-[color,background-color,box-shadow,transform] duration-150 ease-out active:scale-90",
                 typeof closeClassName === "string" ? closeClassName : undefined,
               )}
             >

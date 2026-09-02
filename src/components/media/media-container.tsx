@@ -116,7 +116,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
               imageClassName="bg-foreground/10 aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
               renderTileOverlay={(video) => (
                 <>
-                  <span className="text-foreground bg-background dark:bg-foreground dark:text-background turnicate absolute top-4 left-4 w-min max-w-[250px] truncate rounded-lg px-2 py-1 text-sm md:max-w-[300px] lg:max-w-[400px]">
+                  <span className="text-foreground bg-background dark:bg-foreground dark:text-background turnicate absolute top-4 left-4 w-min max-w-62.5 truncate rounded-lg px-2 py-1 text-sm md:max-w-75 lg:max-w-100">
                     {video.name}
                   </span>
                   <Button
@@ -130,11 +130,11 @@ export const MediaContainer = (props: MediaContainerProps) => {
               )}
               getLightboxTitle={(video) => video.name}
               renderLightboxBody={(video) => (
-                <div className="bg-foreground/10 size-full overflow-hidden rounded-2xl">
+                <div className="bg-secondary size-full overflow-hidden rounded-lg">
                   <YouTubeEmbed
                     videoKey={video.key}
                     title={video.name}
-                    className="size-full rounded-2xl"
+                    className="size-full rounded-lg"
                   />
                 </div>
               )}
@@ -151,14 +151,14 @@ export const MediaContainer = (props: MediaContainerProps) => {
               getThumbSrc={(image) => image.backdrop_image ?? ""}
               getThumbAlt={() => title}
               imageClassName="bg-foreground/10 aspect-video h-44 w-auto rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-              lightboxOverlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
-              lightboxContentClassName="aspect-video w-full max-w-[90vw] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
+              lightboxOverlayClassName="bg-black/45 backdrop-blur-[2px] dark:bg-black/60"
+              lightboxContentClassName="aspect-video w-full max-w-[90vw] rounded-lg border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden"
               getLightboxTitle={() => `${title} Backdrop Image`}
               renderLightboxBody={(image) => (
-                <div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
+                <div className="bg-secondary relative isolate z-1 size-full h-full overflow-hidden rounded-lg p-0">
                   <Image
                     alt={title}
-                    className="aspect-video size-full rounded-2xl object-cover"
+                    className="aspect-video size-full rounded-lg object-cover"
                     height={300}
                     src={image.backdrop_image_raw ?? ""}
                     width={450}
@@ -178,14 +178,14 @@ export const MediaContainer = (props: MediaContainerProps) => {
               getThumbSrc={(image) => image.poster_image ?? ""}
               getThumbAlt={() => title}
               imageClassName="bg-foreground/10 aspect-[2/3] h-44 w-auto rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-              lightboxOverlayClassName="bg-white/10 backdrop-blur-lg dark:bg-black/70"
               lightboxContentClassName="aspect-[2/3] w-[85vw] max-h-[90vh] rounded-2xl border-0 bg-secondary p-0 ring-0 gap-0 overflow-hidden sm:w-auto sm:h-[90vh] sm:max-h-none"
+              lightboxOverlayClassName="bg-black/45 backdrop-blur-[2px] dark:bg-black/60"
               getLightboxTitle={() => `${title} Poster Image`}
               renderLightboxBody={(image) => (
-                <div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-2xl p-0">
+                <div className="bg-secondary relative isolate z-1 size-full h-full overflow-hidden rounded-2xl p-0">
                   <Image
                     alt={title}
-                    className="aspect-[2/3] size-full rounded-2xl object-cover"
+                    className="aspect-2/3 size-full rounded-2xl object-cover"
                     height={300}
                     src={image.poster_image_raw ?? ""}
                     width={450}

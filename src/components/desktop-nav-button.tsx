@@ -54,7 +54,7 @@ const DesktopNavButtons = () => {
   return (
     <>
       {isSignedIn && isPermissionsLoading ? (
-        <Skeleton className="hidden size-9 rounded-xl sm:flex" />
+        <Skeleton className="hidden size-9 rounded-md sm:flex" />
       ) : hasAiRecommendations ? (
         <DesktopNavButton
           href="/recommendations"

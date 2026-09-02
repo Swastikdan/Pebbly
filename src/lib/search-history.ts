@@ -30,11 +30,12 @@ export function getSearchHistory(): string[] {
 }
 
 export function addToSearchHistory(query: string) {
-  if (!query.trim()) return;
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return;
   const history = getSearchHistory().filter(
-    (item) => item.toLowerCase() !== query.trim().toLowerCase(),
+    (item) => item.toLowerCase() !== trimmed.toLowerCase(),
   );
-  history.unshift(query.trim());
+  history.unshift(trimmed);
   localStorage.setItem(
     SEARCH_HISTORY_KEY,
     JSON.stringify(history.slice(0, MAX_HISTORY_ITEMS)),

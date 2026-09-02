@@ -33,7 +33,7 @@ function WatchlistPage() {
 
   return (
     <section className="flex min-h-screen w-full justify-center">
-      <div className="w-full max-w-screen-xl p-5">
+      <div className="w-full max-w-7xl p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <GoBack title="Back" />
           <ShareButton title="My Watchlist" />
@@ -46,7 +46,7 @@ function WatchlistPage() {
               onValueChange={handleTabChange}
               className="w-full"
             >
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center justify-start sm:justify-start">
                 <TabsList className="w-full max-w-sm sm:w-fit">
                   <TabsTab value="watchlist">
                     <Bookmark size={15} />

@@ -5,10 +5,13 @@ import {
   Scripts,
   useRouter,
 } from "@tanstack/react-router";
-import bricolageLatinWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
 import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 
 import type { QueryClient } from "@tanstack/react-query";
+import {
+  COMMAND_PALETTE_OPEN_EVENT,
+  CommandPalette,
+} from "@/components/command-palette";
 import {
   DefaultErrorComponent,
   DefaultNotFoundComponent,
@@ -127,19 +130,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         rel: "stylesheet",
         href: appCss,
       },
-      // Preload the latin body/display subsets so text isn't blocked on CSS
-      // parse before the @font-face fetch even starts. crossOrigin is required
-      // for font preloads (even same-origin) or the browser fetches twice.
+      // Preload the latin Geist subset so the shared type system is ready
+      // before the first contentful paint.
       {
         rel: "preload",
         href: geistLatinWoff2,
-        as: "font",
-        type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
-      {
-        rel: "preload",
-        href: bricolageLatinWoff2,
         as: "font",
         type: "font/woff2",
         crossOrigin: "anonymous",
@@ -210,7 +205,28 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
+  const [commandOpen, setCommandOpen] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const openCommandPalette = () => setCommandOpen(true);
+    const handleGlobalShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    };
+
+    window.addEventListener(COMMAND_PALETTE_OPEN_EVENT, openCommandPalette);
+    window.addEventListener("keydown", handleGlobalShortcut);
+    return () => {
+      window.removeEventListener(
+        COMMAND_PALETTE_OPEN_EVENT,
+        openCommandPalette,
+      );
+      window.removeEventListener("keydown", handleGlobalShortcut);
+    };
+  }, []);
 
   // Keeps the OS-preference subscription alive for the whole app.
   useTheme();
@@ -329,7 +345,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <NavigationProgressBar />
           <a
             href="#main-content"
-            className="focus:border-border focus:bg-background focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:inline-flex focus:items-center focus:justify-center focus:rounded-lg focus:border focus:px-4 focus:py-2.5 focus:font-bold focus:shadow-lg focus:ring-2 focus:outline-hidden"
+            className="focus:border-border focus:bg-background focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:inline-flex focus:items-center focus:justify-center focus:rounded-lg focus:border focus:px-4 focus:py-2.5 focus:font-medium focus:shadow-none focus:ring-2 focus:outline-hidden"
           >
             Skip to main content
           </a>
@@ -346,6 +362,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </main>
           <Footer />
           <MobileBottomNav />
+          <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
           {devtoolsPlugin}
         </ToastProvider>
         <Scripts />

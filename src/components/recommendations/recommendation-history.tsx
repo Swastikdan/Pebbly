@@ -95,11 +95,11 @@ function HistoryAccordionItem({
     <AccordionItem
       value={entry.id}
       className={cn(
-        "border-border bg-card overflow-hidden rounded-2xl border shadow-none transition-colors",
+        "border-border bg-card overflow-hidden rounded-lg border transition-colors",
         isActive && "ring-border ring-1",
       )}
     >
-      <AccordionTrigger className="hover:bg-secondary/10 [&[data-panel-open]]:bg-secondary/10 px-4 py-3 text-sm font-medium transition-colors hover:no-underline">
+      <AccordionTrigger className="hover:bg-secondary/10 data-panel-open:bg-secondary/10 px-4 py-3 text-sm font-medium transition-colors hover:no-underline">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pr-2">
           <Badge
             variant="outline"

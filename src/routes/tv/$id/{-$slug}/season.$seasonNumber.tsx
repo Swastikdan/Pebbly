@@ -9,7 +9,7 @@ import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
-import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { fetchSeasonDetails } from "@/hooks/use-season-details";
 import { getTvDetails } from "@/lib/queries";
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
       url:
         loaderData?.id &&
         loaderData.title &&
-        `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
+        `${SITE_CONFIG.url}/tv/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
     }),
   }),
   component: TvSeasonDetailPage,
@@ -95,7 +95,7 @@ function TvSeasonDetailPage() {
   const urltitle = formatMediaTitle.encode(showName);
 
   return (
-    <section className="mx-auto block min-h-[90vh] max-w-screen-xl items-center px-4">
+    <section className="mx-auto block min-h-[90vh] max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
           <GoBack link={`/tv/${id}/${slug}/seasons`} title="All Seasons" />
@@ -117,7 +117,7 @@ function TvSeasonDetailPage() {
             key={s.id}
             // @ts-expect-error - correct link
             to={`/tv/${id}/${urltitle}/season/${s.season_number}`}
-            className={`pressable-small rounded-xl px-4 py-2 text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow] duration-150 ${
+            className={`pressable-small rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color] duration-150 ${
               s.season_number === seasonNumber
                 ? "bg-foreground text-background"
                 : "bg-secondary/50 text-foreground hover:bg-secondary"
@@ -132,13 +132,13 @@ function TvSeasonDetailPage() {
         {episodes.map((episode, index) => (
           <div
             key={episode.id}
-            className="group border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 hover: relative overflow-hidden rounded-2xl border-2 transition-[color,background-color,border-color,box-shadow] duration-150"
+            className="group border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 relative overflow-hidden rounded-lg border transition-[color,background-color,border-color] duration-150"
           >
             <div className="flex flex-col gap-4 p-3 sm:flex-row sm:items-start md:p-4">
               <div className="relative shrink-0">
                 <Image
                   alt={episode.name}
-                  className="bg-foreground/10 h-36 w-full rounded-xl object-cover sm:h-28 sm:w-48 md:h-32 md:w-56"
+                  className="bg-foreground/10 h-36 w-full rounded-lg object-cover sm:h-28 sm:w-48 md:h-32 md:w-56"
                   height={180}
                   src={
                     episode.still_path
@@ -165,7 +165,7 @@ function TvSeasonDetailPage() {
               <div className="flex flex-1 flex-col gap-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col gap-1">
-                    <span className="text-muted-foreground text-xs font-medium uppercase">
+                    <span className="text-muted-foreground text-xs font-medium">
                       Episode {episode.episode_number}
                     </span>
                     <h3 className="line-clamp-1 text-lg font-bold md:text-xl">

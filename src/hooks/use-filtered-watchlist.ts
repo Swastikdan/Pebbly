@@ -50,7 +50,7 @@ export function useFilteredWatchlist(watchlistData: WatchlistItem[]) {
     let items = watchlistData;
     const normalizedQuery = deferredSearchQuery.trim().toLocaleLowerCase();
 
-    if (normalizedQuery) {
+    if (normalizedQuery.length >= 2) {
       items = items.filter((item) =>
         [item.title, item.overview, item.release_date]
           .filter(Boolean)
@@ -124,7 +124,7 @@ export function useFilteredWatchlist(watchlistData: WatchlistItem[]) {
   }, [watchlistData]);
 
   const activeSecondaryCount = [
-    searchQuery.trim().length > 0,
+    searchQuery.trim().length >= 2,
     mediaFilter !== "all",
     reactionFilter !== "all",
     sortBy !== "recent",

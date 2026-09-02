@@ -134,7 +134,7 @@ export const MediaTitleContainer = (props: {
         <div className="flex items-center justify-between gap-3">
           <GoBack title="Back" />
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="hidden min-h-[36px] min-w-[140px] items-center justify-end sm:flex">
+            <div className="hidden min-h-9 min-w-35 items-center justify-end sm:flex">
               <WatchlistStatusMenu
                 isOnWatchlist={isOnWatchList}
                 progressStatus={progressStatus}
@@ -151,7 +151,7 @@ export const MediaTitleContainer = (props: {
             <ShareButton title={title} />
           </div>
         </div>
-        <div className="flex min-h-[36px] justify-end sm:hidden">
+        <div className="flex min-h-9 justify-end sm:hidden">
           <WatchlistStatusMenu
             isOnWatchlist={isOnWatchList}
             progressStatus={progressStatus}
@@ -211,10 +211,17 @@ export const MediaTitleContainer = (props: {
           )}
         </span>
 
-        <RatingCount
-          rating={parseFloat(vote_average?.toFixed(1) ?? "0")}
-          ratingcount={vote_count ?? 0}
-        />
+        <div className="flex items-center gap-2">
+          {vote_average != null && (
+            <span className="text-meta text-muted-foreground font-medium whitespace-nowrap">
+              User Score
+            </span>
+          )}
+          <RatingCount
+            rating={parseFloat(vote_average?.toFixed(1) ?? "0")}
+            ratingcount={vote_count ?? 0}
+          />
+        </div>
       </div>
     </div>
   );

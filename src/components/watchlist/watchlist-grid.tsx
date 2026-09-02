@@ -43,7 +43,7 @@ export function WatchlistGrid({
     if (!hasActiveFilters) {
       return (
         <div className="animate-fade-in-up flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center">
-          <div className="bg-secondary flex size-16 items-center justify-center rounded-xl">
+          <div className="bg-secondary flex size-16 items-center justify-center rounded-lg">
             <BookMarkFilledIcon className="text-muted-foreground size-7" />
           </div>
           <div>

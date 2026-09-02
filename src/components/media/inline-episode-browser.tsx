@@ -101,9 +101,9 @@ export function InlineEpisodeBrowser({
             <AccordionItem
               key={s.id}
               value={`season-${s.season_number}`}
-              className="border-default/40 bg-card mb-3 overflow-hidden rounded-xl border"
+              className="border-default/40 bg-card mb-3 overflow-hidden rounded-lg border"
             >
-              <AccordionTrigger className="hover:bg-secondary/10 [&[data-panel-open]]:bg-secondary/10 px-4 py-3.5 text-sm font-semibold transition-colors hover:no-underline">
+              <AccordionTrigger className="hover:bg-secondary/10 data-panel-open:bg-secondary/10 px-4 py-3.5 text-sm font-semibold transition-colors hover:no-underline">
                 <div className="flex flex-1 items-center justify-between pr-2">
                   <div className="flex items-center gap-3">
                     <span className="text-base font-bold">
@@ -116,7 +116,7 @@ export function InlineEpisodeBrowser({
                       {s.episode_count} ep{s.episode_count !== 1 ? "s" : ""}
                     </Badge>
                     {s.air_date && (
-                      <span className="text-muted-foreground text-[10px] tracking-wider">
+                      <span className="text-muted-foreground text-[10px] font-medium">
                         {new Date(s.air_date).getFullYear()}
                       </span>
                     )}
@@ -173,7 +173,7 @@ export function InlineEpisodeBrowser({
           type="button"
           variant="outline"
           onClick={() => setShowAllSeasons(true)}
-          className="text-muted-foreground hover:bg-secondary/5 hover:text-foreground mt-3 h-auto w-full rounded-xl border-dashed py-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow]"
+          className="text-muted-foreground hover:bg-secondary/5 hover:text-foreground mt-3 h-auto w-full rounded-lg border-dashed py-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow]"
         >
           {`View all ${allSeasons.length} seasons`}
         </Button>
@@ -308,7 +308,7 @@ function EpisodeCard({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-muted-foreground text-[10px] tracking-widest uppercase">
+            <span className="text-muted-foreground text-[10px] font-medium">
               E{String(episode.episode_number).padStart(2, "0")}
             </span>
             <h3 className="truncate text-sm font-bold md:text-base">
@@ -393,7 +393,7 @@ function EpisodeCard({
             </Badge>
           )}
           {episode.air_date && (
-            <span className="text-muted-foreground text-[10px] tracking-wider">
+            <span className="text-muted-foreground text-[10px] font-medium">
               {new Date(episode.air_date).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
@@ -402,7 +402,7 @@ function EpisodeCard({
             </span>
           )}
           {episode.runtime && (
-            <span className="text-muted-foreground text-[10px] tracking-wider">
+            <span className="text-muted-foreground text-[10px] font-medium">
               {episode.runtime}m
             </span>
           )}

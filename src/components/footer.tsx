@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 
-import { FooterThemeSelect } from "@/components/footer-theme-select";
 import { SITE_CONFIG } from "@/constants";
 import { usePermissions } from "@/hooks/use-permissions";
 
@@ -9,23 +8,9 @@ const Footer = () => {
 
   return (
     <footer className="border-border/60 mx-auto flex w-full items-center justify-center border-t">
-      <section className="text-muted-foreground flex w-full max-w-screen-xl flex-col items-center justify-between gap-2 px-5 py-4 text-sm md:flex-row md:px-10">
-        <p className="flex items-center gap-1">
-          Made with{" "}
-          <span aria-label="love" role="img">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="inline-block size-3.5 text-red-500"
-            >
-              <title>Love</title>
-              <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-            </svg>
-          </span>{" "}
-          By Swastik Dan
-        </p>
-        <div className="flex items-center gap-1">
+      <section className="text-muted-foreground flex w-full max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 text-sm md:flex-row md:px-6">
+        <p>Pebbly by Swastik Dan</p>
+        <nav className="flex items-center gap-1" aria-label="Footer">
           {isSignedIn && isAdmin && (
             <>
               <Link
@@ -34,11 +19,11 @@ const Footer = () => {
               >
                 Admin
               </Link>
-              <span className="text-border">|</span>
+              <span aria-hidden="true" className="text-border/60">
+                ·
+              </span>
             </>
           )}
-          <FooterThemeSelect />
-          <span className="text-border">|</span>
           <Link
             aria-label="User disclaimer"
             to={SITE_CONFIG.Footerlinks.disclaimer}
@@ -46,7 +31,9 @@ const Footer = () => {
           >
             Disclaimer
           </Link>
-          <span className="text-border">|</span>
+          <span aria-hidden="true" className="text-border/60">
+            ·
+          </span>
           <Link
             aria-label={`Github repository for ${SITE_CONFIG.name}`}
             to={SITE_CONFIG.Footerlinks.github}
@@ -56,7 +43,7 @@ const Footer = () => {
           >
             Github
           </Link>
-        </div>
+        </nav>
       </section>
     </footer>
   );

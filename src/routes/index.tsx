@@ -2,6 +2,7 @@ import { useUser } from "@clerk/react";
 import { lazy, Suspense } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { COMMAND_PALETTE_OPEN_EVENT } from "@/components/command-palette";
 import { DailyPickButton } from "@/components/daily-pick";
 import { TrendingDayMovies } from "@/components/homepage-media";
 import { MediaSkeletonList } from "@/components/media-skeleton-list";
@@ -101,11 +102,15 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const openCommandPalette = () => {
+    window.dispatchEvent(new Event(COMMAND_PALETTE_OPEN_EVENT));
+  };
+
   return (
     <section className="flex flex-col items-center justify-center">
       <div className="relative w-full overflow-hidden">
-        <div className="mx-auto max-w-5xl px-4 py-8 pt-6 pb-6 text-center sm:px-6 md:pt-12 md:pb-8 lg:px-8">
-          <div className="animate-fade-in-up py-4">
+        <div className="mx-auto max-w-4xl px-4 py-10 text-center sm:px-6 md:py-16 lg:px-8">
+          <div className="motion-safe:animate-fade-in-up py-4">
             <h1 className="text-display items-center justify-center">
               Welcome to
               <span className="px-2 text-blue-500">{SITE_CONFIG.name}</span>
@@ -115,14 +120,17 @@ function HomePage() {
             </p>
           </div>
 
-          <div className="animate-fade-in" style={{ animationDelay: "150ms" }}>
+          <div
+            className="motion-safe:animate-fade-in"
+            style={{ animationDelay: "150ms" }}
+          >
             <Suspense fallback={<SearchBarSkeleton />}>
-              <SearchBar />
+              <SearchBar onCommandOpen={openCommandPalette} />
             </Suspense>
           </div>
 
           <div
-            className="animate-fade-in mt-4 flex justify-center"
+            className="motion-safe:animate-fade-in mt-4 flex justify-center"
             style={{ animationDelay: "250ms" }}
           >
             <DailyPickButton />
@@ -130,7 +138,7 @@ function HomePage() {
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-screen-xl px-5 py-6 md:pt-10 md:pb-8">
+      <div className="mx-auto flex w-full max-w-7xl px-5 py-6 md:pt-10 md:pb-8">
         <div className="flex w-full flex-col gap-10">
           <Tabs defaultValue="trending_day">
             <div className="mt-2 flex items-center gap-4">
@@ -187,7 +195,7 @@ function HomePage() {
           >
             <Tabs defaultValue="popular_movie">
               <div className="flex items-center gap-4">
-                <h2 className="text-h2">What's Popular</h2>
+                <h2 className="text-h2">Most Popular</h2>
                 <TabsList>
                   <TabsTab value="popular_movie">Theaters</TabsTab>
                   <TabsTab value="popular_tv">On TV</TabsTab>
@@ -257,26 +265,13 @@ function ContinueWatchingSection() {
   const { isSignedIn, isLoaded } = useUser();
   const { items, isLoading, isSettled } = useContinueWatching();
 
-  // While Clerk hydrates, reserve the same height as the eventual rail so
-  // signed-in users don't see the page grow after the auth check resolves.
-  if (!isLoaded) {
-    return (
-      <section aria-hidden="true" className="min-h-[320px]">
-        <div className="mt-2 flex items-center gap-4">
-          <h2 className="text-h2">Continue Watching</h2>
-        </div>
-        <div>
-          <MediaSkeletonList cardType="vertical" count={6} />
-        </div>
-      </section>
-    );
-  }
-
-  if (!isSignedIn) return null;
+  // Do not reserve a placeholder for signed-out visitors. Continue Watching
+  // is a private, user-specific rail and should not leave an empty gap.
+  if (!isLoaded || !isSignedIn) return null;
 
   if (isLoading || !isSettled) {
     return (
-      <section aria-hidden="true" className="min-h-[320px]">
+      <section aria-hidden="true" className="min-h-80">
         <div className="mt-2 flex items-center gap-4">
           <h2 className="text-h2">Continue Watching</h2>
         </div>
@@ -290,7 +285,7 @@ function ContinueWatchingSection() {
   if (items.length === 0) return null;
 
   return (
-    <section className="min-h-[320px]">
+    <section className="min-h-80">
       <div className="mt-2 flex items-center gap-4">
         <h2 className="text-h2">Continue Watching</h2>
       </div>

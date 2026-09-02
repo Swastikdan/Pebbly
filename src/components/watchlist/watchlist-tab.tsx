@@ -119,7 +119,7 @@ export function WatchlistTab() {
 
       {error && (
         <div
-          className={`mb-4 rounded-xl p-3 text-sm ${
+          className={`mb-4 rounded-lg p-3 text-sm ${
             error.invalidItems
               ? "bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
               : "bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-200"
@@ -131,7 +131,7 @@ export function WatchlistTab() {
       )}
       {importLoading && importTotal !== null && (
         <div
-          className="border-primary/15 bg-primary/5 text-muted-foreground mb-4 rounded-xl border px-3 py-2 text-sm"
+          className="border-primary/15 bg-primary/5 text-muted-foreground mb-4 rounded-lg border px-3 py-2 text-sm"
           role="status"
         >
           {importedCount > 0 && importedCount < importTotal
@@ -155,7 +155,7 @@ export function WatchlistTab() {
         errorMessage={error ? error.message : null}
         hasActiveFilters={
           activeFilter !== "all" ||
-          searchQuery.trim().length > 0 ||
+          searchQuery.trim().length >= 2 ||
           mediaFilter !== "all" ||
           reactionFilter !== "all"
         }

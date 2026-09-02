@@ -64,7 +64,7 @@ export default function AccountButton({ variant }: AccountButtonProps) {
       <ClerkLoading>
         <div className="flex h-full w-full flex-col items-center justify-center">
           <span className="mobile-bottom-nav-tab-icon">
-            <UserIcon className="size-[24px]" />
+            <UserIcon className="size-6" />
           </span>
           <span className="mobile-bottom-nav-tab-label">Account</span>
         </div>
@@ -78,7 +78,7 @@ export default function AccountButton({ variant }: AccountButtonProps) {
               className="flex h-full w-full cursor-pointer flex-col items-center justify-center border-none bg-transparent p-0"
             >
               <span className="mobile-bottom-nav-tab-icon">
-                <UserIcon className="size-[24px]" />
+                <UserIcon className="size-6" />
               </span>
               <span className="mobile-bottom-nav-tab-label">Account</span>
             </button>

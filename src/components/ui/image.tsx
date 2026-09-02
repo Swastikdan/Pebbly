@@ -93,6 +93,7 @@ const ImageComponent = ({
         !priority && <Skeleton className="absolute inset-0 rounded-none" />
       )}
       <ReactImage
+        key={currentSrc}
         ref={attachRef}
         alt={alt ?? "Image"}
         className={cn(

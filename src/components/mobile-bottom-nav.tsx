@@ -9,7 +9,6 @@ import {
 } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 
-import { FooterThemeSelect } from "@/components/footer-theme-select";
 import {
   MOVIE_LINKS,
   NavCard,
@@ -17,6 +16,7 @@ import {
   QUICK_LINKS,
   TV_LINKS,
 } from "@/components/navigation/nav-sheet-parts";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
   BookMarkFilledIcon,
   BookMarkIcon,
@@ -52,21 +52,21 @@ const MAIN_TABS: TabItem[] = [
   {
     href: "/",
     label: "Home",
-    icon: <HomeIcon className="size-[24px]" />,
-    activeIcon: <HomeFilledIcon className="size-[24px]" />,
+    icon: <HomeIcon className="size-6" />,
+    activeIcon: <HomeFilledIcon className="size-6" />,
     matchExact: true,
   },
   {
     href: "/search",
     label: "Search",
-    icon: <SearchIcon className="size-[24px]" />,
-    activeIcon: <SearchFilledIcon className="size-[24px]" />,
+    icon: <SearchIcon className="size-6" />,
+    activeIcon: <SearchFilledIcon className="size-6" />,
   },
   {
     href: "/watchlist",
     label: "Watchlist",
-    icon: <BookMarkIcon className="size-[24px]" />,
-    activeIcon: <BookMarkFilledIcon className="size-[24px]" />,
+    icon: <BookMarkIcon className="size-6" />,
+    activeIcon: <BookMarkFilledIcon className="size-6" />,
   },
 ];
 
@@ -150,12 +150,12 @@ const MobileBottomNav = () => {
         );
       })}
 
-      <div className="mobile-bottom-nav-tab min-h-[44px]" data-active="false">
+      <div className="mobile-bottom-nav-tab min-h-11" data-active="false">
         <Suspense
           fallback={
             <div className="flex h-full w-full flex-col items-center justify-center">
               <span className="mobile-bottom-nav-tab-icon">
-                <UserIcon className="size-[24px]" />
+                <UserIcon className="size-6" />
               </span>
               <span className="mobile-bottom-nav-tab-label">Account</span>
             </div>
@@ -177,7 +177,7 @@ const MobileBottomNav = () => {
           }
         >
           <span className="mobile-bottom-nav-tab-icon">
-            <Grid className="size-[22px]" />
+            <Grid className="size-5.5" />
           </span>
           <span className="mobile-bottom-nav-tab-label">More</span>
         </SheetTrigger>
@@ -185,10 +185,10 @@ const MobileBottomNav = () => {
         <SheetPopup
           side="bottom"
           viewportClassName="pt-0"
-          className="bg-background/95 z-50 flex h-dvh flex-col p-0 outline-hidden backdrop-blur-2xl"
+          className="bg-background z-50 flex h-dvh flex-col p-0 outline-hidden"
           closeProps={{
             className:
-              "top-3 right-3 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 dark:bg-black/60 dark:text-white dark:hover:bg-black/80 border border-white/20 backdrop-blur-md",
+              "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-3 right-3 rounded-md border p-2",
           }}
         >
           <SheetHeader className="border-border/40 shrink-0 border-b px-5 pt-1 pb-3 text-left">
@@ -201,17 +201,17 @@ const MobileBottomNav = () => {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="border-border/40 flex shrink-0 items-center justify-between border-b px-5 py-1.5">
-            <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          <div className="border-border/40 flex shrink-0 items-center justify-between border-b px-5 py-2">
+            <span className="text-muted-foreground text-xs font-medium">
               Theme
             </span>
-            <FooterThemeSelect />
+            <ThemeSwitcher />
           </div>
 
           <div className="min-h-0 flex-1 scrollbar-none space-y-5 overflow-y-auto px-4 py-4 pb-10">
             {(isAdmin || hasAiRecommendations) && (
               <div className="space-y-2">
-                <div className="text-muted-foreground px-1 text-xs font-semibold tracking-wider uppercase">
+                <div className="text-muted-foreground px-1 text-xs font-medium">
                   Featured
                 </div>
                 <div className="grid grid-cols-1 gap-2">

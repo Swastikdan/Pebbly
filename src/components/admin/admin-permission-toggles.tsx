@@ -36,13 +36,11 @@ function ToggleSwitch({
         onChange(!enabled);
       }}
       className={`focus-visible:ring-ring relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden ${
-        enabled
-          ? "bg-foreground shadow-sm"
-          : "bg-muted-foreground/20 ring-border ring-1"
+        enabled ? "bg-foreground" : "bg-muted-foreground/20 ring-border ring-1"
       } cursor-pointer`}
     >
       <span
-        className={`bg-background ring-border/50 inline-block size-4 transform rounded-full shadow-sm ring-1 transition-transform duration-150 ${
+        className={`bg-background ring-border/50 inline-block size-4 transform rounded-full ring-1 transition-transform duration-150 ${
           enabled ? "translate-x-6" : "translate-x-1"
         }`}
       />
@@ -89,9 +87,9 @@ function FeatureRow({
   const Icon = FEATURE_ICONS[feature];
 
   return (
-    <div className="bg-card hover:bg-muted/20 flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors">
+    <div className="bg-card hover:bg-muted/20 flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-xl">
+        <div className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-md">
           <Icon className="text-foreground size-4.5" />
         </div>
         <div className="min-w-0">
@@ -101,7 +99,7 @@ function FeatureRow({
       </div>
       <div className="flex shrink-0 items-center gap-3">
         <span
-          className={`min-w-[3.5rem] text-right text-xs font-semibold ${
+          className={`min-w-14 text-right text-xs font-semibold ${
             enabled ? "text-foreground" : "text-muted-foreground"
           }`}
         >
@@ -148,8 +146,8 @@ export function AdminPermissionToggles() {
   if (rawPermissionsData === undefined) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-20 w-full rounded-xl" />
-        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <Skeleton className="h-20 w-full rounded-lg" />
       </div>
     );
   }
@@ -179,7 +177,7 @@ export function AdminPermissionToggles() {
         ))}
       </div>
 
-      <div className="border-border/60 bg-muted/30 flex items-start gap-2.5 rounded-xl border p-3">
+      <div className="border-border/60 bg-muted/30 flex items-start gap-2.5 rounded-lg border p-3">
         <AlertTriangle className="text-muted-foreground mt-0.5 size-4 shrink-0" />
         <div className="space-y-0.5">
           <p className="text-foreground text-xs font-semibold">

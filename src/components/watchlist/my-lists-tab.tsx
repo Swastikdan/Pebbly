@@ -53,12 +53,8 @@ export function MyListsTab() {
   if (!isSignedIn) {
     return (
       <div className="animate-fade-in-up flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-6 py-16 text-center">
-        <div className="relative flex size-20 items-center justify-center">
-          <div className="border-border/30 bg-muted/40 absolute size-14 rotate-[-6deg] rounded-xl border shadow-sm" />
-          <div className="border-border/40 bg-muted/70 absolute size-14 rotate-[6deg] rounded-xl border shadow-md" />
-          <div className="border-border/80 bg-background shadow-primary/5 absolute flex size-14 items-center justify-center rounded-xl border shadow-lg">
-            <ListPlus className="text-primary size-6" />
-          </div>
+        <div className="text-muted-foreground border-border flex size-10 items-center justify-center rounded-md border">
+          <ListPlus className="size-5" />
         </div>
         <div>
           <h3 className="mb-2 text-lg font-bold tracking-tight">
@@ -135,12 +131,8 @@ export function MyListsTab() {
 
       {sortedLists.length === 0 ? (
         <div className="animate-fade-in-up flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-6 py-16 text-center">
-          <div className="relative flex size-20 items-center justify-center">
-            <div className="border-border/30 bg-muted/40 absolute size-14 rotate-[-6deg] rounded-xl border shadow-sm" />
-            <div className="border-border/40 bg-muted/70 absolute size-14 rotate-[6deg] rounded-xl border shadow-md" />
-            <div className="border-border/80 bg-background shadow-primary/5 absolute flex size-14 items-center justify-center rounded-xl border shadow-lg">
-              <ListPlus className="text-primary size-6" />
-            </div>
+          <div className="text-muted-foreground border-border flex size-10 items-center justify-center rounded-md border">
+            <ListPlus className="size-5" />
           </div>
           <div>
             <h3 className="mb-2 text-lg font-bold tracking-tight">

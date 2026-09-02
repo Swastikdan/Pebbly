@@ -30,11 +30,11 @@ export const segmentedControlItemVariants = cva(
       size: segmentedControlItemSizeClassNames,
       state: {
         checked:
-          "data-checked:bg-background data-checked:text-foreground dark:data-checked:bg-input data-checked:shadow-sm/5",
+          "data-checked:bg-background data-checked:text-foreground dark:data-checked:bg-input",
         current:
-          "aria-[current=page]:bg-background aria-[current=page]:text-foreground dark:aria-[current=page]:bg-input aria-[current=page]:shadow-sm/5",
+          "aria-[current=page]:bg-background aria-[current=page]:text-foreground dark:aria-[current=page]:bg-input",
         pressed:
-          "data-pressed:bg-background data-pressed:text-foreground dark:data-pressed:bg-input data-pressed:shadow-sm/5",
+          "data-pressed:bg-background data-pressed:text-foreground dark:data-pressed:bg-input",
       },
     },
   },

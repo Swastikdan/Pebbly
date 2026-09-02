@@ -48,7 +48,7 @@ export function TabsList({
         "text-muted-foreground relative z-0 flex w-fit items-center justify-center gap-x-0.5",
         "data-[orientation=vertical]:flex-col",
         variant === "default"
-          ? "bg-muted text-muted-foreground/72 rounded-lg p-0.5"
+          ? "bg-muted text-muted-foreground/72 rounded-md p-0.5"
           : "*:data-[slot=tabs-tab]:hover:bg-accent data-[orientation=horizontal]:py-1 data-[orientation=vertical]:px-1",
         className,
       )}
@@ -63,8 +63,8 @@ export function TabsList({
         className={cn(
           "ease-emphatic absolute top-0 left-0 transition-[translate,width,height] duration-150",
           variant === "underline"
-            ? "bg-primary z-10 data-[orientation=horizontal]:top-auto data-[orientation=horizontal]:bottom-0 data-[orientation=horizontal]:h-0.5 data-[orientation=horizontal]:w-[var(--active-tab-width)] data-[orientation=horizontal]:[translate:var(--active-tab-left)_0] data-[orientation=vertical]:h-[var(--active-tab-height)] data-[orientation=vertical]:w-0.5 data-[orientation=vertical]:[translate:0_var(--active-tab-top)]"
-            : "bg-background dark:bg-input -z-1 h-[var(--active-tab-height)] w-[var(--active-tab-width)] [translate:var(--active-tab-left)_var(--active-tab-top)] rounded-md shadow-sm/5",
+            ? "bg-primary z-10 data-[orientation=horizontal]:top-auto data-[orientation=horizontal]:bottom-0 data-[orientation=horizontal]:h-0.5 data-[orientation=horizontal]:w-(--active-tab-width) data-[orientation=horizontal]:[translate:var(--active-tab-left)_0] data-[orientation=vertical]:h-(--active-tab-height) data-[orientation=vertical]:w-0.5 data-[orientation=vertical]:[translate:0_var(--active-tab-top)]"
+            : "bg-background dark:bg-input -z-1 h-(--active-tab-height) w-(--active-tab-width) [translate:var(--active-tab-left)_var(--active-tab-top)] rounded-sm shadow-none",
         )}
         data-slot="tab-indicator"
       />

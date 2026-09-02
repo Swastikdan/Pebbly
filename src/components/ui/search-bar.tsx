@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 
 import { SearchIcon, XCircleIcon } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -30,6 +31,8 @@ interface SearchBarProps {
   autoFocus?: boolean;
   disabled?: boolean;
   updateUrlOnChange?: boolean;
+  /** When provided, shows a clickable ⌘K hint on the right that opens the command palette. */
+  onCommandOpen?: () => void;
 }
 
 const SearchBar = memo(
@@ -46,6 +49,7 @@ const SearchBar = memo(
     autoFocus = false,
     disabled = false,
     updateUrlOnChange = false,
+    onCommandOpen,
   }: SearchBarProps) => {
     const searchId = useId();
     const navigate = useNavigate();
@@ -75,11 +79,12 @@ const SearchBar = memo(
           }
 
           if (updateUrlOnChange) {
-            if (newValue.trim()) {
-              addToSearchHistory(newValue.trim());
+            const trimmedValue = newValue.trim();
+            if (trimmedValue.length >= 2) {
+              addToSearchHistory(trimmedValue);
               navigate({
                 to: "/search",
-                search: { query: newValue.trim() },
+                search: { query: trimmedValue },
                 replace: true,
               });
             } else {
@@ -126,24 +131,27 @@ const SearchBar = memo(
           clearTimeout(debounceTimeoutRef.current);
         }
 
-        if (!value.trim()) {
-          navigate({
-            to: "/search",
-            search: {},
-            replace: true,
-          });
+        const trimmedValue = value.trim();
+        if (trimmedValue.length < 2) {
+          if (!trimmedValue) {
+            navigate({
+              to: "/search",
+              search: {},
+              replace: true,
+            });
+          }
           return;
         }
 
-        addToSearchHistory(value.trim());
+        addToSearchHistory(trimmedValue);
 
         if (onSubmit) {
-          onSubmit(value.trim());
+          onSubmit(trimmedValue);
         }
 
         navigate({
           to: "/search",
-          search: { query: value.trim() },
+          search: { query: trimmedValue },
           replace: true,
         });
       },
@@ -193,7 +201,7 @@ const SearchBar = memo(
             disabled={disabled}
             autoFocus={autoFocus}
             className={cn(
-              "peer bg-card/95 border-border placeholder:text-muted-foreground/70 focus:bg-card focus:border-ring/40 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background h-11 w-full rounded-xl border px-0 ps-11 pe-11 text-[16px] shadow-none transition-[color,background-color,border-color,box-shadow] duration-150 focus:ring-2 md:text-[15px]",
+              "peer bg-card border-border placeholder:text-muted-foreground/70 focus:bg-card focus:border-ring/40 focus:ring-ring/15 dark:bg-input/35 dark:focus:bg-background h-11 w-full rounded-lg border px-0 ps-11 pe-11 text-[16px] shadow-none transition-[color,background-color,border-color,box-shadow] duration-150 focus:ring-2 md:text-[15px]",
               disabled && "cursor-not-allowed opacity-50",
             )}
             aria-label="Search Input"
@@ -212,6 +220,16 @@ const SearchBar = memo(
               <XCircleIcon size={20} aria-hidden="true" />
             </button>
           )}
+          {!showClearButton && onCommandOpen && !disabled && !isLoading && (
+            <button
+              type="button"
+              onClick={onCommandOpen}
+              className="text-muted-foreground/60 hover:text-muted-foreground absolute inset-y-0 inset-e-0 z-10 flex cursor-pointer items-center justify-center pe-3 transition-opacity"
+              aria-label="Open command menu (Command K)"
+            >
+              <Kbd>⌘K</Kbd>
+            </button>
+          )}
         </div>
       </form>
     );
@@ -221,7 +239,7 @@ const SearchBar = memo(
 SearchBar.displayName = "SearchBar";
 
 const SearchBarSkeleton = memo(function SearchBarSkeleton() {
-  return <Skeleton className="h-11 w-full rounded-xl" />;
+  return <Skeleton className="h-11 w-full rounded-lg" />;
 });
 
 SearchBarSkeleton.displayName = "SearchBarSkeleton";

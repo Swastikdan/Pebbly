@@ -82,7 +82,7 @@ function KeywordPage() {
 
   return (
     <section className="flex min-h-screen w-full justify-center">
-      <div className="top-0 w-full max-w-screen-xl items-center justify-center p-5">
+      <div className="top-0 w-full max-w-7xl items-center justify-center p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <GoBack title="Back" />
           <ShareButton title={`${keyword.name} Movies`} />

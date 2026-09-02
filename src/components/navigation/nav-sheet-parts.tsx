@@ -128,7 +128,7 @@ export const NavCard = ({
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <div
           className={cn(
-            "shrink-0 rounded-xl p-2.5",
+            "shrink-0 rounded-md p-2.5",
             isActive
               ? "bg-nav-active-fg/15 text-nav-active-fg"
               : "bg-muted text-foreground",
@@ -171,10 +171,8 @@ export const NavCard = ({
   );
 
   const baseClasses = cn(
-    "flex items-center justify-between rounded-2xl border p-3 transition-[color,background-color,border-color,transform] active:scale-[0.98]",
-    isActive
-      ? "bg-nav-active-bg border-transparent shadow-sm"
-      : "border-border bg-card",
+    "flex items-center justify-between rounded-lg border p-3 transition-[color,background-color,border-color,transform] active:scale-[0.98]",
+    isActive ? "bg-nav-active-bg border-transparent" : "border-border bg-card",
   );
 
   if (item.isExternal) {
@@ -212,7 +210,7 @@ export const NavSection = ({
   columns?: 1 | 2;
 }) => (
   <div className="space-y-2">
-    <div className="text-muted-foreground px-1 text-xs font-semibold tracking-wider uppercase">
+    <div className="text-muted-foreground px-1 text-xs font-medium">
       {title}
     </div>
     <div

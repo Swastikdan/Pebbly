@@ -127,7 +127,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
         <div
           data-media-poster
           className={cn(
-            "surface-raised interactive-raised bg-muted relative w-full overflow-hidden rounded-2xl",
+            "surface-raised interactive-raised bg-muted relative w-full overflow-hidden rounded-lg",
             imageContainerClassName,
           )}
         >
@@ -145,13 +145,13 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
           <div className="absolute inset-0 bg-linear-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
           {isRecommended && (
-            <Badge className="absolute top-2 left-2 rounded-md border-0 bg-blue-600/90 px-2 py-1 text-[10px] font-bold text-white shadow-md">
+            <Badge className="absolute top-2 left-2 rounded-md border-0 bg-blue-600/90 px-2 py-1 text-[10px] font-medium text-white">
               Recommended
             </Badge>
           )}
 
           {rating > 0 && (
-            <Badge className="text-meta absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-[8px] py-[11px] text-white sm:bg-black/60">
+            <Badge className="text-meta absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
               <Star className="size-4 fill-yellow-400 text-yellow-400" />
               <span className="font-semibold text-white">
                 {rating.toFixed(1)}
@@ -159,7 +159,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             </Badge>
           )}
 
-          <Badge className="text-meta absolute right-2 bottom-2 rounded-md border-0 bg-black/90 px-[8px] py-[11px] text-white sm:bg-black/60">
+          <Badge className="text-meta absolute right-2 bottom-2 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
             {mediaTypeLabel}
           </Badge>
         </div>
@@ -221,7 +221,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             release_date={release_date ?? ""}
             title={title}
             overview={overview}
-            className="h-8 w-8 rounded-lg shadow-md hover:scale-105"
+            className="h-8 w-8 rounded-md shadow-none hover:scale-105"
           />
         )}
       </div>
@@ -350,7 +350,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
             {episodeDetail?.name && (
               <>
                 <span className="text-muted-foreground/50 text-[10px]">•</span>
-                <span className="text-muted-foreground/80 max-w-[150px] truncate text-xs font-medium">
+                <span className="text-muted-foreground/80 max-w-37.5 truncate text-xs font-medium">
                   {episodeDetail.name}
                 </span>
               </>
@@ -384,7 +384,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
       params={{ id: String(id) }}
       className="group ring-offset-background focus-visible:ring-ring pressable relative block w-24 outline-hidden transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 md:w-28 lg:w-32"
     >
-      <div className="bg-muted relative aspect-[2/3] w-full overflow-hidden rounded-2xl border border-white/10 shadow-[0_1px_0_rgb(255_255_255/0.07)_inset,0_4px_14px_rgb(0_0_0/0.16)] transition-[border-color] duration-200 group-hover:border-white/20 group-hover:shadow-[0_1px_0_rgb(255_255_255/0.09)_inset,0_10px_26px_rgb(0_0_0/0.24)]">
+      <div className="bg-muted border-border group-hover:border-foreground/25 relative aspect-2/3 w-full overflow-hidden rounded-lg border transition-[border-color] duration-200">
         <Image
           alt={name}
           src={imageUrl}
@@ -414,17 +414,17 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
   if (props.card_type === "horizontal") {
     return (
       <div className="w-40 md:w-44 lg:w-48">
-        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl">
-          <Skeleton className="absolute inset-0 rounded-xl" />
+        <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg">
+          <Skeleton className="absolute inset-0 rounded-lg" />
           <div className="absolute bottom-2 left-2">
-            <Skeleton className="h-[18px] w-12 rounded-md" />
+            <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
           <div className="absolute right-2 bottom-2">
-            <Skeleton className="h-[18px] w-10 rounded-md" />
+            <Skeleton className="h-4.5 w-10 rounded-md" />
           </div>
         </div>
         <div className="mt-2.5 flex flex-col gap-1">
-          <Skeleton className="h-[14px] w-3/4 rounded-md" />
+          <Skeleton className="h-3.5 w-3/4 rounded-md" />
           <Skeleton className="h-3 w-1/4 rounded-md" />
         </div>
       </div>
@@ -433,17 +433,17 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
   if (props.card_type === "vertical") {
     return (
       <div className="w-64 md:w-72 lg:w-80">
-        <div className="relative aspect-video w-full overflow-hidden rounded-xl">
-          <Skeleton className="absolute inset-0 rounded-xl" />
+        <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+          <Skeleton className="absolute inset-0 rounded-lg" />
           <div className="absolute bottom-2 left-2">
-            <Skeleton className="h-[18px] w-12 rounded-md" />
+            <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
           <div className="absolute right-2 bottom-2">
-            <Skeleton className="h-[18px] w-14 rounded-md" />
+            <Skeleton className="h-4.5 w-14 rounded-md" />
           </div>
         </div>
         <div className="mt-2.5 flex flex-col gap-1">
-          <Skeleton className="h-[14px] w-3/4 rounded-md" />
+          <Skeleton className="h-3.5 w-3/4 rounded-md" />
           <Skeleton className="h-3 w-1/4 rounded-md" />
         </div>
       </div>
@@ -452,9 +452,9 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
 
   return (
     <div className="w-24 md:w-28 lg:w-32">
-      <Skeleton className="aspect-[2/3] w-full rounded-xl" />
+      <Skeleton className="aspect-2/3 w-full rounded-lg" />
       <div className="mt-2 flex flex-col items-start gap-1">
-        <Skeleton className="h-[14px] w-full rounded-md" />
+        <Skeleton className="h-3.5 w-full rounded-md" />
         <Skeleton className="h-3 w-3/4 rounded-md" />
       </div>
     </div>

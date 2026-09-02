@@ -86,15 +86,15 @@ export function DailyPickButton() {
         <span>What to Watch Today</span>
       </DialogTrigger>
       <DialogPopup
-        className="bg-background/95 max-w-[92vw] overflow-hidden rounded-2xl border-white/10 p-0 shadow-2xl backdrop-blur-xl sm:max-w-lg"
+        className="bg-background border-border max-w-[92vw] overflow-hidden rounded-lg border p-0 shadow-none sm:max-w-lg"
         closeProps={{
           className:
-            "top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white dark:bg-black/60 dark:hover:bg-black/80 dark:text-white border border-white/20 backdrop-blur-md z-30",
+            "border-border bg-background text-foreground hover:bg-muted top-3 right-3 z-30 rounded-md border p-2",
         }}
       >
         {pick.isDataLoading ? (
           <div className="flex h-72 flex-col items-center justify-center gap-3 p-6 text-center">
-            <div className="grid size-12 place-items-center rounded-xl">
+            <div className="grid size-12 place-items-center rounded-lg">
               <Spinner className="text-foreground/70 size-6" />
             </div>
           </div>
@@ -110,15 +110,15 @@ export function DailyPickButton() {
                   height={350}
                 />
               ) : (
-                <div className="h-full w-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-800 dark:to-neutral-950" />
+                <div className="h-full w-full bg-linear-to-br from-neutral-200 to-neutral-300 dark:from-neutral-800 dark:to-neutral-950" />
               )}
-              <div className="from-background via-background/40 absolute inset-0 hidden bg-gradient-to-t to-transparent dark:block" />
+              <div className="from-background via-background/40 absolute inset-0 hidden bg-linear-to-t to-transparent dark:block" />
               <div className="absolute inset-0 bg-black/15 dark:hidden" />
-              <div className="from-background via-background/60 absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t to-transparent dark:hidden" />
+              <div className="from-background via-background/60 absolute inset-x-0 bottom-0 h-16 bg-linear-to-t to-transparent dark:hidden" />
 
               <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 pr-12">
                 {pick.selectedItem.isCurrentlyWatching ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-green-500/90 px-2.5 py-0.5 text-[11px] font-bold text-black shadow-md backdrop-blur-md">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-green-500/90 px-2.5 py-0.5 text-[11px] font-medium text-black">
                     <Eye className="size-3" />
                     Watching
                     {pick.selectedItem.watchProgress
@@ -126,12 +126,12 @@ export function DailyPickButton() {
                       : ""}
                   </span>
                 ) : pick.selectedItem.isFromWatchlist ? (
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-md backdrop-blur-md">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-medium text-white">
                     <BookMarkIcon className="size-3 fill-white" />
                     From Your Watchlist
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-lg border border-blue-500/25 bg-black/75 px-2.5 py-0.5 text-[11px] font-bold text-blue-400 backdrop-blur-md">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-blue-500/25 bg-black/75 px-2.5 py-0.5 text-[11px] font-medium text-blue-400">
                     <SparklesIcon className="size-3 fill-blue-400" />
                     Today's Pick
                   </span>
@@ -145,7 +145,7 @@ export function DailyPickButton() {
                   <Link
                     to={pick.targetPath}
                     onClick={() => setIsOpen(false)}
-                    className="border-background/60 bg-muted group/poster relative aspect-[2/3] w-20 shrink-0 overflow-hidden rounded-xl border-2 shadow-xl transition-opacity sm:w-24 [@media(hover:hover)]:hover:opacity-90"
+                    className="border-background/60 bg-muted group/poster relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition-opacity sm:w-24 [@media(hover:hover)]:hover:opacity-90"
                     title={`View ${pick.title}`}
                   >
                     <Image
@@ -172,7 +172,7 @@ export function DailyPickButton() {
                   <div className="text-meta text-muted-foreground flex flex-wrap items-center gap-1.5">
                     {pick.year && <span>{pick.year}</span>}
                     {pick.year && <span>•</span>}
-                    <span className="text-[11px] font-semibold uppercase">
+                    <span className="text-[11px] font-medium">
                       {pick.mediaType === "tv" ? "TV Series" : "Movie"}
                     </span>
                     {pick.rating > 0 && (
@@ -204,7 +204,7 @@ export function DailyPickButton() {
                         className="flex-1"
                       >
                         {" "}
-                        <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-xl text-xs font-semibold shadow-md sm:h-11 sm:text-sm">
+                        <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-md text-xs font-medium sm:h-11 sm:text-sm">
                           ▶ Watch Now
                         </Button>
                       </Link>
@@ -221,7 +221,7 @@ export function DailyPickButton() {
                         }
                         title={pick.title}
                         overview={pick.selectedItem.overview}
-                        className="h-10 w-10 shrink-0 rounded-xl sm:h-11 sm:w-11"
+                        className="h-10 w-10 shrink-0 rounded-lg sm:h-11 sm:w-11"
                       />
                     </div>
 
@@ -230,7 +230,7 @@ export function DailyPickButton() {
                         variant="outline"
                         onClick={pick.handleDislike}
                         title="Dislike / Not for me (Removes from picks)"
-                        className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-9 rounded-xl px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
+                        className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
                       >
                         <ThumbsDown className="mr-1.5 size-3.5" />
                         <span>Dislike</span>
@@ -240,7 +240,7 @@ export function DailyPickButton() {
                         variant="outline"
                         onClick={pick.handleShuffle}
                         title="Pick Another"
-                        className="border-border hover:bg-accent active:bg-accent h-9 rounded-xl px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
+                        className="border-border hover:bg-accent active:bg-accent h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
                       >
                         🎲 Another
                       </Button>
@@ -261,14 +261,14 @@ export function DailyPickButton() {
                       title={pick.title}
                       overview={pick.selectedItem.overview}
                       showLabel
-                      className="h-10 w-full rounded-xl text-xs font-semibold sm:h-11 sm:text-sm"
+                      className="h-10 w-full rounded-lg text-xs font-semibold sm:h-11 sm:text-sm"
                     />
 
                     <Button
                       variant="outline"
                       onClick={pick.handleDislike}
                       title="Dislike / Not for me (Removes from picks)"
-                      className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-10 w-full rounded-xl px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
+                      className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
                     >
                       <ThumbsDown className="mr-1.5 size-3.5" />
                       <span>Dislike</span>
@@ -278,7 +278,7 @@ export function DailyPickButton() {
                       variant="outline"
                       onClick={pick.handleShuffle}
                       title="Pick Another"
-                      className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-xl px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
+                      className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
                     >
                       🎲 Another
                     </Button>
@@ -288,7 +288,7 @@ export function DailyPickButton() {
             </div>
           </div>
         ) : (
-          <div className="flex min-h-[250px] flex-col items-center justify-center p-8 text-center">
+          <div className="flex min-h-62.5 flex-col items-center justify-center p-8 text-center">
             <FilmIcon className="text-muted-foreground/40 mb-3 size-10" />
             <h4 className="text-foreground text-base font-semibold">
               No picks available

@@ -2,6 +2,7 @@ import { Image } from "@unpic/react";
 import { Link } from "@tanstack/react-router";
 
 import { DesktopNavButtons } from "@/components/desktop-nav-button";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
 import {
   Menu,
@@ -27,7 +28,7 @@ const NavSubmenuItems = ({
         <MenuLinkItem
           key={subitem.slug}
           render={<Link to={subitem.url} />}
-          className="h-9 cursor-pointer rounded-lg px-3 text-base"
+          className="h-8 cursor-pointer rounded-md px-3 text-sm"
         >
           {subitem.name}
         </MenuLinkItem>
@@ -49,10 +50,7 @@ const DesktopNavMenuItem = ({
     <Menu>
       <MenuTrigger
         render={
-          <Button
-            variant="secondary"
-            className="cursor-pointer px-3 text-base"
-          />
+          <Button variant="secondary" className="cursor-pointer px-3 text-sm" />
         }
       >
         {item.name}
@@ -60,7 +58,7 @@ const DesktopNavMenuItem = ({
       <MenuPopup
         align="end"
         aria-label="Desktop Menu"
-        className="mt-2 w-40 rounded-xl p-2 shadow-none"
+        className="mt-2 w-40 rounded-lg p-1 shadow-none"
       >
         <NavSubmenuItems items={item.submenu} />
       </MenuPopup>
@@ -72,14 +70,14 @@ DesktopNavMenuItem.displayName = "DesktopNavMenuItem";
 
 const Navbar = () => {
   return (
-    <header className="border-border/60 bg-background sticky top-0 z-50 mx-auto hidden w-full flex-col items-center border-b md:flex">
+    <header className="border-border/60 bg-background/95 sticky top-0 z-50 mx-auto hidden w-full flex-col items-center border-b md:flex">
       <nav
-        className="flex w-full max-w-screen-xl items-center justify-between px-4 py-2.5 md:px-5"
+        className="flex h-16 w-full max-w-7xl items-center justify-between px-4 md:px-6"
         aria-label="Main Navigation"
       >
         <Link
           to="/"
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+          className="flex items-center gap-2 transition-opacity hover:opacity-70"
           aria-label="Home"
         >
           <Image
@@ -87,14 +85,14 @@ const Navbar = () => {
             alt={`${SITE_CONFIG.name} logo`}
             width={100}
             height={100}
-            className="size-9"
+            className="size-8"
           />
 
-          <h1 className="font-heading text-lg font-bold md:text-xl">
+          <h1 className="font-heading text-base font-semibold tracking-tight md:text-lg">
             {SITE_CONFIG.name}
           </h1>
           {(IS_PREVIEW_BUILD || IS_DEV_BUILD) && (
-            <span className="bg-foreground text-background rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+            <span className="bg-foreground text-background rounded-md px-2 py-0.5 text-[10px] font-medium">
               {IS_PREVIEW_BUILD ? "Preview" : "Dev"}
             </span>
           )}
@@ -106,6 +104,7 @@ const Navbar = () => {
             ))}
           </ul>
           <div className="hidden md:flex md:items-center md:gap-1.5">
+            <ThemeSwitcher />
             <DesktopNavButtons />
           </div>
         </section>

@@ -9,7 +9,7 @@ import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
-import { IMAGE_PREFIX, VITE_PUBLIC_APP_URL } from "@/constants";
+import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
       url:
         loaderData?.id &&
         loaderData.title &&
-        `${VITE_PUBLIC_APP_URL}/tv/${loaderData.id}/${loaderData.slug}/seasons`,
+        `${SITE_CONFIG.url}/tv/${loaderData.id}/${loaderData.slug}/seasons`,
     }),
   }),
   component: TvSeasonsPage,
@@ -72,7 +72,7 @@ function TvSeasonsPage() {
   const urltitle = formatMediaTitle.encode(showName);
 
   return (
-    <section className="mx-auto block min-h-[90vh] max-w-screen-xl items-center px-4">
+    <section className="mx-auto block min-h-[90vh] max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
           <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
@@ -90,13 +90,13 @@ function TvSeasonsPage() {
             to={`/tv/${id}/${urltitle}/season/${season.season_number}`}
             className="pressable-small block"
           >
-            <div className="border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 hover: flex items-start gap-5 rounded-3xl border-2 p-3 transition-[color,background-color,border-color,box-shadow] duration-150 md:p-5">
-              <div className="min-w-[7rem] md:min-w-[9rem]">
+            <div className="border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 relative flex items-start gap-5 rounded-lg border p-3 transition-[color,background-color,border-color] duration-150 md:p-5">
+              <div className="min-w-28 md:min-w-36">
                 {/* Season posters render at ~144px wide, so w500 (SD) is plenty;
 							    w780 (HD) decodes to ~3.6 MB per poster for no visible gain. */}
                 <Image
                   alt={season.name}
-                  className="h-40 w-28 shrink-0 rounded-xl object-cover md:h-52 md:w-36"
+                  className="h-40 w-28 shrink-0 rounded-lg object-cover md:h-52 md:w-36"
                   height={300}
                   src={IMAGE_PREFIX.SD_POSTER + season.poster_path}
                   width={200}

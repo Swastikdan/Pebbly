@@ -56,7 +56,7 @@ export function MenuPopup({
       >
         <MenuPrimitive.Popup
           className={cn(
-            "bg-popover relative flex origin-(--transform-origin) rounded-lg border shadow-lg/5 outline-hidden not-dark:bg-clip-padding not-[class*='w-']:min-w-32 before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] focus:outline-hidden dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+            "bg-popover relative flex origin-(--transform-origin) rounded-lg border shadow-none outline-hidden not-[class*='w-']:min-w-32 focus:outline-hidden",
             className,
           )}
           data-slot="menu-popup"

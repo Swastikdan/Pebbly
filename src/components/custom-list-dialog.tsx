@@ -45,7 +45,7 @@ function SegmentedButton({
       className={cn(
         "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-[10.5px] transition-[color,background-color,border-color,box-shadow]",
         active
-          ? "bg-card text-foreground border-border font-semibold shadow-sm dark:shadow-none"
+          ? "bg-card text-foreground border-border font-semibold"
           : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border-transparent bg-transparent",
       )}
       aria-pressed={active}
@@ -194,7 +194,7 @@ export function CustomListDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPopup className="overflow-hidden rounded-xl p-0 sm:max-w-lg">
+      <DialogPopup className="overflow-hidden rounded-lg p-0 sm:max-w-lg">
         <div className="space-y-5 px-6 py-5">
           <DialogHeader className="relative">
             <DialogTitle className="font-heading pr-6 text-left text-lg font-semibold tracking-tight">
@@ -222,7 +222,7 @@ export function CustomListDialog({
               maxLength={50}
               autoFocus
               className={cn(
-                "bg-card h-10 w-full rounded-xl border px-3.5 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
+                "bg-card h-10 w-full rounded-lg border px-3.5 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
                 "placeholder:text-muted-foreground/60",
                 "focus-visible:border-ring/60 focus-visible:bg-card focus-visible:ring-ring/30 focus-visible:ring-1",
                 error ? "border-destructive/50" : "border-border",
@@ -242,7 +242,7 @@ export function CustomListDialog({
               onChange={(e) => setDescription(e.target.value.substring(0, 150))}
               maxLength={150}
               className={cn(
-                "bg-card min-h-[64px] w-full resize-none rounded-xl border p-3 text-xs outline-hidden transition-[color,background-color,border-color,box-shadow] duration-200",
+                "bg-card min-h-16 w-full resize-none rounded-lg border p-3 text-xs outline-hidden transition-[color,background-color,border-color,box-shadow] duration-200",
                 "placeholder:text-muted-foreground/60",
                 "focus-visible:border-ring/60 focus-visible:bg-card focus-visible:ring-ring/30 focus-visible:ring-1",
                 "border-border",
@@ -274,7 +274,7 @@ export function CustomListDialog({
                     {isSelected && (
                       <Check
                         size={12}
-                        className="absolute inset-0 m-auto text-white drop-shadow-sm"
+                        className="absolute inset-0 m-auto text-white"
                         strokeWidth={3}
                       />
                     )}
@@ -289,7 +289,7 @@ export function CustomListDialog({
               <Label className="text-muted-foreground text-xs font-medium">
                 Visibility
               </Label>
-              <div className="bg-muted/70 border-border/50 flex rounded-xl border p-1">
+              <div className="bg-muted/70 border-border/50 flex rounded-lg border p-1">
                 <SegmentedButton
                   active={visibility === "private"}
                   onClick={() => setVisibility("private")}
@@ -303,7 +303,7 @@ export function CustomListDialog({
                   label="Public"
                 />
               </div>
-              <p className="text-muted-foreground/80 min-h-[28px] text-[10px] leading-snug">
+              <p className="text-muted-foreground/80 min-h-7 text-[10px] leading-snug">
                 {visibility === "private"
                   ? "Only you can see this collection."
                   : "Anyone with the link can view it."}
@@ -324,7 +324,7 @@ export function CustomListDialog({
               <Label className="text-muted-foreground text-xs font-medium">
                 Ordering
               </Label>
-              <div className="bg-muted/70 border-border/50 flex rounded-xl border p-1">
+              <div className="bg-muted/70 border-border/50 flex rounded-lg border p-1">
                 <SegmentedButton
                   active={sortType === "unordered"}
                   onClick={() => setSortType("unordered")}
@@ -338,7 +338,7 @@ export function CustomListDialog({
                   label="Ranked"
                 />
               </div>
-              <p className="text-muted-foreground/80 min-h-[28px] text-[10px] leading-snug">
+              <p className="text-muted-foreground/80 min-h-7 text-[10px] leading-snug">
                 {sortType === "unordered"
                   ? "A simple list of titles."
                   : "Titles are numbered #1, #2, … and can be reordered."}
@@ -347,7 +347,7 @@ export function CustomListDialog({
           </div>
 
           {error && (
-            <p className="bg-destructive/10 text-destructive rounded-xl px-3 py-2 text-xs">
+            <p className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs">
               {error}
             </p>
           )}
