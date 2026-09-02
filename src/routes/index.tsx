@@ -120,14 +120,17 @@ function HomePage() {
             </p>
           </div>
 
-          <div className="animate-fade-in" style={{ animationDelay: "150ms" }}>
+          <div
+            className="motion-safe:animate-fade-in"
+            style={{ animationDelay: "150ms" }}
+          >
             <Suspense fallback={<SearchBarSkeleton />}>
               <SearchBar onCommandOpen={openCommandPalette} />
             </Suspense>
           </div>
 
           <div
-            className="animate-fade-in mt-4 flex justify-center"
+            className="motion-safe:animate-fade-in mt-4 flex justify-center"
             style={{ animationDelay: "250ms" }}
           >
             <DailyPickButton />

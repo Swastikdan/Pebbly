@@ -50,7 +50,9 @@ export function AutocompleteInput({
           sizeValue === "lg" && "h-11 sm:h-10",
           sizeValue === "sm" && "h-8 sm:h-7",
           startAddon && "ps-9 sm:ps-8",
-          (showTrigger || showClear) && "pe-8",
+          showTrigger && showClear
+            ? "pe-16"
+            : (showTrigger || showClear) && "pe-8",
           className,
         )}
         data-slot="autocomplete-input"
@@ -58,18 +60,24 @@ export function AutocompleteInput({
       />
       {showTrigger && (
         <AutocompleteTrigger
+          {...triggerProps}
           className={cn(
             "absolute top-1/2 inline-flex size-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-transparent opacity-80 transition-colors outline-none hover:opacity-100 sm:size-7 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4",
             "end-0.5",
+            triggerProps?.className,
           )}
-          {...triggerProps}
         >
           <AutocompletePrimitive.Icon data-slot="autocomplete-icon">
             <ChevronsUpDownIcon />
           </AutocompletePrimitive.Icon>
         </AutocompleteTrigger>
       )}
-      {showClear && <AutocompleteClear {...clearProps} />}
+      {showClear && (
+        <AutocompleteClear
+          {...clearProps}
+          className={cn(showTrigger && "end-8.5", clearProps?.className)}
+        />
+      )}
     </AutocompletePrimitive.InputGroup>
   );
 }

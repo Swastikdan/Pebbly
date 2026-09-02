@@ -24,9 +24,9 @@ export const CastSection = (props: {
   is_more_cast_crew: boolean;
   type: MediaType;
 }) => {
-  const { id, urltitle, cast, crew, is_more_cast_crew, type } = props;
-  const hasCastOrCrew = cast.length > 0 || crew.length > 0;
-  if (!hasCastOrCrew) return null;
+  const { id, urltitle, cast, is_more_cast_crew, type } = props;
+  const hasCast = cast.length > 0;
+  if (!hasCast) return null;
   const castCrewHref = `/${type}/${id}/${encodeURIComponent(urltitle)}/cast-crew`;
   return (
     <div className="pb-5">
@@ -51,7 +51,7 @@ export const CastSection = (props: {
                   card_type="person"
                 />
               ))}
-              {is_more_cast_crew && (
+              {is_more_cast_crew && hasCast && (
                 <Link to={castCrewHref}>
                   <Button
                     className="pressable mr-10 ml-5 flex items-center justify-center rounded-lg"

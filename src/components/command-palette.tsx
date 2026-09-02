@@ -74,7 +74,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const isSearching = trimmed.length >= 2;
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isPlaceholderData } = useQuery({
     queryKey: queryKeys.tmdb.search(trimmed, 1),
     queryFn: () => getSearchResult({ query: trimmed, page: 1 }),
     enabled: open && isSearching,
@@ -157,27 +157,30 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       (item) => item.media_type === "movie" || item.media_type === "tv",
     );
 
-    const titleItems: PaletteItem[] = resultItems.slice(0, 8).map((item) => {
-      const mediaType = item.media_type as "movie" | "tv";
-      const title = (item.title ?? item.name ?? "Untitled") as string;
-      const releaseDate = item.release_date || item.first_air_date;
-      const year = releaseDate ? new Date(releaseDate).getFullYear() : null;
-      const displayLabel =
-        year && !Number.isNaN(year) ? `${title} (${year})` : title;
+    const titleItems: PaletteItem[] = isPlaceholderData
+      ? []
+      : resultItems.slice(0, 8).map((item) => {
+          const mediaType = item.media_type as "movie" | "tv";
+          const title = (item.title ?? item.name ?? "Untitled") as string;
+          const releaseDate = item.release_date || item.first_air_date;
+          const year = releaseDate ? new Date(releaseDate).getFullYear() : null;
+          const displayLabel =
+            year && !Number.isNaN(year) ? `${title} (${year})` : title;
 
-      return {
-        value: `${mediaType}-${item.id}`,
-        label: displayLabel,
-        icon:
-          mediaType === "movie" ? (
-            <Film aria-hidden="true" className="text-muted-foreground" />
-          ) : (
-            <Tv aria-hidden="true" className="text-muted-foreground" />
-          ),
-        shortcut: mediaType === "movie" ? "Movie" : "TV",
-        onSelect: () => navigate({ to: `/${mediaType}/${item.id.toString()}` }),
-      };
-    });
+          return {
+            value: `${mediaType}-${item.id}`,
+            label: displayLabel,
+            icon:
+              mediaType === "movie" ? (
+                <Film aria-hidden="true" className="text-muted-foreground" />
+              ) : (
+                <Tv aria-hidden="true" className="text-muted-foreground" />
+              ),
+            shortcut: mediaType === "movie" ? "Movie" : "TV",
+            onSelect: () =>
+              navigate({ to: `/${mediaType}/${item.id.toString()}` }),
+          };
+        });
 
     const nextGroups: PaletteGroup[] = [];
     if (matchingAppItems.length > 0) {
@@ -223,6 +226,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     hasAiRecommendations,
     isAdmin,
     isFetching,
+    isPlaceholderData,
     isSearching,
     navigate,
     normalizedQuery,
