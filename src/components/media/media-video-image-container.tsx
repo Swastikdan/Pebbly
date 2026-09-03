@@ -99,10 +99,10 @@ export const MediaVideoImageContainer = (props: {
           getLightboxTitle={(video) => video.name}
           prevLabel="Previous video"
           nextLabel="Next video"
-          lightboxOverlayClassName="bg-black/45 backdrop-blur-[2px] dark:bg-black/60"
-          lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]"
+          lightboxOverlayClassName="bg-black/80 backdrop-blur-sm dark:bg-black/85"
+          lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 bg-neutral-950 p-0 ring-0 sm:max-w-[85vw]"
           renderLightboxBody={(video) => (
-            <div className="bg-secondary size-full overflow-hidden rounded-xl">
+            <div className="size-full overflow-hidden rounded-xl bg-neutral-950">
               <YouTubeEmbed
                 videoKey={video.key}
                 title={video.name}
@@ -128,15 +128,16 @@ export const MediaVideoImageContainer = (props: {
             getLightboxTitle={(image) => `${image.file_path} Backdrop Image`}
             prevLabel="Previous backdrop"
             nextLabel="Next backdrop"
-            lightboxOverlayClassName="bg-black/45 backdrop-blur-[2px] dark:bg-black/60"
-            lightboxContentClassName="bg-secondary aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:max-w-[90vw]"
+            lightboxOverlayClassName="bg-black/80 backdrop-blur-sm dark:bg-black/85"
+            lightboxContentClassName="bg-neutral-950 aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:max-w-[90vw]"
             renderLightboxBody={(image) => (
-              <div className="bg-secondary size-full overflow-hidden rounded-lg">
+              <div className="size-full overflow-hidden rounded-lg bg-neutral-950">
                 <Image
                   alt={image.file_path}
                   className="aspect-video size-full rounded-lg object-cover"
                   height={300}
                   src={IMAGE_PREFIX.ORIGINAL + image.file_path}
+                  blurSrc={IMAGE_PREFIX.SD_BACKDROP + image.file_path}
                   width={450}
                 />
               </div>
@@ -155,15 +156,16 @@ export const MediaVideoImageContainer = (props: {
             getLightboxTitle={(image) => `${image.file_path} Poster Image`}
             prevLabel="Previous poster"
             nextLabel="Next poster"
-            lightboxOverlayClassName="bg-black/45 backdrop-blur-[2px] dark:bg-black/60"
-            lightboxContentClassName="bg-secondary aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:h-full sm:w-auto"
+            lightboxOverlayClassName="bg-black/80 backdrop-blur-sm dark:bg-black/85"
+            lightboxContentClassName="bg-neutral-950 aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:h-full sm:w-auto"
             renderLightboxBody={(image) => (
-              <div className="bg-secondary size-full overflow-hidden rounded-lg">
+              <div className="size-full overflow-hidden rounded-lg bg-neutral-950">
                 <Image
                   alt={image.file_path}
                   className="aspect-11/16 h-auto w-full rounded-lg object-center"
                   height={300}
                   src={IMAGE_PREFIX.ORIGINAL + image.file_path}
+                  blurSrc={IMAGE_PREFIX.SD_POSTER + image.file_path}
                   width={450}
                 />
               </div>

@@ -97,8 +97,8 @@ export function MediaLightboxDialog({
   hasNext,
   onPrev,
   onNext,
-  overlayClassName = "bg-black/50 backdrop-blur-sm",
-  contentClassName = "aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-lg border-0  p-0 ring-0 overflow-hidden",
+  overlayClassName = "bg-black/80 backdrop-blur-sm dark:bg-black/85",
+  contentClassName = "aspect-video w-full max-w-[95vw] sm:max-w-[85vw] rounded-lg border-0 bg-neutral-950 p-0 ring-0 overflow-hidden",
   prevLabel = "Previous item",
   nextLabel = "Next item",
   children,
@@ -130,6 +130,10 @@ export function MediaLightboxDialog({
       <DialogPopup
         overlayClassName={overlayClassName}
         className={contentClassName}
+        closeProps={{
+          className:
+            "bg-black/60 hover:bg-black/90 text-white hover:text-white border-white/20",
+        }}
       >
         <DialogHeader className="sr-only">
           <DialogTitle>{title}</DialogTitle>

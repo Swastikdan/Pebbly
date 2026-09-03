@@ -87,10 +87,10 @@ export function MediaPosterTrailerContainer(props: {
           getLightboxTitle={(video) => video.name}
           prevLabel="Previous trailer"
           nextLabel="Next trailer"
-          lightboxOverlayClassName="bg-black/45 backdrop-blur-[2px] dark:bg-black/60"
-          lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 p-0 ring-0 sm:max-w-[85vw]"
+          lightboxOverlayClassName="bg-black/80 backdrop-blur-sm dark:bg-black/85"
+          lightboxContentClassName="aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-xl border-0 bg-neutral-950 p-0 ring-0 sm:max-w-[85vw]"
           renderLightboxBody={(video) => (
-            <div className="bg-secondary relative isolate z-[1] size-full h-full overflow-hidden rounded-xl p-0">
+            <div className="relative isolate z-[1] size-full h-full overflow-hidden rounded-xl bg-neutral-950 p-0">
               <YouTubeEmbed videoKey={video.key} title={video.name} />
             </div>
           )}

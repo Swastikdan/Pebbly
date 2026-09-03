@@ -119,7 +119,7 @@ export function SheetPopup({
               aria-label="Close"
               {...closeRest}
               className={cn(
-                "text-muted-foreground hover:text-foreground bg-background hover:bg-accent/50 border-border/60 absolute top-4 right-4 z-50 cursor-pointer rounded-lg border p-2 shadow-xs transition-[color,background-color,box-shadow,transform] duration-150 ease-out active:scale-90",
+                "text-muted-foreground hover:text-foreground bg-background border-border/60 absolute top-4 right-4 z-50 cursor-pointer rounded-lg border p-2 shadow-xs transition-[color,background-color,box-shadow,transform] duration-150 ease-out hover:bg-neutral-100 active:scale-90 dark:hover:bg-neutral-800",
                 typeof closeClassName === "string" ? closeClassName : undefined,
               )}
             >

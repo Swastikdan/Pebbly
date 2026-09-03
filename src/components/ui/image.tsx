@@ -83,7 +83,7 @@ const ImageComponent = ({
         <div
           aria-hidden="true"
           className={cn(
-            "pointer-events-none absolute inset-0 scale-110 transform-gpu blur-md transition-opacity duration-500 ease-out",
+            "pointer-events-none absolute inset-0 transform-gpu blur-md transition-opacity duration-500 ease-out",
             loaded ? "opacity-0" : "opacity-100",
           )}
           style={blurStyle}
