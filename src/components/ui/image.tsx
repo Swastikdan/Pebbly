@@ -83,8 +83,8 @@ const ImageComponent = ({
         <div
           aria-hidden="true"
           className={cn(
-            "absolute inset-0 transition-opacity duration-300 ease-out",
-            loaded && "opacity-0",
+            "pointer-events-none absolute inset-0 scale-110 transform-gpu blur-md transition-opacity duration-500 ease-out",
+            loaded ? "opacity-0" : "opacity-100",
           )}
           style={blurStyle}
         />
@@ -93,12 +93,11 @@ const ImageComponent = ({
         !priority && <Skeleton className="absolute inset-0 rounded-none" />
       )}
       <ReactImage
-        key={currentSrc}
         ref={attachRef}
         alt={alt ?? "Image"}
         className={cn(
           className,
-          "transition-opacity duration-300 ease-out",
+          "transition-opacity duration-500 ease-out",
           !loaded && !priority && "opacity-0",
         )}
         loading={priority ? "eager" : "lazy"}

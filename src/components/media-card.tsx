@@ -247,7 +247,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
       imageUrl={imageUrl}
       blurSrc={blurSrc}
       formattedTitle={formattedTitle}
-      containerClassName="w-40 md:w-44 lg:w-48 scroll-snap-item"
+      containerClassName="w-40 md:w-44 lg:w-48"
       imageContainerClassName="aspect-[2/3]"
       imageWidth={300}
       imageHeight={450}
@@ -332,7 +332,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
       imageUrl={imageUrl}
       blurSrc={blurSrc}
       formattedTitle={formattedTitle}
-      containerClassName="w-64 md:w-72 lg:w-80 scroll-snap-item"
+      containerClassName="w-64 md:w-72 lg:w-80"
       imageContainerClassName="aspect-video"
       imageWidth={450}
       imageHeight={300}

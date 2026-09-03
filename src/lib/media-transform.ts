@@ -62,17 +62,14 @@ export const splitVideos = (videos?: MinimalVideo[] | null) => {
   return { allVideos, trailervideos, youtubeclips };
 };
 
-const sortByVoteAverage = (a: MinimalImage, b: MinimalImage) =>
-  (b.vote_average ?? 0) - (a.vote_average ?? 0);
-
 // Cast/crew and backdrop/poster lists share the same shape-up pipeline
-// (bound the list, sort images by TMDB's vote score); only the final
-// per-item projection differs, so the shared part lives here once.
+// (bound the list while preserving the API order); only the final per-item
+// projection differs, so the shared part lives here once.
 const featuredPeople = (people?: MinimalPerson[] | null) =>
   people?.slice(0, FEATURED_ITEMS_LIMIT) ?? [];
 
 const featuredImages = (images?: MinimalImage[] | null) =>
-  images?.slice().sort(sortByVoteAverage).slice(0, FEATURED_ITEMS_LIMIT) ?? [];
+  images?.slice(0, FEATURED_ITEMS_LIMIT) ?? [];
 
 export const mapCast = (cast?: MinimalPerson[] | null) =>
   featuredPeople(cast).map((person) => ({
