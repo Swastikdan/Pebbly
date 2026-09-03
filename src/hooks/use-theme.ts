@@ -85,16 +85,20 @@ export function useTheme() {
 
 export function setThemeWithTransition(next: Theme) {
   const { setTheme } = useThemeStore.getState();
-  const reducedMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)",
-  ).matches;
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const apply = () => {
     setTheme(next);
     applyThemeToDom(isDarkTheme(next));
   };
 
-  if (!reducedMotion && typeof document.startViewTransition === "function") {
+  if (
+    !reducedMotion &&
+    typeof document !== "undefined" &&
+    typeof document.startViewTransition === "function"
+  ) {
     document.startViewTransition(apply);
   } else {
     apply();

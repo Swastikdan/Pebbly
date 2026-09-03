@@ -188,10 +188,10 @@ const MobileBottomNav = () => {
           className="bg-background z-50 flex h-dvh flex-col p-0 outline-hidden"
           closeProps={{
             className:
-              "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-3 right-3 rounded-md border p-2",
+              "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-[max(env(safe-area-inset-top),0.75rem)] right-4 rounded-md border p-2",
           }}
         >
-          <SheetHeader className="border-border/40 shrink-0 border-b px-5 pt-1 pb-3 text-left">
+          <SheetHeader className="border-border/40 shrink-0 border-b px-5 pt-[max(env(safe-area-inset-top),1.25rem)] pr-14 pb-3.5 text-left">
             <SheetTitle className="font-heading flex items-center gap-2 text-lg font-bold">
               <Grid className="text-primary size-5" />
               Explore & Navigation
@@ -201,14 +201,14 @@ const MobileBottomNav = () => {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="border-border/40 flex shrink-0 items-center justify-between border-b px-5 py-2">
+          <div className="border-border/40 flex shrink-0 items-center justify-between border-b px-5 py-2.5">
             <span className="text-muted-foreground text-xs font-medium">
               Theme
             </span>
             <ThemeSwitcher />
           </div>
 
-          <div className="min-h-0 flex-1 scrollbar-none space-y-5 overflow-y-auto px-4 py-4 pb-10">
+          <div className="min-h-0 flex-1 scrollbar-none space-y-6 overflow-y-auto px-5 py-5 pb-[max(env(safe-area-inset-bottom),3.5rem)]">
             {(isAdmin || hasAiRecommendations) && (
               <div className="space-y-2">
                 <div className="text-muted-foreground px-1 text-xs font-medium">

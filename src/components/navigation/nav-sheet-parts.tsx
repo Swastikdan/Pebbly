@@ -171,7 +171,7 @@ export const NavCard = ({
   );
 
   const baseClasses = cn(
-    "flex items-center justify-between rounded-lg border p-3 transition-[color,background-color,border-color,transform] active:scale-[0.98]",
+    "flex items-center justify-between rounded-lg border p-3.5 transition-[color,background-color,border-color,transform] active:scale-[0.98]",
     isActive ? "bg-nav-active-bg border-transparent" : "border-border bg-card",
   );
 
@@ -209,12 +209,12 @@ export const NavSection = ({
   currentPath: string;
   columns?: 1 | 2;
 }) => (
-  <div className="space-y-2">
+  <div className="space-y-2.5">
     <div className="text-muted-foreground px-1 text-xs font-medium">
       {title}
     </div>
     <div
-      className={`grid ${columns === 1 ? "grid-cols-1" : "grid-cols-2"} gap-2`}
+      className={`grid ${columns === 1 ? "grid-cols-1" : "grid-cols-2"} gap-2.5`}
     >
       {items.map((item) => (
         <NavCard

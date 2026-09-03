@@ -31,6 +31,24 @@
   --ease-emphatic: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --expo-out: linear(
+    0 0%,
+    0.1684 2.66%,
+    0.3165 5.49%,
+    0.446 8.52%,
+    0.5581 11.78%,
+    0.6535 15.29%,
+    0.7341 19.11%,
+    0.8011 23.3%,
+    0.8557 27.93%,
+    0.8962 32.68%,
+    0.9283 38.01%,
+    0.9529 44.08%,
+    0.9711 51.14%,
+    0.9833 59.06%,
+    0.9915 68.74%,
+    1 100%
+  );
   --animate-marquee: marquee var(--marquee-duration, 12s) linear infinite;
   @keyframes marquee {
     from {
@@ -368,16 +386,47 @@
     animation-iteration-count: 1 !important;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
-  }
+::view-transition-group(root) {
+  animation-duration: 0.7s;
+  animation-timing-function: var(--expo-out);
+}
+::view-transition-new(root) {
+  animation-name: reveal-light;
+  animation-fill-mode: both;
 }
 ::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 150ms;
-  animation-timing-function: var(--ease-standard);
+.dark::view-transition-old(root) {
+  animation: none;
+  animation-fill-mode: both;
+  z-index: -1;
+}
+.dark::view-transition-new(root) {
+  animation-name: reveal-dark;
+  animation-fill-mode: both;
+}
+@keyframes reveal-dark {
+  from {
+    clip-path: polygon(50% -71%, -50% 71%, -50% 71%, 50% -71%);
+  }
+  to {
+    clip-path: polygon(50% -71%, -50% 71%, 50% 171%, 171% 50%);
+  }
+}
+@keyframes reveal-light {
+  from {
+    clip-path: polygon(171% 50%, 50% 171%, 50% 171%, 171% 50%);
+  }
+  to {
+    clip-path: polygon(171% 50%, 50% 171%, -50% 71%, 50% -71%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  .dark::view-transition-new(root) {
+    animation: none !important;
+  }
 }
 @layer utilities {
   .text-display {

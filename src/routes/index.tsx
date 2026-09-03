@@ -10,6 +10,7 @@ import { LazySection } from "@/components/ui/lazy-section";
 import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
 import { getMedia } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
@@ -162,16 +163,7 @@ function HomePage() {
 
           <ContinueWatchingSection />
 
-          <LazySection
-            minHeight="300px"
-            fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
-          >
-            <Suspense
-              fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
-            >
-              <HomepageRecommendations />
-            </Suspense>
-          </LazySection>
+          <RecommendationsSection />
 
           <div className="mt-2 flex items-center gap-4">
             <h2 className="text-h2">Upcoming Movies</h2>
@@ -302,5 +294,29 @@ function ContinueWatchingSection() {
         </LazySection>
       </div>
     </section>
+  );
+}
+
+function RecommendationsSection() {
+  const { isSignedIn, isLoaded } = useUser();
+  const { hasFeature } = usePermissions();
+
+  // Do not reserve a placeholder for signed-out visitors. Personalized
+  // recommendations require authentication and feature permission.
+  if (!isLoaded || !isSignedIn || !hasFeature("ai-recommendations")) {
+    return null;
+  }
+
+  return (
+    <LazySection
+      minHeight="300px"
+      fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+    >
+      <Suspense
+        fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+      >
+        <HomepageRecommendations />
+      </Suspense>
+    </LazySection>
   );
 }
