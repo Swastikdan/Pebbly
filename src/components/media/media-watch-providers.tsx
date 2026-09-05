@@ -182,7 +182,29 @@ export const MediaWatchProviders = (props: {
   if (!mounted) return <LoadingState />;
 
   if (!resultsByRegion) return isError ? null : <LoadingState />;
-  if (availableRegions.length === 0) return null;
+  if (availableRegions.length === 0) {
+    if (!props.inTheaters) return null;
+    return (
+      <section className="min-h-40 py-3">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-4">
+            <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+              Where to Watch
+            </span>
+          </div>
+          <div>
+            <Badge
+              variant="info"
+              className="h-8 gap-1.5 rounded-md px-3.5 text-xs font-medium"
+            >
+              <TicketIcon aria-hidden="true" className="size-3.5" />
+              In theaters now
+            </Badge>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   // When the detected region has no data, fall back to a curated region
   // (US, GB, IN, ...) in the listed order instead of the alphabetically
@@ -197,6 +219,12 @@ export const MediaWatchProviders = (props: {
     ? region
     : fallbackRegion;
   const countryData = resultsByRegion[effectiveRegion];
+
+  const hasStreaming =
+    (countryData.flatrate?.length ?? 0) > 0 ||
+    (countryData.free?.length ?? 0) > 0 ||
+    (countryData.ads?.length ?? 0) > 0;
+  const showInTheaters = props.inTheaters && !hasStreaming;
 
   const rows = PROVIDER_GROUPS.map((group) => ({
     label: group.label,
@@ -254,7 +282,7 @@ export const MediaWatchProviders = (props: {
           </Select>
         </div>
 
-        {props.inTheaters && (
+        {showInTheaters && (
           <div>
             <Badge
               variant="info"

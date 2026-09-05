@@ -132,20 +132,17 @@ export const getTvCertification = (
   contentRatings?: { iso_3166_1: string; rating?: string }[] | null,
 ) => findUSCertification(contentRatings, (us) => us.rating);
 
-// TMDB release_date types: 1 = premiere, 2 = theatrical (limited),
-// 3 = theatrical (wide). Theatrical runs rarely outlast ~90 days before
-// streaming/digital takes over.
 const THEATRICAL_RELEASE_TYPES = new Set([2, 3]);
-const THEATRICAL_WINDOW_DAYS = 90;
+const THEATRICAL_WINDOW_DAYS = 60;
 
-// Anchored to the title's primary release_date, NOT the per-region entries:
-// regional lists carry re-releases (e.g. a 2026 Turkish screening of a 2021
-// film) that would light the badge up years later. The regional scan only
-// confirms the title ever had a theatrical run, so straight-to-digital
-// releases stay excluded.
 export const isInTheatricalWindow = (
   releaseDate?: string | null,
-  releaseDates?: { release_dates?: { type?: number | null }[] | null }[] | null,
+  releaseDates?:
+    | {
+        release_dates?:
+          { type?: number | null; release_date?: string }[] | null;
+      }[]
+    | null,
 ) => {
   if (!releaseDate) {
     return false;
@@ -161,7 +158,16 @@ export const isInTheatricalWindow = (
         THEATRICAL_RELEASE_TYPES.has(entry.type ?? 0),
       ),
     ) ?? false;
-  return isRecent && hadTheatricalRelease;
+  const hasDigitalReleasePassed =
+    releaseDates?.some((region) =>
+      region.release_dates?.some((entry) => {
+        if (entry.type !== 4 || !entry.release_date) return false;
+        const digitalTime = new Date(entry.release_date).getTime();
+        return Number.isFinite(digitalTime) && digitalTime <= Date.now();
+      }),
+    ) ?? false;
+
+  return isRecent && hadTheatricalRelease && !hasDigitalReleasePassed;
 };
 
 export const formatRuntime = (runtime?: number) =>
