@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import type { PersistedStateSanitizer } from "@/stores/guest-store-kit";
+import { makeEpisodeKey } from "@/lib/watch-progress";
 import { guestPersistOptions } from "@/stores/guest-store-kit";
 
 interface LocalProgressStore {
@@ -74,7 +75,7 @@ export const useLocalProgressStore = create<LocalProgressStore>()(
 
       markEpisodeWatched: (tmdbId, season, episode, isWatched) =>
         set((state) => {
-          const key = `${tmdbId}:${season}:${episode}`;
+          const key = makeEpisodeKey(tmdbId, season, episode);
           const newEpisodes = { ...state.watchedEpisodes };
 
           if (isWatched) newEpisodes[key] = true;
@@ -88,7 +89,7 @@ export const useLocalProgressStore = create<LocalProgressStore>()(
           const newEpisodes = { ...state.watchedEpisodes };
 
           for (const episode of episodes) {
-            const key = `${tmdbId}:${season}:${episode}`;
+            const key = makeEpisodeKey(tmdbId, season, episode);
             if (isWatched) newEpisodes[key] = true;
             else delete newEpisodes[key];
           }

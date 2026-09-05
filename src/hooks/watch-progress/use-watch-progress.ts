@@ -9,13 +9,19 @@ import type {
   ShowMetadata,
   WatchProgressData,
 } from "@/lib/watch-progress";
+import type { EpisodeRef } from "@/lib/watch-progress";
 import {
   fetchWatchedEpisodes,
   fetchWatchlistListFiltered,
 } from "@/lib/data/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
-import { logWatchProgressError, makeEpisodeKey } from "@/lib/watch-progress";
+import {
+  logWatchProgressError,
+  makeEpisodeKey,
+  parseEpisodeKey,
+  resolveNextEpisode,
+} from "@/lib/watch-progress";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
 import { useMediaState, useWatchlistStore } from "../use-watchlist";
 
@@ -57,7 +63,7 @@ export function useWatchProgress(id: string | number, mediaType: MediaType) {
               (e) =>
                 e.season === season && e.episode === episode && e.isWatched,
             )
-          : !!localEpisodes[`${tmdbId}:${season}:${episode}`];
+          : !!localEpisodes[makeEpisodeKey(tmdbId, season, episode)];
 
         if (isThisWatched) {
           context = { season, episode: episode + 1 };
@@ -67,33 +73,25 @@ export function useWatchProgress(id: string | number, mediaType: MediaType) {
       }
 
       if (!context) {
-        const watchedList = isSignedIn
+        const watchedList: EpisodeRef[] = isSignedIn
           ? watchedEpisodes
               .filter((e) => e.isWatched)
               .map((e) => ({ season: e.season, episode: e.episode }))
           : Object.entries(localEpisodes)
               .filter(([key, val]) => key.startsWith(`${tmdbId}:`) && val)
               .map(([key]) => {
-                const [, s, e] = key.split(":");
-                return { season: Number(s), episode: Number(e) };
-              });
+                const parsed = parseEpisodeKey(key);
+                return parsed
+                  ? { season: parsed.season, episode: parsed.episode }
+                  : null;
+              })
+              .filter((ref): ref is EpisodeRef => ref !== null);
 
-        if (watchedList.length > 0) {
-          watchedList.sort((a, b) => {
-            if (a.season !== b.season) return a.season - b.season;
-            return a.episode - b.episode;
-          });
-          const lastWatched = watchedList[watchedList.length - 1];
-          context = {
-            season: lastWatched.season,
-            episode: lastWatched.episode + 1,
-          };
-        } else {
-          context = {
-            season: 1,
-            episode: 1,
-          };
-        }
+        context = resolveNextEpisode({
+          lastPlayed: null,
+          isLastPlayedWatched: false,
+          watchedEpisodes: watchedList,
+        });
       }
     }
 
