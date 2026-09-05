@@ -5,14 +5,10 @@ import type {
   MarkShowEpisodesAndStatusArgs,
   ProgressStatusArgs,
   SetReactionArgs,
-  WatchlistMembershipArgs,
 } from "@/lib/data/optimistic/watchlist-optimistic";
-import type { OpHandle } from "@/lib/data/pending-ops";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
-import { createBatcher } from "@/lib/batcher";
 import {
-  enqueueMutation,
   pendingMutationsFor,
   removeMutation,
 } from "@/lib/data/mutation-outbox";
@@ -31,14 +27,11 @@ import {
   applyProgressUpdateRows,
   watchlistOptimistic,
 } from "@/lib/data/optimistic/watchlist-optimistic";
-import {
-  applyServerState,
-  beginOp,
-  scheduleSync,
-} from "@/lib/data/pending-ops";
+import { beginOp, scheduleSync } from "@/lib/data/pending-ops";
 import { toast } from "@/lib/notifications";
 import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
 import { recordOwnMutation } from "@/lib/realtime-mutations";
+import { createMembershipWriter } from "@/lib/repository/membership-writer";
 import { extractMetadataFields, logError } from "@/lib/utils";
 import {
   episodeRowIdOf,
@@ -55,7 +48,6 @@ import {
   updateCustomList,
 } from "@/server/fns/lists";
 import {
-  batchSetWatchlistMembership,
   markEpisodeWatched,
   markSeasonEpisodesWatched,
   markShowEpisodesAndStatus,
@@ -101,76 +93,10 @@ function runJournaledMutation(
   });
 }
 
-type BatchedWatchlistMembershipTask = {
-  args: WatchlistMembershipArgs;
-  handle?: OpHandle;
-  queryClient: QueryClient;
-  outboxId?: string;
-};
-
-const watchlistMembershipBatcher = createBatcher<
-  BatchedWatchlistMembershipTask,
-  WatchItemRow
->(
-  async (tasks) => {
-    const queryClient = tasks[0]?.queryClient;
-    const items = tasks.map((t) => t.args);
-
-    try {
-      let rows: WatchItemRow[];
-      if (items.length === 1) {
-        const row = await unwrap(setWatchlistMembership({ data: items[0] }));
-        rows = row ? [row] : [];
-      } else {
-        rows = await unwrap(batchSetWatchlistMembership({ data: { items } }));
-      }
-
-      // Each flush is one server write (single or batched), which bumps the
-      // watchlist revision once.
-      recordOwnMutation("watchlist");
-      if (queryClient) {
-        applyServerState(
-          queryClient,
-          queryKeys.watchlist.list(),
-          rows,
-          items.map((i) => `${i.mediaType}:${i.tmdbId}`),
-        );
-      }
-      for (const task of tasks) {
-        task.handle?.resolve();
-        if (task.outboxId) removeMutation(task.outboxId);
-      }
-      // The tracked-ids query derives from the watchlist, so keep it fresh.
-      if (queryClient) {
-        scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds()]);
-      }
-      return rows;
-    } catch (error) {
-      logError("batch set watchlist membership", error);
-      for (const task of tasks) {
-        task.handle?.remove();
-      }
-      toast({
-        title: "Couldn't update watchlist",
-        description: "The change was reverted. Please try again.",
-        type: "error",
-      });
-      // The server may have applied part of the batch before failing; a
-      // refresh reconciles the cache with the authoritative state.
-      if (queryClient) {
-        scheduleSync(queryClient, [queryKeys.watchlist.list()]);
-      }
-      throw error;
-    }
-  },
-  {
-    delayMs: 300,
-    maxWaitMs: 1200,
-    maxBatchSize: 100,
-    getKey: (task) => `${task.args.mediaType}:${task.args.tmdbId}`,
-    flushOnPageHide: true,
-  },
-);
+// The watchlist-membership write path (batching, optimistic-handle
+// resolution, server sync, crash-recovery outbox) lives in an internal seam:
+// `createMembershipWriter` in `membership-writer.ts`. `createRemoteRepository`
+// wires it up below and delegates `toggleMembership` to it.
 
 async function replayPendingMutations(userId: string): Promise<void> {
   for (const record of pendingMutationsFor(userId)) {
@@ -275,34 +201,11 @@ export function createRemoteRepository(
   queryClient: QueryClient,
   userId: string | undefined,
 ): Repository {
+  const memberships = createMembershipWriter(queryClient, userId);
+
   const watchlist: WatchlistRepository = {
     async toggleMembership(item, inWatchlist) {
-      const args: WatchlistMembershipArgs = {
-        tmdbId: Number(item.id),
-        mediaType: item.media_type,
-        inWatchlist,
-        title: item.title,
-        image: item.image,
-        rating: item.rating,
-        release_date: item.release_date || undefined,
-        overview: item.overview || undefined,
-      };
-
-      const handle = watchlistOptimistic.beginMembershipOp(queryClient, args);
-      const outboxId = userId
-        ? enqueueMutation(
-            userId,
-            "set-membership",
-            args,
-            `${args.mediaType}:${args.tmdbId}`,
-          )
-        : undefined;
-      await watchlistMembershipBatcher.schedule({
-        args,
-        handle,
-        queryClient,
-        outboxId,
-      });
+      await memberships.toggleMembership(item, inWatchlist);
     },
 
     async setProgressStatus({
