@@ -79,26 +79,26 @@ export function WatchlistCard({
 
     const capturedProgress = item.progress;
     const capturedStatus = progressStatus;
-    setProgressStatus(
-      String(item.external_id),
-      item.type,
-      nextStatus,
+    setProgressStatus({
+      id: String(item.external_id),
+      mediaType: item.type,
+      progressStatus: nextStatus,
       metadata,
-      progressStatus,
-    );
+      currentStatus: progressStatus,
+    });
     toast({
       title: `Marked as ${getProgressOption(nextStatus).label}`,
       action: {
         label: "Undo",
         onClick: () =>
-          setProgressStatus(
-            String(item.external_id),
-            item.type,
-            capturedStatus,
+          setProgressStatus({
+            id: String(item.external_id),
+            mediaType: item.type,
+            progressStatus: capturedStatus,
             metadata,
-            nextStatus,
-            capturedProgress,
-          ),
+            currentStatus: nextStatus,
+            progress: capturedProgress,
+          }),
       },
     });
   };

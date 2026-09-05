@@ -305,14 +305,14 @@ export function createRemoteRepository(
       });
     },
 
-    async setProgressStatus(
+    async setProgressStatus({
       id,
       mediaType,
       progressStatus,
       metadata,
       currentStatus,
       progress,
-    ) {
+    }) {
       const { action, seasonsPromise } = resolveStatusPlan(
         queryClient,
         id,
@@ -424,7 +424,7 @@ export function createRemoteRepository(
       });
     },
 
-    setReaction(id, mediaType, reaction, metadata) {
+    setReaction({ id, mediaType, reaction, metadata }) {
       const payload: SetReactionArgs = {
         tmdbId: Number(id),
         mediaType,

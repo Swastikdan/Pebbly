@@ -25,6 +25,25 @@ export interface WatchlistToggleItem {
   overview?: string;
 }
 
+/** Args object for `WatchlistRepository.setProgressStatus`. */
+export type SetProgressStatusRepoArgs = {
+  id: string;
+  mediaType: MediaType;
+  progressStatus: ProgressStatus;
+  metadata?: MediaMetadata;
+  /** The status being replaced — drives TV episode side effects. */
+  currentStatus?: ProgressStatus | null;
+  progress?: number;
+};
+
+/** Args object for `WatchlistRepository.setReaction`. */
+export type SetReactionRepoArgs = {
+  id: string;
+  mediaType: MediaType;
+  reaction: ReactionStatus | null;
+  metadata?: MediaMetadata;
+};
+
 export type MarkEpisodeArgs = {
   tmdbId: number;
   season: number;
@@ -61,20 +80,8 @@ export interface WatchlistRepository {
     item: WatchlistToggleItem,
     inWatchlist: boolean,
   ): Promise<void>;
-  setProgressStatus(
-    id: string,
-    mediaType: MediaType,
-    progressStatus: ProgressStatus,
-    metadata?: MediaMetadata,
-    currentStatus?: ProgressStatus | null,
-    progress?: number,
-  ): void;
-  setReaction(
-    id: string,
-    mediaType: MediaType,
-    reaction: ReactionStatus | null,
-    metadata?: MediaMetadata,
-  ): void;
+  setProgressStatus(args: SetProgressStatusRepoArgs): void;
+  setReaction(args: SetReactionRepoArgs): void;
   markEpisode(args: MarkEpisodeArgs): Promise<void>;
   markSeason(args: MarkSeasonArgs): Promise<void>;
   updateProgress(args: UpdateProgressArgs): Promise<void>;

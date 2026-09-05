@@ -195,19 +195,19 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
                 action: {
                   label: "Undo",
                   onClick: () => {
-                    setProgressStatus(
-                      String(id),
-                      media_type,
-                      "watching",
-                      {
+                    setProgressStatus({
+                      id: String(id),
+                      mediaType: media_type,
+                      progressStatus: "watching",
+                      metadata: {
                         title,
                         image: poster_path ?? props.image ?? "",
                         rating,
                         release_date: release_date ?? "",
                         overview,
                       },
-                      "watch-later",
-                    );
+                      currentStatus: "watch-later",
+                    });
                   },
                 },
               });

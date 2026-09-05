@@ -124,18 +124,18 @@ export function useDailyPick(open: boolean) {
 
   const handleDislike = () => {
     if (!selectedItem) return;
-    setReaction(
-      String(selectedItem.id),
-      selectedItem.media_type,
-      "not-for-me",
-      {
+    setReaction({
+      id: String(selectedItem.id),
+      mediaType: selectedItem.media_type,
+      reaction: "not-for-me",
+      metadata: {
         title: selectedItem.title,
         image: selectedItem.poster_path,
         rating: selectedItem.vote_average,
         release_date: selectedItem.release_date ?? selectedItem.first_air_date,
         overview: selectedItem.overview,
       },
-    );
+    });
     handleShuffle();
   };
 

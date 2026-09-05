@@ -20,14 +20,14 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
         });
     },
 
-    setProgressStatus(
+    setProgressStatus({
       id,
       mediaType,
       progressStatus,
       metadata,
       currentStatus,
       progress,
-    ) {
+    }) {
       const { action, seasonsPromise } = resolveStatusPlan(
         queryClient,
         id,
@@ -73,7 +73,7 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
       setLocalStatus(id, mediaType, progressStatus, progress, metadata);
     },
 
-    setReaction(id, mediaType, reaction, metadata) {
+    setReaction({ id, mediaType, reaction, metadata }) {
       useWatchlistStore
         .getState()
         .setReactionLocal(id, mediaType, reaction, metadata);

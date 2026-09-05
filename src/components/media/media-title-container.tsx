@@ -85,7 +85,12 @@ export const MediaTitleContainer = (props: {
       title !== "Unknown Title"
     ) {
       if (progressStatus) {
-        setProgressStatus(String(id), media_type, progressStatus, metadata);
+        setProgressStatus({
+          id: String(id),
+          mediaType: media_type,
+          progressStatus,
+          metadata,
+        });
       }
     }
   }, [
@@ -110,11 +115,22 @@ export const MediaTitleContainer = (props: {
   };
 
   const handleStatusChange = (status: ProgressStatus) => {
-    setProgressStatus(String(id), media_type, status, metadata, progressStatus);
+    setProgressStatus({
+      id: String(id),
+      mediaType: media_type,
+      progressStatus: status,
+      metadata,
+      currentStatus: progressStatus,
+    });
   };
 
   const handleReactionChange = (r: ReactionStatus | null) => {
-    setReaction(String(id), media_type, r, metadata);
+    setReaction({
+      id: String(id),
+      mediaType: media_type,
+      reaction: r,
+      metadata,
+    });
   };
 
   const handleRemove = () => {
