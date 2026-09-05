@@ -137,15 +137,14 @@ guest-read `getCurrentUser`, `getAuthContext`, `requireAdmin`). Config:
 | `mode`    | `"require"` (default; create-on-first-sign-in) · `"current"` (resolve w/o create; guests hit `guest`) · `"anonymous"` (handler runs for visitors too, `user: AuthUser \| null`) |
 | `guest`   | Fallback response for requests that never reach the handler; also overrides `UNAUTHORIZED` (ok-with-defaults quirks like `getUserFeaturesFn`)                                   |
 | `feature` | RBAC feature gate via `hasFeature`; `featureDenied: "fail" \| "guest"`                                                                                                          |
-| `admin`   | Admin gate: signed JWT claim or live Clerk API                                                                                                                                  |
+| `admin`   | Admin gate: signed JWT claim only                                                                                                                                               |
 
 It injects `{ data, user, claims, db }` into the handler and returns the
 `ApiResult` envelope promise (never a closure, so results stay serializable
 across the RPC boundary). `createServerFn(...).validator(...)` stays literal
 at each site because the TanStack compiler statically extracts the
-`.handler(fn)` argument. `guestFallback()` normalizes plain values/thunks;
-`resolveRequiredAuth()` is the escape hatch for handlers whose branching
-genuinely depends on the auth outcome.
+`.handler(fn)` argument. The validated data is passed directly to `authedFn`
+and its type is preserved in the handler context.
 
 All fns return `ApiResult<T>` and validate input with Valibot.
 
@@ -232,7 +231,7 @@ All fns return `ApiResult<T>` and validate input with Valibot.
 
 ### admin.ts (6 fns)
 
-- All run through `authedFn({ admin: true })` (JWT claim → live Clerk API;
+- All run through `authedFn({ admin: true })` (signed JWT claim only;
   `FORBIDDEN` otherwise). Never consults a stored flag.
 - `getUserFeaturesFn` (require + guest override answering ok-with-defaults),
   `getRolePermissions`, `setRolePermission` (global feature toggle via atomic

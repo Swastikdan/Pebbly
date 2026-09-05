@@ -118,7 +118,7 @@ Server functions are:
   options: `mode` (`"require"` = create-on-first-sign-in, `"current"` =
   resolve-without-create, `"anonymous"` = handler also runs for visitors),
   `guest` fallback response, `feature` gate (RBAC), and `admin` gate
-  (JWT claim or live Clerk API). The `createServerFn(...).validator(...)`
+  (signed JWT claim only). The `createServerFn(...).validator(...)`
   call stays literal at every site because the TanStack compiler statically
   extracts the `.handler(fn)` argument; `authedFn` produces its awaited result.
 - **Validated on input**, every fn uses a Valibot schema via `.validator()`,

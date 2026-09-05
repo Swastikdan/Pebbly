@@ -15,6 +15,7 @@ import { Play, XIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
 import { usePlayerProgressListener } from "@/hooks/watch-progress/use-player-listener";
+import { navigateSearch } from "@/lib/media-dialog-helpers";
 import { cn } from "@/lib/utils";
 import { buildPlayerUrl } from "@/lib/watch-progress";
 
@@ -70,7 +71,12 @@ export function VideoPlayerModal({
   }, []);
 
   const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const search = useSearch({
+    strict: false,
+    select: (s: Record<string, unknown>) => ({
+      play: s.play === true || s.play === "true",
+    }),
+  });
 
   const playerUrl = import.meta.env.VITE_PUBLIC_VIDEO_URL
     ? buildPlayerUrl({
@@ -96,7 +102,7 @@ export function VideoPlayerModal({
   usePlayerProgressListener(listenerContext, isOpen);
 
   useEffect(() => {
-    const shouldPlay = search.play === true || search.play === "true";
+    const shouldPlay = search.play;
     if (!shouldPlay) {
       closedByUserRef.current = false;
     }
@@ -202,17 +208,12 @@ export function VideoPlayerModal({
           document.exitFullscreen();
         } catch {}
       }
-      if (search?.play) {
+      if (search.play) {
         setTimeout(() => {
-          // biome-ignore lint/suspicious/noExplicitAny: TanStack Router search param workaround
-          (navigate as any)({
-            search: (prev: Record<string, unknown>) => {
-              const next = { ...prev };
-              delete next.play;
-              return next;
-            },
-            resetScroll: false,
-            replace: true,
+          navigateSearch(navigate, (prev) => {
+            const next = { ...prev };
+            delete next.play;
+            return next;
           });
         }, 150);
       }

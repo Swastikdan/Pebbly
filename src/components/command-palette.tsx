@@ -273,7 +273,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                         >
                           {item.icon}
                           {item.loading ? (
-                            <Skeleton className="h-3.5 w-3/4 rounded" />
+                            <div className="flex flex-1 items-center justify-between gap-2">
+                              <Skeleton className="h-3.5 w-3/4 rounded" />
+                              <Skeleton className="h-3.5 w-8 shrink-0 rounded" />
+                            </div>
                           ) : (
                             <span className="flex-1 truncate">
                               {item.label}

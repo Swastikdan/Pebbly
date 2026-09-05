@@ -5,6 +5,7 @@ import type { WatchlistItem } from "@/stores/watchlist-store";
 import { Button } from "@/components/ui/button";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   MediaChip,
   MediaMetaRow,
@@ -15,7 +16,7 @@ import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
 import { toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
-import { formatMediaTitle } from "@/lib/utils";
+import { cn, formatMediaTitle } from "@/lib/utils";
 
 // Status advances one way only: watch-later → watching → done. "done" is
 // terminal on the card, no wrap-around back to watch-later.
@@ -186,19 +187,35 @@ export function WatchlistCard({
   );
 }
 
-export function WatchlistCardSkeleton() {
+export function WatchlistCardSkeleton({
+  className,
+}: {
+  className?: string;
+} = {}) {
   return (
-    <div className="border-border bg-card relative flex animate-pulse gap-3.5 rounded-lg border p-3.5">
-      <div className="bg-muted h-35 w-23.25 shrink-0 rounded-lg" />
+    <div
+      className={cn(
+        "border-border/60 bg-card dark:border-border/40 relative flex gap-3.5 rounded-lg border p-3.5",
+        className,
+      )}
+    >
+      <Skeleton className="h-35 w-23.25 shrink-0 rounded-lg" />
       <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
         <div>
-          <div className="bg-muted mb-2 h-4 w-3/4 rounded" />
-          <div className="bg-muted mb-3 h-3 w-1/3 rounded" />
-          <div className="bg-muted mb-1.5 h-3 w-full rounded" />
-          <div className="bg-muted h-3 w-4/5 rounded" />
+          <div className="flex items-start justify-between gap-2">
+            <Skeleton className="h-4.5 w-3/4 rounded-md" />
+            <Skeleton className="size-7 shrink-0 rounded-md" />
+          </div>
+          <div className="mt-1 flex items-center gap-1.5">
+            <Skeleton className="h-3.5 w-1/3 rounded" />
+          </div>
+          <div className="mt-1.5 space-y-1">
+            <Skeleton className="h-3 w-full rounded" />
+            <Skeleton className="h-3 w-4/5 rounded" />
+          </div>
         </div>
-        <div className="flex gap-2 pt-2">
-          <div className="bg-muted h-6 w-20 rounded-lg" />
+        <div className="flex flex-wrap items-center gap-1.5 pt-2">
+          <Skeleton className="h-7 w-24 rounded-md" />
         </div>
       </div>
     </div>

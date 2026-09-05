@@ -145,9 +145,28 @@ export function AdminPermissionToggles() {
 
   if (rawPermissionsData === undefined) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-20 w-full rounded-lg" />
-        <Skeleton className="h-20 w-full rounded-lg" />
+      <div className="space-y-4">
+        <div className="space-y-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+              key={i}
+              className="bg-card flex items-center justify-between gap-4 rounded-lg border p-4"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <Skeleton className="size-9 shrink-0 rounded-md" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-4 w-32 rounded" />
+                  <Skeleton className="h-3 w-24 rounded" />
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <Skeleton className="h-4 w-14 rounded" />
+                <Skeleton className="h-6 w-11 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

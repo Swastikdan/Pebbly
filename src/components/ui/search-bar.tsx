@@ -238,8 +238,25 @@ const SearchBar = memo(
 
 SearchBar.displayName = "SearchBar";
 
-const SearchBarSkeleton = memo(function SearchBarSkeleton() {
-  return <Skeleton className="h-11 w-full rounded-lg" />;
+const SearchBarSkeleton = memo(function SearchBarSkeleton({
+  className,
+}: {
+  className?: string;
+} = {}) {
+  return (
+    <div
+      className={cn(
+        "border-border bg-card dark:bg-input/35 relative flex h-11 w-full items-center rounded-lg border px-3.5",
+        className,
+      )}
+    >
+      <Skeleton className="size-5 rounded-md" />
+      <Skeleton className="ml-3 h-4 w-48 max-w-[50%] rounded" />
+      <div className="ml-auto hidden items-center sm:flex">
+        <Skeleton className="h-5 w-8 rounded" />
+      </div>
+    </div>
+  );
 });
 
 SearchBarSkeleton.displayName = "SearchBarSkeleton";

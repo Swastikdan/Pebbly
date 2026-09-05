@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCollection } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
+import { collectionRoute } from "@/lib/route-helpers";
 import { formatMediaTitle } from "@/lib/utils";
 
 export const Collections = (props: { id: number }) => {
@@ -17,10 +18,12 @@ export const Collections = (props: { id: number }) => {
   return (
     <>
       {isLoading ? (
-        <Skeleton
-          aria-label="Loading collection"
-          className="h-48 w-full rounded-lg md:h-52 lg:h-60"
-        />
+        <div className="bg-card relative flex h-48 w-full flex-col items-start justify-center overflow-hidden rounded-lg border border-black/8 p-5 md:h-52 lg:h-60 dark:border-white/8">
+          <span className="sr-only">Loading collection</span>
+          <Skeleton className="h-6 w-56 rounded-md sm:h-7 sm:w-72 md:h-8 md:w-80 lg:h-9 lg:w-96" />
+          <Skeleton className="mt-2.5 h-4 w-96 max-w-[80%] rounded-md md:h-5" />
+          <Skeleton className="mt-4 h-10 w-36 rounded-lg" />
+        </div>
       ) : (
         <div className="bg-secondary relative h-48 w-full overflow-hidden rounded-lg border border-black/8 md:h-52 lg:h-60 dark:border-white/8">
           <div
@@ -53,8 +56,10 @@ export const Collections = (props: { id: number }) => {
               )}
             </span>
             <Link
-              // @ts-expect-error - correct link
-              to={`/collection/${id}/${formatMediaTitle.encode(data?.name ?? "")}`}
+              {...collectionRoute({
+                id,
+                slug: formatMediaTitle.encode(data?.name ?? ""),
+              })}
             >
               <Button
                 variant={null}

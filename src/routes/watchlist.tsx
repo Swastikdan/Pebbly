@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import * as v from "valibot";
+
+export const watchlistSearchSchema = v.object({
+  tab: v.optional(v.string()),
+});
+
+export type WatchlistSearch = v.InferOutput<typeof watchlistSearchSchema>;
 
 export const Route = createFileRoute("/watchlist")({
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      tab: (search.tab as string | undefined) || undefined,
-    };
-  },
+  validateSearch: watchlistSearchSchema,
   head: () => ({
     meta: [
       { title: "Watchlist | Pebbly" },

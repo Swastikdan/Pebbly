@@ -16,6 +16,7 @@ import {
 } from "@/hooks/watch-progress/use-watch-progress";
 import { toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
+import { mediaDetailRoute } from "@/lib/route-helpers";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
@@ -115,13 +116,19 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
   const { removeFromContinueWatching } = useRemoveFromContinueWatching();
   const { setProgressStatus } = useRepository();
 
+  const destination = mediaDetailRoute({
+    mediaType: media_type,
+    id,
+    slug: formattedTitle || undefined,
+    play: isContinueWatching,
+  });
+
   return (
     <div className={cn("group relative", containerClassName)}>
       <Link
-        // @ts-expect-error - correct link
-        to={`/${media_type}/${id}/${formattedTitle}`}
-        // biome-ignore lint/suspicious/noExplicitAny: dynamic route workaround
-        search={(isContinueWatching ? { play: true } : undefined) as any}
+        to={destination.to}
+        params={destination.params}
+        search={destination.search}
         className={linkClassName}
       >
         <div
@@ -413,9 +420,12 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
 const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
   if (props.card_type === "horizontal") {
     return (
-      <div className="w-40 md:w-44 lg:w-48">
+      <div className={cn("w-40 md:w-44 lg:w-48", props.className)}>
         <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg">
           <Skeleton className="absolute inset-0 rounded-lg" />
+          <div className="absolute top-2 right-2">
+            <Skeleton className="size-8 rounded-md" />
+          </div>
           <div className="absolute bottom-2 left-2">
             <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
@@ -423,8 +433,8 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
             <Skeleton className="h-4.5 w-10 rounded-md" />
           </div>
         </div>
-        <div className="mt-2.5 flex flex-col gap-1">
-          <Skeleton className="h-3.5 w-3/4 rounded-md" />
+        <div className="mt-2.5 flex flex-col gap-0.5">
+          <Skeleton className="h-4 w-3/4 rounded-md" />
           <Skeleton className="h-3 w-1/4 rounded-md" />
         </div>
       </div>
@@ -432,9 +442,12 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
   }
   if (props.card_type === "vertical") {
     return (
-      <div className="w-64 md:w-72 lg:w-80">
+      <div className={cn("w-64 md:w-72 lg:w-80", props.className)}>
         <div className="relative aspect-video w-full overflow-hidden rounded-lg">
           <Skeleton className="absolute inset-0 rounded-lg" />
+          <div className="absolute top-2 right-2">
+            <Skeleton className="size-8 rounded-md" />
+          </div>
           <div className="absolute bottom-2 left-2">
             <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
@@ -443,7 +456,7 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
           </div>
         </div>
         <div className="mt-2.5 flex flex-col gap-1">
-          <Skeleton className="h-3.5 w-3/4 rounded-md" />
+          <Skeleton className="h-4.5 w-3/4 rounded-md" />
           <Skeleton className="h-3 w-1/4 rounded-md" />
         </div>
       </div>
@@ -451,10 +464,10 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
   }
 
   return (
-    <div className="w-24 md:w-28 lg:w-32">
+    <div className={cn("w-24 md:w-28 lg:w-32", props.className)}>
       <Skeleton className="aspect-2/3 w-full rounded-lg" />
       <div className="mt-2 flex flex-col items-start gap-1">
-        <Skeleton className="h-3.5 w-full rounded-md" />
+        <Skeleton className="h-4 w-full rounded-md" />
         <Skeleton className="h-3 w-3/4 rounded-md" />
       </div>
     </div>

@@ -13,7 +13,11 @@ import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import { detailHead, loadMediaRouteData } from "@/lib/route-helpers";
+import {
+  detailHead,
+  loadMediaRouteData,
+  tvSeasonRoute,
+} from "@/lib/route-helpers";
 import { formatMediaTitle } from "@/lib/utils";
 
 export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
@@ -86,8 +90,11 @@ function TvSeasonsPage() {
         {seasons.map((season: SeasonInfo, index) => (
           <Link
             key={season.id}
-            // @ts-expect-error - correct link
-            to={`/tv/${id}/${urltitle}/season/${season.season_number}`}
+            {...tvSeasonRoute({
+              id,
+              slug: urltitle,
+              seasonNumber: season.season_number,
+            })}
             className="pressable-small block"
           >
             <div className="border-default bg-secondary/10 hover:border-foreground/20 hover:bg-secondary/20 relative flex items-start gap-5 rounded-lg border p-3 transition-[color,background-color,border-color] duration-150 md:p-5">

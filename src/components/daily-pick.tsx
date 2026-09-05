@@ -141,9 +141,10 @@ export function DailyPickButton() {
 
             <div className="relative -mt-10 px-4 pb-5 sm:-mt-12 sm:px-6 sm:pb-6">
               <div className="flex items-end gap-3 sm:gap-4">
-                {pick.posterUrl && (
+                {pick.posterUrl && pick.destination && (
                   <Link
-                    to={pick.targetPath}
+                    to={pick.destination.to}
+                    params={pick.destination.params}
                     onClick={() => setIsOpen(false)}
                     className="border-background/60 bg-muted group/poster relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition-opacity sm:w-24 [@media(hover:hover)]:hover:opacity-90"
                     title={`View ${pick.title}`}
@@ -159,15 +160,18 @@ export function DailyPickButton() {
                 )}
 
                 <div className="flex min-w-0 flex-1 flex-col justify-end gap-1 pb-0.5">
-                  <Link
-                    to={pick.targetPath}
-                    onClick={() => setIsOpen(false)}
-                    className="group/title inline-block"
-                  >
-                    <h3 className="text-foreground group-hover/title:text-primary line-clamp-2 text-lg leading-tight font-bold transition-colors sm:text-xl">
-                      {pick.title}
-                    </h3>
-                  </Link>
+                  {pick.destination && (
+                    <Link
+                      to={pick.destination.to}
+                      params={pick.destination.params}
+                      onClick={() => setIsOpen(false)}
+                      className="group/title inline-block"
+                    >
+                      <h3 className="text-foreground group-hover/title:text-primary line-clamp-2 text-lg leading-tight font-bold transition-colors sm:text-xl">
+                        {pick.title}
+                      </h3>
+                    </Link>
+                  )}
 
                   <div className="text-meta text-muted-foreground flex flex-wrap items-center gap-1.5">
                     {pick.year && <span>{pick.year}</span>}
@@ -196,18 +200,20 @@ export function DailyPickButton() {
                 {isVideoPlaybackEnabled ? (
                   <>
                     <div className="flex items-center gap-2">
-                      <Link
-                        to={pick.targetPath}
-                        // biome-ignore lint/suspicious/noExplicitAny: dynamic route
-                        search={{ play: true } as any}
-                        onClick={() => setIsOpen(false)}
-                        className="flex-1"
-                      >
-                        {" "}
-                        <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-md text-xs font-medium sm:h-11 sm:text-sm">
-                          ▶ Watch Now
-                        </Button>
-                      </Link>
+                      {pick.playDestination && (
+                        <Link
+                          to={pick.playDestination.to}
+                          params={pick.playDestination.params}
+                          search={pick.playDestination.search}
+                          onClick={() => setIsOpen(false)}
+                          className="flex-1"
+                        >
+                          {" "}
+                          <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-md text-xs font-medium sm:h-11 sm:text-sm">
+                            ▶ Watch Now
+                          </Button>
+                        </Link>
+                      )}
 
                       <WatchlistButton
                         id={pick.selectedItem.id}

@@ -1,6 +1,14 @@
 const CHANNEL_NAME = "pebbly-sync";
 
-export type MutationDomain = "watchlist" | "lists" | "ai";
+export const MUTATION_DOMAINS = ["watchlist", "lists", "ai"] as const;
+export type MutationDomain = (typeof MUTATION_DOMAINS)[number];
+
+export function isMutationDomain(value: unknown): value is MutationDomain {
+  return (
+    typeof value === "string" &&
+    (MUTATION_DOMAINS as readonly string[]).includes(value)
+  );
+}
 
 let channel: BroadcastChannel | null = null;
 
@@ -34,12 +42,8 @@ export function subscribeToCrossTabMutations(
   if (!ch) return () => {};
 
   const listener = (event: MessageEvent) => {
-    if (
-      event.data === "watchlist" ||
-      event.data === "lists" ||
-      event.data === "ai"
-    ) {
-      handler(event.data as MutationDomain);
+    if (isMutationDomain(event.data)) {
+      handler(event.data);
     }
   };
   ch.addEventListener("message", listener);

@@ -61,11 +61,13 @@ export function WatchlistFilters({
   counts,
   filteredCount,
   totalCount,
+  disabled = false,
 }: {
   filters: WatchlistFiltersModel;
   counts: WatchlistCounts;
   filteredCount: number;
   totalCount: number;
+  disabled?: boolean;
 }) {
   const {
     searchQuery,
@@ -98,9 +100,10 @@ export function WatchlistFilters({
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search saved titles"
             aria-label="Search watchlist"
+            disabled={disabled}
             className="border-border/70 bg-card h-9 rounded-md border pr-10 pl-9 text-sm dark:border-white/10"
           />
-          {searchQuery && (
+          {searchQuery && !disabled && (
             <Button
               type="button"
               variant="ghost"
@@ -116,6 +119,7 @@ export function WatchlistFilters({
         <Button
           onClick={() => setFiltersOpen((prev) => !prev)}
           aria-expanded={filtersOpen}
+          disabled={disabled}
           variant={
             filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"
           }
@@ -147,6 +151,7 @@ export function WatchlistFilters({
                   key={tab.value}
                   type="button"
                   variant="ghost"
+                  disabled={disabled}
                   onClick={() => setActiveFilter(tab.value)}
                   className={cn(
                     "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
@@ -171,6 +176,7 @@ export function WatchlistFilters({
               <Button
                 type="button"
                 variant="ghost"
+                disabled={disabled}
                 onClick={() => setActiveFilter("dropped")}
                 className={cn(
                   "h-7 items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,box-shadow]",
@@ -203,6 +209,7 @@ export function WatchlistFilters({
       >
         <div className="scrollbar-hidden flex min-h-0 items-center gap-2 overflow-x-auto">
           <Select
+            disabled={disabled}
             items={MEDIA_TYPE_FILTER_ITEMS}
             value={mediaFilter}
             onValueChange={(value) =>
@@ -211,6 +218,7 @@ export function WatchlistFilters({
           >
             <SelectTrigger
               size="sm"
+              disabled={disabled}
               className="border-border/60 bg-secondary/50 w-auto min-w-25 gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
             >
               <SelectValue placeholder="Type" />
@@ -225,6 +233,7 @@ export function WatchlistFilters({
           </Select>
 
           <Select
+            disabled={disabled}
             items={REACTION_FILTER_ITEMS}
             value={reactionFilter}
             onValueChange={(value) =>
@@ -233,6 +242,7 @@ export function WatchlistFilters({
           >
             <SelectTrigger
               size="sm"
+              disabled={disabled}
               className="border-border/60 bg-secondary/50 w-auto min-w-25 gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
             >
               <SelectValue placeholder="Mood" />
@@ -247,12 +257,14 @@ export function WatchlistFilters({
           </Select>
 
           <Select
+            disabled={disabled}
             items={SORT_ITEMS}
             value={sortBy}
             onValueChange={(value) => setSortBy(value as WatchlistSort)}
           >
             <SelectTrigger
               size="sm"
+              disabled={disabled}
               className="border-border/60 bg-secondary/50 w-auto min-w-30 gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
             >
               <SelectValue />
@@ -270,6 +282,7 @@ export function WatchlistFilters({
             <Button
               type="button"
               variant="ghost"
+              disabled={disabled}
               onClick={resetSecondaryFilters}
               className="text-muted-foreground hover:text-foreground h-auto shrink-0 items-center gap-1 px-2.5 py-1.5 text-xs transition-colors hover:bg-transparent"
             >

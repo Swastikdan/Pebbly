@@ -83,10 +83,10 @@ export function WatchlistTab() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {(watchlistData?.length ?? 0) > 0 && (
+          {(watchlistLoading || (watchlistData?.length ?? 0) > 0) && (
             <Button
               className="gap-1.5 text-xs"
-              disabled={exportLoading || importLoading}
+              disabled={watchlistLoading || exportLoading || importLoading}
               variant="secondary"
               onClick={exportWatchlist}
               aria-label="Export watchlist"
@@ -97,7 +97,7 @@ export function WatchlistTab() {
           )}
           <Button
             className="gap-1.5 text-xs"
-            disabled={importLoading || exportLoading}
+            disabled={watchlistLoading || importLoading || exportLoading}
             variant="secondary"
             onClick={handleImportClick}
             aria-label="Import watchlist"
@@ -106,7 +106,7 @@ export function WatchlistTab() {
               ref={fileInputRef}
               accept=".json,application/json"
               className="hidden"
-              disabled={importLoading || exportLoading}
+              disabled={watchlistLoading || importLoading || exportLoading}
               id={importInputId}
               type="file"
               onChange={importWatchlist}
@@ -140,12 +140,13 @@ export function WatchlistTab() {
         </div>
       )}
 
-      {watchlistData.length > 0 && (
+      {(watchlistLoading || watchlistData.length > 0) && (
         <WatchlistFilters
           filters={filters}
           counts={counts}
           filteredCount={filteredWatchlist.length}
           totalCount={watchlistData.length}
+          disabled={watchlistLoading}
         />
       )}
 

@@ -18,6 +18,7 @@ import {
   detailHead,
   loadMediaRouteData,
   requireRouteId,
+  tvSeasonRoute,
 } from "@/lib/route-helpers";
 import { formatMediaTitle } from "@/lib/utils";
 
@@ -115,8 +116,11 @@ function TvSeasonDetailPage() {
         {seasons.map((s) => (
           <Link
             key={s.id}
-            // @ts-expect-error - correct link
-            to={`/tv/${id}/${urltitle}/season/${s.season_number}`}
+            {...tvSeasonRoute({
+              id,
+              slug: urltitle,
+              seasonNumber: s.season_number,
+            })}
             className={`pressable-small rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color] duration-150 ${
               s.season_number === seasonNumber
                 ? "bg-foreground text-background"

@@ -1,8 +1,10 @@
+import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   clearPendingMutations,
   enqueueMutation,
+  mutationOutboxRecordSchema,
   pendingMutationsFor,
   removeMutation,
 } from "./mutation-outbox";
@@ -109,5 +111,51 @@ describe("mutation outbox", () => {
     clearPendingMutations("user-a");
     expect(pendingMutationsFor("user-a")).toEqual([]);
     expect(pendingMutationsFor("user-b")).toHaveLength(1);
+  });
+
+  it("validates valid record with mutationOutboxRecordSchema", () => {
+    const valid = {
+      id: "rec-1",
+      userId: "user-1",
+      kind: "set-watchlist",
+      payload: { tmdbId: 10 },
+      coalesceKey: "movie:10",
+      createdAt: 1000,
+    };
+    const parsed = v.safeParse(mutationOutboxRecordSchema, valid);
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects non-finite createdAt in mutationOutboxRecordSchema", () => {
+    const nanRecord = {
+      id: "rec-1",
+      userId: "user-1",
+      kind: "set-watchlist",
+      payload: {},
+      createdAt: Number.NaN,
+    };
+    const infRecord = {
+      id: "rec-2",
+      userId: "user-1",
+      kind: "set-watchlist",
+      payload: {},
+      createdAt: Number.POSITIVE_INFINITY,
+    };
+
+    expect(v.safeParse(mutationOutboxRecordSchema, nanRecord).success).toBe(
+      false,
+    );
+    expect(v.safeParse(mutationOutboxRecordSchema, infRecord).success).toBe(
+      false,
+    );
+  });
+
+  it("rejects records with missing required fields", () => {
+    expect(
+      v.safeParse(mutationOutboxRecordSchema, {
+        id: "rec-1",
+        userId: "user-1",
+      }).success,
+    ).toBe(false);
   });
 });

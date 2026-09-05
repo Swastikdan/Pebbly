@@ -111,17 +111,17 @@ const ProviderTile = ({
 };
 
 const LoadingState = () => (
-  <section className="min-h-35 py-3">
+  <section className="min-h-40 py-3">
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
           Where to Watch
         </span>
-        <Skeleton className="h-7 w-28 rounded-md" />
+        <Skeleton className="h-8 w-28 rounded-md" />
       </div>
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-5 w-14 rounded-md" />
-        <div className="flex gap-2">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <Skeleton className="h-4 w-12 shrink-0 rounded sm:w-14" />
+        <div className="flex flex-wrap items-center gap-2">
           {Array.from({ length: 4 }).map((_, index) => (
             <Skeleton
               // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
@@ -131,6 +131,9 @@ const LoadingState = () => (
           ))}
         </div>
       </div>
+      <p className="text-muted-foreground text-xs">
+        Availability data provided by JustWatch via TMDB.
+      </p>
     </div>
   </section>
 );

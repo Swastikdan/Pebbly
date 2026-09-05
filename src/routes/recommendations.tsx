@@ -1,6 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import * as v from "valibot";
+
+export const recommendationsSearchSchema = v.object({
+  activeId: v.optional(v.string()),
+});
+
+export type RecommendationsSearch = v.InferOutput<
+  typeof recommendationsSearchSchema
+>;
 
 export const Route = createFileRoute("/recommendations")({
+  validateSearch: recommendationsSearchSchema,
   head: () => ({
     meta: [
       { title: "AI Recommendations | Pebbly" },
@@ -11,9 +21,4 @@ export const Route = createFileRoute("/recommendations")({
       },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      activeId: search.activeId as string | undefined,
-    };
-  },
 });

@@ -203,19 +203,31 @@ function SeasonEpisodeList({
 
   if (isLoading) {
     return (
-      <div className="divide-border/50 flex flex-col gap-0 divide-y">
+      <div className="divide-border/50 flex flex-col divide-y">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
             key={`ep-skel-${i}`}
-            className="flex gap-3 px-4 py-3"
+            className="flex flex-row items-start gap-3 px-4 py-3"
           >
             <Skeleton className="xs:h-20 xs:w-32 h-16 w-28 shrink-0 rounded-lg sm:h-24 sm:w-40 md:h-28 md:w-48" />
-            <div className="flex flex-1 flex-col gap-2 py-1">
-              <Skeleton className="h-2 w-10" />
-              <Skeleton className="h-4 w-32 sm:w-48" />
-              <Skeleton className="mt-1 hidden h-3 w-full max-w-[90%] sm:block" />
-              <Skeleton className="hidden h-3 w-3/4 sm:block" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <Skeleton className="h-3 w-8 rounded" />
+                  <Skeleton className="h-4.5 w-36 rounded md:h-5 md:w-52" />
+                </div>
+                <Skeleton className="size-7 shrink-0 rounded-lg" />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                <Skeleton className="h-4.5 w-12 rounded-md" />
+                <Skeleton className="h-3.5 w-20 rounded" />
+                <Skeleton className="h-3.5 w-12 rounded" />
+              </div>
+              <div className="mt-0.5 hidden space-y-1 sm:block">
+                <Skeleton className="h-3 w-full max-w-[90%] rounded" />
+                <Skeleton className="h-3 w-3/4 rounded" />
+              </div>
             </div>
           </div>
         ))}

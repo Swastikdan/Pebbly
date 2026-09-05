@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import type { RouteComponent } from "@tanstack/react-router";
 import {
   castCrewRouteOptions,
+  indexDetailSearch,
   indexRouteOptions,
+  mediaGallerySearch,
   mediaRouteOptions,
 } from "./media-route-options";
 
@@ -48,5 +50,69 @@ describe("mediaRouteOptions head generators", () => {
 
     expect(mediaTitleTag?.title).toBe("Inception - Media | Pebbly");
     expect(castTitleTag?.title).toBe("Breaking Bad - Cast & Crew | Pebbly");
+  });
+});
+
+describe("mediaRouteOptions search validators", () => {
+  describe("indexDetailSearch", () => {
+    it("parses valid search parameters", () => {
+      const result = indexDetailSearch({
+        trailer: "abc",
+        play: true,
+        video: "def",
+        backdrop: "gh",
+        poster: "ij",
+      });
+
+      expect(result).toEqual({
+        trailer: "abc",
+        play: true,
+        video: "def",
+        backdrop: "gh",
+        poster: "ij",
+      });
+    });
+
+    it("accepts string 'true' for play", () => {
+      expect(indexDetailSearch({ play: "true" })).toEqual({ play: true });
+    });
+
+    it("ignores non-string or empty search parameters", () => {
+      const result = indexDetailSearch({
+        trailer: 123,
+        video: ["invalid"],
+        backdrop: {},
+        poster: "",
+        play: "false",
+      });
+
+      expect(result).toEqual({});
+    });
+  });
+
+  describe("mediaGallerySearch", () => {
+    it("parses valid gallery search parameters", () => {
+      const result = mediaGallerySearch({
+        video: "vid1",
+        backdrop: "back1",
+        poster: "post1",
+      });
+
+      expect(result).toEqual({
+        video: "vid1",
+        backdrop: "back1",
+        poster: "post1",
+      });
+    });
+
+    it("ignores non-string or empty properties", () => {
+      const result = mediaGallerySearch({
+        video: 42,
+        backdrop: null,
+        poster: "",
+      });
+
+      expect(result).toEqual({});
+    });
   });
 });

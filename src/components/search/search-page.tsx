@@ -196,16 +196,16 @@ export function SearchPage() {
   } else if (isLoadingState) {
     content = (
       <div className="flex h-full min-h-125 flex-col gap-5 py-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
+        <div className="flex min-h-8 flex-wrap items-center gap-2">
+          <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex h-8 min-h-8 shrink-0 items-center gap-0.5 rounded-lg border p-0.5">
             <Skeleton className="h-7 w-10 rounded-md" />
             <Skeleton className="h-7 w-16 rounded-md" />
             <Skeleton className="h-7 w-14 rounded-md" />
           </div>
 
-          <Skeleton className="h-8 w-25 rounded-lg" />
+          <Skeleton className="h-8 w-25 shrink-0 rounded-lg" />
 
-          <Skeleton className="ml-auto h-3 w-17.5 rounded" />
+          <Skeleton className="ml-auto h-3 w-17.5 shrink-0 rounded" />
         </div>
         <div className="flex min-h-105 w-full items-center justify-center">
           <MediaGrid>
@@ -218,7 +218,13 @@ export function SearchPage() {
             ))}
           </MediaGrid>
         </div>
-        <div className="min-h-14" />
+        <div className="flex min-h-14 items-center justify-center">
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-8 w-8 rounded-md" />
+            <Skeleton className="h-8 w-8 rounded-md" />
+            <Skeleton className="h-8 w-8 rounded-md" />
+          </div>
+        </div>
       </div>
     );
   } else if (error) {

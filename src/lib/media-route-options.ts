@@ -98,21 +98,57 @@ const CAST_CREW_HEAD = buildHeadCopy(
   "/cast-crew",
 );
 
-export function indexDetailSearch(search: Record<string, unknown>) {
+function toOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function toOptionalBoolean(value: unknown): true | undefined {
+  return value === true || value === "true" ? true : undefined;
+}
+
+export type IndexDetailSearch = {
+  trailer?: string;
+  play?: boolean;
+  video?: string;
+  backdrop?: string;
+  poster?: string;
+};
+
+export function indexDetailSearch(
+  search: Record<string, unknown>,
+): IndexDetailSearch {
+  const trailer = toOptionalString(search.trailer);
+  const play = toOptionalBoolean(search.play);
+  const video = toOptionalString(search.video);
+  const backdrop = toOptionalString(search.backdrop);
+  const poster = toOptionalString(search.poster);
+
   return {
-    trailer: search.trailer as string | undefined,
-    play: search.play === true || search.play === "true" ? true : undefined,
-    video: search.video as string | undefined,
-    backdrop: search.backdrop as string | undefined,
-    poster: search.poster as string | undefined,
+    ...(trailer !== undefined ? { trailer } : {}),
+    ...(play !== undefined ? { play } : {}),
+    ...(video !== undefined ? { video } : {}),
+    ...(backdrop !== undefined ? { backdrop } : {}),
+    ...(poster !== undefined ? { poster } : {}),
   };
 }
 
-export function mediaGallerySearch(search: Record<string, unknown>) {
+export type MediaGallerySearch = {
+  video?: string;
+  backdrop?: string;
+  poster?: string;
+};
+
+export function mediaGallerySearch(
+  search: Record<string, unknown>,
+): MediaGallerySearch {
+  const video = toOptionalString(search.video);
+  const backdrop = toOptionalString(search.backdrop);
+  const poster = toOptionalString(search.poster);
+
   return {
-    video: search.video as string | undefined,
-    backdrop: search.backdrop as string | undefined,
-    poster: search.poster as string | undefined,
+    ...(video !== undefined ? { video } : {}),
+    ...(backdrop !== undefined ? { backdrop } : {}),
+    ...(poster !== undefined ? { poster } : {}),
   };
 }
 

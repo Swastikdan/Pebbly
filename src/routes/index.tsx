@@ -149,10 +149,14 @@ function HomePage() {
                 <TabsTab value="trending_week">This Week</TabsTab>
               </TabsList>
             </div>
-            <TabsPanel keepMounted value="trending_day">
-              <TrendingDayMovies />
+            <TabsPanel value="trending_day">
+              <Suspense
+                fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+              >
+                <TrendingDayMovies />
+              </Suspense>
             </TabsPanel>
-            <TabsPanel keepMounted value="trending_week">
+            <TabsPanel value="trending_week">
               <Suspense
                 fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
               >
@@ -298,17 +302,19 @@ function ContinueWatchingSection() {
 }
 
 function RecommendationsSection() {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded, user } = useUser();
   const { hasFeature } = usePermissions();
 
-  // Do not reserve a placeholder for signed-out visitors. Personalized
-  // recommendations require authentication and feature permission.
-  if (!isLoaded || !isSignedIn || !hasFeature("ai-recommendations")) {
+  // Do not reserve a placeholder for signed-out visitors. During Clerk's
+  // logout transition, isSignedIn and user can update in separate renders;
+  // requiring both prevents the LazySection from leaving a 300px gap.
+  if (!isLoaded || !isSignedIn || !user || !hasFeature("ai-recommendations")) {
     return null;
   }
 
   return (
     <LazySection
+      key={user.id}
       minHeight="300px"
       fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
     >

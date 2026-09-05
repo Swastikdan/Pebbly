@@ -1,5 +1,3 @@
-import type { GenericSchema, InferOutput } from "valibot";
-
 import type { AuthUser, ClerkSessionClaims, RequireUserResult } from "../auth";
 import type { Db } from "../db/client";
 import type { RbacFeature } from "../rbac";
@@ -39,10 +37,7 @@ export type AuthMode =
   /** Like "current" but the handler also runs for anonymous visitors. */
   | "anonymous";
 
-type RpcSchema = GenericSchema<unknown, unknown>;
-
 export interface AuthedFnConfig {
-  readonly schema?: RpcSchema;
   readonly mode?: AuthMode;
   /**
    * Response for requests that never reach the handler:
@@ -89,12 +84,6 @@ type ClaimsFor<M extends AuthMode> = M extends "require"
   ? ClerkSessionClaims
   : ClerkSessionClaims | null;
 
-type DataOf<C> = C extends { readonly schema: infer S }
-  ? S extends RpcSchema
-    ? InferOutput<S>
-    : unknown
-  : undefined;
-
 export interface AuthedContext<TData, TUser, TClaims> {
   data: TData;
   user: TUser;
@@ -102,8 +91,8 @@ export interface AuthedContext<TData, TUser, TClaims> {
   db: Db;
 }
 
-export type AuthedHandler<C extends AuthedFnConfig, TResult> = (
-  context: AuthedContext<DataOf<C>, UserFor<ModeOf<C>>, ClaimsFor<ModeOf<C>>>,
+export type AuthedHandler<C extends AuthedFnConfig, TData, TResult> = (
+  context: AuthedContext<TData, UserFor<ModeOf<C>>, ClaimsFor<ModeOf<C>>>,
 ) => TResult | Promise<TResult>;
 
 /**
@@ -112,10 +101,10 @@ export type AuthedHandler<C extends AuthedFnConfig, TResult> = (
  * second argument. Returns the envelope promise, never a closure, so the
  * result stays serializable across the TanStack RPC boundary.
  */
-export function authedFn<C extends AuthedFnConfig, TResult>(
+export function authedFn<TData, C extends AuthedFnConfig, TResult>(
   config: C,
-  data: unknown,
-  handler: AuthedHandler<C, TResult>,
+  data: TData,
+  handler: AuthedHandler<C, TData, TResult>,
 ): Promise<TResult> {
   return (async () => {
     const resolved = await resolveAuth(config);
@@ -165,7 +154,7 @@ export function authedFn<C extends AuthedFnConfig, TResult>(
     }
 
     return handler({
-      data: data as DataOf<C>,
+      data,
       user: user as UserFor<ModeOf<C>>,
       claims: claims as ClaimsFor<ModeOf<C>>,
       db: getDb(getEnv()),
@@ -213,23 +202,4 @@ async function resolveAuth(config: AuthedFnConfig): Promise<ResolvedAuth> {
     return { kind: "unauthorized", error: result.error };
   }
   return { kind: "authenticated", user: result.user, claims: result.claims };
-}
-
-export function guestFallback<T>(value: T | (() => T)): () => T {
-  return typeof value === "function" ? (value as () => T) : () => value;
-}
-
-export type RequiredAuthResult =
-  | { ok: true; user: AuthUser; claims: ClerkSessionClaims; db: Db }
-  | { ok: false; error: UnauthorizedError };
-
-export async function resolveRequiredAuth(): Promise<RequiredAuthResult> {
-  const result = await requireUser();
-  if (result.error) return { ok: false, error: result.error };
-  return {
-    ok: true,
-    user: result.user,
-    claims: result.claims,
-    db: getDb(getEnv()),
-  };
 }

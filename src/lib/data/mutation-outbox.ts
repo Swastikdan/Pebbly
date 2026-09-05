@@ -1,11 +1,17 @@
-export type MutationOutboxRecord = {
-  id: string;
-  userId: string;
-  kind: string;
-  payload: unknown;
-  coalesceKey?: string;
-  createdAt: number;
-};
+import * as v from "valibot";
+
+export const mutationOutboxRecordSchema = v.object({
+  id: v.string(),
+  userId: v.string(),
+  kind: v.string(),
+  payload: v.unknown(),
+  coalesceKey: v.optional(v.string()),
+  createdAt: v.pipe(v.number(), v.finite()),
+});
+
+export type MutationOutboxRecord = v.InferOutput<
+  typeof mutationOutboxRecordSchema
+>;
 
 const STORAGE_KEY = "pebbly-pending-mutations";
 
@@ -16,23 +22,13 @@ function readRecords(): MutationOutboxRecord[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isRecord);
+    return parsed.flatMap((item) => {
+      const res = v.safeParse(mutationOutboxRecordSchema, item);
+      return res.success ? [res.output] : [];
+    });
   } catch {
     return [];
   }
-}
-
-function isRecord(value: unknown): value is MutationOutboxRecord {
-  if (!value || typeof value !== "object") return false;
-  const record = value as Partial<MutationOutboxRecord>;
-  return (
-    typeof record.id === "string" &&
-    typeof record.userId === "string" &&
-    typeof record.kind === "string" &&
-    (record.coalesceKey === undefined ||
-      typeof record.coalesceKey === "string") &&
-    typeof record.createdAt === "number"
-  );
 }
 
 function writeRecords(records: MutationOutboxRecord[]) {

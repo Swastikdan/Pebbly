@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, gt } from "drizzle-orm";
+import * as v from "valibot";
 
 import type { Recommendation } from "./ai";
 import type { Db } from "./db/client";
@@ -19,6 +20,7 @@ import {
 import { collectAllByKeyset } from "./helpers/paginate";
 import { candidateIdentity } from "./recommendation-candidates";
 import { PEBBLY_PICKS_LIST_TYPE } from "./schema/lists";
+import { recommendationSchema } from "./schema/recommendations";
 
 export const SYSTEM_INSTRUCTION =
   "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
@@ -145,12 +147,17 @@ export function parseStoredRecommendations(
 ): Recommendation[] | null {
   if (!raw) return null;
   try {
-    const recommendations = Array.isArray(raw)
-      ? raw
-      : (JSON.parse(String(raw)) as unknown);
-    return Array.isArray(recommendations)
-      ? dedupeRecommendations(recommendations as Recommendation[])
-      : null;
+    const data = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(data)) return null;
+
+    const validated: Recommendation[] = [];
+    for (const item of data) {
+      const parsed = v.safeParse(recommendationSchema, item);
+      if (parsed.success) {
+        validated.push(parsed.output);
+      }
+    }
+    return dedupeRecommendations(validated);
   } catch (e) {
     console.error("Failed to parse stored recommendations", e);
     return null;

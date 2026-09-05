@@ -1,9 +1,6 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 
-import type {
-  MediaDialogKey,
-  MediaDialogSearch,
-} from "@/lib/media-dialog-helpers";
+import type { MediaDialogKey } from "@/lib/media-dialog-helpers";
 import { MediaLightboxDialog } from "@/components/media/media-lightbox-dialog";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
@@ -53,16 +50,16 @@ export function MediaThumbRail<T>({
   scrollContainerClassName,
 }: MediaThumbRailProps<T>) {
   const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as MediaDialogSearch;
+  const activeKey = useSearch({
+    strict: false,
+    select: (s: Record<string, unknown>) =>
+      typeof s[paramKey] === "string" ? (s[paramKey] as string) : undefined,
+  });
 
-  const setActiveKey = (value?: string) =>
-    updateDialogSearch(
-      (options) => navigate(options as never),
-      paramKey,
-      value,
-    );
+  const setActiveKey = (value?: string) => {
+    updateDialogSearch(navigate, paramKey, value);
+  };
 
-  const activeKey = search[paramKey] as string | undefined;
   const activeIndex = items.findIndex((item) => getKey(item) === activeKey);
   const activeItem = activeIndex >= 0 ? items[activeIndex] : undefined;
 

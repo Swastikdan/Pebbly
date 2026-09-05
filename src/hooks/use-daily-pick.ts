@@ -12,6 +12,7 @@ import {
 import { getMedia, getMovieDetails, getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
+import { mediaDetailRoute } from "@/lib/route-helpers";
 import { formatMediaTitle } from "@/lib/utils";
 import { useDailyPickStore } from "@/stores/daily-pick-store";
 
@@ -199,9 +200,23 @@ export function useDailyPick(open: boolean) {
   const posterLqUrl = effectivePosterPath
     ? `${IMAGE_PREFIX.LQ_POSTER}${effectivePosterPath}`
     : "";
-  const targetPath = formattedTitle
-    ? `/${mediaType}/${selectedItem?.id}/${formattedTitle}`
-    : `/${mediaType}/${selectedItem?.id}`;
+
+  const destination = selectedItem
+    ? mediaDetailRoute({
+        mediaType,
+        id: selectedItem.id,
+        slug: formattedTitle || undefined,
+      })
+    : null;
+
+  const playDestination = selectedItem
+    ? mediaDetailRoute({
+        mediaType,
+        id: selectedItem.id,
+        slug: formattedTitle || undefined,
+        play: true,
+      })
+    : null;
 
   return {
     candidateItems,
@@ -218,7 +233,8 @@ export function useDailyPick(open: boolean) {
     backdropLqUrl,
     posterUrl,
     posterLqUrl,
-    targetPath,
+    destination,
+    playDestination,
     setSelectedKey,
   };
 }

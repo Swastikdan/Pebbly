@@ -13,8 +13,8 @@ import {
 } from "@/components/media/media-lightbox-dialog";
 import { MediaThumbRail } from "@/components/media/media-thumb-rail";
 import { ScrollContainer } from "@/components/scroll-container";
-import { SkeletonGrid } from "@/components/ui/feedback";
 import { Image } from "@/components/ui/image";
+import { Skeleton } from "@/components/ui/skeleton";
 import { IMAGE_PREFIX } from "@/constants";
 import { getImageDialogKey } from "@/lib/media-dialog-helpers";
 import { getImages, getVideos } from "@/lib/queries";
@@ -186,10 +186,20 @@ const GLobalMediaVideoImageContainerLoader = () => {
         </span>
         <ScrollContainer isButtonsVisible={false}>
           <div className="flex items-center justify-center gap-3">
-            <SkeletonGrid
-              count={6}
-              itemClassName="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
-            />
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+                key={index}
+                className="relative aspect-video h-44 w-auto shrink-0 overflow-hidden rounded-xl md:h-52 lg:h-60"
+              >
+                <Skeleton className="size-full rounded-xl" />
+                <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                  <Skeleton className="h-6 w-24 rounded-lg" />
+                  <Skeleton className="h-5 w-12 rounded-md" />
+                </div>
+                <PlayOverlay />
+              </div>
+            ))}
           </div>
         </ScrollContainer>
       </div>
@@ -201,19 +211,25 @@ const GLobalMediaVideoImageContainerLoader = () => {
           <span className="w-fit text-lg md:text-xl">Backdrops</span>
           <ScrollContainer isButtonsVisible={false}>
             <div className="flex items-center justify-center gap-3">
-              <SkeletonGrid
-                count={6}
-                itemClassName="bg-accent aspect-video h-44 w-auto rounded-xl md:h-52 lg:h-60"
-              />
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+                  key={index}
+                  className="aspect-video h-44 w-auto shrink-0 rounded-xl md:h-52 lg:h-60"
+                />
+              ))}
             </div>
           </ScrollContainer>
           <span className="font-heading w-fit text-lg md:text-xl">Posters</span>
           <ScrollContainer isButtonsVisible={false}>
             <div className="flex items-center justify-center gap-3">
-              <SkeletonGrid
-                count={12}
-                itemClassName="bg-accent aspect-video h-44 w-30 rounded-xl md:h-52 md:w-35.75 lg:h-60 lg:w-41.25"
-              />
+              {Array.from({ length: 12 }).map((_, index) => (
+                <Skeleton
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+                  key={index}
+                  className="aspect-[11/16] h-44 w-auto shrink-0 rounded-xl md:h-52 lg:h-60"
+                />
+              ))}
             </div>
           </ScrollContainer>
         </div>

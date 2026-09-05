@@ -119,3 +119,98 @@ export function detailHead(input: {
     }),
   ];
 }
+
+export type MediaDetailDestination =
+  | {
+      to: "/movie/$id/{-$slug}";
+      params: { id: string; slug?: string };
+      search?: { play?: true };
+    }
+  | {
+      to: "/tv/$id/{-$slug}";
+      params: { id: string; slug?: string };
+      search?: { play?: true };
+    };
+
+export function mediaDetailRoute(options: {
+  mediaType: MediaKind;
+  id: number | string;
+  slug?: string;
+  play?: boolean;
+}): MediaDetailDestination {
+  const params: { id: string; slug?: string } = {
+    id: String(options.id),
+    ...(options.slug ? { slug: options.slug } : {}),
+  };
+  const search = options.play ? ({ play: true } as const) : undefined;
+
+  if (options.mediaType === "movie") {
+    return {
+      to: "/movie/$id/{-$slug}",
+      params,
+      ...(search ? { search } : {}),
+    };
+  }
+
+  return {
+    to: "/tv/$id/{-$slug}",
+    params,
+    ...(search ? { search } : {}),
+  };
+}
+
+export type TvSeasonDestination = {
+  to: "/tv/$id/{-$slug}/season/$seasonNumber";
+  params: { id: string; slug?: string; seasonNumber: string };
+};
+
+export function tvSeasonRoute(options: {
+  id: number | string;
+  slug?: string;
+  seasonNumber: number | string;
+}): TvSeasonDestination {
+  return {
+    to: "/tv/$id/{-$slug}/season/$seasonNumber",
+    params: {
+      id: String(options.id),
+      seasonNumber: String(options.seasonNumber),
+      ...(options.slug ? { slug: options.slug } : {}),
+    },
+  };
+}
+
+export type TvSeasonsDestination = {
+  to: "/tv/$id/{-$slug}/seasons";
+  params: { id: string; slug?: string };
+};
+
+export function tvSeasonsRoute(options: {
+  id: number | string;
+  slug?: string;
+}): TvSeasonsDestination {
+  return {
+    to: "/tv/$id/{-$slug}/seasons",
+    params: {
+      id: String(options.id),
+      ...(options.slug ? { slug: options.slug } : {}),
+    },
+  };
+}
+
+export type CollectionDestination = {
+  to: "/collection/$id/{-$slug}";
+  params: { id: string; slug?: string };
+};
+
+export function collectionRoute(options: {
+  id: number | string;
+  slug?: string;
+}): CollectionDestination {
+  return {
+    to: "/collection/$id/{-$slug}",
+    params: {
+      id: String(options.id),
+      ...(options.slug ? { slug: options.slug } : {}),
+    },
+  };
+}
