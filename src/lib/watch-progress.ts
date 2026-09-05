@@ -96,7 +96,6 @@ export function makeEpisodeKey(
   return `${tvId}:${season}:${episode}`;
 }
 
-/** Inverse of `makeEpisodeKey` for `{tmdbId}:{season}:{episode}` keys. */
 export function parseEpisodeKey(key: string): {
   tmdbId: number;
   season: number;
@@ -120,19 +119,6 @@ export type EpisodeRef = { season: number; episode: number };
 const byEpisodeOrder = (a: EpisodeRef, b: EpisodeRef) =>
   a.season !== b.season ? a.season - b.season : a.episode - b.episode;
 
-/**
- * Decides which episode the player should resume/offer next, given the last
- * played episode and the set of watched episodes (already filtered to
- * `isWatched`). Pure so the TV resume logic stays unit-testable; callers only
- * adapt the source of truth (server rows vs the local guest store).
- *
- * Rules:
- * - Resume at the last played episode unless it's already watched, in which
- *   case advance one.
- * - Without a last-played marker, continue after the most recently watched
- *   episode in season/episode order.
- * - Nothing watched yet: start at S1E1.
- */
 export function resolveNextEpisode(input: {
   lastPlayed: EpisodeRef | null;
   isLastPlayedWatched: boolean;

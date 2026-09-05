@@ -93,11 +93,6 @@ function runJournaledMutation(
   });
 }
 
-// The watchlist-membership write path (batching, optimistic-handle
-// resolution, server sync, crash-recovery outbox) lives in an internal seam:
-// `createMembershipWriter` in `membership-writer.ts`. `createRemoteRepository`
-// wires it up below and delegates `toggleMembership` to it.
-
 async function replayPendingMutations(userId: string): Promise<void> {
   for (const record of pendingMutationsFor(userId)) {
     try {

@@ -5,34 +5,16 @@ import { ERA_PRESETS } from "@/lib/recommendation-eras";
 import { normalizeTitleKey } from "@/lib/text";
 import { MAX_EXCLUDE_TMDB_IDS } from "@/server/schema/recommendations";
 
-/**
- * Stable identifier for a recommendation row in the local dismiss cache.
- * Includes the title because the same TMDB id can be surfaced by multiple
- * generations and should remain dismissible per surfacing.
- */
 export const getDismissKey = (rec: AIRecommendation) =>
   `${rec.mediaType}:${rec.tmdbId ?? ""}:${rec.title}`;
 
 export interface RecommendationFilterSets {
-  /** Keys from `getDismissKey` that the user dismissed in this session. */
   dismissedKeys: Set<string>;
-  /** `${mediaType}:${tmdbId}` keys the user thumbs-downed server-side. */
   dislikedKeys: Set<string>;
-  /** `${mediaType}:${tmdbId}` keys already in the user's watchlist. */
   watchlistKeys: Set<string>;
-  /** `${mediaType}:${tmdbId}` keys the user thumbs-upped in this session. */
   likedKeys: Set<string>;
 }
 
-/**
- * Filter the raw homepage rail to what should actually render:
- *  - drop locally dismissed rows,
- *  - drop rows the user has disliked (server feedback),
- *  - drop rows already in the watchlist — UNLESS the user also liked that
- *    exact row in this session (an explicit like should win over membership).
- *
- * Pure function so it is covered by unit tests independent of the component.
- */
 export function filterRenderedRecommendations(
   recommendations: AIRecommendation[] | null | undefined,
   {
@@ -53,10 +35,6 @@ export function filterRenderedRecommendations(
     return true;
   });
 }
-
-// ---------------------------------------------------------------------------
-// Generation options builders (pure; consumed by `use-recommendations`).
-// ---------------------------------------------------------------------------
 
 export interface GenerateOptions {
   generationType?: "watchlist" | "list" | "genre";

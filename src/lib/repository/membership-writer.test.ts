@@ -9,7 +9,6 @@ import {
 } from "@/server/fns/watchlist";
 import { createMembershipWriter } from "./membership-writer";
 
-// A membership item as the repository adapters pass it (WatchlistItem-like).
 const item = {
   id: "42",
   media_type: "movie" as const,
@@ -131,8 +130,6 @@ describe("createMembershipWriter", () => {
 
     const writer = createMembershipWriter(undefinedQueryClient(), "user-1");
     const p = writer.toggleMembership(item, true);
-    // Register the handler early so the rejection is never unhandled between
-    // the flush and the assertion below.
     p.catch(() => {});
     await vi.advanceTimersByTimeAsync(300);
     await expect(p).rejects.toThrow("offline");
@@ -145,7 +142,5 @@ describe("createMembershipWriter", () => {
 });
 
 function undefinedQueryClient() {
-  // applyServerState/scheduleSync are mocked out, so the client is never
-  // touched; a minimal stub keeps the seam test dependency-free.
   return {} as Parameters<typeof createMembershipWriter>[0];
 }

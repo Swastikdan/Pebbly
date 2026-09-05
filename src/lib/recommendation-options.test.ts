@@ -206,13 +206,11 @@ describe("filterRenderedRecommendations", () => {
 
   it("drops watchlist rows unless explicitly liked", () => {
     const list = [rec({ tmdbId: 1 }), rec({ tmdbId: 2 })];
-    // Member but not liked → removed.
     const out1 = filterRenderedRecommendations(list, {
       ...empty,
       watchlistKeys: new Set(["movie:1"]),
     });
     expect(out1).toEqual([expect.objectContaining({ tmdbId: 2 })]);
-    // Member AND liked in this session → kept.
     const out2 = filterRenderedRecommendations(list, {
       ...empty,
       watchlistKeys: new Set(["movie:1"]),

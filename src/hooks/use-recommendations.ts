@@ -23,9 +23,6 @@ import {
 } from "@/server/fns/recommendations";
 import { unwrap } from "@/server/schema/common";
 
-// The option builders and history filtering are pure and live in
-// `lib/recommendation-options.ts` (unit-testable, no React imports). Re-export
-// so existing consumers keep their import path.
 export {
   buildGenerateAgainOptions,
   buildGenerateMoreOptions,

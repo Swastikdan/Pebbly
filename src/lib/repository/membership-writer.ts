@@ -23,16 +23,6 @@ export type BatchedWatchlistMembershipTask = {
   outboxId?: string;
 };
 
-/**
- * Owns the watchlist-membership write path: batching, optimistic-handle
- * resolution, server sync and crash-recovery outboxing. Extracted from
- * `remote-repository.ts` so the 600-line adapter file reads as a flat table
- * of repository methods; the membership machinery is the only piece with
- * real internal state, so it becomes an object with one method.
- *
- * The external `Repository` interface is unchanged — `createRemoteRepository`
- * delegates `toggleMembership` to this writer.
- */
 export function createMembershipWriter(
   queryClient: QueryClient,
   userId: string | undefined,
@@ -50,8 +40,6 @@ export function createMembershipWriter(
           rows = await unwrap(batchSetWatchlistMembership({ data: { items } }));
         }
 
-        // Each flush is one server write (single or batched), which bumps the
-        // watchlist revision once.
         recordOwnMutation("watchlist");
         applyServerState(
           queryClient,
@@ -63,7 +51,6 @@ export function createMembershipWriter(
           task.handle?.resolve();
           if (task.outboxId) removeMutation(task.outboxId);
         }
-        // The tracked-ids query derives from the watchlist, so keep it fresh.
         scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds()]);
         return rows;
       } catch (error) {
@@ -76,8 +63,6 @@ export function createMembershipWriter(
           description: "The change was reverted. Please try again.",
           type: "error",
         });
-        // The server may have applied part of the batch before failing; a
-        // refresh reconciles the cache with the authoritative state.
         scheduleSync(queryClient, [queryKeys.watchlist.list()]);
         throw error;
       }

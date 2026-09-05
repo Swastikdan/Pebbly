@@ -25,18 +25,15 @@ export interface WatchlistToggleItem {
   overview?: string;
 }
 
-/** Args object for `WatchlistRepository.setProgressStatus`. */
 export type SetProgressStatusRepoArgs = {
   id: string;
   mediaType: MediaType;
   progressStatus: ProgressStatus;
   metadata?: MediaMetadata;
-  /** The status being replaced — drives TV episode side effects. */
   currentStatus?: ProgressStatus | null;
   progress?: number;
 };
 
-/** Args object for `WatchlistRepository.setReaction`. */
 export type SetReactionRepoArgs = {
   id: string;
   mediaType: MediaType;
