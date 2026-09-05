@@ -10,18 +10,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GENRE_LIST } from "@/constants";
+import { ERA_PRESETS } from "@/lib/recommendation-eras";
 import { cn } from "@/lib/utils";
 
 export const POPULAR_GENRES = GENRE_LIST.slice(0, 14);
-
-export const ERA_PRESETS = [
-  { label: "Classics", from: 1900, to: 1979 },
-  { label: "80s", from: 1980, to: 1989 },
-  { label: "90s", from: 1990, to: 1999 },
-  { label: "2000s", from: 2000, to: 2009 },
-  { label: "2010s", from: 2010, to: 2019 },
-  { label: "2020s", from: 2020, to: 2029 },
-] as const;
 
 export const COUNT_OPTIONS = [5, 10, 15, 20, 25, 30] as const;
 
