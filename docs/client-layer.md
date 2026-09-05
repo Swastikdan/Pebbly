@@ -115,11 +115,14 @@ The mutation layer that eliminated the old `if (isSignedIn)` branches:
 - `use-repository.ts`, `useRepository()` returns the remote implementation
   when signed in, the local one otherwise (memoized per auth state).
 - `remote-repository.ts`, server-backed implementation:
-  - watchlist membership writes go through a shared `RequestBatcher`
+  - watchlist membership writes are delegated to `membership-writer.ts`
+    (`createMembershipWriter`): a shared `RequestBatcher`
     (300 ms debounce / 1.2 s max wait / max batch 100 / dedupe by
     `mediaType:tmdbId` / flush on page hide), then `setWatchlistMembership`
     or `batchSetWatchlistMembership`; the authoritative rows are merged into
-    the cache with `applyServerState`.
+    the cache with `applyServerState`. The batcher, optimistic handles and
+    outboxing live behind that internal seam; the external `Repository`
+    interface is unchanged.
   - progress status / reactions / episode syncs run through
     `runJournaledMutation` (begin op → run fn → resolve/rollback → schedule
     sync) on top of `resolveStatusPlan` for status changes.
