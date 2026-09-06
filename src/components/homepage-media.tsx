@@ -32,7 +32,7 @@ const MediaList = memo(
   }) => {
     return (
       <ScrollContainer isButtonsVisible={true}>
-        <div className="flex gap-2 p-4 first:pl-0 last:pr-0">
+        <div className="flex gap-2 p-4 first:ps-0 last:pe-0">
           {props.data.map((item, index) => (
             <MediaCard
               key={item.id}

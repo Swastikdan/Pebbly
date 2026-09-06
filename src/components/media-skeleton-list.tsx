@@ -8,7 +8,7 @@ export const MediaSkeletonList = memo(
     const cardCount = props.count ?? 6;
     return (
       <ScrollContainer isButtonsVisible={false}>
-        <div className="flex gap-2 p-4 first:pl-0 last:pr-0">
+        <div className="flex gap-2 p-4 first:ps-0 last:pe-0">
           {Array.from({ length: cardCount }).map((_, index) => (
             <MediaCardSkeleton
               // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list

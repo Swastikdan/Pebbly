@@ -92,7 +92,7 @@ export function WatchlistFilters({
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search
-            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2"
+            className="text-muted-foreground pointer-events-none absolute start-3 top-1/2 z-10 size-4 -translate-y-1/2"
             aria-hidden="true"
           />
           <Input
@@ -101,7 +101,7 @@ export function WatchlistFilters({
             placeholder="Search saved titles"
             aria-label="Search watchlist"
             disabled={disabled}
-            className="border-border/70 bg-card h-9 rounded-md border pr-10 pl-9 text-sm dark:border-white/10"
+            className="border-border/70 bg-card h-9 rounded-md border ps-9 pe-10 text-sm dark:border-white/10"
           />
           {searchQuery && !disabled && (
             <Button
@@ -109,7 +109,7 @@ export function WatchlistFilters({
               variant="ghost"
               size="icon"
               onClick={() => setSearchQuery("")}
-              className="text-muted-foreground absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-lg"
+              className="text-muted-foreground absolute end-1 top-1/2 size-8 -translate-y-1/2 rounded-lg"
               aria-label="Clear watchlist search"
             >
               <X aria-hidden="true" size={14} />

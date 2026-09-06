@@ -368,8 +368,8 @@ export function VideoPlayerModal({
             aria-label="Close"
             onClick={() => handleOpenChange(false)}
             className={cn(
-              "pressable absolute z-70 flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-95 sm:p-3",
-              "top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))]",
+              "pressable absolute z-70 flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-[0.96] sm:p-3",
+              "end-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))]",
               controlsVisible ? "opacity-100" : "pointer-events-none opacity-0",
             )}
           >
@@ -380,8 +380,8 @@ export function VideoPlayerModal({
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             onClick={handleFullscreen}
             className={cn(
-              "pressable absolute z-70 flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-95 sm:p-3",
-              "top-[max(0.75rem,env(safe-area-inset-top))] right-[calc(max(0.75rem,env(safe-area-inset-right))+4rem)]",
+              "pressable absolute z-70 flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-[0.96] sm:p-3",
+              "end-[calc(max(0.75rem,env(safe-area-inset-right))+4rem)] top-[max(0.75rem,env(safe-area-inset-top))]",
               controlsVisible ? "opacity-100" : "pointer-events-none opacity-0",
             )}
           >

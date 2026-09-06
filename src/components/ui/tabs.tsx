@@ -61,7 +61,7 @@ export function TabsList({
       </TabsListContext.Provider>
       <TabsPrimitive.Indicator
         className={cn(
-          "ease-emphatic absolute top-0 left-0 transition-[translate,width,height] duration-150",
+          "ease-emphatic absolute start-0 top-0 transition-[translate,width,height] duration-150",
           variant === "underline"
             ? "bg-primary z-10 data-[orientation=horizontal]:top-auto data-[orientation=horizontal]:bottom-0 data-[orientation=horizontal]:h-0.5 data-[orientation=horizontal]:w-(--active-tab-width) data-[orientation=horizontal]:[translate:var(--active-tab-left)_0] data-[orientation=vertical]:h-(--active-tab-height) data-[orientation=vertical]:w-0.5 data-[orientation=vertical]:[translate:0_var(--active-tab-top)]"
             : "bg-background dark:bg-input -z-1 h-(--active-tab-height) w-(--active-tab-width) [translate:var(--active-tab-left)_var(--active-tab-top)] rounded-sm shadow-none",

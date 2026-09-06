@@ -37,7 +37,7 @@ export function DailyPickButton() {
         className="pressable opacity-70"
         aria-hidden="true"
       >
-        <FilmIcon aria-hidden="true" className="text-primary mr-1.5 size-4" />
+        <FilmIcon aria-hidden="true" className="text-primary me-1.5 size-4" />
         <span>What to Watch Today</span>
       </Button>
     );
@@ -55,7 +55,7 @@ export function DailyPickButton() {
         className="invisible flex h-11 items-center justify-center px-8"
       >
         <Button variant="secondary" size="lg" disabled tabIndex={-1}>
-          <FilmIcon className="text-primary mr-1.5 size-4" />
+          <FilmIcon className="text-primary me-1.5 size-4" />
           <span>What to Watch Today</span>
         </Button>
       </div>
@@ -82,14 +82,14 @@ export function DailyPickButton() {
           />
         }
       >
-        <FilmIcon aria-hidden="true" className="text-primary mr-1.5 size-4" />
+        <FilmIcon aria-hidden="true" className="text-primary me-1.5 size-4" />
         <span>What to Watch Today</span>
       </DialogTrigger>
       <DialogPopup
         className="bg-background border-border max-w-[92vw] overflow-hidden rounded-lg border p-0 shadow-none sm:max-w-lg"
         closeProps={{
           className:
-            "border-border bg-background text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800 top-3 right-3 z-30 rounded-md border p-2",
+            "border-border bg-background text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800 top-3 end-3 z-30 rounded-md border p-2",
         }}
       >
         {pick.isDataLoading ? (
@@ -116,7 +116,7 @@ export function DailyPickButton() {
               <div className="absolute inset-0 bg-black/15 dark:hidden" />
               <div className="from-background via-background/60 absolute inset-x-0 bottom-0 h-16 bg-linear-to-t to-transparent dark:hidden" />
 
-              <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 pr-12">
+              <div className="absolute start-3 top-3 flex flex-wrap items-center gap-1.5 pe-12">
                 {pick.selectedItem.isCurrentlyWatching ? (
                   <span className="inline-flex items-center gap-1.5 rounded-md bg-green-500/90 px-2.5 py-0.5 text-[11px] font-medium text-black">
                     <Eye aria-hidden="true" className="size-3" />
@@ -221,7 +221,7 @@ export function DailyPickButton() {
                           <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-md text-xs font-medium sm:h-11 sm:text-sm">
                             <Play
                               aria-hidden="true"
-                              className="mr-1.5 size-3.5 fill-current"
+                              className="me-1.5 size-3.5 fill-current"
                             />
                             <span>Watch Now</span>
                           </Button>
@@ -249,11 +249,11 @@ export function DailyPickButton() {
                         variant="outline"
                         onClick={pick.handleDislike}
                         title="Dislike / Not for me (Removes from picks)"
-                        className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
+                        className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-10"
                       >
                         <ThumbsDown
                           aria-hidden="true"
-                          className="mr-1.5 size-3.5"
+                          className="me-1.5 size-3.5"
                         />
                         <span>Dislike</span>
                       </Button>
@@ -262,9 +262,9 @@ export function DailyPickButton() {
                         variant="outline"
                         onClick={pick.handleShuffle}
                         title="Pick Another"
-                        className="border-border hover:bg-accent active:bg-accent h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
+                        className="border-border hover:bg-accent active:bg-accent h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-10"
                       >
-                        <Dices aria-hidden="true" className="mr-1.5 size-3.5" />
+                        <Dices aria-hidden="true" className="me-1.5 size-3.5" />
                         <span>Another</span>
                       </Button>
                     </div>
@@ -291,11 +291,11 @@ export function DailyPickButton() {
                       variant="outline"
                       onClick={pick.handleDislike}
                       title="Dislike / Not for me (Removes from picks)"
-                      className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
+                      className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-11 sm:text-sm"
                     >
                       <ThumbsDown
                         aria-hidden="true"
-                        className="mr-1.5 size-3.5"
+                        className="me-1.5 size-3.5"
                       />
                       <span>Dislike</span>
                     </Button>
@@ -304,9 +304,9 @@ export function DailyPickButton() {
                       variant="outline"
                       onClick={pick.handleShuffle}
                       title="Pick Another"
-                      className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
+                      className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-11 sm:text-sm"
                     >
-                      <Dices aria-hidden="true" className="mr-1.5 size-3.5" />
+                      <Dices aria-hidden="true" className="me-1.5 size-3.5" />
                       <span>Another</span>
                     </Button>
                   </div>

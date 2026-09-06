@@ -158,7 +158,7 @@ export function RecommendationFilters({
               <SlidersHorizontal aria-hidden="true" className="size-3.5" />
             </Button>
           </div>
-          <div className="mt-1 flex w-full sm:mt-0 sm:ml-auto sm:w-auto">
+          <div className="mt-1 flex w-full sm:ms-auto sm:mt-0 sm:w-auto">
             <Button
               onClick={handleGenerate}
               disabled={
@@ -170,7 +170,7 @@ export function RecommendationFilters({
                 (genMode === "genre" && selectedGenres.length === 0)
               }
               variant="secondary"
-              className="border-border h-10 w-full gap-2 rounded-md border px-5 shadow-none transition-[color,background-color,border-color,transform] duration-150 hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
+              className="border-border h-10 w-full gap-2 rounded-md border px-5 shadow-none transition-[color,background-color,border-color,transform] duration-150 hover:scale-[1.02] active:scale-[0.96] sm:w-auto"
             >
               {isGenerating ? (
                 <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
@@ -188,7 +188,7 @@ export function RecommendationFilters({
             className="border-border/40 mt-3 flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-4"
           >
             <div className="scrollbar-hidden flex items-center gap-1.5 overflow-x-auto pb-0.5">
-              <span className="text-muted-foreground mr-1 shrink-0 text-xs font-medium">
+              <span className="text-muted-foreground me-1 shrink-0 text-xs font-medium">
                 Era
               </span>
               {ERA_PRESETS.map((era) => (
@@ -213,7 +213,7 @@ export function RecommendationFilters({
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5">
-              <span className="text-muted-foreground mr-1 shrink-0 text-xs font-medium">
+              <span className="text-muted-foreground me-1 shrink-0 text-xs font-medium">
                 Count
               </span>
               <Select

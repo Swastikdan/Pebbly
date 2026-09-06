@@ -114,7 +114,7 @@ export function Pagination({
       </div>
       <Button
         variant="outline"
-        className="border-border/60 flex-1 rounded-lg px-4 pl-4 text-sm md:flex-none"
+        className="border-border/60 flex-1 rounded-lg px-4 text-sm md:flex-none"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Next Page"

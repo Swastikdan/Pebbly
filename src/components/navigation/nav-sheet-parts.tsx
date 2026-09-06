@@ -159,7 +159,7 @@ export const NavCard = ({
       {badge && (
         <span
           className={cn(
-            "ml-1.5 shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-semibold sm:ml-2 sm:px-2.5",
+            "ms-1.5 shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-semibold sm:ms-2 sm:px-2.5",
             isActive
               ? "bg-nav-active-fg/15 text-nav-active-fg border-transparent"
               : "bg-muted text-muted-foreground border-border/60",
@@ -172,7 +172,7 @@ export const NavCard = ({
   );
 
   const baseClasses = cn(
-    "flex items-center justify-between rounded-lg border p-2.5 transition-[color,background-color,border-color,transform] active:scale-[0.98] sm:p-3.5",
+    "flex items-center justify-between rounded-lg border p-2.5 transition-[color,background-color,border-color,transform] active:scale-[0.96] sm:p-3.5",
     isActive ? "bg-nav-active-bg border-transparent" : "border-border bg-card",
   );
 

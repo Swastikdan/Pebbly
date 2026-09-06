@@ -10,12 +10,12 @@ const Footer = () => {
     <footer className="border-border/60 mx-auto flex w-full items-center justify-center border-t">
       <section className="text-muted-foreground flex w-full max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 text-sm md:flex-row md:px-6">
         <p>Pebbly by Swastik Dan</p>
-        <nav className="flex items-center gap-1" aria-label="Footer">
+        <nav className="flex items-center gap-1.5 sm:gap-2" aria-label="Footer">
           {isSignedIn && isAdmin && (
             <>
               <Link
                 to="/admin"
-                className="hover:text-foreground rounded-md px-2 py-1 transition-colors"
+                className="hover:text-foreground rounded-md px-2.5 py-1.5 transition-colors"
               >
                 Admin
               </Link>
@@ -27,7 +27,7 @@ const Footer = () => {
           <Link
             aria-label="User disclaimer"
             to={SITE_CONFIG.Footerlinks.disclaimer}
-            className="hover:text-foreground rounded-md px-2 py-1 transition-colors"
+            className="hover:text-foreground rounded-md px-2.5 py-1.5 transition-colors"
           >
             Disclaimer
           </Link>
@@ -39,7 +39,7 @@ const Footer = () => {
             to={SITE_CONFIG.Footerlinks.github}
             rel="noopener noreferrer"
             target="_blank"
-            className="hover:text-foreground rounded-md px-2 py-1 transition-colors"
+            className="hover:text-foreground rounded-md px-2.5 py-1.5 transition-colors"
           >
             Github
           </Link>

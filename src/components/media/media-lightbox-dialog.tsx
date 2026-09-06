@@ -59,7 +59,7 @@ export function LightboxNavButton({
       variant="ghost"
       size="icon"
       aria-label={label}
-      className={`${dir === "prev" ? "left-4" : "right-4"} ${NAV_BUTTON_CLASS}`}
+      className={`${dir === "prev" ? "start-4" : "end-4"} ${NAV_BUTTON_CLASS}`}
       onClick={(e) => {
         e.stopPropagation();
         onClick();

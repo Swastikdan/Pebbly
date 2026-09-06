@@ -102,18 +102,18 @@ export function AdminRoleDialog({
               <>
                 <Loader2
                   aria-hidden="true"
-                  className="mr-2 size-4 animate-spin"
+                  className="me-2 size-4 animate-spin"
                 />
                 Processing…
               </>
             ) : selectedUser?.isBanned ? (
               <>
-                <ShieldCheck aria-hidden="true" className="mr-1.5 size-4" />
+                <ShieldCheck aria-hidden="true" className="me-1.5 size-4" />
                 Confirm Unban
               </>
             ) : (
               <>
-                <Ban aria-hidden="true" className="mr-1.5 size-4" />
+                <Ban aria-hidden="true" className="me-1.5 size-4" />
                 Confirm Ban
               </>
             )}

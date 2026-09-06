@@ -214,7 +214,7 @@ const SearchBar = memo(
             <button
               type="button"
               onClick={handleClear}
-              className="absolute inset-y-0 inset-e-0 z-20 flex w-11 cursor-pointer items-center justify-center transition-[color,background-color,box-shadow] duration-150 hover:opacity-70 active:scale-90"
+              className="absolute inset-y-0 inset-e-0 z-20 flex w-11 cursor-pointer items-center justify-center transition-[color,background-color,box-shadow] duration-150 hover:opacity-70 active:scale-[0.96]"
               aria-label="Clear Search"
             >
               <XCircleIcon size={20} aria-hidden="true" />
@@ -251,8 +251,8 @@ const SearchBarSkeleton = memo(function SearchBarSkeleton({
       )}
     >
       <Skeleton className="size-5 rounded-md" />
-      <Skeleton className="ml-3 h-4 w-48 max-w-[50%] rounded" />
-      <div className="ml-auto hidden items-center sm:flex">
+      <Skeleton className="ms-3 h-4 w-48 max-w-[50%] rounded" />
+      <div className="ms-auto hidden items-center sm:flex">
         <Skeleton className="h-5 w-8 rounded" />
       </div>
     </div>

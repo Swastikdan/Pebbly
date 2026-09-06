@@ -126,7 +126,7 @@ export function CustomListMediaCard({
             </div>
           )}
           {rank !== undefined && (
-            <span className="bg-foreground text-background border-card absolute -top-1.5 -left-1.5 flex size-6 items-center justify-center rounded-md border-2 text-[11px] font-bold tabular-nums">
+            <span className="bg-foreground text-background border-card absolute -start-1.5 -top-1.5 flex size-6 items-center justify-center rounded-md border-2 text-[11px] font-bold tabular-nums">
               {rank}
             </span>
           )}

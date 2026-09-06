@@ -103,7 +103,7 @@ const ProviderTile = ({
       target="_blank"
       rel="noopener noreferrer"
       title={`Watch on ${provider.provider_name}`}
-      className="inline-block shrink-0 rounded-lg outline-offset-2 transition-transform duration-150 ease-out hover:scale-105 active:scale-95"
+      className="inline-block shrink-0 rounded-lg outline-offset-2 transition-transform duration-150 ease-out hover:scale-105 active:scale-[0.96]"
     >
       {tile}
     </a>

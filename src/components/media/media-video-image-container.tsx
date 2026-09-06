@@ -85,7 +85,7 @@ export const MediaVideoImageContainer = (props: {
           imageClassName="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
           renderTileOverlay={(video) => (
             <>
-              <div className="absolute top-3 left-3 flex max-w-[80%] items-center gap-1.5">
+              <div className="absolute start-3 top-3 flex max-w-[80%] items-center gap-1.5">
                 <span className="text-foreground bg-background/90 dark:bg-foreground/90 dark:text-background truncate rounded-lg px-2 py-0.5 text-sm">
                   {video.name}
                 </span>
@@ -193,7 +193,7 @@ const GLobalMediaVideoImageContainerLoader = () => {
                 className="relative aspect-video h-44 w-auto shrink-0 overflow-hidden rounded-xl md:h-52 lg:h-60"
               >
                 <Skeleton className="size-full rounded-xl" />
-                <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                <div className="absolute start-3 top-3 flex items-center gap-1.5">
                   <Skeleton className="h-6 w-24 rounded-lg" />
                   <Skeleton className="h-5 w-12 rounded-md" />
                 </div>

@@ -205,7 +205,7 @@ export function SearchPage() {
 
           <Skeleton className="h-8 w-25 shrink-0 rounded-lg" />
 
-          <Skeleton className="ml-auto h-3 w-17.5 shrink-0 rounded" />
+          <Skeleton className="ms-auto h-3 w-17.5 shrink-0 rounded" />
         </div>
         <div className="flex min-h-105 w-full items-center justify-center">
           <MediaGrid>
@@ -358,7 +358,7 @@ export function SearchPage() {
             </SelectPopup>
           </Select>
 
-          <span className="text-muted-foreground ml-auto text-[10px]">
+          <span className="text-muted-foreground ms-auto text-[10px]">
             {data?.total_results ?? 0} results
           </span>
         </div>

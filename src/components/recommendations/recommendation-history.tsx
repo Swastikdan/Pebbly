@@ -100,7 +100,7 @@ function HistoryAccordionItem({
       )}
     >
       <AccordionTrigger className="hover:bg-secondary/10 data-panel-open:bg-secondary/10 px-4 py-3 text-sm font-medium transition-colors hover:no-underline">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pr-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pe-2">
           <Badge
             variant="outline"
             className="shrink-0 text-[10px] font-medium capitalize"
@@ -120,7 +120,7 @@ function HistoryAccordionItem({
               ` · ${entry.mediaTypePreference === "movie" ? "Movies" : "TV"}`}
           </span>
 
-          <div className="ml-auto hidden shrink-0 items-center gap-2 sm:flex">
+          <div className="ms-auto hidden shrink-0 items-center gap-2 sm:flex">
             {movieCount > 0 && (
               <span className="text-muted-foreground/60 inline-flex items-center gap-1 text-[10px]">
                 <Film aria-hidden="true" className="size-3" />
@@ -169,7 +169,7 @@ function HistoryAccordionItem({
             <Button
               size="sm"
               variant="secondary"
-              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.97]"
+              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.96]"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect();
@@ -182,7 +182,7 @@ function HistoryAccordionItem({
             <Button
               size="sm"
               variant="secondary"
-              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.97]"
+              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.96]"
               disabled={isGenerating}
               onClick={(e) => {
                 e.stopPropagation();
@@ -198,7 +198,7 @@ function HistoryAccordionItem({
             <Button
               size="sm"
               variant="secondary"
-              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.97]"
+              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.96]"
               disabled={isGenerating}
               onClick={(e) => {
                 e.stopPropagation();
@@ -211,7 +211,7 @@ function HistoryAccordionItem({
             <Button
               size="sm"
               variant="ghost"
-              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-auto h-8 shrink-0 gap-1.5 rounded-lg text-xs transition-colors"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 ms-auto h-8 shrink-0 gap-1.5 rounded-lg text-xs transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();

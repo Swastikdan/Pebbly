@@ -175,7 +175,7 @@ function PersonPage() {
         <ShareButton title={name} />
       </div>
       <div className="flex flex-col gap-8 md:flex-row md:items-start">
-        <div className="flex flex-col items-center gap-4 md:sticky md:top-16 md:w-1/3 md:items-start">
+        <div className="flex flex-col items-center gap-4 md:sticky md:top-20 md:w-1/3 md:items-start">
           <div className="ring-border/40 relative aspect-2/3 w-64 max-w-sm overflow-hidden rounded-xl ring-1 md:w-full dark:ring-white/6">
             {imageUrl ? (
               <Image
@@ -230,7 +230,7 @@ function PersonPage() {
               <h2 className="text-h2">Biography</h2>
               <div
                 id={biographyId}
-                className="text-muted-foreground max-w-[65ch] text-base leading-relaxed whitespace-pre-wrap"
+                className="text-muted-foreground text-base leading-relaxed whitespace-pre-wrap"
               >
                 <div className="flex flex-col">
                   {isBiographyExpanded ? (

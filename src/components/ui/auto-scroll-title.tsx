@@ -43,7 +43,7 @@ export function AutoScrollTitle({
     <div
       ref={containerRef}
       className={cn(
-        "group relative w-full overflow-hidden text-left whitespace-nowrap",
+        "group relative w-full overflow-hidden text-start whitespace-nowrap",
         className,
       )}
       style={

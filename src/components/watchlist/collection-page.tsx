@@ -189,7 +189,7 @@ export function CollectionPage({ listId }: { listId: string }) {
             <span className="max-w-md truncate">{list.description}</span>
           </>
         )}
-        <span className="ml-auto shrink-0 text-[11px]">
+        <span className="ms-auto shrink-0 text-[11px]">
           Created{" "}
           {new Date(list.createdAt).toLocaleDateString("en-US", {
             month: "short",

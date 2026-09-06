@@ -258,16 +258,16 @@ function RecommendationCard({
       <Button
         type="button"
         variant="ghost"
-        className="bg-muted ring-border/40 hover:bg-muted relative aspect-2/3 h-auto w-full overflow-hidden rounded-xl p-0 text-left ring-1 transition-[box-shadow,border-color] duration-200"
+        className="bg-muted ring-border/40 hover:bg-muted relative aspect-2/3 h-auto w-full overflow-hidden rounded-xl p-0 text-start ring-1 transition-[box-shadow,border-color] duration-200"
         onClick={() => navigate({ to: "/search", search: { query: title } })}
       >
-        <div className="absolute top-0 right-0 left-0 z-10 flex items-start justify-end p-2.5">
+        <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-end p-2.5">
           <span className="bg-secondary text-muted-foreground rounded-md px-2 py-1 text-[11px] font-medium capitalize">
             {mediaType === "movie" ? "Movie" : "TV"}
           </span>
         </div>
 
-        <div className="absolute right-0 bottom-0 left-0 z-10 flex flex-col gap-1.5 p-3">
+        <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-1.5 p-3">
           <h3 className="text-foreground line-clamp-2 text-[15px] leading-snug font-bold text-balance">
             {title}
           </h3>

@@ -188,10 +188,10 @@ const MobileBottomNav = () => {
           className="bg-background z-50 flex h-dvh flex-col p-0 outline-hidden"
           closeProps={{
             className:
-              "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-[max(env(safe-area-inset-top),0.75rem)] right-4 rounded-md border p-2",
+              "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-[max(env(safe-area-inset-top),0.75rem)] end-4 rounded-md border p-2",
           }}
         >
-          <SheetHeader className="border-border/40 shrink-0 border-b px-5 pt-[max(env(safe-area-inset-top),1.25rem)] pr-14 pb-3.5 text-left">
+          <SheetHeader className="border-border/40 shrink-0 border-b px-5 pe-14 pt-[max(env(safe-area-inset-top),1.25rem)] pb-3.5 text-start">
             <SheetTitle className="font-heading flex items-center gap-2 text-lg font-bold">
               <Grid className="text-primary size-5" />
               Explore & Navigation

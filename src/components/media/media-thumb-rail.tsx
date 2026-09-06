@@ -119,7 +119,7 @@ export function MediaThumbRail<T>({
         {viewMoreHref && (
           <Link to={viewMoreHref}>
             <Button
-              className="pressable mr-10 ml-5 flex items-center justify-center rounded-lg"
+              className="pressable ms-5 me-10 flex items-center justify-center rounded-lg"
               size="lg"
               variant="secondary"
             >

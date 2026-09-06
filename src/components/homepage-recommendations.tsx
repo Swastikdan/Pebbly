@@ -58,12 +58,12 @@ const HomepageRecommendationCard = memo(
           hideWatchlistButton={true}
         />
 
-        <div className="absolute top-2 right-2 z-20 flex gap-1.5 opacity-100 transition-opacity duration-200 ease-out [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/rec-card:opacity-100">
+        <div className="absolute end-2 top-2 z-20 flex gap-1.5 opacity-100 transition-opacity duration-200 ease-out [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/rec-card:opacity-100">
           <Button
             variant="secondary"
             size="icon"
             className={cn(
-              "pressable h-8 w-8 cursor-pointer rounded-md border transition-[color,background-color,border-color,transform] duration-150 active:scale-95 [@media(hover:hover)]:hover:scale-105",
+              "pressable h-8 w-8 cursor-pointer rounded-md border transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] [@media(hover:hover)]:hover:scale-105",
               isLiked
                 ? "border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-700"
                 : "border-neutral-700 bg-neutral-900/90 text-white hover:bg-neutral-800",
@@ -100,7 +100,7 @@ const HomepageRecommendationCard = memo(
           <Button
             variant="secondary"
             size="icon"
-            className="pressable h-8 w-8 cursor-pointer rounded-md border border-neutral-700 bg-neutral-900/90 text-white transition-[color,background-color,border-color,transform] duration-150 hover:border-red-600 hover:bg-red-900/90 hover:text-red-200 active:scale-95 [@media(hover:hover)]:hover:scale-105"
+            className="pressable h-8 w-8 cursor-pointer rounded-md border border-neutral-700 bg-neutral-900/90 text-white transition-[color,background-color,border-color,transform] duration-150 hover:border-red-600 hover:bg-red-900/90 hover:text-red-200 active:scale-[0.96] [@media(hover:hover)]:hover:scale-105"
             aria-label="Dislike recommendation"
             onClick={(event) => {
               event.stopPropagation();
@@ -169,7 +169,7 @@ export function HomepageRecommendations() {
 
   if (hasNoWatchHistory) {
     return (
-      <section className="border-border/40 bg-card/40 w-full rounded-lg border px-4 py-4 text-left">
+      <section className="border-border/40 bg-card/40 w-full rounded-lg border px-4 py-4 text-start">
         <div className="text-muted-foreground mb-2 flex items-center gap-2">
           <Sparkles aria-hidden="true" size={16} className="text-primary" />
           <h3 className="text-sm font-semibold">
@@ -220,7 +220,7 @@ export function HomepageRecommendations() {
       <section className="w-full">
         <RecommendationSectionHeader />
         <ScrollContainer isButtonsVisible={true}>
-          <div className="flex gap-2 p-4 first:pl-0 last:pr-0">
+          <div className="flex gap-2 p-4 first:ps-0 last:pe-0">
             {recs.map((rec) => (
               <HomepageRecommendationCard
                 key={getDismissKey(rec)}

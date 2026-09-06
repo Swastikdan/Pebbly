@@ -198,7 +198,7 @@ export function CustomListDialog({
       <DialogPopup className="overflow-hidden rounded-lg p-0 sm:max-w-lg">
         <div className="space-y-5 px-6 py-5">
           <DialogHeader className="relative">
-            <DialogTitle className="font-heading pr-6 text-left text-lg font-semibold tracking-tight">
+            <DialogTitle className="font-heading pe-6 text-start text-lg font-semibold tracking-tight">
               {isEditing ? "Edit Collection" : "New Collection"}
             </DialogTitle>
           </DialogHeader>

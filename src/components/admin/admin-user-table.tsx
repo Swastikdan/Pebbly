@@ -30,17 +30,17 @@ export function AdminUserTableSkeleton() {
             <caption className="sr-only">Users loading</caption>
             <thead>
               <tr className="bg-muted/40 border-b">
-                <th className="px-4 py-3 text-left">
+                <th className="px-4 py-3 text-start">
                   <Skeleton className="h-4 w-12" />
                 </th>
-                <th className="px-4 py-3 text-left">
+                <th className="px-4 py-3 text-start">
                   <Skeleton className="h-4 w-14" />
                 </th>
-                <th className="px-4 py-3 text-left">
+                <th className="px-4 py-3 text-start">
                   <Skeleton className="h-4 w-12" />
                 </th>
-                <th className="px-4 py-3 text-right">
-                  <Skeleton className="ml-auto h-4 w-16" />
+                <th className="px-4 py-3 text-end">
+                  <Skeleton className="ms-auto h-4 w-16" />
                 </th>
               </tr>
             </thead>
@@ -65,8 +65,8 @@ export function AdminUserTableSkeleton() {
                       <Skeleton className="h-6 w-24 rounded-md" />
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <Skeleton className="ml-auto h-7 w-16 rounded-md" />
+                  <td className="px-4 py-3 text-end">
+                    <Skeleton className="ms-auto h-7 w-16 rounded-md" />
                   </td>
                 </tr>
               ))}
@@ -92,7 +92,7 @@ export function AdminUserTableSkeleton() {
             <div className="flex items-center gap-2 border-t pt-2">
               <Skeleton className="h-6 w-20 rounded-md" />
               <Skeleton className="h-6 w-20 rounded-md" />
-              <Skeleton className="ml-auto h-7 w-14 rounded-md" />
+              <Skeleton className="ms-auto h-7 w-14 rounded-md" />
             </div>
           </div>
         ))}
@@ -151,7 +151,7 @@ export function AdminUserTable() {
         <div className="relative flex-1">
           <Search
             aria-hidden="true"
-            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2"
+            className="text-muted-foreground pointer-events-none absolute start-3 top-1/2 z-10 size-4 -translate-y-1/2"
           />
           <Input
             placeholder="Search users…"
@@ -198,16 +198,16 @@ export function AdminUserTable() {
             <caption className="sr-only">Users</caption>
             <thead>
               <tr className="bg-muted/40 border-b">
-                <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                <th className="text-muted-foreground px-4 py-3 text-start text-xs font-medium">
                   User
                 </th>
-                <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                <th className="text-muted-foreground px-4 py-3 text-start text-xs font-medium">
                   Status
                 </th>
-                <th className="text-muted-foreground px-4 py-3 text-left text-xs font-medium">
+                <th className="text-muted-foreground px-4 py-3 text-start text-xs font-medium">
                   Roles
                 </th>
-                <th className="text-muted-foreground px-4 py-3 text-right text-xs font-medium">
+                <th className="text-muted-foreground px-4 py-3 text-end text-xs font-medium">
                   Actions
                 </th>
               </tr>

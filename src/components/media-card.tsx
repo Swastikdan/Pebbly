@@ -152,13 +152,13 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
           <div className="absolute inset-0 bg-linear-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
           {isRecommended && (
-            <Badge className="absolute top-2 left-2 rounded-md border-0 bg-blue-600/90 px-2 py-1 text-[10px] font-medium text-white">
+            <Badge className="absolute start-2 top-2 rounded-md border-0 bg-blue-600/90 px-2 py-1 text-[10px] font-medium text-white">
               Recommended
             </Badge>
           )}
 
           {rating > 0 && (
-            <Badge className="text-meta absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
+            <Badge className="text-meta absolute start-2 bottom-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
               <Star
                 aria-hidden="true"
                 className="size-4 fill-yellow-400 text-yellow-400"
@@ -169,7 +169,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             </Badge>
           )}
 
-          <Badge className="text-meta absolute right-2 bottom-2 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
+          <Badge className="text-meta absolute end-2 bottom-2 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
             {mediaTypeLabel}
           </Badge>
         </div>
@@ -179,7 +179,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 
       <div
         className={cn(
-          "absolute top-2 right-2 z-10 flex items-center gap-1.5",
+          "absolute end-2 top-2 z-10 flex items-center gap-1.5",
           actionsClassName,
         )}
       >
@@ -360,7 +360,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
             {episodeDetail?.name && (
               <>
                 <span className="text-muted-foreground/50 text-[10px]">•</span>
-                <span className="text-muted-foreground/80 max-w-37.5 truncate text-xs font-medium">
+                <span className="text-foreground/75 dark:text-muted-foreground max-w-37.5 truncate text-xs font-medium">
                   {episodeDetail.name}
                 </span>
               </>
@@ -426,13 +426,13 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
       <div className={cn("w-40 md:w-44 lg:w-48", props.className)}>
         <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg">
           <Skeleton className="absolute inset-0 rounded-lg" />
-          <div className="absolute top-2 right-2">
+          <div className="absolute end-2 top-2">
             <Skeleton className="size-8 rounded-md" />
           </div>
-          <div className="absolute bottom-2 left-2">
+          <div className="absolute start-2 bottom-2">
             <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
-          <div className="absolute right-2 bottom-2">
+          <div className="absolute end-2 bottom-2">
             <Skeleton className="h-4.5 w-10 rounded-md" />
           </div>
         </div>
@@ -448,13 +448,13 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
       <div className={cn("w-64 md:w-72 lg:w-80", props.className)}>
         <div className="relative aspect-video w-full overflow-hidden rounded-lg">
           <Skeleton className="absolute inset-0 rounded-lg" />
-          <div className="absolute top-2 right-2">
+          <div className="absolute end-2 top-2">
             <Skeleton className="size-8 rounded-md" />
           </div>
-          <div className="absolute bottom-2 left-2">
+          <div className="absolute start-2 bottom-2">
             <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
-          <div className="absolute right-2 bottom-2">
+          <div className="absolute end-2 bottom-2">
             <Skeleton className="h-4.5 w-14 rounded-md" />
           </div>
         </div>

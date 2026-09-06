@@ -274,7 +274,7 @@ function StatusButton({
       type="button"
       aria-pressed={active}
       className={cn(
-        "border-border flex w-full cursor-pointer items-center gap-2.5 rounded-lg border p-3 text-left text-xs font-semibold transition-[color,background-color,border-color] duration-200",
+        "border-border flex w-full cursor-pointer items-center gap-2.5 rounded-lg border p-3 text-start text-xs font-semibold transition-[color,background-color,border-color] duration-200",
         active
           ? "bg-primary/10 text-primary border-primary/30 font-bold"
           : "hover:bg-secondary/40 text-muted-foreground hover:text-foreground",

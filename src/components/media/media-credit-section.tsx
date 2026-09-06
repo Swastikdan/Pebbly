@@ -95,7 +95,7 @@ export const MediaCreditSection = (props: {
                           No image
                         </div>
                       )}
-                      <div className="flex flex-col items-start pl-5">
+                      <div className="flex flex-col items-start ps-5">
                         <p className="group-hover:text-primary text-start font-bold transition-colors">
                           {castMember.name}
                         </p>
@@ -150,7 +150,7 @@ export const MediaCreditSection = (props: {
                                   No image
                                 </div>
                               )}
-                              <div className="flex flex-col items-start pl-5">
+                              <div className="flex flex-col items-start ps-5">
                                 <p className="group-hover:text-primary text-start font-bold transition-colors">
                                   {crewMember.name}
                                 </p>

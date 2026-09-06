@@ -54,20 +54,20 @@ export function CustomListCard({
       <div className="relative">
         <Link
           to={href}
-          className="relative block aspect-16/10 w-full overflow-hidden rounded-lg text-left"
+          className="relative block aspect-16/10 w-full overflow-hidden rounded-lg text-start"
           aria-label={`Open ${list.name}`}
         >
           <ListCollage previews={previews} color={list.color} />
         </Link>
 
         {isPebblyPicks && (
-          <span className="bg-foreground text-background absolute top-2 left-2 z-10 flex size-6 items-center justify-center rounded-md">
+          <span className="bg-foreground text-background absolute start-2 top-2 z-10 flex size-6 items-center justify-center rounded-md">
             <Sparkles aria-hidden="true" size={12} />
             <span className="sr-only">AI curated</span>
           </span>
         )}
 
-        <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+        <div className="absolute end-2 top-2 z-10 flex items-center gap-1">
           {isPublic && (
             <span
               className="bg-background/95 text-muted-foreground border-border flex size-7 items-center justify-center rounded-md border sm:size-5.5"
@@ -143,7 +143,7 @@ export function CustomListCard({
       </div>
 
       <div className="mt-3 flex items-start justify-between gap-2 px-1">
-        <Link to={href} className="min-w-0 flex-1 text-left">
+        <Link to={href} className="min-w-0 flex-1 text-start">
           <h3 className="text-foreground group-hover/card:text-primary truncate text-base font-bold transition-colors duration-250">
             {list.name}
           </h3>

@@ -137,7 +137,7 @@ function DisclaimerPage() {
           <Link to="/">
             <Button
               variant="secondary"
-              className="transition-transform active:scale-95 [@media(hover:hover)]:hover:scale-105"
+              className="transition-transform active:scale-[0.96] [@media(hover:hover)]:hover:scale-105"
             >
               Return to Home Page
             </Button>
