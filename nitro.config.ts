@@ -160,6 +160,8 @@ export default defineNitroConfig({
         "Cache-Control": "public, max-age=86400",
       },
     },
+    // Unversioned favicon/icons: files never get hashed, so browsers can cache
+    // them for a week and revalidate once it expires.
     "/favicon*": {
       headers: {
         "Cache-Control": "public, max-age=604800",
