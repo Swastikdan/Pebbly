@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "184fb63d-e2b4-4b24-b5e3-f902c4e21ccf",
-  "prevId": "801133bc-8fae-4aaf-9ecf-b1068bd8cac2",
+  "id": "fa7a80ca-6b5c-4b6b-924a-ee954b3e00f8",
+  "prevId": "184fb63d-e2b4-4b24-b5e3-f902c4e21ccf",
   "tables": {
     "ai_generation_jobs": {
       "name": "ai_generation_jobs",
@@ -305,6 +305,24 @@
             "episode"
           ],
           "isUnique": true
+        },
+        "episode_user_tmdb_watched_idx": {
+          "name": "episode_user_tmdb_watched_idx",
+          "columns": [
+            "user_id",
+            "tmdb_id",
+            "is_watched",
+            "id"
+          ],
+          "isUnique": false
+        },
+        "episode_user_id_idx": {
+          "name": "episode_user_id_idx",
+          "columns": [
+            "user_id",
+            "id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {

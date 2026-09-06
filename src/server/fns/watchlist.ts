@@ -659,7 +659,9 @@ export const getAllEpisodeProgress = createServerFn({ method: "POST" }).handler(
         db,
         user,
       }): Promise<ApiResult<(typeof episodeProgress.$inferSelect)[]>> => {
-        const rows = await fetchEpisodeProgress(db, user.id);
+        const rows = await fetchEpisodeProgress(db, user.id, {
+          paginate: true,
+        });
         return ok(rows);
       },
     ),

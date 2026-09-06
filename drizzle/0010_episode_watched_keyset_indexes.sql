@@ -1,0 +1,2 @@
+CREATE INDEX `episode_user_tmdb_watched_idx` ON `episode_progress` (`user_id`,`tmdb_id`,`is_watched`,`id`);--> statement-breakpoint
+CREATE INDEX `episode_user_id_idx` ON `episode_progress` (`user_id`,`id`);

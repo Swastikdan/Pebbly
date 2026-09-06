@@ -196,6 +196,21 @@ export const episodeProgress = sqliteTable(
       t.season,
       t.episode,
     ),
+    // Covering index for the "watched episodes" keyset scan
+    // (`getAllWatchedEpisodes` / `fetchEpisodeProgress`): equality on
+    // (user_id, tmdb_id, is_watched) then in-order id seek. Without it the
+    // query scans every episode of a show, temp-sorts by id and filters
+    // `is_watched` per page — tens of thousands of rows read for a 500-row page.
+    index("episode_user_tmdb_watched_idx").on(
+      t.userId,
+      t.tmdbId,
+      t.isWatched,
+      t.id,
+    ),
+    // Covering index for the full-export keyset scan (`getAllEpisodeProgress`),
+    // which pages the user's entire episode_progress by id. Lets each page seek
+    // straight to the next 500 rows instead of rescanning/sorting the whole set.
+    index("episode_user_id_idx").on(t.userId, t.id),
   ],
 );
 
