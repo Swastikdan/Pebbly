@@ -154,6 +154,7 @@ export function WatchlistTab() {
         items={paginatedWatchlist}
         loading={watchlistLoading}
         errorMessage={error ? error.message : null}
+        totalWatchlistCount={watchlistData.length}
         hasActiveFilters={
           activeFilter !== "all" ||
           searchQuery.trim().length >= 2 ||

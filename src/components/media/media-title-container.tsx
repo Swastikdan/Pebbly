@@ -147,10 +147,10 @@ export const MediaTitleContainer = (props: {
   return (
     <div className="animate-fade-in pt-5 pb-4">
       <div className="space-y-3 pb-4">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-2">
           <GoBack title="Back" />
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="hidden min-h-9 min-w-35 items-center justify-end sm:flex">
+          <div className="flex items-center justify-end gap-2">
+            <div className="flex min-h-9 items-center justify-end">
               <WatchlistStatusMenu
                 isOnWatchlist={isOnWatchList}
                 progressStatus={progressStatus}
@@ -166,20 +166,6 @@ export const MediaTitleContainer = (props: {
             </div>
             <ShareButton title={title} />
           </div>
-        </div>
-        <div className="flex min-h-9 justify-end sm:hidden">
-          <WatchlistStatusMenu
-            isOnWatchlist={isOnWatchList}
-            progressStatus={progressStatus}
-            reaction={reaction}
-            mediaType={media_type}
-            tmdbId={id}
-            onAdd={handleAdd}
-            onStatusChange={handleStatusChange}
-            onReactionChange={handleReactionChange}
-            onRemove={handleRemove}
-            metadata={metadata}
-          />
         </div>
         <h1 className="text-h1 lg:px-0">
           {imdb_url ? (

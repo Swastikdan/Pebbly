@@ -79,7 +79,7 @@ export const MediaVideoImageContainer = (props: {
           paramKey="video"
           getKey={(video) => video.key}
           getThumbSrc={(video) =>
-            `https://img.youtube.com/vi/${video.key}/sddefault.jpg`
+            `https://img.youtube.com/vi/${video.key}/hqdefault.jpg`
           }
           getThumbAlt={(video) => video.name}
           imageClassName="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"

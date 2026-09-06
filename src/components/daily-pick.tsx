@@ -1,4 +1,4 @@
-import { Eye, ThumbsDown } from "lucide-react";
+import { Dices, Eye, Play, ThumbsDown } from "lucide-react";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 
@@ -210,7 +210,8 @@ export function DailyPickButton() {
                         >
                           {" "}
                           <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-md text-xs font-medium sm:h-11 sm:text-sm">
-                            ▶ Watch Now
+                            <Play className="mr-1.5 size-3.5 fill-current" />
+                            <span>Watch Now</span>
                           </Button>
                         </Link>
                       )}
@@ -248,7 +249,8 @@ export function DailyPickButton() {
                         title="Pick Another"
                         className="border-border hover:bg-accent active:bg-accent h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
                       >
-                        🎲 Another
+                        <Dices className="mr-1.5 size-3.5" />
+                        <span>Another</span>
                       </Button>
                     </div>
                   </>
@@ -286,7 +288,8 @@ export function DailyPickButton() {
                       title="Pick Another"
                       className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
                     >
-                      🎲 Another
+                      <Dices className="mr-1.5 size-3.5" />
+                      <span>Another</span>
                     </Button>
                   </div>
                 )}

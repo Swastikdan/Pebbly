@@ -72,7 +72,7 @@ export function MediaPosterTrailerContainer(props: {
           paramKey="trailer"
           getKey={(video) => video.key}
           getThumbSrc={(video) =>
-            `https://img.youtube.com/vi/${video.key}/sddefault.jpg`
+            `https://img.youtube.com/vi/${video.key}/hqdefault.jpg`
           }
           getThumbAlt={(video) => video.name}
           imageClassName="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"

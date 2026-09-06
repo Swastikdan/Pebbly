@@ -110,13 +110,13 @@ export const MediaContainer = (props: MediaContainerProps) => {
               paramKey="video"
               getKey={(video) => video.key}
               getThumbSrc={(video) =>
-                `https://img.youtube.com/vi/${video.key}/sddefault.jpg`
+                `https://img.youtube.com/vi/${video.key}/hqdefault.jpg`
               }
               getThumbAlt={(video) => video.name}
               imageClassName="bg-foreground/10 aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
               renderTileOverlay={(video) => (
                 <>
-                  <span className="text-foreground bg-background dark:bg-foreground dark:text-background turnicate absolute top-4 left-4 w-min max-w-62.5 truncate rounded-lg px-2 py-1 text-sm md:max-w-75 lg:max-w-100">
+                  <span className="text-foreground bg-background dark:bg-foreground dark:text-background absolute top-4 left-4 w-min max-w-62.5 truncate rounded-lg px-2 py-1 text-sm md:max-w-75 lg:max-w-100">
                     {video.name}
                   </span>
                   <Button

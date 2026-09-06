@@ -14,12 +14,14 @@ export function WatchlistGrid({
   loading,
   errorMessage,
   hasActiveFilters,
+  totalWatchlistCount,
   onRemoveFromWatchlist,
 }: {
   items: WatchlistItem[];
   loading: boolean;
   errorMessage?: string | null;
   hasActiveFilters: boolean;
+  totalWatchlistCount?: number;
   onRemoveFromWatchlist: (item: WatchlistItem) => void;
 }) {
   if (loading && items.length === 0) {
@@ -40,7 +42,7 @@ export function WatchlistGrid({
   }
 
   if (items.length === 0) {
-    if (!hasActiveFilters) {
+    if (totalWatchlistCount === 0 || !hasActiveFilters) {
       return (
         <div className="animate-fade-in-up flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center">
           <div className="bg-secondary flex size-16 items-center justify-center rounded-lg">

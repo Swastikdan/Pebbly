@@ -125,10 +125,10 @@ export const NavCard = ({
 }) => {
   const cardContent = (
     <>
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         <div
           className={cn(
-            "shrink-0 rounded-md p-2.5",
+            "shrink-0 rounded-md p-2 sm:p-2.5",
             isActive
               ? "bg-nav-active-fg/15 text-nav-active-fg"
               : "bg-muted text-foreground",
@@ -139,7 +139,7 @@ export const NavCard = ({
         <div className="min-w-0 flex-1">
           <div
             className={cn(
-              "truncate text-sm font-bold",
+              "truncate text-[13px] font-semibold sm:text-sm sm:font-bold",
               isActive ? "text-nav-active-fg" : "text-foreground",
             )}
           >
@@ -158,7 +158,7 @@ export const NavCard = ({
       {badge && (
         <span
           className={cn(
-            "ml-2 shrink-0 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold",
+            "ml-1.5 shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-semibold sm:ml-2 sm:px-2.5",
             isActive
               ? "bg-nav-active-fg/15 text-nav-active-fg border-transparent"
               : "bg-muted text-muted-foreground border-border/60",
@@ -171,7 +171,7 @@ export const NavCard = ({
   );
 
   const baseClasses = cn(
-    "flex items-center justify-between rounded-lg border p-3.5 transition-[color,background-color,border-color,transform] active:scale-[0.98]",
+    "flex items-center justify-between rounded-lg border p-2.5 transition-[color,background-color,border-color,transform] active:scale-[0.98] sm:p-3.5",
     isActive ? "bg-nav-active-bg border-transparent" : "border-border bg-card",
   );
 
@@ -190,6 +190,7 @@ export const NavCard = ({
 
   return (
     <SheetClose
+      nativeButton={false}
       render={<Link to={item.url} search={search} />}
       className={baseClasses}
     >

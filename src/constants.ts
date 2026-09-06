@@ -58,7 +58,7 @@ export const SITE_CONFIG = {
   ],
 
   Footerlinks: {
-    github: "https://github.com/Swastikdan/Film-Fanatic",
+    github: "https://github.com/Swastikdan/pebbly",
     disclaimer: "/disclaimer",
   },
 };
