@@ -16,9 +16,7 @@ export function AdminDashboard() {
         <Tabs defaultValue="users" className="gap-6">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <h1 className="text-xl leading-tight font-bold tracking-tight sm:text-2xl">
-                Admin Dashboard
-              </h1>
+              <h1 className="text-h2 text-balance">Admin Dashboard</h1>
               <p className="text-muted-foreground mt-0.5 text-xs">
                 Manage users and feature permissions
               </p>

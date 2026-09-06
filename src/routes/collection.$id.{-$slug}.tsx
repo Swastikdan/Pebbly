@@ -137,7 +137,7 @@ function MovieCollectionPage() {
             {` • `}
             <span className="text-sm">{part_count} Movies</span>
           </div>
-          <span className="line-clamp-3 text-center text-sm sm:text-left md:text-base">
+          <span className="line-clamp-3 text-center text-sm leading-relaxed text-pretty sm:text-left md:text-base">
             {overview || "No overview available"}
           </span>
         </div>

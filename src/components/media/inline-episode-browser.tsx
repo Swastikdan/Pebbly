@@ -81,9 +81,7 @@ export function InlineEpisodeBrowser({
   return (
     <div className="animate-fade-in-up pb-8">
       <div className="mb-5 flex items-end justify-between gap-4">
-        <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
-          Episodes
-        </h2>
+        <h2 className="text-h2">Episodes</h2>
       </div>
 
       <Accordion className="w-full space-y-2">
@@ -424,7 +422,7 @@ function EpisodeCard({
           <div className="mt-0.5 hidden sm:block">
             <p
               id={overviewId}
-              className="text-muted-foreground text-xs leading-relaxed"
+              className="text-muted-foreground text-[13px] leading-relaxed text-pretty"
             >
               {expanded || !hasLongOverview
                 ? episode.overview
@@ -444,7 +442,7 @@ function EpisodeCard({
             )}
           </div>
         ) : (
-          <p className="text-muted-foreground/60 text-xs italic">
+          <p className="text-muted-foreground/60 text-[13px] italic">
             No overview available.
           </p>
         )}

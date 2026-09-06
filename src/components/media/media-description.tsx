@@ -10,14 +10,14 @@ export const MediaDescription = ({ description }: { description: string }) => {
   return (
     <div className="py-3">
       <h3 className="text-lg font-semibold md:text-xl">Overview</h3>
-      <div className="text-foreground/90 py-1.5 text-sm leading-relaxed sm:text-[15px]">
+      <div className="text-foreground/90 max-w-[65ch] py-1.5 text-base leading-relaxed text-pretty">
         <span className="hidden md:flex">{description}</span>
         <span className="flex flex-col md:hidden">
-          <span id={overviewId}>
-            {isFullTextVisible ? (
+          <span id={overviewId} className="break-words">
+            {isFullTextVisible || description.length <= 100 ? (
               <span>{description}</span>
             ) : (
-              <span>{description.substring(0, 100)}...</span>
+              <span>{description.substring(0, 100)}…</span>
             )}
           </span>
           <Button

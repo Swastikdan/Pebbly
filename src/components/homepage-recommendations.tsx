@@ -176,7 +176,7 @@ export function HomepageRecommendations() {
             Personalized Recommendations
           </h3>
         </div>
-        <p className="text-muted-foreground max-w-lg text-xs leading-relaxed">
+        <p className="text-muted-foreground max-w-[65ch] text-[13px] leading-relaxed text-pretty">
           Add some movies or TV shows to your watchlist to start receiving
           personalized recommendations refreshed twice a day.
         </p>

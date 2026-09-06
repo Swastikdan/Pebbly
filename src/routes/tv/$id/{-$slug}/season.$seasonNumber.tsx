@@ -102,11 +102,11 @@ function TvSeasonDetailPage() {
           <GoBack link={`/tv/${id}/${slug}/seasons`} title="All Seasons" />
           <ShareButton />
         </div>
-        <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
+        <h1 className="text-h1 text-balance lg:px-0">
           {showName} · {seasonData.name}
         </h1>
         {seasonData.overview && (
-          <p className="text-muted-foreground max-w-3xl text-sm md:text-base">
+          <p className="text-muted-foreground max-w-[65ch] text-base leading-relaxed text-pretty">
             {seasonData.overview}
           </p>
         )}
@@ -223,7 +223,7 @@ function TvSeasonDetailPage() {
                   )}
                 </div>
 
-                <p className="text-muted-foreground line-clamp-2 text-sm md:line-clamp-3">
+                <p className="text-muted-foreground line-clamp-2 text-[13px] leading-relaxed text-pretty md:line-clamp-3 md:text-sm">
                   {episode.overview || "No overview available."}
                 </p>
               </div>

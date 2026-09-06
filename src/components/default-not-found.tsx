@@ -67,7 +67,7 @@ export function DefaultErrorComponent({
         </div>
         <div>
           <h1 className="mb-2 text-xl font-semibold">Something went wrong</h1>
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-muted-foreground max-w-[65ch] text-base leading-relaxed text-pretty">
             An unexpected error occurred. Please try again or return to the home
             page.
           </p>

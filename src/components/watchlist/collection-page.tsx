@@ -122,9 +122,7 @@ export function CollectionPage({ listId }: { listId: string }) {
               style={{ backgroundColor: list.color }}
             />
           )}
-          <h1 className="text-foreground truncate text-xl font-bold tracking-tight sm:text-2xl">
-            {list.name}
-          </h1>
+          <h1 className="text-h1 truncate text-balance">{list.name}</h1>
           <span
             className="text-muted-foreground shrink-0"
             title={isPublic ? "Public" : "Private"}

@@ -119,7 +119,7 @@ function MediaListPage() {
           <GoBack title="Back" />
           <ShareButton title={`${subNavItem.name} ${navItem.name}`} />
         </div>
-        <h1 className="animate-fade-in-up text-start text-2xl font-bold tracking-tight md:text-3xl">
+        <h1 className="text-h1 animate-fade-in-up text-start">
           {subNavItem.name} {navItem.name}
         </h1>
 

@@ -194,9 +194,7 @@ function PersonPage() {
           </div>
 
           <div className="flex w-full flex-col gap-2">
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              {name}
-            </h1>
+            <h1 className="text-h1 text-balance">{name}</h1>
             {birthday && (
               <div className="text-muted-foreground text-sm">
                 <span className="text-foreground font-semibold">Born: </span>
@@ -229,10 +227,10 @@ function PersonPage() {
         <div className="flex flex-col gap-8 md:w-2/3">
           {biographyParagraphs.length > 0 && (
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold">Biography</h2>
+              <h2 className="text-h2">Biography</h2>
               <div
                 id={biographyId}
-                className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap sm:text-[15px]"
+                className="text-muted-foreground max-w-[65ch] text-base leading-relaxed whitespace-pre-wrap"
               >
                 <div className="flex flex-col">
                   {isBiographyExpanded ? (
@@ -248,7 +246,7 @@ function PersonPage() {
                   ) : (
                     <p className="mb-2">
                       {biography.length > 300
-                        ? `${biography.substring(0, 300)}...`
+                        ? `${biography.substring(0, 300)}…`
                         : biography}
                     </p>
                   )}
@@ -271,7 +269,7 @@ function PersonPage() {
 
           {knownForCredits.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Known For</h2>
+              <h2 className="text-h2">Known For</h2>
               <div className="grid w-full grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
                 {knownForCredits.map((credit) => (
                   <div

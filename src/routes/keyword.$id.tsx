@@ -87,7 +87,7 @@ function KeywordPage() {
           <GoBack title="Back" />
           <ShareButton title={`${keyword.name} Movies`} />
         </div>
-        <h1 className="pb-5 text-start text-2xl font-bold capitalize md:text-3xl lg:text-4xl">
+        <h1 className="text-h1 pb-5 text-start capitalize">
           {keyword.name} Movies
         </h1>
 

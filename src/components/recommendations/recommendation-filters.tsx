@@ -177,7 +177,7 @@ export function RecommendationFilters({
               ) : (
                 <Sparkles aria-hidden="true" className="size-4" />
               )}
-              {isGenerating ? "Generating..." : "Generate"}
+              {isGenerating ? "Generating…" : "Generate"}
             </Button>
           </div>
         </div>

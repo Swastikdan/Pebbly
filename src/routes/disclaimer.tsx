@@ -24,12 +24,12 @@ function DisclaimerPage() {
         <div className="mb-6 md:hidden">
           <GoBack title="Back" />
         </div>
-        <div className="stagger-grid space-y-12">
+        <div className="stagger-grid mx-auto max-w-[65ch] space-y-12">
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Disclaimer
             </h1>
-            <p className="text-muted-foreground mt-4 text-lg">
+            <p className="text-muted-foreground mt-4 text-base leading-relaxed">
               Last updated: August 02, 2026
             </p>
           </div>
@@ -38,7 +38,7 @@ function DisclaimerPage() {
             <h2 className="mb-4 border-b pb-2 text-2xl font-semibold">
               General Information
             </h2>
-            <div className="text-muted-foreground space-y-4">
+            <div className="text-muted-foreground space-y-4 text-base leading-relaxed">
               <p>
                 Pebbly is a personal, non-commercial project created for
                 portfolio and demonstration purposes. The information provided
@@ -65,7 +65,7 @@ function DisclaimerPage() {
             <h2 className="mb-4 border-b pb-2 text-2xl font-semibold">
               Terms of Use
             </h2>
-            <div className="text-muted-foreground space-y-6">
+            <div className="text-muted-foreground space-y-6 text-base leading-relaxed">
               <div>
                 <h3 className="text-foreground mb-2 font-medium">
                   1. No Commercial Use
@@ -96,7 +96,7 @@ function DisclaimerPage() {
             <h2 className="mb-4 border-b pb-2 text-2xl font-semibold">
               Limitation of Liability
             </h2>
-            <div className="text-muted-foreground space-y-4">
+            <div className="text-muted-foreground space-y-4 text-base leading-relaxed">
               <p>
                 This website is provided "as is," without any warranties,
                 express or implied. Your use of the service is at your sole
@@ -117,7 +117,7 @@ function DisclaimerPage() {
             <h2 className="mb-4 border-b pb-2 text-2xl font-semibold">
               Changes to This Disclaimer
             </h2>
-            <div className="text-muted-foreground space-y-4">
+            <div className="text-muted-foreground space-y-4 text-base leading-relaxed">
               <p>
                 We reserve the right to modify this disclaimer at any time. We
                 encourage you to review this page periodically for any changes.
@@ -130,7 +130,7 @@ function DisclaimerPage() {
           className="animate-fade-in-up mt-12 border-t pt-8 text-center"
           style={{ animationDelay: "100ms" }}
         >
-          <p className="text-muted-foreground mb-4">
+          <p className="text-muted-foreground mx-auto mb-4 max-w-[65ch] text-base leading-relaxed text-pretty">
             By using Pebbly, you acknowledge that you have read, understood, and
             agree to this disclaimer.
           </p>

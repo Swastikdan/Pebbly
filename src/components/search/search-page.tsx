@@ -404,9 +404,7 @@ export function SearchPage() {
         </div>
         {!hasValidQuery && (
           <div className="mb-6 flex flex-col gap-1">
-            <h1 className="animate-fade-in text-2xl font-bold tracking-tight md:text-3xl">
-              Search
-            </h1>
+            <h1 className="text-h1 animate-fade-in">Search</h1>
             <p className="text-muted-foreground text-sm">
               Find movies, TV shows, and more
             </p>

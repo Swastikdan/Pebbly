@@ -82,9 +82,7 @@ function TvSeasonsPage() {
           <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
           <ShareButton />
         </div>
-        <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
-          {title}
-        </h1>
+        <h1 className="text-h1 text-balance lg:px-0">{title}</h1>
       </div>
       <div className="flex flex-col gap-5 py-5 pb-32">
         {seasons.map((season: SeasonInfo, index) => (
@@ -138,7 +136,7 @@ function TvSeasonsPage() {
                     {season.episode_count} Episodes
                   </span>
                 </div>
-                <span className="line-clamp-3 text-sm md:text-base">
+                <span className="line-clamp-3 text-sm leading-relaxed text-pretty md:text-base">
                   {season.overview || "No overview available"}
                 </span>
               </div>

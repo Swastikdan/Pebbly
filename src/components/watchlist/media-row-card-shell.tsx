@@ -135,7 +135,7 @@ export function MediaRowCardShell({
           {overview && (
             <p
               className={cn(
-                "mt-1.5 line-clamp-2 text-xs leading-relaxed",
+                "mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-pretty",
                 overviewClassName,
               )}
             >

@@ -201,7 +201,7 @@ export function DailyPickButton() {
                 </div>
               </div>
 
-              <p className="text-muted-foreground mt-3 line-clamp-3 text-xs leading-relaxed sm:mt-4">
+              <p className="text-muted-foreground mt-3 line-clamp-3 text-[13px] leading-relaxed text-pretty sm:mt-4">
                 {pick.selectedItem.overview}
               </p>
 

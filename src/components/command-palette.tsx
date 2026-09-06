@@ -248,7 +248,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           onValueChange={setQuery}
           value={query}
         >
-          <CommandInput placeholder="Search movies, TV shows, or open a page..." />
+          <CommandInput placeholder="Search movies, TV shows, or open a page…" />
           <CommandPanel>
             <CommandEmpty>
               <span className="text-muted-foreground flex flex-col items-center gap-2 py-2 text-sm">

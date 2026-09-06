@@ -144,10 +144,10 @@ export function CustomListCard({
 
       <div className="mt-3 flex items-start justify-between gap-2 px-1">
         <Link to={href} className="min-w-0 flex-1 text-left">
-          <h3 className="text-foreground group-hover/card:text-primary truncate text-base font-bold tracking-tight transition-colors duration-250 sm:text-sm">
+          <h3 className="text-foreground group-hover/card:text-primary truncate text-base font-bold transition-colors duration-250">
             {list.name}
           </h3>
-          <p className="text-muted-foreground/80 mt-0.5 truncate text-xs font-medium sm:text-[10px]">
+          <p className="text-muted-foreground/80 mt-0.5 truncate text-xs font-medium">
             {isPebblyPicks ? (
               "AI-curated for you"
             ) : (

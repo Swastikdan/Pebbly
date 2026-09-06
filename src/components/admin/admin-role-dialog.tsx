@@ -44,7 +44,7 @@ export function AdminRoleDialog({
               {selectedUser?.isBanned ? "Unban User" : "Ban User"}
             </DialogTitle>
           </div>
-          <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
+          <DialogDescription className="text-muted-foreground max-w-[65ch] text-base leading-relaxed">
             {selectedUser?.isBanned ? (
               <>
                 Are you sure you want to unban{" "}
@@ -104,7 +104,7 @@ export function AdminRoleDialog({
                   aria-hidden="true"
                   className="mr-2 size-4 animate-spin"
                 />
-                Processing...
+                Processing…
               </>
             ) : selectedUser?.isBanned ? (
               <>

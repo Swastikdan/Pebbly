@@ -268,10 +268,10 @@ function RecommendationCard({
         </div>
 
         <div className="absolute right-0 bottom-0 left-0 z-10 flex flex-col gap-1.5 p-3">
-          <h3 className="text-foreground line-clamp-2 text-[15px] leading-snug font-bold">
+          <h3 className="text-foreground line-clamp-2 text-[15px] leading-snug font-bold text-balance">
             {title}
           </h3>
-          <p className="text-muted-foreground line-clamp-3 text-[10.5px] leading-relaxed">
+          <p className="text-muted-foreground line-clamp-3 text-[13px] leading-relaxed text-pretty">
             {reasoning}
           </p>
           <div className="mt-1 flex w-full items-center justify-between">
