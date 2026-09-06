@@ -259,9 +259,9 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
       formattedTitle={formattedTitle}
       containerClassName="w-40 md:w-44 lg:w-48"
       imageContainerClassName="aspect-[2/3]"
-      imageWidth={300}
-      imageHeight={450}
-      imageSizes="(max-width: 640px) 160px, (max-width: 768px) 176px, 192px"
+      imageWidth={192}
+      imageHeight={288}
+      imageSizes="(max-width: 767px) 160px, (max-width: 1023px) 176px, 192px"
       mediaTypeLabel={media_type === "movie" ? "Movie" : "TV"}
       linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
       actionsClassName="transition-[transform,opacity] duration-200 ease-out"

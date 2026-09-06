@@ -15,6 +15,7 @@ const config = defineConfig(({ mode }) => ({
     port: 3000,
   },
   build: {
+    target: "es2022",
     minify: "terser",
     sourcemap: "hidden",
     terserOptions: {
@@ -97,6 +98,10 @@ const config = defineConfig(({ mode }) => ({
                 {
                   name: "vendor-seroval",
                   test: /node_modules\/seroval\//,
+                },
+                {
+                  name: "vendor-sentry",
+                  test: /node_modules\/@sentry\//,
                 },
               ],
             },

@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 
+import { DeferredAccountButton } from "@/components/auth/deferred-account-button";
 import { Button } from "@/components/ui/button";
 import {
   BookMarkFilledIcon,
@@ -10,11 +10,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
-
-// Clerk's widgets (and the @clerk/ui theme they style with) are code-split
-// behind this boundary: the nav renders a skeleton immediately and the real
-// account button swaps in once the chunk lands.
-const AccountButton = lazy(() => import("@/components/auth/account-button"));
 
 const DesktopNavButton = ({
   href,
@@ -77,9 +72,7 @@ const DesktopNavButtons = () => {
         label="Search"
         icon={<SearchFilledIcon />}
       />
-      <Suspense fallback={<Skeleton className="size-9 rounded-full" />}>
-        <AccountButton variant="desktop" />
-      </Suspense>
+      <DeferredAccountButton variant="desktop" />
     </>
   );
 };

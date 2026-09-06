@@ -24,12 +24,7 @@ Sentry.init({
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: isDev ? 0 : 0.5,
 
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
+  integrations: [],
 
   // Filter out client noise that unnecessarily consumes free error quota
   ignoreErrors: [
@@ -40,3 +35,27 @@ Sentry.init({
     "NetworkError when attempting to fetch resource",
   ],
 });
+
+// Replay is 0% for normal sessions and only 50% on errors. Defer loading
+// the ~200 KiB rrweb bundle until after idle so it never competes with
+// the critical path (FCP/LCP/TBT).
+if (!isDev && typeof window !== "undefined") {
+  const loadReplay = () => {
+    import("@sentry/tanstackstart-react").then(
+      ({ replayIntegration, addIntegration }) => {
+        addIntegration(
+          replayIntegration({
+            maskAllText: true,
+            blockAllMedia: true,
+          }),
+        );
+      },
+    );
+  };
+
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(loadReplay);
+  } else {
+    setTimeout(loadReplay, 2500);
+  }
+}

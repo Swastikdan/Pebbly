@@ -29,37 +29,37 @@ const HomepageRecommendations = lazy(() =>
   })),
 );
 const TrendingWeekMovies = lazy(() =>
-  import("@/components/homepage-media").then((m) => ({
+  import("@/components/homepage-media-deferred").then((m) => ({
     default: m.TrendingWeekMovies,
   })),
 );
 const UpcomingMovies = lazy(() =>
-  import("@/components/homepage-media").then((m) => ({
+  import("@/components/homepage-media-deferred").then((m) => ({
     default: m.UpcomingMovies,
   })),
 );
 const PopularMovies = lazy(() =>
-  import("@/components/homepage-media").then((m) => ({
+  import("@/components/homepage-media-deferred").then((m) => ({
     default: m.PopularMovies,
   })),
 );
 const PopularTv = lazy(() =>
-  import("@/components/homepage-media").then((m) => ({
+  import("@/components/homepage-media-deferred").then((m) => ({
     default: m.PopularTv,
   })),
 );
 const TopRatedMovies = lazy(() =>
-  import("@/components/homepage-media").then((m) => ({
+  import("@/components/homepage-media-deferred").then((m) => ({
     default: m.TopRatedMovies,
   })),
 );
 const TopRatedTv = lazy(() =>
-  import("@/components/homepage-media").then((m) => ({
+  import("@/components/homepage-media-deferred").then((m) => ({
     default: m.TopRatedTv,
   })),
 );
 const ContinueWatching = lazy(() =>
-  import("@/components/homepage-media").then((m) => ({
+  import("@/components/homepage-media-deferred").then((m) => ({
     default: m.ContinueWatching,
   })),
 );
@@ -92,7 +92,8 @@ export const Route = createFileRoute("/")({
         rel: "preload" as const,
         as: "image" as const,
         imageSrcSet: srcSet,
-        imageSizes: "(max-width: 640px) 160px, (max-width: 768px) 176px, 192px",
+        imageSizes:
+          "(max-width: 767px) 160px, (max-width: 1023px) 176px, 192px",
         href: src,
         fetchPriority: "high" as const,
       };

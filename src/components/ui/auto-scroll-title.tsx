@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -17,31 +17,28 @@ export function AutoScrollTitle({
   const measureRef = useRef<HTMLSpanElement>(null);
   const [isOverflow, setIsOverflow] = useState(false);
 
-  useEffect(() => {
+  const handleMouseEnter = () => {
+    if (isOverflow) return;
     if (
       typeof window !== "undefined" &&
       !window.matchMedia("(hover: hover)").matches
     ) {
       return;
     }
-
     const container = containerRef.current;
     const measure = measureRef.current;
     if (!container || !measure) return;
 
-    const check = () => {
-      setIsOverflow(measure.scrollWidth > container.clientWidth);
-    };
-
-    const ro = new ResizeObserver(check);
-    ro.observe(container);
-
-    return () => ro.disconnect();
-  }, []);
+    if (measure.scrollWidth > container.clientWidth) {
+      setIsOverflow(true);
+    }
+  };
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: decorative overflow measurement on hover only
     <div
       ref={containerRef}
+      onMouseEnter={handleMouseEnter}
       className={cn(
         "group relative w-full overflow-hidden text-start whitespace-nowrap",
         className,

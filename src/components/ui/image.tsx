@@ -68,15 +68,6 @@ const ImageComponent = ({
   // placeholder. Non-priority cards keep the blur/skeleton fade for
   // perceived polish. See `src/components/homepage-media.tsx:132` where
   // `priorityCount={2}` is set for the above-the-fold rail.
-  const blurStyle =
-    blurSrc && !error && !priority
-      ? {
-          backgroundImage: `url("${blurSrc}")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }
-      : undefined;
-
   return (
     <div
       className={cn(
@@ -84,18 +75,8 @@ const ImageComponent = ({
         className,
       )}
     >
-      {blurStyle ? (
-        <div
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute inset-0 transform-gpu blur-md transition-opacity duration-500 ease-out",
-            loaded ? "opacity-0" : "opacity-100",
-          )}
-          style={blurStyle}
-        />
-      ) : (
-        !loaded &&
-        !priority && <Skeleton className="absolute inset-0 rounded-none" />
+      {!loaded && !priority && (
+        <Skeleton className="absolute inset-0 rounded-none" />
       )}
       <ReactImage
         ref={attachRef}

@@ -1,14 +1,8 @@
 import { Grid, Shield, Sparkles } from "lucide-react";
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 
+import { DeferredAccountButton } from "@/components/auth/deferred-account-button";
 import {
   MOVIE_LINKS,
   NavCard,
@@ -24,7 +18,6 @@ import {
   HomeIcon,
   SearchFilledIcon,
   SearchIcon,
-  UserIcon,
 } from "@/components/ui/icons";
 import {
   Sheet,
@@ -36,10 +29,6 @@ import {
 } from "@/components/ui/sheet";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
-
-// Same code-split as the desktop nav: the account tab shows its static icon
-// immediately and Clerk's widgets hydrate into it from a lazy chunk.
-const AccountButton = lazy(() => import("@/components/auth/account-button"));
 
 interface TabItem {
   href: string;
@@ -172,18 +161,7 @@ const MobileBottomNav = () => {
       })}
 
       <div className="mobile-bottom-nav-tab min-h-11" data-active="false">
-        <Suspense
-          fallback={
-            <div className="flex h-full w-full flex-col items-center justify-center">
-              <span className="mobile-bottom-nav-tab-icon">
-                <UserIcon aria-hidden="true" className="size-6" />
-              </span>
-              <span className="mobile-bottom-nav-tab-label">Account</span>
-            </div>
-          }
-        >
-          <AccountButton variant="mobile" />
-        </Suspense>
+        <DeferredAccountButton variant="mobile" />
       </div>
 
       <Sheet>
