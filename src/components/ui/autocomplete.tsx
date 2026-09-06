@@ -68,7 +68,7 @@ export function AutocompleteInput({
           )}
         >
           <AutocompletePrimitive.Icon data-slot="autocomplete-icon">
-            <ChevronsUpDownIcon />
+            <ChevronsUpDownIcon aria-hidden="true" />
           </AutocompletePrimitive.Icon>
         </AutocompleteTrigger>
       )}
@@ -211,7 +211,7 @@ export function AutocompleteClear({
       data-slot="autocomplete-clear"
       {...props}
     >
-      <XIcon />
+      <XIcon aria-hidden="true" />
     </AutocompletePrimitive.Clear>
   );
 }

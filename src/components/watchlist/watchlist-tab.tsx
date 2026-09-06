@@ -91,7 +91,11 @@ export function WatchlistTab() {
               onClick={exportWatchlist}
               aria-label="Export watchlist"
             >
-              {exportLoading ? <Spinner /> : <Download size={14} />}
+              {exportLoading ? (
+                <Spinner aria-hidden="true" />
+              ) : (
+                <Download aria-hidden="true" size={14} />
+              )}
               <span className="hidden sm:inline">Export</span>
             </Button>
           )}
@@ -111,7 +115,11 @@ export function WatchlistTab() {
               type="file"
               onChange={importWatchlist}
             />
-            {importLoading ? <Spinner /> : <Upload size={14} />}
+            {importLoading ? (
+              <Spinner aria-hidden="true" />
+            ) : (
+              <Upload aria-hidden="true" size={14} />
+            )}
             <span className="hidden sm:inline">Import</span>
           </Button>
         </div>
@@ -121,7 +129,7 @@ export function WatchlistTab() {
         <div
           className={`mb-4 rounded-lg p-3 text-sm ${
             error.invalidItems
-              ? "bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
+              ? "bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-200"
               : "bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-200"
           }`}
           role="alert"

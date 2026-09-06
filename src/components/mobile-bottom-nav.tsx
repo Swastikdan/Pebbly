@@ -1,14 +1,8 @@
 import { Grid, Shield, Sparkles } from "lucide-react";
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 
+import { DeferredAccountButton } from "@/components/auth/deferred-account-button";
 import {
   MOVIE_LINKS,
   NavCard,
@@ -24,7 +18,6 @@ import {
   HomeIcon,
   SearchFilledIcon,
   SearchIcon,
-  UserIcon,
 } from "@/components/ui/icons";
 import {
   Sheet,
@@ -35,10 +28,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { usePermissions } from "@/hooks/use-permissions";
-
-// Same code-split as the desktop nav: the account tab shows its static icon
-// immediately and Clerk's widgets hydrate into it from a lazy chunk.
-const AccountButton = lazy(() => import("@/components/auth/account-button"));
+import { cn } from "@/lib/utils";
 
 interface TabItem {
   href: string;
@@ -142,8 +132,28 @@ const MobileBottomNav = () => {
             aria-label={tab.label}
             aria-current={active ? "page" : undefined}
           >
-            <span className="mobile-bottom-nav-tab-icon">
-              {active ? tab.activeIcon : tab.icon}
+            <span aria-hidden="true" className="mobile-bottom-nav-tab-icon">
+              {/* Both icons stay in the DOM for a smooth cross-fade on every state change */}
+              <span
+                className={cn(
+                  "absolute transition-[opacity,scale,filter] duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                  active
+                    ? "scale-100 opacity-100 [filter:blur(0px)]"
+                    : "scale-[0.25] opacity-0 [filter:blur(4px)]",
+                )}
+              >
+                {tab.activeIcon}
+              </span>
+              <span
+                className={cn(
+                  "transition-[opacity,scale,filter] duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                  active
+                    ? "scale-[0.25] opacity-0 [filter:blur(4px)]"
+                    : "scale-100 opacity-100 [filter:blur(0px)]",
+                )}
+              >
+                {tab.icon}
+              </span>
             </span>
             <span className="mobile-bottom-nav-tab-label">{tab.label}</span>
           </Link>
@@ -151,18 +161,7 @@ const MobileBottomNav = () => {
       })}
 
       <div className="mobile-bottom-nav-tab min-h-11" data-active="false">
-        <Suspense
-          fallback={
-            <div className="flex h-full w-full flex-col items-center justify-center">
-              <span className="mobile-bottom-nav-tab-icon">
-                <UserIcon className="size-6" />
-              </span>
-              <span className="mobile-bottom-nav-tab-label">Account</span>
-            </div>
-          }
-        >
-          <AccountButton variant="mobile" />
-        </Suspense>
+        <DeferredAccountButton variant="mobile" />
       </div>
 
       <Sheet>
@@ -188,10 +187,10 @@ const MobileBottomNav = () => {
           className="bg-background z-50 flex h-dvh flex-col p-0 outline-hidden"
           closeProps={{
             className:
-              "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-[max(env(safe-area-inset-top),0.75rem)] right-4 rounded-md border p-2",
+              "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-[max(env(safe-area-inset-top),0.75rem)] end-4 rounded-md border p-2",
           }}
         >
-          <SheetHeader className="border-border/40 shrink-0 border-b px-5 pt-[max(env(safe-area-inset-top),1.25rem)] pr-14 pb-3.5 text-left">
+          <SheetHeader className="border-border/40 shrink-0 border-b px-5 pe-14 pt-[max(env(safe-area-inset-top),1.25rem)] pb-3.5 text-start">
             <SheetTitle className="font-heading flex items-center gap-2 text-lg font-bold">
               <Grid className="text-primary size-5" />
               Explore & Navigation

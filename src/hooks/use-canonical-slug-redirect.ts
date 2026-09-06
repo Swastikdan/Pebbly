@@ -26,7 +26,8 @@ export function useCanonicalSlugRedirect(args: {
     }
 
     const canonicalTitle = formatMediaTitle.encode(title);
-    const requiredPathname = `/${entity}/${id}/${canonicalTitle}${
+    const routePrefix = entity === "tv" ? "series" : entity;
+    const requiredPathname = `/${routePrefix}/${id}/${canonicalTitle}${
       subPageEntity === "home" || subPageEntity === "collection"
         ? ""
         : `/${subPageEntity}`

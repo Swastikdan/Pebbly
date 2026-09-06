@@ -4,8 +4,8 @@
   "description": "Explore a vast collection of movies and TV shows with Pebbly.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0a08",
-  "theme_color": "#0b0a08",
+  "background_color": "#131313",
+  "theme_color": "#131313",
   "orientation": "portrait-primary",
   "icons": [
     {

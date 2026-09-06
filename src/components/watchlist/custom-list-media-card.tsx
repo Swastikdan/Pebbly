@@ -101,12 +101,14 @@ export function CustomListMediaCard({
     onMove?.(dir);
   };
 
+  const routeType = item.mediaType === "tv" ? "series" : item.mediaType;
+
   return (
     <MediaRowCardShell
       to={
         formattedTitle
-          ? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
-          : `/${item.mediaType}/${item.tmdbId}`
+          ? `/${routeType}/${item.tmdbId}/${formattedTitle}`
+          : `/${routeType}/${item.tmdbId}`
       }
       className="rounded-lg"
       poster={
@@ -122,11 +124,11 @@ export function CustomListMediaCard({
             />
           ) : (
             <div className="bg-secondary text-muted-foreground flex h-40 w-26.75 shrink-0 animate-pulse items-center justify-center rounded-lg text-xs font-medium sm:h-35 sm:w-23.25">
-              {item.mediaType === "movie" ? "MOV" : "TV"}
+              {item.mediaType === "movie" ? "MOV" : "SER"}
             </div>
           )}
           {rank !== undefined && (
-            <span className="bg-foreground text-background border-card absolute -top-1.5 -left-1.5 flex size-6 items-center justify-center rounded-md border-2 text-[11px] font-bold tabular-nums">
+            <span className="bg-foreground text-background border-card absolute -start-1.5 -top-1.5 flex size-6 items-center justify-center rounded-md border-2 text-[11px] font-bold tabular-nums">
               {rank}
             </span>
           )}
@@ -155,7 +157,7 @@ export function CustomListMediaCard({
                   )}
                   aria-label="Move up one rank"
                 >
-                  <ArrowUp size={12} />
+                  <ArrowUp aria-hidden="true" size={12} />
                 </button>
                 <button
                   type="button"
@@ -170,7 +172,7 @@ export function CustomListMediaCard({
                   )}
                   aria-label="Move down one rank"
                 >
-                  <ArrowDown size={12} />
+                  <ArrowDown aria-hidden="true" size={12} />
                 </button>
               </div>
             )}
@@ -179,11 +181,11 @@ export function CustomListMediaCard({
               type="button"
               variant="ghost"
               size="icon"
-              className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive shrink-0 p-1.5 opacity-100 transition-colors focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+              className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive-foreground shrink-0 p-1.5 opacity-100 transition-colors focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
               aria-label={`Remove from collection`}
               onClick={handleRemove}
             >
-              <TrashBin size={14} />
+              <TrashBin aria-hidden="true" size={14} />
             </Button>
           </div>
         )

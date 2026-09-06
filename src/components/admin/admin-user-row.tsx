@@ -28,6 +28,7 @@ function RoleToggleButtons({
           <button
             key={config.value}
             type="button"
+            aria-pressed={isActive}
             onClick={() => onToggleRole(config.value)}
             disabled={isBanned || isRolePending}
             title={
@@ -39,7 +40,7 @@ function RoleToggleButtons({
                 : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
             }`}
           >
-            {isActive && <Check className="size-3" />}
+            {isActive && <Check aria-hidden="true" className="size-3" />}
             {config.short}
           </button>
         );
@@ -54,7 +55,7 @@ function UserBadges({ user, isSelf }: { user: AdminUser; isSelf: boolean }) {
       {user.isAdmin && (
         <Badge
           variant="outline"
-          className="shrink-0 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] font-semibold text-amber-500"
+          className="shrink-0 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] font-semibold text-amber-700 dark:text-amber-400"
         >
           Admin
         </Badge>
@@ -86,7 +87,10 @@ function UserAvatar({ user, size }: { user: AdminUser; size: "sm" | "lg" }) {
     <img src={user.image} alt={user.name} className={className} />
   ) : (
     <div className={fallbackClassName}>
-      <UserCog className={`${iconClassName} text-muted-foreground`} />
+      <UserCog
+        aria-hidden="true"
+        className={`${iconClassName} text-muted-foreground`}
+      />
     </div>
   );
 }
@@ -101,22 +105,22 @@ function UserStatusBadge({
   if (isBanned) {
     return (
       <Badge
-        className={`bg-destructive/15 text-destructive border-destructive/30 gap-1 font-semibold ${
+        className={`bg-destructive/15 text-destructive-foreground border-destructive/30 gap-1 font-semibold ${
           size === "sm" ? "hover:bg-destructive/20" : "shrink-0 py-1 text-xs"
         }`}
       >
-        <UserX className="size-3" />
+        <UserX aria-hidden="true" className="size-3" />
         Banned
       </Badge>
     );
   }
   return (
     <Badge
-      className={`gap-1 border-emerald-500/30 bg-emerald-500/15 font-semibold text-emerald-600 dark:text-emerald-400 ${
+      className={`gap-1 border-emerald-500/30 bg-emerald-500/15 font-semibold text-emerald-700 dark:text-emerald-400 ${
         size === "sm" ? "hover:bg-emerald-500/20" : "shrink-0 py-1 text-xs"
       }`}
     >
-      <ShieldCheck className="size-3" />
+      <ShieldCheck aria-hidden="true" className="size-3" />
       Active
     </Badge>
   );
@@ -173,13 +177,13 @@ export function AdminUserRow({
             />
           </div>
         </td>
-        <td className="px-4 py-3.5 text-right">
+        <td className="px-4 py-3.5 text-end">
           <Button
             variant={isBanned ? "outline" : "destructive"}
             size="sm"
             className={`h-8 px-3 text-xs font-semibold ${
               isBanned
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"
                 : ""
             }`}
             onClick={() => onPromptBanToggle(user)}
@@ -196,12 +200,12 @@ export function AdminUserRow({
           >
             {isBanned ? (
               <>
-                <ShieldCheck className="mr-1.5 size-3" />
+                <ShieldCheck aria-hidden="true" className="me-1.5 size-3" />
                 Unban
               </>
             ) : (
               <>
-                <Ban className="mr-1.5 size-3" />
+                <Ban aria-hidden="true" className="me-1.5 size-3" />
                 Ban
               </>
             )}
@@ -240,7 +244,7 @@ export function AdminUserRow({
 
       <div className="border-border/40 mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-muted-foreground mr-0.5 text-[11px] font-medium">
+          <span className="text-muted-foreground me-0.5 text-[11px] font-medium">
             Roles:
           </span>
           {ROLE_CONFIGS.map((config) => {
@@ -249,6 +253,7 @@ export function AdminUserRow({
               <button
                 key={config.value}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => onToggleRole(config.value)}
                 disabled={isBanned || isRolePending}
                 className={`flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md border px-3.5 py-2 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
@@ -257,7 +262,7 @@ export function AdminUserRow({
                     : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
                 }`}
               >
-                {isActive && <Check className="size-3.5" />}
+                {isActive && <Check aria-hidden="true" className="size-3.5" />}
                 {config.label}
               </button>
             );
@@ -268,21 +273,21 @@ export function AdminUserRow({
           <Button
             variant={isBanned ? "outline" : "destructive"}
             size="sm"
-            className={`ml-auto h-9 min-h-9 rounded-md px-3.5 text-xs font-semibold ${
+            className={`ms-auto h-9 min-h-9 rounded-md px-3.5 text-xs font-semibold ${
               isBanned
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"
                 : ""
             }`}
             onClick={() => onPromptBanToggle(user)}
           >
             {isBanned ? (
               <>
-                <ShieldCheck className="mr-1 size-3.5" />
+                <ShieldCheck aria-hidden="true" className="me-1 size-3.5" />
                 Unban
               </>
             ) : (
               <>
-                <Ban className="mr-1 size-3.5" />
+                <Ban aria-hidden="true" className="me-1 size-3.5" />
                 Ban
               </>
             )}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -151,6 +151,7 @@ function PersonPage() {
     () => biography.split("\n\n").filter(Boolean),
     [biography],
   );
+  const biographyId = useId();
 
   if (isLoading) {
     return <DefaultLoader />;
@@ -174,7 +175,7 @@ function PersonPage() {
         <ShareButton title={name} />
       </div>
       <div className="flex flex-col gap-8 md:flex-row md:items-start">
-        <div className="flex flex-col items-center gap-4 md:sticky md:top-16 md:w-1/3 md:items-start">
+        <div className="flex flex-col items-center gap-4 md:sticky md:top-20 md:w-1/3 md:items-start">
           <div className="ring-border/40 relative aspect-2/3 w-64 max-w-sm overflow-hidden rounded-xl ring-1 md:w-full dark:ring-white/6">
             {imageUrl ? (
               <Image
@@ -193,9 +194,7 @@ function PersonPage() {
           </div>
 
           <div className="flex w-full flex-col gap-2">
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-              {name}
-            </h1>
+            <h1 className="text-h1 text-balance">{name}</h1>
             {birthday && (
               <div className="text-muted-foreground text-sm">
                 <span className="text-foreground font-semibold">Born: </span>
@@ -228,8 +227,11 @@ function PersonPage() {
         <div className="flex flex-col gap-8 md:w-2/3">
           {biographyParagraphs.length > 0 && (
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold">Biography</h2>
-              <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap sm:text-[15px]">
+              <h2 className="text-h2">Biography</h2>
+              <div
+                id={biographyId}
+                className="text-muted-foreground text-base leading-relaxed whitespace-pre-wrap"
+              >
                 <div className="flex flex-col">
                   {isBiographyExpanded ? (
                     biographyParagraphs.map((paragraph, index) => (
@@ -244,7 +246,7 @@ function PersonPage() {
                   ) : (
                     <p className="mb-2">
                       {biography.length > 300
-                        ? `${biography.substring(0, 300)}...`
+                        ? `${biography.substring(0, 300)}…`
                         : biography}
                     </p>
                   )}
@@ -253,6 +255,8 @@ function PersonPage() {
                       className="text-foreground w-fit px-0 font-semibold hover:no-underline"
                       size="sm"
                       variant="link"
+                      aria-expanded={isBiographyExpanded}
+                      aria-controls={biographyId}
                       onClick={() => setIsBiographyExpanded((prev) => !prev)}
                     >
                       {isBiographyExpanded ? "Read Less" : "Read More"}
@@ -265,7 +269,7 @@ function PersonPage() {
 
           {knownForCredits.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Known For</h2>
+              <h2 className="text-h2">Known For</h2>
               <div className="grid w-full grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
                 {knownForCredits.map((credit) => (
                   <div

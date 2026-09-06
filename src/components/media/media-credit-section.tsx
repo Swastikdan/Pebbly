@@ -52,9 +52,7 @@ export const MediaCreditSection = (props: {
           <GoBack link={`/${type}/${id}/${slug}`} title="Back to main" />
           <ShareButton />
         </div>
-        <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
-          {title}
-        </h1>
+        <h1 className="text-h1 text-balance lg:px-0">{title}</h1>
       </div>
       <div className="my-5 mb-40 grid justify-between gap-3 space-y-10 md:grid-cols-2 md:space-y-0">
         {hasNoCredits ? (
@@ -65,10 +63,8 @@ export const MediaCreditSection = (props: {
           <>
             <div>
               <span className="flex items-center gap-2">
-                <span className="text-foreground font-heading text-2xl font-bold">
-                  Cast
-                </span>
-                ({cast.length})
+                <span className="text-h2 text-foreground">Cast</span>(
+                {cast.length})
               </span>
               {cast.length === 0 ? (
                 <p className="text-muted-foreground pt-5 text-sm">
@@ -99,11 +95,11 @@ export const MediaCreditSection = (props: {
                           No image
                         </div>
                       )}
-                      <div className="flex flex-col items-start pl-5">
+                      <div className="flex flex-col items-start ps-5">
                         <p className="group-hover:text-primary text-start font-bold transition-colors">
                           {castMember.name}
                         </p>
-                        <p className="text-start text-sm">
+                        <p className="text-start text-[13px] leading-relaxed text-pretty">
                           {castMember.character || "Role not available"}
                         </p>
                       </div>
@@ -115,10 +111,8 @@ export const MediaCreditSection = (props: {
 
             <div>
               <span className="flex items-center gap-2">
-                <span className="text-foreground font-heading text-2xl font-bold">
-                  Crew
-                </span>
-                ({crew.length})
+                <span className="text-h2 text-foreground">Crew</span>(
+                {crew.length})
               </span>
 
               {crew.length === 0 ? (
@@ -130,7 +124,7 @@ export const MediaCreditSection = (props: {
                   {Array.from(castByDepartment).map(
                     ([department, crewMembers]) => (
                       <div key={`dept-${department}`}>
-                        <h2 className="mt-3 text-lg font-bold">{department}</h2>
+                        <h2 className="text-h3 mt-3">{department}</h2>
                         <div className="grid grid-cols-1 gap-3 pt-5 lg:grid-cols-2">
                           {crewMembers.map((crewMember: CrewMember) => (
                             <Link
@@ -156,11 +150,11 @@ export const MediaCreditSection = (props: {
                                   No image
                                 </div>
                               )}
-                              <div className="flex flex-col items-start pl-5">
+                              <div className="flex flex-col items-start ps-5">
                                 <p className="group-hover:text-primary text-start font-bold transition-colors">
                                   {crewMember.name}
                                 </p>
-                                <p className="text-start text-sm">
+                                <p className="text-start text-sm leading-relaxed text-pretty">
                                   {crewMember.job || "Job not available"}
                                 </p>
                               </div>

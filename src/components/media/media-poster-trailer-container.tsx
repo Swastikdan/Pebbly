@@ -78,7 +78,7 @@ export function MediaPosterTrailerContainer(props: {
           imageClassName="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
           renderTileOverlay={(video) => (
             <>
-              <span className="bg-background text-foreground dark:bg-foreground dark:text-background absolute top-4 left-4 w-min max-w-[200px] truncate rounded-lg px-2 py-1 text-sm sm:max-w-[250px]">
+              <span className="bg-background text-foreground dark:bg-foreground dark:text-background absolute start-4 top-4 w-min max-w-[200px] truncate rounded-lg px-2 py-1 text-sm sm:max-w-[250px]">
                 {video.name}
               </span>
               <PlayOverlay />

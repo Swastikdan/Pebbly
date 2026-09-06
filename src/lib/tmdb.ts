@@ -7,6 +7,40 @@ import { createFetch } from "@better-fetch/fetch";
  */
 let client: ReturnType<typeof createFetch> | null = null;
 
+function isCloudflareWorker(): boolean {
+  if (typeof window !== "undefined") return false;
+  return (
+    typeof (globalThis as unknown as { __env__?: unknown }).__env__ !==
+      "undefined" ||
+    (typeof navigator !== "undefined" &&
+      navigator.userAgent === "Cloudflare-Workers") ||
+    typeof (globalThis as unknown as { WebSocketPair?: unknown })
+      .WebSocketPair !== "undefined"
+  );
+}
+
+const tmdbCustomFetch = (
+  input: string | URL | Request,
+  init?: RequestInit & { cf?: Record<string, unknown> },
+) => {
+  if (isCloudflareWorker()) {
+    return (
+      fetch as (
+        input: string | URL | Request,
+        init?: unknown,
+      ) => Promise<Response>
+    )(input, {
+      ...init,
+      cf: {
+        cacheTtl: 3600,
+        cacheEverything: true,
+        ...init?.cf,
+      },
+    });
+  }
+  return fetch(input, init);
+};
+
 export function getTmdbFetch() {
   if (!client) {
     const ACCESS_TOKEN = import.meta.env.VITE_PUBLIC_TMDB_ACCESS_TOKEN;
@@ -18,6 +52,7 @@ export function getTmdbFetch() {
 
     client = createFetch({
       baseURL: BASE_URL,
+      customFetchImpl: tmdbCustomFetch,
       throw: true,
       timeout: 15_000,
       headers: {

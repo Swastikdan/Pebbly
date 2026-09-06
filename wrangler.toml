@@ -1,5 +1,7 @@
 name = "pebbly"
-main = ".output/server/index.mjs"
+# Nitro's cloudflare_module preset generates the final `main` and `assets`
+# entries in `.output/server/wrangler.json`; keep this source config focused
+# on deployment settings that Nitro does not derive.
 compatibility_date = "2026-08-08"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
@@ -9,10 +11,6 @@ upload_source_maps = true
 
 [ai]
 binding = "AI"
-
-[assets]
-directory = ".output/public"
-binding = "ASSETS"
 
 [[d1_databases]]
 binding = "DB"

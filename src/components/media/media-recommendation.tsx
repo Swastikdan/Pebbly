@@ -43,7 +43,7 @@ export const MediaRecommendations = (props: {
             Recommendations
           </span>
           <ScrollContainer isButtonsVisible={false}>
-            <div className="flex gap-4 p-4 first:pl-0 last:pr-0">
+            <div className="flex gap-4 p-4 first:ps-0 last:pe-0">
               {Array.from({ length: 6 }).map((_, index) => (
                 <MediaCardSkeleton
                   // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
@@ -68,7 +68,7 @@ export const MediaRecommendations = (props: {
           Recommendations
         </span>
         <ScrollContainer isButtonsVisible={!movie_is_loading}>
-          <div className="flex gap-4 p-4 first:pl-0 last:pr-0">
+          <div className="flex gap-4 p-4 first:ps-0 last:pe-0">
             {type === "movie"
               ? movie_data?.results?.map((item) => (
                   <MediaCard

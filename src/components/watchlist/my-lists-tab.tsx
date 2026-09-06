@@ -57,9 +57,7 @@ export function MyListsTab() {
           <ListPlus className="size-5" />
         </div>
         <div>
-          <h3 className="mb-2 text-lg font-bold tracking-tight">
-            Sign in to create collections
-          </h3>
+          <h3 className="text-h3 mb-2">Sign in to create collections</h3>
           <p className="text-muted-foreground/80 max-w-sm text-xs leading-relaxed">
             Collections are saved to your account, so you can keep them private
             or share them with anyone.
@@ -110,9 +108,7 @@ export function MyListsTab() {
     <div className="space-y-6 pt-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-            My Collections
-          </h2>
+          <h2 className="text-h2 text-balance">My Collections</h2>
           <p className="text-muted-foreground animate-fade-in mt-0.5 text-sm">
             {customLists.length} collection
             {customLists.length !== 1 ? "s" : ""} created
@@ -124,7 +120,7 @@ export function MyListsTab() {
           onClick={() => setShowCreateList(true)}
           className="gap-1.5 text-xs"
         >
-          <Plus size={14} />
+          <Plus aria-hidden="true" size={14} />
           New Collection
         </Button>
       </div>
@@ -135,9 +131,7 @@ export function MyListsTab() {
             <ListPlus className="size-5" />
           </div>
           <div>
-            <h3 className="mb-2 text-lg font-bold tracking-tight">
-              Create your first collection
-            </h3>
+            <h3 className="text-h3 mb-2">Create your first collection</h3>
             <p className="text-muted-foreground/80 max-w-sm text-xs leading-relaxed">
               Organize movies and TV shows into custom lists, like "Sci-Fi
               Favorites" or "Shows to Binge with Friends".
@@ -149,7 +143,7 @@ export function MyListsTab() {
             className="hover:bg-secondary/80 gap-2 px-5 text-xs font-semibold"
             onClick={() => setShowCreateList(true)}
           >
-            <Plus size={14} />
+            <Plus aria-hidden="true" size={14} />
             Create Your First Collection
           </Button>
         </div>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { SeasonInfo, TvEpisodeDetail } from "@/lib/tmdb-schemas";
@@ -81,9 +81,7 @@ export function InlineEpisodeBrowser({
   return (
     <div className="animate-fade-in-up pb-8">
       <div className="mb-5 flex items-end justify-between gap-4">
-        <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
-          Episodes
-        </h2>
+        <h2 className="text-h2">Episodes</h2>
       </div>
 
       <Accordion className="w-full space-y-2">
@@ -101,12 +99,12 @@ export function InlineEpisodeBrowser({
             <AccordionItem
               key={s.id}
               value={`season-${s.season_number}`}
-              className="border-default/40 bg-card mb-3 overflow-hidden rounded-lg border"
+              className="border-border/60 bg-card mb-3 overflow-hidden rounded-lg border"
             >
               <AccordionTrigger className="hover:bg-secondary/10 data-panel-open:bg-secondary/10 px-4 py-3.5 text-sm font-semibold transition-colors hover:no-underline">
-                <div className="flex flex-1 items-center justify-between pr-2">
+                <div className="flex flex-1 items-center justify-between pe-2">
                   <div className="flex items-center gap-3">
-                    <span className="text-base font-bold">
+                    <span className="text-foreground text-base font-bold">
                       {`Season ${s.season_number}`}
                     </span>
                     <Badge
@@ -116,7 +114,7 @@ export function InlineEpisodeBrowser({
                       {s.episode_count} ep{s.episode_count !== 1 ? "s" : ""}
                     </Badge>
                     {s.air_date && (
-                      <span className="text-muted-foreground text-[10px] font-medium">
+                      <span className="text-foreground/70 dark:text-muted-foreground text-[11px] font-medium">
                         {new Date(s.air_date).getFullYear()}
                       </span>
                     )}
@@ -129,14 +127,14 @@ export function InlineEpisodeBrowser({
                       </Badge>
                     )}
                     {!seenAll && watchedCount > 0 && (
-                      <span className="text-muted-foreground text-[10px]">
+                      <span className="text-foreground/70 dark:text-muted-foreground text-[11px] font-medium">
                         {watchedCount}/{s.episode_count} watched
                       </span>
                     )}
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionPanel className="border-default/50 border-t px-0 pb-0">
+              <AccordionPanel className="border-border/60 text-foreground border-t px-0 pb-0">
                 <div className="flex h-full items-end justify-end p-2">
                   <Button
                     variant="outline"
@@ -149,7 +147,7 @@ export function InlineEpisodeBrowser({
                       );
                       handleSeasonToggle(s, seenAll, epNums);
                     }}
-                    className="pressable-small text-muted-foreground hover:text-foreground relative z-10 h-7 text-[11px] font-medium transition-colors hover:no-underline"
+                    className="pressable-small text-foreground/80 hover:text-foreground border-border/70 relative z-10 h-7 text-[11px] font-medium transition-colors hover:no-underline"
                   >
                     {seenAll ? "Unmark all as watched" : "Mark all as watched"}
                   </Button>
@@ -173,7 +171,7 @@ export function InlineEpisodeBrowser({
           type="button"
           variant="outline"
           onClick={() => setShowAllSeasons(true)}
-          className="text-muted-foreground hover:bg-secondary/5 hover:text-foreground mt-3 h-auto w-full rounded-lg border-dashed py-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow]"
+          className="text-foreground/80 hover:bg-secondary/10 hover:text-foreground border-border mt-3 h-auto w-full rounded-lg border-dashed py-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow]"
         >
           {`View all ${allSeasons.length} seasons`}
         </Button>
@@ -281,6 +279,7 @@ function EpisodeCard({
   onToggleWatched: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const overviewId = useId();
   const hasLongOverview = (episode.overview?.length ?? 0) > 100;
   const progress = useEpisodeProgress(
     tvId,
@@ -302,7 +301,7 @@ function EpisodeCard({
           }
           width={250}
         />
-        <span className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums backdrop-blur-sm">
+        <span className="pointer-events-none absolute start-1.5 bottom-1.5 z-20 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums backdrop-blur-sm">
           E{episode.episode_number}
         </span>
         <Suspense fallback={null}>
@@ -319,7 +318,7 @@ function EpisodeCard({
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="min-w-0 truncate text-sm font-bold md:text-base">
+          <h3 className="text-foreground group-hover:text-primary min-w-0 truncate text-sm font-bold transition-colors md:text-base">
             {episode.name}
           </h3>
 
@@ -327,22 +326,23 @@ function EpisodeCard({
             type="button"
             variant="ghost"
             onClick={onToggleWatched}
+            aria-label={isWatched ? "Mark as unwatched" : "Mark as watched"}
             className={`pressable-small h-auto shrink-0 rounded-md border p-2 text-[10px] font-medium transition-[color,background-color,border-color] ${
               isWatched
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                : "border-border/50 text-muted-foreground hover:border-foreground/20 hover:text-foreground bg-transparent"
+                : "border-border/60 text-foreground/75 hover:border-foreground/30 hover:text-foreground dark:text-muted-foreground bg-transparent"
             }`}
             title={isWatched ? "Mark as unwatched" : "Mark as watched"}
           >
             {isWatched ? (
               <svg
+                aria-hidden="true"
                 className="size-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={2.5}
                 stroke="currentColor"
               >
-                <title>Mark as unwatched</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -351,13 +351,13 @@ function EpisodeCard({
               </svg>
             ) : (
               <svg
+                aria-hidden="true"
                 className="size-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={2}
                 stroke="currentColor"
               >
-                <title>Mark as watched</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -377,7 +377,7 @@ function EpisodeCard({
           {isWatched && (
             <Badge
               variant="default"
-              className="rounded-md border border-emerald-500/25 bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-400"
+              className="rounded-md border border-emerald-500/25 bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400"
             >
               Seen
             </Badge>
@@ -385,22 +385,25 @@ function EpisodeCard({
           {!isWatched && progress > 0 && (
             <Badge
               variant="secondary"
-              className="rounded-md border border-amber-500/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-500 dark:text-amber-400"
+              className="rounded-md border border-amber-500/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:text-amber-400"
             >
               {Math.round(progress)}%
             </Badge>
           )}
           {episode.vote_average > 0 && (
             <Badge
-              className="rounded-md px-1.5 py-0.5 text-[10px] font-medium"
+              className="border-border/60 rounded-md border px-1.5 py-0.5 text-[10px] font-medium"
               variant="secondary"
             >
-              <Star className="mr-0.5 size-2.5 fill-current text-yellow-400" />
+              <Star
+                aria-hidden="true"
+                className="me-0.5 size-2.5 fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400"
+              />
               {episode.vote_average.toFixed(1)}
             </Badge>
           )}
           {episode.air_date && (
-            <span className="text-muted-foreground text-[10px] font-medium">
+            <span className="text-foreground/75 dark:text-muted-foreground text-[11px] font-medium">
               {new Date(episode.air_date).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
@@ -409,7 +412,7 @@ function EpisodeCard({
             </span>
           )}
           {episode.runtime && (
-            <span className="text-muted-foreground text-[10px] font-medium">
+            <span className="text-foreground/75 dark:text-muted-foreground text-[11px] font-medium">
               {episode.runtime}m
             </span>
           )}
@@ -417,7 +420,10 @@ function EpisodeCard({
 
         {episode.overview ? (
           <div className="mt-0.5 hidden sm:block">
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            <p
+              id={overviewId}
+              className="text-foreground/85 dark:text-muted-foreground text-[13px] leading-relaxed text-pretty"
+            >
               {expanded || !hasLongOverview
                 ? episode.overview
                 : `${episode.overview.slice(0, 120)}…`}
@@ -426,15 +432,17 @@ function EpisodeCard({
               <Button
                 type="button"
                 variant="link"
+                aria-expanded={expanded}
+                aria-controls={overviewId}
                 onClick={() => setExpanded(!expanded)}
-                className="text-foreground/60 hover:text-foreground mt-0.5 h-auto p-0 text-[11px] font-medium transition-colors"
+                className="text-foreground/80 hover:text-foreground mt-0.5 h-auto p-0 text-[11px] font-semibold transition-colors"
               >
                 {expanded ? "Show less" : "Read more"}
               </Button>
             )}
           </div>
         ) : (
-          <p className="text-muted-foreground/60 text-xs italic">
+          <p className="text-muted-foreground text-xs italic">
             No overview available.
           </p>
         )}

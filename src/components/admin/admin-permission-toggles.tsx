@@ -22,15 +22,18 @@ const FEATURE_ICONS: Record<RbacFeature, typeof Activity> = {
 
 function ToggleSwitch({
   enabled,
+  label,
   onChange,
 }: {
   enabled: boolean;
+  label: string;
   onChange: (value: boolean) => void;
 }) {
   return (
     <button
       type="button"
       role="switch"
+      aria-label={`${label} permission`}
       aria-checked={enabled}
       onClick={() => {
         onChange(!enabled);
@@ -90,7 +93,7 @@ function FeatureRow({
     <div className="bg-card hover:bg-muted/20 flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors">
       <div className="flex min-w-0 items-center gap-3">
         <div className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-md">
-          <Icon className="text-foreground size-4.5" />
+          <Icon aria-hidden="true" className="text-foreground size-4.5" />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold">{featureLabel}</p>
@@ -99,7 +102,7 @@ function FeatureRow({
       </div>
       <div className="flex shrink-0 items-center gap-3">
         <span
-          className={`min-w-14 text-right text-xs font-semibold ${
+          className={`min-w-14 text-end text-xs font-semibold ${
             enabled ? "text-foreground" : "text-muted-foreground"
           }`}
         >
@@ -107,6 +110,7 @@ function FeatureRow({
         </span>
         <ToggleSwitch
           enabled={enabled}
+          label={featureLabel}
           onChange={(nextEnabled) => onToggle(role, nextEnabled)}
         />
       </div>

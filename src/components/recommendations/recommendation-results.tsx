@@ -258,25 +258,25 @@ function RecommendationCard({
       <Button
         type="button"
         variant="ghost"
-        className="bg-muted ring-border/40 hover:bg-muted relative aspect-2/3 h-auto w-full overflow-hidden rounded-xl p-0 text-left ring-1 transition-[box-shadow,border-color] duration-200"
+        className="bg-muted ring-border/40 hover:bg-muted relative aspect-2/3 h-auto w-full overflow-hidden rounded-xl p-0 text-start ring-1 transition-[box-shadow,border-color] duration-200"
         onClick={() => navigate({ to: "/search", search: { query: title } })}
       >
-        <div className="absolute top-0 right-0 left-0 z-10 flex items-start justify-end p-2.5">
+        <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-end p-2.5">
           <span className="bg-secondary text-muted-foreground rounded-md px-2 py-1 text-[11px] font-medium capitalize">
             {mediaType === "movie" ? "Movie" : "TV"}
           </span>
         </div>
 
-        <div className="absolute right-0 bottom-0 left-0 z-10 flex flex-col gap-1.5 p-3">
-          <h3 className="text-foreground line-clamp-2 text-[15px] leading-snug font-bold">
+        <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-1.5 p-3">
+          <h3 className="text-foreground line-clamp-2 text-[15px] leading-snug font-bold text-balance">
             {title}
           </h3>
-          <p className="text-muted-foreground line-clamp-3 text-[10.5px] leading-relaxed">
+          <p className="text-muted-foreground line-clamp-3 text-[13px] leading-relaxed text-pretty">
             {reasoning}
           </p>
           <div className="mt-1 flex w-full items-center justify-between">
             <span className="text-muted-foreground/50 group-hover/card:text-foreground inline-flex items-center gap-1 text-[10.5px] font-medium transition-colors duration-200">
-              <ArrowUpRight size={11} />
+              <ArrowUpRight aria-hidden="true" size={11} />
               Search
             </span>
             {relevanceScore && (
@@ -284,9 +284,9 @@ function RecommendationCard({
                 className={cn(
                   "text-[10.5px] font-semibold",
                   relevanceScore >= 80
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-emerald-700 dark:text-emerald-400"
                     : relevanceScore >= 60
-                      ? "text-amber-600 dark:text-amber-400"
+                      ? "text-amber-700 dark:text-amber-400"
                       : "text-muted-foreground",
                 )}
               >

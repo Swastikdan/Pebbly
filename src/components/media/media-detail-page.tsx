@@ -42,7 +42,7 @@ export function MediaDetailPage(props: {
     <section className="mx-auto block max-w-7xl items-center px-4">
       <MediaTitleContainer
         runtime={props.runtime ?? null}
-        description={`${props.overview?.slice(0, 100)}...`}
+        description={`${props.overview?.slice(0, 100)}…`}
         id={props.id}
         image={mediaPage.image}
         imdb_url={props.imdbUrl}

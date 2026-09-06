@@ -75,9 +75,10 @@ export function WatchlistStatusMenu({
         <Button
           variant="secondary"
           className="border-border hover:bg-secondary/80 flex h-10 w-10 items-center justify-center gap-0 border px-0 text-xs font-semibold transition-[color,background-color,border-color] sm:w-auto sm:min-w-fit sm:gap-2 sm:px-4"
+          aria-label="Add to Watchlist"
           onClick={onAdd}
         >
-          <Bookmark size={16} />
+          <Bookmark aria-hidden="true" size={16} />
           <span className="hidden sm:inline">Add to Watchlist</span>
         </Button>
       ) : (
@@ -87,12 +88,14 @@ export function WatchlistStatusMenu({
               <Button
                 variant="secondary"
                 className="bg-primary/10 hover:bg-primary/15 text-primary flex h-10 w-10 cursor-pointer items-center justify-center gap-0 px-0 text-xs font-semibold transition-[color,background-color,border-color] sm:w-auto sm:min-w-fit sm:gap-2 sm:px-4"
+                aria-label={`Watchlist status: ${currentOption.label}`}
               />
             }
           >
-            <StatusIcon size={16} className="text-primary" />
+            <StatusIcon aria-hidden="true" size={16} className="text-primary" />
             <span className="hidden sm:inline">{currentOption.label}</span>
             <ChevronDown
+              aria-hidden="true"
               size={14}
               className={cn(
                 "hidden opacity-75 transition-transform duration-200 sm:inline",
@@ -116,6 +119,7 @@ export function WatchlistStatusMenu({
                 onClick={() => onStatusChange("watch-later")}
               >
                 <Clock
+                  aria-hidden="true"
                   size={14}
                   className={
                     currentStatus === "watch-later"
@@ -130,6 +134,7 @@ export function WatchlistStatusMenu({
                 onClick={() => onStatusChange("watching")}
               >
                 <Eye
+                  aria-hidden="true"
                   size={14}
                   className={
                     currentStatus === "watching"
@@ -144,6 +149,7 @@ export function WatchlistStatusMenu({
                 onClick={() => onStatusChange("done")}
               >
                 <Check
+                  aria-hidden="true"
                   size={14}
                   className={
                     currentStatus === "done"
@@ -159,6 +165,7 @@ export function WatchlistStatusMenu({
                   onClick={() => onStatusChange("dropped")}
                 >
                   <X
+                    aria-hidden="true"
                     size={14}
                     className={
                       currentStatus === "dropped"
@@ -184,6 +191,7 @@ export function WatchlistStatusMenu({
                     <button
                       key={option.value}
                       type="button"
+                      aria-pressed={isSelected}
                       className={cn(
                         "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border px-1 py-2 transition-[color,background-color,border-color] duration-150",
                         isSelected
@@ -197,6 +205,7 @@ export function WatchlistStatusMenu({
                       }}
                     >
                       <option.icon
+                        aria-hidden="true"
                         size={18}
                         className={
                           isSelected ? "text-primary" : "text-muted-foreground"
@@ -214,13 +223,13 @@ export function WatchlistStatusMenu({
             <div className="border-border border-t p-2.5">
               <button
                 type="button"
-                className="text-destructive hover:bg-destructive/10 border-destructive/25 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors"
+                className="text-destructive-foreground hover:bg-destructive/10 border-destructive/25 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors"
                 onClick={() => {
                   onRemove();
                   setOpen(false);
                 }}
               >
-                <Trash2 size={14} />
+                <Trash2 aria-hidden="true" size={14} />
                 <span>Delete from Watchlist</span>
               </button>
             </div>
@@ -231,9 +240,10 @@ export function WatchlistStatusMenu({
       <Button
         variant="secondary"
         className="border-border hover:bg-secondary/80 flex h-10 w-10 cursor-pointer items-center justify-center gap-0 border px-0 text-xs font-semibold transition-[color,background-color,border-color] sm:w-auto sm:min-w-fit sm:gap-2 sm:px-4"
+        aria-label="Add to Collection"
         onClick={() => setListDialogOpen(true)}
       >
-        <ListPlus size={16} />
+        <ListPlus aria-hidden="true" size={16} />
         <span className="hidden sm:inline">Add to Collection</span>
       </Button>
 
@@ -262,8 +272,9 @@ function StatusButton({
   return (
     <button
       type="button"
+      aria-pressed={active}
       className={cn(
-        "border-border flex w-full cursor-pointer items-center gap-2.5 rounded-lg border p-3 text-left text-xs font-semibold transition-[color,background-color,border-color] duration-200",
+        "border-border flex w-full cursor-pointer items-center gap-2.5 rounded-lg border p-3 text-start text-xs font-semibold transition-[color,background-color,border-color] duration-200",
         active
           ? "bg-primary/10 text-primary border-primary/30 font-bold"
           : "hover:bg-secondary/40 text-muted-foreground hover:text-foreground",
@@ -352,6 +363,7 @@ function AddToListDialog({
                         <button
                           key={list._id}
                           type="button"
+                          aria-pressed={isInList}
                           className={cn(
                             "flex w-full items-center justify-between rounded-lg border border-transparent px-4 py-3 text-sm transition-[color,background-color,border-color] duration-200",
                             isInList
@@ -381,7 +393,13 @@ function AddToListDialog({
                                   : "border-muted-foreground/30 bg-transparent",
                               )}
                             >
-                              {isInList && <Check size={11} strokeWidth={3} />}
+                              {isInList && (
+                                <Check
+                                  aria-hidden="true"
+                                  size={11}
+                                  strokeWidth={3}
+                                />
+                              )}
                             </div>
                             <span className="truncate">{list.name}</span>
                           </div>
@@ -404,7 +422,7 @@ function AddToListDialog({
                   className="text-muted-foreground hover:bg-secondary/60 hover:text-foreground h-auto w-full justify-center gap-2 border-dashed py-2.5 text-sm font-medium transition-colors"
                   onClick={() => setShowCreateDialog(true)}
                 >
-                  <Plus size={16} />
+                  <Plus aria-hidden="true" size={16} />
                   Create New Collection
                 </Button>
               </div>

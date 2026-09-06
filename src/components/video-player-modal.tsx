@@ -273,8 +273,11 @@ export function VideoPlayerModal({
             />
           }
         >
-          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
-            <Play className="size-6 fill-white text-white" />
+          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color] duration-100 group-hover/play:bg-black/80">
+            <Play
+              aria-hidden="true"
+              className="size-6 translate-x-[2px] fill-white text-white"
+            />
           </div>
         </DialogTrigger>
       ) : variant === "episode" ? (
@@ -291,7 +294,7 @@ export function VideoPlayerModal({
             />
           }
         >
-          <Play className="size-4 fill-current" />
+          <Play aria-hidden="true" className="size-4 fill-current" />
           {label}
         </DialogTrigger>
       ) : (
@@ -308,7 +311,7 @@ export function VideoPlayerModal({
             />
           }
         >
-          <Play className="size-5 fill-current" />
+          <Play aria-hidden="true" className="size-5 fill-current" />
           {label}
         </DialogTrigger>
       )}
@@ -368,27 +371,27 @@ export function VideoPlayerModal({
             aria-label="Close"
             onClick={() => handleOpenChange(false)}
             className={cn(
-              "pressable absolute z-70 flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-95 sm:p-3",
-              "top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))]",
+              "pressable absolute z-70 flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-[0.96] sm:p-3",
+              "end-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))]",
               controlsVisible ? "opacity-100" : "pointer-events-none opacity-0",
             )}
           >
-            <XIcon className="size-5.5" />
+            <XIcon aria-hidden="true" className="size-5.5" />
           </button>
           <button
             type="button"
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             onClick={handleFullscreen}
             className={cn(
-              "pressable absolute z-70 flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-95 sm:p-3",
-              "top-[max(0.75rem,env(safe-area-inset-top))] right-[calc(max(0.75rem,env(safe-area-inset-right))+4rem)]",
+              "pressable absolute z-70 flex items-center justify-center rounded-lg bg-white p-3.5 text-black transition-[color,background-color,border-color,transform,opacity] duration-200 hover:scale-105 hover:bg-white/90 hover:text-black active:scale-[0.96] sm:p-3",
+              "end-[calc(max(0.75rem,env(safe-area-inset-right))+4rem)] top-[max(0.75rem,env(safe-area-inset-top))]",
               controlsVisible ? "opacity-100" : "pointer-events-none opacity-0",
             )}
           >
             {isFullscreen ? (
-              <Minimize className="size-5.5" />
+              <Minimize aria-hidden="true" className="size-5.5" />
             ) : (
-              <Maximize2 className="size-5.5" />
+              <Maximize2 aria-hidden="true" className="size-5.5" />
             )}
           </button>
         </div>

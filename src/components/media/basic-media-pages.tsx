@@ -56,9 +56,7 @@ export function MediaGalleryPage(props: {
           <GoBack link={`/${entity}/${id}/${slug}`} title="Back to main" />
           <ShareButton />
         </div>
-        <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
-          {title}
-        </h1>
+        <h1 className="text-h1 text-balance lg:px-0">{title}</h1>
       </div>
       <MediaVideoImageContainer id={parseInt(id, 10)} media_type={entity} />
     </section>

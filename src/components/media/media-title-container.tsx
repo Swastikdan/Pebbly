@@ -187,8 +187,8 @@ export const MediaTitleContainer = (props: {
           </h2>
         )}
       </div>
-      <div className="flex flex-row items-center justify-between">
-        <span className="text-meta text-muted-foreground flex items-center gap-1.5 whitespace-nowrap">
+      <div className="flex flex-wrap items-center justify-between gap-y-2">
+        <span className="text-meta text-muted-foreground flex flex-wrap items-center gap-1.5">
           {releaseyear && releaseyear !== "null" && (
             <>
               <span>{releaseyear}</span>

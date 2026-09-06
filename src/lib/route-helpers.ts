@@ -127,7 +127,7 @@ export type MediaDetailDestination =
       search?: { play?: true };
     }
   | {
-      to: "/tv/$id/{-$slug}";
+      to: "/series/$id/{-$slug}";
       params: { id: string; slug?: string };
       search?: { play?: true };
     };
@@ -153,14 +153,14 @@ export function mediaDetailRoute(options: {
   }
 
   return {
-    to: "/tv/$id/{-$slug}",
+    to: "/series/$id/{-$slug}",
     params,
     ...(search ? { search } : {}),
   };
 }
 
 export type TvSeasonDestination = {
-  to: "/tv/$id/{-$slug}/season/$seasonNumber";
+  to: "/series/$id/{-$slug}/season/$seasonNumber";
   params: { id: string; slug?: string; seasonNumber: string };
 };
 
@@ -170,7 +170,7 @@ export function tvSeasonRoute(options: {
   seasonNumber: number | string;
 }): TvSeasonDestination {
   return {
-    to: "/tv/$id/{-$slug}/season/$seasonNumber",
+    to: "/series/$id/{-$slug}/season/$seasonNumber",
     params: {
       id: String(options.id),
       seasonNumber: String(options.seasonNumber),
@@ -180,7 +180,7 @@ export function tvSeasonRoute(options: {
 }
 
 export type TvSeasonsDestination = {
-  to: "/tv/$id/{-$slug}/seasons";
+  to: "/series/$id/{-$slug}/seasons";
   params: { id: string; slug?: string };
 };
 
@@ -189,7 +189,7 @@ export function tvSeasonsRoute(options: {
   slug?: string;
 }): TvSeasonsDestination {
   return {
-    to: "/tv/$id/{-$slug}/seasons",
+    to: "/series/$id/{-$slug}/seasons",
     params: {
       id: String(options.id),
       ...(options.slug ? { slug: options.slug } : {}),

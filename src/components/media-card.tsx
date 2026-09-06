@@ -152,21 +152,24 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
           <div className="absolute inset-0 bg-linear-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-200 [@media(hover:hover)]:group-hover:opacity-100" />
 
           {isRecommended && (
-            <Badge className="absolute top-2 left-2 rounded-md border-0 bg-blue-600/90 px-2 py-1 text-[10px] font-medium text-white">
+            <Badge className="absolute start-2 top-2 rounded-md border-0 bg-blue-600/90 px-2 py-1 text-[10px] font-medium text-white">
               Recommended
             </Badge>
           )}
 
           {rating > 0 && (
-            <Badge className="text-meta absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
-              <Star className="size-4 fill-yellow-400 text-yellow-400" />
+            <Badge className="text-meta absolute start-2 bottom-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
+              <Star
+                aria-hidden="true"
+                className="size-4 fill-amber-400 text-amber-400"
+              />
               <span className="font-semibold text-white">
                 {rating.toFixed(1)}
               </span>
             </Badge>
           )}
 
-          <Badge className="text-meta absolute right-2 bottom-2 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
+          <Badge className="text-meta absolute end-2 bottom-2 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
             {mediaTypeLabel}
           </Badge>
         </div>
@@ -176,7 +179,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 
       <div
         className={cn(
-          "absolute top-2 right-2 z-10 flex items-center gap-1.5",
+          "absolute end-2 top-2 z-10 flex items-center gap-1.5",
           actionsClassName,
         )}
       >
@@ -212,9 +215,9 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
                 },
               });
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color,transform] duration-150 hover:bg-red-600 hover:text-white [@media(hover:hover)]:hover:scale-105"
+            className="hover:bg-destructive flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color] duration-150 hover:text-white"
           >
-            <XIcon className="size-4" />
+            <XIcon aria-hidden="true" className="size-4" />
           </button>
         )}
         {!hideWatchlistButton && (
@@ -228,7 +231,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             release_date={release_date ?? ""}
             title={title}
             overview={overview}
-            className="h-8 w-8 rounded-md shadow-none hover:scale-105"
+            className="h-8 w-8 rounded-md shadow-none"
           />
         )}
       </div>
@@ -239,11 +242,10 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
   const { title, image, media_type, release_date, relevanceScore } = props;
 
   const formattedTitle = formatMediaTitle.encode(title);
-  // Use LQ (w342) as `src` fallback so the initial download on 1x phones
-  // is ~18 KiB not 28 KiB (w500). `srcSet` still offers w500/w780 for 2x+
-  // via `tmdbSrcSet`, so high-DPR screens pick the larger candidate without
-  // penalising 1x. Saves ~10 KiB per poster, 14 KiB reported by Pagespeed
-  // "Improve image delivery" for Mutiny (w300 28.8 KiB → w185 15 KiB).
+  // Use LQ (w185) as `src` fallback so the initial download on 1x phones
+  // is ~12 KiB not 28 KiB (w500). `srcSet` still offers w342/w500 for high-DPR
+  // screens via `tmdbSrcSet`. On mobile (159px rendered), sizes 92px/160px
+  // routes DPR 1-2 displays to w185 (185x278) instead of downloading w342.
   const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${image}`;
   const blurSrc = image ? `${IMAGE_PREFIX.PREVIEW}${image}` : undefined;
   const year = release_date ? new Date(release_date).getFullYear() : "";
@@ -256,10 +258,10 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
       formattedTitle={formattedTitle}
       containerClassName="w-40 md:w-44 lg:w-48"
       imageContainerClassName="aspect-[2/3]"
-      imageWidth={300}
-      imageHeight={450}
-      imageSizes="(max-width: 640px) 160px, (max-width: 768px) 176px, 192px"
-      mediaTypeLabel={media_type === "movie" ? "Movie" : "TV"}
+      imageWidth={192}
+      imageHeight={288}
+      imageSizes="(max-width: 767px) 92px, (max-width: 1023px) 176px, 192px"
+      mediaTypeLabel={media_type === "movie" ? "Movie" : "Series"}
       linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
       actionsClassName="transition-[transform,opacity] duration-200 ease-out"
     >
@@ -270,7 +272,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
         />
         <div className="flex min-h-4 items-center gap-1.5">
           {year && (
-            <span className="text-meta text-muted-foreground/70">{year}</span>
+            <span className="text-meta text-muted-foreground">{year}</span>
           )}
           {year && relevanceScore && (
             <span className="text-muted-foreground/30">•</span>
@@ -280,9 +282,9 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
               className={cn(
                 "text-[11px] font-semibold tabular-nums",
                 relevanceScore >= 80
-                  ? "text-emerald-600 dark:text-emerald-400"
+                  ? "text-emerald-700 dark:text-emerald-400"
                   : relevanceScore >= 60
-                    ? "text-amber-600 dark:text-amber-400"
+                    ? "text-amber-700 dark:text-amber-400"
                     : "text-muted-foreground",
               )}
             >
@@ -344,7 +346,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
       imageWidth={450}
       imageHeight={300}
       imageSizes="(max-width: 640px) 256px, (max-width: 768px) 288px, 320px"
-      mediaTypeLabel={media_type === "movie" ? "Movie" : "TV Series"}
+      mediaTypeLabel={media_type === "movie" ? "Movie" : "Series"}
       linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
       actionsClassName="transition-[color,background-color,transform] duration-300 ease-out"
     >
@@ -357,7 +359,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
             {episodeDetail?.name && (
               <>
                 <span className="text-muted-foreground/50 text-[10px]">•</span>
-                <span className="text-muted-foreground/80 max-w-37.5 truncate text-xs font-medium">
+                <span className="text-foreground/75 dark:text-muted-foreground max-w-37.5 truncate text-xs font-medium">
                   {episodeDetail.name}
                 </span>
               </>
@@ -370,7 +372,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
         />
 
         {!isTVContinueWatching && (
-          <span className="text-meta text-muted-foreground/70 capitalize">
+          <span className="text-meta text-muted-foreground capitalize">
             {year}
           </span>
         )}
@@ -391,7 +393,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
       params={{ id: String(id) }}
       className="group ring-offset-background focus-visible:ring-ring pressable relative block w-24 outline-hidden transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 md:w-28 lg:w-32"
     >
-      <div className="bg-muted border-border group-hover:border-foreground/25 relative aspect-2/3 w-full overflow-hidden rounded-lg border transition-[border-color] duration-200">
+      <div className="bg-muted relative aspect-2/3 w-full overflow-hidden rounded-lg shadow-[0px_0px_0px_1px_oklch(0_0_0/0.06),0px_1px_2px_-1px_oklch(0_0_0/0.06),0px_2px_4px_0px_oklch(0_0_0/0.04)] transition-[box-shadow] duration-150 ease-out group-hover:shadow-[0px_0px_0px_1px_oklch(0_0_0/0.08),0px_1px_2px_-1px_oklch(0_0_0/0.08),0px_2px_4px_0px_oklch(0_0_0/0.06)] dark:shadow-[0_0_0_1px_oklch(1_0_0/0.08)] dark:group-hover:shadow-[0_0_0_1px_oklch(1_0_0/0.13)]">
         <Image
           alt={name}
           src={imageUrl}
@@ -409,7 +411,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
           text={name}
           className="text-foreground group-hover:text-primary w-full truncate text-sm leading-tight font-bold transition-colors duration-200"
         />
-        <span className="text-meta text-muted-foreground/70 w-full truncate">
+        <span className="text-meta text-muted-foreground w-full truncate">
           {known_for_department}
         </span>
       </div>
@@ -423,13 +425,13 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
       <div className={cn("w-40 md:w-44 lg:w-48", props.className)}>
         <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg">
           <Skeleton className="absolute inset-0 rounded-lg" />
-          <div className="absolute top-2 right-2">
+          <div className="absolute end-2 top-2">
             <Skeleton className="size-8 rounded-md" />
           </div>
-          <div className="absolute bottom-2 left-2">
+          <div className="absolute start-2 bottom-2">
             <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
-          <div className="absolute right-2 bottom-2">
+          <div className="absolute end-2 bottom-2">
             <Skeleton className="h-4.5 w-10 rounded-md" />
           </div>
         </div>
@@ -445,13 +447,13 @@ const MediaCardSkeleton = (props: MediaCardSkeletonProps) => {
       <div className={cn("w-64 md:w-72 lg:w-80", props.className)}>
         <div className="relative aspect-video w-full overflow-hidden rounded-lg">
           <Skeleton className="absolute inset-0 rounded-lg" />
-          <div className="absolute top-2 right-2">
+          <div className="absolute end-2 top-2">
             <Skeleton className="size-8 rounded-md" />
           </div>
-          <div className="absolute bottom-2 left-2">
+          <div className="absolute start-2 bottom-2">
             <Skeleton className="h-4.5 w-12 rounded-md" />
           </div>
-          <div className="absolute right-2 bottom-2">
+          <div className="absolute end-2 bottom-2">
             <Skeleton className="h-4.5 w-14 rounded-md" />
           </div>
         </div>

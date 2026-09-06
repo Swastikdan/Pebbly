@@ -138,7 +138,10 @@ function Toasts({
                       className="[&_svg]:pointer-events-none [&_svg]:shrink-0 [&>svg]:h-lh [&>svg]:w-4"
                       data-slot="toast-icon"
                     >
-                      <Icon className="in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:animate-spin in-data-[type=loading]:opacity-80" />
+                      <Icon
+                        aria-hidden="true"
+                        className="in-data-[type=error]:text-destructive-foreground in-data-[type=info]:text-info-foreground in-data-[type=success]:text-success-foreground in-data-[type=warning]:text-warning-foreground in-data-[type=loading]:animate-spin in-data-[type=loading]:opacity-80"
+                      />
                     </div>
                   )}
 

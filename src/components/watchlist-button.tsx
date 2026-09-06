@@ -116,7 +116,8 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
       {showTrash ? (
         <>
           <TrashBin
-            className={cn("size-5", showLabel && "mr-1.5 size-3.5 sm:size-4")}
+            aria-hidden="true"
+            className={cn("size-5", showLabel && "me-1.5 size-3.5 sm:size-4")}
           />
           {showLabel && <span>Remove</span>}
         </>
@@ -127,11 +128,12 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
             className={cn(
               "flex items-center justify-center",
               isAnimating && "bookmark-pop",
-              showLabel && "mr-1.5",
+              showLabel && "me-1.5",
             )}
             style={{ display: "inline-flex" }}
           >
             <BookMarkFilledIcon
+              aria-hidden="true"
               className={cn("size-5", showLabel && "size-3.5 sm:size-4")}
             />
           </span>
@@ -140,7 +142,8 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
       ) : (
         <>
           <BookMarkIcon
-            className={cn("size-5", showLabel && "mr-1.5 size-3.5 sm:size-4")}
+            aria-hidden="true"
+            className={cn("size-5", showLabel && "me-1.5 size-3.5 sm:size-4")}
           />
           {showLabel && <span>Watchlist</span>}
         </>

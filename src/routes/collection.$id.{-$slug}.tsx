@@ -114,7 +114,7 @@ function MovieCollectionPage() {
         </div>
 
         <div className="flex w-full flex-1 flex-col items-center justify-center gap-2 overflow-hidden py-3 sm:items-start">
-          <span className="line-clamp-1 text-center text-xl font-bold transition-opacity duration-200 ease-in-out hover:opacity-90 sm:text-left md:text-2xl dark:hover:opacity-70">
+          <span className="line-clamp-1 text-center text-xl font-bold transition-opacity duration-200 ease-in-out hover:opacity-90 sm:text-start md:text-2xl dark:hover:opacity-70">
             {name}
           </span>
           <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
@@ -124,7 +124,11 @@ function MovieCollectionPage() {
                 variant="secondary"
               >
                 <span className="flex w-full flex-row items-center gap-1">
-                  <Star className="size-3 fill-current" size={16} />
+                  <Star
+                    aria-hidden="true"
+                    className="size-3 fill-current"
+                    size={16}
+                  />
                   {user_rating} %
                 </span>
               </Badge>
@@ -133,7 +137,7 @@ function MovieCollectionPage() {
             {` • `}
             <span className="text-sm">{part_count} Movies</span>
           </div>
-          <span className="line-clamp-3 text-center text-sm sm:text-left md:text-base">
+          <span className="line-clamp-3 text-center text-sm leading-relaxed text-pretty sm:text-start md:text-base">
             {overview || "No overview available"}
           </span>
         </div>

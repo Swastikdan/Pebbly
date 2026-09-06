@@ -122,24 +122,29 @@ export function CollectionPage({ listId }: { listId: string }) {
               style={{ backgroundColor: list.color }}
             />
           )}
-          <h1 className="text-foreground truncate text-xl font-bold tracking-tight sm:text-2xl">
-            {list.name}
-          </h1>
+          <h1 className="text-h1 truncate text-balance">{list.name}</h1>
           <span
             className="text-muted-foreground shrink-0"
             title={isPublic ? "Public" : "Private"}
           >
-            {isPublic ? <Globe size={14} /> : <Lock size={14} />}
+            {isPublic ? (
+              <Globe aria-hidden="true" size={14} />
+            ) : (
+              <Lock aria-hidden="true" size={14} />
+            )}
+            <span className="sr-only">
+              {isPublic ? "Public collection" : "Private collection"}
+            </span>
           </span>
           {isPebblyPicks && (
             <span className="bg-foreground text-background inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium">
-              <Sparkles size={10} />
+              <Sparkles aria-hidden="true" size={10} />
               AI Curated
             </span>
           )}
           {isOrdered && (
             <span className="bg-secondary text-secondary-foreground inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium">
-              <ListOrdered size={10} />
+              <ListOrdered aria-hidden="true" size={10} />
               Ranked
             </span>
           )}
@@ -155,7 +160,7 @@ export function CollectionPage({ listId }: { listId: string }) {
               className="border-border text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
               aria-label={`Edit ${list.name}`}
             >
-              <Pencil size={13} />
+              <Pencil aria-hidden="true" size={13} />
               <span className="hidden sm:inline">Edit</span>
             </Button>
             <Button
@@ -163,10 +168,10 @@ export function CollectionPage({ listId }: { listId: string }) {
               variant="secondary"
               size="sm"
               onClick={handleDelete}
-              className="border-border text-muted-foreground hover:text-destructive h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
+              className="border-border text-muted-foreground hover:text-destructive-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
               aria-label={`Delete ${list.name}`}
             >
-              <Trash2 size={13} />
+              <Trash2 aria-hidden="true" size={13} />
               <span className="hidden sm:inline">Delete</span>
             </Button>
           </div>
@@ -184,7 +189,7 @@ export function CollectionPage({ listId }: { listId: string }) {
             <span className="max-w-md truncate">{list.description}</span>
           </>
         )}
-        <span className="ml-auto shrink-0 text-[11px]">
+        <span className="ms-auto shrink-0 text-[11px]">
           Created{" "}
           {new Date(list.createdAt).toLocaleDateString("en-US", {
             month: "short",

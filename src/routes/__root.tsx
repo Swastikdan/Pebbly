@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
+  useLocation,
   useRouter,
 } from "@tanstack/react-router";
 import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
@@ -208,6 +209,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
   const [commandOpen, setCommandOpen] = useState(false);
   const router = useRouter();
+  const location = useLocation();
+  const mainContentRef = useRef<HTMLElement>(null);
+  const previousPathnameRef = useRef(location.pathname);
 
   useEffect(() => {
     const openCommandPalette = () => setCommandOpen(true);
@@ -231,6 +235,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
   // Keeps the OS-preference subscription alive for the whole app.
   useTheme();
+
+  useEffect(() => {
+    if (previousPathnameRef.current === location.pathname) {
+      return;
+    }
+
+    previousPathnameRef.current = location.pathname;
+    mainContentRef.current?.focus({ preventScroll: true });
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleWindowError = (event: ErrorEvent) => {
@@ -371,7 +384,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <NavigationProgressBar />
           <a
             href="#main-content"
-            className="focus:border-border focus:bg-background focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:inline-flex focus:items-center focus:justify-center focus:rounded-lg focus:border focus:px-4 focus:py-2.5 focus:font-medium focus:shadow-none focus:ring-2 focus:outline-hidden"
+            className="focus:border-border focus:bg-background focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-100 focus:inline-flex focus:items-center focus:justify-center focus:rounded-lg focus:border focus:px-4 focus:py-2.5 focus:font-medium focus:shadow-none focus:ring-2 focus:outline-hidden"
           >
             Skip to main content
           </a>
@@ -380,6 +393,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </Suspense>
           <Navbar />
           <main
+            ref={mainContentRef}
             id="main-content"
             tabIndex={-1}
             className="focus-visible:outline-ring mobile-nav-spacer focus-visible:outline-2 focus-visible:outline-offset-2"

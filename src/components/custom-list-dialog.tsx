@@ -43,14 +43,14 @@ function SegmentedButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-[10.5px] transition-[color,background-color,border-color,box-shadow]",
+        "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs leading-tight transition-[color,background-color,border-color,box-shadow]",
         active
           ? "bg-card text-foreground border-border font-semibold"
           : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border-transparent bg-transparent",
       )}
       aria-pressed={active}
     >
-      <Icon size={11} />
+      <Icon aria-hidden="true" size={11} />
       {label}
     </button>
   );
@@ -107,6 +107,7 @@ export function CustomListDialog({
   const isEditing = !!listId;
   const listNameId = useId();
   const listDescId = useId();
+  const errorId = useId();
 
   useEffect(() => {
     if (open) {
@@ -197,7 +198,7 @@ export function CustomListDialog({
       <DialogPopup className="overflow-hidden rounded-lg p-0 sm:max-w-lg">
         <div className="space-y-5 px-6 py-5">
           <DialogHeader className="relative">
-            <DialogTitle className="font-heading pr-6 text-left text-lg font-semibold tracking-tight">
+            <DialogTitle className="font-heading pe-6 text-start text-lg font-semibold tracking-tight">
               {isEditing ? "Edit Collection" : "New Collection"}
             </DialogTitle>
           </DialogHeader>
@@ -220,6 +221,8 @@ export function CustomListDialog({
                 if (e.key === "Enter") handleSubmit();
               }}
               maxLength={50}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? errorId : undefined}
               autoFocus
               className={cn(
                 "bg-card h-10 w-full rounded-lg border px-3.5 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
@@ -242,7 +245,7 @@ export function CustomListDialog({
               onChange={(e) => setDescription(e.target.value.substring(0, 150))}
               maxLength={150}
               className={cn(
-                "bg-card min-h-16 w-full resize-none rounded-lg border p-3 text-xs outline-hidden transition-[color,background-color,border-color,box-shadow] duration-200",
+                "bg-card min-h-16 w-full resize-none rounded-lg border p-3 text-base leading-relaxed outline-hidden transition-[color,background-color,border-color,box-shadow] duration-200 sm:text-sm",
                 "placeholder:text-muted-foreground/60",
                 "focus-visible:border-ring/60 focus-visible:bg-card focus-visible:ring-ring/30 focus-visible:ring-1",
                 "border-border",
@@ -273,6 +276,7 @@ export function CustomListDialog({
                   >
                     {isSelected && (
                       <Check
+                        aria-hidden="true"
                         size={12}
                         className="absolute inset-0 m-auto text-white"
                         strokeWidth={3}
@@ -303,7 +307,7 @@ export function CustomListDialog({
                   label="Public"
                 />
               </div>
-              <p className="text-muted-foreground/80 min-h-7 text-[10px] leading-snug">
+              <p className="text-muted-foreground/80 min-h-7 text-xs leading-relaxed">
                 {visibility === "private"
                   ? "Only you can see this collection."
                   : "Anyone with the link can view it."}
@@ -314,7 +318,7 @@ export function CustomListDialog({
                   onClick={handleCopyLink}
                   className="bg-secondary/70 text-secondary-foreground hover:bg-secondary flex cursor-pointer items-center gap-1.5 self-start rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors"
                 >
-                  <Copy size={10} />
+                  <Copy aria-hidden="true" size={10} />
                   Copy public link
                 </button>
               )}
@@ -338,7 +342,7 @@ export function CustomListDialog({
                   label="Ranked"
                 />
               </div>
-              <p className="text-muted-foreground/80 min-h-7 text-[10px] leading-snug">
+              <p className="text-muted-foreground/80 min-h-7 text-xs leading-relaxed">
                 {sortType === "unordered"
                   ? "A simple list of titles."
                   : "Titles are numbered #1, #2, … and can be reordered."}
@@ -347,7 +351,11 @@ export function CustomListDialog({
           </div>
 
           {error && (
-            <p className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs">
+            <p
+              id={errorId}
+              role="alert"
+              className="bg-destructive/10 text-destructive-foreground rounded-lg px-3 py-2 text-xs"
+            >
               {error}
             </p>
           )}
@@ -368,7 +376,7 @@ export function CustomListDialog({
               className="h-10 cursor-pointer text-xs font-bold"
             >
               {saving
-                ? "Saving..."
+                ? "Saving…"
                 : isEditing
                   ? "Save Changes"
                   : "Create Collection"}

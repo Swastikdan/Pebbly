@@ -34,9 +34,10 @@ export default function AccountButton({ variant }: AccountButtonProps) {
             <SignInButton mode="modal" appearance={shadcn}>
               <Button
                 variant="outline"
+                aria-label="Sign In"
                 className="flex size-9 items-center justify-center rounded-full p-0 before:rounded-full"
               >
-                <UserIcon className="size-5" />
+                <UserIcon aria-hidden="true" className="size-5" />
               </Button>
             </SignInButton>
           </Show>
@@ -64,7 +65,7 @@ export default function AccountButton({ variant }: AccountButtonProps) {
       <ClerkLoading>
         <div className="flex h-full w-full flex-col items-center justify-center">
           <span className="mobile-bottom-nav-tab-icon">
-            <UserIcon className="size-6" />
+            <UserIcon aria-hidden="true" className="size-6" />
           </span>
           <span className="mobile-bottom-nav-tab-label">Account</span>
         </div>

@@ -63,7 +63,7 @@ function PageShell({ children }: { children: ReactNode }) {
         <div className="mb-6 flex items-center justify-between gap-3">
           <GoBack title="Back" />
         </div>
-        <h1 className="animate-fade-in-up mb-6 text-start text-2xl font-bold tracking-tight md:text-3xl">
+        <h1 className="text-h1 animate-fade-in-up mb-6 text-start">
           AI Recommendations
         </h1>
         {children}
@@ -250,7 +250,7 @@ function RecommendationsContent({
       />
 
       {error && (
-        <div className="border-destructive/50 bg-destructive/10 text-destructive animate-in fade-in slide-in-from-top-1 rounded-lg border p-4 text-sm">
+        <div className="border-destructive/50 bg-destructive/10 text-destructive-foreground animate-in fade-in slide-in-from-top-1 rounded-lg border p-4 text-sm">
           {describeGenerationError(error)}
         </div>
       )}

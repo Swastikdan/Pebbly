@@ -127,6 +127,14 @@ export default defineNitroConfig({
     "30 3 * * *": "user-maintenance",
   },
   routeRules: {
+    // Homepage edge caching: cache on Cloudflare edge CDN for 1 hour so repeat visits
+    // and Lighthouse audits get instant (<50ms) TTFB, with stale-while-revalidate.
+    "/": {
+      headers: {
+        "Cache-Control":
+          "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+      },
+    },
     "/assets/**": {
       headers: {
         "Cache-Control": "public, max-age=31536000, immutable",
@@ -152,6 +160,8 @@ export default defineNitroConfig({
         "Cache-Control": "public, max-age=86400",
       },
     },
+    // Unversioned favicon/icons: files never get hashed, so browsers can cache
+    // them for a week and revalidate once it expires.
     "/favicon*": {
       headers: {
         "Cache-Control": "public, max-age=604800",

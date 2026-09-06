@@ -370,6 +370,38 @@ async function runHistoryPipeline(
 async function runHomepagePipeline(
   context: PipelineContext,
 ): Promise<GenerateResult> {
+  const [homepageEntry] = await context.db
+    .select()
+    .from(homepageRecommendations)
+    .where(eq(homepageRecommendations.userId, context.userId))
+    .limit(1);
+
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  const isGeneratedInLast24Hours =
+    homepageEntry?.status === "success" &&
+    (homepageEntry?.lastUpdatedAt ?? 0) > 0 &&
+    Date.now() - (homepageEntry?.lastUpdatedAt ?? 0) < ONE_DAY_MS;
+
+  if (isGeneratedInLast24Hours) {
+    const existingRecs = parseStoredRecommendations(
+      homepageEntry.recommendations,
+    );
+    if (existingRecs && existingRecs.length > 0) {
+      return {
+        recommendations: existingRecs,
+        inputStats: {
+          movieCount: existingRecs.filter((r) => r.mediaType === "movie")
+            .length,
+          tvCount: existingRecs.filter((r) => r.mediaType === "tv").length,
+          episodesWatched: 0,
+          totalItems: existingRecs.length,
+        },
+        cached: true,
+        generatedAt: homepageEntry.lastUpdatedAt ?? Date.now(),
+      };
+    }
+  }
+
   const token = await consumeGenerationToken(
     context.db,
     context.userId,
@@ -383,11 +415,6 @@ async function runHomepagePipeline(
     context.userId,
     ["not_interested", "dislike"],
   );
-  const [homepageEntry] = await context.db
-    .select()
-    .from(homepageRecommendations)
-    .where(eq(homepageRecommendations.userId, context.userId))
-    .limit(1);
   const previous = parseStoredRecommendations(homepageEntry?.recommendations);
   const recent = await getRecentRecommendationExclusions(
     context.db,

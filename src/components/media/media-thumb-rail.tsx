@@ -76,6 +76,8 @@ export function MediaThumbRail<T>({
               className="group focus-visible:ring-ring focus-visible:ring-offset-background relative cursor-pointer rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2"
               role="button"
               tabIndex={0}
+              aria-label={getLightboxTitle(item)}
+              aria-haspopup="dialog"
               onClick={() => setActiveKey(itemKey)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -117,7 +119,7 @@ export function MediaThumbRail<T>({
         {viewMoreHref && (
           <Link to={viewMoreHref}>
             <Button
-              className="pressable mr-10 ml-5 flex items-center justify-center rounded-lg"
+              className="pressable ms-5 me-10 flex items-center justify-center rounded-lg"
               size="lg"
               variant="secondary"
             >

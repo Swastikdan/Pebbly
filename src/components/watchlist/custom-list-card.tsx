@@ -54,25 +54,27 @@ export function CustomListCard({
       <div className="relative">
         <Link
           to={href}
-          className="relative block aspect-16/10 w-full overflow-hidden rounded-lg text-left"
+          className="relative block aspect-16/10 w-full overflow-hidden rounded-lg text-start"
           aria-label={`Open ${list.name}`}
         >
           <ListCollage previews={previews} color={list.color} />
         </Link>
 
         {isPebblyPicks && (
-          <span className="bg-foreground text-background absolute top-2 left-2 z-10 flex size-6 items-center justify-center rounded-md">
-            <Sparkles size={12} />
+          <span className="bg-foreground text-background absolute start-2 top-2 z-10 flex size-6 items-center justify-center rounded-md">
+            <Sparkles aria-hidden="true" size={12} />
+            <span className="sr-only">AI curated</span>
           </span>
         )}
 
-        <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+        <div className="absolute end-2 top-2 z-10 flex items-center gap-1">
           {isPublic && (
             <span
               className="bg-background/95 text-muted-foreground border-border flex size-7 items-center justify-center rounded-md border sm:size-5.5"
               title="Public collection"
             >
-              <Globe size={11} />
+              <Globe aria-hidden="true" size={11} />
+              <span className="sr-only">Public collection</span>
             </span>
           )}
           {isOrdered && (
@@ -80,7 +82,8 @@ export function CustomListCard({
               className="bg-foreground text-background flex size-7 items-center justify-center rounded-md sm:size-5.5"
               title="Ranked collection"
             >
-              <ListOrdered size={11} />
+              <ListOrdered aria-hidden="true" size={11} />
+              <span className="sr-only">Ranked collection</span>
             </span>
           )}
           {!isPublic && !isPebblyPicks && (
@@ -88,7 +91,8 @@ export function CustomListCard({
               className="bg-background/95 text-muted-foreground/70 border-border flex size-7 items-center justify-center rounded-md border sm:size-5.5 md:hidden"
               title="Private collection"
             >
-              <Lock size={11} />
+              <Lock aria-hidden="true" size={11} />
+              <span className="sr-only">Private collection</span>
             </span>
           )}
           <span className="bg-background/95 border-border inline-flex h-6 items-center rounded-md border px-2.5 text-[11px] font-medium">
@@ -108,7 +112,7 @@ export function CustomListCard({
               className="bg-background/90 text-muted-foreground border-border hover:text-foreground flex size-8 cursor-pointer items-center justify-center rounded-md border transition-colors md:size-7"
               aria-label={`Edit ${list.name}`}
             >
-              <Pencil size={14} />
+              <Pencil aria-hidden="true" size={14} />
             </button>
             <button
               type="button"
@@ -120,7 +124,7 @@ export function CustomListCard({
               className="bg-background/90 text-muted-foreground border-border hover:text-foreground flex size-8 cursor-pointer items-center justify-center rounded-md border transition-colors md:size-7"
               aria-label={`Duplicate ${list.name}`}
             >
-              <Copy size={14} />
+              <Copy aria-hidden="true" size={14} />
             </button>
             <button
               type="button"
@@ -129,21 +133,21 @@ export function CustomListCard({
                 e.stopPropagation();
                 onDelete();
               }}
-              className="bg-background/90 text-muted-foreground border-border hover:text-destructive hover:border-destructive/40 flex size-8 cursor-pointer items-center justify-center rounded-md border transition-colors md:size-7"
+              className="bg-background/90 text-muted-foreground border-border hover:text-destructive-foreground hover:border-destructive/40 flex size-8 cursor-pointer items-center justify-center rounded-md border transition-colors md:size-7"
               aria-label={`Delete ${list.name}`}
             >
-              <Trash2 size={14} />
+              <Trash2 aria-hidden="true" size={14} />
             </button>
           </div>
         )}
       </div>
 
       <div className="mt-3 flex items-start justify-between gap-2 px-1">
-        <Link to={href} className="min-w-0 flex-1 text-left">
-          <h3 className="text-foreground group-hover/card:text-primary truncate text-base font-bold tracking-tight transition-colors duration-250 sm:text-sm">
+        <Link to={href} className="min-w-0 flex-1 text-start">
+          <h3 className="text-foreground group-hover/card:text-primary truncate text-base font-bold transition-colors duration-250">
             {list.name}
           </h3>
-          <p className="text-muted-foreground/80 mt-0.5 truncate text-xs font-medium sm:text-[10px]">
+          <p className="text-muted-foreground/80 mt-0.5 truncate text-xs font-medium">
             {isPebblyPicks ? (
               "AI-curated for you"
             ) : (

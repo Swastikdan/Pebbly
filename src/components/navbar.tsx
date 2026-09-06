@@ -88,9 +88,9 @@ const Navbar = () => {
             className="size-8"
           />
 
-          <h1 className="font-heading text-base font-semibold tracking-tight md:text-lg">
+          <span className="font-heading text-base font-semibold tracking-tight md:text-lg">
             {SITE_CONFIG.name}
-          </h1>
+          </span>
           {(IS_PREVIEW_BUILD || IS_DEV_BUILD) && (
             <span className="bg-foreground text-background rounded-md px-2 py-0.5 text-[10px] font-medium">
               {IS_PREVIEW_BUILD ? "Preview" : "Dev"}
@@ -98,11 +98,11 @@ const Navbar = () => {
           )}
         </Link>
         <section className="flex items-center gap-1.5 md:gap-2">
-          <ul className="hidden gap-1.5 md:flex">
+          <div className="hidden gap-1.5 md:flex">
             {NAV_ITEMS.map((item) => (
               <DesktopNavMenuItem key={item.slug} item={item} />
             ))}
-          </ul>
+          </div>
           <div className="hidden md:flex md:items-center md:gap-1.5">
             <ThemeSwitcher />
             <DesktopNavButtons />

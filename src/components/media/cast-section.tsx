@@ -54,12 +54,12 @@ export const CastSection = (props: {
               {is_more_cast_crew && hasCast && (
                 <Link to={castCrewHref}>
                   <Button
-                    className="pressable mr-10 ml-5 flex items-center justify-center rounded-lg"
+                    className="pressable ms-5 me-10 flex items-center justify-center rounded-lg"
                     size="lg"
                     variant="secondary"
                   >
                     View More
-                    <ArrowRightLine size={24} />
+                    <ArrowRightLine aria-hidden="true" size={24} />
                   </Button>
                 </Link>
               )}
@@ -71,8 +71,9 @@ export const CastSection = (props: {
           >
             View full cast & crew
             <ArrowRightLine
+              aria-hidden="true"
               size={14}
-              className="ml-1 inline-block transition-transform [@media(hover:hover)]:group-hover:translate-x-0.5"
+              className="ms-1 inline-block transition-transform [@media(hover:hover)]:group-hover:translate-x-0.5"
             />
           </Link>
         </div>

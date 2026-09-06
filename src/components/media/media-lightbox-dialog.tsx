@@ -17,7 +17,7 @@ export function PlayOverlay() {
   return (
     <div className="absolute inset-0 flex items-center justify-center">
       <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-200 [@media(hover:hover)]:group-hover:scale-110">
-        <Play className="size-6 fill-white text-white" />
+        <Play aria-hidden="true" className="size-6 fill-white text-white" />
       </div>
     </div>
   );
@@ -59,16 +59,16 @@ export function LightboxNavButton({
       variant="ghost"
       size="icon"
       aria-label={label}
-      className={`${dir === "prev" ? "left-4" : "right-4"} ${NAV_BUTTON_CLASS}`}
+      className={`${dir === "prev" ? "start-4" : "end-4"} ${NAV_BUTTON_CLASS}`}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
     >
       {dir === "prev" ? (
-        <ChevronLeft className="size-6" />
+        <ChevronLeft aria-hidden="true" className="size-6" />
       ) : (
-        <ChevronRight className="size-6" />
+        <ChevronRight aria-hidden="true" className="size-6" />
       )}
     </Button>
   );

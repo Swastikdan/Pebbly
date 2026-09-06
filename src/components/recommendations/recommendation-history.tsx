@@ -100,7 +100,7 @@ function HistoryAccordionItem({
       )}
     >
       <AccordionTrigger className="hover:bg-secondary/10 data-panel-open:bg-secondary/10 px-4 py-3 text-sm font-medium transition-colors hover:no-underline">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pr-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pe-2">
           <Badge
             variant="outline"
             className="shrink-0 text-[10px] font-medium capitalize"
@@ -120,16 +120,16 @@ function HistoryAccordionItem({
               ` · ${entry.mediaTypePreference === "movie" ? "Movies" : "TV"}`}
           </span>
 
-          <div className="ml-auto hidden shrink-0 items-center gap-2 sm:flex">
+          <div className="ms-auto hidden shrink-0 items-center gap-2 sm:flex">
             {movieCount > 0 && (
               <span className="text-muted-foreground/60 inline-flex items-center gap-1 text-[10px]">
-                <Film className="size-3" />
+                <Film aria-hidden="true" className="size-3" />
                 {movieCount}
               </span>
             )}
             {tvCount > 0 && (
               <span className="text-muted-foreground/60 inline-flex items-center gap-1 text-[10px]">
-                <Tv className="size-3" />
+                <Tv aria-hidden="true" className="size-3" />
                 {tvCount}
               </span>
             )}
@@ -137,9 +137,9 @@ function HistoryAccordionItem({
               className={cn(
                 "text-[10px] font-semibold tabular-nums",
                 avgScore >= 80
-                  ? "text-emerald-600 dark:text-emerald-400"
+                  ? "text-emerald-700 dark:text-emerald-400"
                   : avgScore >= 60
-                    ? "text-amber-600 dark:text-amber-400"
+                    ? "text-amber-700 dark:text-amber-400"
                     : "text-muted-foreground",
               )}
             >
@@ -169,20 +169,20 @@ function HistoryAccordionItem({
             <Button
               size="sm"
               variant="secondary"
-              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.97]"
+              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.96]"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect();
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             >
-              <ArrowUpRight className="size-3.5" />
+              <ArrowUpRight aria-hidden="true" className="size-3.5" />
               View Cards
             </Button>
             <Button
               size="sm"
               variant="secondary"
-              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.97]"
+              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.96]"
               disabled={isGenerating}
               onClick={(e) => {
                 e.stopPropagation();
@@ -190,6 +190,7 @@ function HistoryAccordionItem({
               }}
             >
               <RefreshCw
+                aria-hidden="true"
                 className={cn("size-3.5", isGenerating && "animate-spin")}
               />
               Generate Again
@@ -197,38 +198,38 @@ function HistoryAccordionItem({
             <Button
               size="sm"
               variant="secondary"
-              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.97]"
+              className="border-border h-8 shrink-0 gap-1.5 rounded-lg border text-xs shadow-none transition-[color,background-color,border-color,transform] hover:scale-[1.03] active:scale-[0.96]"
               disabled={isGenerating}
               onClick={(e) => {
                 e.stopPropagation();
                 onGenerateMore();
               }}
             >
-              <Plus className="size-3.5" />
+              <Plus aria-hidden="true" className="size-3.5" />
               Generate More
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 ml-auto h-8 shrink-0 gap-1.5 rounded-lg text-xs transition-colors"
+              className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive/10 ms-auto h-8 shrink-0 gap-1.5 rounded-lg text-xs transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
             >
-              <Trash2 className="size-3.5" />
+              <Trash2 aria-hidden="true" className="size-3.5" />
               Delete
             </Button>
           </div>
 
           <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
             <span className="flex items-center gap-1">
-              <Film className="size-3.5" />
+              <Film aria-hidden="true" className="size-3.5" />
               {movieCount} {movieCount === 1 ? "movie" : "movies"}
             </span>
             <span className="text-muted-foreground/30">·</span>
             <span className="flex items-center gap-1">
-              <Tv className="size-3.5" />
+              <Tv aria-hidden="true" className="size-3.5" />
               {tvCount} TV {tvCount === 1 ? "show" : "shows"}
             </span>
             <span className="text-muted-foreground/30">·</span>
@@ -238,9 +239,9 @@ function HistoryAccordionItem({
                 className={cn(
                   "font-semibold",
                   avgScore >= 80
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-emerald-700 dark:text-emerald-400"
                     : avgScore >= 60
-                      ? "text-amber-600 dark:text-amber-400"
+                      ? "text-amber-700 dark:text-amber-400"
                       : "text-muted-foreground",
                 )}
               >

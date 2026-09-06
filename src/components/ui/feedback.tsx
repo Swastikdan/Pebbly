@@ -30,8 +30,9 @@ export function ErrorBanner({
 }) {
   return (
     <div
+      role="alert"
       className={cn(
-        "border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-3 text-xs",
+        "border-destructive/30 bg-destructive/10 text-destructive-foreground rounded-lg border p-3 text-xs",
         className,
       )}
     >

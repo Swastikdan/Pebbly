@@ -32,7 +32,7 @@ export function Pagination({
         disabled={currentPage === 1}
         aria-label="Previous Page"
       >
-        <ChevronLeft />
+        <ChevronLeft aria-hidden="true" />
         <span>Prev</span>
       </Button>
       <div className="bg-secondary/60 flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 md:hidden">
@@ -114,13 +114,13 @@ export function Pagination({
       </div>
       <Button
         variant="outline"
-        className="border-border/60 flex-1 rounded-lg px-4 pl-4 text-sm md:flex-none"
+        className="border-border/60 flex-1 rounded-lg px-4 text-sm md:flex-none"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Next Page"
       >
         Next
-        <ChevronRight />
+        <ChevronRight aria-hidden="true" />
       </Button>
     </nav>
   );

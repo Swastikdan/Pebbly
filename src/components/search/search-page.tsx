@@ -205,7 +205,7 @@ export function SearchPage() {
 
           <Skeleton className="h-8 w-25 shrink-0 rounded-lg" />
 
-          <Skeleton className="ml-auto h-3 w-17.5 shrink-0 rounded" />
+          <Skeleton className="ms-auto h-3 w-17.5 shrink-0 rounded" />
         </div>
         <div className="flex min-h-105 w-full items-center justify-center">
           <MediaGrid>
@@ -340,6 +340,7 @@ export function SearchPage() {
           >
             <SelectTrigger
               size="sm"
+              aria-label="Filter search results by minimum rating"
               className="border-border/60 bg-secondary/30 h-8 min-h-8 w-auto shrink-0 gap-2 rounded-lg px-3 text-xs font-medium"
             >
               <SelectValue />
@@ -357,7 +358,7 @@ export function SearchPage() {
             </SelectPopup>
           </Select>
 
-          <span className="text-muted-foreground ml-auto text-[10px]">
+          <span className="text-muted-foreground ms-auto text-[10px]">
             {data?.total_results ?? 0} results
           </span>
         </div>
@@ -403,9 +404,7 @@ export function SearchPage() {
         </div>
         {!hasValidQuery && (
           <div className="mb-6 flex flex-col gap-1">
-            <h1 className="animate-fade-in text-2xl font-bold tracking-tight md:text-3xl">
-              Search
-            </h1>
+            <h1 className="text-h1 animate-fade-in">Search</h1>
             <p className="text-muted-foreground text-sm">
               Find movies, TV shows, and more
             </p>
@@ -488,7 +487,7 @@ function SearchHistory({
               }}
               aria-label={`Remove "${item}" from history`}
             >
-              <XCircleIcon size={14} />
+              <XCircleIcon aria-hidden="true" size={14} />
             </Button>
           </div>
         ))}

@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/tanstackstart-react";
+import { captureException } from "@sentry/tanstackstart-react";
 
 const REPORT_COOLDOWN_MS = 10_000;
 let lastReportAt = 0;
@@ -117,6 +117,25 @@ export function reportClientSideError(
 
   const message =
     error instanceof Error ? error.message : String(error || "Unknown error");
+
+  // Ignore errors when offline or due to standard network failures
+  if (typeof navigator !== "undefined" && !navigator.onLine) return;
+  if (error instanceof DOMException && error.name === "AbortError") return;
+
+  const lowerMsg = message.toLowerCase();
+  if (
+    lowerMsg.includes("abort") ||
+    lowerMsg.includes("resizeobserver") ||
+    lowerMsg.includes("failed to fetch") ||
+    lowerMsg.includes("fetch failed") ||
+    lowerMsg.includes("networkerror") ||
+    lowerMsg.includes("network error") ||
+    lowerMsg.includes("load failed") ||
+    lowerMsg.includes("net::err_")
+  ) {
+    return;
+  }
+
   const route = context.route ?? window.location.pathname;
   const diagnostics = classifyError(error, context.source);
   const reportKey = `${context.source}|${message}|${route}|${context.endpoint ?? ""}`;
@@ -128,7 +147,7 @@ export function reportClientSideError(
   lastReportKey = reportKey;
   lastReportAt = now;
 
-  Sentry.captureException(error, {
+  captureException(error, {
     tags: {
       source: context.source,
       route,

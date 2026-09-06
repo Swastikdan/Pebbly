@@ -162,16 +162,16 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
     <div className={cn("relative w-full overflow-hidden", className)}>
       {isControlsEnabled && canScrollLeft && (
         <>
-          <div className="from-background pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-linear-to-r to-transparent" />
+          <div className="from-background pointer-events-none absolute inset-y-0 start-0 z-10 w-16 bg-linear-to-r to-transparent" />
           <Button
             aria-label="Scroll left"
-            className="absolute top-1/2 left-2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-md transition-[color,background-color,transform] duration-200 sm:flex [@media(hover:hover)]:hover:scale-105"
+            className="absolute start-2 top-1/2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-md transition-[color,background-color,transform] duration-200 sm:flex [@media(hover:hover)]:hover:scale-105"
             variant="light"
             size="icon"
             onClick={scrollLeft}
             tabIndex={0}
           >
-            <ArrowLeftLine className="size-5" />
+            <ArrowLeftLine aria-hidden="true" className="size-5" />
           </Button>
         </>
       )}
@@ -186,16 +186,16 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
       </section>
       {isControlsEnabled && canScrollRight && (
         <>
-          <div className="from-background pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-linear-to-l to-transparent" />
+          <div className="from-background pointer-events-none absolute inset-y-0 end-0 z-10 w-16 bg-linear-to-l to-transparent" />
           <Button
             aria-label="Scroll right"
-            className="absolute top-1/2 right-2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-md transition-[color,background-color,transform] duration-200 sm:flex [@media(hover:hover)]:hover:scale-105"
+            className="absolute end-2 top-1/2 z-20 hidden size-9 -translate-y-1/2 transform items-center justify-center rounded-md transition-[color,background-color,transform] duration-200 sm:flex [@media(hover:hover)]:hover:scale-105"
             variant="light"
             size="icon"
             onClick={scrollRight}
             tabIndex={0}
           >
-            <ArrowRightLine className="size-5" />
+            <ArrowRightLine aria-hidden="true" className="size-5" />
           </Button>
         </>
       )}

@@ -14,7 +14,7 @@ const TMDB_IMAGE_URL_RE = /^(https:\/\/image\.tmdb\.org\/t\/p\/)([^/]+)(\/.+)$/;
  * image, so one universal ladder covers posters, backdrops, profiles, and
  * episode stills without needing to know the image class.
  */
-const WIDTH_LADDER = [92, 154, 185, 300, 342, 500, 780, 1280] as const;
+const WIDTH_LADDER = [92, 154, 185, 342, 500, 780, 1280] as const;
 
 const H632_APPROX_WIDTH = 421;
 
@@ -42,6 +42,10 @@ export function tmdbSrcSet(src: string): string | undefined {
   } else {
     for (const width of WIDTH_LADDER) {
       entries.add(`${base}w${width}${path} ${width}w`);
+    }
+    // Retain w300 if the source is specifically a backdrop/still variant (TMDB only documents w300 for backdrops/stills).
+    if (currentSize === "w300") {
+      entries.add(`${base}w300${path} 300w`);
     }
     // Exotic/undocumented prefixes ("original", custom crops) are dropped on
     // purpose: their real width is unknowable, and capping the ladder at

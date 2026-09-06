@@ -7,7 +7,7 @@ import {
   castCrewRouteOptions,
 } from "@/lib/media-route-options";
 
-export const Route = createFileRoute("/tv/$id/{-$slug}/cast-crew")(
+export const Route = createFileRoute("/series/$id/{-$slug}/cast-crew")(
   castCrewRouteOptions("tv", TvCastAndCrewPage),
 );
 

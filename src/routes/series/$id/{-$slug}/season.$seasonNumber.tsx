@@ -28,7 +28,9 @@ const VideoPlayerModal = lazy(() =>
   })),
 );
 
-export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
+export const Route = createFileRoute(
+  "/series/$id/{-$slug}/season/$seasonNumber",
+)({
   loader: async ({ params, context }) => {
     const seasonNumber = requireRouteId(params.seasonNumber);
     return {
@@ -51,7 +53,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
       url:
         loaderData?.id &&
         loaderData.title &&
-        `${SITE_CONFIG.url}/tv/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
+        `${SITE_CONFIG.url}/series/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
     }),
   }),
   component: TvSeasonDetailPage,
@@ -78,7 +80,7 @@ function TvSeasonDetailPage() {
     subPageEntity: `season/${seasonNumber}`,
     id: tvData?.id,
     title: tvData?.name ?? tvData?.name,
-    incomingPathname: `/tv/${id}/${slug}/season/${seasonNumber}`,
+    incomingPathname: `/series/${id}/${slug}/season/${seasonNumber}`,
     isLoading: tvLoading,
   });
 
@@ -99,14 +101,14 @@ function TvSeasonDetailPage() {
     <section className="mx-auto block min-h-[90vh] max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
-          <GoBack link={`/tv/${id}/${slug}/seasons`} title="All Seasons" />
+          <GoBack link={`/series/${id}/${slug}/seasons`} title="All Seasons" />
           <ShareButton />
         </div>
-        <h1 className="text-[19px] font-bold sm:text-xl md:text-2xl lg:px-0 lg:text-3xl">
+        <h1 className="text-h1 text-balance lg:px-0">
           {showName} · {seasonData.name}
         </h1>
         {seasonData.overview && (
-          <p className="text-muted-foreground max-w-3xl text-sm md:text-base">
+          <p className="text-muted-foreground max-w-[65ch] text-base leading-relaxed text-pretty">
             {seasonData.overview}
           </p>
         )}
@@ -196,7 +198,8 @@ function TvSeasonDetailPage() {
                     >
                       <span className="flex items-center gap-1">
                         <Star
-                          className="size-3 fill-current text-yellow-400"
+                          aria-hidden="true"
+                          className="size-3 fill-current text-amber-600 dark:text-amber-400"
                           size={12}
                         />
                         {episode.vote_average.toFixed(1)}
@@ -222,7 +225,7 @@ function TvSeasonDetailPage() {
                   )}
                 </div>
 
-                <p className="text-muted-foreground line-clamp-2 text-sm md:line-clamp-3">
+                <p className="text-muted-foreground line-clamp-2 text-[13px] leading-relaxed text-pretty md:line-clamp-3 md:text-sm">
                   {episode.overview || "No overview available."}
                 </p>
               </div>
