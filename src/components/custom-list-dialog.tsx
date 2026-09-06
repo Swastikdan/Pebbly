@@ -354,7 +354,7 @@ export function CustomListDialog({
             <p
               id={errorId}
               role="alert"
-              className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs"
+              className="bg-destructive/10 text-destructive-foreground rounded-lg px-3 py-2 text-xs"
             >
               {error}
             </p>

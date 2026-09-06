@@ -62,11 +62,11 @@
   );
   --accent: --alpha(var(--color-black) / 4%);
   --accent-foreground: var(--color-neutral-800);
-  --destructive: var(--color-red-500);
+  --destructive: var(--color-red-600);
   --destructive-foreground: var(--color-red-700);
   --border: --alpha(var(--color-black) / 8%);
   --input: --alpha(var(--color-black) / 10%);
-  --ring: var(--color-neutral-400);
+  --ring: var(--color-neutral-500);
   --surface-2: oklch(1 0 0);
   --success: var(--color-emerald-500);
   --warning: var(--color-amber-500);
@@ -127,11 +127,7 @@
   );
   --accent: --alpha(var(--color-white) / 4%);
   --accent-foreground: var(--color-neutral-100);
-  --destructive: color-mix(
-    in srgb,
-    var(--color-red-500) 90%,
-    var(--color-white)
-  );
+  --destructive: var(--color-red-600);
   --border: --alpha(var(--color-white) / 6%);
   --input: --alpha(var(--color-white) / 8%);
   --ring: var(--color-neutral-500);

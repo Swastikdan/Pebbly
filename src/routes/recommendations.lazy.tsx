@@ -250,7 +250,7 @@ function RecommendationsContent({
       />
 
       {error && (
-        <div className="border-destructive/50 bg-destructive/10 text-destructive animate-in fade-in slide-in-from-top-1 rounded-lg border p-4 text-sm">
+        <div className="border-destructive/50 bg-destructive/10 text-destructive-foreground animate-in fade-in slide-in-from-top-1 rounded-lg border p-4 text-sm">
           {describeGenerationError(error)}
         </div>
       )}

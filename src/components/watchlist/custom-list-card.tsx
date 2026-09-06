@@ -133,7 +133,7 @@ export function CustomListCard({
                 e.stopPropagation();
                 onDelete();
               }}
-              className="bg-background/90 text-muted-foreground border-border hover:text-destructive hover:border-destructive/40 flex size-8 cursor-pointer items-center justify-center rounded-md border transition-colors md:size-7"
+              className="bg-background/90 text-muted-foreground border-border hover:text-destructive-foreground hover:border-destructive/40 flex size-8 cursor-pointer items-center justify-center rounded-md border transition-colors md:size-7"
               aria-label={`Delete ${list.name}`}
             >
               <Trash2 aria-hidden="true" size={14} />

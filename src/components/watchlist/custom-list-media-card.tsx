@@ -179,7 +179,7 @@ export function CustomListMediaCard({
               type="button"
               variant="ghost"
               size="icon"
-              className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive shrink-0 p-1.5 opacity-100 transition-colors focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+              className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive-foreground shrink-0 p-1.5 opacity-100 transition-colors focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
               aria-label={`Remove from collection`}
               onClick={handleRemove}
             >

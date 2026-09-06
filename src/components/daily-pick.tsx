@@ -118,7 +118,7 @@ export function DailyPickButton() {
 
               <div className="absolute start-3 top-3 flex flex-wrap items-center gap-1.5 pe-12">
                 {pick.selectedItem.isCurrentlyWatching ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-green-500/90 px-2.5 py-0.5 text-[11px] font-medium text-black">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/90 px-2.5 py-0.5 text-[11px] font-medium text-black">
                     <Eye aria-hidden="true" className="size-3" />
                     Watching
                     {pick.selectedItem.watchProgress
@@ -134,7 +134,7 @@ export function DailyPickButton() {
                     From Your Watchlist
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-blue-500/25 bg-black/75 px-2.5 py-0.5 text-[11px] font-medium text-blue-400">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-blue-500/25 bg-black/80 px-2.5 py-0.5 text-[11px] font-medium text-blue-400">
                     <SparklesIcon
                       aria-hidden="true"
                       className="size-3 fill-blue-400"
@@ -191,7 +191,7 @@ export function DailyPickButton() {
                         <span className="flex items-center gap-1 font-bold">
                           <Star
                             aria-hidden="true"
-                            className="size-3.5 fill-yellow-400 text-yellow-400"
+                            className="size-3.5 fill-amber-400 text-amber-400"
                           />
                           {pick.rating.toFixed(1)}
                         </span>
@@ -249,7 +249,7 @@ export function DailyPickButton() {
                         variant="outline"
                         onClick={pick.handleDislike}
                         title="Dislike / Not for me (Removes from picks)"
-                        className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-10"
+                        className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive-foreground active:bg-destructive/15 active:text-destructive-foreground h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-10"
                       >
                         <ThumbsDown
                           aria-hidden="true"
@@ -291,7 +291,7 @@ export function DailyPickButton() {
                       variant="outline"
                       onClick={pick.handleDislike}
                       title="Dislike / Not for me (Removes from picks)"
-                      className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-11 sm:text-sm"
+                      className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive-foreground active:bg-destructive/15 active:text-destructive-foreground h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-11 sm:text-sm"
                     >
                       <ThumbsDown
                         aria-hidden="true"

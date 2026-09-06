@@ -65,7 +65,7 @@ const HomepageRecommendationCard = memo(
             className={cn(
               "pressable h-8 w-8 cursor-pointer rounded-md border transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] [@media(hover:hover)]:hover:scale-105",
               isLiked
-                ? "border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-700"
+                ? "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800"
                 : "border-neutral-700 bg-neutral-900/90 text-white hover:bg-neutral-800",
             )}
             aria-label={
@@ -100,7 +100,7 @@ const HomepageRecommendationCard = memo(
           <Button
             variant="secondary"
             size="icon"
-            className="pressable h-8 w-8 cursor-pointer rounded-md border border-neutral-700 bg-neutral-900/90 text-white transition-[color,background-color,border-color,transform] duration-150 hover:border-red-600 hover:bg-red-900/90 hover:text-red-200 active:scale-[0.96] [@media(hover:hover)]:hover:scale-105"
+            className="pressable hover:border-destructive hover:bg-destructive/90 h-8 w-8 cursor-pointer rounded-md border border-neutral-700 bg-neutral-900/90 text-white transition-[color,background-color,border-color,transform] duration-150 hover:text-white active:scale-[0.96] [@media(hover:hover)]:hover:scale-105"
             aria-label="Dislike recommendation"
             onClick={(event) => {
               event.stopPropagation();
@@ -129,7 +129,7 @@ function GenerationErrorNotice({ error }: { error: string }) {
   return (
     <div
       role="alert"
-      className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-xs"
+      className="border-destructive/50 bg-destructive/10 text-destructive-foreground rounded-lg border px-4 py-3 text-xs"
     >
       {describeGenerationError(error, {
         rate_limited:

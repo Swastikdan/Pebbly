@@ -385,7 +385,7 @@ function EpisodeCard({
           {!isWatched && progress > 0 && (
             <Badge
               variant="secondary"
-              className="rounded-md border border-amber-500/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400"
+              className="rounded-md border border-amber-500/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:text-amber-400"
             >
               {Math.round(progress)}%
             </Badge>
@@ -397,7 +397,7 @@ function EpisodeCard({
             >
               <Star
                 aria-hidden="true"
-                className="me-0.5 size-2.5 fill-yellow-500 text-yellow-500"
+                className="me-0.5 size-2.5 fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400"
               />
               {episode.vote_average.toFixed(1)}
             </Badge>

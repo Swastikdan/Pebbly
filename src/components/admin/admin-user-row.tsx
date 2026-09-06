@@ -55,7 +55,7 @@ function UserBadges({ user, isSelf }: { user: AdminUser; isSelf: boolean }) {
       {user.isAdmin && (
         <Badge
           variant="outline"
-          className="shrink-0 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] font-semibold text-amber-500"
+          className="shrink-0 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] font-semibold text-amber-700 dark:text-amber-400"
         >
           Admin
         </Badge>
@@ -105,7 +105,7 @@ function UserStatusBadge({
   if (isBanned) {
     return (
       <Badge
-        className={`bg-destructive/15 text-destructive border-destructive/30 gap-1 font-semibold ${
+        className={`bg-destructive/15 text-destructive-foreground border-destructive/30 gap-1 font-semibold ${
           size === "sm" ? "hover:bg-destructive/20" : "shrink-0 py-1 text-xs"
         }`}
       >
@@ -116,7 +116,7 @@ function UserStatusBadge({
   }
   return (
     <Badge
-      className={`gap-1 border-emerald-500/30 bg-emerald-500/15 font-semibold text-emerald-600 dark:text-emerald-400 ${
+      className={`gap-1 border-emerald-500/30 bg-emerald-500/15 font-semibold text-emerald-700 dark:text-emerald-400 ${
         size === "sm" ? "hover:bg-emerald-500/20" : "shrink-0 py-1 text-xs"
       }`}
     >
@@ -183,7 +183,7 @@ export function AdminUserRow({
             size="sm"
             className={`h-8 px-3 text-xs font-semibold ${
               isBanned
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"
                 : ""
             }`}
             onClick={() => onPromptBanToggle(user)}
@@ -275,7 +275,7 @@ export function AdminUserRow({
             size="sm"
             className={`ms-auto h-9 min-h-9 rounded-md px-3.5 text-xs font-semibold ${
               isBanned
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"
                 : ""
             }`}
             onClick={() => onPromptBanToggle(user)}

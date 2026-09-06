@@ -114,7 +114,7 @@ function HomePage() {
           <div className="motion-safe:animate-fade-in-up py-4">
             <h1 className="text-display items-center justify-center">
               Welcome to
-              <span className="px-2 text-blue-500">{SITE_CONFIG.name}</span>
+              <span className="px-2 text-blue-600">{SITE_CONFIG.name}</span>
             </h1>
             <p className="text-body text-muted-foreground mt-2 mb-4">
               Millions of movies, TV shows, and people to discover.

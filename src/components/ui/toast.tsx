@@ -140,7 +140,7 @@ function Toasts({
                     >
                       <Icon
                         aria-hidden="true"
-                        className="in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:animate-spin in-data-[type=loading]:opacity-80"
+                        className="in-data-[type=error]:text-destructive-foreground in-data-[type=info]:text-info-foreground in-data-[type=success]:text-success-foreground in-data-[type=warning]:text-warning-foreground in-data-[type=loading]:animate-spin in-data-[type=loading]:opacity-80"
                       />
                     </div>
                   )}

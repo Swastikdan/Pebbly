@@ -70,7 +70,7 @@ export function MediaMetaRow({
           <span className="flex items-center gap-0.5">
             <Star
               aria-hidden="true"
-              className="size-2.5 fill-yellow-400 text-yellow-400"
+              className="size-2.5 fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400"
             />
             {rating?.toFixed(1)}
           </span>

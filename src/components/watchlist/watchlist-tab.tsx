@@ -129,7 +129,7 @@ export function WatchlistTab() {
         <div
           className={`mb-4 rounded-lg p-3 text-sm ${
             error.invalidItems
-              ? "bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200"
+              ? "bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-200"
               : "bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-200"
           }`}
           role="alert"

@@ -11,7 +11,7 @@ export const RatingCount = (props: { rating: number; ratingcount: number }) => {
     <div className="text-compact flex items-center gap-1.5">
       <Star
         aria-hidden="true"
-        className="size-4 fill-yellow-500 text-yellow-500"
+        className="size-4 fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400"
       />
       <span className="font-semibold tabular-nums">{rating_rounded}</span>
       <span className="text-muted-foreground/60">/10</span>

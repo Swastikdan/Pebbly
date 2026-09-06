@@ -137,9 +137,9 @@ function HistoryAccordionItem({
               className={cn(
                 "text-[10px] font-semibold tabular-nums",
                 avgScore >= 80
-                  ? "text-emerald-600 dark:text-emerald-400"
+                  ? "text-emerald-700 dark:text-emerald-400"
                   : avgScore >= 60
-                    ? "text-amber-600 dark:text-amber-400"
+                    ? "text-amber-700 dark:text-amber-400"
                     : "text-muted-foreground",
               )}
             >
@@ -211,7 +211,7 @@ function HistoryAccordionItem({
             <Button
               size="sm"
               variant="ghost"
-              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 ms-auto h-8 shrink-0 gap-1.5 rounded-lg text-xs transition-colors"
+              className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive/10 ms-auto h-8 shrink-0 gap-1.5 rounded-lg text-xs transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
@@ -239,9 +239,9 @@ function HistoryAccordionItem({
                 className={cn(
                   "font-semibold",
                   avgScore >= 80
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-emerald-700 dark:text-emerald-400"
                     : avgScore >= 60
-                      ? "text-amber-600 dark:text-amber-400"
+                      ? "text-amber-700 dark:text-amber-400"
                       : "text-muted-foreground",
                 )}
               >

@@ -197,7 +197,7 @@ function TvSeasonDetailPage() {
                       <span className="flex items-center gap-1">
                         <Star
                           aria-hidden="true"
-                          className="size-3 fill-current text-yellow-400"
+                          className="size-3 fill-current text-amber-600 dark:text-amber-400"
                           size={12}
                         />
                         {episode.vote_average.toFixed(1)}

@@ -284,9 +284,9 @@ function RecommendationCard({
                 className={cn(
                   "text-[10.5px] font-semibold",
                   relevanceScore >= 80
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-emerald-700 dark:text-emerald-400"
                     : relevanceScore >= 60
-                      ? "text-amber-600 dark:text-amber-400"
+                      ? "text-amber-700 dark:text-amber-400"
                       : "text-muted-foreground",
                 )}
               >

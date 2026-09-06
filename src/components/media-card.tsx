@@ -161,7 +161,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             <Badge className="text-meta absolute start-2 bottom-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
               <Star
                 aria-hidden="true"
-                className="size-4 fill-yellow-400 text-yellow-400"
+                className="size-4 fill-amber-400 text-amber-400"
               />
               <span className="font-semibold text-white">
                 {rating.toFixed(1)}
@@ -215,7 +215,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
                 },
               });
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color] duration-150 hover:bg-red-600 hover:text-white"
+            className="hover:bg-destructive flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color] duration-150 hover:text-white"
           >
             <XIcon aria-hidden="true" className="size-4" />
           </button>
@@ -283,9 +283,9 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
               className={cn(
                 "text-[11px] font-semibold tabular-nums",
                 relevanceScore >= 80
-                  ? "text-emerald-600 dark:text-emerald-400"
+                  ? "text-emerald-700 dark:text-emerald-400"
                   : relevanceScore >= 60
-                    ? "text-amber-600 dark:text-amber-400"
+                    ? "text-amber-700 dark:text-amber-400"
                     : "text-muted-foreground",
               )}
             >

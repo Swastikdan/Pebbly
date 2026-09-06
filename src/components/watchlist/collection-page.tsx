@@ -168,7 +168,7 @@ export function CollectionPage({ listId }: { listId: string }) {
               variant="secondary"
               size="sm"
               onClick={handleDelete}
-              className="border-border text-muted-foreground hover:text-destructive h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
+              className="border-border text-muted-foreground hover:text-destructive-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
               aria-label={`Delete ${list.name}`}
             >
               <Trash2 aria-hidden="true" size={13} />

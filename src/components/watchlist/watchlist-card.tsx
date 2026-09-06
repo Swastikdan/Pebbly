@@ -124,7 +124,7 @@ export function WatchlistCard({
           type="button"
           variant="ghost"
           size="icon"
-          className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive shrink-0 p-1.5 transition-colors"
+          className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive-foreground shrink-0 p-1.5 transition-colors"
           aria-label={`Remove ${item.title} from watchlist`}
           onClick={(e) => handleRemove(e, item, onRemoveFromWatchlist)}
         >
