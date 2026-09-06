@@ -597,8 +597,19 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
 async function fetchEpisodeProgress(
   db: Db,
   userId: string,
-  options?: { tmdbId?: number; isWatched?: boolean },
+  options?: { tmdbId?: number; isWatched?: boolean; paginate?: boolean },
 ) {
+  const hasFilter =
+    options?.tmdbId !== undefined || options?.isWatched !== undefined;
+
+  if (!hasFilter && options?.paginate !== true) {
+    return db
+      .select()
+      .from(episodeProgress)
+      .where(eq(episodeProgress.userId, userId))
+      .orderBy(asc(episodeProgress.id));
+  }
+
   return collectAllByKeyset(500, (cursor) =>
     db
       .select()
