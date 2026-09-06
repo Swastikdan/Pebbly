@@ -12,7 +12,3 @@ self.addEventListener('activate', (event) => {
   );
   self.clients.claim();
 });
-
-// Empty fetch handler: keeps the worker active for installability while
-// always deferring to default network behavior.
-self.addEventListener('fetch', () => {});

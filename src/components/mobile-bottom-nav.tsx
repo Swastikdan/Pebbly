@@ -120,6 +120,7 @@ const MobileBottomNav = () => {
     <nav
       className={`mobile-bottom-nav md:hidden ${isHidden ? "mobile-bottom-nav-hidden" : ""}`}
       aria-label="Mobile Navigation"
+      inert={isHidden || undefined}
     >
       {MAIN_TABS.map((tab) => {
         const active = isTabActive(tab);
