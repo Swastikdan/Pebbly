@@ -9,7 +9,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "animate-skeleton rounded-sm bg-neutral-200 [--skeleton-highlight:--alpha(var(--color-white)/60%)] [background:linear-gradient(120deg,transparent_40%,var(--skeleton-highlight),transparent_60%)_var(--color-neutral-200)_0_0/200%_100%_fixed] dark:bg-neutral-800 dark:[--skeleton-highlight:--alpha(var(--color-white)/8%)] dark:[background:linear-gradient(120deg,transparent_40%,var(--skeleton-highlight),transparent_60%)_var(--color-neutral-800)_0_0/200%_100%_fixed]",
+        "before:animate-skeleton relative overflow-hidden rounded-sm bg-neutral-200 before:absolute before:inset-0 before:bg-[linear-gradient(120deg,transparent_40%,--alpha(var(--color-white)/60%)_50%,transparent_60%)] before:will-change-transform dark:bg-neutral-800 dark:before:bg-[linear-gradient(120deg,transparent_40%,--alpha(var(--color-white)/8%)_50%,transparent_60%)]",
         className,
       )}
       data-slot="skeleton"

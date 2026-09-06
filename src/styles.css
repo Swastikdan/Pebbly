@@ -31,24 +31,6 @@
   --ease-emphatic: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-  --expo-out: linear(
-    0 0%,
-    0.1684 2.66%,
-    0.3165 5.49%,
-    0.446 8.52%,
-    0.5581 11.78%,
-    0.6535 15.29%,
-    0.7341 19.11%,
-    0.8011 23.3%,
-    0.8557 27.93%,
-    0.8962 32.68%,
-    0.9283 38.01%,
-    0.9529 44.08%,
-    0.9711 51.14%,
-    0.9833 59.06%,
-    0.9915 68.74%,
-    1 100%
-  );
   --animate-marquee: marquee var(--marquee-duration, 12s) linear infinite;
   @keyframes marquee {
     from {
@@ -208,7 +190,7 @@
   --shadow-2xl: var(--shadow-2xl);
   --radius-2xl: 1.25rem;
   --radius-3xl: 1.5rem;
-  --animate-skeleton: skeleton 2s -1s infinite linear;
+  --animate-skeleton: skeleton 1.8s ease-in-out -0.5s infinite;
   --animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
   --animate-toast-success-odd: toast-success 0.32s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-success-even: toast-success 0.32s
@@ -224,8 +206,11 @@
   --color-nav-active-bg: var(--nav-active-bg);
   --color-nav-active-fg: var(--nav-active-fg);
   @keyframes skeleton {
+    from {
+      transform: translateX(-100%);
+    }
     to {
-      background-position: -200% 0;
+      transform: translateX(100%);
     }
   }
   @keyframes spinner-leaf-fade {
@@ -387,44 +372,49 @@
   }
 }
 ::view-transition-group(root) {
-  animation-duration: 0.7s;
-  animation-timing-function: var(--expo-out);
+  animation-duration: 0.3s;
+  animation-timing-function: ease;
 }
 ::view-transition-new(root) {
-  animation-name: reveal-light;
+  animation-name: fade-in;
   animation-fill-mode: both;
 }
-::view-transition-old(root),
-.dark::view-transition-old(root) {
-  animation: none;
+::view-transition-old(root) {
+  animation-name: fade-out;
   animation-fill-mode: both;
   z-index: -1;
 }
 .dark::view-transition-new(root) {
-  animation-name: reveal-dark;
+  animation-name: fade-in;
   animation-fill-mode: both;
 }
-@keyframes reveal-dark {
+.dark::view-transition-old(root) {
+  animation-name: fade-out;
+  animation-fill-mode: both;
+  z-index: -1;
+}
+@keyframes fade-in {
   from {
-    clip-path: polygon(50% -71%, -50% 71%, -50% 71%, 50% -71%);
+    opacity: 0;
   }
   to {
-    clip-path: polygon(50% -71%, -50% 71%, 50% 171%, 171% 50%);
+    opacity: 1;
   }
 }
-@keyframes reveal-light {
+@keyframes fade-out {
   from {
-    clip-path: polygon(171% 50%, 50% 171%, 50% 171%, 171% 50%);
+    opacity: 1;
   }
   to {
-    clip-path: polygon(171% 50%, 50% 171%, -50% 71%, 50% -71%);
+    opacity: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(root),
   ::view-transition-old(root),
   ::view-transition-new(root),
-  .dark::view-transition-new(root) {
+  .dark::view-transition-new(root),
+  .dark::view-transition-old(root) {
     animation: none !important;
   }
 }
@@ -536,37 +526,54 @@
     animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .animate-fade-in-up {
+    will-change: transform, opacity;
     animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  /* Staggered entrance is a desktop nicety, on phones it forces dozens of simultaneous transform animations on every grid render, which is a primary source of scroll/tap jank. Small screens get a plain opacity fade with no stagger instead. */
+  /* Staggered entrance is a desktop nicety, on phones it forces dozens of simultaneous transform animations on every grid render, which is a primary source of scroll/tap jank. Small screens get a plain opacity fade with no stagger instead. Desktop staggers are capped at the first row of visible items (6, matching xl:grid-cols-6); later children appear instantly so large grids don't jank and rows load uniformly. */
   .stagger-grid > * {
-    animation: fadeIn 0.2s ease-out both;
+    opacity: 1;
+    transition: opacity 0.2s ease-out;
+    @starting-style {
+      opacity: 0;
+    }
   }
   @media (min-width: 640px) {
     .stagger-grid > * {
-      animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+      opacity: 1;
+      transform: translateY(0);
+      transition:
+        opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      @starting-style {
+        opacity: 0;
+        transform: translateY(10px);
+      }
     }
     .stagger-grid > *:nth-child(1) {
-      animation-delay: 0ms;
+      transition-delay: 0ms;
     }
     .stagger-grid > *:nth-child(2) {
-      animation-delay: 40ms;
+      transition-delay: 40ms;
     }
     .stagger-grid > *:nth-child(3) {
-      animation-delay: 80ms;
+      transition-delay: 80ms;
     }
     .stagger-grid > *:nth-child(4) {
-      animation-delay: 120ms;
+      transition-delay: 120ms;
     }
     .stagger-grid > *:nth-child(5) {
-      animation-delay: 160ms;
+      transition-delay: 160ms;
     }
-    .stagger-grid > *:nth-child(n + 6) {
-      animation-delay: 200ms;
+    .stagger-grid > *:nth-child(6) {
+      transition-delay: 200ms;
+    }
+    .stagger-grid > *:nth-child(n + 7) {
+      transition-delay: 0ms;
     }
   }
   .progress-indeterminate {
     width: 40%;
+    will-change: transform;
     animation: progress-slide 1.4s var(--ease-emphatic) infinite;
   }
   /* Watchlist button confirmation pop, transition + @starting-style so rapid toggles retarget from the current state instead of restarting from zero (keyframes would not be interruptible). */

@@ -71,7 +71,7 @@ export function AutoScrollTitle({
       {isOverflow && (
         <div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100">
           <div
-            className="motion-safe:animate-marquee flex w-max gap-8 will-change-transform [animation-play-state:paused] group-hover:[animation-play-state:running] motion-reduce:animate-none"
+            className="motion-safe:animate-marquee flex w-max gap-8 [animation-play-state:paused] group-hover:[animation-play-state:running] motion-reduce:animate-none"
             style={
               {
                 "--marquee-duration": duration,
