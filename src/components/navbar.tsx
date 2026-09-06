@@ -98,11 +98,11 @@ const Navbar = () => {
           )}
         </Link>
         <section className="flex items-center gap-1.5 md:gap-2">
-          <ul className="hidden gap-1.5 md:flex">
+          <div className="hidden gap-1.5 md:flex">
             {NAV_ITEMS.map((item) => (
               <DesktopNavMenuItem key={item.slug} item={item} />
             ))}
-          </ul>
+          </div>
           <div className="hidden md:flex md:items-center md:gap-1.5">
             <ThemeSwitcher />
             <DesktopNavButtons />

@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/tanstackstart-react";
+import { init } from "@sentry/tanstackstart-react";
 
 function getEnvironment(): "development" | "preview" | "production" {
   if (import.meta.env.VITE_PUBLIC_APP_ENV === "preview") return "preview";
@@ -12,17 +12,16 @@ function getEnvironment(): "development" | "preview" | "production" {
 const environment = getEnvironment();
 const isDev = environment === "development";
 
-Sentry.init({
+init({
   dsn: "https://87a5b5f39478e56bf9a781e3a4577006@o4509412406919168.ingest.de.sentry.io/4512037435146320",
   environment,
 
   // Free-tier optimization:
   // - tracesSampleRate: 0 in dev, 0.1 (10%) in preview and prod to stay well within 10,000 transactions/mo.
-  // - replaysSessionSampleRate: 0 (disable random session replays) to conserve the 50 replays/mo free limit.
-  // - replaysOnErrorSampleRate: 0 in dev, 0.5 (50%) in preview and prod so replay quota is saved for genuine errors.
+  // - replays: disabled to eliminate ~250 KiB rrweb DOM snapshotter and Array.from legacy polyfill.
   tracesSampleRate: isDev ? 0 : 0.1,
   replaysSessionSampleRate: 0,
-  replaysOnErrorSampleRate: isDev ? 0 : 0.5,
+  replaysOnErrorSampleRate: 0,
 
   integrations: [],
 
@@ -35,27 +34,3 @@ Sentry.init({
     "NetworkError when attempting to fetch resource",
   ],
 });
-
-// Replay is 0% for normal sessions and only 50% on errors. Defer loading
-// the ~200 KiB rrweb bundle until after idle so it never competes with
-// the critical path (FCP/LCP/TBT).
-if (!isDev && typeof window !== "undefined") {
-  const loadReplay = () => {
-    import("@sentry/tanstackstart-react").then(
-      ({ replayIntegration, addIntegration }) => {
-        addIntegration(
-          replayIntegration({
-            maskAllText: true,
-            blockAllMedia: true,
-          }),
-        );
-      },
-    );
-  };
-
-  if ("requestIdleCallback" in window) {
-    window.requestIdleCallback(loadReplay);
-  } else {
-    setTimeout(loadReplay, 2500);
-  }
-}

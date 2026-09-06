@@ -242,11 +242,10 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
   const { title, image, media_type, release_date, relevanceScore } = props;
 
   const formattedTitle = formatMediaTitle.encode(title);
-  // Use LQ (w342) as `src` fallback so the initial download on 1x phones
-  // is ~18 KiB not 28 KiB (w500). `srcSet` still offers w500/w780 for 2x+
-  // via `tmdbSrcSet`, so high-DPR screens pick the larger candidate without
-  // penalising 1x. Saves ~10 KiB per poster, 14 KiB reported by Pagespeed
-  // "Improve image delivery" for Mutiny (w300 28.8 KiB → w185 15 KiB).
+  // Use LQ (w185) as `src` fallback so the initial download on 1x phones
+  // is ~12 KiB not 28 KiB (w500). `srcSet` still offers w342/w500 for high-DPR
+  // screens via `tmdbSrcSet`. On mobile (159px rendered), sizes 92px/160px
+  // routes DPR 1-2 displays to w185 (185x278) instead of downloading w342.
   const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${image}`;
   const blurSrc = image ? `${IMAGE_PREFIX.PREVIEW}${image}` : undefined;
   const year = release_date ? new Date(release_date).getFullYear() : "";
@@ -261,7 +260,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
       imageContainerClassName="aspect-[2/3]"
       imageWidth={192}
       imageHeight={288}
-      imageSizes="(max-width: 767px) 160px, (max-width: 1023px) 176px, 192px"
+      imageSizes="(max-width: 767px) 92px, (max-width: 1023px) 176px, 192px"
       mediaTypeLabel={media_type === "movie" ? "Movie" : "TV"}
       linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
       actionsClassName="transition-[transform,opacity] duration-200 ease-out"
@@ -273,7 +272,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
         />
         <div className="flex min-h-4 items-center gap-1.5">
           {year && (
-            <span className="text-meta text-muted-foreground/70">{year}</span>
+            <span className="text-meta text-muted-foreground">{year}</span>
           )}
           {year && relevanceScore && (
             <span className="text-muted-foreground/30">•</span>
@@ -373,7 +372,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
         />
 
         {!isTVContinueWatching && (
-          <span className="text-meta text-muted-foreground/70 capitalize">
+          <span className="text-meta text-muted-foreground capitalize">
             {year}
           </span>
         )}
@@ -412,7 +411,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
           text={name}
           className="text-foreground group-hover:text-primary w-full truncate text-sm leading-tight font-bold transition-colors duration-200"
         />
-        <span className="text-meta text-muted-foreground/70 w-full truncate">
+        <span className="text-meta text-muted-foreground w-full truncate">
           {known_for_department}
         </span>
       </div>

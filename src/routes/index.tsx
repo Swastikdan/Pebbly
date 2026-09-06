@@ -92,8 +92,7 @@ export const Route = createFileRoute("/")({
         rel: "preload" as const,
         as: "image" as const,
         imageSrcSet: srcSet,
-        imageSizes:
-          "(max-width: 767px) 160px, (max-width: 1023px) 176px, 192px",
+        imageSizes: "(max-width: 767px) 92px, (max-width: 1023px) 176px, 192px",
         href: src,
         fetchPriority: "high" as const,
       };

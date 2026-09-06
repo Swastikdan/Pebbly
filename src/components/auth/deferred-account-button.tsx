@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { UserIcon } from "@/components/ui/icons";
@@ -60,17 +60,6 @@ function AccountPlaceholder({ variant }: AccountButtonProps) {
 
 export function DeferredAccountButton({ variant }: AccountButtonProps) {
   const [shouldLoad, setShouldLoad] = useState(false);
-
-  useEffect(() => {
-    if ("requestIdleCallback" in window) {
-      const handle = window.requestIdleCallback(() => setShouldLoad(true), {
-        timeout: 3500,
-      });
-      return () => window.cancelIdleCallback(handle);
-    }
-    const timer = setTimeout(() => setShouldLoad(true), 2500);
-    return () => clearTimeout(timer);
-  }, []);
 
   const triggerLoad = () => {
     if (!shouldLoad) setShouldLoad(true);

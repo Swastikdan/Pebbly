@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { MediaType } from "@/domain/media";
@@ -8,6 +8,8 @@ import { MediaSkeletonList } from "@/components/media-skeleton-list";
 import { ScrollContainer } from "@/components/scroll-container";
 import { getMedia } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
+
+const INITIAL_VISIBLE_COUNT = 8;
 
 interface MediaListProps extends MediaListResultsEntity {
   is_on_watchlist_page?: boolean;
@@ -21,10 +23,37 @@ const MediaList = memo(
     defaultMediatype?: MediaType;
     priorityCount?: number;
   }) => {
+    const [showAll, setShowAll] = useState(false);
+
+    useEffect(() => {
+      if (showAll || props.data.length <= INITIAL_VISIBLE_COUNT) return;
+      if ("requestIdleCallback" in window) {
+        const handle = window.requestIdleCallback(() => setShowAll(true), {
+          timeout: 2500,
+        });
+        return () => window.cancelIdleCallback(handle);
+      }
+      const timer = setTimeout(() => setShowAll(true), 1500);
+      return () => clearTimeout(timer);
+    }, [showAll, props.data.length]);
+
+    const revealAll = () => {
+      if (!showAll) setShowAll(true);
+    };
+
+    const items =
+      showAll || props.data.length <= INITIAL_VISIBLE_COUNT
+        ? props.data
+        : props.data.slice(0, INITIAL_VISIBLE_COUNT);
+
     return (
       <ScrollContainer isButtonsVisible={true}>
-        <div className="flex gap-2 p-4 first:ps-0 last:pe-0">
-          {props.data.map((item, index) => (
+        <div
+          className="flex gap-2 p-4 first:ps-0 last:pe-0"
+          onPointerEnter={revealAll}
+          onTouchStart={revealAll}
+        >
+          {items.map((item, index) => (
             <MediaCard
               key={item.id}
               id={item.id}

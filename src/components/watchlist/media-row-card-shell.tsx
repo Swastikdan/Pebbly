@@ -55,24 +55,43 @@ export function MediaMetaRow({
   className?: string;
   labelClassName?: string;
 }) {
+  const formattedMediaType =
+    mediaType?.toLowerCase() === "tv"
+      ? "TV"
+      : mediaType?.toLowerCase() === "movie"
+        ? "Movie"
+        : mediaType
+          ? mediaType.charAt(0).toUpperCase() + mediaType.slice(1)
+          : "";
+
   return (
-    <div className={cn("mt-1 flex items-center gap-1.5", className)}>
-      <span className={labelClassName}>{mediaType}</span>
+    <div className={cn("mt-1.5 flex flex-wrap items-center gap-2", className)}>
+      {formattedMediaType && (
+        <span className={cn("font-medium", labelClassName)}>
+          {formattedMediaType}
+        </span>
+      )}
       {year && (
         <>
-          <span className="text-border">·</span>
-          <span>{year}</span>
+          <span
+            className="bg-muted-foreground/40 size-1 shrink-0 rounded-full"
+            aria-hidden="true"
+          />
+          <span className="font-medium">{year}</span>
         </>
       )}
       {(rating ?? 0) > 0 && (
         <>
-          <span className="text-border">·</span>
-          <span className="flex items-center gap-0.5">
+          <span
+            className="bg-muted-foreground/40 size-1 shrink-0 rounded-full"
+            aria-hidden="true"
+          />
+          <span className="border-border/60 bg-muted/60 text-foreground inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold">
             <Star
               aria-hidden="true"
-              className="size-2.5 fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400"
+              className="size-3 shrink-0 fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400"
             />
-            {rating?.toFixed(1)}
+            <span>{rating?.toFixed(1)}</span>
           </span>
         </>
       )}

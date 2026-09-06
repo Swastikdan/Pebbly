@@ -7,18 +7,23 @@ import { createFetch } from "@better-fetch/fetch";
  */
 let client: ReturnType<typeof createFetch> | null = null;
 
-const isWorker =
-  typeof window === "undefined" &&
-  (typeof (globalThis as unknown as { __env__?: unknown }).__env__ !==
-    "undefined" ||
+function isCloudflareWorker(): boolean {
+  if (typeof window !== "undefined") return false;
+  return (
+    typeof (globalThis as unknown as { __env__?: unknown }).__env__ !==
+      "undefined" ||
     (typeof navigator !== "undefined" &&
-      navigator.userAgent === "Cloudflare-Workers"));
+      navigator.userAgent === "Cloudflare-Workers") ||
+    typeof (globalThis as unknown as { WebSocketPair?: unknown })
+      .WebSocketPair !== "undefined"
+  );
+}
 
 const tmdbCustomFetch = (
   input: string | URL | Request,
   init?: RequestInit & { cf?: Record<string, unknown> },
 ) => {
-  if (isWorker) {
+  if (isCloudflareWorker()) {
     return (
       fetch as (
         input: string | URL | Request,

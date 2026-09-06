@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/tanstackstart-react";
+import { captureException } from "@sentry/tanstackstart-react";
 
 const REPORT_COOLDOWN_MS = 10_000;
 let lastReportAt = 0;
@@ -128,7 +128,7 @@ export function reportClientSideError(
   lastReportKey = reportKey;
   lastReportAt = now;
 
-  Sentry.captureException(error, {
+  captureException(error, {
     tags: {
       source: context.source,
       route,

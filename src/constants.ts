@@ -145,7 +145,7 @@ export const IMAGE_PREFIX = {
   SD_POSTER: "https://image.tmdb.org/t/p/w500",
   SD_BACKDROP: "https://image.tmdb.org/t/p/w780",
   SD_PROFILE: "https://image.tmdb.org/t/p/w185",
-  LQ_POSTER: "https://image.tmdb.org/t/p/w342",
+  LQ_POSTER: "https://image.tmdb.org/t/p/w185",
   LQ_BACKDROP: "https://image.tmdb.org/t/p/w300",
   LQ_PROFILE: "https://image.tmdb.org/t/p/w185",
 } as const;

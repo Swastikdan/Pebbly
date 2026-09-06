@@ -19,6 +19,7 @@ const config = defineConfig(({ mode }) => ({
     minify: "terser",
     sourcemap: "hidden",
     terserOptions: {
+      ecma: 2022,
       compress: {
         drop_console: mode === "production",
         drop_debugger: mode === "production",
@@ -58,6 +59,7 @@ const config = defineConfig(({ mode }) => ({
   environments: {
     client: {
       build: {
+        target: "es2022",
         rolldownOptions: {
           output: {
             // Vite 8 dropped rollup-style manualChunks; this is Rolldown's
@@ -101,7 +103,7 @@ const config = defineConfig(({ mode }) => ({
                 },
                 {
                   name: "vendor-sentry",
-                  test: /node_modules\/@sentry\//,
+                  test: /node_modules\/@sentry\/(?!replay)/,
                 },
               ],
             },
