@@ -101,12 +101,14 @@ export function CustomListMediaCard({
     onMove?.(dir);
   };
 
+  const routeType = item.mediaType === "tv" ? "series" : item.mediaType;
+
   return (
     <MediaRowCardShell
       to={
         formattedTitle
-          ? `/${item.mediaType}/${item.tmdbId}/${formattedTitle}`
-          : `/${item.mediaType}/${item.tmdbId}`
+          ? `/${routeType}/${item.tmdbId}/${formattedTitle}`
+          : `/${routeType}/${item.tmdbId}`
       }
       className="rounded-lg"
       poster={
@@ -122,7 +124,7 @@ export function CustomListMediaCard({
             />
           ) : (
             <div className="bg-secondary text-muted-foreground flex h-40 w-26.75 shrink-0 animate-pulse items-center justify-center rounded-lg text-xs font-medium sm:h-35 sm:w-23.25">
-              {item.mediaType === "movie" ? "MOV" : "TV"}
+              {item.mediaType === "movie" ? "MOV" : "SER"}
             </div>
           )}
           {rank !== undefined && (

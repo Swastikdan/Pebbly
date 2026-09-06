@@ -33,6 +33,9 @@ importers:
       '@fontsource-variable/geist':
         specifier: ^5.3.0
         version: 5.3.0
+      '@sentry/cloudflare':
+        specifier: ^10.73.0
+        version: 10.73.0(@cloudflare/workers-types@5.20260823.1)(wrangler@4.125.0(@cloudflare/workers-types@5.20260823.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@sentry/tanstackstart-react':
         specifier: ^10.73.0
         version: 10.73.0(@opentelemetry/core@2.11.0(@opentelemetry/api@1.9.1))(react@19.2.8)(rollup@4.62.5)
@@ -1728,6 +1731,18 @@ packages:
     resolution: {integrity: sha512-baBcNPLLfUi9WuL+Tpri9BFaAdvugZIKelC5X0tt0Zdy+K0K+PCVSrnNmwMWU/HyaF/SEv6b6UHnXIdqanBlcg==}
     engines: {node: '>= 10'}
     hasBin: true
+
+  '@sentry/cloudflare@10.73.0':
+    resolution: {integrity: sha512-6BmvIbstT8GLdA7xDrjd3oR98tdXh7uwDbnm/Hu3HjO3py0HEQlTypeSZIDVdRpR3veYZ9eT0hJ/74Gp+QZZtQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@cloudflare/workers-types': ^4.x || ^5.x
+      wrangler: ^4.x
+    peerDependenciesMeta:
+      '@cloudflare/workers-types':
+        optional: true
+      wrangler:
+        optional: true
 
   '@sentry/conventions@0.16.0':
     resolution: {integrity: sha512-fO9PLmHdVURcSPUpWCItWAtgKiMwGdJHbovoSEyLplX5sxs2ugvI4CBPTrkkgqhObnZOD0CnWBKDzSVQYBKEyQ==}
@@ -6864,6 +6879,16 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@sentry/cloudflare@10.73.0(@cloudflare/workers-types@5.20260823.1)(wrangler@4.125.0(@cloudflare/workers-types@5.20260823.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@sentry/core': 10.73.0
+      '@sentry/server-utils': 10.73.0
+      magic-string: 0.30.21
+    optionalDependencies:
+      '@cloudflare/workers-types': 5.20260823.1
+      wrangler: 4.125.0(@cloudflare/workers-types@5.20260823.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)
 
   '@sentry/conventions@0.16.0': {}
 

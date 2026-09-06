@@ -66,6 +66,9 @@ export async function unwrap<T>(
   result: ApiResult<T> | Promise<ApiResult<T>>,
 ): Promise<T> {
   const resolved = await result;
+  if (!resolved || typeof resolved !== "object") {
+    throw new ApiError("BAD_REQUEST", "Invalid server response");
+  }
   if (resolved.ok) return resolved.data;
   throw new ApiError(resolved.code, resolved.message);
 }

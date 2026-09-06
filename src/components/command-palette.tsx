@@ -176,9 +176,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               ) : (
                 <Tv aria-hidden="true" className="text-muted-foreground" />
               ),
-            shortcut: mediaType === "movie" ? "Movie" : "TV",
-            onSelect: () =>
-              navigate({ to: `/${mediaType}/${item.id.toString()}` }),
+            shortcut: mediaType === "movie" ? "Movie" : "Series",
+            onSelect: () => {
+              const routeType = mediaType === "tv" ? "series" : mediaType;
+              navigate({ to: `/${routeType}/${item.id.toString()}` });
+            },
           };
         });
 

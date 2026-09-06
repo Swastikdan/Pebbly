@@ -20,7 +20,7 @@ import {
 } from "@/lib/route-helpers";
 import { formatMediaTitle } from "@/lib/utils";
 
-export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
+export const Route = createFileRoute("/series/$id/{-$slug}/seasons")({
   loader: ({ params, context }) =>
     loadMediaRouteData(context, params, { mediaType: "tv", level: "full" }),
   head: ({ loaderData }) => ({
@@ -35,7 +35,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/seasons")({
       url:
         loaderData?.id &&
         loaderData.title &&
-        `${SITE_CONFIG.url}/tv/${loaderData.id}/${loaderData.slug}/seasons`,
+        `${SITE_CONFIG.url}/series/${loaderData.id}/${loaderData.slug}/seasons`,
     }),
   }),
   component: TvSeasonsPage,
@@ -54,7 +54,7 @@ function TvSeasonsPage() {
     subPageEntity: "seasons",
     id: data?.id,
     title: data?.name ?? data?.name,
-    incomingPathname: `/tv/${id}/${slug}/seasons`,
+    incomingPathname: `/series/${id}/${slug}/seasons`,
     isLoading,
   });
   if (isLoading) {
@@ -79,7 +79,7 @@ function TvSeasonsPage() {
     <section className="mx-auto block min-h-[90vh] max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
-          <GoBack link={`/tv/${id}/${slug}`} title="Back to main" />
+          <GoBack link={`/series/${id}/${slug}`} title="Back to main" />
           <ShareButton />
         </div>
         <h1 className="text-h1 text-balance lg:px-0">{title}</h1>

@@ -7,7 +7,7 @@ import {
   mediaRouteOptions,
 } from "@/lib/media-route-options";
 
-export const Route = createFileRoute("/tv/$id/{-$slug}/media")(
+export const Route = createFileRoute("/series/$id/{-$slug}/media")(
   mediaRouteOptions("tv", TvMediaPage),
 );
 

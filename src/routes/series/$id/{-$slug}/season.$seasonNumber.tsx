@@ -28,7 +28,9 @@ const VideoPlayerModal = lazy(() =>
   })),
 );
 
-export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
+export const Route = createFileRoute(
+  "/series/$id/{-$slug}/season/$seasonNumber",
+)({
   loader: async ({ params, context }) => {
     const seasonNumber = requireRouteId(params.seasonNumber);
     return {
@@ -51,7 +53,7 @@ export const Route = createFileRoute("/tv/$id/{-$slug}/season/$seasonNumber")({
       url:
         loaderData?.id &&
         loaderData.title &&
-        `${SITE_CONFIG.url}/tv/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
+        `${SITE_CONFIG.url}/series/${loaderData.id}/${loaderData.slug}/season/${loaderData.seasonNumber}`,
     }),
   }),
   component: TvSeasonDetailPage,
@@ -78,7 +80,7 @@ function TvSeasonDetailPage() {
     subPageEntity: `season/${seasonNumber}`,
     id: tvData?.id,
     title: tvData?.name ?? tvData?.name,
-    incomingPathname: `/tv/${id}/${slug}/season/${seasonNumber}`,
+    incomingPathname: `/series/${id}/${slug}/season/${seasonNumber}`,
     isLoading: tvLoading,
   });
 
@@ -99,7 +101,7 @@ function TvSeasonDetailPage() {
     <section className="mx-auto block min-h-[90vh] max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
-          <GoBack link={`/tv/${id}/${slug}/seasons`} title="All Seasons" />
+          <GoBack link={`/series/${id}/${slug}/seasons`} title="All Seasons" />
           <ShareButton />
         </div>
         <h1 className="text-h1 text-balance lg:px-0">

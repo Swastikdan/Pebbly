@@ -30,7 +30,7 @@ describe("route-helpers", () => {
       });
 
       expect(dest).toEqual({
-        to: "/tv/$id/{-$slug}",
+        to: "/series/$id/{-$slug}",
         params: { id: "1399" },
       });
       expect(dest.search).toBeUndefined();
@@ -59,7 +59,7 @@ describe("route-helpers", () => {
       });
 
       expect(dest).toEqual({
-        to: "/tv/$id/{-$slug}",
+        to: "/series/$id/{-$slug}",
         params: { id: "456" },
       });
       expect(dest.search).toBeUndefined();
@@ -75,7 +75,7 @@ describe("route-helpers", () => {
       });
 
       expect(dest).toEqual({
-        to: "/tv/$id/{-$slug}/season/$seasonNumber",
+        to: "/series/$id/{-$slug}/season/$seasonNumber",
         params: {
           id: "1399",
           slug: "game-of-thrones",
@@ -93,7 +93,7 @@ describe("route-helpers", () => {
       });
 
       expect(dest).toEqual({
-        to: "/tv/$id/{-$slug}/seasons",
+        to: "/series/$id/{-$slug}/seasons",
         params: { id: "1399", slug: "game-of-thrones" },
       });
     });

@@ -11,6 +11,7 @@ import { SearchBar, SearchBarSkeleton } from "@/components/ui/search-bar";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useAllMediaStates } from "@/hooks/use-watchlist";
 import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
 import { getMedia } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
@@ -26,6 +27,11 @@ import { tmdbSrcSet } from "@/lib/tmdb-image";
 const HomepageRecommendations = lazy(() =>
   import("@/components/homepage-recommendations").then((m) => ({
     default: m.HomepageRecommendations,
+  })),
+);
+const BecauseYouWatched = lazy(() =>
+  import("@/components/because-you-watched").then((m) => ({
+    default: m.BecauseYouWatched,
   })),
 );
 const TrendingWeekMovies = lazy(() =>
@@ -166,6 +172,8 @@ function HomePage() {
           </Tabs>
 
           <ContinueWatchingSection />
+
+          <BecauseYouWatchedSection />
 
           <RecommendationsSection />
 
@@ -322,6 +330,32 @@ function RecommendationsSection() {
         fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
       >
         <HomepageRecommendations />
+      </Suspense>
+    </LazySection>
+  );
+}
+
+function BecauseYouWatchedSection() {
+  const { isLoaded } = useUser();
+  const { allMediaStates, loading } = useAllMediaStates();
+
+  if (!isLoaded && loading) {
+    return null;
+  }
+
+  if (allMediaStates.length === 0) {
+    return null;
+  }
+
+  return (
+    <LazySection
+      minHeight="300px"
+      fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+    >
+      <Suspense
+        fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
+      >
+        <BecauseYouWatched />
       </Suspense>
     </LazySection>
   );

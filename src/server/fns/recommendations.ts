@@ -32,6 +32,7 @@ import {
   setRecommendationFeedbackArgsSchema,
   updateVerifiedRecommendationsArgsSchema,
 } from "../schema/recommendations";
+import { setSentryConversationId, setSentryUser } from "../sentry";
 import { appendToPicksList } from "../services/picks-list";
 import { authedFn, WRITE_RATE_LIMIT } from "./rpc";
 
@@ -375,13 +376,19 @@ export const getHomepageRecommendations = createServerFn({ method: "POST" })
         const status = row?.status ?? "none";
 
         const currentTime = Date.now();
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+        const isGeneratedInLast24Hours =
+          status === "success" &&
+          lastUpdatedAt > 0 &&
+          currentTime - lastUpdatedAt < ONE_DAY_MS;
         const isOlderThan24Hours =
-          currentTime - lastAttemptedAt > 24 * 60 * 60 * 1000;
+          currentTime - Math.max(lastAttemptedAt, lastUpdatedAt) > ONE_DAY_MS;
         const hasFailedRecently =
           status === "failed" &&
           currentTime - lastAttemptedAt < 1 * 60 * 60 * 1000;
         const needsRefresh =
           featureEnabled &&
+          !isGeneratedInLast24Hours &&
           (!row || (isOlderThan24Hours && !hasFailedRecently));
 
         return ok({
@@ -407,13 +414,16 @@ export const startGeneration = createServerFn({ method: "POST" })
     authedFn(
       { mode: "require", feature: "ai-recommendations" },
       data,
-      async ({ claims, db, user }): Promise<ApiResult<GenerateResult>> =>
-        ok(
+      async ({ claims, db, user }): Promise<ApiResult<GenerateResult>> => {
+        setSentryUser({ id: user.id });
+        setSentryConversationId(`rec-${user.id}-${Date.now()}`);
+        return ok(
           await runPipeline(
             { db, userId: user.id, isAdmin: isAdminByClaims(claims) },
             { type: "history", options: data },
           ),
-        ),
+        );
+      },
     ),
   );
 
@@ -423,12 +433,15 @@ export const startHomepageGeneration = createServerFn({
   authedFn(
     { mode: "require", feature: "ai-recommendations" },
     undefined,
-    async ({ claims, db, user }): Promise<ApiResult<GenerateResult>> =>
-      ok(
+    async ({ claims, db, user }): Promise<ApiResult<GenerateResult>> => {
+      setSentryUser({ id: user.id });
+      setSentryConversationId(`homepage-${user.id}-${Date.now()}`);
+      return ok(
         await runPipeline(
           { db, userId: user.id, isAdmin: isAdminByClaims(claims) },
           { type: "homepage" },
         ),
-      ),
+      );
+    },
   ),
 );

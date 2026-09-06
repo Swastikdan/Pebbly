@@ -261,7 +261,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
       imageWidth={192}
       imageHeight={288}
       imageSizes="(max-width: 767px) 92px, (max-width: 1023px) 176px, 192px"
-      mediaTypeLabel={media_type === "movie" ? "Movie" : "TV"}
+      mediaTypeLabel={media_type === "movie" ? "Movie" : "Series"}
       linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
       actionsClassName="transition-[transform,opacity] duration-200 ease-out"
     >
@@ -346,7 +346,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
       imageWidth={450}
       imageHeight={300}
       imageSizes="(max-width: 640px) 256px, (max-width: 768px) 288px, 320px"
-      mediaTypeLabel={media_type === "movie" ? "Movie" : "TV Series"}
+      mediaTypeLabel={media_type === "movie" ? "Movie" : "Series"}
       linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
       actionsClassName="transition-[color,background-color,transform] duration-300 ease-out"
     >

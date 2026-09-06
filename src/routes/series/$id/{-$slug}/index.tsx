@@ -16,7 +16,7 @@ import { getTvCertification } from "@/lib/media-transform";
 import { getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 
-export const Route = createFileRoute("/tv/$id/{-$slug}/")(
+export const Route = createFileRoute("/series/$id/{-$slug}/")(
   indexRouteOptions("tv", TvHomePage),
 );
 
@@ -33,7 +33,7 @@ function TvHomePage() {
     subPageEntity: "home",
     id: data?.id,
     title: data?.name ?? data?.original_name,
-    incomingPathname: `/tv/${tv_id}/${tv_slug}`,
+    incomingPathname: `/series/${tv_id}/${tv_slug}`,
     isLoading,
   });
   if (isLoading) {

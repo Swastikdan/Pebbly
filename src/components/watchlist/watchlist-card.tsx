@@ -103,9 +103,11 @@ export function WatchlistCard({
     });
   };
 
+  const routeType = item.type === "tv" ? "series" : item.type;
+
   return (
     <MediaRowCardShell
-      to={`/${item.type}/${item.external_id}/${formattedTitle}`}
+      to={`/${routeType}/${item.external_id}/${formattedTitle}`}
       className="[@media(hover:hover)]:hover:border-foreground/20 rounded-lg transition-[border-color,opacity] duration-150"
       poster={
         <Image
