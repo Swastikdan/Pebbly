@@ -1,5 +1,6 @@
 import viteReact from "@vitejs/plugin-react";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { sentryTanstackStart } from "@sentry/tanstackstart-react/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
@@ -108,6 +109,11 @@ const config = defineConfig(({ mode }) => ({
     nitro(),
     tailwindcss(),
     tanstackStart(),
+    sentryTanstackStart({
+      org: "swastik-q9",
+      project: "pebbly-tanstackstart-react",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+    }),
     viteReact({
       babel: {
         plugins: [["babel-plugin-react-compiler", {}]],

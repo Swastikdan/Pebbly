@@ -261,7 +261,7 @@ export function VideoPlayerModal({
               type="button"
               variant="ghost"
               className={cn(
-                "group/play absolute inset-0 z-10 size-full rounded-xl p-0 opacity-0 transition-opacity duration-200 before:rounded-xl hover:bg-transparent hover:opacity-100 focus-visible:opacity-100",
+                "group/play absolute inset-0 z-10 size-full rounded-xl p-0 opacity-0 transition-opacity duration-100 before:rounded-xl hover:bg-transparent hover:opacity-100 focus-visible:opacity-100",
                 className,
               )}
               aria-label={`Play ${title}`}
@@ -273,7 +273,7 @@ export function VideoPlayerModal({
             />
           }
         >
-          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-200 group-hover/play:scale-110 group-hover/play:bg-black/80">
+          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
             <Play className="size-6 fill-white text-white" />
           </div>
         </DialogTrigger>

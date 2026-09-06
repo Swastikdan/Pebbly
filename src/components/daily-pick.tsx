@@ -89,7 +89,7 @@ export function DailyPickButton() {
         className="bg-background border-border max-w-[92vw] overflow-hidden rounded-lg border p-0 shadow-none sm:max-w-lg"
         closeProps={{
           className:
-            "border-border bg-background text-foreground hover:bg-muted top-3 right-3 z-30 rounded-md border p-2",
+            "border-border bg-background text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800 top-3 right-3 z-30 rounded-md border p-2",
         }}
       >
         {pick.isDataLoading ? (

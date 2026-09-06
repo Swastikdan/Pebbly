@@ -213,11 +213,8 @@ function SeasonEpisodeList({
             <Skeleton className="xs:h-20 xs:w-32 h-16 w-28 shrink-0 rounded-lg sm:h-24 sm:w-40 md:h-28 md:w-48" />
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 flex-col gap-1">
-                  <Skeleton className="h-3 w-8 rounded" />
-                  <Skeleton className="h-4.5 w-36 rounded md:h-5 md:w-52" />
-                </div>
-                <Skeleton className="size-7 shrink-0 rounded-lg" />
+                <Skeleton className="h-4.5 w-36 rounded md:h-5 md:w-52" />
+                <Skeleton className="size-8 shrink-0 rounded-md" />
               </div>
               <div className="flex flex-wrap items-center gap-2 pt-0.5">
                 <Skeleton className="h-4.5 w-12 rounded-md" />
@@ -305,6 +302,9 @@ function EpisodeCard({
           }
           width={250}
         />
+        <span className="pointer-events-none absolute bottom-1.5 left-1.5 z-20 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums backdrop-blur-sm">
+          E{episode.episode_number}
+        </span>
         <Suspense fallback={null}>
           <VideoPlayerModal
             tmdbId={tvId}
@@ -319,20 +319,15 @@ function EpisodeCard({
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-muted-foreground text-[10px] font-medium">
-              E{String(episode.episode_number).padStart(2, "0")}
-            </span>
-            <h3 className="truncate text-sm font-bold md:text-base">
-              {episode.name}
-            </h3>
-          </div>
+          <h3 className="min-w-0 truncate text-sm font-bold md:text-base">
+            {episode.name}
+          </h3>
 
           <Button
             type="button"
             variant="ghost"
             onClick={onToggleWatched}
-            className={`pressable-small h-auto shrink-0 rounded-lg border p-1.5 text-[10px] font-medium transition-[color,background-color,border-color] ${
+            className={`pressable-small h-auto shrink-0 rounded-md border p-2 text-[10px] font-medium transition-[color,background-color,border-color] ${
               isWatched
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                 : "border-border/50 text-muted-foreground hover:border-foreground/20 hover:text-foreground bg-transparent"
@@ -341,7 +336,7 @@ function EpisodeCard({
           >
             {isWatched ? (
               <svg
-                className="size-3.5"
+                className="size-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={2.5}
@@ -356,7 +351,7 @@ function EpisodeCard({
               </svg>
             ) : (
               <svg
-                className="size-3.5"
+                className="size-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={2}

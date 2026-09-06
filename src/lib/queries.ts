@@ -8,6 +8,7 @@ import type {
 } from "./tmdb-schemas";
 import type { MediaType } from "@/domain/media";
 import type { MediaListQuery, MediaQuery } from "@/domain/media-query";
+import { reportClientSideError } from "./client-error-reporting";
 import { getTmdbFetch } from "./tmdb";
 import * as Schemas from "./tmdb-schemas";
 import { validateId } from "./utils";
@@ -22,6 +23,13 @@ async function safeFetch<Output>(
       getTmdbFetch() as (url: string, opts: unknown) => Promise<Output>
     )(url, { output: schema })) as Output;
   } catch (error: unknown) {
+    reportClientSideError(error, {
+      source: "tmdb",
+      endpoint: url,
+      route:
+        typeof window === "undefined" ? undefined : window.location.pathname,
+    });
+
     if (import.meta.env.DEV) {
       console.error(`[${queryName}] ❌ Error fetching TMDB URL: "${url}"`, {
         queryName,

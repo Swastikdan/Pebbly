@@ -1,4 +1,8 @@
 import { getToken } from "@clerk/react";
+import {
+  sentryGlobalFunctionMiddleware,
+  sentryGlobalRequestMiddleware,
+} from "@sentry/tanstackstart-react";
 import { createCsrfMiddleware, createStart } from "@tanstack/react-start";
 
 import { requestLogger, serverFnLogger } from "./server/request-logger";
@@ -23,10 +27,11 @@ export const startInstance = createStart(() => ({
   // calls carry Sec-Fetch-Site/Origin and pass; cookie-derived sessions
   // can no longer be abused by a cross-site form/fetch from another origin.
   requestMiddleware: [
+    sentryGlobalRequestMiddleware,
     requestLogger,
     createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" }),
   ],
-  functionMiddleware: [serverFnLogger],
+  functionMiddleware: [sentryGlobalFunctionMiddleware, serverFnLogger],
   serverFns: {
     fetch: async (url, args = {}) => {
       const headers = new Headers(args.headers);

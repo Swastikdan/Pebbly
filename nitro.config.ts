@@ -88,6 +88,10 @@ const contentSecurityPolicy = [
     ...clerkOrigins,
     // Clerk SDK telemetry beacon.
     "https://clerk-telemetry.com",
+    // Sentry error reporting, tracing, and replay ingestion.
+    "https://*.ingest.de.sentry.io",
+    "https://*.ingest.sentry.io",
+    "https://*.sentry.io",
   ].join(" "),
   [
     "frame-src",

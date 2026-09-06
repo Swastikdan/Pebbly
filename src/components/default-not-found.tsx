@@ -1,6 +1,9 @@
+import { useEffect } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 
+import type { ErrorComponentProps } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { reportClientSideError } from "@/lib/client-error-reporting";
 
 export function DefaultNotFoundComponent() {
   return (
@@ -25,8 +28,19 @@ export function DefaultNotFoundComponent() {
   );
 }
 
-export function DefaultErrorComponent() {
+export function DefaultErrorComponent({
+  error,
+  info,
+}: Partial<ErrorComponentProps>) {
   const router = useRouter();
+
+  useEffect(() => {
+    if (error === undefined) return;
+    reportClientSideError(error, {
+      source: "route-error",
+      componentStack: info?.componentStack,
+    });
+  }, [error, info?.componentStack]);
 
   return (
     <div className="grid h-full min-h-[calc(100vh-200px)] place-content-center items-center justify-center px-6">

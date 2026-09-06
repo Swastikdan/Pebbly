@@ -23,6 +23,7 @@ import { NavigationProgressBar } from "@/components/navigation-progress-bar";
 import { ToastProvider } from "@/components/ui/toast";
 import { SITE_CONFIG } from "@/constants";
 import { THEME_STORAGE_KEY, useTheme } from "@/hooks/use-theme";
+import { reportClientSideError } from "@/lib/client-error-reporting";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import appCss from "@/styles.css?url";
 
@@ -230,6 +231,31 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
   // Keeps the OS-preference subscription alive for the whole app.
   useTheme();
+
+  useEffect(() => {
+    const handleWindowError = (event: ErrorEvent) => {
+      reportClientSideError(event.error ?? event.message, {
+        source: "window-error",
+        route: window.location.pathname,
+      });
+    };
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      reportClientSideError(event.reason, {
+        source: "unhandled-rejection",
+        route: window.location.pathname,
+      });
+    };
+
+    window.addEventListener("error", handleWindowError);
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    return () => {
+      window.removeEventListener("error", handleWindowError);
+      window.removeEventListener(
+        "unhandledrejection",
+        handleUnhandledRejection,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
