@@ -215,7 +215,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
                 },
               });
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color,transform] duration-150 hover:bg-red-600 hover:text-white [@media(hover:hover)]:hover:scale-105"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color] duration-150 hover:bg-red-600 hover:text-white"
           >
             <XIcon aria-hidden="true" className="size-4" />
           </button>
@@ -231,7 +231,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             release_date={release_date ?? ""}
             title={title}
             overview={overview}
-            className="h-8 w-8 rounded-md shadow-none hover:scale-105"
+            className="h-8 w-8 rounded-md shadow-none"
           />
         )}
       </div>
@@ -394,7 +394,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
       params={{ id: String(id) }}
       className="group ring-offset-background focus-visible:ring-ring pressable relative block w-24 outline-hidden transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 md:w-28 lg:w-32"
     >
-      <div className="bg-muted border-border group-hover:border-foreground/25 relative aspect-2/3 w-full overflow-hidden rounded-lg border transition-[border-color] duration-200">
+      <div className="bg-muted relative aspect-2/3 w-full overflow-hidden rounded-lg shadow-[0px_0px_0px_1px_oklch(0_0_0/0.06),0px_1px_2px_-1px_oklch(0_0_0/0.06),0px_2px_4px_0px_oklch(0_0_0/0.04)] transition-[box-shadow] duration-150 ease-out group-hover:shadow-[0px_0px_0px_1px_oklch(0_0_0/0.08),0px_1px_2px_-1px_oklch(0_0_0/0.08),0px_2px_4px_0px_oklch(0_0_0/0.06)] dark:shadow-[0_0_0_1px_oklch(1_0_0/0.08)] dark:group-hover:shadow-[0_0_0_1px_oklch(1_0_0/0.13)]">
         <Image
           alt={name}
           src={imageUrl}

@@ -96,6 +96,13 @@
   --warning-foreground: var(--color-amber-700);
   --nav-active-bg: oklch(0.34 0 0);
   --nav-active-fg: oklch(0.97 0 0);
+  /* Skill: surfaces — shadow-as-border recipe (light mode) */
+  --shadow-border:
+    0px 0px 0px 1px oklch(0 0 0 / 0.06), 0px 1px 2px -1px oklch(0 0 0 / 0.06),
+    0px 2px 4px 0px oklch(0 0 0 / 0.04);
+  --shadow-border-hover:
+    0px 0px 0px 1px oklch(0 0 0 / 0.08), 0px 1px 2px -1px oklch(0 0 0 / 0.08),
+    0px 2px 4px 0px oklch(0 0 0 / 0.06);
 }
 .dark {
   --background: color-mix(
@@ -156,6 +163,9 @@
   --warning-foreground: var(--color-amber-400);
   --nav-active-bg: oklch(0.87 0 0);
   --nav-active-fg: oklch(0.22 0 0);
+  /* Skill: surfaces — shadow-as-border recipe (dark mode: single white ring) */
+  --shadow-border: 0 0 0 1px oklch(1 0 0 / 0.08);
+  --shadow-border-hover: 0 0 0 1px oklch(1 0 0 / 0.13);
 }
 @theme inline {
   --color-background: var(--background);

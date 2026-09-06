@@ -273,8 +273,11 @@ export function VideoPlayerModal({
             />
           }
         >
-          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
-            <Play aria-hidden="true" className="size-6 fill-white text-white" />
+          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color] duration-100 group-hover/play:bg-black/80">
+            <Play
+              aria-hidden="true"
+              className="size-6 translate-x-[2px] fill-white text-white"
+            />
           </div>
         </DialogTrigger>
       ) : variant === "episode" ? (

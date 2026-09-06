@@ -18,14 +18,19 @@ export function ThemeSwitcher({ className }: { className?: string }) {
         setThemeWithTransition(isDark ? "light" : "dark");
       }}
     >
-      <Sun
+      {/* Both icons stay in the DOM so both enter and exit animate cleanly */}
+      <span
         aria-hidden="true"
-        className="size-4.5 scale-100 rotate-0 transition-transform duration-200 dark:scale-0 dark:-rotate-90"
-      />
-      <Moon
+        className="absolute scale-100 opacity-100 [filter:blur(0px)] transition-[opacity,scale,filter] duration-300 ease-[cubic-bezier(0.2,0,0,1)] dark:scale-[0.25] dark:opacity-0 dark:[filter:blur(4px)]"
+      >
+        <Sun className="size-4.5" />
+      </span>
+      <span
         aria-hidden="true"
-        className="absolute size-4.5 scale-0 rotate-90 transition-transform duration-200 dark:scale-100 dark:rotate-0"
-      />
+        className="scale-[0.25] opacity-0 [filter:blur(4px)] transition-[opacity,scale,filter] duration-300 ease-[cubic-bezier(0.2,0,0,1)] dark:scale-100 dark:opacity-100 dark:[filter:blur(0px)]"
+      >
+        <Moon className="size-4.5" />
+      </span>
       <span className="sr-only">Toggle theme</span>
     </Button>
   );

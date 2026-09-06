@@ -78,7 +78,12 @@ const ImageComponent = ({
       : undefined;
 
   return (
-    <div className={cn("bg-foreground/10 relative overflow-hidden", className)}>
+    <div
+      className={cn(
+        "bg-foreground/10 relative overflow-hidden outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10",
+        className,
+      )}
+    >
       {blurStyle ? (
         <div
           aria-hidden="true"

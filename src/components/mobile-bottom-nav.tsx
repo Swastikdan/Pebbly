@@ -35,6 +35,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { usePermissions } from "@/hooks/use-permissions";
+import { cn } from "@/lib/utils";
 
 // Same code-split as the desktop nav: the account tab shows its static icon
 // immediately and Clerk's widgets hydrate into it from a lazy chunk.
@@ -143,7 +144,27 @@ const MobileBottomNav = () => {
             aria-current={active ? "page" : undefined}
           >
             <span aria-hidden="true" className="mobile-bottom-nav-tab-icon">
-              {active ? tab.activeIcon : tab.icon}
+              {/* Both icons stay in the DOM for a smooth cross-fade on every state change */}
+              <span
+                className={cn(
+                  "absolute transition-[opacity,scale,filter] duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                  active
+                    ? "scale-100 opacity-100 [filter:blur(0px)]"
+                    : "scale-[0.25] opacity-0 [filter:blur(4px)]",
+                )}
+              >
+                {tab.activeIcon}
+              </span>
+              <span
+                className={cn(
+                  "transition-[opacity,scale,filter] duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                  active
+                    ? "scale-[0.25] opacity-0 [filter:blur(4px)]"
+                    : "scale-100 opacity-100 [filter:blur(0px)]",
+                )}
+              >
+                {tab.icon}
+              </span>
             </span>
             <span className="mobile-bottom-nav-tab-label">{tab.label}</span>
           </Link>

@@ -1,9 +1,9 @@
-import type { ClassValue } from "clsx";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "cn";
 
 import type { MediaMetadata, ProgressStatus } from "@/domain/watchlist";
 import { PROGRESS_STATUSES } from "@/domain/watchlist";
+
+export { cn };
 
 // Derived from the domain constant so the two lists can never drift apart.
 const VALID_PROGRESS_STATUSES: ReadonlySet<string> = new Set(PROGRESS_STATUSES);
@@ -39,10 +39,6 @@ type ValidationResult<T> =
       success: false;
       error: string;
     };
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 /**
  * Centralised error logger shared across repositories, hooks and helpers.
