@@ -121,7 +121,11 @@ function TvSeasonsPage() {
                       variant="secondary"
                     >
                       <span className="flex flex-row items-center gap-1">
-                        <Star className="size-3 fill-current" size={16} />
+                        <Star
+                          aria-hidden="true"
+                          className="size-3 fill-current"
+                          size={16}
+                        />
                         {season.vote_average * 10} %
                       </span>
                     </Badge>

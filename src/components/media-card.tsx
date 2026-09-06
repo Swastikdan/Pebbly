@@ -159,7 +159,10 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
 
           {rating > 0 && (
             <Badge className="text-meta absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md border-0 bg-black/90 px-2 py-2.75 text-white sm:bg-black/60">
-              <Star className="size-4 fill-yellow-400 text-yellow-400" />
+              <Star
+                aria-hidden="true"
+                className="size-4 fill-yellow-400 text-yellow-400"
+              />
               <span className="font-semibold text-white">
                 {rating.toFixed(1)}
               </span>
@@ -214,7 +217,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             }}
             className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color,transform] duration-150 hover:bg-red-600 hover:text-white [@media(hover:hover)]:hover:scale-105"
           >
-            <XIcon className="size-4" />
+            <XIcon aria-hidden="true" className="size-4" />
           </button>
         )}
         {!hideWatchlistButton && (

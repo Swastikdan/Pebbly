@@ -128,7 +128,7 @@ export function WatchlistCard({
           aria-label={`Remove ${item.title} from watchlist`}
           onClick={(e) => handleRemove(e, item, onRemoveFromWatchlist)}
         >
-          <TrashBin size={14} />
+          <TrashBin aria-hidden="true" size={14} />
         </Button>
       }
       metaRow={
@@ -154,9 +154,13 @@ export function WatchlistCard({
               aria-label={`Marked as ${progressOption.label}. Click to move to ${nextOption.label}.`}
               className="bg-secondary/80 text-secondary-foreground hover:bg-secondary inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium"
             >
-              <ProgressIcon size={12} />
+              <ProgressIcon aria-hidden="true" size={12} />
               {progressOption.label}
-              <ChevronRight size={10} className="opacity-50" />
+              <ChevronRight
+                aria-hidden="true"
+                size={10}
+                className="opacity-50"
+              />
               <span className="text-muted-foreground">{nextOption.label}</span>
             </Button>
           ) : (
@@ -171,7 +175,7 @@ export function WatchlistCard({
               title="Recommended"
               className="border-info/30 bg-info/15 text-info inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border"
             >
-              <Sparkles size={12} />
+              <Sparkles aria-hidden="true" size={12} />
             </span>
           )}
           {reactionOption && (

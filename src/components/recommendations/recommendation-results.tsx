@@ -276,7 +276,7 @@ function RecommendationCard({
           </p>
           <div className="mt-1 flex w-full items-center justify-between">
             <span className="text-muted-foreground/50 group-hover/card:text-foreground inline-flex items-center gap-1 text-[10.5px] font-medium transition-colors duration-200">
-              <ArrowUpRight size={11} />
+              <ArrowUpRight aria-hidden="true" size={11} />
               Search
             </span>
             {relevanceScore && (

@@ -149,25 +149,27 @@ export function AdminUserTable() {
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2" />
+          <Search
+            aria-hidden="true"
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2"
+          />
           <Input
             placeholder="Search users..."
+            aria-label="Search users"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-9 rounded-md text-sm [&>input]:ps-8.5"
           />
         </div>
-        <div
-          role="tablist"
-          aria-label="User filter tabs"
+        <fieldset
+          aria-label="User filters"
           className="bg-muted/40 grid w-full shrink-0 grid-cols-3 gap-1 rounded-md border p-1 sm:flex sm:w-auto"
         >
           {filterTabs.map((ft) => (
             <button
               key={ft.id}
               type="button"
-              role="tab"
-              aria-selected={filterTab === ft.id}
+              aria-pressed={filterTab === ft.id}
               onClick={() => setFilterTab(ft.id)}
               className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
                 filterTab === ft.id
@@ -187,7 +189,7 @@ export function AdminUserTable() {
               </span>
             </button>
           ))}
-        </div>
+        </fieldset>
       </div>
 
       <div className="hidden overflow-hidden rounded-lg border md:block">

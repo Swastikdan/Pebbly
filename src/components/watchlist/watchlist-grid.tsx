@@ -46,7 +46,10 @@ export function WatchlistGrid({
       return (
         <div className="animate-fade-in-up flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center">
           <div className="bg-secondary flex size-16 items-center justify-center rounded-lg">
-            <BookMarkFilledIcon className="text-muted-foreground size-7" />
+            <BookMarkFilledIcon
+              aria-hidden="true"
+              className="text-muted-foreground size-7"
+            />
           </div>
           <div>
             <h3 className="mb-2 text-lg font-semibold">
@@ -59,7 +62,7 @@ export function WatchlistGrid({
           </div>
           <Link to="/search">
             <Button variant="secondary" size="lg" className="gap-2">
-              <SearchFilledIcon className="size-4" />
+              <SearchFilledIcon aria-hidden="true" className="size-4" />
               Browse titles
             </Button>
           </Link>

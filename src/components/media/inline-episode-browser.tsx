@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { SeasonInfo, TvEpisodeDetail } from "@/lib/tmdb-schemas";
@@ -281,6 +281,7 @@ function EpisodeCard({
   onToggleWatched: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const overviewId = useId();
   const hasLongOverview = (episode.overview?.length ?? 0) > 100;
   const progress = useEpisodeProgress(
     tvId,
@@ -327,6 +328,7 @@ function EpisodeCard({
             type="button"
             variant="ghost"
             onClick={onToggleWatched}
+            aria-label={isWatched ? "Mark as unwatched" : "Mark as watched"}
             className={`pressable-small h-auto shrink-0 rounded-md border p-2 text-[10px] font-medium transition-[color,background-color,border-color] ${
               isWatched
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
@@ -336,13 +338,13 @@ function EpisodeCard({
           >
             {isWatched ? (
               <svg
+                aria-hidden="true"
                 className="size-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={2.5}
                 stroke="currentColor"
               >
-                <title>Mark as unwatched</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -351,13 +353,13 @@ function EpisodeCard({
               </svg>
             ) : (
               <svg
+                aria-hidden="true"
                 className="size-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={2}
                 stroke="currentColor"
               >
-                <title>Mark as watched</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -395,7 +397,10 @@ function EpisodeCard({
               className="rounded-md px-1.5 py-0.5 text-[10px] font-medium"
               variant="secondary"
             >
-              <Star className="mr-0.5 size-2.5 fill-current text-yellow-400" />
+              <Star
+                aria-hidden="true"
+                className="mr-0.5 size-2.5 fill-current text-yellow-400"
+              />
               {episode.vote_average.toFixed(1)}
             </Badge>
           )}
@@ -417,7 +422,10 @@ function EpisodeCard({
 
         {episode.overview ? (
           <div className="mt-0.5 hidden sm:block">
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            <p
+              id={overviewId}
+              className="text-muted-foreground text-xs leading-relaxed"
+            >
               {expanded || !hasLongOverview
                 ? episode.overview
                 : `${episode.overview.slice(0, 120)}…`}
@@ -426,6 +434,8 @@ function EpisodeCard({
               <Button
                 type="button"
                 variant="link"
+                aria-expanded={expanded}
+                aria-controls={overviewId}
                 onClick={() => setExpanded(!expanded)}
                 className="text-foreground/60 hover:text-foreground mt-0.5 h-auto p-0 text-[11px] font-medium transition-colors"
               >

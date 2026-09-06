@@ -9,7 +9,10 @@ export const RatingCount = (props: { rating: number; ratingcount: number }) => {
 
   return (
     <div className="text-compact flex items-center gap-1.5">
-      <Star className="size-4 fill-yellow-500 text-yellow-500" />
+      <Star
+        aria-hidden="true"
+        className="size-4 fill-yellow-500 text-yellow-500"
+      />
       <span className="font-semibold tabular-nums">{rating_rounded}</span>
       <span className="text-muted-foreground/60">/10</span>
       {props.ratingcount > 0 && (

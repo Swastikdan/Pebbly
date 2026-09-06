@@ -142,7 +142,7 @@ const MobileBottomNav = () => {
             aria-label={tab.label}
             aria-current={active ? "page" : undefined}
           >
-            <span className="mobile-bottom-nav-tab-icon">
+            <span aria-hidden="true" className="mobile-bottom-nav-tab-icon">
               {active ? tab.activeIcon : tab.icon}
             </span>
             <span className="mobile-bottom-nav-tab-label">{tab.label}</span>
@@ -155,7 +155,7 @@ const MobileBottomNav = () => {
           fallback={
             <div className="flex h-full w-full flex-col items-center justify-center">
               <span className="mobile-bottom-nav-tab-icon">
-                <UserIcon className="size-6" />
+                <UserIcon aria-hidden="true" className="size-6" />
               </span>
               <span className="mobile-bottom-nav-tab-label">Account</span>
             </div>

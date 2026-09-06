@@ -123,7 +123,7 @@ export function SheetPopup({
                 typeof closeClassName === "string" ? closeClassName : undefined,
               )}
             >
-              <XIcon className="size-5.5" />
+              <XIcon aria-hidden="true" className="size-5.5" />
               <span className="sr-only">Close</span>
             </SheetPrimitive.Close>
           )}

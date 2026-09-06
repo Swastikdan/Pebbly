@@ -28,7 +28,7 @@ export const ShareButton = (props: { title?: string }) => {
       className="border-border border"
     >
       <span className="flex w-full items-center gap-1">
-        <ShareBold size={24} />
+        <ShareBold aria-hidden="true" size={24} />
         <span>Share</span>
       </span>
     </Button>

@@ -47,7 +47,10 @@ export function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon data-slot="select-icon">
-        <ChevronsUpDownIcon className={selectTriggerIconClassName} />
+        <ChevronsUpDownIcon
+          aria-hidden="true"
+          className={selectTriggerIconClassName}
+        />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -110,7 +113,10 @@ export function SelectPopup({
             className="before:from-popover top-0 z-50 flex h-6 w-full cursor-default items-center justify-center before:pointer-events-none before:absolute before:inset-x-px before:top-px before:h-[200%] before:rounded-t-[calc(var(--radius-lg)-1px)] before:bg-linear-to-b before:from-50%"
             data-slot="select-scroll-up-arrow"
           >
-            <ChevronUpIcon className="relative size-4.5 sm:size-4" />
+            <ChevronUpIcon
+              aria-hidden="true"
+              className="relative size-4.5 sm:size-4"
+            />
           </SelectPrimitive.ScrollUpArrow>
           <div className="bg-popover relative h-full min-w-(--anchor-width) rounded-lg border shadow-none">
             <SelectPrimitive.List
@@ -127,7 +133,10 @@ export function SelectPopup({
             className="before:from-popover bottom-0 z-50 flex h-6 w-full cursor-default items-center justify-center before:pointer-events-none before:absolute before:inset-x-px before:bottom-px before:h-[200%] before:rounded-b-[calc(var(--radius-lg)-1px)] before:bg-linear-to-t before:from-50%"
             data-slot="select-scroll-down-arrow"
           >
-            <ChevronDownIcon className="relative size-4.5 sm:size-4" />
+            <ChevronDownIcon
+              aria-hidden="true"
+              className="relative size-4.5 sm:size-4"
+            />
           </SelectPrimitive.ScrollDownArrow>
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>

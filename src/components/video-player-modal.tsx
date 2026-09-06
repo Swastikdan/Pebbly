@@ -274,7 +274,7 @@ export function VideoPlayerModal({
           }
         >
           <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
-            <Play className="size-6 fill-white text-white" />
+            <Play aria-hidden="true" className="size-6 fill-white text-white" />
           </div>
         </DialogTrigger>
       ) : variant === "episode" ? (
@@ -291,7 +291,7 @@ export function VideoPlayerModal({
             />
           }
         >
-          <Play className="size-4 fill-current" />
+          <Play aria-hidden="true" className="size-4 fill-current" />
           {label}
         </DialogTrigger>
       ) : (
@@ -308,7 +308,7 @@ export function VideoPlayerModal({
             />
           }
         >
-          <Play className="size-5 fill-current" />
+          <Play aria-hidden="true" className="size-5 fill-current" />
           {label}
         </DialogTrigger>
       )}
@@ -373,7 +373,7 @@ export function VideoPlayerModal({
               controlsVisible ? "opacity-100" : "pointer-events-none opacity-0",
             )}
           >
-            <XIcon className="size-5.5" />
+            <XIcon aria-hidden="true" className="size-5.5" />
           </button>
           <button
             type="button"
@@ -386,9 +386,9 @@ export function VideoPlayerModal({
             )}
           >
             {isFullscreen ? (
-              <Minimize className="size-5.5" />
+              <Minimize aria-hidden="true" className="size-5.5" />
             ) : (
-              <Maximize2 className="size-5.5" />
+              <Maximize2 aria-hidden="true" className="size-5.5" />
             )}
           </button>
         </div>

@@ -37,7 +37,7 @@ export function DailyPickButton() {
         className="pressable opacity-70"
         aria-hidden="true"
       >
-        <FilmIcon className="text-primary mr-1.5 size-4" />
+        <FilmIcon aria-hidden="true" className="text-primary mr-1.5 size-4" />
         <span>What to Watch Today</span>
       </Button>
     );
@@ -82,7 +82,7 @@ export function DailyPickButton() {
           />
         }
       >
-        <FilmIcon className="text-primary mr-1.5 size-4" />
+        <FilmIcon aria-hidden="true" className="text-primary mr-1.5 size-4" />
         <span>What to Watch Today</span>
       </DialogTrigger>
       <DialogPopup
@@ -119,7 +119,7 @@ export function DailyPickButton() {
               <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 pr-12">
                 {pick.selectedItem.isCurrentlyWatching ? (
                   <span className="inline-flex items-center gap-1.5 rounded-md bg-green-500/90 px-2.5 py-0.5 text-[11px] font-medium text-black">
-                    <Eye className="size-3" />
+                    <Eye aria-hidden="true" className="size-3" />
                     Watching
                     {pick.selectedItem.watchProgress
                       ? ` (${Math.round(pick.selectedItem.watchProgress) + 1}%)`
@@ -127,12 +127,18 @@ export function DailyPickButton() {
                   </span>
                 ) : pick.selectedItem.isFromWatchlist ? (
                   <span className="inline-flex items-center gap-1 rounded-md bg-blue-600/90 px-2.5 py-0.5 text-[11px] font-medium text-white">
-                    <BookMarkIcon className="size-3 fill-white" />
+                    <BookMarkIcon
+                      aria-hidden="true"
+                      className="size-3 fill-white"
+                    />
                     From Your Watchlist
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-md border border-blue-500/25 bg-black/75 px-2.5 py-0.5 text-[11px] font-medium text-blue-400">
-                    <SparklesIcon className="size-3 fill-blue-400" />
+                    <SparklesIcon
+                      aria-hidden="true"
+                      className="size-3 fill-blue-400"
+                    />
                     Today's Pick
                   </span>
                 )}
@@ -183,7 +189,10 @@ export function DailyPickButton() {
                       <>
                         <span>•</span>
                         <span className="flex items-center gap-1 font-bold">
-                          <Star className="size-3.5 fill-yellow-400 text-yellow-400" />
+                          <Star
+                            aria-hidden="true"
+                            className="size-3.5 fill-yellow-400 text-yellow-400"
+                          />
                           {pick.rating.toFixed(1)}
                         </span>
                       </>
@@ -210,7 +219,10 @@ export function DailyPickButton() {
                         >
                           {" "}
                           <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-md text-xs font-medium sm:h-11 sm:text-sm">
-                            <Play className="mr-1.5 size-3.5 fill-current" />
+                            <Play
+                              aria-hidden="true"
+                              className="mr-1.5 size-3.5 fill-current"
+                            />
                             <span>Watch Now</span>
                           </Button>
                         </Link>
@@ -239,7 +251,10 @@ export function DailyPickButton() {
                         title="Dislike / Not for me (Removes from picks)"
                         className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
                       >
-                        <ThumbsDown className="mr-1.5 size-3.5" />
+                        <ThumbsDown
+                          aria-hidden="true"
+                          className="mr-1.5 size-3.5"
+                        />
                         <span>Dislike</span>
                       </Button>
 
@@ -249,7 +264,7 @@ export function DailyPickButton() {
                         title="Pick Another"
                         className="border-border hover:bg-accent active:bg-accent h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-10"
                       >
-                        <Dices className="mr-1.5 size-3.5" />
+                        <Dices aria-hidden="true" className="mr-1.5 size-3.5" />
                         <span>Another</span>
                       </Button>
                     </div>
@@ -278,7 +293,10 @@ export function DailyPickButton() {
                       title="Dislike / Not for me (Removes from picks)"
                       className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive active:bg-destructive/15 active:text-destructive h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
                     >
-                      <ThumbsDown className="mr-1.5 size-3.5" />
+                      <ThumbsDown
+                        aria-hidden="true"
+                        className="mr-1.5 size-3.5"
+                      />
                       <span>Dislike</span>
                     </Button>
 
@@ -288,7 +306,7 @@ export function DailyPickButton() {
                       title="Pick Another"
                       className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.97] sm:h-11 sm:text-sm"
                     >
-                      <Dices className="mr-1.5 size-3.5" />
+                      <Dices aria-hidden="true" className="mr-1.5 size-3.5" />
                       <span>Another</span>
                     </Button>
                   </div>
@@ -298,7 +316,10 @@ export function DailyPickButton() {
           </div>
         ) : (
           <div className="flex min-h-62.5 flex-col items-center justify-center p-8 text-center">
-            <FilmIcon className="text-muted-foreground/40 mb-3 size-10" />
+            <FilmIcon
+              aria-hidden="true"
+              className="text-muted-foreground/40 mb-3 size-10"
+            />
             <h4 className="text-foreground text-base font-semibold">
               No picks available
             </h4>

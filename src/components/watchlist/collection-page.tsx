@@ -129,17 +129,24 @@ export function CollectionPage({ listId }: { listId: string }) {
             className="text-muted-foreground shrink-0"
             title={isPublic ? "Public" : "Private"}
           >
-            {isPublic ? <Globe size={14} /> : <Lock size={14} />}
+            {isPublic ? (
+              <Globe aria-hidden="true" size={14} />
+            ) : (
+              <Lock aria-hidden="true" size={14} />
+            )}
+            <span className="sr-only">
+              {isPublic ? "Public collection" : "Private collection"}
+            </span>
           </span>
           {isPebblyPicks && (
             <span className="bg-foreground text-background inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium">
-              <Sparkles size={10} />
+              <Sparkles aria-hidden="true" size={10} />
               AI Curated
             </span>
           )}
           {isOrdered && (
             <span className="bg-secondary text-secondary-foreground inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium">
-              <ListOrdered size={10} />
+              <ListOrdered aria-hidden="true" size={10} />
               Ranked
             </span>
           )}
@@ -155,7 +162,7 @@ export function CollectionPage({ listId }: { listId: string }) {
               className="border-border text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
               aria-label={`Edit ${list.name}`}
             >
-              <Pencil size={13} />
+              <Pencil aria-hidden="true" size={13} />
               <span className="hidden sm:inline">Edit</span>
             </Button>
             <Button
@@ -166,7 +173,7 @@ export function CollectionPage({ listId }: { listId: string }) {
               className="border-border text-muted-foreground hover:text-destructive h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
               aria-label={`Delete ${list.name}`}
             >
-              <Trash2 size={13} />
+              <Trash2 aria-hidden="true" size={13} />
               <span className="hidden sm:inline">Delete</span>
             </Button>
           </div>

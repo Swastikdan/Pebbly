@@ -109,7 +109,7 @@ export function DialogPopup({
                 typeof closeClassName === "string" ? closeClassName : undefined,
               )}
             >
-              <XIcon className="size-5" />
+              <XIcon aria-hidden="true" className="size-5" />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
           )}

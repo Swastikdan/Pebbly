@@ -50,7 +50,7 @@ function SegmentedButton({
       )}
       aria-pressed={active}
     >
-      <Icon size={11} />
+      <Icon aria-hidden="true" size={11} />
       {label}
     </button>
   );
@@ -107,6 +107,7 @@ export function CustomListDialog({
   const isEditing = !!listId;
   const listNameId = useId();
   const listDescId = useId();
+  const errorId = useId();
 
   useEffect(() => {
     if (open) {
@@ -220,6 +221,8 @@ export function CustomListDialog({
                 if (e.key === "Enter") handleSubmit();
               }}
               maxLength={50}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? errorId : undefined}
               autoFocus
               className={cn(
                 "bg-card h-10 w-full rounded-lg border px-3.5 text-xs transition-[color,background-color,border-color,box-shadow] duration-150",
@@ -273,6 +276,7 @@ export function CustomListDialog({
                   >
                     {isSelected && (
                       <Check
+                        aria-hidden="true"
                         size={12}
                         className="absolute inset-0 m-auto text-white"
                         strokeWidth={3}
@@ -314,7 +318,7 @@ export function CustomListDialog({
                   onClick={handleCopyLink}
                   className="bg-secondary/70 text-secondary-foreground hover:bg-secondary flex cursor-pointer items-center gap-1.5 self-start rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors"
                 >
-                  <Copy size={10} />
+                  <Copy aria-hidden="true" size={10} />
                   Copy public link
                 </button>
               )}
@@ -347,7 +351,11 @@ export function CustomListDialog({
           </div>
 
           {error && (
-            <p className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs">
+            <p
+              id={errorId}
+              role="alert"
+              className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs"
+            >
               {error}
             </p>
           )}

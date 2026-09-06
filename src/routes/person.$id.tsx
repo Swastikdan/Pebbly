@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -151,6 +151,7 @@ function PersonPage() {
     () => biography.split("\n\n").filter(Boolean),
     [biography],
   );
+  const biographyId = useId();
 
   if (isLoading) {
     return <DefaultLoader />;
@@ -229,7 +230,10 @@ function PersonPage() {
           {biographyParagraphs.length > 0 && (
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Biography</h2>
-              <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap sm:text-[15px]">
+              <div
+                id={biographyId}
+                className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap sm:text-[15px]"
+              >
                 <div className="flex flex-col">
                   {isBiographyExpanded ? (
                     biographyParagraphs.map((paragraph, index) => (
@@ -253,6 +257,8 @@ function PersonPage() {
                       className="text-foreground w-fit px-0 font-semibold hover:no-underline"
                       size="sm"
                       variant="link"
+                      aria-expanded={isBiographyExpanded}
+                      aria-controls={biographyId}
                       onClick={() => setIsBiographyExpanded((prev) => !prev)}
                     >
                       {isBiographyExpanded ? "Read Less" : "Read More"}

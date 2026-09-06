@@ -28,6 +28,7 @@ function RoleToggleButtons({
           <button
             key={config.value}
             type="button"
+            aria-pressed={isActive}
             onClick={() => onToggleRole(config.value)}
             disabled={isBanned || isRolePending}
             title={
@@ -39,7 +40,7 @@ function RoleToggleButtons({
                 : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
             }`}
           >
-            {isActive && <Check className="size-3" />}
+            {isActive && <Check aria-hidden="true" className="size-3" />}
             {config.short}
           </button>
         );
@@ -86,7 +87,10 @@ function UserAvatar({ user, size }: { user: AdminUser; size: "sm" | "lg" }) {
     <img src={user.image} alt={user.name} className={className} />
   ) : (
     <div className={fallbackClassName}>
-      <UserCog className={`${iconClassName} text-muted-foreground`} />
+      <UserCog
+        aria-hidden="true"
+        className={`${iconClassName} text-muted-foreground`}
+      />
     </div>
   );
 }
@@ -105,7 +109,7 @@ function UserStatusBadge({
           size === "sm" ? "hover:bg-destructive/20" : "shrink-0 py-1 text-xs"
         }`}
       >
-        <UserX className="size-3" />
+        <UserX aria-hidden="true" className="size-3" />
         Banned
       </Badge>
     );
@@ -116,7 +120,7 @@ function UserStatusBadge({
         size === "sm" ? "hover:bg-emerald-500/20" : "shrink-0 py-1 text-xs"
       }`}
     >
-      <ShieldCheck className="size-3" />
+      <ShieldCheck aria-hidden="true" className="size-3" />
       Active
     </Badge>
   );
@@ -196,12 +200,12 @@ export function AdminUserRow({
           >
             {isBanned ? (
               <>
-                <ShieldCheck className="mr-1.5 size-3" />
+                <ShieldCheck aria-hidden="true" className="mr-1.5 size-3" />
                 Unban
               </>
             ) : (
               <>
-                <Ban className="mr-1.5 size-3" />
+                <Ban aria-hidden="true" className="mr-1.5 size-3" />
                 Ban
               </>
             )}
@@ -249,6 +253,7 @@ export function AdminUserRow({
               <button
                 key={config.value}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => onToggleRole(config.value)}
                 disabled={isBanned || isRolePending}
                 className={`flex min-h-9 cursor-pointer items-center gap-1.5 rounded-md border px-3.5 py-2 text-xs font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
@@ -257,7 +262,7 @@ export function AdminUserRow({
                     : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:text-foreground"
                 }`}
               >
-                {isActive && <Check className="size-3.5" />}
+                {isActive && <Check aria-hidden="true" className="size-3.5" />}
                 {config.label}
               </button>
             );
@@ -277,12 +282,12 @@ export function AdminUserRow({
           >
             {isBanned ? (
               <>
-                <ShieldCheck className="mr-1 size-3.5" />
+                <ShieldCheck aria-hidden="true" className="mr-1 size-3.5" />
                 Unban
               </>
             ) : (
               <>
-                <Ban className="mr-1 size-3.5" />
+                <Ban aria-hidden="true" className="mr-1 size-3.5" />
                 Ban
               </>
             )}

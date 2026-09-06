@@ -123,13 +123,13 @@ function HistoryAccordionItem({
           <div className="ml-auto hidden shrink-0 items-center gap-2 sm:flex">
             {movieCount > 0 && (
               <span className="text-muted-foreground/60 inline-flex items-center gap-1 text-[10px]">
-                <Film className="size-3" />
+                <Film aria-hidden="true" className="size-3" />
                 {movieCount}
               </span>
             )}
             {tvCount > 0 && (
               <span className="text-muted-foreground/60 inline-flex items-center gap-1 text-[10px]">
-                <Tv className="size-3" />
+                <Tv aria-hidden="true" className="size-3" />
                 {tvCount}
               </span>
             )}
@@ -176,7 +176,7 @@ function HistoryAccordionItem({
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             >
-              <ArrowUpRight className="size-3.5" />
+              <ArrowUpRight aria-hidden="true" className="size-3.5" />
               View Cards
             </Button>
             <Button
@@ -190,6 +190,7 @@ function HistoryAccordionItem({
               }}
             >
               <RefreshCw
+                aria-hidden="true"
                 className={cn("size-3.5", isGenerating && "animate-spin")}
               />
               Generate Again
@@ -204,7 +205,7 @@ function HistoryAccordionItem({
                 onGenerateMore();
               }}
             >
-              <Plus className="size-3.5" />
+              <Plus aria-hidden="true" className="size-3.5" />
               Generate More
             </Button>
             <Button
@@ -216,19 +217,19 @@ function HistoryAccordionItem({
                 onDelete();
               }}
             >
-              <Trash2 className="size-3.5" />
+              <Trash2 aria-hidden="true" className="size-3.5" />
               Delete
             </Button>
           </div>
 
           <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
             <span className="flex items-center gap-1">
-              <Film className="size-3.5" />
+              <Film aria-hidden="true" className="size-3.5" />
               {movieCount} {movieCount === 1 ? "movie" : "movies"}
             </span>
             <span className="text-muted-foreground/30">·</span>
             <span className="flex items-center gap-1">
-              <Tv className="size-3.5" />
+              <Tv aria-hidden="true" className="size-3.5" />
               {tvCount} TV {tvCount === 1 ? "show" : "shows"}
             </span>
             <span className="text-muted-foreground/30">·</span>

@@ -155,7 +155,7 @@ export function CustomListMediaCard({
                   )}
                   aria-label="Move up one rank"
                 >
-                  <ArrowUp size={12} />
+                  <ArrowUp aria-hidden="true" size={12} />
                 </button>
                 <button
                   type="button"
@@ -170,7 +170,7 @@ export function CustomListMediaCard({
                   )}
                   aria-label="Move down one rank"
                 >
-                  <ArrowDown size={12} />
+                  <ArrowDown aria-hidden="true" size={12} />
                 </button>
               </div>
             )}
@@ -183,7 +183,7 @@ export function CustomListMediaCard({
               aria-label={`Remove from collection`}
               onClick={handleRemove}
             >
-              <TrashBin size={14} />
+              <TrashBin aria-hidden="true" size={14} />
             </Button>
           </div>
         )

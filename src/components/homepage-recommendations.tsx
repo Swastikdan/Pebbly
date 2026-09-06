@@ -68,6 +68,10 @@ const HomepageRecommendationCard = memo(
                 ? "border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-700"
                 : "border-neutral-700 bg-neutral-900/90 text-white hover:bg-neutral-800",
             )}
+            aria-label={
+              isLiked ? "Remove from Watchlist" : "Add to Watchlist and like"
+            }
+            aria-pressed={isLiked}
             onClick={(event) => {
               event.stopPropagation();
               event.preventDefault();
@@ -88,6 +92,7 @@ const HomepageRecommendationCard = memo(
             }
           >
             <ThumbsUp
+              aria-hidden="true"
               size={13}
               className={isLiked ? "fill-white text-white" : "text-white"}
             />
@@ -96,6 +101,7 @@ const HomepageRecommendationCard = memo(
             variant="secondary"
             size="icon"
             className="pressable h-8 w-8 cursor-pointer rounded-md border border-neutral-700 bg-neutral-900/90 text-white transition-[color,background-color,border-color,transform] duration-150 hover:border-red-600 hover:bg-red-900/90 hover:text-red-200 active:scale-95 [@media(hover:hover)]:hover:scale-105"
+            aria-label="Dislike recommendation"
             onClick={(event) => {
               event.stopPropagation();
               event.preventDefault();
@@ -103,7 +109,7 @@ const HomepageRecommendationCard = memo(
             }}
             title="Dislike"
           >
-            <ThumbsDown size={13} />
+            <ThumbsDown aria-hidden="true" size={13} />
           </Button>
         </div>
       </div>
@@ -121,7 +127,10 @@ function RecommendationSectionHeader() {
 
 function GenerationErrorNotice({ error }: { error: string }) {
   return (
-    <div className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-xs">
+    <div
+      role="alert"
+      className="border-destructive/50 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-xs"
+    >
       {describeGenerationError(error, {
         rate_limited:
           "Please wait a couple minutes before refreshing personalized recommendations.",
@@ -162,7 +171,7 @@ export function HomepageRecommendations() {
     return (
       <section className="border-border/40 bg-card/40 w-full rounded-lg border px-4 py-4 text-left">
         <div className="text-muted-foreground mb-2 flex items-center gap-2">
-          <Sparkles size={16} className="text-primary" />
+          <Sparkles aria-hidden="true" size={16} className="text-primary" />
           <h3 className="text-sm font-semibold">
             Personalized Recommendations
           </h3>

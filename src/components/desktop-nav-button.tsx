@@ -36,7 +36,11 @@ const DesktopNavButton = ({
       className={cn(className, "pressable cursor-pointer")}
       render={<Link to={href} aria-label={label} />}
     >
-      {icon}
+      {icon && (
+        <span aria-hidden="true" className="contents">
+          {icon}
+        </span>
+      )}
     </Button>
   );
 };

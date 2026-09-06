@@ -171,7 +171,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
             onClick={scrollLeft}
             tabIndex={0}
           >
-            <ArrowLeftLine className="size-5" />
+            <ArrowLeftLine aria-hidden="true" className="size-5" />
           </Button>
         </>
       )}
@@ -195,7 +195,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
             onClick={scrollRight}
             tabIndex={0}
           >
-            <ArrowRightLine className="size-5" />
+            <ArrowRightLine aria-hidden="true" className="size-5" />
           </Button>
         </>
       )}

@@ -320,8 +320,11 @@
   a:focus-visible,
   button:focus-visible,
   [role="button"]:focus-visible,
-  input[type="checkbox"]:focus-visible,
-  input[type="radio"]:focus-visible {
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  summary:focus-visible,
+  [tabindex]:not([tabindex="-1"]):focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
@@ -674,6 +677,8 @@
 }
 .mobile-bottom-nav-hidden {
   transform: translateY(100%);
+  visibility: hidden;
+  pointer-events: none;
 }
 .mobile-bottom-nav-tab {
   display: flex;
@@ -702,6 +707,10 @@
 }
 .mobile-bottom-nav-tab[data-active="true"] {
   color: var(--foreground);
+}
+.mobile-bottom-nav-tab:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
 }
 .mobile-bottom-nav-tab-icon {
   position: relative;

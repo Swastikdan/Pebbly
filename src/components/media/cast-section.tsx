@@ -59,7 +59,7 @@ export const CastSection = (props: {
                     variant="secondary"
                   >
                     View More
-                    <ArrowRightLine size={24} />
+                    <ArrowRightLine aria-hidden="true" size={24} />
                   </Button>
                 </Link>
               )}
@@ -71,6 +71,7 @@ export const CastSection = (props: {
           >
             View full cast & crew
             <ArrowRightLine
+              aria-hidden="true"
               size={14}
               className="ml-1 inline-block transition-transform [@media(hover:hover)]:group-hover:translate-x-0.5"
             />

@@ -340,6 +340,7 @@ export function SearchPage() {
           >
             <SelectTrigger
               size="sm"
+              aria-label="Filter search results by minimum rating"
               className="border-border/60 bg-secondary/30 h-8 min-h-8 w-auto shrink-0 gap-2 rounded-lg px-3 text-xs font-medium"
             >
               <SelectValue />
@@ -488,7 +489,7 @@ function SearchHistory({
               }}
               aria-label={`Remove "${item}" from history`}
             >
-              <XCircleIcon size={14} />
+              <XCircleIcon aria-hidden="true" size={14} />
             </Button>
           </div>
         ))}

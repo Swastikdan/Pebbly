@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
+  useLocation,
   useRouter,
 } from "@tanstack/react-router";
 import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
@@ -208,6 +209,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const [devtoolsPlugin, setDevtoolsPlugin] = useState<React.ReactNode>(null);
   const [commandOpen, setCommandOpen] = useState(false);
   const router = useRouter();
+  const location = useLocation();
+  const mainContentRef = useRef<HTMLElement>(null);
+  const previousPathnameRef = useRef(location.pathname);
 
   useEffect(() => {
     const openCommandPalette = () => setCommandOpen(true);
@@ -231,6 +235,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
   // Keeps the OS-preference subscription alive for the whole app.
   useTheme();
+
+  useEffect(() => {
+    if (previousPathnameRef.current === location.pathname) {
+      return;
+    }
+
+    previousPathnameRef.current = location.pathname;
+    mainContentRef.current?.focus({ preventScroll: true });
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleWindowError = (event: ErrorEvent) => {
@@ -380,6 +393,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </Suspense>
           <Navbar />
           <main
+            ref={mainContentRef}
             id="main-content"
             tabIndex={-1}
             className="focus-visible:outline-ring mobile-nav-spacer focus-visible:outline-2 focus-visible:outline-offset-2"

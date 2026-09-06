@@ -43,7 +43,7 @@ const REACTION_FILTER_ITEMS = [
     value: option.value as WatchlistReactionFilter,
     label: (
       <span className="flex items-center gap-2">
-        <option.icon size={14} /> {option.label}
+        <option.icon aria-hidden="true" size={14} /> {option.label}
       </span>
     ),
   })),
@@ -112,13 +112,14 @@ export function WatchlistFilters({
               className="text-muted-foreground absolute top-1/2 right-1 size-8 -translate-y-1/2 rounded-lg"
               aria-label="Clear watchlist search"
             >
-              <X size={14} />
+              <X aria-hidden="true" size={14} />
             </Button>
           )}
         </div>
         <Button
           onClick={() => setFiltersOpen((prev) => !prev)}
           aria-expanded={filtersOpen}
+          aria-controls="watchlist-secondary-filters"
           disabled={disabled}
           variant={
             filtersOpen || activeSecondaryCount > 0 ? "default" : "ghost"
@@ -131,7 +132,7 @@ export function WatchlistFilters({
               : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
           )}
         >
-          <SlidersHorizontal size={13} />
+          <SlidersHorizontal aria-hidden="true" size={13} />
           <span>{filtersOpen ? "Hide" : "Filters"}</span>
           {activeSecondaryCount > 0 && (
             <span className="text-[10px] opacity-70">
@@ -151,6 +152,7 @@ export function WatchlistFilters({
                   key={tab.value}
                   type="button"
                   variant="ghost"
+                  aria-pressed={isActive}
                   disabled={disabled}
                   onClick={() => setActiveFilter(tab.value)}
                   className={cn(
@@ -176,6 +178,7 @@ export function WatchlistFilters({
               <Button
                 type="button"
                 variant="ghost"
+                aria-pressed={activeFilter === "dropped"}
                 disabled={disabled}
                 onClick={() => setActiveFilter("dropped")}
                 className={cn(
@@ -199,6 +202,7 @@ export function WatchlistFilters({
       </div>
 
       <div
+        id="watchlist-secondary-filters"
         inert={!filtersOpen}
         className={cn(
           "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out",
@@ -219,6 +223,7 @@ export function WatchlistFilters({
             <SelectTrigger
               size="sm"
               disabled={disabled}
+              aria-label="Filter watchlist by media type"
               className="border-border/60 bg-secondary/50 w-auto min-w-25 gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
             >
               <SelectValue placeholder="Type" />
@@ -243,6 +248,7 @@ export function WatchlistFilters({
             <SelectTrigger
               size="sm"
               disabled={disabled}
+              aria-label="Filter watchlist by mood"
               className="border-border/60 bg-secondary/50 w-auto min-w-25 gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
             >
               <SelectValue placeholder="Mood" />
@@ -265,6 +271,7 @@ export function WatchlistFilters({
             <SelectTrigger
               size="sm"
               disabled={disabled}
+              aria-label="Sort watchlist"
               className="border-border/60 bg-secondary/50 w-auto min-w-30 gap-1.5 rounded-md border px-3 text-xs dark:border-white/10"
             >
               <SelectValue />
@@ -286,7 +293,7 @@ export function WatchlistFilters({
               onClick={resetSecondaryFilters}
               className="text-muted-foreground hover:text-foreground h-auto shrink-0 items-center gap-1 px-2.5 py-1.5 text-xs transition-colors hover:bg-transparent"
             >
-              <X size={12} />
+              <X aria-hidden="true" size={12} />
               Reset
             </Button>
           )}

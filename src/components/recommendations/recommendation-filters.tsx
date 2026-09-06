@@ -89,7 +89,10 @@ export function RecommendationFilters({
               }
             }}
           >
-            <SelectTrigger className="text-foreground bg-secondary/20 border-border hover:bg-secondary/40 h-10 w-auto rounded-md border px-4 text-xs font-semibold shadow-none transition-colors">
+            <SelectTrigger
+              aria-label="Recommendation source"
+              className="text-foreground bg-secondary/20 border-border hover:bg-secondary/40 h-10 w-auto rounded-md border px-4 text-xs font-semibold shadow-none transition-colors"
+            >
               <SelectValue placeholder="From Watchlist" />
             </SelectTrigger>
             <SelectPopup align="start" className="max-h-75 overflow-y-auto">
@@ -116,6 +119,7 @@ export function RecommendationFilters({
               <Button
                 className="h-8 flex-1 rounded-lg px-4 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 sm:flex-none"
                 variant={!mediaType ? "default" : "ghost"}
+                aria-pressed={!mediaType}
                 onClick={() => setMediaType(undefined)}
               >
                 All
@@ -123,6 +127,7 @@ export function RecommendationFilters({
               <Button
                 className="h-8 flex-1 rounded-lg px-4 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 sm:flex-none"
                 variant={mediaType === "movie" ? "default" : "ghost"}
+                aria-pressed={mediaType === "movie"}
                 onClick={() =>
                   setMediaType(mediaType === "movie" ? undefined : "movie")
                 }
@@ -132,6 +137,7 @@ export function RecommendationFilters({
               <Button
                 className="h-8 flex-1 rounded-lg px-4 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 sm:flex-none"
                 variant={mediaType === "tv" ? "default" : "ghost"}
+                aria-pressed={mediaType === "tv"}
                 onClick={() =>
                   setMediaType(mediaType === "tv" ? undefined : "tv")
                 }
@@ -143,10 +149,13 @@ export function RecommendationFilters({
             <Button
               type="button"
               variant={showAdvancedOptions ? "outline" : "ghost"}
+              aria-label="Advanced recommendation options"
+              aria-expanded={showAdvancedOptions}
+              aria-controls="recommendation-advanced-options"
               className="border-border bg-card/40 hover:bg-secondary/40 h-10 w-10 shrink-0 justify-center gap-1.5 rounded-md border text-xs shadow-none transition-colors"
               onClick={() => setShowAdvancedOptions((prev) => !prev)}
             >
-              <SlidersHorizontal className="size-3.5" />
+              <SlidersHorizontal aria-hidden="true" className="size-3.5" />
             </Button>
           </div>
           <div className="mt-1 flex w-full sm:mt-0 sm:ml-auto sm:w-auto">
@@ -164,9 +173,9 @@ export function RecommendationFilters({
               className="border-border h-10 w-full gap-2 rounded-md border px-5 shadow-none transition-[color,background-color,border-color,transform] duration-150 hover:scale-[1.02] active:scale-[0.98] sm:w-auto"
             >
               {isGenerating ? (
-                <RefreshCw className="size-4 animate-spin" />
+                <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
               ) : (
-                <Sparkles className="size-4" />
+                <Sparkles aria-hidden="true" className="size-4" />
               )}
               {isGenerating ? "Generating..." : "Generate"}
             </Button>
@@ -174,7 +183,10 @@ export function RecommendationFilters({
         </div>
 
         {showAdvancedOptions && (
-          <div className="border-border/40 mt-3 flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-4">
+          <div
+            id="recommendation-advanced-options"
+            className="border-border/40 mt-3 flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-4"
+          >
             <div className="scrollbar-hidden flex items-center gap-1.5 overflow-x-auto pb-0.5">
               <span className="text-muted-foreground mr-1 shrink-0 text-xs font-medium">
                 Era
@@ -183,6 +195,7 @@ export function RecommendationFilters({
                 <Button
                   key={era.label}
                   type="button"
+                  aria-pressed={selectedEras.includes(era.label)}
                   variant={
                     selectedEras.includes(era.label) ? "default" : "ghost"
                   }
@@ -213,6 +226,7 @@ export function RecommendationFilters({
               >
                 <SelectTrigger
                   size="sm"
+                  aria-label="Number of recommendations"
                   className="bg-secondary/40 border-border hover:bg-secondary/60 h-8 w-17.5 shrink-0 rounded-lg border px-2.5 text-xs font-semibold shadow-none transition-colors"
                 >
                   <SelectValue />
@@ -253,6 +267,7 @@ export function RecommendationFilters({
                 <Button
                   key={genre.id}
                   type="button"
+                  aria-pressed={selectedGenres.includes(genre.name)}
                   variant={
                     selectedGenres.includes(genre.name) ? "default" : "ghost"
                   }

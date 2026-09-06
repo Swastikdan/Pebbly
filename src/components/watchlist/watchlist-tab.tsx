@@ -91,7 +91,11 @@ export function WatchlistTab() {
               onClick={exportWatchlist}
               aria-label="Export watchlist"
             >
-              {exportLoading ? <Spinner /> : <Download size={14} />}
+              {exportLoading ? (
+                <Spinner aria-hidden="true" />
+              ) : (
+                <Download aria-hidden="true" size={14} />
+              )}
               <span className="hidden sm:inline">Export</span>
             </Button>
           )}
@@ -111,7 +115,11 @@ export function WatchlistTab() {
               type="file"
               onChange={importWatchlist}
             />
-            {importLoading ? <Spinner /> : <Upload size={14} />}
+            {importLoading ? (
+              <Spinner aria-hidden="true" />
+            ) : (
+              <Upload aria-hidden="true" size={14} />
+            )}
             <span className="hidden sm:inline">Import</span>
           </Button>
         </div>

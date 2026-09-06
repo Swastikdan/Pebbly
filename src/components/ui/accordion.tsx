@@ -42,6 +42,7 @@ export function AccordionTrigger({
       >
         {children}
         <ChevronDownIcon
+          aria-hidden="true"
           className="ease-emphatic pointer-events-none size-4 shrink-0 translate-y-0.5 opacity-80 transition-transform duration-200"
           data-slot="accordion-indicator"
         />

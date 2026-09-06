@@ -124,7 +124,7 @@ export function MyListsTab() {
           onClick={() => setShowCreateList(true)}
           className="gap-1.5 text-xs"
         >
-          <Plus size={14} />
+          <Plus aria-hidden="true" size={14} />
           New Collection
         </Button>
       </div>
@@ -149,7 +149,7 @@ export function MyListsTab() {
             className="hover:bg-secondary/80 gap-2 px-5 text-xs font-semibold"
             onClick={() => setShowCreateList(true)}
           >
-            <Plus size={14} />
+            <Plus aria-hidden="true" size={14} />
             Create Your First Collection
           </Button>
         </div>

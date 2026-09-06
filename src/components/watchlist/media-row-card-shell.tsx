@@ -23,7 +23,11 @@ export function MediaChip({
   label,
   title,
 }: {
-  icon: ComponentType<{ size?: string | number; className?: string }>;
+  icon: ComponentType<{
+    size?: string | number;
+    className?: string;
+    "aria-hidden"?: boolean | "true" | "false";
+  }>;
   label: string;
   title?: string;
 }) {
@@ -32,7 +36,7 @@ export function MediaChip({
       className="bg-secondary/80 text-secondary-foreground inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium"
       title={title}
     >
-      <Icon size={12} />
+      <Icon aria-hidden="true" size={12} />
       {label}
     </span>
   );
@@ -64,7 +68,10 @@ export function MediaMetaRow({
         <>
           <span className="text-border">·</span>
           <span className="flex items-center gap-0.5">
-            <Star className="size-2.5 fill-yellow-400 text-yellow-400" />
+            <Star
+              aria-hidden="true"
+              className="size-2.5 fill-yellow-400 text-yellow-400"
+            />
             {rating?.toFixed(1)}
           </span>
         </>

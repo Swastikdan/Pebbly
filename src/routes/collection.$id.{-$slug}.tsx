@@ -124,7 +124,11 @@ function MovieCollectionPage() {
                 variant="secondary"
               >
                 <span className="flex w-full flex-row items-center gap-1">
-                  <Star className="size-3 fill-current" size={16} />
+                  <Star
+                    aria-hidden="true"
+                    className="size-3 fill-current"
+                    size={16}
+                  />
                   {user_rating} %
                 </span>
               </Badge>

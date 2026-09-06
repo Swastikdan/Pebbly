@@ -127,6 +127,7 @@ export const NavCard = ({
     <>
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         <div
+          aria-hidden="true"
           className={cn(
             "shrink-0 rounded-md p-2 sm:p-2.5",
             isActive

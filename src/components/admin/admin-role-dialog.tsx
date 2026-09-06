@@ -33,11 +33,11 @@ export function AdminRoleDialog({
           <div className="flex items-center gap-3">
             {selectedUser?.isBanned ? (
               <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
-                <ShieldCheck className="size-5" />
+                <ShieldCheck aria-hidden="true" className="size-5" />
               </div>
             ) : (
               <div className="bg-destructive/10 text-destructive flex size-11 shrink-0 items-center justify-center rounded-lg">
-                <Ban className="size-5" />
+                <Ban aria-hidden="true" className="size-5" />
               </div>
             )}
             <DialogTitle className="text-lg font-bold">
@@ -69,7 +69,7 @@ export function AdminRoleDialog({
 
         {errorMessage && (
           <ErrorBanner className="flex items-center gap-2">
-            <AlertCircle className="size-4 shrink-0" />
+            <AlertCircle aria-hidden="true" className="size-4 shrink-0" />
             <span>{errorMessage}</span>
           </ErrorBanner>
         )}
@@ -100,17 +100,20 @@ export function AdminRoleDialog({
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2
+                  aria-hidden="true"
+                  className="mr-2 size-4 animate-spin"
+                />
                 Processing...
               </>
             ) : selectedUser?.isBanned ? (
               <>
-                <ShieldCheck className="mr-1.5 size-4" />
+                <ShieldCheck aria-hidden="true" className="mr-1.5 size-4" />
                 Confirm Unban
               </>
             ) : (
               <>
-                <Ban className="mr-1.5 size-4" />
+                <Ban aria-hidden="true" className="mr-1.5 size-4" />
                 Confirm Ban
               </>
             )}

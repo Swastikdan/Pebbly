@@ -196,6 +196,7 @@ function TvSeasonDetailPage() {
                     >
                       <span className="flex items-center gap-1">
                         <Star
+                          aria-hidden="true"
                           className="size-3 fill-current text-yellow-400"
                           size={12}
                         />
