@@ -169,7 +169,7 @@ function PersonPage() {
     : null;
 
   return (
-    <section className="animate-fade-in mx-auto block max-w-7xl items-center px-4 py-5">
+    <section className="mx-auto block max-w-7xl items-center px-4 py-5">
       <div className="mb-5 flex items-center justify-between gap-3">
         <GoBack title="Back" />
         <ShareButton title={name} />

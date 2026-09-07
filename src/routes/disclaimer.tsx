@@ -19,12 +19,12 @@ export const Route = createFileRoute("/disclaimer")({
 
 function DisclaimerPage() {
   return (
-    <div className="animate-fade-in min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl rounded-xl p-4 sm:p-8">
         <div className="mb-6 md:hidden">
           <GoBack title="Back" />
         </div>
-        <div className="stagger-grid mx-auto max-w-[65ch] space-y-12">
+        <div className="mx-auto max-w-[65ch] space-y-12">
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Disclaimer
@@ -126,10 +126,7 @@ function DisclaimerPage() {
           </section>
         </div>
 
-        <div
-          className="animate-fade-in-up mt-12 border-t pt-8 text-center"
-          style={{ animationDelay: "100ms" }}
-        >
+        <div className="mt-12 border-t pt-8 text-center">
           <p className="text-muted-foreground mx-auto mb-4 max-w-[65ch] text-base leading-relaxed text-pretty">
             By using Pebbly, you acknowledge that you have read, understood, and
             agree to this disclaimer.

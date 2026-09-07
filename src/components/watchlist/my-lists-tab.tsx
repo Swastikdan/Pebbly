@@ -52,7 +52,7 @@ export function MyListsTab() {
   // shared, which read as broken.
   if (!isSignedIn) {
     return (
-      <div className="animate-fade-in-up flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-6 py-16 text-center">
+      <div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-6 py-16 text-center">
         <div className="text-muted-foreground border-border flex size-10 items-center justify-center rounded-md border">
           <ListPlus className="size-5" />
         </div>
@@ -109,7 +109,7 @@ export function MyListsTab() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-h2 text-balance">My Collections</h2>
-          <p className="text-muted-foreground animate-fade-in mt-0.5 text-sm">
+          <p className="text-muted-foreground mt-0.5 text-sm">
             {customLists.length} collection
             {customLists.length !== 1 ? "s" : ""} created
           </p>
@@ -126,7 +126,7 @@ export function MyListsTab() {
       </div>
 
       {sortedLists.length === 0 ? (
-        <div className="animate-fade-in-up flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-6 py-16 text-center">
+        <div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-6 py-16 text-center">
           <div className="text-muted-foreground border-border flex size-10 items-center justify-center rounded-md border">
             <ListPlus className="size-5" />
           </div>

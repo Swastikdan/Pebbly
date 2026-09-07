@@ -14,7 +14,9 @@ export type SetRolePermissionArgs = v.InferOutput<
 
 export const setUserRolesArgsSchema = v.object({
   tokenIdentifier: v.string(),
-  roles: v.array(v.picklist(["video-player", "ai-integrations"])),
+  roles: v.array(
+    v.picklist(["video-player", "ai-integrations", "external-redirect"]),
+  ),
 });
 export type SetUserRolesArgs = v.InferOutput<typeof setUserRolesArgsSchema>;
 

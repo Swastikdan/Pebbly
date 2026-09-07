@@ -6,15 +6,24 @@ import { getDb, runBatch } from "./db/client";
 import { rolePermissions } from "./db/schema";
 import { getEnv } from "./env";
 
-export const DYNAMIC_ROLES = ["video-player", "ai-integrations"] as const;
-export const VALID_FEATURES = ["video-player", "ai-recommendations"] as const;
+export const DYNAMIC_ROLES = [
+  "video-player",
+  "ai-integrations",
+  "external-redirect",
+] as const;
+export const VALID_FEATURES = [
+  "video-player",
+  "ai-recommendations",
+  "external-redirect",
+] as const;
 
 export type DynamicRbacRole = (typeof DYNAMIC_ROLES)[number];
 export type RbacFeature = (typeof VALID_FEATURES)[number];
 
-const ADMIN_PERMISSIONS: Record<RbacFeature, true> = {
+const ADMIN_PERMISSIONS: Record<RbacFeature, boolean> = {
   "video-player": true,
   "ai-recommendations": true,
+  "external-redirect": false,
 };
 
 const DEFAULT_PERMISSIONS: Record<
@@ -24,16 +33,24 @@ const DEFAULT_PERMISSIONS: Record<
   "video-player": {
     "video-player": true,
     "ai-recommendations": false,
+    "external-redirect": false,
   },
   "ai-integrations": {
     "video-player": false,
     "ai-recommendations": true,
+    "external-redirect": false,
+  },
+  "external-redirect": {
+    "video-player": false,
+    "ai-recommendations": false,
+    "external-redirect": true,
   },
 };
 
 export const ROLE_FEATURES: Record<DynamicRbacRole, RbacFeature> = {
   "video-player": "video-player",
   "ai-integrations": "ai-recommendations",
+  "external-redirect": "external-redirect",
 };
 
 export async function getGlobalFeatureFlags(
@@ -175,8 +192,25 @@ export async function hasFeature(
   // demotion in Clerk lands at the next token refresh, never for the life
   // of a long-lived credential. Same contract in getUserFeatures and the
   // authedFn admin gate (fns/rpc.ts).
-  if (isAdminByClaims(claims)) {
-    return true;
+  const isAdmin = isAdminByClaims(claims);
+  if (isAdmin) {
+    if (feature === "video-player" || feature === "ai-recommendations") {
+      return true;
+    }
+    if (feature === "external-redirect") {
+      const db = getDb(getEnv());
+      const globalFlags = await getGlobalFeatureFlags(db);
+      if (globalFlags["external-redirect"] !== true) {
+        return false;
+      }
+      const roles = (user?.roles ?? []).filter((role) =>
+        DYNAMIC_ROLES.includes(role as DynamicRbacRole),
+      );
+      if (roles.length > 0) {
+        return roles.includes("external-redirect");
+      }
+      return true;
+    }
   }
   if (!user) return false;
 
@@ -210,12 +244,25 @@ export async function getUserFeatures(
     };
   }
 
-  // JWT-claim-only admin check, same rationale as hasFeature: staleness of a
-  // revoked admin claim is bounded by the verified token's short lifetime.
-  if (isAdminByClaims(claims)) {
+  const isAdmin = isAdminByClaims(claims);
+  const db = getDb(getEnv());
+  const roles = (user?.roles ?? []).filter((role) =>
+    DYNAMIC_ROLES.includes(role as DynamicRbacRole),
+  );
+  const computed = await computeRoleFeatures(db, roles);
+  const globalFlags = await getGlobalFeatureFlags(db);
+
+  if (isAdmin) {
+    const externalRedirectEnabled =
+      globalFlags["external-redirect"] === true &&
+      (roles.length > 0 ? roles.includes("external-redirect") : true);
+
     return {
-      roles: [] as string[],
-      features: { ...ADMIN_PERMISSIONS },
+      roles,
+      features: {
+        ...ADMIN_PERMISSIONS,
+        "external-redirect": externalRedirectEnabled,
+      },
       isAdmin: true,
       isBanned: false,
     };
@@ -229,13 +276,7 @@ export async function getUserFeatures(
     };
   }
 
-  const db = getDb(getEnv());
-  const roles = (user.roles ?? []).filter((role) =>
-    DYNAMIC_ROLES.includes(role as DynamicRbacRole),
-  );
-  const features = await computeRoleFeatures(db, roles);
-
-  return { roles, features, isAdmin: false, isBanned: false };
+  return { roles, features: computed, isAdmin: false, isBanned: false };
 }
 
 /**

@@ -39,10 +39,7 @@ export function MediaPosterTrailerContainer(props: {
   }
 
   return (
-    <div
-      className="animate-fade-in-up flex flex-col justify-start gap-3 pb-3 sm:flex-row"
-      style={{ animationDelay: "100ms" }}
-    >
+    <div className="flex flex-col justify-start gap-3 pb-3 sm:flex-row">
       <div className="surface-raised group relative w-full shrink-0 overflow-hidden rounded-xl sm:w-auto">
         <Image
           alt={title}

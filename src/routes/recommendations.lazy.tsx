@@ -63,9 +63,7 @@ function PageShell({ children }: { children: ReactNode }) {
         <div className="mb-6 flex items-center justify-between gap-3">
           <GoBack title="Back" />
         </div>
-        <h1 className="text-h1 animate-fade-in-up mb-6 text-start">
-          AI Recommendations
-        </h1>
+        <h1 className="text-h1 mb-6 text-start">AI Recommendations</h1>
         {children}
       </div>
     </section>
@@ -265,10 +263,7 @@ function RecommendationsContent({
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-semibold">Building recommendations</p>
-              <p
-                key={genStage}
-                className="text-muted-foreground animate-fade-in text-xs"
-              >
+              <p key={genStage} className="text-muted-foreground text-xs">
                 {GEN_STAGES[genStage]}
               </p>
             </div>

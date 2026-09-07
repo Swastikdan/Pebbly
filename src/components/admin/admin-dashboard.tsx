@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function AdminDashboard() {
   return (
-    <div className="animate-fade-in min-h-screen">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6 lg:px-8">
         <GoBack title="Back" />
       </div>

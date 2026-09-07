@@ -21,6 +21,7 @@ import { collectAllByKeyset } from "./helpers/paginate";
 import { candidateIdentity } from "./recommendation-candidates";
 import { PEBBLY_PICKS_LIST_TYPE } from "./schema/lists";
 import { recommendationSchema } from "./schema/recommendations";
+import { captureAiConversation } from "./sentry";
 
 export const SYSTEM_INSTRUCTION =
   "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
@@ -88,7 +89,9 @@ export async function runAiGeneration(args: {
     retries: args.attempts,
   });
   if (aiResult.error || !aiResult.result) {
-    return { ok: false, error: aiResult.error ?? "api_unavailable" };
+    const error = aiResult.error ?? "api_unavailable";
+    captureAiConversation({ ok: false, error });
+    return { ok: false, error };
   }
 
   const modelRecommendations = args.candidateCatalog?.length
@@ -126,8 +129,16 @@ export async function runAiGeneration(args: {
   // history entry. A short response is retained and reported as-is: the UI
   // shows the actual number returned rather than claiming the requested count.
   if (recommendations.length === 0) {
+    captureAiConversation({ ok: false, error: "empty_result" });
     return { ok: false, error: "empty_result" };
   }
+
+  captureAiConversation({
+    ok: true,
+    usedModel: aiResult.usedModel ?? "unknown",
+    recommendationCount: recommendations.length,
+    reasoningTokens: aiResult.reasoningTokens,
+  });
 
   return {
     ok: true,

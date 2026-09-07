@@ -79,7 +79,7 @@ export function InlineEpisodeBrowser({
   };
 
   return (
-    <div className="animate-fade-in-up pb-8">
+    <div className="pb-8">
       <div className="mb-5 flex items-end justify-between gap-4">
         <h2 className="text-h2">Episodes</h2>
       </div>
@@ -211,7 +211,10 @@ function SeasonEpisodeList({
             <Skeleton className="xs:h-20 xs:w-32 h-16 w-28 shrink-0 rounded-lg sm:h-24 sm:w-40 md:h-28 md:w-48" />
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-start justify-between gap-2">
-                <Skeleton className="h-4.5 w-36 rounded md:h-5 md:w-52" />
+                <div className="flex min-w-0 flex-col gap-1">
+                  <Skeleton className="h-3 w-8 rounded" />
+                  <Skeleton className="h-4.5 w-36 rounded md:h-5 md:w-52" />
+                </div>
                 <Skeleton className="size-8 shrink-0 rounded-md" />
               </div>
               <div className="flex flex-wrap items-center gap-2 pt-0.5">
@@ -301,9 +304,6 @@ function EpisodeCard({
           }
           width={250}
         />
-        <span className="pointer-events-none absolute start-1.5 bottom-1.5 z-20 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums backdrop-blur-sm">
-          E{episode.episode_number}
-        </span>
         <Suspense fallback={null}>
           <VideoPlayerModal
             tmdbId={tvId}
@@ -318,9 +318,14 @@ function EpisodeCard({
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-foreground group-hover:text-primary min-w-0 truncate text-sm font-bold transition-colors md:text-base">
-            {episode.name}
-          </h3>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-muted-foreground text-[10px] font-medium">
+              E{String(episode.episode_number).padStart(2, "0")}
+            </span>
+            <h3 className="text-foreground group-hover:text-primary min-w-0 truncate text-sm font-bold transition-colors md:text-base">
+              {episode.name}
+            </h3>
+          </div>
 
           <Button
             type="button"

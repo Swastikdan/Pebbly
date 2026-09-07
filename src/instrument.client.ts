@@ -27,10 +27,12 @@ init({
   environment,
   enabled: !isDev,
 
-  // Free-tier optimization:
-  // - tracesSampleRate: 0 in dev, 0.1 (10%) in preview and prod to stay well within 10,000 transactions/mo.
-  // - replays: disabled to eliminate ~250 KiB rrweb DOM snapshotter and Array.from legacy polyfill.
-  tracesSampleRate: isDev ? 0 : 0.1,
+  // Sentry is used for ERROR TRACKING and AI-conversation monitoring only.
+  // - tracesSampleRate: 0 disables distributed/request tracing entirely (no
+  //   perf traces emitted), so the SDK only reports errors.
+  // - replays: disabled to eliminate ~250 KiB rrweb DOM snapshotter and
+  //   Array.from legacy polyfill from the shipped bundle.
+  tracesSampleRate: 0,
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 0,
 

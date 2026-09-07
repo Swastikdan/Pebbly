@@ -29,7 +29,7 @@ export function usePermissions(): PermissionState & {
   });
 
   const clerkIsAdmin = user?.publicMetadata?.isAdmin === true;
-  const loading = !isLoaded || (isSignedIn && !clerkIsAdmin && raw.isPending);
+  const loading = !isLoaded || (isSignedIn && raw.isPending);
 
   const isBanned = raw.data?.isBanned === true;
 
@@ -37,16 +37,18 @@ export function usePermissions(): PermissionState & {
     ? ({
         "video-player": true,
         "ai-recommendations": true,
+        "external-redirect": raw.data?.features?.["external-redirect"] === true,
       } as Record<RbacFeature, boolean>)
     : isBanned
       ? ({
           "video-player": false,
           "ai-recommendations": false,
+          "external-redirect": false,
         } as Record<RbacFeature, boolean>)
       : ((raw.data?.features ?? {}) as Record<RbacFeature, boolean>);
 
   const roles = clerkIsAdmin
-    ? (["admin"] as RbacRole[])
+    ? ((raw.data?.roles ?? ["admin"]) as RbacRole[])
     : ((raw.data?.roles ?? []) as RbacRole[]);
 
   const isAdmin = clerkIsAdmin;

@@ -44,7 +44,7 @@ export function WatchlistGrid({
   if (items.length === 0) {
     if (totalWatchlistCount === 0 || !hasActiveFilters) {
       return (
-        <div className="animate-fade-in-up flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center">
+        <div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-5 py-16 text-center">
           <div className="bg-secondary flex size-16 items-center justify-center rounded-lg">
             <BookMarkFilledIcon
               aria-hidden="true"

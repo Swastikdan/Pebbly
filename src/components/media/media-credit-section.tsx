@@ -3,8 +3,8 @@ import { Link, notFound } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
 import type { CrewMember } from "@/lib/tmdb-schemas";
-import { DefaultLoader } from "@/components/default-loader";
 import { GoBack } from "@/components/go-back";
+import { CastSkeleton } from "@/components/media/cast-skeleton";
 import { ShareButton } from "@/components/share-button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
@@ -24,7 +24,7 @@ export const MediaCreditSection = (props: {
   });
 
   if (isFetching) {
-    return <DefaultLoader />;
+    return <CastSkeleton />;
   }
   if (!data || error) {
     throw notFound();

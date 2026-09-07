@@ -117,7 +117,7 @@ function HomePage() {
     <section className="flex flex-col items-center justify-center">
       <div className="relative w-full overflow-hidden">
         <div className="mx-auto max-w-4xl px-4 py-10 text-center sm:px-6 md:py-16 lg:px-8">
-          <div className="motion-safe:animate-fade-in-up py-4">
+          <div className="py-4">
             <h1 className="text-display items-center justify-center">
               Welcome to
               <span className="px-2 text-blue-600">{SITE_CONFIG.name}</span>
@@ -127,19 +127,11 @@ function HomePage() {
             </p>
           </div>
 
-          <div
-            className="motion-safe:animate-fade-in"
-            style={{ animationDelay: "150ms" }}
-          >
-            <Suspense fallback={<SearchBarSkeleton />}>
-              <SearchBar onCommandOpen={openCommandPalette} />
-            </Suspense>
-          </div>
+          <Suspense fallback={<SearchBarSkeleton />}>
+            <SearchBar onCommandOpen={openCommandPalette} />
+          </Suspense>
 
-          <div
-            className="motion-safe:animate-fade-in mt-4 flex justify-center"
-            style={{ animationDelay: "250ms" }}
-          >
+          <div className="mt-4 flex justify-center">
             <DailyPickButton />
           </div>
         </div>

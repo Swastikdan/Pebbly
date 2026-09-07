@@ -73,42 +73,57 @@ const config = defineConfig(({ mode }) => ({
             // Each group is a separate preload on first paint; splitting
             // heavy deps that are not needed for LCP (Convex, date-fns,
             // seroval) keeps the entry at ~170 KiB transfer instead of
-            // ~245 KiB and cuts script evaluation (809ms → ~600ms on 4x
-            // throttling) and the 140 KiB unused-JS reported for
-            // `workers.dev 1st party` (DmBDMIEq.js 93 KiB + CAUC7euS.js 46 KiB).
+            // ~245 KiB and cuts script evaluation and the unused-JS reported
+            // for `workers.dev 1st party`.
+            //
+            // `test` is a function so matching is robust to whichever module
+            // id form Rolldown reports (pnpm real paths live under
+            // `.pnpm/<pkg>@<ver>/node_modules/<pkg>/`, so the package name
+            // appears as a path segment). Regex `test` values are also
+            // accepted, but a bare specifier never matched in earlier builds.
             codeSplitting: {
               groups: [
                 {
                   name: "vendor-react",
-                  test: /node_modules\/(react|react-dom|scheduler)\//,
+                  test: (id) =>
+                    /[\\/](react|react-dom|scheduler)[\\/]/.test(id),
+                  priority: 20,
                 },
                 {
                   name: "vendor-ui",
-                  test: /node_modules\/(@base-ui|unpic|@unpic)\//,
+                  test: (id) => /[\\/](@base-ui|unpic|@unpic)[\\/]/.test(id),
+                  priority: 10,
                 },
                 {
                   name: "vendor-tanstack",
-                  test: /node_modules\/@tanstack\//,
+                  test: (id) => /[\\/]@tanstack[\\/]/.test(id),
+                  priority: 10,
                 },
                 {
-                  name: "vendor-auth-db",
-                  test: /node_modules\/@clerk\//,
+                  name: "vendor-auth",
+                  test: (id) => /[\\/]@clerk[\\/]/.test(id),
+                  priority: 10,
                 },
                 {
                   name: "vendor-icons",
-                  test: /node_modules\/lucide-react\//,
+                  test: (id) => /[\\/]lucide-react[\\/]/.test(id),
+                  priority: 10,
                 },
                 {
                   name: "vendor-date",
-                  test: /node_modules\/date-fns\//,
+                  test: (id) => /[\\/]date-fns[\\/]/.test(id),
+                  priority: 10,
                 },
                 {
                   name: "vendor-seroval",
-                  test: /node_modules\/seroval\//,
+                  test: (id) => /[\\/]seroval[\\/]/.test(id),
+                  priority: 10,
                 },
                 {
                   name: "vendor-sentry",
-                  test: /node_modules\/@sentry\/(?!replay)/,
+                  test: (id) =>
+                    /[\\/]@sentry[\\/]/.test(id) && !id.includes("replay"),
+                  priority: 10,
                 },
               ],
             },

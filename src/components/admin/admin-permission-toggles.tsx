@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, Zap } from "lucide-react";
+import { Activity, AlertTriangle, ExternalLink, Zap } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -13,11 +13,13 @@ import { unwrap } from "@/server/schema/common";
 const FEATURE_ROLES: Record<RbacFeature, PermissionRole> = {
   "video-player": "video-player",
   "ai-recommendations": "ai-integrations",
+  "external-redirect": "external-redirect",
 };
 
 const FEATURE_ICONS: Record<RbacFeature, typeof Activity> = {
   "video-player": Activity,
   "ai-recommendations": Zap,
+  "external-redirect": ExternalLink,
 };
 
 function ToggleSwitch({
@@ -151,7 +153,7 @@ export function AdminPermissionToggles() {
     return (
       <div className="space-y-4">
         <div className="space-y-3">
-          {Array.from({ length: 2 }).map((_, i) => (
+          {Array.from({ length: 3 }).map((_, i) => (
             <div
               // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
               key={i}

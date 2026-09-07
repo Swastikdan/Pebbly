@@ -106,7 +106,7 @@ export function CollectionPage({ listId }: { listId: string }) {
   };
 
   return (
-    <div className="animate-fade-in space-y-4">
+    <div className="space-y-4">
       {/* Top Nav Row: Back (left) and Share (right) */}
       <div className="flex items-center justify-between gap-3">
         <GoBack title="Back" />
@@ -248,7 +248,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 
       <SilentErrorBoundary>
         {items.length === 0 ? (
-          <div className="text-muted-foreground animate-fade-in-up flex flex-col items-center justify-center gap-4 py-20 text-center">
+          <div className="text-muted-foreground flex flex-col items-center justify-center gap-4 py-20 text-center">
             <div className="bg-secondary/60 flex size-14 items-center justify-center rounded-lg">
               <ListPlus className="text-muted-foreground/80 size-6" />
             </div>
@@ -269,7 +269,7 @@ export function CollectionPage({ listId }: { listId: string }) {
             </p>
           </div>
         ) : (
-          <div className="stagger-grid animate-fade-in grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map(({ item, index }) => (
               <CustomListMediaCard
                 key={`${item.tmdbId}-${item.mediaType}`}

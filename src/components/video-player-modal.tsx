@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogHeader,
@@ -20,6 +20,11 @@ import { cn } from "@/lib/utils";
 import { buildPlayerUrl } from "@/lib/watch-progress";
 
 const INACTIVITY_HIDE_DELAY = 3000;
+
+// A `?play=true` landing in redirect mode should open exactly one external
+// tab, even when the page mounts several VideoPlayerModal instances (poster
+// + episode rows). Module-scoped so the first mounted player wins.
+let hasAutoRedirected = false;
 
 interface VideoPlayerModalProps {
   tmdbId: number;
@@ -101,15 +106,32 @@ export function VideoPlayerModal({
 
   usePlayerProgressListener(listenerContext, isOpen);
 
+  const externalPlayerUrl = import.meta.env.VITE_PUBLIC_EXTERNAL_PLAYER_URL;
+  // Redirect mode takes precedence over the built-in player: when the
+  // External Player Redirect feature is enabled for the user AND the external
+  // player URL is configured, play buttons open the external player even if
+  // Video Playback is disabled. If the URL is missing, fall back to the modal.
+  const redirectUrl = useMemo(() => {
+    if (!externalPlayerUrl || !hasFeature("external-redirect"))
+      return undefined;
+    const base = externalPlayerUrl.replace(/\/+$/, "");
+    return type === "movie"
+      ? `${base}/watch/movie/${tmdbId}`
+      : `${base}/watch/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}`;
+  }, [hasFeature, type, tmdbId, season, episode]);
+
   useEffect(() => {
     const shouldPlay = search.play;
     if (!shouldPlay) {
       closedByUserRef.current = false;
     }
+    // In redirect mode, ?play=true is handled by the redirect effect below;
+    // don't also open the modal iframe.
+    if (redirectUrl) return;
     if (shouldPlay && !isOpen && !closedByUserRef.current) {
       setIsOpen(true);
     }
-  }, [search.play, isOpen]);
+  }, [search.play, isOpen, redirectUrl]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -189,7 +211,29 @@ export function VideoPlayerModal({
     };
   }, [isOpen]);
 
-  if (!isSignedIn || loading || !hasFeature("video-player")) return null;
+  // Continue-watching and daily-pick links land on `?play=true`; in modal mode
+  // that auto-opens the player. In redirect mode, open the external player
+  // (new tab; same tab if the popup is blocked).
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !redirectUrl ||
+      !search.play ||
+      hasAutoRedirected
+    ) {
+      return;
+    }
+    hasAutoRedirected = true;
+    const win = window.open(redirectUrl, "_blank", "noopener,noreferrer");
+    if (!win) {
+      window.location.assign(redirectUrl);
+    }
+  }, [redirectUrl, search.play]);
+
+  // Render whenever either feature is enabled; redirect mode wins when both.
+  if (!isSignedIn || loading || (!redirectUrl && !hasFeature("video-player"))) {
+    return null;
+  }
 
   const label =
     type === "tv" && season && episode
@@ -252,19 +296,75 @@ export function VideoPlayerModal({
 
   const controlsVisible = closeVisible;
 
+  const cardTriggerClass = cn(
+    "group/play focus-visible:ring-ring absolute inset-0 z-10 flex size-full cursor-pointer items-center justify-center rounded-[inherit] p-0 outline-hidden transition-opacity duration-100 focus-visible:ring-2 focus-visible:ring-offset-2",
+    className ??
+      "opacity-0 hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
+  );
+
+  const triggerClass = cn(
+    variant === "episode"
+      ? "pressable gap-2 rounded-full px-5 text-sm font-semibold before:rounded-full"
+      : "pressable gap-2.5 rounded-full px-7 text-base font-semibold before:rounded-full",
+    className,
+  );
+
+  const ariaLabel = `Play ${title}`;
+
+  if (redirectUrl) {
+    if (variant === "card") {
+      return (
+        <a
+          href={redirectUrl}
+          aria-label={ariaLabel}
+          title={label}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cardTriggerClass}
+        >
+          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
+            <Play
+              aria-hidden="true"
+              className="size-6 translate-x-[2px] fill-white text-white"
+            />
+          </div>
+        </a>
+      );
+    }
+
+    return (
+      <a
+        href={redirectUrl}
+        aria-label={ariaLabel}
+        title={label}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={buttonVariants({
+          size: "lg",
+          className: triggerClass,
+        })}
+      >
+        <Play
+          aria-hidden="true"
+          className={cn(
+            "fill-current",
+            variant === "episode" ? "size-4" : "size-5",
+          )}
+        />
+        {label}
+      </a>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {variant === "card" ? (
         <DialogTrigger
           render={
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              className={cn(
-                "group/play absolute inset-0 z-10 size-full rounded-xl p-0 opacity-0 transition-opacity duration-100 before:rounded-xl hover:bg-transparent hover:opacity-100 focus-visible:opacity-100",
-                className,
-              )}
-              aria-label={`Play ${title}`}
+              className={cardTriggerClass}
+              aria-label={ariaLabel}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -273,7 +373,7 @@ export function VideoPlayerModal({
             />
           }
         >
-          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color] duration-100 group-hover/play:bg-black/80">
+          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
             <Play
               aria-hidden="true"
               className="size-6 translate-x-[2px] fill-white text-white"
@@ -286,11 +386,8 @@ export function VideoPlayerModal({
             <Button
               type="button"
               size="lg"
-              className={cn(
-                "pressable gap-2 rounded-full px-5 text-sm font-semibold before:rounded-full",
-                className,
-              )}
-              aria-label={`Play ${title}`}
+              className={triggerClass}
+              aria-label={ariaLabel}
             />
           }
         >
@@ -303,11 +400,8 @@ export function VideoPlayerModal({
             <Button
               type="button"
               size="lg"
-              className={cn(
-                "pressable gap-2.5 rounded-full px-7 text-base font-semibold before:rounded-full",
-                className,
-              )}
-              aria-label={`Play ${title}`}
+              className={triggerClass}
+              aria-label={ariaLabel}
             />
           }
         >

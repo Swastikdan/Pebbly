@@ -145,7 +145,7 @@ export const MediaTitleContainer = (props: {
   };
 
   return (
-    <div className="animate-fade-in pt-5 pb-4">
+    <div className="pt-5 pb-4">
       <div className="space-y-3 pb-4">
         <div className="flex items-center justify-between gap-2">
           <GoBack title="Back" />

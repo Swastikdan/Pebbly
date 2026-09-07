@@ -115,9 +115,18 @@ export const GENRE_LIST = [
 
 export const MAX_PAGINATION_LIMIT = 500;
 
-export const RBAC_ROLES = ["admin", "video-player", "ai-integrations"] as const;
+export const RBAC_ROLES = [
+  "admin",
+  "video-player",
+  "ai-integrations",
+  "external-redirect",
+] as const;
 export type RbacRole = (typeof RBAC_ROLES)[number];
-export const PERMISSION_ROLES = ["video-player", "ai-integrations"] as const;
+export const PERMISSION_ROLES = [
+  "video-player",
+  "ai-integrations",
+  "external-redirect",
+] as const;
 export type PermissionRole = (typeof PERMISSION_ROLES)[number];
 
 export const RBAC_FEATURES = {
@@ -129,6 +138,11 @@ export const RBAC_FEATURES = {
     label: "AI Recommendations",
     description:
       "AI-powered personalized movie and TV recommendations built from your viewing history.",
+  },
+  "external-redirect": {
+    label: "External Player Redirect",
+    description:
+      "Open play buttons on the external player instead of the built-in modal.",
   },
 } as const;
 export type RbacFeature = keyof typeof RBAC_FEATURES;

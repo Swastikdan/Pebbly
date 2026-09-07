@@ -1,8 +1,4 @@
 import { ClerkProvider } from "@clerk/react";
-import {
-  addIntegration,
-  tanstackRouterBrowserTracingIntegration,
-} from "@sentry/tanstackstart-react";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
@@ -65,10 +61,6 @@ export const getRouter = () => {
     defaultNotFoundComponent: () => <DefaultNotFoundComponent />,
     defaultErrorComponent: (props) => <DefaultErrorComponent {...props} />,
   });
-
-  if (!router.isServer) {
-    addIntegration(tanstackRouterBrowserTracingIntegration(router));
-  }
 
   setupRouterSsrQueryIntegration({
     router,
