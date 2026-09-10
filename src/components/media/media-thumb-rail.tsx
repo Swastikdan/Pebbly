@@ -18,6 +18,8 @@ interface MediaThumbRailProps<T> {
   thumbWidth?: number;
   thumbHeight?: number;
   renderTileOverlay?: (item: T) => React.ReactNode;
+  /** Optional per-tile thumbnail renderer; overrides the default <Image src={getThumbSrc(item)} />. Passed the item so consumers can mount custom progressive image components. */
+  renderThumb?: (item: T) => React.ReactNode;
   getLightboxTitle: (item: T) => string;
   lightboxOverlayClassName?: string;
   lightboxContentClassName?: string;
@@ -43,6 +45,7 @@ export function MediaThumbRail<T>({
   lightboxOverlayClassName,
   lightboxContentClassName,
   renderLightboxBody,
+  renderThumb,
   prevLabel = "Previous item",
   nextLabel = "Next item",
   viewMoreHref,
@@ -86,13 +89,17 @@ export function MediaThumbRail<T>({
                 }
               }}
             >
-              <Image
-                alt={getThumbAlt(item)}
-                className={imageClassName}
-                height={thumbHeight}
-                src={getThumbSrc(item)}
-                width={thumbWidth}
-              />
+              {renderThumb ? (
+                renderThumb(item)
+              ) : (
+                <Image
+                  alt={getThumbAlt(item)}
+                  className={imageClassName}
+                  height={thumbHeight}
+                  src={getThumbSrc(item)}
+                  width={thumbWidth}
+                />
+              )}
               {renderTileOverlay?.(item)}
             </div>
           );

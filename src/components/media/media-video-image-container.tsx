@@ -12,6 +12,7 @@ import {
   YouTubeEmbed,
 } from "@/components/media/media-lightbox-dialog";
 import { MediaThumbRail } from "@/components/media/media-thumb-rail";
+import { YouTubeThumbnail } from "@/components/media/youtube-thumbnail";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -79,10 +80,17 @@ export const MediaVideoImageContainer = (props: {
           paramKey="video"
           getKey={(video) => video.key}
           getThumbSrc={(video) =>
-            `https://img.youtube.com/vi/${video.key}/hqdefault.jpg`
+            `https://img.youtube.com/vi/${video.key}/mqdefault.jpg`
           }
           getThumbAlt={(video) => video.name}
           imageClassName="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+          renderThumb={(video) => (
+            <YouTubeThumbnail
+              videoKey={video.key}
+              alt={video.name}
+              className="bg-accent aspect-video h-44 w-auto rounded-xl object-cover md:h-52 lg:h-60"
+            />
+          )}
           renderTileOverlay={(video) => (
             <>
               <div className="absolute start-3 top-3 flex max-w-[80%] items-center gap-1.5">

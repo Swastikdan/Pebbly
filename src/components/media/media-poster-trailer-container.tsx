@@ -6,6 +6,7 @@ import {
   YouTubeEmbed,
 } from "@/components/media/media-lightbox-dialog";
 import { MediaThumbRail } from "@/components/media/media-thumb-rail";
+import { YouTubeThumbnail } from "@/components/media/youtube-thumbnail";
 import { Image } from "@/components/ui/image";
 import { useWatchProgress } from "@/hooks/watch-progress/use-watch-progress";
 
@@ -69,10 +70,17 @@ export function MediaPosterTrailerContainer(props: {
           paramKey="trailer"
           getKey={(video) => video.key}
           getThumbSrc={(video) =>
-            `https://img.youtube.com/vi/${video.key}/hqdefault.jpg`
+            `https://img.youtube.com/vi/${video.key}/mqdefault.jpg`
           }
           getThumbAlt={(video) => video.name}
           imageClassName="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
+          renderThumb={(video) => (
+            <YouTubeThumbnail
+              videoKey={video.key}
+              alt={video.name}
+              className="bg-accent aspect-video h-48 w-auto rounded-xl object-cover sm:h-56 md:h-70 lg:h-80"
+            />
+          )}
           renderTileOverlay={(video) => (
             <>
               <span className="bg-background text-foreground dark:bg-foreground dark:text-background absolute start-4 top-4 w-min max-w-[200px] truncate rounded-lg px-2 py-1 text-sm sm:max-w-[250px]">
