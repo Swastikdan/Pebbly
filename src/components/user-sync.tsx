@@ -118,7 +118,10 @@ export const UserSync = () => {
     refetchInterval: (query) => {
       if (query.state.fetchFailureCount >= 3) return 60_000;
       if (hasRecentOwnMutation(20_000)) return 4_000;
-      return hasRecentOwnMutation(2 * 60_000) ? 10_000 : 30_000;
+      // Baseline of 10s (was 30s) so permission and cross-device changes —
+      // feature flags, roles, ban status — propagate noticeably faster even
+      // when the client has no recent own mutations.
+      return 10_000;
     },
   });
 

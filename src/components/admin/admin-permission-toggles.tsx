@@ -135,6 +135,10 @@ export function AdminPermissionToggles() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.admin.rolePermissions(),
       });
+      // A global flag change affects the admin's own effective features too,
+      // so refresh the current user's permissions immediately instead of
+      // waiting for the next data-version poll.
+      void queryClient.invalidateQueries({ queryKey: ["permissions"] });
     },
     onError: (error) => {
       setToggleError(
@@ -209,9 +213,10 @@ export function AdminPermissionToggles() {
             Global Feature Flags
           </p>
           <p className="text-muted-foreground text-[11px] leading-relaxed">
-            These toggles enable or disable features globally. If disabled, a
-            feature will not work for users even if they have the required role,
-            but it will still work for administrators.
+            These toggles enable or disable features globally. A feature is
+            active only when its global flag is on <em>and</em> the user holds a
+            role that grants it — for everyone, administrators included. There
+            is no admin bypass.
           </p>
         </div>
       </div>

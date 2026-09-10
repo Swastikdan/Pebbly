@@ -193,11 +193,11 @@ Indexes: `(user_id, tmdb_id, media_type)` **unique** ·
 
 RBAC feature flags, including the `global` kill switch.
 
-| Column    | Type    | Notes                                           |
-| :-------- | :------ | :---------------------------------------------- |
-| `role`    | text    | `global` \| `video-player` \| `ai-integrations` |
-| `feature` | text    | `video-player` \| `ai-recommendations`          |
-| `enabled` | boolean | default `true`                                  |
+| Column    | Type    | Notes                                                                  |
+| :-------- | :------ | :--------------------------------------------------------------------- |
+| `role`    | text    | `global` \| `video-player` \| `ai-integrations` \| `external-redirect` |
+| `feature` | text    | `video-player` \| `ai-recommendations` \| `external-redirect`          |
+| `enabled` | boolean | default `true` (video/ai), `false` for `external-redirect`)            |
 
 Primary key: `(role, feature)`. Seeded/defaulted by `syncRolePermissions`
 (see [server-layer.md](./server-layer.md#5-rbac-srcserverrbacts)).

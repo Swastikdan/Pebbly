@@ -33,19 +33,16 @@ export function usePermissions(): PermissionState & {
 
   const isBanned = raw.data?.isBanned === true;
 
-  const features = clerkIsAdmin
+  // Features come from the server and are uniform for everyone (admins
+  // included) — no client-side admin auto-enable. Gating happens server-side
+  // via computeRoleFeatures (global flag AND granting role).
+  const features = isBanned
     ? ({
-        "video-player": true,
-        "ai-recommendations": true,
-        "external-redirect": raw.data?.features?.["external-redirect"] === true,
+        "video-player": false,
+        "ai-recommendations": false,
+        "external-redirect": false,
       } as Record<RbacFeature, boolean>)
-    : isBanned
-      ? ({
-          "video-player": false,
-          "ai-recommendations": false,
-          "external-redirect": false,
-        } as Record<RbacFeature, boolean>)
-      : ((raw.data?.features ?? {}) as Record<RbacFeature, boolean>);
+    : ((raw.data?.features ?? {}) as Record<RbacFeature, boolean>);
 
   const roles = clerkIsAdmin
     ? ((raw.data?.roles ?? ["admin"]) as RbacRole[])

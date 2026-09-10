@@ -126,15 +126,18 @@ function RecommendationSectionHeader() {
 }
 
 function GenerationErrorNotice({ error }: { error: string }) {
+  const message = describeGenerationError(error, {
+    rate_limited:
+      "Please wait a couple minutes before refreshing personalized recommendations.",
+  });
+  // Availability failures intentionally have no copy; keep the space empty.
+  if (!message) return null;
   return (
     <div
       role="alert"
       className="border-destructive/50 bg-destructive/10 text-destructive-foreground rounded-lg border px-4 py-3 text-xs"
     >
-      {describeGenerationError(error, {
-        rate_limited:
-          "Please wait a couple minutes before refreshing personalized recommendations.",
-      })}
+      {message}
     </div>
   );
 }

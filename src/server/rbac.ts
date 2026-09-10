@@ -20,7 +20,12 @@ export const VALID_FEATURES = [
 export type DynamicRbacRole = (typeof DYNAMIC_ROLES)[number];
 export type RbacFeature = (typeof VALID_FEATURES)[number];
 
-const ADMIN_PERMISSIONS: Record<RbacFeature, boolean> = {
+// Default for the `global` kill-switch (the `global:<feature>` row) when the
+// row is absent. Gating is uniform for every feature and every user — admins
+// included — so a feature is active only when its global flag is enabled AND a
+// role granting it is present. These defaults are applied before an admin has
+// ever touched a toggle.
+const DEFAULT_GLOBAL_PERMISSIONS: Record<RbacFeature, boolean> = {
   "video-player": true,
   "ai-recommendations": true,
   "external-redirect": false,
@@ -62,7 +67,7 @@ export async function getGlobalFeatureFlags(
     const perm = perms.find(
       (p) => p.role === "global" && p.feature === feature,
     );
-    flags[feature] = perm ? perm.enabled : true;
+    flags[feature] = perm ? perm.enabled : DEFAULT_GLOBAL_PERMISSIONS[feature];
   }
   return flags;
 }
@@ -151,7 +156,9 @@ async function computeRoleFeatures(
   for (const feature of VALID_FEATURES) {
     const globalEnabled = permissionMap.get(`global:${feature}`);
     const isGloballyEnabled =
-      globalEnabled !== undefined ? globalEnabled : true;
+      globalEnabled !== undefined
+        ? globalEnabled
+        : DEFAULT_GLOBAL_PERMISSIONS[feature];
 
     let enabled = false;
     if (isGloballyEnabled) {
@@ -179,41 +186,14 @@ export async function hasFeature(
   feature: RbacFeature,
 ): Promise<boolean> {
   if (!claims) return false;
-
   if (user?.isBanned === true) return false;
-  // Request-path admin decisions come solely from the signed JWT claim,
-  // never a live Clerk API call (that would add an external request to every
-  // gate check). Admin status reaches the claim via the Clerk session-claims
-  // template (`publicMetadata.isAdmin`); see isAdminByClaims.
-  //
-  // Revocation latency is bounded by token lifetime, not JWT longevity:
-  // getSessionClaims verifies the token's `exp` via Clerk's verifyToken and
-  // Clerk session tokens are short-lived (reissued continuously), so a
-  // demotion in Clerk lands at the next token refresh, never for the life
-  // of a long-lived credential. Same contract in getUserFeatures and the
-  // authedFn admin gate (fns/rpc.ts).
-  const isAdmin = isAdminByClaims(claims);
-  if (isAdmin) {
-    if (feature === "video-player" || feature === "ai-recommendations") {
-      return true;
-    }
-    if (feature === "external-redirect") {
-      const db = getDb(getEnv());
-      const globalFlags = await getGlobalFeatureFlags(db);
-      if (globalFlags["external-redirect"] !== true) {
-        return false;
-      }
-      const roles = (user?.roles ?? []).filter((role) =>
-        DYNAMIC_ROLES.includes(role as DynamicRbacRole),
-      );
-      if (roles.length > 0) {
-        return roles.includes("external-redirect");
-      }
-      return true;
-    }
-  }
   if (!user) return false;
 
+  // Uniform gating for every feature, administrators included: the `global`
+  // flag for the feature must be enabled AND the user must hold a role that
+  // grants it. There is no admin bypass — admin status grants access to the
+  // admin surface (see the `admin: true` gate in authedFn), not automatic
+  // consumer features. The same contract is used by getUserFeatures.
   const db = getDb(getEnv());
   const roles = (user.roles ?? []).filter((role) =>
     DYNAMIC_ROLES.includes(role as DynamicRbacRole),
@@ -249,34 +229,22 @@ export async function getUserFeatures(
   const roles = (user?.roles ?? []).filter((role) =>
     DYNAMIC_ROLES.includes(role as DynamicRbacRole),
   );
-  const computed = await computeRoleFeatures(db, roles);
-  const globalFlags = await getGlobalFeatureFlags(db);
 
-  if (isAdmin) {
-    const externalRedirectEnabled =
-      globalFlags["external-redirect"] === true &&
-      (roles.length > 0 ? roles.includes("external-redirect") : true);
-
-    return {
-      roles,
-      features: {
-        ...ADMIN_PERMISSIONS,
-        "external-redirect": externalRedirectEnabled,
-      },
-      isAdmin: true,
-      isBanned: false,
-    };
-  }
   if (!user) {
     return {
       roles: [] as string[],
       features: {},
-      isAdmin: false,
+      isAdmin,
       isBanned: false,
     };
   }
 
-  return { roles, features: computed, isAdmin: false, isBanned: false };
+  // Uniform for everyone (admins included): features are derived purely from
+  // granted roles gated by the global flags — no admin auto-enable. Admins must
+  // turn the flag on and hold the relevant role to use a feature.
+  const features = await computeRoleFeatures(db, roles);
+
+  return { roles, features, isAdmin, isBanned: false };
 }
 
 /**
@@ -340,6 +308,27 @@ export async function syncRolePermissions(
             role,
             feature,
             enabled: DEFAULT_PERMISSIONS[role][feature],
+          })
+          .onConflictDoNothing(),
+      );
+    }
+  }
+
+  // Seed the `global` kill-switch rows so the DB matches the read-time
+  // defaults (External Player Redirect is OFF until an admin turns it on).
+  for (const feature of VALID_FEATURES) {
+    const existing = existingPermissions.some(
+      (permission) =>
+        permission.role === "global" && permission.feature === feature,
+    );
+    if (!existing) {
+      statements.push(
+        db
+          .insert(rolePermissions)
+          .values({
+            role: "global",
+            feature,
+            enabled: DEFAULT_GLOBAL_PERMISSIONS[feature],
           })
           .onConflictDoNothing(),
       );

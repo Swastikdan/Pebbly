@@ -247,11 +247,19 @@ function RecommendationsContent({
         handleGenerate={handleGenerate}
       />
 
-      {error && (
-        <div className="border-destructive/50 bg-destructive/10 text-destructive-foreground animate-in fade-in slide-in-from-top-1 rounded-lg border p-4 text-sm">
-          {describeGenerationError(error)}
-        </div>
-      )}
+      {error
+        ? (() => {
+            const message = describeGenerationError(error);
+            // Availability failures intentionally have no copy; keep the space
+            // empty.
+            if (!message) return null;
+            return (
+              <div className="border-destructive/50 bg-destructive/10 text-destructive-foreground animate-in fade-in slide-in-from-top-1 rounded-lg border p-4 text-sm">
+                {message}
+              </div>
+            );
+          })()
+        : null}
 
       {(accessLoading || historyLoading) && !isGenerating && <DefaultLoader />}
 

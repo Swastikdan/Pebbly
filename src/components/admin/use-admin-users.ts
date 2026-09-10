@@ -56,15 +56,26 @@ export function useAdminUsers() {
       queryKey: queryKeys.admin.users(currentUser?.id),
     });
   };
+  // Any role/ban change alters effective feature access, so also refresh the
+  // current user's (admins included) permissions right away instead of
+  // waiting for the next data-version poll.
+  const refreshPermissions = () =>
+    void queryClient.invalidateQueries({ queryKey: ["permissions"] });
   const setUserRolesMutation = useMutation({
     mutationFn: (args: { tokenIdentifier: string; roles: DynamicRbacRole[] }) =>
       unwrap(setUserRoles({ data: args })),
-    onSuccess: refreshUsers,
+    onSuccess: () => {
+      refreshUsers();
+      refreshPermissions();
+    },
   });
   const setUserBannedMutation = useMutation({
     mutationFn: (args: { tokenIdentifier: string; banned: boolean }) =>
       unwrap(setUserBanned({ data: args })),
-    onSuccess: refreshUsers,
+    onSuccess: () => {
+      refreshUsers();
+      refreshPermissions();
+    },
   });
 
   const [selectedUser, setSelectedUser] = useState<UserTarget | null>(null);

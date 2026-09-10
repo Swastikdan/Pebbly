@@ -105,17 +105,25 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 
 ## 5. RBAC (`src/server/rbac.ts`)
 
-- Two dynamic roles (`video-player`, `ai-integrations`) map 1:1 to two
-  features (`video-player`, `ai-recommendations`).
+- Three dynamic roles (`video-player`, `ai-integrations`, `external-redirect`)
+  map 1:1 to three features (`video-player`, `ai-recommendations`,
+  `external-redirect`).
 - `hasFeature(claims, user, feature)`, the decision function:
   1. no claims → false
   2. banned user → false
-  3. admin (JWT claim or Clerk API) → true
-  4. `global:<feature>` permission row must be enabled (default true)
+  3. no user row → false
+  4. `global:<feature>` permission row must be enabled (default `true` for
+     video/ai, `false` for `external-redirect`)
   5. any of the user's roles grant the feature (permission row overrides
      `DEFAULT_PERMISSIONS`)
+- Gating is uniform for everyone, including administrators — there is no admin
+  bypass. A feature is active only when its global flag is ON and the user
+  holds a granting role. Admin status grants access to the admin surface (the
+  `admin: true` gate in `authedFn`), not automatic consumer features.
 - `getUserFeatures()`, shape used by the client (`usePermissions`); banned →
-  empty features + `isBanned: true`; admin → all features enabled.
+  empty features + `isBanned: true`; otherwise features are derived purely from
+  granted roles gated by the global flags, identically for admins and regular
+  users.
 - `syncRolePermissions(db, force)`, prunes invalid rows and seeds defaults in
   a single batched round trip (idempotent, race-safe with
   `onConflictDoNothing`).

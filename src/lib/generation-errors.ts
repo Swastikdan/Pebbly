@@ -20,8 +20,10 @@ export type GenerationErrorCode =
   | "genre_required";
 
 const generationErrorMessages = {
-  api_unavailable:
-    "The AI service is temporarily unavailable. Please try again later.",
+  // Availability failures render nothing — the section keeps its normal
+  // empty space instead of showing an error banner. Other, actionable codes
+  // (rate limits, empty input, invalid response) still get visible copy.
+  api_unavailable: "",
   location_unsupported:
     "The AI provider is not available in this region. Please try again later.",
   invalid_response: "The AI returned an unexpected response. Please try again.",
