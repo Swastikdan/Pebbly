@@ -19,11 +19,7 @@ import { Spinner } from "./ui/spinner";
 export function DailyPickButton() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const {
-    hasFeature,
-    loading: isPermissionsLoading,
-    isSignedIn,
-  } = usePermissions();
+  const { hasFeature, loading: isPermissionsLoading } = usePermissions();
   const isVideoPlaybackEnabled = hasFeature("video-player");
 
   const pick = useDailyPick(isOpen);
@@ -40,25 +36,6 @@ export function DailyPickButton() {
         <FilmIcon aria-hidden="true" className="text-primary me-1.5 size-4" />
         <span>What to Watch Today</span>
       </Button>
-    );
-  }
-
-  // Signed-in users need the video-player feature. Signed-out users get no
-  // RBAC features at all, but the pick is still useful to them (browse,
-  // shuffle, save locally), so keep the button visible. When hidden for
-  // signed-in users without the feature, keep an invisible placeholder of
-  // identical height so the hero below doesn't shift up.
-  if (!isVideoPlaybackEnabled && isSignedIn) {
-    return (
-      <div
-        aria-hidden="true"
-        className="invisible flex h-11 items-center justify-center px-8"
-      >
-        <Button variant="secondary" size="lg" disabled tabIndex={-1}>
-          <FilmIcon className="text-primary me-1.5 size-4" />
-          <span>What to Watch Today</span>
-        </Button>
-      </div>
     );
   }
 
