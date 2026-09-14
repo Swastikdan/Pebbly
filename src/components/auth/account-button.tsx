@@ -12,6 +12,14 @@ import { UserIcon } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
+const clerkAppearance = {
+  ...shadcn,
+  variables: {
+    ...shadcn.variables,
+    colorMuted: "var(--card)",
+  },
+};
+
 // Everything Clerk-UI-shaped lives in this one module so the nav components
 // can render a static placeholder and pull the real widgets in via a lazy
 // chunk. @clerk/react widget internals plus the @clerk/ui theme object are
@@ -31,7 +39,7 @@ export default function AccountButton({ variant }: AccountButtonProps) {
         </ClerkLoading>
         <ClerkLoaded>
           <Show when="signed-out">
-            <SignInButton mode="modal" appearance={shadcn}>
+            <SignInButton mode="modal" appearance={clerkAppearance}>
               <Button
                 variant="outline"
                 aria-label="Sign In"
@@ -72,7 +80,7 @@ export default function AccountButton({ variant }: AccountButtonProps) {
       </ClerkLoading>
       <ClerkLoaded>
         <Show when="signed-out">
-          <SignInButton mode="modal" appearance={shadcn}>
+          <SignInButton mode="modal" appearance={clerkAppearance}>
             <button
               type="button"
               aria-label="Sign In"

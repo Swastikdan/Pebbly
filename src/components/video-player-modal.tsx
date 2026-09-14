@@ -107,6 +107,7 @@ export function VideoPlayerModal({
   usePlayerProgressListener(listenerContext, isOpen);
 
   const externalPlayerUrl = import.meta.env.VITE_PUBLIC_EXTERNAL_PLAYER_URL;
+  console.log(externalPlayerUrl);
   // Redirect mode takes precedence over the built-in player: when the
   // External Player Redirect feature is enabled for the user AND the external
   // player URL is configured, play buttons open the external player even if
@@ -231,7 +232,11 @@ export function VideoPlayerModal({
   }, [redirectUrl, search.play]);
 
   // Render whenever either feature is enabled; redirect mode wins when both.
-  if (!isSignedIn || loading || (!redirectUrl && !hasFeature("video-player"))) {
+  if (
+    !isSignedIn ||
+    loading ||
+    (!hasFeature("external-redirect") && !hasFeature("video-player"))
+  ) {
     return null;
   }
 

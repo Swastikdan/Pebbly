@@ -63,9 +63,6 @@ export function useHomepageRecommendations() {
   }, [recommendationsQuery, feedbackQuery]);
 
   useEffect(() => {
-    if (!recommendationsData?.needsRefresh) {
-      homepageAttemptRef.current = false;
-    }
     if (
       !canAccessFeature ||
       !recommendationsData?.needsRefresh ||

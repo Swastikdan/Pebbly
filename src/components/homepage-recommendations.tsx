@@ -164,6 +164,7 @@ export function HomepageRecommendations() {
   }
 
   if (!canAccessFeature) return null;
+  if (generationError || recommendationsData?.status === "failed") return null;
 
   const hasNoWatchHistory =
     recommendationsData?.status === "failed" &&
