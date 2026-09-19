@@ -196,7 +196,8 @@
   --shadow-2xl: var(--shadow-2xl);
   --radius-2xl: 1.25rem;
   --radius-3xl: 1.5rem;
-  --animate-skeleton: skeleton 1.8s ease-in-out -0.5s infinite;
+  /* A longer, linear sweep keeps dense poster grids from looking stuttery. */
+  --animate-skeleton: skeleton 2.2s linear -0.6s infinite;
   --animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
   --animate-toast-success-odd: toast-success 0.32s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-success-even: toast-success 0.32s
@@ -213,10 +214,10 @@
   --color-nav-active-fg: var(--nav-active-fg);
   @keyframes skeleton {
     from {
-      transform: translateX(-100%);
+      transform: translate3d(-100%, 0, 0);
     }
     to {
-      transform: translateX(100%);
+      transform: translate3d(100%, 0, 0);
     }
   }
   @keyframes spinner-leaf-fade {

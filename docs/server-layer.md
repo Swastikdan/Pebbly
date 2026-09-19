@@ -21,12 +21,6 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
   `APP_ENV=preview` var, no cron triggers, and `no_bundle = true` with
   ESModule rules (Nitro pre-bundles the output). It must be passed to
   wrangler via `--config`, never `--env`.
-- `server/routes/api/health.ts`, `GET /api/health`: pings D1 with `select 1`,
-  returns `{ ok, service, timestamp, checks, durationMs }`, `503` when the DB
-  is down. The DB check result is memoized for 10 s (failures ~5 s) so an
-  outage doesn't turn into a stampede, and the check is skipped entirely when
-  there's no D1 binding (plain `vite dev`). Never leaks raw driver errors
-  (public endpoint).
 - `server/tasks/snapshots.ts`, Nitro task dispatched by the cron. Reads the
   persisted cursor (`watchlist_snapshot_cursor` in `snapshot_cursors`), calls
   `createDailySnapshots` (max 200 users/run, keyset pagination in pages of

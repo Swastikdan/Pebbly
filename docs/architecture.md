@@ -32,7 +32,7 @@ linter only (`pnpm lint`). The pre-commit hook runs both via `lint-staged`.
                                 ▼                           ▼
    ┌──────────────────────────────────────┐      ┌─────────────────────────┐
    │   Nitro (h3): only 2 things          │      │  TanStack Start RPCs    │
-   │   · /api/health (D1 ping)            │      │  POST /_server-fn/*     │
+   │   · cron task "snapshots"            │      │  POST /_server-fn/*     │
    │   · cron task "snapshots" (03:00)    │      │  createServerFn handlers│
    └──────────────────────────────────────┘      └───────────┬─────────────┘
                                                              │

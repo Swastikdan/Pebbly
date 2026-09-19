@@ -32,10 +32,9 @@ counts are approximate (as of 2026-08-23). Entries are grouped by directory.
 
 ## `server/`: Nitro layer (framework-agnostic entry points)
 
-| File                   | What it is                                                                                                                                                                                                                                                                                |
-| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `routes/api/health.ts` | `GET /api/health`, pings D1 (`select 1`), returns `{ ok, service, timestamp, checks, durationMs }`; `503` when the DB is unavailable; result memoized 10 s (failures ~5 s) and the check is skipped without a D1 binding (plain `vite dev`). Never leaks raw DB errors (public endpoint). |
-| `tasks/snapshots.ts`   | Nitro task `snapshots` run by the `0 3 * * *` cron. Reads/persists the `watchlist_snapshot_cursor`, calls `createDailySnapshots` (≤200 users/run, keyset pages of 50), returns a run summary.                                                                                             |
+| File                 | What it is                                                                                                                                                                                    |
+| :------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tasks/snapshots.ts` | Nitro task `snapshots` run by the `0 3 * * *` cron. Reads/persists the `watchlist_snapshot_cursor`, calls `createDailySnapshots` (≤200 users/run, keyset pages of 50), returns a run summary. |
 
 ## `drizzle/`: SQL migrations
 

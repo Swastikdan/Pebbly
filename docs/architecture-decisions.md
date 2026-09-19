@@ -54,8 +54,7 @@ Client calls them through the generated RPC layer; `unwrap()` throws an
 
 - End-to-end type safety: the client imports the same fns it calls; schemas
   are shared, so a schema change is a compile error on both sides.
-- No OpenAPI/REST surface to maintain; Nitro only owns `/api/health` and the
-  cron task.
+- No OpenAPI/REST surface to maintain; Nitro only owns the cron task.
 - CSRF protection is needed (server fns accept cookies) and is provided by
   TanStack Start's native `createCsrfMiddleware` scoped to server fns
   (`src/start.ts`), plus a fresh Bearer token attached client-side.

@@ -29,7 +29,7 @@
   through TanStack Start `createServerFn` RPCs in `src/server/fns/`. They are
   type-safe, Valibot-validated, guarded by one shared builder (`authedFn` in
   `fns/rpc.ts`), and co-located with the client. Nitro only owns the
-  `/api/health` endpoint and the cron task.
+  cron task.
 - **A repository pattern hides remote-vs-local.** `useRepository()` picks a
   remote (server-fn + optimistic journal) or local (Zustand + localStorage)
   implementation based on auth state, so mutation hooks never branch on
