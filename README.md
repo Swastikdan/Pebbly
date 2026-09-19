@@ -108,6 +108,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 - A Clerk Application
 - A Cloudflare Account (with D1 and Workers AI enabled)
 - A Google Gemini API Key (optional, local-development fallback only)
+- A PostHog project (the project token is safe to expose in the browser)
 
 ### Environment setup
 
@@ -140,6 +141,10 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
    # TMDB API (read-only public API key, safe for client)
    VITE_PUBLIC_TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
    VITE_PUBLIC_TMDB_API_URL=https://api.themoviedb.org/3
+
+   # PostHog (disabled locally unless VITE_PUBLIC_APP_ENV is preview/production)
+   VITE_PUBLIC_POSTHOG_PROJECT_TOKEN=phc_your_project_token
+   VITE_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 
    # Optional local AI fallback (production uses the Workers AI binding)
    GEMINI_API_KEY=your_gemini_key
@@ -210,6 +215,13 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 ---
 
 ## Deploying to Cloudflare
+
+Before the first deploy, add these GitHub Actions secrets from your PostHog
+project settings. The workflows inject them at build time for both preview and
+production; local development intentionally does not send analytics.
+
+- `VITE_PUBLIC_POSTHOG_PROJECT_TOKEN`
+- `VITE_PUBLIC_POSTHOG_HOST` (normally `https://us.i.posthog.com`)
 
 Deployment is automated via GitHub Actions:
 
