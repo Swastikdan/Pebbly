@@ -1,3 +1,4 @@
+import { usePostHog } from "@posthog/react";
 import { Maximize2, Minimize } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -105,6 +106,28 @@ export function VideoPlayerModal({
   );
 
   usePlayerProgressListener(listenerContext, isOpen);
+
+  const posthog = usePostHog();
+  const capturePlay = useCallback(
+    (mode: "embedded" | "redirect") => {
+      posthog?.capture("video_playback_started", {
+        tmdb_id: tmdbId,
+        media_type: type,
+        title,
+        season,
+        episode,
+        mode,
+      });
+    },
+    [posthog, tmdbId, type, title, season, episode],
+  );
+  const handleRedirectClick = () => capturePlay("redirect");
+
+  // Fires once each time the in-app player opens, from any trigger (poster,
+  // page button, or a `?play=true` deep link).
+  useEffect(() => {
+    if (isOpen) capturePlay("embedded");
+  }, [isOpen, capturePlay]);
 
   const externalPlayerUrl = import.meta.env.VITE_PUBLIC_EXTERNAL_PLAYER_URL;
   console.log(externalPlayerUrl);
@@ -225,11 +248,12 @@ export function VideoPlayerModal({
       return;
     }
     hasAutoRedirected = true;
+    capturePlay("redirect");
     const win = window.open(redirectUrl, "_blank", "noopener,noreferrer");
     if (!win) {
       window.location.assign(redirectUrl);
     }
-  }, [redirectUrl, search.play]);
+  }, [redirectUrl, search.play, capturePlay]);
 
   // Render whenever either feature is enabled; redirect mode wins when both.
   if (
@@ -326,6 +350,7 @@ export function VideoPlayerModal({
           target="_blank"
           rel="noopener noreferrer"
           className={cardTriggerClass}
+          onClick={handleRedirectClick}
         >
           <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
             <Play
@@ -348,6 +373,7 @@ export function VideoPlayerModal({
           size: "lg",
           className: triggerClass,
         })}
+        onClick={handleRedirectClick}
       >
         <Play
           aria-hidden="true"

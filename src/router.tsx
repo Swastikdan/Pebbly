@@ -7,6 +7,7 @@ import {
   DefaultErrorComponent,
   DefaultNotFoundComponent,
 } from "@/components/default-not-found";
+import { PostHogProvider } from "@/lib/posthog";
 import { getContext } from "@/lib/query/query-client";
 import { Provider as QueryProvider } from "@/lib/query/root-provider";
 import { routeTree } from "@/routeTree.gen";
@@ -49,7 +50,9 @@ export const getRouter = () => {
         <ClerkProvider
           publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
         >
-          <QueryProvider {...rqContext}>{props.children}</QueryProvider>
+          <PostHogProvider>
+            <QueryProvider {...rqContext}>{props.children}</QueryProvider>
+          </PostHogProvider>
         </ClerkProvider>
       );
     },
