@@ -1,3 +1,4 @@
+import { usePostHog } from "@posthog/react";
 import { useCallback, useEffect, useState } from "react";
 
 import type { MediaType } from "@/domain/media";
@@ -41,6 +42,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
   const itemId = String(props.id);
   const toggle = useToggleWatchlistItem();
   const { isOnWatchList } = useWatchlistItem(itemId, media_type);
+  const posthog = usePostHog();
 
   const [optimisticOn, setOptimisticOn] = useState<boolean | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -79,6 +81,10 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
         },
         isOnWatchList,
       );
+      posthog?.capture(
+        nextActive ? "watchlist_item_added" : "watchlist_item_removed",
+        { media_id: itemId, media_type, title },
+      );
     } catch (error) {
       console.error("Error toggling watchlist:", error);
       setOptimisticOn(null);
@@ -95,6 +101,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
     toggle,
     overview,
     is_on_watchlist_page,
+    posthog,
   ]);
 
   return (
