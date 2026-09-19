@@ -75,7 +75,7 @@ const contentSecurityPolicy = [
   ].join(" "),
   // Clerk registers its telemetry/handshake workers from blob: URLs, which
   // falls back to script-src when worker-src is absent.
-  "worker-src 'self' blob:",
+  "worker-src 'self' blob: data:",
   "style-src 'self' 'unsafe-inline'",
   [
     "img-src",
@@ -96,6 +96,7 @@ const contentSecurityPolicy = [
     "'self'",
     ...tmdbApiOrigins,
     ...clerkOrigins,
+    ...posthogOrigins,
     // Clerk SDK telemetry beacon.
     "https://clerk-telemetry.com",
     // PostHog event ingestion and remote config.

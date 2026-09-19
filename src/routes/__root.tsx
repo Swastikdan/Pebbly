@@ -69,7 +69,7 @@ function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       apiKey={apiKey}
       options={{
         api_host: apiHost,
-        defaults: "2025-05-24",
+        defaults: "2026-05-30",
         capture_exceptions: true,
         debug: import.meta.env.DEV,
         tracing_headers:
