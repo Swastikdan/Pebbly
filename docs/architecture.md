@@ -31,9 +31,9 @@ linter only (`pnpm lint`). The pre-commit hook runs both via `lint-staged`.
                                 │ SSR (Node / Worker)       │ client fetch
                                 ▼                           ▼
    ┌──────────────────────────────────────┐      ┌─────────────────────────┐
-   │   Nitro (h3): only 2 things          │      │  TanStack Start RPCs    │
+   │   Nitro (h3): only 1 thing           │      │  TanStack Start RPCs    │
    │   · cron task "snapshots"            │      │  POST /_server-fn/*     │
-   │   · cron task "snapshots" (03:00)    │      │  createServerFn handlers│
+   │                                      │      │  createServerFn handlers│
    └──────────────────────────────────────┘      └───────────┬─────────────┘
                                                              │
                                      ┌───────────────────────▼─────────────┐

@@ -45,19 +45,23 @@ export async function captureServerEvent(
   event: string,
   properties: Record<string, unknown>,
 ): Promise<void> {
-  const posthog = getPostHogClient();
-  if (!posthog) return;
+  try {
+    const posthog = getPostHogClient();
+    if (!posthog) return;
 
-  const sessionId = getRequestHeader("X-PostHog-Session-Id");
-  posthog.capture({
-    distinctId,
-    event,
-    properties: {
-      ...properties,
-      $session_id: sessionId || undefined,
-    },
-  });
-  await posthog.flush();
+    const sessionId = getRequestHeader("X-PostHog-Session-Id");
+    posthog.capture({
+      distinctId,
+      event,
+      properties: {
+        ...properties,
+        $session_id: sessionId || undefined,
+      },
+    });
+    await posthog.flush();
+  } catch (error) {
+    console.warn("[posthog] Failed to capture server event:", error);
+  }
 }
 
 export async function captureServerException(

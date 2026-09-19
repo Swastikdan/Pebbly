@@ -91,18 +91,18 @@ export async function runAiGeneration(args: {
     systemInstruction: SYSTEM_INSTRUCTION,
     retries: args.attempts,
   });
-  await captureAiGeneration({
-    distinctId: args.distinctId,
-    provider: getAiProvider(),
-    model: aiResult.usedModel ?? "unknown",
-    durationMs: Date.now() - startedAt,
-    ok: !aiResult.error,
-    error: aiResult.error,
-    retries: args.attempts,
-    reasoningTokens: aiResult.reasoningTokens,
-  });
   if (aiResult.error || !aiResult.result) {
     const error = aiResult.error ?? "api_unavailable";
+    await captureAiGeneration({
+      distinctId: args.distinctId,
+      provider: getAiProvider(),
+      model: aiResult.usedModel ?? "unknown",
+      durationMs: Date.now() - startedAt,
+      ok: false,
+      error,
+      retries: args.attempts,
+      reasoningTokens: aiResult.reasoningTokens,
+    });
     return { ok: false, error };
   }
 
@@ -141,8 +141,28 @@ export async function runAiGeneration(args: {
   // history entry. A short response is retained and reported as-is: the UI
   // shows the actual number returned rather than claiming the requested count.
   if (recommendations.length === 0) {
+    await captureAiGeneration({
+      distinctId: args.distinctId,
+      provider: getAiProvider(),
+      model: aiResult.usedModel ?? "unknown",
+      durationMs: Date.now() - startedAt,
+      ok: false,
+      error: "empty_result",
+      retries: args.attempts,
+      reasoningTokens: aiResult.reasoningTokens,
+    });
     return { ok: false, error: "empty_result" };
   }
+
+  await captureAiGeneration({
+    distinctId: args.distinctId,
+    provider: getAiProvider(),
+    model: aiResult.usedModel ?? "unknown",
+    durationMs: Date.now() - startedAt,
+    ok: true,
+    retries: args.attempts,
+    reasoningTokens: aiResult.reasoningTokens,
+  });
 
   return {
     ok: true,

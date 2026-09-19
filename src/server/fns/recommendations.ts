@@ -429,9 +429,11 @@ export const startGeneration = createServerFn({ method: "POST" })
           { db, userId: user.id, isAdmin: isAdminByClaims(claims) },
           { type: "history", options: data },
         );
-        await captureServerEvent(claims.sub, "recommendations_generated", {
-          generation_surface: "history",
-        });
+        if (!("error" in result)) {
+          await captureServerEvent(claims.sub, "recommendations_generated", {
+            generation_surface: "history",
+          });
+        }
         return ok(result);
       },
     ),
@@ -448,9 +450,11 @@ export const startHomepageGeneration = createServerFn({
         { db, userId: user.id, isAdmin: isAdminByClaims(claims) },
         { type: "homepage" },
       );
-      await captureServerEvent(claims.sub, "recommendations_generated", {
-        generation_surface: "homepage",
-      });
+      if (!("error" in result) && !result.cached) {
+        await captureServerEvent(claims.sub, "recommendations_generated", {
+          generation_surface: "homepage",
+        });
+      }
       return ok(result);
     },
   ),

@@ -1,5 +1,6 @@
 import type { MutationDomain } from "@/lib/cross-tab-sync";
 import type { QueryClient } from "@tanstack/react-query";
+import { broadcastMutation } from "@/lib/cross-tab-sync";
 
 /**
  * Pending-op journal + reconcile for array-shaped query caches (watchlist,
@@ -213,6 +214,7 @@ function resolveOp(
   // this would otherwise trigger). Untagged ops are counted by their caller
   // (one count per batched server flush). Rollbacks (`removeOp`) record
   // nothing: a failed write never bumps the revision.
+  if (op.domain) broadcastMutation(op.domain);
 }
 
 function removeOp(
