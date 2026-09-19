@@ -335,6 +335,7 @@ async function runHistoryPipeline(
 
   const targetCount = Math.min(Math.max(options.count ?? 10, 1), 30);
   const generated = await runAiGeneration({
+    distinctId: context.userId,
     prompt,
     attempts: 1,
     targetCount,
@@ -462,6 +463,7 @@ async function runHomepagePipeline(
       );
 
   const generated = await runAiGeneration({
+    distinctId: context.userId,
     prompt,
     attempts: 2,
     targetCount: 30,

@@ -8,8 +8,8 @@ import {
   useAllMediaStates,
   useToggleWatchlistItem,
 } from "@/hooks/use-watchlist";
+import { broadcastMutation } from "@/lib/cross-tab-sync";
 import { queryKeys } from "@/lib/query/keys";
-import { recordOwnMutation } from "@/lib/realtime-mutations";
 import {
   filterRenderedRecommendations,
   getDismissKey,
@@ -94,7 +94,7 @@ export function useHomepageRecommendations() {
       .finally(() => {
         isGeneratingRef.current = false;
         setIsGenerating(false);
-        recordOwnMutation("ai");
+        broadcastMutation("ai");
         refreshHomepage();
       });
   }, [canAccessFeature, recommendationsData?.needsRefresh, refreshHomepage]);
@@ -239,7 +239,7 @@ export function useHomepageRecommendations() {
             }),
           );
         }
-        recordOwnMutation("ai");
+        broadcastMutation("ai");
         refreshHomepage();
       } catch (error) {
         console.error("Failed to update recommendation feedback:", error);

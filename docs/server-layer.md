@@ -89,9 +89,9 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
   skew tolerance); malformed/expired → `null` (guest).
 - `requireUser()`, the main auth gate. Verifies the session, resolves the
   user, **creates the row on first sign-in** (race-safe:
-  `onConflictDoNothing` + re-read by canonical `tokenIdentifier`), and
-  auto-consolidates orphaned `watch_items` from duplicate legacy user rows
-  (batched rewrite).
+  `onConflictDoNothing` + re-read by canonical `tokenIdentifier`). Legacy
+  duplicate-user reconciliation is handled by the offline maintenance helper,
+  not on the request path.
 - `getCurrentUser()`, resolves without creating (read paths).
 - `findUserByClaims()`, multi-format `tokenIdentifier` matching (canonical
   `clerk|<sub>` fast path via the unique index, then an escaped LIKE fallback

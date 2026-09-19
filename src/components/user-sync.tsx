@@ -1,18 +1,15 @@
 import { useClerk, useUser } from "@clerk/react";
+import { usePostHog } from "@posthog/react";
 import { useCallback, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { DataVersion } from "@/hooks/data-version";
-import type { MutationDomain } from "@/lib/realtime-mutations";
+import type { MutationDomain } from "@/lib/cross-tab-sync";
 import { fetchDataVersion } from "@/hooks/data-version";
 import { usePermissions } from "@/hooks/use-permissions";
 import { subscribeToCrossTabMutations } from "@/lib/cross-tab-sync";
 import { clearPendingOps } from "@/lib/data/pending-ops";
 import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
-import {
-  hasRecentOwnMutation,
-  takeOwnMutationCounts,
-} from "@/lib/realtime-mutations";
 import { replayRemoteMutations } from "@/lib/repository/remote-repository";
 import { storeUser } from "@/server/fns/users";
 import { unwrap } from "@/server/schema/common";
@@ -21,9 +18,32 @@ export const UserSync = () => {
   const { user, isLoaded } = useUser();
   const queryClient = useQueryClient();
   const { signOut } = useClerk();
+  const posthog = usePostHog();
   const { isBanned, isSignedIn, loading } = usePermissions();
 
   const lastRevsRef = useRef<Record<string, DataVersion>>({});
+  const identifiedUserRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!user) {
+      if (identifiedUserRef.current) {
+        posthog.reset();
+        identifiedUserRef.current = null;
+      }
+      return;
+    }
+
+    if (identifiedUserRef.current && identifiedUserRef.current !== user.id) {
+      posthog.reset();
+    }
+    posthog.identify(user.id, {
+      email: user.primaryEmailAddress?.emailAddress,
+      name: user.fullName ?? user.username ?? undefined,
+    });
+    identifiedUserRef.current = user.id;
+  }, [isLoaded, posthog, user]);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -117,10 +137,8 @@ export const UserSync = () => {
     refetchOnWindowFocus: true,
     refetchInterval: (query) => {
       if (query.state.fetchFailureCount >= 3) return 60_000;
-      if (hasRecentOwnMutation(20_000)) return 4_000;
-      // Baseline of 10s (was 30s) so permission and cross-device changes —
-      // feature flags, roles, ban status — propagate noticeably faster even
-      // when the client has no recent own mutations.
+      // Keep the poll constant. Local mutations already invalidate their
+      // affected queries; the revision poll only detects other tabs/devices.
       return 10_000;
     },
   });
@@ -147,24 +165,16 @@ export const UserSync = () => {
       return;
     }
     const prev = lastRevsRef.current[user.id];
-    // Own successful mutations since the last poll. A revision delta that is
-    // fully explained by the client's own writes is already reflected in its
-    // cache (optimistic update + server response), so refetching would be
-    // redundant, only refetch for deltas larger than our own writes.
-    const own = takeOwnMutationCounts();
-
     if (prev) {
-      if (current.watchlistRev - prev.watchlistRev > own.watchlist) {
+      if (current.watchlistRev !== prev.watchlistRev) {
         invalidateDomain("watchlist");
       }
-      if (current.listsRev - prev.listsRev > own.lists) {
+      if (current.listsRev !== prev.listsRev) {
         invalidateDomain("lists");
       }
-      if (current.aiRev - prev.aiRev > own.ai) {
+      if (current.aiRev !== prev.aiRev) {
         invalidateDomain("ai");
       }
-      // Permission changes (roles, ban flag, global feature flags) are
-      // never this client's own writes, any delta means refetch perms.
       if (current.permsRev !== prev.permsRev) {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.permissions(user.id),

@@ -8,6 +8,7 @@ import type {
 } from "@/lib/data/optimistic/watchlist-optimistic";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
+import { broadcastMutation } from "@/lib/cross-tab-sync";
 import {
   pendingMutationsFor,
   removeMutation,
@@ -30,7 +31,6 @@ import {
 import { beginOp, scheduleSync } from "@/lib/data/pending-ops";
 import { toast } from "@/lib/notifications";
 import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
-import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { createMembershipWriter } from "@/lib/repository/membership-writer";
 import { extractMetadataFields, logError } from "@/lib/utils";
 import {
@@ -551,7 +551,7 @@ export function createRemoteRepository(
 
     async cloneList(sourceListId) {
       const newId = await unwrap(cloneCustomList({ data: { sourceListId } }));
-      recordOwnMutation("lists");
+      broadcastMutation("lists");
       scheduleSync(queryClient, [queryKeys.lists.all(userId)]);
       return newId;
     },

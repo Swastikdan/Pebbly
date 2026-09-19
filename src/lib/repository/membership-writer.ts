@@ -3,12 +3,12 @@ import type { OpHandle } from "@/lib/data/pending-ops";
 import type { WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
 import { createBatcher } from "@/lib/batcher";
+import { broadcastMutation } from "@/lib/cross-tab-sync";
 import { enqueueMutation, removeMutation } from "@/lib/data/mutation-outbox";
 import { watchlistOptimistic } from "@/lib/data/optimistic/watchlist-optimistic";
 import { applyServerState, scheduleSync } from "@/lib/data/pending-ops";
 import { toast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
-import { recordOwnMutation } from "@/lib/realtime-mutations";
 import { logError } from "@/lib/utils";
 import {
   batchSetWatchlistMembership,
@@ -40,7 +40,7 @@ export function createMembershipWriter(
           rows = await unwrap(batchSetWatchlistMembership({ data: { items } }));
         }
 
-        recordOwnMutation("watchlist");
+        broadcastMutation("watchlist");
         applyServerState(
           queryClient,
           queryKeys.watchlist.list(),

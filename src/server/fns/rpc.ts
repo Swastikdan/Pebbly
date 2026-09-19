@@ -2,6 +2,7 @@ import type { AuthUser, ClerkSessionClaims, RequireUserResult } from "../auth";
 import type { Db } from "../db/client";
 import type { RbacFeature } from "../rbac";
 import type { ApiResult } from "../schema/common";
+import { captureServerException } from "@/lib/posthog-server";
 import { findUserByClaims, getSessionClaims, requireUser } from "../auth";
 import { getDb } from "../db/client";
 import { getEnv } from "../env";
@@ -153,12 +154,23 @@ export function authedFn<TData, C extends AuthedFnConfig, TResult>(
       }
     }
 
-    return handler({
-      data,
-      user: user as UserFor<ModeOf<C>>,
-      claims: claims as ClaimsFor<ModeOf<C>>,
-      db: getDb(getEnv()),
-    }) as Promise<TResult>;
+    try {
+      return await handler({
+        data,
+        user: user as UserFor<ModeOf<C>>,
+        claims: claims as ClaimsFor<ModeOf<C>>,
+        db: getDb(getEnv()),
+      });
+    } catch (error) {
+      if (claims?.sub) {
+        try {
+          await captureServerException(error, claims.sub);
+        } catch {
+          // Analytics failures must not replace the original application error.
+        }
+      }
+      throw error;
+    }
   })();
 }
 

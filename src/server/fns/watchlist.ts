@@ -4,6 +4,7 @@ import * as v from "valibot";
 
 import type { Db } from "../db/client";
 import type { ApiResult } from "../schema/common";
+import { captureServerEvent } from "@/lib/posthog-server";
 import { extractMetadataFields } from "@/lib/utils";
 import { runBatch } from "../db/client";
 import { episodeProgress, users, watchItems } from "../db/schema";
@@ -220,6 +221,7 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
       { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({
+        claims,
         db,
         user,
       }): Promise<ApiResult<typeof watchItems.$inferSelect | null>> => {
@@ -245,6 +247,11 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
               .where(eq(watchItems.id, existing.id));
           }
           await bumpWatchlistRev(db, user.id);
+          await captureServerEvent(claims.sub, "watchlist_membership_changed", {
+            action: "removed",
+            media_type: data.mediaType,
+            tmdb_id: data.tmdbId,
+          });
           return ok(plan.delete ? null : plan.nextRow);
         }
 
@@ -265,6 +272,11 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
           },
         );
 
+        await captureServerEvent(claims.sub, "watchlist_membership_changed", {
+          action: "added",
+          media_type: data.mediaType,
+          tmdb_id: data.tmdbId,
+        });
         return ok(row ?? null);
       },
     ),

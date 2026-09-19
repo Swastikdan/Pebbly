@@ -5,6 +5,7 @@ import type { Db } from "../db/client";
 import type { ApiResult } from "../schema/common";
 import type { ListType, ListVisibility } from "../schema/lists";
 import type { MediaType } from "@/domain/media";
+import { captureServerEvent } from "@/lib/posthog-server";
 import { runBatch } from "../db/client";
 import { listItems, lists } from "../db/schema";
 import { findOwnedRow } from "../helpers/owned-row";
@@ -90,9 +91,14 @@ export const createCustomList = createServerFn({ method: "POST" })
     authedFn(
       { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
-      async ({ db, user }) => {
+      async ({ claims, db, user }) => {
         const result = await createCustomListInner(db, user.id, data);
         if (!result.ok) return result;
+        await captureServerEvent(claims.sub, "custom_list_created", {
+          visibility: data.visibility ?? "private",
+          sort_type: data.sortType ?? "unordered",
+          has_initial_item: false,
+        });
         return ok(result.data);
       },
     ),
@@ -104,7 +110,7 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
     authedFn(
       { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
-      async ({ db, user }) => {
+      async ({ claims, db, user }) => {
         const created = await createCustomListInner(
           db,
           user.id,
@@ -140,6 +146,16 @@ export const createCustomListAndAddItem = createServerFn({ method: "POST" })
           return itemResult;
         }
 
+        await captureServerEvent(claims.sub, "custom_list_created", {
+          visibility: data.visibility ?? "private",
+          sort_type: data.sortType ?? "unordered",
+          has_initial_item: true,
+        });
+        await captureServerEvent(claims.sub, "custom_list_item_changed", {
+          action: "added",
+          media_type: data.mediaType,
+          tmdb_id: data.tmdbId,
+        });
         return ok(id);
       },
     ),
@@ -209,9 +225,14 @@ export const toggleListItem = createServerFn({ method: "POST" })
     authedFn(
       { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
-      async ({ db, user }) => {
+      async ({ claims, db, user }) => {
         const result = await toggleListItemInner(db, user.id, data);
         if (!result.ok) return result;
+        await captureServerEvent(claims.sub, "custom_list_item_changed", {
+          action: result.data ? "added" : "removed",
+          media_type: data.mediaType,
+          tmdb_id: data.tmdbId,
+        });
         return ok(result.data);
       },
     ),

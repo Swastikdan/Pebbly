@@ -1,8 +1,4 @@
 import { getToken } from "@clerk/react";
-import {
-  sentryGlobalFunctionMiddleware,
-  sentryGlobalRequestMiddleware,
-} from "@sentry/tanstackstart-react";
 import { createCsrfMiddleware, createStart } from "@tanstack/react-start";
 
 import { requestLogger, serverFnLogger } from "./server/request-logger";
@@ -23,15 +19,14 @@ const RPC_TIMEOUT_MS = 30_000;
  */
 export const startInstance = createStart(() => ({
   // Reject cross-site server-function requests. Scoped to server fns so
-  // ordinary page navigation/SSR is never affected. Browser same-origin
-  // calls carry Sec-Fetch-Site/Origin and pass; cookie-derived sessions
-  // can no longer be abused by a cross-site form/fetch from another origin.
+  // ordinary page navigation/SSR is never affected. The native middleware
+  // checks Sec-Fetch-Site, Origin, and Referer; Bearer auth does not bypass
+  // this same-origin boundary.
   requestMiddleware: [
-    sentryGlobalRequestMiddleware,
     requestLogger,
     createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" }),
   ],
-  functionMiddleware: [sentryGlobalFunctionMiddleware, serverFnLogger],
+  functionMiddleware: [serverFnLogger],
   serverFns: {
     fetch: async (url, args = {}) => {
       const headers = new Headers(args.headers);

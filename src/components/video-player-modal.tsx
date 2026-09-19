@@ -1,3 +1,4 @@
+import { usePostHog } from "@posthog/react";
 import { Maximize2, Minimize } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -50,9 +51,11 @@ export function VideoPlayerModal({
   const [closeVisible, setCloseVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { isSignedIn, hasFeature, loading } = usePermissions();
+  const posthog = usePostHog();
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closedByUserRef = useRef(false);
+  const playbackCapturedRef = useRef(false);
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -245,9 +248,25 @@ export function VideoPlayerModal({
       ? `Play S${season}E${episode}`
       : "Play Now";
 
+  const capturePlaybackStart = (playbackMode: "embedded" | "external") => {
+    if (playbackMode === "embedded" && playbackCapturedRef.current) return;
+    if (playbackMode === "embedded") playbackCapturedRef.current = true;
+    posthog.capture("video_playback_started", {
+      playback_mode: playbackMode,
+      media_type: type,
+      tmdb_id: tmdbId,
+      season,
+      episode,
+      trigger_variant: variant,
+    });
+  };
+
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
+    if (open) {
+      capturePlaybackStart("embedded");
+    } else {
       closedByUserRef.current = true;
+      playbackCapturedRef.current = false;
     }
     setIsOpen(open);
     if (!open) {
@@ -295,6 +314,7 @@ export function VideoPlayerModal({
         }
       }
     } catch (error) {
+      posthog.captureException(error);
       console.error("Failed to toggle fullscreen:", error);
     }
   };
@@ -326,6 +346,7 @@ export function VideoPlayerModal({
           target="_blank"
           rel="noopener noreferrer"
           className={cardTriggerClass}
+          onClick={() => capturePlaybackStart("external")}
         >
           <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
             <Play
@@ -344,6 +365,7 @@ export function VideoPlayerModal({
         title={label}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => capturePlaybackStart("external")}
         className={buttonVariants({
           size: "lg",
           className: triggerClass,
@@ -373,6 +395,7 @@ export function VideoPlayerModal({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                capturePlaybackStart("embedded");
                 setIsOpen(true);
               }}
             />

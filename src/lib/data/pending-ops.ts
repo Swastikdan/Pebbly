@@ -1,6 +1,5 @@
-import type { MutationDomain } from "@/lib/realtime-mutations";
+import type { MutationDomain } from "@/lib/cross-tab-sync";
 import type { QueryClient } from "@tanstack/react-query";
-import { recordOwnMutation } from "@/lib/realtime-mutations";
 
 /**
  * Pending-op journal + reconcile for array-shaped query caches (watchlist,
@@ -214,9 +213,6 @@ function resolveOp(
   // this would otherwise trigger). Untagged ops are counted by their caller
   // (one count per batched server flush). Rollbacks (`removeOp`) record
   // nothing: a failed write never bumps the revision.
-  if (op.domain) {
-    recordOwnMutation(op.domain);
-  }
 }
 
 function removeOp(

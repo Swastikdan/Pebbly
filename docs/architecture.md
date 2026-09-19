@@ -73,8 +73,8 @@ The same Worker serves both the static frontend (via the `ASSETS` binding,
 - `src/start.ts` creates the client start instance and, importantly,
   customizes `serverFns.fetch` so every server-function RPC carries a fresh
   Clerk session token in `Authorization: Bearer` (the server prefers this
-  header over cookies) with a 30 s abort timeout. It also installs a CSRF
-  middleware scoped to server functions.
+  header over cookies) with a 30 s abort timeout. It also installs TanStack
+  Start's native CSRF middleware scoped to server functions.
 - `src/routes/` holds file-based routes. Static shells (`search.tsx`,
   `watchlist.tsx`, `recommendations.tsx`) only define metadata + search-param
   validation; the actual UI lives in the `.lazy.tsx` variants.
@@ -142,9 +142,9 @@ Server functions are:
 
 - `auth.ts`, extracts the Clerk token (Bearer header → cookie), verifies it
   with `@clerk/backend`, resolves the `users` row (creating it on first
-  sign-in, race-safe via `onConflictDoNothing`), auto-consolidates duplicate
-  user rows, and exposes a short-lived in-memory user cache (15 s TTL,
-  500-entry LRU).
+  sign-in, race-safe via `onConflictDoNothing`), and exposes a short-lived
+  in-memory user cache (15 s TTL, 500-entry LRU). Legacy duplicate-user
+  reconciliation is kept off the request path in the maintenance helper.
 - `rbac.ts`, feature flags (`video-player`, `ai-recommendations`) evaluated
   from a `role_permissions` table + dynamic user roles + a **global** kill
   switch. Admin is resolved by `isAdminByClaims` (the signed JWT

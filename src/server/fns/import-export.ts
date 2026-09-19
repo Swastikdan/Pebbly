@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq, inArray } from "drizzle-orm";
 
+import { captureServerEvent } from "@/lib/posthog-server";
 import { chunkedQuery, runBatch } from "../db/client";
 import { episodeProgress, watchItems } from "../db/schema";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
@@ -20,7 +21,7 @@ export const importWatchlist = createServerFn({ method: "POST" })
     authedFn(
       { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
-      async ({ db, user }) => {
+      async ({ claims, db, user }) => {
         const now = Date.now();
         const importedItems = new Map<string, (typeof data.items)[number]>();
 
@@ -193,6 +194,10 @@ export const importWatchlist = createServerFn({ method: "POST" })
         if (data.final !== false) {
           await createWatchlistSnapshot(db, user.id);
           await bumpWatchlistRev(db, user.id);
+          await captureServerEvent(claims.sub, "watchlist_imported", {
+            imported_title_count: importedItems.size,
+            watched_episode_count: episodeKeys.size,
+          });
         }
         return ok({ imported: importedItems.size });
       },

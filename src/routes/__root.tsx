@@ -1,3 +1,4 @@
+import { PostHogProvider } from "@posthog/react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   createRootRouteWithContext,
@@ -28,9 +29,9 @@ import { reportClientSideError } from "@/lib/client-error-reporting";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import appCss from "@/styles.css?url";
 
-// UserSync polls data-version every 30s and syncs Clerk user to DB – not
-// needed for LCP. Lazy-load it so its JS (storeUser, cross-tab sync,
-// realtime-mutations) is not parsed during the critical 2.9s main-thread
+// UserSync polls data-version every 10s and syncs Clerk user to DB – not
+// needed for LCP. Lazy-load it so its JS (storeUser and cross-tab sync)
+// is not parsed during the critical 2.9s main-thread
 // window (Pagespeed "Minimize main-thread work" 809ms evaluation).
 const UserSync = lazy(() =>
   import("@/components/user-sync").then((m) => ({ default: m.UserSync })),
@@ -38,6 +39,46 @@ const UserSync = lazy(() =>
 
 interface RouterContext {
   queryClient: QueryClient;
+}
+
+function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+  const appEnv = import.meta.env.VITE_PUBLIC_APP_ENV;
+  const analyticsEnabled = appEnv === "preview" || appEnv === "production";
+
+  // Never send local development traffic to the shared PostHog project.
+  // Deploy workflows explicitly set the build marker for preview/production.
+  if (!analyticsEnabled) return children;
+
+  const apiKey = import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN;
+  const apiHost = import.meta.env.VITE_PUBLIC_POSTHOG_HOST;
+
+  if (!apiKey || !apiHost) {
+    if (import.meta.env.DEV) {
+      const missingVariable = !apiKey
+        ? "VITE_PUBLIC_POSTHOG_PROJECT_TOKEN"
+        : "VITE_PUBLIC_POSTHOG_HOST";
+      throw new Error(
+        `${missingVariable} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${missingVariable} is configured`,
+      );
+    }
+    return children;
+  }
+
+  return (
+    <PostHogProvider
+      apiKey={apiKey}
+      options={{
+        api_host: apiHost,
+        defaults: "2025-05-24",
+        capture_exceptions: true,
+        debug: import.meta.env.DEV,
+        tracing_headers:
+          typeof window !== "undefined" ? [window.location.hostname] : [],
+      }}
+    >
+      {children}
+    </PostHogProvider>
+  );
 }
 
 // Blocking, pre-paint theme resolution. Runs before any stylesheet renders so
@@ -384,31 +425,33 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="min-h-screen antialiased">
-        <ToastProvider position="bottom-right">
-          <NavigationProgressBar />
-          <a
-            href="#main-content"
-            className="focus:border-border focus:bg-background focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-100 focus:inline-flex focus:items-center focus:justify-center focus:rounded-lg focus:border focus:px-4 focus:py-2.5 focus:font-medium focus:shadow-none focus:ring-2 focus:outline-hidden"
-          >
-            Skip to main content
-          </a>
-          <Suspense fallback={null}>
-            <UserSync />
-          </Suspense>
-          <Navbar />
-          <main
-            ref={mainContentRef}
-            id="main-content"
-            tabIndex={-1}
-            className="focus-visible:outline-ring mobile-nav-spacer focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            {children}
-          </main>
-          <Footer />
-          <MobileBottomNav />
-          <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
-          {devtoolsPlugin}
-        </ToastProvider>
+        <AnalyticsProvider>
+          <ToastProvider position="bottom-right">
+            <NavigationProgressBar />
+            <a
+              href="#main-content"
+              className="focus:border-border focus:bg-background focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-100 focus:inline-flex focus:items-center focus:justify-center focus:rounded-lg focus:border focus:px-4 focus:py-2.5 focus:font-medium focus:shadow-none focus:ring-2 focus:outline-hidden"
+            >
+              Skip to main content
+            </a>
+            <Suspense fallback={null}>
+              <UserSync />
+            </Suspense>
+            <Navbar />
+            <main
+              ref={mainContentRef}
+              id="main-content"
+              tabIndex={-1}
+              className="focus-visible:outline-ring mobile-nav-spacer focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              {children}
+            </main>
+            <Footer />
+            <MobileBottomNav />
+            <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+            {devtoolsPlugin}
+          </ToastProvider>
+        </AnalyticsProvider>
         <Scripts />
       </body>
     </html>
