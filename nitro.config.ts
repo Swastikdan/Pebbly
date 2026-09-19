@@ -49,6 +49,14 @@ const tmdbApiOrigins = originsOf(
   buildEnv.VITE_PUBLIC_TMDB_API_URL || "https://api.themoviedb.org/3",
 );
 const videoPlayerOrigins = originsOf(buildEnv.VITE_PUBLIC_VIDEO_URL);
+// PostHog ingests events on its API host and lazily loads recorder/survey
+// assets from the sibling `-assets` host, so both origins must be allowed.
+const posthogHost =
+  buildEnv.VITE_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
+const posthogOrigins = originsOf(
+  posthogHost,
+  posthogHost.replace(".i.posthog.com", "-assets.i.posthog.com"),
+);
 
 // Report-only until violation reports confirm the allowlist is complete;
 // promote to enforced `Content-Security-Policy` afterwards.
@@ -62,6 +70,8 @@ const contentSecurityPolicy = [
     // the jsdelivr mirror depending on version/proxy mode.
     ...clerkOrigins,
     "https://cdn.jsdelivr.net",
+    // PostHog loads session-replay and survey scripts from its assets host.
+    ...posthogOrigins,
   ].join(" "),
   // Clerk registers its telemetry/handshake workers from blob: URLs, which
   // falls back to script-src when worker-src is absent.
@@ -88,6 +98,8 @@ const contentSecurityPolicy = [
     ...clerkOrigins,
     // Clerk SDK telemetry beacon.
     "https://clerk-telemetry.com",
+    // PostHog event ingestion and remote config.
+    ...posthogOrigins,
   ].join(" "),
   [
     "frame-src",
