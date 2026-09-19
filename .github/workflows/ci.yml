@@ -45,8 +45,6 @@ jobs:
           VITE_PUBLIC_POSTHOG_HOST: ${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}
           VITE_PUBLIC_TMDB_API_URL: ${{ secrets.VITE_PUBLIC_TMDB_API_URL }}
           VITE_PUBLIC_VIDEO_URL: ${{ secrets.VITE_PUBLIC_VIDEO_URL }}
-          # PostHog analytics: public client key inlined into the bundle.
-          VITE_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{ secrets.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN }}
 
   security:
     runs-on: ubuntu-latest
