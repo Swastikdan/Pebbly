@@ -32,6 +32,7 @@ enabled = true
 
 # Non-secret server vars only. Secrets: wrangler secret put <NAME>.
 # Client VITE_* vars are inlined at build time from .env - they do NOT go here.
+APP_ENV = "production"
 
 # Preview deploys (cf-* branches) use a separate, flattened config at
 # wrangler.preview.toml deployed with `wrangler deploy --config ...`.

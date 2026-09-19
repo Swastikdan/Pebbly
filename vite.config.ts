@@ -1,11 +1,8 @@
 import viteReact from "@vitejs/plugin-react";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import { sentryTanstackStart } from "@sentry/tanstackstart-react/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
-
-const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
 
 const config = defineConfig(({ mode }) => ({
   envPrefix: ["VITE_"],
@@ -38,8 +35,8 @@ const config = defineConfig(({ mode }) => ({
         shorthand: true,
       },
     },
-    // The client entry is ~785 KiB after minification because TanStack Start,
-    // Clerk, and Sentry bootstrap code must hydrate synchronously on first
+    // The client entry is large because TanStack Start and Clerk bootstrap
+    // code must hydrate synchronously on first
     // paint. Keep the warning useful without flagging this measured,
     // intentional baseline; revisit if this grows beyond the 850 KiB limit.
     chunkSizeWarningLimit: 850,
@@ -119,12 +116,6 @@ const config = defineConfig(({ mode }) => ({
                   test: (id) => /[\\/]seroval[\\/]/.test(id),
                   priority: 10,
                 },
-                {
-                  name: "vendor-sentry",
-                  test: (id) =>
-                    /[\\/]@sentry[\\/]/.test(id) && !id.includes("replay"),
-                  priority: 10,
-                },
               ],
             },
           },
@@ -136,16 +127,6 @@ const config = defineConfig(({ mode }) => ({
     nitro(),
     tailwindcss(),
     tanstackStart(),
-    ...(sentryAuthToken
-      ? [
-          ...sentryTanstackStart({
-            org: "swastik-q9",
-            project: "pebbly-tanstackstart-react",
-            authToken: sentryAuthToken,
-            telemetry: false,
-          }),
-        ]
-      : []),
     viteReact({
       babel: {
         plugins: [["babel-plugin-react-compiler", {}]],

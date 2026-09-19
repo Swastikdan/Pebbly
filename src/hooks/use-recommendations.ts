@@ -8,8 +8,8 @@ import type {
   RecommendationHistoryEntry,
   RepeatGenerateContext,
 } from "@/lib/recommendation-options";
+import { broadcastMutation } from "@/lib/cross-tab-sync";
 import { queryKeys } from "@/lib/query/keys";
-import { recordOwnMutation } from "@/lib/realtime-mutations";
 import {
   buildGenerateAgainOptions,
   buildGenerateMoreOptions,
@@ -72,7 +72,7 @@ export function useRecommendations() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => unwrap(deleteRecommendation({ data: { id } })),
-    onSuccess: () => recordOwnMutation("ai"),
+    onSuccess: () => broadcastMutation("ai"),
     onError: (err, id) => {
       logRecommendationError("delete recommendation", err);
       setOptimisticDeletedIds((prev) => {
@@ -99,7 +99,7 @@ export function useRecommendations() {
           return null;
         }
 
-        recordOwnMutation("ai");
+        broadcastMutation("ai");
         await queryClient.invalidateQueries({
           queryKey: queryKeys.recommendations.history(user?.id),
         });
@@ -146,7 +146,7 @@ export function useRecommendations() {
             data: { id, recommendations: JSON.stringify(recommendations) },
           }),
         );
-        recordOwnMutation("ai");
+        broadcastMutation("ai");
         await queryClient.invalidateQueries({
           queryKey: queryKeys.recommendations.history(user?.id),
         });

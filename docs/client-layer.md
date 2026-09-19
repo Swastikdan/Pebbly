@@ -10,8 +10,9 @@ mutation goes to the server or to local storage.
 - `src/start.ts`, client start instance. **Key behavior:** every server-fn
   RPC is wrapped with a fresh Clerk session token
   (`Authorization: Bearer <token>`, minted/rotated by the Clerk SDK) and a
-  30 s abort timeout. Also installs `createCsrfMiddleware` scoped to server
-  fns so cookie-derived sessions can't be abused cross-site.
+  30 s abort timeout. It also installs TanStack Start's native
+  `createCsrfMiddleware`, scoped to server fns, so every browser RPC remains
+  same-origin regardless of whether auth arrives via a cookie or Bearer token.
 - `src/router.tsx`, builds the router: `ClerkProvider` wraps the Query
   provider. Sets `defaultStaleTime: 30s`, intent-based preloading, scroll
   restoration, case-sensitive routes, and the default pending / not-found /
@@ -129,9 +130,9 @@ The mutation layer that eliminated the old `if (isSignedIn)` branches:
   - custom-list CRUD wraps each server fn with optimistic ops + id swapping
     (optimistic temp id → real id via `localId()`) + cache sync; ordered
     lists get a dedicated reorder op builder.
-  - Successful server writes call `recordOwnMutation` (see
-    `realtime-mutations.ts`) so the realtime poll can tell this client's own
-    changes apart from external ones.
+  - Successful server writes broadcast their domain to sibling tabs; the
+    revision poll always invalidates on any revision change, so same-count
+    writes from another device cannot be masked by a local counter.
 - `local-repository.ts`, the same interface against the Zustand stores in
   `src/stores/`. TV progress runs the same `resolveStatusPlan`.
 
@@ -232,26 +233,19 @@ The rest of the data layer sits beside it:
   per-user revision counters (`watchlistRev`, `listsRev`, `aiRev`,
   `permsRev`).
 
-## 7. Cross-device realtime (`user-sync.tsx` + `realtime-mutations.ts` + `cross-tab-sync.ts`)
+## 7. Cross-device realtime (`user-sync.tsx` + `cross-tab-sync.ts`)
 
 Convex's realtime subscriptions are replaced by **version-gated polling**
 (see ADR-015):
 
-- `src/lib/realtime-mutations.ts`, per-domain counters (`watchlist` / `lists`
-  / `ai`) of this client's **successful** server writes, recorded by the
-  repository, the pending-op journal, and the AI/import hooks at every
-  rev-bumping call site.
-- `user-sync.tsx`, polls `data.version` on an adaptive cadence (4 s fast lane
-  within 20 s of own mutations, 10 s during activity (2 min window), 30 s
-  when quiet, 60 s after ≥3 poll failures; pauses on hidden tabs) and tracks
-  the last-seen revisions per user. When a revision moves **beyond what the
-  client's own mutations can explain**, it invalidates the matching query
-  group (watchlist list / `listsSyncKeys` / AI history + homepage and
-  feedback caches), so mounted queries refetch. Own writes never trigger a
-  redundant refetch; external changes always do. Per-poll cost is 1 row read
-  regardless of collection size. Any `permsRev` movement invalidates
-  permissions (own writes excluded by construction). The same component
-  enforces bans (sign-out) and upserts the profile via `storeUser`.
+- `user-sync.tsx`, polls `data.version` every 10 s (60 s after ≥3 poll
+  failures; pauses on hidden tabs) and tracks the last-seen revisions per
+  user. Any revision change invalidates the matching query group (watchlist
+  list / `listsSyncKeys` / AI history + homepage and feedback caches), so a
+  same-count write from another device cannot be mistaken for a local write.
+  Per-poll cost is 1 row read regardless of collection size. Any `permsRev`
+  movement invalidates permissions. The same component enforces bans
+  (sign-out) and upserts the profile via `storeUser`.
 - `src/lib/cross-tab-sync.ts`, BroadcastChannel fan-out (`pebbly-sync`) so
   sibling tabs of the same browser invalidate each other instantly (no server
   round trip).

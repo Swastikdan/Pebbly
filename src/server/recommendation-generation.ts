@@ -8,6 +8,7 @@ import type {
   RecommendationCandidate,
   WatchlistData,
 } from "./prompts";
+import { captureAiGeneration } from "@/lib/posthog-server";
 import { normalizeTitleKey } from "@/lib/text";
 import { dedupeRecommendations, generateRecommendations } from "./ai";
 import {
@@ -17,11 +18,11 @@ import {
   recommendationFeedback,
   watchItems,
 } from "./db/schema";
+import { getEnv } from "./env";
 import { collectAllByKeyset } from "./helpers/paginate";
 import { candidateIdentity } from "./recommendation-candidates";
 import { PEBBLY_PICKS_LIST_TYPE } from "./schema/lists";
 import { recommendationSchema } from "./schema/recommendations";
-import { captureAiConversation } from "./sentry";
 
 export const SYSTEM_INSTRUCTION =
   "You are a movie and TV show recommendation engine. You analyze a user's watchlist and viewing preferences to suggest titles they would enjoy. You MUST only recommend real, existing movies and TV shows. Never invent fictional titles. Return your response as a JSON object with the exact schema specified by the user.";
@@ -74,6 +75,7 @@ export type AiGenerationResult =
  * persistence after.
  */
 export async function runAiGeneration(args: {
+  distinctId: string;
   prompt: string;
   attempts: number;
   targetCount: number;
@@ -83,6 +85,7 @@ export async function runAiGeneration(args: {
   excludeTitles?: string[];
   candidateCatalog?: RecommendationCandidate[];
 }): Promise<AiGenerationResult> {
+  const startedAt = Date.now();
   const aiResult = await generateRecommendations({
     prompt: args.prompt,
     systemInstruction: SYSTEM_INSTRUCTION,
@@ -90,7 +93,16 @@ export async function runAiGeneration(args: {
   });
   if (aiResult.error || !aiResult.result) {
     const error = aiResult.error ?? "api_unavailable";
-    captureAiConversation({ ok: false, error });
+    await captureAiGeneration({
+      distinctId: args.distinctId,
+      provider: getAiProvider(),
+      model: aiResult.usedModel ?? "unknown",
+      durationMs: Date.now() - startedAt,
+      ok: false,
+      error,
+      retries: args.attempts,
+      reasoningTokens: aiResult.reasoningTokens,
+    });
     return { ok: false, error };
   }
 
@@ -129,14 +141,26 @@ export async function runAiGeneration(args: {
   // history entry. A short response is retained and reported as-is: the UI
   // shows the actual number returned rather than claiming the requested count.
   if (recommendations.length === 0) {
-    captureAiConversation({ ok: false, error: "empty_result" });
+    await captureAiGeneration({
+      distinctId: args.distinctId,
+      provider: getAiProvider(),
+      model: aiResult.usedModel ?? "unknown",
+      durationMs: Date.now() - startedAt,
+      ok: false,
+      error: "empty_result",
+      retries: args.attempts,
+      reasoningTokens: aiResult.reasoningTokens,
+    });
     return { ok: false, error: "empty_result" };
   }
 
-  captureAiConversation({
+  await captureAiGeneration({
+    distinctId: args.distinctId,
+    provider: getAiProvider(),
+    model: aiResult.usedModel ?? "unknown",
+    durationMs: Date.now() - startedAt,
     ok: true,
-    usedModel: aiResult.usedModel ?? "unknown",
-    recommendationCount: recommendations.length,
+    retries: args.attempts,
     reasoningTokens: aiResult.reasoningTokens,
   });
 
@@ -146,6 +170,10 @@ export async function runAiGeneration(args: {
     reasoningTokens: aiResult.reasoningTokens,
     recommendations,
   };
+}
+
+function getAiProvider(): string {
+  return getEnv().AI ? "cloudflare-workers-ai" : "gemini";
 }
 
 /**

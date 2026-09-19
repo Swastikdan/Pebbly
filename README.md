@@ -65,7 +65,6 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 ```text
 ├── drizzle/                         # Drizzle generated SQL migrations for Cloudflare D1
 ├── server/                          # Nitro server routes and scheduled tasks
-│   ├── routes/api/health.ts         # /api/health endpoint (D1 status check)
 │   └── tasks/snapshots.ts           # Daily watchlist snapshots cron task
 ├── src/
 │   ├── server/                      # Co-located backend server functions & database layer

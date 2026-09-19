@@ -1,4 +1,4 @@
-import { captureException } from "@sentry/tanstackstart-react";
+import posthog from "posthog-js";
 
 const REPORT_COOLDOWN_MS = 10_000;
 let lastReportAt = 0;
@@ -101,7 +101,7 @@ function classifyError(error: unknown, source: string): ErrorDiagnostics {
 }
 
 /**
- * Best-effort client error reporting via Sentry.
+ * Best-effort client error reporting via PostHog Error Tracking.
  * Identical errors are coalesced for a short period to avoid loops.
  */
 export function reportClientSideError(
@@ -147,7 +147,7 @@ export function reportClientSideError(
   lastReportKey = reportKey;
   lastReportAt = now;
 
-  captureException(error, {
+  posthog.captureException(error, {
     tags: {
       source: context.source,
       route,

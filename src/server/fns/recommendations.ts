@@ -7,6 +7,7 @@ import type {
   GenerateResult,
   HomepageRecommendationsResult,
 } from "../schema/recommendations";
+import { captureServerEvent } from "@/lib/posthog-server";
 import { dedupeRecommendations } from "../ai";
 import {
   aiRecommendations,
@@ -32,7 +33,6 @@ import {
   setRecommendationFeedbackArgsSchema,
   updateVerifiedRecommendationsArgsSchema,
 } from "../schema/recommendations";
-import { setSentryConversationId, setSentryUser } from "../sentry";
 import { appendToPicksList } from "../services/picks-list";
 import { authedFn, WRITE_RATE_LIMIT } from "./rpc";
 
@@ -208,7 +208,7 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
     authedFn(
       { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
-      async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
+      async ({ claims, db, user }): Promise<ApiResult<{ ok: true }>> => {
         const now = Date.now();
 
         const existing = await db
@@ -279,6 +279,16 @@ export const setRecommendationFeedback = createServerFn({ method: "POST" })
           await bumpListsRev(db, user.id);
         }
 
+        await captureServerEvent(
+          claims.sub,
+          "recommendation_feedback_submitted",
+          {
+            feedback: data.feedback,
+            media_type: data.mediaType,
+            tmdb_id: data.tmdbId,
+            added_to_watchlist: data.feedback === "like",
+          },
+        );
         return ok({ ok: true });
       },
     ),
@@ -415,14 +425,16 @@ export const startGeneration = createServerFn({ method: "POST" })
       { mode: "require", feature: "ai-recommendations" },
       data,
       async ({ claims, db, user }): Promise<ApiResult<GenerateResult>> => {
-        setSentryUser({ id: user.id });
-        setSentryConversationId(`rec-${user.id}-${Date.now()}`);
-        return ok(
-          await runPipeline(
-            { db, userId: user.id, isAdmin: isAdminByClaims(claims) },
-            { type: "history", options: data },
-          ),
+        const result = await runPipeline(
+          { db, userId: user.id, isAdmin: isAdminByClaims(claims) },
+          { type: "history", options: data },
         );
+        if (!("error" in result)) {
+          await captureServerEvent(claims.sub, "recommendations_generated", {
+            generation_surface: "history",
+          });
+        }
+        return ok(result);
       },
     ),
   );
@@ -434,14 +446,16 @@ export const startHomepageGeneration = createServerFn({
     { mode: "require", feature: "ai-recommendations" },
     undefined,
     async ({ claims, db, user }): Promise<ApiResult<GenerateResult>> => {
-      setSentryUser({ id: user.id });
-      setSentryConversationId(`homepage-${user.id}-${Date.now()}`);
-      return ok(
-        await runPipeline(
-          { db, userId: user.id, isAdmin: isAdminByClaims(claims) },
-          { type: "homepage" },
-        ),
+      const result = await runPipeline(
+        { db, userId: user.id, isAdmin: isAdminByClaims(claims) },
+        { type: "homepage" },
       );
+      if (!("error" in result) && !result.cached) {
+        await captureServerEvent(claims.sub, "recommendations_generated", {
+          generation_surface: "homepage",
+        });
+      }
+      return ok(result);
     },
   ),
 );

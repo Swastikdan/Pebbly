@@ -38,8 +38,11 @@ vi.mock("@/lib/data/pending-ops", () => ({
   applyServerState: vi.fn(),
   scheduleSync: vi.fn(),
 }));
-vi.mock("@/lib/realtime-mutations", () => ({
-  recordOwnMutation: vi.fn(),
+vi.mock("@/lib/cross-tab-sync", async () => ({
+  ...(await vi.importActual<typeof import("@/lib/cross-tab-sync")>(
+    "@/lib/cross-tab-sync",
+  )),
+  broadcastMutation: vi.fn(),
 }));
 vi.mock("@/lib/data/mutation-outbox", () => ({
   enqueueMutation: vi.fn(() => "outbox-1"),

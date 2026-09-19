@@ -54,11 +54,10 @@ Client calls them through the generated RPC layer; `unwrap()` throws an
 
 - End-to-end type safety: the client imports the same fns it calls; schemas
   are shared, so a schema change is a compile error on both sides.
-- No OpenAPI/REST surface to maintain; Nitro only owns `/api/health` and the
-  cron task.
+- No OpenAPI/REST surface to maintain; Nitro only owns the cron task.
 - CSRF protection is needed (server fns accept cookies) and is provided by
-  `createCsrfMiddleware` scoped to server fns (`src/start.ts`), plus a fresh
-  Bearer token attached client-side.
+  TanStack Start's native `createCsrfMiddleware` scoped to server fns
+  (`src/start.ts`), plus a fresh Bearer token attached client-side.
 
 ---
 
@@ -415,15 +414,12 @@ path rather than the first step.
   bump every user.
 - `getDataVersion` (`src/server/fns/watchlist.ts`) reads all four counters
   in one row.
-- `UserSync` (`src/components/user-sync.tsx`) polls `data.version` on an
-  adaptive cadence (pauses on hidden tabs): a 4 s fast lane for ~20 s after
-  own mutations, 10 s during an active session, 30 s when quiet, and 60 s
-  backoff after repeated poll failures. It refetches on window focus
-  (covers visibilitychange) and invalidates a query group only when its
-  revision moved **beyond what this client's own mutations can explain**.
-  Own successful writes are counted per domain in
-  `src/lib/realtime-mutations.ts`, instrumented at every rev-bumping call
-  site (repository, watch-progress, player listener, import, AI hooks).
+- `UserSync` (`src/components/user-sync.tsx`) polls `data.version` every 10 s
+  (pauses on hidden tabs and backs off to 60 s after repeated poll failures).
+  It refetches on window focus (covers visibilitychange) and invalidates a
+  query group whenever its revision changes. This deliberately avoids a
+  client-side own-write counter, which could mask an equal number of writes
+  from another device.
   Full-list fetches remain capped at 500 rows.
 - Same-browser sibling tabs sync instantly via BroadcastChannel
   (`src/lib/cross-tab-sync.ts`): each own mutation is broadcast and sibling
@@ -436,17 +432,13 @@ path rather than the first step.
 **Consequences:**
 
 - Per-poll cost is O(1) regardless of watchlist/lists/history size; a 50k-item
-  user costs the same as a 10-item user. The adaptive cadence cuts steady-state
-  reads further (30 s when quiet vs the old fixed 10 s) while feeling faster
-  around activity (4 s fast lane, instant on focus).
-- Each client refetches at most once per external change; its own writes never
-  trigger a redundant refetch. Counters only increment on confirmed successful
-  writes, so an uninstrumented path degrades safely to a redundant refetch,
-  never a missed external sync. Residual blind spot: another device writing
-  exactly as many times as this client within one poll window masks that
-  change until the next unexplained delta (documented in
-  `realtime-mutations.ts`); same-browser tabs are immune via BroadcastChannel.
-- Cross-device latency is one adaptive interval (~4–30 s), instant for
+  user costs the same as a 10-item user. A fixed 10 s cadence keeps behavior
+  predictable while remaining inexpensive because the poll reads one row.
+- Each client refetches when a revision changes. This can cause one redundant
+  refetch after a local write, but removes counter bookkeeping and its
+  same-count masking risk; same-browser tabs are still instant via
+  BroadcastChannel.
+- Cross-device latency is one polling interval (~10 s), instant for
   same-browser tabs and on tab focus. If true push becomes necessary,
   Durable Objects + WebSocket Hibernation (stays ~free at this scale) remains
   the upgrade path.

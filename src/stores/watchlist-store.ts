@@ -240,10 +240,12 @@ export const useWatchlistStore = create<WatchlistStore>()(
                 return {
                   ...current,
                   inWatchlist,
-                  progressStatus:
-                    current.progressStatus === "watch-later"
-                      ? null
-                      : current.progressStatus,
+                  // Removing a local item also removes its watch state. If a
+                  // `watching` row keeps its status after membership is
+                  // cleared, it can remain visible through continue-watching
+                  // selectors even though it is no longer in the watchlist.
+                  progressStatus: inWatchlist ? current.progressStatus : null,
+                  progress: inWatchlist ? current.progress : 0,
                 };
               },
             ),

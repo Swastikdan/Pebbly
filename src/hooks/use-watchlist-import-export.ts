@@ -6,9 +6,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
 import type { EpisodeProgressRow } from "@/lib/server-types";
 import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
+import { broadcastMutation } from "@/lib/cross-tab-sync";
 import { fetchAllEpisodeProgress } from "@/lib/data/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
-import { recordOwnMutation } from "@/lib/realtime-mutations";
 import {
   parseWatchlistImport,
   planImportBatches,
@@ -165,7 +165,7 @@ export const useWatchlistImportExport = () => {
               // for cross-tab sync, normally skipped for non-final batches)
               // so the UI reflects what actually landed, then rethrow.
               if (importedSoFar > 0) {
-                recordOwnMutation("watchlist");
+                broadcastMutation("watchlist");
                 try {
                   await queryClient.invalidateQueries({
                     queryKey: queryKeys.watchlist.list(),
@@ -185,7 +185,7 @@ export const useWatchlistImportExport = () => {
               );
             }
 
-            recordOwnMutation("watchlist");
+            broadcastMutation("watchlist");
             await queryClient.invalidateQueries({
               queryKey: queryKeys.watchlist.list(),
             });

@@ -355,9 +355,14 @@ export async function generateRecommendations({
     // Never expose provider response text to the client. In particular, the
     // Gemini location message is actionable only as a classified error code;
     // all other unexpected provider failures stay behind a generic message.
-    if (locationUnsupported) return { error: "location_unsupported" };
-    if (rateLimited) return { error: "rate_limited" };
-    return { error: highDemandError ? "high_demand" : "api_unavailable" };
+    const error = locationUnsupported
+      ? "location_unsupported"
+      : rateLimited
+        ? "rate_limited"
+        : highDemandError
+          ? "high_demand"
+          : "api_unavailable";
+    return { error };
   }
 
   // Log reasoning tokens at the top-level call as well (useful for observability).

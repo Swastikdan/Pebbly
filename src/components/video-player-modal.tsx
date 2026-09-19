@@ -1,3 +1,4 @@
+import { usePostHog } from "@posthog/react";
 import { Maximize2, Minimize } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -50,6 +51,7 @@ export function VideoPlayerModal({
   const [closeVisible, setCloseVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { isSignedIn, hasFeature, loading } = usePermissions();
+  const posthog = usePostHog();
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closedByUserRef = useRef(false);
@@ -295,6 +297,7 @@ export function VideoPlayerModal({
         }
       }
     } catch (error) {
+      posthog.captureException(error);
       console.error("Failed to toggle fullscreen:", error);
     }
   };
