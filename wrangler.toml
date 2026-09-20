@@ -18,6 +18,10 @@ database_name = "pebbly"
 database_id = "cf94e4ee-291d-499f-b463-ef61ee9d9e1d"
 migrations_dir = "drizzle"
 
+[vars]
+# Non-secret server vars only. Secrets: wrangler secret put <NAME>.
+APP_ENV = "production"
+
 [triggers]
 # 03:00 UTC - daily watchlist snapshots (Nitro task "snapshots")
 # 03:30 UTC - legacy duplicate-user consolidation (Nitro task "user-maintenance")
@@ -29,10 +33,6 @@ invocation_logs = true
 
 [observability.traces]
 enabled = true
-
-# Non-secret server vars only. Secrets: wrangler secret put <NAME>.
-# Client VITE_* vars are inlined at build time from .env - they do NOT go here.
-APP_ENV = "production"
 
 # Preview deploys (cf-* branches) use a separate, flattened config at
 # wrangler.preview.toml deployed with `wrangler deploy --config ...`.
