@@ -52,12 +52,15 @@ function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const apiKey = import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN;
   const apiHost = import.meta.env.VITE_PUBLIC_POSTHOG_HOST;
 
-  // Events go through the same-origin /ph reverse proxy (server/routes/ph)
+  // Events go through the same-origin /api/collect rewrite
+  // (server/routes/api/collect)
   // so requests to posthog.com never hit the browser and can't be blocked by
   // ad blockers. The env host is kept for SSR, the server-side SDK, and as a
   // drop-in fallback.
   const clientApiHost =
-    typeof window !== "undefined" ? `${window.location.origin}/ph` : apiHost;
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/collect`
+      : apiHost;
 
   if (!apiKey || !apiHost) {
     if (import.meta.env.DEV) {
@@ -76,7 +79,7 @@ function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       apiKey={apiKey}
       options={{
         api_host: clientApiHost,
-        // Same-origin /ph proxy means posthog-js can't infer the UI host;
+        // Same-origin rewrite means posthog-js can't infer the UI host;
         // without it the toolbar and feature-flag links would point at the app.
         ui_host: apiHost.includes("eu.")
           ? "https://eu.posthog.com"
