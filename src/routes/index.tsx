@@ -316,6 +316,7 @@ function RecommendationsSection() {
     <LazySection
       key={user.id}
       minHeight="300px"
+      releaseMinHeightAfterIntersect
       fallback={<MediaSkeletonList cardType="horizontal" count={6} />}
     >
       <Suspense

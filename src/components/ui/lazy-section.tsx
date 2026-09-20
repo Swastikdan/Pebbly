@@ -6,6 +6,8 @@ interface LazySectionProps {
   rootMargin?: string;
   minHeight?: string;
   className?: string;
+  /** Release the initial reservation once the lazy content has been evaluated. */
+  releaseMinHeightAfterIntersect?: boolean;
 }
 
 export function LazySection({
@@ -14,6 +16,7 @@ export function LazySection({
   rootMargin = "300px",
   minHeight = "280px",
   className,
+  releaseMinHeightAfterIntersect = false,
 }: LazySectionProps) {
   const [hasIntersected, setHasIntersected] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -35,19 +38,20 @@ export function LazySection({
     return () => observer.disconnect();
   }, [rootMargin]);
 
-  // Keep minHeight always to avoid CLS when the fallback is swapped for
-  // content. `minHeight` is a lower bound so taller content still expands
-  // without collapsing the placeholder that was measured during initial
-  // paint. `content-visibility:auto` with `containIntrinsicSize: auto <size>`
-  // keeps the off-screen cost low without discarding the size reservation
-  // and preserves document height for content taller than minHeight.
+  // Keep minHeight until the lazy content is evaluated to avoid CLS while it
+  // loads. Some optional rails can resolve to null; those opt into releasing
+  // the reservation after intersection so an empty rail does not leave a gap.
+  // `content-visibility:auto` with `containIntrinsicSize` keeps off-screen
+  // work low without discarding the initial size reservation.
+  const reserveSpace = !releaseMinHeightAfterIntersect || !hasIntersected;
+
   return (
     <div
       ref={ref}
       className={className}
       style={{
-        minHeight,
-        containIntrinsicSize: `auto ${minHeight}`,
+        minHeight: reserveSpace ? minHeight : undefined,
+        containIntrinsicSize: reserveSpace ? `auto ${minHeight}` : undefined,
         contentVisibility: "auto",
       }}
     >

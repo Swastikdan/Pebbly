@@ -86,6 +86,7 @@ export async function runAiGeneration(args: {
   candidateCatalog?: RecommendationCandidate[];
 }): Promise<AiGenerationResult> {
   const startedAt = Date.now();
+  const traceId = crypto.randomUUID();
   const aiResult = await generateRecommendations({
     prompt: args.prompt,
     systemInstruction: SYSTEM_INSTRUCTION,
@@ -95,6 +96,7 @@ export async function runAiGeneration(args: {
     const error = aiResult.error ?? "api_unavailable";
     await captureAiGeneration({
       distinctId: args.distinctId,
+      traceId,
       provider: getAiProvider(),
       model: aiResult.usedModel ?? "unknown",
       durationMs: Date.now() - startedAt,
@@ -143,6 +145,7 @@ export async function runAiGeneration(args: {
   if (recommendations.length === 0) {
     await captureAiGeneration({
       distinctId: args.distinctId,
+      traceId,
       provider: getAiProvider(),
       model: aiResult.usedModel ?? "unknown",
       durationMs: Date.now() - startedAt,
@@ -156,6 +159,7 @@ export async function runAiGeneration(args: {
 
   await captureAiGeneration({
     distinctId: args.distinctId,
+    traceId,
     provider: getAiProvider(),
     model: aiResult.usedModel ?? "unknown",
     durationMs: Date.now() - startedAt,

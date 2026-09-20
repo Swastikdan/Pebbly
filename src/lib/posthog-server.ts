@@ -35,6 +35,12 @@ export function getPostHogClient(): PostHog | null {
     flushAt: 1,
     flushInterval: 0,
     enableExceptionAutocapture: true,
+    // PostHog's native tracing API exports OTLP spans to /i/v1/traces.
+    // Keep this opt-in with the existing analytics client so local development
+    // remains completely telemetry-free.
+    traces: {
+      serviceName: "pebbly-server",
+    },
   });
 
   return posthogClient;
@@ -83,6 +89,7 @@ export async function captureServerException(
  */
 export async function captureAiGeneration(args: {
   distinctId: string;
+  traceId: string;
   provider: string;
   model: string;
   durationMs: number;
@@ -95,10 +102,16 @@ export async function captureAiGeneration(args: {
   if (!posthog) return;
 
   try {
+    const sessionId = getRequestHeader("X-PostHog-Session-Id");
     await posthog.captureAiImmediate({
       distinctId: args.distinctId,
       event: "$ai_generation",
       properties: {
+        // PostHog uses this ID to group generations into an AI trace.
+        $ai_trace_id: args.traceId,
+        $ai_session_id: sessionId || null,
+        $ai_span_id: crypto.randomUUID(),
+        $ai_span_name: "recommendation_generation",
         $ai_provider: args.provider,
         $ai_model: args.model,
         $ai_is_error: !args.ok,
