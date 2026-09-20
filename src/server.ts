@@ -1,10 +1,15 @@
 import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
 
-import { captureServerException, getPostHogClient } from "@/lib/posthog-server";
+import {
+  captureServerEvent,
+  captureServerException,
+  getPostHogClient,
+} from "@/lib/posthog-server";
 
 export default createServerEntry({
   async fetch(request: Request) {
     const posthog = getPostHogClient();
+    let requestDistinctId = "anonymous";
 
     try {
       if (!posthog) return await handler.fetch(request);
@@ -14,6 +19,7 @@ export default createServerEntry({
         request.headers.get("X-PostHog-Session-Id") || undefined;
       const distinctId =
         request.headers.get("X-PostHog-Distinct-Id") || "anonymous";
+      requestDistinctId = distinctId;
       const traceparent = request.headers.get("traceparent") || undefined;
       const tracestate = request.headers.get("tracestate") || undefined;
 
@@ -36,6 +42,19 @@ export default createServerEntry({
               span.setAttribute("http.response.status_code", response.status);
               if (response.status >= 500) {
                 span.setStatus("error", `HTTP ${response.status}`);
+                console.error(
+                  "[backend] request error",
+                  JSON.stringify({
+                    method: request.method,
+                    path: url.pathname,
+                    status: response.status,
+                  }),
+                );
+                await captureServerEvent(distinctId, "backend_request_error", {
+                  method: request.method,
+                  path: url.pathname,
+                  status: response.status,
+                });
               } else {
                 span.setStatus("ok");
               }
@@ -48,8 +67,16 @@ export default createServerEntry({
         ),
       );
     } catch (error) {
+      console.error(
+        "[backend] request exception",
+        JSON.stringify({
+          method: request.method,
+          url: request.url,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
       try {
-        await captureServerException(error, "anonymous");
+        await captureServerException(error, requestDistinctId);
       } catch (telemetryError) {
         console.warn(
           "[posthog] Failed to capture request exception:",

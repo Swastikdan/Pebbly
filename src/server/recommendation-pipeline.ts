@@ -311,11 +311,15 @@ async function runHistoryPipeline(
     likedTitles,
     mediaTypePreference: options.mediaTypePreference,
   });
-  void captureServerEvent(context.userId, "recommendation_jev_rerank", {
+  await captureServerEvent(context.userId, "recommendation_jev_rerank", {
     generationType,
     ran: reranked.ran,
+    candidatesAttempted: reranked.attempted,
     candidatesScored: reranked.scored,
+    candidatesFailed: reranked.failed,
     meanConfidence: reranked.meanConfidence,
+    durationMs: reranked.durationMs,
+    model: "typesafe/jev",
     fallbackReason: reranked.fallbackReason ?? null,
   });
   const orderedCandidates = reranked.candidates;
@@ -485,11 +489,15 @@ async function runHomepagePipeline(
     likedTitles: feedbackSignals.likedTitles ?? [],
     mediaTypePreference: undefined,
   });
-  void captureServerEvent(context.userId, "recommendation_jev_rerank", {
+  await captureServerEvent(context.userId, "recommendation_jev_rerank", {
     generationType: "homepage",
     ran: reranked.ran,
+    candidatesAttempted: reranked.attempted,
     candidatesScored: reranked.scored,
+    candidatesFailed: reranked.failed,
     meanConfidence: reranked.meanConfidence,
+    durationMs: reranked.durationMs,
+    model: "typesafe/jev",
     fallbackReason: reranked.fallbackReason ?? null,
   });
   const orderedCandidates = reranked.candidates;
