@@ -3,8 +3,8 @@ import { GENRE_LIST } from "@/constants";
 import { getEnv } from "@/server/env";
 
 export const JEV_MODEL = "typesafe/jev";
-export const JEV_TIMEOUT_MS = 2_500;
-export const JEV_CANDIDATE_CAP = 24;
+export const JEV_TIMEOUT_MS = 8_000;
+export const JEV_CANDIDATE_CAP = 12;
 export const JEV_CONCURRENCY = 6;
 export const JEV_CONFIDENCE_FLOOR = 0.55;
 
@@ -210,7 +210,15 @@ export async function rerankCandidatesWithJev(
     const scores = await mapWithConcurrency(
       capped,
       JEV_CONCURRENCY,
-      (candidate) => scoreCandidate(ai, candidate, options),
+      async (candidate) => {
+        try {
+          return await scoreCandidate(ai, candidate, options);
+        } catch {
+          // One slow or unavailable candidate must not discard scores for the
+          // rest of the bounded rerank batch.
+          return null;
+        }
+      },
     );
     const validScores = scores.filter(
       (score): score is { score: number; confidence: number } => score !== null,
