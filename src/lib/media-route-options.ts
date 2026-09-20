@@ -7,6 +7,7 @@ import type { BasicMovie, BasicTv } from "@/lib/tmdb-schemas";
 import type { QueryClient } from "@tanstack/react-query";
 import type { RouteComponent } from "@tanstack/react-router";
 import { DefaultLoader } from "@/components/default-loader";
+import { MediaDetailSkeleton } from "@/components/media/media-detail-skeleton";
 import { SITE_CONFIG } from "@/constants";
 import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
@@ -156,14 +157,14 @@ export function indexRouteOptions(kind: MediaKind, component: RouteComponent) {
   return {
     loader: buildLoader({
       mediaType: kind,
-      level: "basic",
+      level: "full",
       titleFallback: kind === "movie" ? "Movie Page" : "Tv Page",
     }),
     head: buildHead(kind, INDEX_HEAD[kind]),
     validateSearch: indexDetailSearch,
     component,
     pendingMs: 150,
-    pendingComponent: DefaultLoader,
+    pendingComponent: MediaDetailSkeleton,
   };
 }
 

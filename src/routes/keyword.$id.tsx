@@ -23,9 +23,17 @@ const keywordPageSearchSchema = object({
 
 export const Route = createFileRoute("/keyword/$id")({
   validateSearch: keywordPageSearchSchema,
-  loader: async ({ params }) => {
+  loaderDeps: ({ search }) => ({ page: search.page }),
+  loader: async ({ params, context, deps }) => {
     const { id } = params;
-    const keyword = await getKeywordDetails({ id: Number(id) });
+    const page = deps.page ?? 1;
+    const [keyword] = await Promise.all([
+      getKeywordDetails({ id: Number(id) }),
+      context.queryClient.ensureQueryData({
+        queryKey: queryKeys.tmdb.discoverKeyword(Number(id), page),
+        queryFn: () => getDiscoverMovies({ with_keywords: Number(id), page }),
+      }),
+    ]);
     return { keyword };
   },
   head: ({ loaderData }) => ({
@@ -59,7 +67,6 @@ function KeywordPage() {
     queryKey: queryKeys.tmdb.discoverKeyword(Number(id), urlPage),
     queryFn: () =>
       getDiscoverMovies({ with_keywords: Number(id), page: urlPage }),
-    enabled: typeof window !== "undefined" && !!id,
   });
 
   const { page, isPending, totalPages, handlePageChange } = useUrlPagedQuery({

@@ -30,7 +30,8 @@ const listPageSearchSchema = object({
 
 export const Route = createFileRoute("/list/$type/$slug")({
   validateSearch: listPageSearchSchema,
-  loader: async ({ params }) => {
+  loaderDeps: ({ search }) => ({ page: search.page }),
+  loader: async ({ params, context, deps }) => {
     const { type, slug } = params;
 
     const isValidSlug = MEDIA_PAGE_SLUGS.some(
@@ -50,6 +51,12 @@ export const Route = createFileRoute("/list/$type/$slug")({
 
     const mediatype = slugToMediaType(type) ?? "tv";
     const query = `${type}_${slug}` as MediaListQuery["type"];
+    const page = deps.page ?? 1;
+
+    await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.tmdb.mediaList(query, page),
+      queryFn: () => getMediaList({ type: query, page }),
+    });
 
     return { navItem, subNavItem, mediatype, query };
   },
@@ -88,7 +95,6 @@ function MediaListPage() {
   } = useQuery({
     queryKey: queryKeys.tmdb.mediaList(query, urlPage),
     queryFn: () => getMediaList({ type: query, page: urlPage }),
-    enabled: typeof window !== "undefined" && !!query,
   });
 
   const { page, isPending, totalPages, handlePageChange } = useUrlPagedQuery({

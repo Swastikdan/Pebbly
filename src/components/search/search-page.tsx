@@ -56,7 +56,7 @@ export function SearchPage() {
   const { data, error, isFetching, isLoading } = useQuery({
     queryKey: queryKeys.tmdb.search(trimmedQuery, urlPage),
     queryFn: () => getSearchResult({ query: trimmedQuery, page: urlPage }),
-    enabled: typeof window !== "undefined" && hasValidQuery,
+    enabled: hasValidQuery,
     staleTime: 1000 * 60 * 60 * 24,
     // Keep search results bounded in memory; data is still considered
     // fresh for a day (staleTime above), only unused copies are evicted.
@@ -73,7 +73,7 @@ export function SearchPage() {
     gcTime: 1000 * 60 * 30,
     retry: 2,
     refetchOnWindowFocus: false,
-    enabled: typeof window !== "undefined" && !hasValidQuery,
+    enabled: !hasValidQuery,
   });
 
   const { page, isPending, totalPages, handlePageChange } = useUrlPagedQuery({
