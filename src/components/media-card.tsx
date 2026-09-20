@@ -81,6 +81,8 @@ interface BaseMediaCardProps extends MediaCardSpecificProps {
   mediaTypeLabel: string;
   actionsClassName: string;
   linkClassName: string;
+  /** Whether a continue-watching card has a valid episode to resume. */
+  continueWatchingPlay?: boolean;
   children: React.ReactNode;
 }
 
@@ -108,6 +110,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
     mediaTypeLabel,
     actionsClassName,
     linkClassName,
+    continueWatchingPlay = true,
     children,
     hideWatchlistButton,
     isRecommended,
@@ -120,7 +123,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
     mediaType: media_type,
     id,
     slug: formattedTitle || undefined,
-    play: isContinueWatching,
+    play: isContinueWatching && continueWatchingPlay,
   });
 
   return (
@@ -316,14 +319,18 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
   // Season details are routed through the shared batcher (see
   // use-season-details.ts) so the N cards in a continue-watching strip
   // coalesce their requests instead of firing N parallel fetches.
-  const { data: seasonDetails } = useSeasonDetails(
+  const seasonDetailsQuery = useSeasonDetails(
     id,
     isTVContinueWatching ? season : undefined,
   );
+  const seasonDetails = seasonDetailsQuery.data;
 
   const episodeDetail = seasonDetails?.episodes?.find(
     (ep) => ep.episode_number === episode,
   );
+  const seasonDetailsLoaded = seasonDetailsQuery.isFetched;
+  const hasValidResumeEpisode =
+    !isTVContinueWatching || !seasonDetailsLoaded || Boolean(episodeDetail);
   let imageUrl = `${IMAGE_PREFIX.LQ_BACKDROP}${image}`;
   let blurSrc = image ? `${IMAGE_PREFIX.PREVIEW}${image}` : undefined;
   if (isTVContinueWatching) {
@@ -338,6 +345,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
   return (
     <BaseMediaCard
       {...props}
+      continueWatchingPlay={hasValidResumeEpisode}
       imageUrl={imageUrl}
       blurSrc={blurSrc}
       formattedTitle={formattedTitle}
@@ -351,7 +359,7 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
       actionsClassName="transition-[color,background-color,transform] duration-300 ease-out"
     >
       <div className="mt-2.5 flex flex-col gap-1 overflow-hidden">
-        {isTVContinueWatching && season && episode && (
+        {isTVContinueWatching && seasonDetailsLoaded && episodeDetail && (
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-meta font-bold text-blue-500 dark:text-blue-400">
               S{season} E{episode}
