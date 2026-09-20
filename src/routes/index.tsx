@@ -2,7 +2,6 @@ import { useUser } from "@clerk/react";
 import { lazy, Suspense } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { COMMAND_PALETTE_OPEN_EVENT } from "@/components/command-palette";
 import { DailyPickButton } from "@/components/daily-pick";
 import { TrendingDayMovies } from "@/components/homepage-media";
 import { MediaSkeletonList } from "@/components/media-skeleton-list";
@@ -109,10 +108,6 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const openCommandPalette = () => {
-    window.dispatchEvent(new Event(COMMAND_PALETTE_OPEN_EVENT));
-  };
-
   return (
     <section className="flex flex-col items-center justify-center">
       <div className="relative w-full overflow-hidden">
@@ -128,7 +123,7 @@ function HomePage() {
           </div>
 
           <Suspense fallback={<SearchBarSkeleton />}>
-            <SearchBar onCommandOpen={openCommandPalette} />
+            <SearchBar />
           </Suspense>
 
           <div className="mt-4 flex justify-center">
