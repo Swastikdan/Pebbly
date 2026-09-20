@@ -6,6 +6,7 @@ import { GoBack } from "@/components/go-back";
 import { MediaCreditSection } from "@/components/media/media-credit-section";
 import { MediaVideoImageContainer } from "@/components/media/media-video-image-container";
 import { ShareButton } from "@/components/share-button";
+import { mediaTypeToRouteSegment } from "@/domain/media";
 import { useCanonicalSlugRedirect } from "@/hooks/use-canonical-slug-redirect";
 
 type AnyBasicDetails = BasicMovie | BasicTv;
@@ -35,12 +36,13 @@ export function MediaGalleryPage(props: {
   isLoading: boolean;
 }) {
   const { entity, id, slug, title, data, isLoading } = props;
+  const routeSegment = mediaTypeToRouteSegment(entity);
   useCanonicalSlugRedirect({
     entity,
     subPageEntity: "media",
     id: data?.id,
     title: defaultCanonicalTitle(entity === "movie", data),
-    incomingPathname: `/${entity}/${id}/${slug}/media`,
+    incomingPathname: `/${routeSegment}/${id}/${slug}/media`,
     isLoading,
   });
   if (isLoading) {
@@ -53,7 +55,10 @@ export function MediaGalleryPage(props: {
     <section className="mx-auto block max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
-          <GoBack link={`/${entity}/${id}/${slug}`} title="Back to main" />
+          <GoBack
+            link={`/${routeSegment}/${id}/${slug}`}
+            title="Back to main"
+          />
           <ShareButton />
         </div>
         <h1 className="text-h1 text-balance lg:px-0">{title}</h1>
@@ -79,12 +84,13 @@ export function MediaCreditsPage<K extends MediaType>(props: {
   const redirectTitle = selectRedirectTitle
     ? selectRedirectTitle(data)
     : defaultCanonicalTitle(entity === "movie", data);
+  const routeSegment = mediaTypeToRouteSegment(entity);
   useCanonicalSlugRedirect({
     entity,
     subPageEntity: "cast-crew",
     id: data?.id,
     title: redirectTitle,
-    incomingPathname: `/${entity}/${id}/${slug}/cast-crew`,
+    incomingPathname: `/${routeSegment}/${id}/${slug}/cast-crew`,
     isLoading,
   });
   if (isLoading) {

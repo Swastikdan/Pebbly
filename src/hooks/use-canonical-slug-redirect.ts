@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
+import { mediaTypeToRouteSegment } from "@/domain/media";
 import { formatMediaTitle } from "@/lib/utils";
 
 export type RedirectEntityType = MediaType | "collection";
@@ -26,7 +27,8 @@ export function useCanonicalSlugRedirect(args: {
     }
 
     const canonicalTitle = formatMediaTitle.encode(title);
-    const routePrefix = entity === "tv" ? "series" : entity;
+    const routePrefix =
+      entity === "collection" ? entity : mediaTypeToRouteSegment(entity);
     const requiredPathname = `/${routePrefix}/${id}/${canonicalTitle}${
       subPageEntity === "home" || subPageEntity === "collection"
         ? ""

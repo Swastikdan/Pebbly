@@ -1,5 +1,12 @@
 export type MediaType = "movie" | "tv";
 
+/** URL segment used by the app router for a media type. */
+export function mediaTypeToRouteSegment(
+  mediaType: MediaType,
+): "movie" | "series" {
+  return mediaType === "tv" ? "series" : "movie";
+}
+
 export const MEDIA_TYPES = [
   "movie",
   "tv",

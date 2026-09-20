@@ -5,6 +5,7 @@ import { MediaCard } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLine } from "@/components/ui/icons";
+import { mediaTypeToRouteSegment } from "@/domain/media";
 
 export const CastSection = (props: {
   id: number;
@@ -27,7 +28,7 @@ export const CastSection = (props: {
   const { id, urltitle, cast, is_more_cast_crew, type } = props;
   const hasCast = cast.length > 0;
   if (!hasCast) return null;
-  const castCrewHref = `/${type}/${id}/${encodeURIComponent(urltitle)}/cast-crew`;
+  const castCrewHref = `/${mediaTypeToRouteSegment(type)}/${id}/${encodeURIComponent(urltitle)}/cast-crew`;
   return (
     <div className="pb-5">
       <div className="flex flex-col gap-3">

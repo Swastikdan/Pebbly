@@ -214,10 +214,10 @@
   --color-nav-active-fg: var(--nav-active-fg);
   @keyframes skeleton {
     from {
-      transform: translate3d(-100%, 0, 0);
+      transform: translateX(-100%);
     }
     to {
-      transform: translate3d(100%, 0, 0);
+      transform: translateX(200%);
     }
   }
   @keyframes spinner-leaf-fade {
