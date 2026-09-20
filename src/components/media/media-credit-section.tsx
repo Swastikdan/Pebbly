@@ -8,6 +8,7 @@ import { CastSkeleton } from "@/components/media/cast-skeleton";
 import { ShareButton } from "@/components/share-button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
+import { mediaTypeToRouteSegment } from "@/domain/media";
 import { getCredits } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 
@@ -18,6 +19,7 @@ export const MediaCreditSection = (props: {
   title: string;
 }) => {
   const { id, slug, title, type } = props;
+  const routeSegment = mediaTypeToRouteSegment(type);
   const { data, isFetching, error } = useQuery({
     queryKey: queryKeys.tmdb.credits(id, type),
     queryFn: async () => getCredits({ id, type }),
@@ -49,7 +51,10 @@ export const MediaCreditSection = (props: {
     <section className="mx-auto block max-w-7xl items-center px-4">
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
-          <GoBack link={`/${type}/${id}/${slug}`} title="Back to main" />
+          <GoBack
+            link={`/${routeSegment}/${id}/${slug}`}
+            title="Back to main"
+          />
           <ShareButton />
         </div>
         <h1 className="text-h1 text-balance lg:px-0">{title}</h1>
@@ -62,10 +67,9 @@ export const MediaCreditSection = (props: {
         ) : (
           <>
             <div>
-              <span className="flex items-center gap-2">
-                <span className="text-h2 text-foreground">Cast</span>(
-                {cast.length})
-              </span>
+              <div className="flex items-center gap-2">
+                <h2 className="text-h2 text-foreground">Cast</h2>({cast.length})
+              </div>
               {cast.length === 0 ? (
                 <p className="text-muted-foreground pt-5 text-sm">
                   No cast data available.
@@ -110,10 +114,9 @@ export const MediaCreditSection = (props: {
             </div>
 
             <div>
-              <span className="flex items-center gap-2">
-                <span className="text-h2 text-foreground">Crew</span>(
-                {crew.length})
-              </span>
+              <div className="flex items-center gap-2">
+                <h2 className="text-h2 text-foreground">Crew</h2>({crew.length})
+              </div>
 
               {crew.length === 0 ? (
                 <p className="text-muted-foreground pt-5 text-sm">

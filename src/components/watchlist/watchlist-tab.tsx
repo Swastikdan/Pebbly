@@ -74,9 +74,9 @@ export function WatchlistTab() {
     <div className="pt-3">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold tracking-tight sm:text-xl">
+          <h1 className="text-lg font-bold tracking-tight sm:text-xl">
             Watchlist
-          </h2>
+          </h1>
           <p className="text-muted-foreground mt-0.5 text-xs">
             {watchlistData.length} title
             {watchlistData.length !== 1 ? "s" : ""} saved

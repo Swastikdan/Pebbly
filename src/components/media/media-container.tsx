@@ -9,10 +9,10 @@ import {
 } from "@/components/media/media-lightbox-dialog";
 import { MediaThumbRail } from "@/components/media/media-thumb-rail";
 import { YouTubeThumbnail } from "@/components/media/youtube-thumbnail";
-import { Button } from "@/components/ui/button";
 import { ArrowRightLine } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
+import { mediaTypeToRouteSegment } from "@/domain/media";
 import { getImageDialogKey } from "@/lib/media-dialog-helpers";
 
 interface VideoItem {
@@ -85,7 +85,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
     setSelectedTab(activeTabFromSearch ?? defaultSelectedKey);
   }
 
-  const mediaHref = `/${type}/${id}/${urltitle}/media`;
+  const mediaHref = `/${mediaTypeToRouteSegment(type)}/${id}/${urltitle}/media`;
 
   if (!hasVideos && !hasBackdrops && !hasPosters) return null;
   return (
@@ -127,13 +127,7 @@ export const MediaContainer = (props: MediaContainerProps) => {
                   <span className="text-foreground bg-background dark:bg-foreground dark:text-background absolute start-4 top-4 w-min max-w-62.5 truncate rounded-lg px-2 py-1 text-sm md:max-w-75 lg:max-w-100">
                     {video.name}
                   </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="absolute inset-0 size-full rounded-xl p-0 hover:bg-transparent"
-                  >
-                    <PlayOverlay />
-                  </Button>
+                  <PlayOverlay />
                 </>
               )}
               getLightboxTitle={(video) => video.name}

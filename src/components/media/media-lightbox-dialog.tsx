@@ -15,7 +15,10 @@ const NAV_BUTTON_CLASS =
 
 export function PlayOverlay() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center">
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 flex items-center justify-center"
+    >
       <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-200 [@media(hover:hover)]:group-hover:scale-110">
         <Play aria-hidden="true" className="size-6 fill-white text-white" />
       </div>

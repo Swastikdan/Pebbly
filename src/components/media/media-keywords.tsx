@@ -10,9 +10,9 @@ export const MediaKeywords = (props: {
   return (
     <div className="py-5">
       <div className="flex flex-col gap-5">
-        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+        <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
           Keywords
-        </span>
+        </h2>
         <div className="flex flex-wrap gap-2">
           {props.keywords.map((keyword) => (
             <Link

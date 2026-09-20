@@ -72,9 +72,9 @@ export const MediaVideoImageContainer = (props: {
   return (
     <>
       <div className="flex flex-col gap-5 py-3">
-        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+        <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
           Videos
-        </span>
+        </h2>
         <MediaThumbRail
           items={mediaVideos}
           paramKey="video"
@@ -121,11 +121,11 @@ export const MediaVideoImageContainer = (props: {
         />
       </div>
       <div className="flex flex-col gap-5 py-3 pb-32">
-        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+        <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
           Images
-        </span>
+        </h2>
         <div className="flex flex-col gap-3">
-          <span className="w-fit text-lg md:text-xl">Backdrops</span>
+          <h3 className="w-fit text-lg md:text-xl">Backdrops</h3>
           <MediaThumbRail
             items={mediaImages?.backdrops ?? []}
             paramKey="backdrop"
@@ -151,7 +151,7 @@ export const MediaVideoImageContainer = (props: {
               </div>
             )}
           />
-          <span className="font-heading w-fit text-lg md:text-xl">Posters</span>
+          <h2 className="font-heading w-fit text-lg md:text-xl">Posters</h2>
           <MediaThumbRail
             items={mediaImages?.posters ?? []}
             paramKey="poster"
@@ -189,9 +189,9 @@ const GLobalMediaVideoImageContainerLoader = () => {
   return (
     <>
       <div className="flex flex-col gap-5 py-3">
-        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+        <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
           Videos
-        </span>
+        </h2>
         <ScrollContainer isButtonsVisible={false}>
           <div className="flex items-center justify-center gap-3">
             {Array.from({ length: 6 }).map((_, index) => (
@@ -212,11 +212,11 @@ const GLobalMediaVideoImageContainerLoader = () => {
         </ScrollContainer>
       </div>
       <div className="flex flex-col gap-5 py-3 pb-32">
-        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+        <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
           Images
-        </span>
+        </h2>
         <div className="flex flex-col gap-3">
-          <span className="w-fit text-lg md:text-xl">Backdrops</span>
+          <h3 className="w-fit text-lg md:text-xl">Backdrops</h3>
           <ScrollContainer isButtonsVisible={false}>
             <div className="flex items-center justify-center gap-3">
               {Array.from({ length: 6 }).map((_, index) => (
@@ -228,7 +228,7 @@ const GLobalMediaVideoImageContainerLoader = () => {
               ))}
             </div>
           </ScrollContainer>
-          <span className="font-heading w-fit text-lg md:text-xl">Posters</span>
+          <h3 className="font-heading w-fit text-lg md:text-xl">Posters</h3>
           <ScrollContainer isButtonsVisible={false}>
             <div className="flex items-center justify-center gap-3">
               {Array.from({ length: 12 }).map((_, index) => (

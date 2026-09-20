@@ -73,21 +73,13 @@ export function MediaThumbRail<T>({
           const itemKey = getKey(item);
           if (!itemKey) return null;
           return (
-            // biome-ignore lint/a11y/useSemanticElements: contains nested <button>, cannot use <button> wrapper
-            <div
+            <button
               key={itemKey}
-              className="group focus-visible:ring-ring focus-visible:ring-offset-background relative cursor-pointer rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2"
-              role="button"
-              tabIndex={0}
+              type="button"
+              className="group focus-visible:ring-ring focus-visible:ring-offset-background relative cursor-pointer rounded-xl border-0 bg-transparent p-0 text-start outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2"
               aria-label={getLightboxTitle(item)}
               aria-haspopup="dialog"
               onClick={() => setActiveKey(itemKey)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setActiveKey(itemKey);
-                }
-              }}
             >
               {renderThumb ? (
                 renderThumb(item)
@@ -101,7 +93,7 @@ export function MediaThumbRail<T>({
                 />
               )}
               {renderTileOverlay?.(item)}
-            </div>
+            </button>
           );
         })}
         <MediaLightboxDialog

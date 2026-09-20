@@ -39,9 +39,9 @@ export const MediaRecommendations = (props: {
     return (
       <div className="pb-5">
         <div className="flex flex-col gap-3">
-          <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+          <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
             Recommendations
-          </span>
+          </h2>
           <ScrollContainer isButtonsVisible={false}>
             <div className="flex gap-4 p-4 first:ps-0 last:pe-0">
               {Array.from({ length: 6 }).map((_, index) => (
@@ -64,9 +64,9 @@ export const MediaRecommendations = (props: {
   return (
     <div className="pb-5">
       <div className="flex flex-col gap-3">
-        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+        <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
           Recommendations
-        </span>
+        </h2>
         <ScrollContainer isButtonsVisible={!movie_is_loading}>
           <div className="flex gap-4 p-4 first:ps-0 last:pe-0">
             {type === "movie"

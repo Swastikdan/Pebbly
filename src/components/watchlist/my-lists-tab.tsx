@@ -57,7 +57,7 @@ export function MyListsTab() {
           <ListPlus className="size-5" />
         </div>
         <div>
-          <h3 className="text-h3 mb-2">Sign in to create collections</h3>
+          <h1 className="text-h3 mb-2">Sign in to create collections</h1>
           <p className="text-muted-foreground/80 max-w-sm text-xs leading-relaxed">
             Collections are saved to your account, so you can keep them private
             or share them with anyone.
@@ -108,7 +108,7 @@ export function MyListsTab() {
     <div className="space-y-6 pt-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-h2 text-balance">My Collections</h2>
+          <h1 className="text-h2 text-balance">My Collections</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
             {customLists.length} collection
             {customLists.length !== 1 ? "s" : ""} created

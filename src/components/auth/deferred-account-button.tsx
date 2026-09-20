@@ -1,7 +1,6 @@
 import { useUser } from "@clerk/react";
 import { lazy, Suspense, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { UserIcon } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -11,37 +10,60 @@ interface AccountButtonProps {
   variant: "desktop" | "mobile";
 }
 
-function AccountPlaceholder({ variant }: AccountButtonProps) {
+function AccountPlaceholder({
+  onActivate,
+  variant,
+}: AccountButtonProps & { onActivate: () => void }) {
   const { isSignedIn, isLoaded, user } = useUser();
 
   if (variant === "desktop") {
     if (isLoaded && isSignedIn && user?.imageUrl) {
       return (
-        <div className="flex size-10 items-center justify-center">
+        <button
+          type="button"
+          onClick={onActivate}
+          className="flex size-10 cursor-pointer items-center justify-center border-0 bg-transparent p-0"
+          aria-label="Account"
+        >
           <img
             src={user.imageUrl}
             alt={user.fullName ?? "Account"}
             className="border-secondary size-9 rounded-full border-2 object-cover"
           />
-        </div>
+        </button>
       );
     }
     if (!isLoaded) {
-      return <Skeleton className="size-9 rounded-full" />;
+      return (
+        <button
+          type="button"
+          onClick={onActivate}
+          className="flex size-9 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0"
+          aria-label="Account"
+        >
+          <Skeleton className="size-9 rounded-full" />
+        </button>
+      );
     }
     return (
-      <Button
-        variant="outline"
+      <button
+        type="button"
+        onClick={onActivate}
         aria-label="Sign In"
-        className="flex size-9 items-center justify-center rounded-full p-0 before:rounded-full"
+        className="border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring focus-visible:ring-offset-background flex size-9 cursor-pointer items-center justify-center rounded-full border p-0 outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2"
       >
         <UserIcon aria-hidden="true" className="size-5" />
-      </Button>
+      </button>
     );
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center">
+    <button
+      type="button"
+      onClick={onActivate}
+      className="flex h-full w-full cursor-pointer flex-col items-center justify-center border-none bg-transparent p-0"
+      aria-label="Account"
+    >
       <span className="mobile-bottom-nav-tab-icon">
         {isLoaded && isSignedIn && user?.imageUrl ? (
           <img
@@ -54,7 +76,7 @@ function AccountPlaceholder({ variant }: AccountButtonProps) {
         )}
       </span>
       <span className="mobile-bottom-nav-tab-label">Account</span>
-    </div>
+    </button>
   );
 }
 
@@ -66,22 +88,15 @@ export function DeferredAccountButton({ variant }: AccountButtonProps) {
   };
 
   if (!shouldLoad) {
-    return (
-      <button
-        type="button"
-        onClick={triggerLoad}
-        onMouseEnter={triggerLoad}
-        onFocus={triggerLoad}
-        className="contents cursor-pointer border-none bg-transparent p-0"
-        aria-label="Account"
-      >
-        <AccountPlaceholder variant={variant} />
-      </button>
-    );
+    return <AccountPlaceholder onActivate={triggerLoad} variant={variant} />;
   }
 
   return (
-    <Suspense fallback={<AccountPlaceholder variant={variant} />}>
+    <Suspense
+      fallback={
+        <AccountPlaceholder onActivate={triggerLoad} variant={variant} />
+      }
+    >
       <AccountButton variant={variant} />
     </Suspense>
   );

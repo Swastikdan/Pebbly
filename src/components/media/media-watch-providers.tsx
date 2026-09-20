@@ -114,9 +114,9 @@ const LoadingState = () => (
   <section className="min-h-40 py-3">
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
-        <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+        <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
           Where to Watch
-        </span>
+        </h2>
         <Skeleton className="h-8 w-28 rounded-md" />
       </div>
       <div className="flex items-center gap-3 sm:gap-4">
@@ -188,9 +188,9 @@ export const MediaWatchProviders = (props: {
       <section className="min-h-40 py-3">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
-            <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+            <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
               Where to Watch
-            </span>
+            </h2>
           </div>
           <div>
             <Badge
@@ -243,9 +243,9 @@ export const MediaWatchProviders = (props: {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="font-heading w-fit text-xl font-semibold md:text-2xl">
+            <h2 className="font-heading w-fit text-xl font-semibold md:text-2xl">
               Where to Watch
-            </span>
+            </h2>
             {countryData.link && (
               <a
                 href={countryData.link}
