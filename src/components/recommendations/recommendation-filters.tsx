@@ -1,4 +1,10 @@
-import { RefreshCw, SlidersHorizontal, Sparkles } from "lucide-react";
+import {
+  Combine,
+  RefreshCw,
+  SlidersHorizontal,
+  Sparkles,
+  Split,
+} from "lucide-react";
 
 import type { MediaType } from "@/domain/media";
 import { Button } from "@/components/ui/button";
@@ -28,6 +34,8 @@ export function RecommendationFilters({
   setMediaType,
   selectedGenres,
   toggleGenre,
+  genreMode,
+  setGenreMode,
   selectedEras,
   toggleEra,
   count,
@@ -48,6 +56,8 @@ export function RecommendationFilters({
   setMediaType: (mediaType: MediaType | undefined) => void;
   selectedGenres: string[];
   toggleGenre: (name: string) => void;
+  genreMode: "together" | "separate";
+  setGenreMode: (mode: "together" | "separate") => void;
   selectedEras: string[];
   toggleEra: (label: string) => void;
   count: number;
@@ -287,6 +297,40 @@ export function RecommendationFilters({
               <p className="text-muted-foreground mt-2 text-xs">
                 Select at least one genre to enable generation.
               </p>
+            )}
+            {selectedGenres.length > 1 && (
+              <div className="border-border/40 bg-secondary/20 mt-4 flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold">
+                    How should genres work?
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-[11px]">
+                    {genreMode === "together"
+                      ? "Every pick must blend all selected genres."
+                      : "Picks can come from any selected genre, mixed together."}
+                  </p>
+                </div>
+                <div className="bg-background/70 flex w-full rounded-md border p-1 sm:w-auto">
+                  <Button
+                    type="button"
+                    variant={genreMode === "together" ? "default" : "ghost"}
+                    aria-pressed={genreMode === "together"}
+                    className="h-8 flex-1 gap-1.5 px-3 text-xs sm:flex-none"
+                    onClick={() => setGenreMode("together")}
+                  >
+                    <Combine className="size-3.5" /> Together
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={genreMode === "separate" ? "default" : "ghost"}
+                    aria-pressed={genreMode === "separate"}
+                    className="h-8 flex-1 gap-1.5 px-3 text-xs sm:flex-none"
+                    onClick={() => setGenreMode("separate")}
+                  >
+                    <Split className="size-3.5" /> Separately
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         )}

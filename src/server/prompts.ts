@@ -53,6 +53,8 @@ export interface RecommendationCandidate {
   year: number | null;
   rating: number;
   voteCount: number;
+  genreIds?: number[];
+  overview?: string | null;
 }
 
 function formatStats(inputStats: {
@@ -332,6 +334,7 @@ export function buildGenrePrompt(
   yearFrom?: number,
   yearTo?: number,
   count?: number,
+  genreMode: "together" | "separate" = "together",
 ): string {
   const { existingIds, existingTitles } = buildWatchlistContext(
     data,
@@ -341,10 +344,16 @@ export function buildGenrePrompt(
 
   let intro = `Recommend me exactly ${titleCount} popular and highly-rated ${mediaLabel(mediaTypePreference)}`;
   if (genrePreference) {
-    intro += ` in these genres: ${genrePreference}`;
+    intro +=
+      genreMode === "separate"
+        ? ` across these genres as separate recommendation lanes: ${genrePreference}`
+        : ` that combine all of these genres together: ${genrePreference}`;
   }
   intro += `.\n\n`;
-  intro += `Focus on well-known, critically acclaimed titles that are widely loved. Include a mix of classic and recent titles.\n\n`;
+  intro +=
+    genreMode === "separate"
+      ? `Treat each selected genre independently. The final list may contain comedy-only, drama-only, and multi-genre titles. Keep the overall list varied across the selected genres.\n\n`
+      : `Every title must meaningfully fit all selected genres at once; do not generate separate batches for each genre. Focus on well-known, critically acclaimed titles and include a mix of classic and recent titles.\n\n`;
 
   return buildSectionedPrompt({
     intro,
@@ -415,6 +424,7 @@ export function buildCandidateRecommendationPrompt(args: {
   previousTitles: string[];
   mediaTypePreference?: string;
   genrePreference?: string;
+  genreMode?: "together" | "separate";
   count: number;
   goal?: string;
 }): string {
@@ -440,9 +450,15 @@ export function buildCandidateRecommendationPrompt(args: {
         ? "Select TV shows only."
         : "Select movies and TV shows.";
 
+  const genreRule = args.genrePreference
+    ? args.genreMode === "separate"
+      ? `Treat these as separate genre lanes and select a varied mix across them: ${args.genrePreference}. A title may match one or more lanes.`
+      : `Every selected title must match all of these genres together: ${args.genrePreference}. Do not treat them as separate batches.`
+    : "";
+
   return `You are ranking a current TMDB candidate catalog for personalized recommendations.
 You may ONLY select candidates from the catalog below. Never invent a title, TMDB ID, or media type. Return exactly ${args.count} recommendations when enough candidates exist. ${typeRule}
-${liked}${disliked}${previous}${args.genrePreference ? `Preferred genres: ${args.genrePreference}\n` : ""}${args.goal ?? "Choose the strongest, most varied matches for the user's taste."}
+${liked}${disliked}${previous}${genreRule}${genreRule ? "\n" : ""}${args.goal ?? "Choose the strongest, most varied matches for the user's taste."}
 
 Candidate catalog:
 ${candidateCatalog}

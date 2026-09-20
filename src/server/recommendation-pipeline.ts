@@ -7,6 +7,7 @@ import type {
   Recommendation as RecommendationRow,
 } from "./schema/recommendations";
 import type { MediaType } from "@/domain/media";
+import { captureServerEvent } from "@/lib/posthog-server";
 import { dedupeRecommendations } from "./ai";
 import { aiRecommendations, homepageRecommendations } from "./db/schema";
 import { releaseRateLimit, tryConsumeRateLimit } from "./helpers/rate-limit";
@@ -24,6 +25,7 @@ import {
   parseStoredRecommendations,
   runAiGeneration,
 } from "./recommendation-generation";
+import { rerankCandidatesWithJev } from "./recommendation-rerank";
 
 const RATE_LIMIT_MS = 2 * 60 * 1000;
 const GENERATION_RATE_LIMIT_KEY = "ai-gen";
@@ -118,6 +120,7 @@ async function saveRecommendations(
     model,
     mediaTypePreference: options.mediaTypePreference,
     genrePreference: options.genrePreference,
+    genreMode: options.genreMode,
     generationType,
     createdAt: Date.now(),
   });
@@ -243,12 +246,40 @@ async function runHistoryPipeline(
     ...(feedbackSignals.previousTitles ?? []),
     ...recent.titles,
   ];
+  const likedTitles =
+    generationType === "genre"
+      ? []
+      : [
+          ...(feedbackSignals.likedTitles ?? []),
+          ...watchlistData.watchItems
+            .filter(
+              (item) => item.reaction === "loved" || item.reaction === "liked",
+            )
+            .map((item) => item.title)
+            .filter((title): title is string => !!title),
+          ...(generationType === "list" && options.listId
+            ? watchlistData.listItems
+                .filter((item) => item.listId === options.listId)
+                .map(
+                  (item) =>
+                    watchlistData.watchItems.find(
+                      (watchItem) =>
+                        watchItem.tmdbId === item.tmdbId &&
+                        watchItem.mediaType === item.mediaType,
+                    )?.title,
+                )
+                .filter((title): title is string => !!title)
+            : []),
+        ];
+  const dislikedTitles =
+    generationType === "genre" ? [] : (feedbackSignals.dislikedTitles ?? []);
 
   const candidateCatalog = await getRecommendationCandidates({
     watchItems: watchlistData.watchItems,
     excludedWatchItems: watchlistData.excludedWatchItems,
     useWatchlistSeeds: generationType !== "genre",
     genreIds: options.genreIds,
+    genreMode: options.genreMode,
     seedItems:
       generationType === "list" && options.listId
         ? watchlistData.listItems
@@ -271,29 +302,33 @@ async function runHistoryPipeline(
     limit: 40,
     balanced: true,
   });
-  const likedTitles =
-    generationType === "genre"
-      ? []
-      : [
-          ...(feedbackSignals.likedTitles ?? []),
-          ...watchlistData.watchItems
-            .filter(
-              (item) => item.reaction === "loved" || item.reaction === "liked",
-            )
-            .map((item) => item.title)
-            .filter((title): title is string => !!title),
-        ];
-  const dislikedTitles =
-    generationType === "genre" ? [] : (feedbackSignals.dislikedTitles ?? []);
+  const reranked = await rerankCandidatesWithJev(candidateCatalog, {
+    selectedGenres:
+      generationType === "genre"
+        ? (options.genrePreference?.split(",").map((genre) => genre.trim()) ??
+          [])
+        : [],
+    likedTitles,
+    mediaTypePreference: options.mediaTypePreference,
+  });
+  void captureServerEvent(context.userId, "recommendation_jev_rerank", {
+    generationType,
+    ran: reranked.ran,
+    candidatesScored: reranked.scored,
+    meanConfidence: reranked.meanConfidence,
+    fallbackReason: reranked.fallbackReason ?? null,
+  });
+  const orderedCandidates = reranked.candidates;
 
-  const prompt = candidateCatalog.length
+  const prompt = orderedCandidates.length
     ? buildCandidateRecommendationPrompt({
-        candidates: candidateCatalog,
+        candidates: orderedCandidates,
         likedTitles,
         dislikedTitles,
         previousTitles,
         mediaTypePreference: options.mediaTypePreference,
         genrePreference: options.genrePreference,
+        genreMode: options.genreMode,
         count: Math.min(Math.max(options.count ?? 10, 1), 30),
         goal:
           generationType === "genre"
@@ -331,6 +366,7 @@ async function runHistoryPipeline(
             options.yearFrom,
             options.yearTo,
             options.count,
+            options.genreMode,
           );
 
   const targetCount = Math.min(Math.max(options.count ?? 10, 1), 30);
@@ -343,7 +379,7 @@ async function runHistoryPipeline(
     excludedWatchItems: watchlistData.excludedWatchItems,
     excludeTmdbIds,
     excludeTitles,
-    candidateCatalog: candidateCatalog.length ? candidateCatalog : undefined,
+    candidateCatalog: orderedCandidates.length ? orderedCandidates : undefined,
   });
   if (!generated.ok) {
     if (token.token) await releaseRateLimit(context.db, token.token);
@@ -445,9 +481,21 @@ async function runHomepagePipeline(
     limit: 60,
     balanced: true,
   });
-  const prompt = candidateCatalog.length
+  const reranked = await rerankCandidatesWithJev(candidateCatalog, {
+    likedTitles: feedbackSignals.likedTitles ?? [],
+    mediaTypePreference: undefined,
+  });
+  void captureServerEvent(context.userId, "recommendation_jev_rerank", {
+    generationType: "homepage",
+    ran: reranked.ran,
+    candidatesScored: reranked.scored,
+    meanConfidence: reranked.meanConfidence,
+    fallbackReason: reranked.fallbackReason ?? null,
+  });
+  const orderedCandidates = reranked.candidates;
+  const prompt = orderedCandidates.length
     ? buildCandidateRecommendationPrompt({
-        candidates: candidateCatalog,
+        candidates: orderedCandidates,
         likedTitles: feedbackSignals.likedTitles ?? [],
         dislikedTitles: feedbackSignals.dislikedTitles ?? [],
         previousTitles,
@@ -471,7 +519,7 @@ async function runHomepagePipeline(
     excludedWatchItems: watchlistData.excludedWatchItems,
     excludeTmdbIds: excludeIds,
     excludeTitles,
-    candidateCatalog: candidateCatalog.length ? candidateCatalog : undefined,
+    candidateCatalog: orderedCandidates.length ? orderedCandidates : undefined,
   });
   if (!generated.ok) {
     if (token.token) await releaseRateLimit(context.db, token.token);

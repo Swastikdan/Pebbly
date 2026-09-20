@@ -77,6 +77,22 @@ describe("buildGenrePrompt", () => {
     const prompt = buildGenrePrompt(data(), "tv", "noir thriller");
     expect(prompt).toContain("noir thriller");
     expect(prompt).toContain("tv");
+    expect(prompt).toContain("all selected genres at once");
+  });
+
+  it("can treat selected genres as separate lanes", () => {
+    const prompt = buildGenrePrompt(
+      data(),
+      undefined,
+      "Comedy, Drama",
+      [],
+      undefined,
+      undefined,
+      10,
+      "separate",
+    );
+    expect(prompt).toContain("separate recommendation lanes");
+    expect(prompt).toContain("Treat each selected genre independently");
   });
 });
 
@@ -113,6 +129,8 @@ describe("buildCandidateRecommendationPrompt", () => {
       previousTitles: ["Previously Shown"],
       count: 5,
       goal: "Prefer smart crime stories.",
+      genrePreference: "Comedy, Drama",
+      genreMode: "together",
     });
 
     expect(prompt).toContain("movie:550");
@@ -121,6 +139,7 @@ describe("buildCandidateRecommendationPrompt", () => {
     expect(prompt).toContain("ONLY select candidates from the catalog");
     expect(prompt).toContain("Never invent a title, TMDB ID, or media type");
     expect(prompt).toContain("smart crime stories");
+    expect(prompt).toContain("match all of these genres together");
     expect(prompt).not.toContain("The Nice Guys (TMDB ID:");
   });
 });

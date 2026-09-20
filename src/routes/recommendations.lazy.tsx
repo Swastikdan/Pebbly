@@ -137,6 +137,9 @@ function RecommendationsContent({
   const [listId, setListId] = useState<string>("");
   const [mediaType, setMediaType] = useState<MediaType | undefined>();
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [genreMode, setGenreMode] = useState<"together" | "separate">(
+    "together",
+  );
   const [selectedEras, setSelectedEras] = useState<string[]>([]);
   const [count, setCount] = useState(10);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
@@ -189,6 +192,7 @@ function RecommendationsContent({
           mediaTypePreference: mediaType,
           selectedGenres,
           selectedEras,
+          genreMode,
           count,
         },
         trackedIdSet,
@@ -234,6 +238,8 @@ function RecommendationsContent({
         setMediaType={setMediaType}
         selectedGenres={selectedGenres}
         toggleGenre={toggleGenre}
+        genreMode={genreMode}
+        setGenreMode={setGenreMode}
         selectedEras={selectedEras}
         toggleEra={toggleEra}
         count={count}

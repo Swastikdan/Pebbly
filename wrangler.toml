@@ -21,6 +21,8 @@ migrations_dir = "drizzle"
 [vars]
 # Non-secret server vars only. Secrets: wrangler secret put <NAME>.
 APP_ENV = "production"
+# Optional Jev reranking; enable explicitly after validating latency and quality.
+JEV_RERANK = "true"
 
 [triggers]
 # 03:00 UTC - daily watchlist snapshots (Nitro task "snapshots")

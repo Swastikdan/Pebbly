@@ -65,6 +65,7 @@ export function useRecommendations() {
           generationType: entry.generationType ?? "watchlist",
           mediaTypePreference: entry.mediaTypePreference ?? undefined,
           genrePreference: entry.genrePreference ?? undefined,
+          genreMode: entry.genreMode ?? undefined,
           verified: entry.verified ?? false,
         })),
     [historyQuery.data, optimisticDeletedIds],

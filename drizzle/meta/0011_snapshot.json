@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "fa7a80ca-6b5c-4b6b-924a-ee954b3e00f8",
-  "prevId": "184fb63d-e2b4-4b24-b5e3-f902c4e21ccf",
+  "id": "2ce0b3e4-19b8-4305-80d3-bf59a9055e98",
+  "prevId": "fa7a80ca-6b5c-4b6b-924a-ee954b3e00f8",
   "tables": {
     "ai_generation_jobs": {
       "name": "ai_generation_jobs",
@@ -184,6 +184,13 @@
         },
         "genre_preference": {
           "name": "genre_preference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "genre_mode": {
+          "name": "genre_mode",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

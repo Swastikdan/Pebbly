@@ -20,6 +20,7 @@ export interface Env {
   CLERK_SECRET_KEY?: string;
   CLERK_ISSUER_URL?: string;
   GEMINI_API_KEY?: string;
+  JEV_RERANK?: string;
   APP_ENV?: string;
   /**
    * When "true", skips the legacy tokenIdentifier LIKE fallback scan in

@@ -1,0 +1,1 @@
+ALTER TABLE `ai_recommendations` ADD `genre_mode` text;

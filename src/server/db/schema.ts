@@ -236,6 +236,7 @@ export const aiRecommendations = sqliteTable(
       enum: [...MEDIA_TYPES],
     }),
     genrePreference: text("genre_preference"),
+    genreMode: text("genre_mode", { enum: ["together", "separate"] }),
     generationType: text("generation_type"),
     verified: integer("verified", { mode: "boolean" }).default(false),
     createdAt: integer("created_at").notNull(),

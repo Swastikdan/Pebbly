@@ -63,3 +63,4 @@ APP_ENV = "preview"
 
 # Non-secret server vars only. Secrets: wrangler secret put <NAME> --config wrangler.preview.toml.
 # Client VITE_* vars are inlined at build time from .env - they do NOT go here.
+JEV_RERANK = "false"

@@ -93,6 +93,7 @@ describe("buildGenerateOptions", () => {
       {
         generationType: "genre",
         selectedGenres: ["Action", "Not A Genre"],
+        genreMode: "separate",
         selectedEras: ["80s", "90s"],
         count: 10,
       },
@@ -102,6 +103,7 @@ describe("buildGenerateOptions", () => {
     expect(options.yearFrom).toBe(1980);
     expect(options.yearTo).toBe(1999);
     expect(options.genreIds).toEqual([28]);
+    expect(options.genreMode).toBe("separate");
     expect(options.count).toBe(10);
   });
 

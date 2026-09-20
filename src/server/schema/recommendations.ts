@@ -29,6 +29,7 @@ export const inputStatsSchema = v.object({
 export type InputStats = v.InferOutput<typeof inputStatsSchema>;
 
 export const generationTypeSchema = v.picklist(["watchlist", "list", "genre"]);
+export const genreModeSchema = v.picklist(["together", "separate"]);
 
 // Canonical values for homepage_recommendations.status; mirrored by the
 // drizzle CHECK constraint in server/db/schema.ts.
@@ -46,6 +47,7 @@ export const generateRecommendationsArgsSchema = v.object({
   mediaTypePreference: v.optional(mediaTypeSchema),
   genrePreference: v.optional(v.string()),
   genreIds: v.optional(v.pipe(v.array(v.number()), v.maxLength(10))),
+  genreMode: v.optional(genreModeSchema),
   excludeTmdbIds: v.optional(
     v.pipe(v.array(v.number()), v.maxLength(MAX_EXCLUDE_TMDB_IDS)),
   ),

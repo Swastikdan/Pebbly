@@ -41,6 +41,7 @@ export interface GenerateOptions {
   listId?: string;
   mediaTypePreference?: MediaType;
   genrePreference?: string;
+  genreMode?: "together" | "separate";
   genreIds?: number[];
   excludeTmdbIds?: number[];
   yearFrom?: number;
@@ -61,6 +62,7 @@ export interface RecommendationHistoryEntry {
   generationType?: string;
   mediaTypePreference?: string;
   genrePreference?: string;
+  genreMode?: "together" | "separate";
   verified?: boolean;
 }
 
@@ -117,6 +119,7 @@ export interface FreshGenerateOptionsInput {
   listId?: string;
   mediaTypePreference?: MediaType;
   selectedGenres?: string[];
+  genreMode?: "together" | "separate";
   selectedEras?: string[];
   count: number;
 }
@@ -136,6 +139,7 @@ export function buildGenerateOptions(
       .map((name) => GENRE_LIST.find((genre) => genre.name === name)?.id)
       .filter((id): id is number => id !== undefined)
       .slice(0, 10);
+    options.genreMode = input.genreMode ?? "together";
   }
 
   if (input.selectedEras && input.selectedEras.length > 0) {
@@ -170,6 +174,7 @@ function buildRepeatBaseOptions(
     options.mediaTypePreference = entry.mediaTypePreference as MediaType;
   if (entry.genrePreference) {
     options.genrePreference = entry.genrePreference;
+    options.genreMode = entry.genreMode ?? "together";
     options.genreIds = entry.genrePreference
       .split(",")
       .map((name) => GENRE_LIST.find((genre) => genre.name === name.trim())?.id)
