@@ -85,11 +85,14 @@ export async function captureServerException(
 
 /**
  * Record privacy-safe LLM telemetry for PostHog AI observability.
- * Prompts, watchlist contents, and model output are intentionally excluded.
+ * Captures the prompt and parsed model output so AI Observability can render
+ * the generation. Callers should only pass data that is safe for telemetry.
  */
 export async function captureAiGeneration(args: {
   distinctId: string;
   traceId: string;
+  input?: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+  output?: Array<{ role: "assistant"; content: string }>;
   provider: string;
   model: string;
   durationMs: number;
@@ -112,6 +115,8 @@ export async function captureAiGeneration(args: {
         $ai_session_id: sessionId || null,
         $ai_span_id: crypto.randomUUID(),
         $ai_span_name: "recommendation_generation",
+        ...(args.input ? { $ai_input: args.input } : {}),
+        ...(args.output ? { $ai_output_choices: args.output } : {}),
         $ai_provider: args.provider,
         $ai_model: args.model,
         $ai_is_error: !args.ok,

@@ -87,6 +87,10 @@ export async function runAiGeneration(args: {
 }): Promise<AiGenerationResult> {
   const startedAt = Date.now();
   const traceId = crypto.randomUUID();
+  const input = [
+    { role: "system" as const, content: SYSTEM_INSTRUCTION },
+    { role: "user" as const, content: args.prompt },
+  ];
   const aiResult = await generateRecommendations({
     prompt: args.prompt,
     systemInstruction: SYSTEM_INSTRUCTION,
@@ -97,6 +101,7 @@ export async function runAiGeneration(args: {
     await captureAiGeneration({
       distinctId: args.distinctId,
       traceId,
+      input,
       provider: getAiProvider(),
       model: aiResult.usedModel ?? "unknown",
       durationMs: Date.now() - startedAt,
@@ -146,6 +151,7 @@ export async function runAiGeneration(args: {
     await captureAiGeneration({
       distinctId: args.distinctId,
       traceId,
+      input,
       provider: getAiProvider(),
       model: aiResult.usedModel ?? "unknown",
       durationMs: Date.now() - startedAt,
@@ -160,6 +166,13 @@ export async function runAiGeneration(args: {
   await captureAiGeneration({
     distinctId: args.distinctId,
     traceId,
+    input,
+    output: [
+      {
+        role: "assistant",
+        content: JSON.stringify(aiResult.result),
+      },
+    ],
     provider: getAiProvider(),
     model: aiResult.usedModel ?? "unknown",
     durationMs: Date.now() - startedAt,
