@@ -66,7 +66,6 @@ function PersonPage() {
   const { data, error, isLoading } = useQuery<PersonDetails>({
     queryKey: queryKeys.tmdb.personDetails(personId),
     queryFn: async () => await getPersonDetails({ id: personId }),
-    enabled: typeof window !== "undefined",
   });
 
   const knownForCredits = useMemo(() => {

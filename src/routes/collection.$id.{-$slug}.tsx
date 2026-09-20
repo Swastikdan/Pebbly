@@ -20,7 +20,7 @@ export const Route = createFileRoute("/collection/$id/{-$slug}")({
   loader: async ({ params, context }) => {
     const collectionId = requireRouteId(params.id);
     await context.queryClient.ensureQueryData({
-      queryKey: queryKeys.tmdb.movieDetails(collectionId),
+      queryKey: queryKeys.tmdb.collection(collectionId),
       queryFn: () => getCollection({ id: collectionId }),
     });
     return {
@@ -51,9 +51,8 @@ export const Route = createFileRoute("/collection/$id/{-$slug}")({
 function MovieCollectionPage() {
   const { id, slug } = Route.useLoaderData();
   const { data, error, isLoading } = useQuery<Collection>({
-    queryKey: queryKeys.tmdb.movieDetails(Number(id)),
+    queryKey: queryKeys.tmdb.collection(Number(id)),
     queryFn: async () => await getCollection({ id: parseInt(id, 10) }),
-    enabled: typeof window !== "undefined",
   });
 
   useCanonicalSlugRedirect({
