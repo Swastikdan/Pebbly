@@ -22,15 +22,17 @@ export const Route = createFileRoute("/search")({
     const page = deps.page ?? 1;
 
     if (hasValidQuery) {
-      await context.queryClient.ensureQueryData({
+      const searchResults = await context.queryClient.ensureQueryData({
         queryKey: queryKeys.tmdb.search(trimmedQuery, page),
         queryFn: () => getSearchResult({ query: trimmedQuery, page }),
       });
+      return { page, query: trimmedQuery, searchResults };
     } else {
-      await context.queryClient.ensureQueryData({
+      const trendingResults = await context.queryClient.ensureQueryData({
         queryKey: queryKeys.tmdb.trendingDay(),
         queryFn: () => getMedia({ type: "trending_day", page: 1 }),
       });
+      return { page, query: trimmedQuery, trendingResults };
     }
   },
   head: ({ match }) => {

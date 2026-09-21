@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useLoaderData, useNavigate, useSearch } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
 import type { SearchResultsEntity } from "@/lib/tmdb-schemas";
@@ -41,6 +41,7 @@ const MIN_RATING_ITEMS = [
 
 export function SearchPage() {
   const navigate = useNavigate();
+  const loaderData = useLoaderData({ from: "/search" });
   const { page: pageNumber, query: searchQuery } = useSearch({
     from: "/search",
   });
@@ -52,11 +53,21 @@ export function SearchPage() {
   const [minRating, setMinRating] = useState("0");
 
   const urlPage = pageNumber ?? 1;
+  const hasMatchingSearchLoaderData =
+    hasValidQuery &&
+    loaderData.query === trimmedQuery &&
+    loaderData.page === urlPage;
 
   const { data, error, isFetching, isLoading } = useQuery({
     queryKey: queryKeys.tmdb.search(trimmedQuery, urlPage),
     queryFn: () => getSearchResult({ query: trimmedQuery, page: urlPage }),
     enabled: hasValidQuery,
+    // The route loader already fetched this data on the server. Passing it
+    // explicitly makes a direct URL render results even if query-cache
+    // dehydration is unavailable during a particular hydration pass.
+    initialData: hasMatchingSearchLoaderData
+      ? loaderData.searchResults
+      : undefined,
     staleTime: 1000 * 60 * 60 * 24,
     // Keep search results bounded in memory; data is still considered
     // fresh for a day (staleTime above), only unused copies are evicted.
@@ -74,6 +85,7 @@ export function SearchPage() {
     retry: 2,
     refetchOnWindowFocus: false,
     enabled: !hasValidQuery,
+    initialData: !hasValidQuery ? loaderData.trendingResults : undefined,
   });
 
   const { page, isPending, totalPages, handlePageChange } = useUrlPagedQuery({
