@@ -23,14 +23,13 @@ compatibility_date = "2026-08-08"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 upload_source_maps = true
-
-[ai]
-binding = "AI"
-
 # Nitro pre-bundles the entry; tell Wrangler not to re-bundle it. Production
 # gets these fields from the generated redirected config, but --config bypasses
 # that redirect, so they must be stated explicitly here.
 no_bundle = true
+
+[ai]
+binding = "AI"
 
 [[rules]]
 type = "ESModule"

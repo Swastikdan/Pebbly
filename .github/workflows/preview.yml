@@ -59,6 +59,7 @@ jobs:
           VITE_PUBLIC_POSTHOG_HOST: ${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}
           VITE_PUBLIC_TMDB_API_URL: ${{ secrets.VITE_PUBLIC_TMDB_API_URL }}
           VITE_PUBLIC_VIDEO_URL: ${{ secrets.VITE_PUBLIC_VIDEO_URL }}
+          VITE_PUBLIC_EXTERNAL_PLAYER_URL: ${{ secrets.VITE_PUBLIC_EXTERNAL_PLAYER_URL }}
 
       - name: Deploy Worker (preview)
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4 (node24 runtime)
@@ -70,4 +71,4 @@ jobs:
           # Wrangler reads wrangler.preview.toml directly (redirected: false),
           # so the "redirected configs cannot include environments" error does
           # not apply, there is no env indirection to resolve.
-          command: deploy --config wrangler.preview.toml
+          command: deploy --config wrangler.preview.toml --no-bundle
