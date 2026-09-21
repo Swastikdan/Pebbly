@@ -8,7 +8,7 @@ import { Star, XIcon } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WatchlistButton } from "@/components/watchlist-button";
-import { IMAGE_PREFIX } from "@/constants";
+import { DEFAULT_PLACEHOLDER_IMAGE, IMAGE_PREFIX } from "@/constants";
 import { useSeasonDetails } from "@/hooks/use-season-details";
 import {
   useRemoveFromContinueWatching,
@@ -17,6 +17,7 @@ import {
 import { toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { mediaDetailRoute } from "@/lib/route-helpers";
+import { tmdbImageUrl } from "@/lib/tmdb-image";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 interface BaseCardProps {
@@ -249,8 +250,9 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
   // is ~12 KiB not 28 KiB (w500). `srcSet` still offers w342/w500 for high-DPR
   // screens via `tmdbSrcSet`. On mobile (159px rendered), sizes 92px/160px
   // routes DPR 1-2 displays to w185 (185x278) instead of downloading w342.
-  const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${image}`;
-  const blurSrc = image ? `${IMAGE_PREFIX.PREVIEW}${image}` : undefined;
+  const imageUrl =
+    tmdbImageUrl(IMAGE_PREFIX.LQ_POSTER, image) ?? DEFAULT_PLACEHOLDER_IMAGE;
+  const blurSrc = tmdbImageUrl(IMAGE_PREFIX.PREVIEW, image);
   const year = release_date ? new Date(release_date).getFullYear() : "";
 
   return (
@@ -331,15 +333,20 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
   const seasonDetailsLoaded = seasonDetailsQuery.isFetched;
   const hasValidResumeEpisode =
     !isTVContinueWatching || !seasonDetailsLoaded || Boolean(episodeDetail);
-  let imageUrl = `${IMAGE_PREFIX.LQ_BACKDROP}${image}`;
-  let blurSrc = image ? `${IMAGE_PREFIX.PREVIEW}${image}` : undefined;
+  let imageUrl =
+    tmdbImageUrl(IMAGE_PREFIX.LQ_BACKDROP, image) ?? DEFAULT_PLACEHOLDER_IMAGE;
+  let blurSrc = tmdbImageUrl(IMAGE_PREFIX.PREVIEW, image);
   if (isTVContinueWatching) {
     if (episodeDetail?.still_path) {
-      imageUrl = `${IMAGE_PREFIX.LQ_BACKDROP}${episodeDetail.still_path}`;
-      blurSrc = `${IMAGE_PREFIX.PREVIEW}${episodeDetail.still_path}`;
+      imageUrl =
+        tmdbImageUrl(IMAGE_PREFIX.LQ_BACKDROP, episodeDetail.still_path) ??
+        DEFAULT_PLACEHOLDER_IMAGE;
+      blurSrc = tmdbImageUrl(IMAGE_PREFIX.PREVIEW, episodeDetail.still_path);
     } else if (seasonDetails?.poster_path) {
-      imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${seasonDetails.poster_path}`;
-      blurSrc = `${IMAGE_PREFIX.PREVIEW}${seasonDetails.poster_path}`;
+      imageUrl =
+        tmdbImageUrl(IMAGE_PREFIX.LQ_POSTER, seasonDetails.poster_path) ??
+        DEFAULT_PLACEHOLDER_IMAGE;
+      blurSrc = tmdbImageUrl(IMAGE_PREFIX.PREVIEW, seasonDetails.poster_path);
     }
   }
   return (
@@ -390,10 +397,10 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
 });
 const PersonCard = memo((props: PersonCardSpecificProps) => {
   const { id, name, profile_path, known_for_department, priority } = props;
-  const imageUrl = `${IMAGE_PREFIX.SD_PROFILE}${profile_path}`;
-  const blurSrc = profile_path
-    ? `${IMAGE_PREFIX.PREVIEW}${profile_path}`
-    : undefined;
+  const imageUrl =
+    tmdbImageUrl(IMAGE_PREFIX.SD_PROFILE, profile_path) ??
+    DEFAULT_PLACEHOLDER_IMAGE;
+  const blurSrc = tmdbImageUrl(IMAGE_PREFIX.PREVIEW, profile_path);
 
   return (
     <Link

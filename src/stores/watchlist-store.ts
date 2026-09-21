@@ -9,6 +9,7 @@ import type {
   ReactionStatus,
 } from "@/domain/watchlist";
 import type { PersistedStateSanitizer } from "@/stores/guest-store-kit";
+import { toTmdbPath } from "@/lib/tmdb-image";
 import { inferStatusFromProgress, normalizeProgressStatus } from "@/lib/utils";
 import {
   mediaTypeSchema,
@@ -117,7 +118,7 @@ function buildFallbackItem(
     title: metadata?.title ?? `Media ${id}`,
     type,
     external_id: String(id),
-    image: metadata?.image ?? "",
+    image: toTmdbPath(metadata?.image) ?? "",
     rating: metadata?.rating ?? 0,
     release_date: metadata?.release_date ?? "",
     overview: metadata?.overview ?? undefined,
@@ -150,7 +151,7 @@ export function mapWatchlistRowToItem(item: {
     title: item.title ?? "Unknown Title",
     type: item.mediaType as MediaType,
     external_id: String(item.tmdbId),
-    image: item.image ?? "",
+    image: toTmdbPath(item.image) ?? "",
     rating: item.rating ?? 0,
     release_date: item.releaseDate ?? "",
     overview: item.overview ?? undefined,
@@ -170,7 +171,7 @@ function mergeMediaMetadata(
   return {
     ...item,
     title: metadata?.title ?? item.title,
-    image: metadata?.image ?? item.image,
+    image: toTmdbPath(metadata?.image) ?? item.image,
     rating: metadata?.rating ?? item.rating,
     release_date: metadata?.release_date ?? item.release_date,
     overview: metadata?.overview ?? item.overview,

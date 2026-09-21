@@ -1,3 +1,4 @@
+import { usePostHog } from "@posthog/react";
 import { Image as ReactImage } from "@unpic/react";
 import { memo, useCallback, useMemo, useState } from "react";
 
@@ -19,6 +20,7 @@ const ImageComponent = ({
   fallbackImage?: string;
   blurSrc?: string;
 }) => {
+  const posthog = usePostHog();
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [prevSrc, setPrevSrc] = useState(initialSrc);
@@ -31,7 +33,10 @@ const ImageComponent = ({
 
   const handleError = useCallback(() => {
     setError(true);
-  }, []);
+    // No client telemetry existed for image load failures, so the blank-poster
+    // symptom could not be sized. TMDB URLs are public content, not PII.
+    posthog?.capture("image_load_failed", { image_src: initialSrc });
+  }, [posthog, initialSrc]);
 
   const handleLoad = useCallback(() => {
     setLoaded(true);
