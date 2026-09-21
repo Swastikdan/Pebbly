@@ -8,7 +8,6 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import type { MediaType } from "@/domain/media";
 import type { RecommendationHistoryEntry } from "@/hooks/use-recommendations";
 import { DefaultLoader } from "@/components/default-loader";
-import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { RecommendationFilters } from "@/components/recommendations/recommendation-filters";
 import { RecommendationHistory } from "@/components/recommendations/recommendation-history";
@@ -31,26 +30,14 @@ export const Route = createLazyFileRoute("/recommendations")({
 });
 
 function RecommendationsPage() {
-  const { hasFeature, loading: accessLoading, isSignedIn } = usePermissions();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (
-    isMounted &&
-    !accessLoading &&
-    (!isSignedIn || !hasFeature("ai-recommendations"))
-  ) {
-    return <DefaultNotFoundComponent />;
-  }
+  const loaderData = Route.useLoaderData();
+  const { isSignedIn } = usePermissions();
 
   return (
     <PageShell>
       <RecommendationsContent
         isSignedIn={isSignedIn}
-        accessLoading={!isMounted || accessLoading}
+        userId={loaderData.userId}
       />
     </PageShell>
   );
@@ -78,10 +65,10 @@ const GEN_STAGES = [
 
 function RecommendationsContent({
   isSignedIn,
-  accessLoading,
+  userId,
 }: {
   isSignedIn: boolean;
-  accessLoading: boolean;
+  userId?: string;
 }) {
   const {
     history,
@@ -93,16 +80,17 @@ function RecommendationsContent({
     generateMore,
     deleteEntry,
     updateVerified,
-  } = useRecommendations();
+  } = useRecommendations(userId);
 
   const { watchlist, loading: watchlistLoading } = useWatchlist();
 
   const { user } = useUser();
+  const effectiveUserId = user?.id ?? userId;
   const queryClient = useQueryClient();
   const trackedTmdbIdsQuery = useQuery({
-    queryKey: queryKeys.watchlist.trackedTmdbIds(user?.id),
+    queryKey: queryKeys.watchlist.trackedTmdbIds(effectiveUserId),
     queryFn: () => unwrap(getTrackedTmdbIds()),
-    enabled: !!isSignedIn,
+    enabled: !!isSignedIn || !!userId,
   });
   const trackedIdSet = useMemo<Set<number>>(
     () => new Set((trackedTmdbIdsQuery.data ?? []) as number[]),
@@ -267,7 +255,7 @@ function RecommendationsContent({
           })()
         : null}
 
-      {(accessLoading || historyLoading) && !isGenerating && <DefaultLoader />}
+      {historyLoading && !isGenerating && <DefaultLoader />}
 
       {isGenerating && (
         <div className="animate-in fade-in space-y-4 duration-300">
@@ -293,25 +281,22 @@ function RecommendationsContent({
         </div>
       )}
 
-      {!accessLoading && !historyLoading && !isGenerating && activeEntry && (
+      {!historyLoading && !isGenerating && activeEntry && (
         <RecommendationResults
           entry={activeEntry}
           updateVerified={updateVerified}
         />
       )}
 
-      {!accessLoading &&
-        !historyLoading &&
-        !isGenerating &&
-        filteredHistory.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-4 py-20">
-            <BrainCircuit className="text-muted-foreground/40 size-10" />
-            <p className="text-muted-foreground max-w-sm text-center text-sm">
-              Generate your first recommendations using your watchlist or by
-              selecting genres above.
-            </p>
-          </div>
-        )}
+      {!historyLoading && !isGenerating && filteredHistory.length === 0 && (
+        <div className="flex flex-col items-center justify-center gap-4 py-20">
+          <BrainCircuit className="text-muted-foreground/40 size-10" />
+          <p className="text-muted-foreground max-w-sm text-center text-sm">
+            Generate your first recommendations using your watchlist or by
+            selecting genres above.
+          </p>
+        </div>
+      )}
 
       {filteredHistory.length > 0 && (
         <RecommendationHistory

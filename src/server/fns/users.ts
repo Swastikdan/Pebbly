@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
+import type { ApiResult } from "../schema/common";
 import { invalidateUserCache } from "../auth";
 import { users } from "../db/schema";
 import { ok } from "../schema/common";
@@ -33,3 +34,24 @@ export const storeUser = createServerFn({ method: "POST" })
       },
     ),
   );
+
+export type AuthSessionResult = {
+  isSignedIn: boolean;
+  userId: string | null;
+};
+
+export const getAuthSession = createServerFn({ method: "POST" }).handler(() =>
+  authedFn(
+    {
+      mode: "current",
+      guest: () => ok({ isSignedIn: false, userId: null }),
+    },
+    undefined,
+    async ({ claims }): Promise<ApiResult<AuthSessionResult>> => {
+      return ok({
+        isSignedIn: true,
+        userId: claims?.sub ?? null,
+      });
+    },
+  ),
+);

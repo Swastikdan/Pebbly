@@ -36,6 +36,7 @@ export function MediaDetailPage(props: {
   hasMorePosters: boolean;
   aboveMedia?: ReactNode;
   belowMedia?: ReactNode;
+  initialRegion?: string;
 }) {
   const { entity, mediaPage } = props;
   return (
@@ -76,6 +77,7 @@ export function MediaDetailPage(props: {
         id={props.id}
         type={entity}
         inTheaters={props.inTheaters}
+        initialRegion={props.initialRegion}
       />
       <MediaDescription description={props.overview} />
       <CastSection

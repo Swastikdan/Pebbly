@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   notFound,
@@ -30,8 +30,7 @@ const listPageSearchSchema = object({
 
 export const Route = createFileRoute("/list/$type/$slug")({
   validateSearch: listPageSearchSchema,
-  loaderDeps: ({ search }) => ({ page: search.page }),
-  loader: async ({ params, context, deps }) => {
+  loader: async ({ params, context, location }) => {
     const { type, slug } = params;
 
     const isValidSlug = MEDIA_PAGE_SLUGS.some(
@@ -51,7 +50,8 @@ export const Route = createFileRoute("/list/$type/$slug")({
 
     const mediatype = slugToMediaType(type) ?? "tv";
     const query = `${type}_${slug}` as MediaListQuery["type"];
-    const page = deps.page ?? 1;
+    const search = location.search as { page?: number };
+    const page = search.page ?? 1;
 
     await context.queryClient.ensureQueryData({
       queryKey: queryKeys.tmdb.mediaList(query, page),
@@ -77,8 +77,37 @@ export const Route = createFileRoute("/list/$type/$slug")({
       },
     ],
   }),
+  pendingComponent: MediaListPageSkeleton,
   component: MediaListPage,
 });
+
+function MediaListPageSkeleton() {
+  const { type, slug } = Route.useParams();
+  const navItem = NAV_ITEMS.find((item) => item.slug === type);
+  const subNavItem = navItem?.submenu.find((item) => item.slug === slug);
+
+  return (
+    <section className="flex min-h-screen w-full justify-center">
+      <div className="top-0 w-full max-w-7xl items-center justify-center p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <GoBack title="Back" />
+          {subNavItem && navItem ? (
+            <ShareButton title={`${subNavItem.name} ${navItem.name}`} />
+          ) : null}
+        </div>
+        {subNavItem && navItem ? (
+          <h1 className="text-h1 text-start">
+            {subNavItem.name} {navItem.name}
+          </h1>
+        ) : (
+          <div className="bg-muted h-10 w-48 animate-pulse rounded" />
+        )}
+
+        <PagedMediaGrid isLoading={true}>{null}</PagedMediaGrid>
+      </div>
+    </section>
+  );
+}
 
 function MediaListPage() {
   const { mediatype, query, navItem, subNavItem } = Route.useLoaderData();
@@ -95,6 +124,7 @@ function MediaListPage() {
   } = useQuery({
     queryKey: queryKeys.tmdb.mediaList(query, urlPage),
     queryFn: () => getMediaList({ type: query, page: urlPage }),
+    placeholderData: keepPreviousData,
   });
 
   const { page, isPending, totalPages, handlePageChange } = useUrlPagedQuery({

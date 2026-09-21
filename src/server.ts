@@ -10,6 +10,7 @@ export default createServerEntry({
   async fetch(request: Request) {
     const posthog = getPostHogClient();
     let requestDistinctId = "anonymous";
+    let requestSessionId: string | undefined;
 
     try {
       if (!posthog) return await handler.fetch(request);
@@ -17,6 +18,7 @@ export default createServerEntry({
       const url = new URL(request.url);
       const sessionId =
         request.headers.get("X-PostHog-Session-Id") || undefined;
+      requestSessionId = sessionId;
       const distinctId =
         request.headers.get("X-PostHog-Distinct-Id") || "anonymous";
       requestDistinctId = distinctId;
@@ -42,19 +44,26 @@ export default createServerEntry({
               span.setAttribute("http.response.status_code", response.status);
               if (response.status >= 500) {
                 span.setStatus("error", `HTTP ${response.status}`);
+                const errorBody = await response.clone().text();
                 console.error(
                   "[backend] request error",
                   JSON.stringify({
                     method: request.method,
                     path: url.pathname,
                     status: response.status,
+                    errorBody: errorBody.slice(0, 1000),
                   }),
                 );
-                await captureServerEvent(distinctId, "backend_request_error", {
-                  method: request.method,
-                  path: url.pathname,
-                  status: response.status,
-                });
+                await captureServerEvent(
+                  distinctId,
+                  "backend_request_error",
+                  {
+                    method: request.method,
+                    path: url.pathname,
+                    status: response.status,
+                  },
+                  { sessionId },
+                );
               } else {
                 span.setStatus("ok");
               }
@@ -76,7 +85,9 @@ export default createServerEntry({
         }),
       );
       try {
-        await captureServerException(error, requestDistinctId);
+        await captureServerException(error, requestDistinctId, {
+          sessionId: requestSessionId,
+        });
       } catch (telemetryError) {
         console.warn(
           "[posthog] Failed to capture request exception:",

@@ -1,13 +1,19 @@
-import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
-import { DefaultLoader } from "@/components/default-loader";
-import { DefaultNotFoundComponent } from "@/components/default-not-found";
-import { usePermissions } from "@/hooks/use-permissions";
+import { getUserFeaturesFn } from "@/server/fns/admin";
+import { unwrap } from "@/server/schema/common";
 
 export const Route = createFileRoute("/admin")({
-  component: AdminPage,
+  loader: async () => {
+    const userFeatures = await unwrap(getUserFeaturesFn()).catch(() => ({
+      isAdmin: false,
+    }));
+    if (!userFeatures.isAdmin) {
+      throw notFound();
+    }
+    return { isAdmin: true };
+  },
   head: () => ({
     meta: [
       { title: "Admin | Pebbly" },
@@ -17,18 +23,9 @@ export const Route = createFileRoute("/admin")({
       },
     ],
   }),
+  component: AdminPage,
 });
 
 function AdminPage() {
-  const { isAdmin, loading, isSignedIn } = usePermissions();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted || loading) return <DefaultLoader />;
-  if (!isSignedIn || !isAdmin) return <DefaultNotFoundComponent />;
-
   return <AdminDashboard />;
 }

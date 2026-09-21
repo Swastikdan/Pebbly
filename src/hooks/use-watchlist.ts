@@ -43,19 +43,25 @@ export function useWatchlist() {
   const localMediaState = useWatchlistStore((state) => state.mediaState);
 
   const watchlist: WatchlistItem[] = useMemo(() => {
+    if (remote.data !== undefined) {
+      return selectInWatchlist(remote.data.map(mapWatchlistRowToItem));
+    }
+
     if (!isLoaded) {
       return [];
     }
 
     if (isSignedIn) {
-      if (!remote.data) return [];
-      return selectInWatchlist(remote.data.map(mapWatchlistRowToItem));
+      return [];
     }
 
     return selectInWatchlist(localMediaState);
   }, [isLoaded, isSignedIn, remote.data, localMediaState]);
 
-  const loading = !isLoaded || (isSignedIn && remote.isPending);
+  const loading =
+    remote.data !== undefined
+      ? false
+      : !isLoaded || (isSignedIn && remote.isPending);
 
   return { watchlist, loading };
 }
@@ -66,17 +72,27 @@ export function useAllMediaStates() {
   const localMediaState = useWatchlistStore((state) => state.mediaState);
 
   const allMediaStates: WatchlistItem[] = useMemo(() => {
-    if (isSignedIn) {
-      if (!remote.data) return [];
+    if (remote.data !== undefined) {
       return [...remote.data]
         .map((item) => mapWatchlistRowToItem(item))
         .sort((a, b) => b.updated_at - a.updated_at);
     }
 
-    return [...localMediaState].sort((a, b) => b.updated_at - a.updated_at);
-  }, [isSignedIn, remote.data, localMediaState]);
+    if (!isLoaded) {
+      return [];
+    }
 
-  const loading = !isLoaded || (isSignedIn && remote.isPending);
+    if (isSignedIn) {
+      return [];
+    }
+
+    return [...localMediaState].sort((a, b) => b.updated_at - a.updated_at);
+  }, [isSignedIn, remote.data, localMediaState, isLoaded]);
+
+  const loading =
+    remote.data !== undefined
+      ? false
+      : !isLoaded || (isSignedIn && remote.isPending);
 
   return { allMediaStates, loading };
 }

@@ -16,6 +16,7 @@ type PageTab = "watchlist" | "my-lists";
 
 function WatchlistPage() {
   const search = Route.useSearch();
+  const loaderData = Route.useLoaderData();
   const navigate = useNavigate({ from: "/watchlist" });
 
   const activeTab: PageTab =
@@ -65,7 +66,10 @@ function WatchlistPage() {
 
               <TabsPanel value="my-lists" className="mt-0">
                 <SilentErrorBoundary>
-                  <MyListsTab />
+                  <MyListsTab
+                    initialUserId={loaderData?.userId ?? undefined}
+                    initialSignedIn={loaderData?.isSignedIn}
+                  />
                 </SilentErrorBoundary>
               </TabsPanel>
             </Tabs>

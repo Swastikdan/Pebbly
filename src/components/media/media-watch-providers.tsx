@@ -142,15 +142,18 @@ export const MediaWatchProviders = (props: {
   id: number;
   type: MediaType;
   inTheaters?: boolean;
+  initialRegion?: string;
 }) => {
-  const { id, type } = props;
-  const [region, setRegion] = useState<string>("US");
+  const { id, type, initialRegion } = props;
+  const [region, setRegion] = useState<string>(initialRegion ?? "US");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setRegion(detectRegion());
-  }, []);
+    if (!initialRegion) {
+      setRegion(detectRegion());
+    }
+  }, [initialRegion]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: queryKeys.tmdb.watchProviders(id, type),
@@ -175,11 +178,11 @@ export const MediaWatchProviders = (props: {
   }, [resultsByRegion]);
 
   // Stable min-height wrapper avoids CLS between LoadingState (140px)
-  // and the resolved rows (typically 140-200px). Mount gating keeps SSR
-  // and client region consistent without unmounting the placeholder.
+  // and the resolved rows (typically 140-200px). When initialRegion is
+  // provided via edge SSR detection, render real providers immediately.
   if (isLoading) return <LoadingState />;
 
-  if (!mounted) return <LoadingState />;
+  if (!mounted && !initialRegion) return <LoadingState />;
 
   if (!resultsByRegion) return isError ? null : <LoadingState />;
   if (availableRegions.length === 0) {

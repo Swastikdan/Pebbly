@@ -50,7 +50,7 @@ export const getUserRecommendationAccess = createServerFn({
       user,
     }): Promise<
       ApiResult<
-        | { hasAccess: true }
+        | { hasAccess: true; userId: string }
         | { hasAccess: false; reason: "not_authenticated" | "feature_disabled" }
       >
     > => {
@@ -58,7 +58,7 @@ export const getUserRecommendationAccess = createServerFn({
       if (!allowed) {
         return ok({ hasAccess: false, reason: "feature_disabled" });
       }
-      return ok({ hasAccess: true });
+      return ok({ hasAccess: true, userId: claims.sub });
     },
   ),
 );

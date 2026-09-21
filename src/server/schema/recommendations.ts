@@ -133,7 +133,10 @@ export type HomepageRecommendationsResult = {
 };
 
 export const getUserRecommendationAccessResultSchema = v.variant("hasAccess", [
-  v.object({ hasAccess: v.literal(true) }),
+  v.object({
+    hasAccess: v.literal(true),
+    userId: v.optional(v.string()),
+  }),
   v.object({
     hasAccess: v.literal(false),
     reason: v.picklist(["not_authenticated", "feature_disabled"]),

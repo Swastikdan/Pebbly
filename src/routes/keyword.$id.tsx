@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useNavigate,
@@ -23,10 +23,10 @@ const keywordPageSearchSchema = object({
 
 export const Route = createFileRoute("/keyword/$id")({
   validateSearch: keywordPageSearchSchema,
-  loaderDeps: ({ search }) => ({ page: search.page }),
-  loader: async ({ params, context, deps }) => {
+  loader: async ({ params, context, location }) => {
     const { id } = params;
-    const page = deps.page ?? 1;
+    const search = location.search as { page?: number };
+    const page = search.page ?? 1;
     const [keyword] = await Promise.all([
       getKeywordDetails({ id: Number(id) }),
       context.queryClient.ensureQueryData({
@@ -47,8 +47,23 @@ export const Route = createFileRoute("/keyword/$id")({
       },
     ],
   }),
+  pendingComponent: KeywordPageSkeleton,
   component: KeywordPage,
 });
+
+function KeywordPageSkeleton() {
+  return (
+    <section className="flex min-h-screen w-full justify-center">
+      <div className="top-0 w-full max-w-7xl items-center justify-center p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <GoBack title="Back" />
+        </div>
+        <div className="bg-muted h-10 w-48 animate-pulse rounded pb-5" />
+        <PagedMediaGrid isLoading={true}>{null}</PagedMediaGrid>
+      </div>
+    </section>
+  );
+}
 
 function KeywordPage() {
   const { keyword } = Route.useLoaderData();
@@ -67,6 +82,7 @@ function KeywordPage() {
     queryKey: queryKeys.tmdb.discoverKeyword(Number(id), urlPage),
     queryFn: () =>
       getDiscoverMovies({ with_keywords: Number(id), page: urlPage }),
+    placeholderData: keepPreviousData,
   });
 
   const { page, isPending, totalPages, handlePageChange } = useUrlPagedQuery({

@@ -21,7 +21,7 @@ export const Route = createFileRoute("/series/$id/{-$slug}/")(
 );
 
 function TvHomePage() {
-  const { id: tv_id, slug: tv_slug } = Route.useLoaderData();
+  const { id: tv_id, slug: tv_slug, region } = Route.useLoaderData();
   const tv_id_param = parseInt(tv_id, 10);
   const { data, error, isLoading } = useQuery<Tv>({
     queryKey: queryKeys.tmdb.tvDetails(tv_id_param),
@@ -49,28 +49,30 @@ function TvHomePage() {
     genres,
     id,
     external_ids: { imdb_id },
+    name,
     original_name,
     overview,
     poster_path,
-    backdrop_path,
-    first_air_date: release_date,
-    content_ratings,
+    first_air_date,
     tagline,
-    name,
     vote_average,
     vote_count,
-    images,
+    backdrop_path,
     credits,
+    images,
     videos,
-    status,
     keywords,
+    content_ratings,
+    status,
   } = data;
+
+  const release_date = first_air_date;
 
   const mediaPage = buildSharedMediaPageData({
     title: name,
     originalTitle: original_name,
-    posterPath: poster_path,
     releaseDate: release_date,
+    posterPath: poster_path,
     genres,
     images,
     credits,
@@ -83,6 +85,7 @@ function TvHomePage() {
       entity="tv"
       mediaPage={mediaPage}
       id={id}
+      initialRegion={region}
       overview={overview}
       posterPath={poster_path}
       backdropPath={backdrop_path}
