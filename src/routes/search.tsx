@@ -12,10 +12,11 @@ const searchPageSearchSchema = object({
 export const Route = createFileRoute("/search")({
   validateSearch: searchPageSearchSchema,
   loaderDeps: ({ search }) => ({ query: search.query, page: search.page }),
-  // Search parameters change while the user is actively typing. Keep the
-  // current route mounted while the loader warms the next query so the input
-  // never loses focus or gets replaced by the app-wide loader.
-  pendingComponent: () => null,
+  // Search parameters change while the user is actively typing. Never swap in
+  // a pending route component for this navigation: keeping the current route
+  // mounted preserves the input, keyboard, and existing result list while the
+  // next query is fetched.
+  pendingMs: Number.POSITIVE_INFINITY,
   loader: async ({ context, deps }) => {
     const trimmedQuery = (deps.query ?? "").trim();
     const hasValidQuery = trimmedQuery.length >= 2;
