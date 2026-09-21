@@ -147,7 +147,10 @@ export function SearchPage() {
   const noResultsDueToFilters =
     filteredData.length === 0 && hasActiveFilters && baselineNonPersonCount > 0;
   const showPagination = hasResults && totalPages > 1;
-  const isLoadingState = isLoading || isPending || isFetching;
+  // A search refetch is an in-place update, not a page transition. Keeping the
+  // previous results mounted prevents the grid from flashing away and, more
+  // importantly, leaves the focused search input untouched while typing.
+  const isLoadingState = isLoading || isPending;
 
   let content: React.ReactNode;
   if (!hasValidQuery) {
@@ -410,7 +413,12 @@ export function SearchPage() {
             </p>
           </div>
         )}
-        <SearchBar query={query} updateUrlOnChange autoFocus={!hasValidQuery} />
+        <SearchBar
+          query={query}
+          updateUrlOnChange
+          isLoading={isFetching}
+          autoFocus={!hasValidQuery}
+        />
         {content}
       </div>
     </section>

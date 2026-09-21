@@ -12,6 +12,10 @@ const searchPageSearchSchema = object({
 export const Route = createFileRoute("/search")({
   validateSearch: searchPageSearchSchema,
   loaderDeps: ({ search }) => ({ query: search.query, page: search.page }),
+  // Search parameters change while the user is actively typing. Keep the
+  // current route mounted while the loader warms the next query so the input
+  // never loses focus or gets replaced by the app-wide loader.
+  pendingComponent: () => null,
   loader: async ({ context, deps }) => {
     const trimmedQuery = (deps.query ?? "").trim();
     const hasValidQuery = trimmedQuery.length >= 2;

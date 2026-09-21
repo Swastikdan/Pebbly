@@ -54,11 +54,23 @@ const SearchBar = memo(
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-      if (document.activeElement?.id === searchId && query) {
+      // While the input owns focus, its local value is authoritative. The URL
+      // is updated after the debounce, but syncing it back during that same
+      // navigation can overwrite the user's in-progress text and remount the
+      // input on mobile, which dismisses the keyboard.
+      if (document.activeElement?.id === searchId) {
         return;
       }
       setValue(query ?? "");
     }, [query, searchId]);
+
+    useEffect(() => {
+      return () => {
+        if (debounceTimeoutRef.current) {
+          clearTimeout(debounceTimeoutRef.current);
+        }
+      };
+    }, []);
 
     const handleChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
