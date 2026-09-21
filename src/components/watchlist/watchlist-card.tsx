@@ -16,6 +16,7 @@ import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
 import { toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
+import { tmdbImageUrl } from "@/lib/tmdb-image";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
 // Status advances one way only: watch-later → watching → done. "done" is
@@ -49,10 +50,8 @@ export function WatchlistCard({
   const isRecommended = reaction === "recommended";
   const ProgressIcon = progressOption.icon;
   const formattedTitle = formatMediaTitle.encode(item.title);
-  const imageUrl = `${IMAGE_PREFIX.LQ_POSTER}${item.image}`;
-  const blurSrc = item.image
-    ? `${IMAGE_PREFIX.PREVIEW}${item.image}`
-    : undefined;
+  const imageUrl = tmdbImageUrl(IMAGE_PREFIX.LQ_POSTER, item.image);
+  const blurSrc = tmdbImageUrl(IMAGE_PREFIX.PREVIEW, item.image);
   const year = releaseYearOf(item.release_date);
 
   const { setProgressStatus } = useRepository();

@@ -3,15 +3,17 @@ import { Link } from "@tanstack/react-router";
 
 import { Star } from "@/components/ui/icons";
 import { IMAGE_PREFIX } from "@/constants";
+import { tmdbImageUrl } from "@/lib/tmdb-image";
 import { cn } from "@/lib/utils";
 
 export function resolvePosterSrc(
   image?: string | null,
   backdrop?: string | null,
 ) {
-  if (image) return `${IMAGE_PREFIX.LQ_POSTER}${image}`;
-  if (backdrop) return `${IMAGE_PREFIX.LQ_BACKDROP}${backdrop}`;
-  return undefined;
+  return (
+    tmdbImageUrl(IMAGE_PREFIX.LQ_POSTER, image) ??
+    tmdbImageUrl(IMAGE_PREFIX.LQ_BACKDROP, backdrop)
+  );
 }
 
 export function releaseYearOf(releaseDate?: string | null) {
