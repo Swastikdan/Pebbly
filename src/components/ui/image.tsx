@@ -8,6 +8,12 @@ import { DEFAULT_PLACEHOLDER_IMAGE } from "@/constants";
 import { tmdbSrcSet } from "@/lib/tmdb-image";
 import { cn } from "@/lib/utils";
 
+// `ImageProps` is a discriminated union over `layout`; a plain `Omit` would
+// collapse that discriminant, so omit per union member to keep it intact.
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
+  ? Omit<T, K>
+  : never;
+
 const ImageComponent = ({
   src: initialSrc,
   fallbackImage,
@@ -16,7 +22,8 @@ const ImageComponent = ({
   blurSrc,
   className,
   ...props
-}: ImageProps & {
+}: DistributiveOmit<ImageProps, "src"> & {
+  src?: string;
   fallbackImage?: string;
   blurSrc?: string;
 }) => {
@@ -54,9 +61,13 @@ const ImageComponent = ({
     }
   }, []);
 
-  const currentSrc = error
-    ? (fallbackImage ?? DEFAULT_PLACEHOLDER_IMAGE)
-    : initialSrc;
+  // A falsy src is an image the caller could not build (an absent or non-TMDB
+  // path), so render the placeholder from the start rather than passing an
+  // empty src to the browser. Callers therefore never repeat this fallback.
+  const currentSrc =
+    error || !initialSrc
+      ? (fallbackImage ?? DEFAULT_PLACEHOLDER_IMAGE)
+      : initialSrc;
 
   // TMDB assets are size-variant ladders on one CDN URL, so a srcset lets
   // phones pull w185/w342 posters instead of the fixed w500/w780 JPEGs.

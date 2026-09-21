@@ -12,7 +12,7 @@ import {
   MediaRowCardShell,
   releaseYearOf,
 } from "@/components/watchlist/media-row-card-shell";
-import { DEFAULT_PLACEHOLDER_IMAGE, IMAGE_PREFIX } from "@/constants";
+import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
 import { toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
@@ -50,9 +50,7 @@ export function WatchlistCard({
   const isRecommended = reaction === "recommended";
   const ProgressIcon = progressOption.icon;
   const formattedTitle = formatMediaTitle.encode(item.title);
-  const imageUrl =
-    tmdbImageUrl(IMAGE_PREFIX.LQ_POSTER, item.image) ??
-    DEFAULT_PLACEHOLDER_IMAGE;
+  const imageUrl = tmdbImageUrl(IMAGE_PREFIX.LQ_POSTER, item.image);
   const blurSrc = tmdbImageUrl(IMAGE_PREFIX.PREVIEW, item.image);
   const year = releaseYearOf(item.release_date);
 
