@@ -1,4 +1,5 @@
-import { PostHogProvider } from "@posthog/react";
+import { useUser } from "@clerk/react";
+import { PostHogProvider, usePostHog } from "@posthog/react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   createRootRouteWithContext,
@@ -21,6 +22,7 @@ import { NavigationProgressBar } from "@/components/navigation-progress-bar";
 import { ToastProvider } from "@/components/ui/toast";
 import { SITE_CONFIG } from "@/constants";
 import { THEME_STORAGE_KEY, useTheme } from "@/hooks/use-theme";
+import { getAnonymousId } from "@/lib/anonymous-id";
 import { reportClientSideError } from "@/lib/client-error-reporting";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
 import appCss from "@/styles.css?url";
@@ -90,9 +92,37 @@ function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           typeof window !== "undefined" ? [window.location.hostname] : [],
       }}
     >
+      <AnalyticsIdentity />
       {children}
     </PostHogProvider>
   );
+}
+
+function AnalyticsIdentity() {
+  const posthog = usePostHog();
+  const { isLoaded, isSignedIn, user } = useUser();
+  const wasSignedInRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    if (!posthog || !isLoaded) return;
+
+    if (wasSignedInRef.current === true && !isSignedIn) {
+      posthog.reset();
+    }
+    wasSignedInRef.current = Boolean(isSignedIn);
+
+    if (isSignedIn && user?.id) {
+      posthog.identify(user.id);
+      return;
+    }
+
+    const anonymousId = getAnonymousId();
+    if (anonymousId) {
+      posthog.identify(anonymousId, { account_type: "anonymous" });
+    }
+  }, [isLoaded, isSignedIn, posthog, user?.id]);
+
+  return null;
 }
 
 // Blocking, pre-paint theme resolution. Runs before any stylesheet renders so
