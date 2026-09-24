@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { MediaType } from "@/domain/media";
@@ -23,36 +23,25 @@ const MediaList = memo(
     defaultMediatype?: MediaType;
     priorityCount?: number;
   }) => {
-    const [showAll, setShowAll] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(() =>
+      Math.min(props.data.length, INITIAL_VISIBLE_COUNT),
+    );
 
-    useEffect(() => {
-      if (showAll || props.data.length <= INITIAL_VISIBLE_COUNT) return;
-      if ("requestIdleCallback" in window) {
-        const handle = window.requestIdleCallback(() => setShowAll(true), {
-          timeout: 2500,
-        });
-        return () => window.cancelIdleCallback(handle);
-      }
-      const timer = setTimeout(() => setShowAll(true), 1500);
-      return () => clearTimeout(timer);
-    }, [showAll, props.data.length]);
+    const revealNextPage = useCallback(() => {
+      setVisibleCount((current) =>
+        Math.min(current + INITIAL_VISIBLE_COUNT, props.data.length),
+      );
+    }, [props.data.length]);
 
-    const revealAll = () => {
-      if (!showAll) setShowAll(true);
-    };
-
-    const items =
-      showAll || props.data.length <= INITIAL_VISIBLE_COUNT
-        ? props.data
-        : props.data.slice(0, INITIAL_VISIBLE_COUNT);
+    const renderedCount = Math.min(
+      props.data.length,
+      Math.max(visibleCount, INITIAL_VISIBLE_COUNT),
+    );
+    const items = props.data.slice(0, renderedCount);
 
     return (
-      <ScrollContainer isButtonsVisible={true}>
-        <div
-          className="flex gap-2 p-4 first:ps-0 last:pe-0"
-          onPointerEnter={revealAll}
-          onTouchStart={revealAll}
-        >
+      <ScrollContainer isButtonsVisible={true} onEndReached={revealNextPage}>
+        <div className="flex gap-2 p-4 first:ps-0 last:pe-0">
           {items.map((item, index) => (
             <MediaCard
               key={item.id}

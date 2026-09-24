@@ -263,10 +263,15 @@
 }
 @layer base {
   html {
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
+    overflow-y: auto;
     text-underline-position: from-font;
     text-decoration-skip-ink: auto;
+  }
+  @media (min-width: 768px) {
+    html {
+      overflow-y: scroll;
+      scrollbar-gutter: stable;
+    }
   }
   * {
     @apply border-border outline-ring/50;
@@ -639,7 +644,6 @@
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: auto;
   touch-action: pan-x pan-y;
-  will-change: scroll-position;
 }
 .content-visibility-auto {
   content-visibility: auto;
@@ -669,7 +673,6 @@
   background: var(--background);
   border-top: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
   transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
 }
 @media (min-width: 768px) {
   .mobile-bottom-nav {

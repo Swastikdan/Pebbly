@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type {
@@ -120,12 +120,6 @@ export function useMediaState(id: string, mediaType: MediaType) {
 
 export function useToggleWatchlistItem() {
   const repository = useRepository();
-  const watchlistRef = useRef<WatchlistItem[]>([]);
-  const { watchlist } = useWatchlist();
-
-  useEffect(() => {
-    watchlistRef.current = watchlist;
-  });
 
   return useCallback(
     async (
@@ -138,45 +132,15 @@ export function useToggleWatchlistItem() {
         release_date: string;
         overview?: string;
       },
-      explicitInWatchlist?: boolean,
+      explicitlyInWatchlist: boolean,
     ) => {
-      const currentlyInWatchlist =
-        explicitInWatchlist !== undefined
-          ? explicitInWatchlist
-          : watchlistRef.current.some(
-              (i) =>
-                String(i.external_id) === String(item.id) &&
-                i.type === item.media_type &&
-                i.inWatchlist,
-            );
-      const inWatchlist = !currentlyInWatchlist;
-
-      await repository.toggleMembership(item, inWatchlist);
+      await repository.toggleMembership(item, !explicitlyInWatchlist);
     },
     [repository],
   );
 }
 
-export function useWatchlistItem(id: string, mediaType?: MediaType) {
-  const { watchlist } = useWatchlist();
-  const mediaState = useMediaState(id, mediaType ?? "movie");
-
-  const isOnWatchList = useMemo(() => {
-    if (mediaState !== null && mediaState !== undefined) {
-      return Boolean(mediaState.inWatchlist);
-    }
-    if (!mediaType) {
-      return watchlist.some(
-        (item) => String(item.external_id) === String(id) && item.inWatchlist,
-      );
-    }
-    return watchlist.some(
-      (item) =>
-        String(item.external_id) === String(id) &&
-        item.type === mediaType &&
-        item.inWatchlist,
-    );
-  }, [watchlist, id, mediaType, mediaState]);
-
-  return { isOnWatchList };
+export function useWatchlistItem(id: string, mediaType: MediaType) {
+  const mediaState = useMediaState(id, mediaType);
+  return { isOnWatchList: Boolean(mediaState?.inWatchlist) };
 }

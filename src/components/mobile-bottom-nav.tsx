@@ -67,8 +67,8 @@ function useScrollDirection(pathname: string) {
 
   useEffect(() => {
     if (pathname) {
-      setHidden(false);
-      lastScrollY.current = 0;
+      setHidden((current) => (current ? false : current));
+      lastScrollY.current = window.scrollY;
     }
   }, [pathname]);
 
@@ -77,11 +77,12 @@ function useScrollDirection(pathname: string) {
     const delta = currentScrollY - lastScrollY.current;
 
     if (Math.abs(delta) > 8) {
-      setHidden(delta > 0 && currentScrollY > 60);
+      const shouldHide = delta > 0 && currentScrollY > 60;
+      setHidden((current) => (current === shouldHide ? current : shouldHide));
     }
 
     if (currentScrollY <= 10) {
-      setHidden(false);
+      setHidden((current) => (current ? false : current));
     }
 
     lastScrollY.current = currentScrollY;

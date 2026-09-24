@@ -79,7 +79,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
           release_date: release_date ?? "",
           overview,
         },
-        isOnWatchList,
+        isActive,
       );
       posthog?.capture(
         nextActive ? "watchlist_item_added" : "watchlist_item_removed",
@@ -91,7 +91,6 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
     }
   }, [
     isActive,
-    isOnWatchList,
     title,
     rating,
     image,

@@ -24,6 +24,63 @@ interface BaseCardProps {
   className?: string;
 }
 
+interface ContinueWatchingRemoveButtonProps {
+  id: number;
+  mediaType: MediaType;
+  title: string;
+  image: string;
+  rating: number;
+  releaseDate: string | null;
+  overview?: string;
+}
+
+const ContinueWatchingRemoveButton = memo(
+  (props: ContinueWatchingRemoveButtonProps) => {
+    const { id, mediaType, title, image, rating, releaseDate, overview } =
+      props;
+    const { removeFromContinueWatching } = useRemoveFromContinueWatching();
+    const { setProgressStatus } = useRepository();
+
+    return (
+      <button
+        type="button"
+        title="Remove from Continue Watching"
+        aria-label="Remove from Continue Watching"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          removeFromContinueWatching(id, mediaType);
+          toast({
+            title: "Removed from Continue Watching",
+            description: title,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                setProgressStatus({
+                  id: String(id),
+                  mediaType,
+                  progressStatus: "watching",
+                  metadata: {
+                    title,
+                    image,
+                    rating,
+                    release_date: releaseDate ?? "",
+                    overview,
+                  },
+                  currentStatus: "watch-later",
+                });
+              },
+            },
+          });
+        }}
+        className="hover:bg-destructive flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color] duration-150 hover:text-white"
+      >
+        <XIcon aria-hidden="true" className="size-4" />
+      </button>
+    );
+  },
+);
+
 interface MediaCardSpecificProps extends BaseCardProps {
   card_type: "horizontal" | "vertical";
   title: string;
@@ -116,9 +173,6 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
     isRecommended,
   } = props;
 
-  const { removeFromContinueWatching } = useRemoveFromContinueWatching();
-  const { setProgressStatus } = useRepository();
-
   const destination = mediaDetailRoute({
     mediaType: media_type,
     id,
@@ -187,41 +241,15 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
         )}
       >
         {isContinueWatching && (
-          <button
-            type="button"
-            title="Remove from Continue Watching"
-            aria-label="Remove from Continue Watching"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              removeFromContinueWatching(id, media_type);
-              toast({
-                title: "Removed from Continue Watching",
-                description: title,
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    setProgressStatus({
-                      id: String(id),
-                      mediaType: media_type,
-                      progressStatus: "watching",
-                      metadata: {
-                        title,
-                        image: poster_path ?? props.image ?? "",
-                        rating,
-                        release_date: release_date ?? "",
-                        overview,
-                      },
-                      currentStatus: "watch-later",
-                    });
-                  },
-                },
-              });
-            }}
-            className="hover:bg-destructive flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color] duration-150 hover:text-white"
-          >
-            <XIcon aria-hidden="true" className="size-4" />
-          </button>
+          <ContinueWatchingRemoveButton
+            id={id}
+            mediaType={media_type}
+            title={title}
+            image={poster_path ?? props.image ?? ""}
+            rating={rating}
+            releaseDate={release_date}
+            overview={overview}
+          />
         )}
         {!hideWatchlistButton && (
           <WatchlistButton

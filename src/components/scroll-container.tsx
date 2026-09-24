@@ -9,6 +9,7 @@ interface ScrollContainerProps {
   isButtonsVisible?: boolean;
   className?: string;
   scrollPercentage?: number;
+  onEndReached?: () => void;
 }
 
 const MOBILE_BREAKPOINT = 640;
@@ -18,10 +19,12 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
   isButtonsVisible = true,
   className,
   scrollPercentage = 0.9,
+  onEndReached,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number | null>(null);
+  const endReachedWidthRef = useRef<number | null>(null);
   const scrollStateRef = useRef({
     canScrollLeft: false,
     canScrollRight: false,
@@ -98,6 +101,45 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
 
   const scrollLeft = useCallback(() => scroll("left"), [scroll]);
   const scrollRight = useCallback(() => scroll("right"), [scroll]);
+
+  const notifyIfAtEnd = useCallback(
+    (element: HTMLElement) => {
+      if (!onEndReached) return;
+      const atEnd =
+        element.scrollLeft + element.clientWidth >= element.scrollWidth - 2;
+      if (!atEnd) {
+        endReachedWidthRef.current = null;
+        return;
+      }
+      if (endReachedWidthRef.current === element.scrollWidth) return;
+      endReachedWidthRef.current = element.scrollWidth;
+      onEndReached();
+    },
+    [onEndReached],
+  );
+
+  const handleScroll = useCallback(
+    (event: React.UIEvent<HTMLElement>) => {
+      notifyIfAtEnd(event.currentTarget);
+    },
+    [notifyIfAtEnd],
+  );
+
+  useEffect(() => {
+    const currentScrollRef = scrollRef.current;
+    const currentContentRef = contentRef.current;
+    if (!onEndReached || !currentScrollRef) return;
+
+    endReachedWidthRef.current = null;
+    const observer = new ResizeObserver(() => {
+      notifyIfAtEnd(currentScrollRef);
+    });
+    observer.observe(currentScrollRef);
+    if (currentContentRef) observer.observe(currentContentRef);
+    notifyIfAtEnd(currentScrollRef);
+
+    return () => observer.disconnect();
+  }, [notifyIfAtEnd, onEndReached]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -179,6 +221,7 @@ export const ScrollContainer: React.FC<ScrollContainerProps> = ({
         ref={scrollRef}
         aria-label="Scrollable content"
         className="scrollbar-hidden scroll-snap-x relative w-full overflow-x-auto rounded-md sm:scroll-smooth"
+        onScroll={onEndReached ? handleScroll : undefined}
       >
         <div ref={contentRef} className="flex w-max items-center">
           {children}
