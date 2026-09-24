@@ -1,5 +1,8 @@
+import { useUser } from "@clerk/react";
+import { ArrowRightLeft } from "lucide-react";
 import { useCallback, useId, useMemo, useState } from "react";
 
+import { openGuestMigrationModal } from "@/components/auth/guest-migration-dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Upload } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
@@ -9,12 +12,23 @@ import { WatchlistFilters } from "@/components/watchlist/watchlist-filters";
 import { WatchlistGrid } from "@/components/watchlist/watchlist-grid";
 import { useFilteredWatchlist } from "@/hooks/use-filtered-watchlist";
 import { useRemoveFromWatchlistWithUndo } from "@/hooks/use-remove-with-undo";
-import { useWatchlist } from "@/hooks/use-watchlist";
+import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
 import { useWatchlistImportExport } from "@/hooks/use-watchlist-import-export";
+import { useLocalListsStore } from "@/stores/local-lists-store";
+import { useLocalProgressStore } from "@/stores/local-progress-store";
 
 const WATCHLIST_PAGE_SIZE = 30;
 
 export function WatchlistTab() {
+  const { isSignedIn } = useUser();
+  const localMedia = useWatchlistStore((s) => s.mediaState);
+  const localEpisodes = useLocalProgressStore((s) => s.watchedEpisodes);
+  const localLists = useLocalListsStore((s) => s.lists);
+  const hasGuestData =
+    localMedia.length > 0 ||
+    Object.values(localEpisodes).some(Boolean) ||
+    localLists.length > 0;
+
   const importInputId = useId();
   const { watchlist: watchlistData, loading: watchlistLoading } =
     useWatchlist();
@@ -72,6 +86,35 @@ export function WatchlistTab() {
 
   return (
     <div className="pt-3">
+      {isSignedIn && hasGuestData && (
+        <div className="bg-primary/5 border-primary/20 mb-4 flex flex-col gap-3 rounded-lg border p-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2.5">
+            <ArrowRightLeft
+              aria-hidden="true"
+              size={16}
+              className="text-primary shrink-0"
+            />
+            <p className="text-foreground text-xs">
+              You have{" "}
+              <span className="font-semibold">
+                {localMedia.length} guest title
+                {localMedia.length === 1 ? "" : "s"}
+              </span>{" "}
+              saved locally in this browser.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            onClick={openGuestMigrationModal}
+            className="shrink-0 text-xs font-semibold"
+          >
+            Review & Merge
+          </Button>
+        </div>
+      )}
+
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-bold tracking-tight sm:text-xl">

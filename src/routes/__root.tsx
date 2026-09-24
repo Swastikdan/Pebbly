@@ -34,6 +34,11 @@ import appCss from "@/styles.css?url";
 const UserSync = lazy(() =>
   import("@/components/user-sync").then((m) => ({ default: m.UserSync })),
 );
+const GuestMigrationDialog = lazy(() =>
+  import("@/components/auth/guest-migration-dialog").then((m) => ({
+    default: m.GuestMigrationDialog,
+  })),
+);
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -459,6 +464,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             </a>
             <Suspense fallback={null}>
               <UserSync />
+              <GuestMigrationDialog />
             </Suspense>
             <Navbar />
             <main
