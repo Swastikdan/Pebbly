@@ -139,7 +139,10 @@ const config = defineConfig(({ mode }) => ({
       "@tanstack/react-router-devtools",
       "@tanstack/react-query-devtools",
     ],
-    noExternal: mode === "production" ? true : undefined,
+    noExternal:
+      mode === "production"
+        ? /^(?!class-variance-authority$|clsx$).*/
+        : undefined,
   },
 }));
 
