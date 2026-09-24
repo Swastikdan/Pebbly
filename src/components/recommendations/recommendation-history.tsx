@@ -99,7 +99,7 @@ function HistoryAccordionItem({
         isActive && "ring-border ring-1",
       )}
     >
-      <AccordionTrigger className="hover:bg-secondary/10 data-panel-open:bg-secondary/10 px-4 py-3 text-sm font-medium transition-colors hover:no-underline">
+      <AccordionTrigger className="hover:bg-secondary/10 data-panel-open:bg-secondary/10 flex items-center px-4 py-3 text-sm font-medium transition-colors hover:no-underline">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pe-2">
           <Badge
             variant="outline"
@@ -165,7 +165,7 @@ function HistoryAccordionItem({
 
       <AccordionPanel className="px-4 pb-4">
         <div className="scrollbar-hidden space-y-4">
-          <div className="scrollbar-hidden flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
             <Button
               size="sm"
               variant="secondary"

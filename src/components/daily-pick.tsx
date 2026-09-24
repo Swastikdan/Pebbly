@@ -31,7 +31,8 @@ export function DailyPickButton() {
   const [isOpen, setIsOpen] = useState(false);
 
   const { hasFeature, loading: isPermissionsLoading } = usePermissions();
-  const isVideoPlaybackEnabled = hasFeature("video-player");
+  const isPlaybackEnabled =
+    hasFeature("video-player") || hasFeature("external-redirect");
 
   if (isPermissionsLoading) {
     return (
@@ -103,7 +104,7 @@ export function DailyPickButton() {
                           <Eye aria-hidden="true" className="size-3" />
                           Watching
                           {pick.selectedItem.watchProgress
-                            ? ` (${Math.round(pick.selectedItem.watchProgress) + 1}%)`
+                            ? ` (${Math.min(100, Math.max(0, Math.round(pick.selectedItem.watchProgress)))}%)`
                             : ""}
                         </span>
                       ) : pick.selectedItem.isFromWatchlist ? (
@@ -187,26 +188,27 @@ export function DailyPickButton() {
                     </p>
 
                     <div className="mt-5 flex flex-col gap-2">
-                      {isVideoPlaybackEnabled ? (
+                      {isPlaybackEnabled ? (
                         <>
                           <div className="flex items-center gap-2">
                             {pick.playDestination && (
-                              <Link
-                                to={pick.playDestination.to}
-                                params={pick.playDestination.params}
-                                search={pick.playDestination.search}
-                                onClick={() => setIsOpen(false)}
-                                className="flex-1"
-                              >
-                                {" "}
-                                <Button className="bg-foreground text-background hover:bg-foreground/90 h-10 w-full rounded-md text-xs font-medium sm:h-11 sm:text-sm">
-                                  <Play
-                                    aria-hidden="true"
-                                    className="me-1.5 size-3.5 fill-current"
+                              <Button
+                                render={
+                                  <Link
+                                    to={pick.playDestination.to}
+                                    params={pick.playDestination.params}
+                                    search={pick.playDestination.search}
+                                    onClick={() => setIsOpen(false)}
                                   />
-                                  <span>Watch Now</span>
-                                </Button>
-                              </Link>
+                                }
+                                className="bg-foreground text-background hover:bg-foreground/90 h-10 min-w-0 flex-1 rounded-md text-xs font-medium sm:h-11 sm:text-sm"
+                              >
+                                <Play
+                                  aria-hidden="true"
+                                  className="me-1.5 size-3.5 fill-current"
+                                />
+                                <span>Watch Now</span>
+                              </Button>
                             )}
 
                             <WatchlistButton

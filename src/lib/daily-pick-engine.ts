@@ -129,12 +129,14 @@ export function buildDailyPickCandidates({
   const checkFilter = (id: string | number, mediaType: MediaType) => {
     const key = `${mediaType}:${id}`;
     const state = mediaStateMap.get(key);
-    if (state?.progressStatus === "done") return { exclude: true };
+    const progress = state?.progress ?? 0;
+    if (state?.progressStatus === "done" || progress >= 95)
+      return { exclude: true };
     if (state?.reaction === "not-for-me") return { exclude: true };
     return {
       exclude: false,
       isCurrentlyWatching: state?.progressStatus === "watching",
-      watchProgress: state?.progress ?? 0,
+      watchProgress: progress,
     };
   };
 

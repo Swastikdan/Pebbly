@@ -130,7 +130,6 @@ export function VideoPlayerModal({
   }, [isOpen, capturePlay]);
 
   const externalPlayerUrl = import.meta.env.VITE_PUBLIC_EXTERNAL_PLAYER_URL;
-  console.log(externalPlayerUrl);
   // Redirect mode takes precedence over the built-in player: when the
   // External Player Redirect feature is enabled for the user AND the external
   // player URL is configured, play buttons open the external player even if
@@ -328,8 +327,8 @@ export function VideoPlayerModal({
 
   const cardTriggerClass = cn(
     "group/play focus-visible:ring-ring absolute inset-0 z-10 flex size-full cursor-pointer items-center justify-center rounded-[inherit] p-0 outline-hidden transition-opacity duration-100 focus-visible:ring-2 focus-visible:ring-offset-2",
-    className ??
-      "opacity-0 hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
+    "opacity-0 hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
+    className,
   );
 
   const triggerClass = cn(
@@ -354,10 +353,7 @@ export function VideoPlayerModal({
           onClick={handleRedirectClick}
         >
           <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
-            <Play
-              aria-hidden="true"
-              className="size-6 translate-x-[2px] fill-white text-white"
-            />
+            <Play aria-hidden="true" className="size-6 fill-white text-white" />
           </div>
         </a>
       );
@@ -406,10 +402,7 @@ export function VideoPlayerModal({
           }
         >
           <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
-            <Play
-              aria-hidden="true"
-              className="size-6 translate-x-[2px] fill-white text-white"
-            />
+            <Play aria-hidden="true" className="size-6 fill-white text-white" />
           </div>
         </DialogTrigger>
       ) : variant === "episode" ? (
