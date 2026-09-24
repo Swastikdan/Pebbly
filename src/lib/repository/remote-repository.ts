@@ -237,15 +237,16 @@ export function createRemoteRepository(
           ...extractMetadataFields(metadata),
         };
         const syncKeys = [
-          queryKeys.watchlist.list(),
-          queryKeys.watchlist.episodes(Number(id)),
+          queryKeys.watchlist.list(undefined, userId),
+          queryKeys.watchlist.episodes(Number(id), userId),
         ];
         const send = (
           args: MarkShowEpisodesAndStatusArgs,
           kind = "mark-show",
         ) =>
           runJournaledMutation(queryClient, {
-            begin: () => watchlistOptimistic.beginMarkShowOp(queryClient, args),
+            begin: () =>
+              watchlistOptimistic.beginMarkShowOp(queryClient, args, userId),
             run: () => unwrap(markShowEpisodesAndStatus({ data: args })),
             syncKeys,
             errorMessage: "sync show episode status",
@@ -264,9 +265,10 @@ export function createRemoteRepository(
               watchlistOptimistic.beginProgressStatusOp(
                 queryClient,
                 statusArgs,
+                userId,
               ),
             run: () => unwrap(setProgressStatusFn({ data: statusArgs })),
-            syncKeys: [queryKeys.watchlist.list()],
+            syncKeys: [queryKeys.watchlist.list(undefined, userId)],
             errorMessage: "set show progress status",
             outbox: userId
               ? {
@@ -312,9 +314,9 @@ export function createRemoteRepository(
       };
       runJournaledMutation(queryClient, {
         begin: () =>
-          watchlistOptimistic.beginProgressStatusOp(queryClient, args),
+          watchlistOptimistic.beginProgressStatusOp(queryClient, args, userId),
         run: () => unwrap(setProgressStatusFn({ data: args })),
-        syncKeys: [queryKeys.watchlist.list()],
+        syncKeys: [queryKeys.watchlist.list(undefined, userId)],
         errorMessage: "set progress status",
         outbox: userId
           ? { userId, kind: "set-progress-status", payload: args }
@@ -335,9 +337,10 @@ export function createRemoteRepository(
       }
 
       runJournaledMutation(queryClient, {
-        begin: () => watchlistOptimistic.beginReactionOp(queryClient, payload),
+        begin: () =>
+          watchlistOptimistic.beginReactionOp(queryClient, payload, userId),
         run: () => unwrap(setReactionFn({ data: payload })),
-        syncKeys: [queryKeys.watchlist.list()],
+        syncKeys: [queryKeys.watchlist.list(undefined, userId)],
         errorMessage: "set reaction",
         notifyError: "Couldn't save your reaction change.",
         outbox: userId ? { userId, kind: "set-reaction", payload } : undefined,
@@ -345,7 +348,7 @@ export function createRemoteRepository(
     },
 
     async markEpisode(args) {
-      const episodeKey = queryKeys.watchlist.episodes(args.tmdbId);
+      const episodeKey = queryKeys.watchlist.episodes(args.tmdbId, userId);
       runJournaledMutation(queryClient, {
         begin: () =>
           beginOp(
@@ -372,7 +375,7 @@ export function createRemoteRepository(
     },
 
     async markSeason(args) {
-      const episodeKey = queryKeys.watchlist.episodes(args.tmdbId);
+      const episodeKey = queryKeys.watchlist.episodes(args.tmdbId, userId);
       runJournaledMutation(queryClient, {
         begin: () =>
           beginOp(
@@ -401,7 +404,7 @@ export function createRemoteRepository(
     },
 
     async updateProgress(args) {
-      const listKey = queryKeys.watchlist.list();
+      const listKey = queryKeys.watchlist.list(undefined, userId);
       runJournaledMutation(queryClient, {
         begin: () =>
           beginOp(
@@ -436,7 +439,7 @@ export function createRemoteRepository(
     },
 
     async removeFromContinueWatching(tmdbId, mediaType) {
-      const listKey = queryKeys.watchlist.list();
+      const listKey = queryKeys.watchlist.list(undefined, userId);
       runJournaledMutation(queryClient, {
         begin: () =>
           beginOp(

@@ -2,12 +2,14 @@ import type { MediaType } from "@/domain/media";
 
 export const queryKeys = {
   watchlist: {
-    list: (args?: { statusFilter?: string; limit?: number }) =>
-      ["watchlist", "list", args ?? {}] as const,
+    list: (args?: { statusFilter?: string; limit?: number }, userId?: string) =>
+      ["watchlist", "list", userId ?? "anonymous", args ?? {}] as const,
     trackedTmdbIds: (userId?: string) =>
       ["watchlist", "tracked-ids", userId ?? "anonymous"] as const,
-    episodes: (tmdbId: number) => ["watchlist", "episodes", tmdbId] as const,
-    allEpisodes: () => ["watchlist", "all-episodes"] as const,
+    episodes: (tmdbId: number, userId?: string) =>
+      ["watchlist", "episodes", tmdbId, userId ?? "anonymous"] as const,
+    allEpisodes: (userId?: string) =>
+      ["watchlist", "all-episodes", userId ?? "anonymous"] as const,
   },
   lists: {
     all: (userId?: string) => ["lists", "all", userId ?? "anonymous"] as const,
@@ -25,8 +27,8 @@ export const queryKeys = {
       ] as const,
     // Owner/visitor payload for the /c/$id collection page. Viewer-dependent
     // on purpose: the server fn resolves owner vs public per request.
-    collectionPage: (listId: string) =>
-      ["lists", "collection-page", listId] as const,
+    collectionPage: (listId: string, userId?: string) =>
+      ["lists", "collection-page", listId, userId ?? "anonymous"] as const,
   },
   permissions: (userId?: string) =>
     ["permissions", userId ?? "anonymous"] as const,

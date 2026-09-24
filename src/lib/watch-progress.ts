@@ -235,7 +235,7 @@ export function buildPlayerUrl(opts: {
     nextEpisode: "true",
     episodeSelector: "true",
   });
-  if (opts.savedProgress && opts.savedProgress > 10)
+  if (opts.savedProgress && opts.savedProgress > 10 && opts.savedProgress < 95)
     params.set("progress", String(Math.floor(opts.savedProgress)));
   return opts.type === "movie"
     ? `${videoUrl}/embed/movie/${opts.tmdbId}?${params}`

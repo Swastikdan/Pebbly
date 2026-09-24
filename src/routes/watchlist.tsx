@@ -24,8 +24,15 @@ export const Route = createFileRoute("/watchlist")({
     if (session.isSignedIn && session.userId) {
       await Promise.allSettled([
         context.queryClient.ensureQueryData({
-          queryKey: queryKeys.watchlist.list(),
-          queryFn: () => fetchWatchlistList(context.queryClient),
+          queryKey: queryKeys.watchlist.list(
+            undefined,
+            session.userId ?? undefined,
+          ),
+          queryFn: () =>
+            fetchWatchlistList(
+              context.queryClient,
+              session.userId ?? undefined,
+            ),
         }),
         context.queryClient.ensureQueryData({
           queryKey: queryKeys.lists.all(session.userId),

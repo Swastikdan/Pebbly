@@ -12,10 +12,11 @@ import { unwrap } from "@/server/schema/common";
 
 export async function fetchWatchlistList(
   queryClient: QueryClient,
+  userId?: string,
 ): Promise<WatchItemRow[]> {
   return reconcileListFetch(
     queryClient,
-    queryKeys.watchlist.list(),
+    queryKeys.watchlist.list(undefined, userId),
     await unwrap(getWatchlist({ data: {} })),
   );
 }
@@ -26,10 +27,11 @@ export async function fetchWatchlistListFiltered(
     statusFilter?: ProgressStatus;
     limit?: number;
   },
+  userId?: string,
 ): Promise<WatchItemRow[]> {
   return reconcileListFetch(
     queryClient,
-    queryKeys.watchlist.list(args),
+    queryKeys.watchlist.list(args, userId),
     await unwrap(getWatchlist({ data: args })),
   );
 }
@@ -37,20 +39,22 @@ export async function fetchWatchlistListFiltered(
 export async function fetchWatchedEpisodes(
   queryClient: QueryClient,
   tmdbId: number,
+  userId?: string,
 ): Promise<EpisodeProgressRow[]> {
   return reconcileListFetch(
     queryClient,
-    queryKeys.watchlist.episodes(tmdbId),
+    queryKeys.watchlist.episodes(tmdbId, userId),
     await unwrap(getAllWatchedEpisodes({ data: { tmdbId } })),
   );
 }
 
 export async function fetchAllEpisodeProgress(
   queryClient: QueryClient,
+  userId?: string,
 ): Promise<EpisodeProgressRow[]> {
   return reconcileListFetch(
     queryClient,
-    queryKeys.watchlist.allEpisodes(),
+    queryKeys.watchlist.allEpisodes(userId),
     await unwrap(getAllEpisodeProgress()),
   );
 }

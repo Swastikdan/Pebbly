@@ -79,14 +79,16 @@ function DisclaimerPage() {
 
               <div>
                 <h3 className="text-foreground mb-2 font-medium">
-                  2. User Accounts
+                  2. User Accounts & Data
                 </h3>
                 <p>
-                  While we offer watchlist functionality, we do not store any
-                  personally identifiable information on our servers. User data
-                  is managed through third-party authentication providers. We
-                  are not responsible for any issues related to these
-                  third-party services.
+                  User authentication is provided through third-party services
+                  (such as Clerk). To power personal features—including your
+                  watchlist, watch progress, reactions, custom collections, and
+                  AI recommendations—Pebbly stores your account profile
+                  information (such as your name, email address, profile image,
+                  and account identifier) and associated viewing activity on our
+                  databases. We do not sell your personal data to third parties.
                 </p>
               </div>
             </div>

@@ -51,6 +51,11 @@ export interface AuthedFnConfig {
   readonly featureDenied?: "fail" | "guest";
   readonly admin?: boolean;
   /**
+   * If true, allows banned users to execute the handler. Defaults to false,
+   * meaning banned accounts are rejected globally with FORBIDDEN.
+   */
+  readonly allowBanned?: boolean;
+  /**
    * Per-user write budget for mutating fns. Enforced inside `authedFn`
    * after the auth gates pass, against one shared bucket per user
    * (`fnw:<user.id>`) across every fn that opts in — so the budget bounds
@@ -118,6 +123,10 @@ export function authedFn<TData, C extends AuthedFnConfig, TResult>(
 
     const { user, claims } = resolved;
 
+    if (!config.allowBanned && user?.isBanned === true) {
+      return fail("FORBIDDEN", "Forbidden: account is banned") as TResult;
+    }
+
     if (config.feature && !(await hasFeature(claims, user, config.feature))) {
       if ((config.featureDenied ?? "fail") === "guest" && config.guest) {
         return config.guest() as TResult;
@@ -126,6 +135,9 @@ export function authedFn<TData, C extends AuthedFnConfig, TResult>(
     }
 
     if (config.admin === true) {
+      if (user?.isBanned === true) {
+        return fail("FORBIDDEN", "Forbidden: account is banned") as TResult;
+      }
       // JWT-claim-only: the signed claim is the sole request-path source for
       // admin decisions (a live Clerk API fallback here would put an external
       // call inside every admin gate). Requires the Clerk session-claims

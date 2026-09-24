@@ -39,10 +39,10 @@ export const useWatchlistImportExport = () => {
     (state) => state.markEpisodeWatched,
   );
 
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const allEpisodeProgress = useQuery({
-    queryKey: queryKeys.watchlist.allEpisodes(),
-    queryFn: () => fetchAllEpisodeProgress(queryClient),
+    queryKey: queryKeys.watchlist.allEpisodes(user?.id),
+    queryFn: () => fetchAllEpisodeProgress(queryClient, user?.id),
     enabled: !!isSignedIn,
   });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -168,10 +168,10 @@ export const useWatchlistImportExport = () => {
                 broadcastMutation("watchlist");
                 try {
                   await queryClient.invalidateQueries({
-                    queryKey: queryKeys.watchlist.list(),
+                    queryKey: queryKeys.watchlist.list(undefined, user?.id),
                   });
                   await queryClient.invalidateQueries({
-                    queryKey: queryKeys.watchlist.allEpisodes(),
+                    queryKey: queryKeys.watchlist.allEpisodes(user?.id),
                   });
                 } catch {
                   // Cache refresh is best-effort here; the original failure
@@ -187,10 +187,10 @@ export const useWatchlistImportExport = () => {
 
             broadcastMutation("watchlist");
             await queryClient.invalidateQueries({
-              queryKey: queryKeys.watchlist.list(),
+              queryKey: queryKeys.watchlist.list(undefined, user?.id),
             });
             await queryClient.invalidateQueries({
-              queryKey: queryKeys.watchlist.allEpisodes(),
+              queryKey: queryKeys.watchlist.allEpisodes(user?.id),
             });
           } else {
             importWatchlistLocal(
@@ -245,7 +245,13 @@ export const useWatchlistImportExport = () => {
 
       reader.readAsText(file);
     },
-    [importWatchlistLocal, isSignedIn, markEpisodeWatchedLocal, queryClient],
+    [
+      importWatchlistLocal,
+      isSignedIn,
+      markEpisodeWatchedLocal,
+      queryClient,
+      user?.id,
+    ],
   );
 
   const handleImportClick = useCallback(() => {

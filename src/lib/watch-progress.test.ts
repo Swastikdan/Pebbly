@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  buildPlayerUrl,
   makeEpisodeKey,
   parseEpisodeKey,
   resolveNextEpisode,
@@ -87,5 +88,56 @@ describe("resolveNextEpisode", () => {
         watchedEpisodes: [{ season: 2, episode: 8 }],
       }),
     ).toEqual({ season: 2, episode: 9 });
+  });
+});
+
+describe("buildPlayerUrl", () => {
+  beforeEach(() => {
+    import.meta.env.VITE_PUBLIC_VIDEO_URL = "https://player.example.com";
+  });
+
+  it("builds a movie embed URL without progress by default", () => {
+    const url = buildPlayerUrl({ type: "movie", tmdbId: 550 });
+    expect(url).toContain("https://player.example.com/embed/movie/550?");
+    expect(url).toContain("autoPlay=true");
+    expect(url).not.toContain("progress=");
+  });
+
+  it("builds a tv embed URL with season and episode", () => {
+    const url = buildPlayerUrl({
+      type: "tv",
+      tmdbId: 1399,
+      season: 3,
+      episode: 5,
+    });
+    expect(url).toContain("https://player.example.com/embed/tv/1399/3/5?");
+    expect(url).toContain("autoPlay=true");
+  });
+
+  it("includes progress parameter when savedProgress is between 10% and 95%", () => {
+    const url = buildPlayerUrl({
+      type: "movie",
+      tmdbId: 550,
+      savedProgress: 45.8,
+    });
+    expect(url).toContain("progress=45");
+  });
+
+  it("omits progress parameter when savedProgress is <= 10%", () => {
+    const url = buildPlayerUrl({
+      type: "movie",
+      tmdbId: 550,
+      savedProgress: 8,
+    });
+    expect(url).not.toContain("progress=");
+  });
+
+  it("omits progress parameter when savedProgress is >= 95% (completed)", () => {
+    const url = buildPlayerUrl({
+      type: "movie",
+      tmdbId: 550,
+      savedProgress: 97,
+    });
+    expect(url).not.toContain("progress=");
   });
 });

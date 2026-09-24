@@ -24,11 +24,11 @@ export type { MediaMetadata, MediaType, WatchlistItem };
  * state derives from this one query instead of per-card RPCs.
  */
 function useWatchlistQuery() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const queryClient = useQueryClient();
   return useQuery({
-    queryKey: queryKeys.watchlist.list(),
-    queryFn: () => fetchWatchlistList(queryClient),
+    queryKey: queryKeys.watchlist.list(undefined, user?.id),
+    queryFn: () => fetchWatchlistList(queryClient, user?.id),
     enabled: !!isSignedIn,
     // Cross-device sync is driven by UserSync's watchlist-version poll
     // (refetch only when the revision changes), so this query itself does

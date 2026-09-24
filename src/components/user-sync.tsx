@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { DataVersion } from "@/hooks/data-version";
 import type { MutationDomain } from "@/lib/cross-tab-sync";
+import type { QueryClient } from "@tanstack/react-query";
 import { fetchDataVersion } from "@/hooks/data-version";
 import { usePermissions } from "@/hooks/use-permissions";
 import { subscribeToCrossTabMutations } from "@/lib/cross-tab-sync";
@@ -13,6 +14,16 @@ import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
 import { replayRemoteMutations } from "@/lib/repository/remote-repository";
 import { storeUser } from "@/server/fns/users";
 import { unwrap } from "@/server/schema/common";
+
+export function purgePrivateQueries(client: QueryClient) {
+  clearPendingOps(client);
+  client.removeQueries({ queryKey: ["watchlist"] });
+  client.removeQueries({ queryKey: ["lists"] });
+  client.removeQueries({ queryKey: ["permissions"] });
+  client.removeQueries({ queryKey: ["data"] });
+  client.removeQueries({ queryKey: ["admin"] });
+  client.removeQueries({ queryKey: ["recommendations"] });
+}
 
 export const UserSync = () => {
   const { user, isLoaded } = useUser();
@@ -30,6 +41,8 @@ export const UserSync = () => {
     if (!user) {
       if (identifiedUserRef.current) {
         posthog.reset();
+        purgePrivateQueries(queryClient);
+        lastRevsRef.current = {};
         identifiedUserRef.current = null;
       }
       return;
@@ -37,13 +50,15 @@ export const UserSync = () => {
 
     if (identifiedUserRef.current && identifiedUserRef.current !== user.id) {
       posthog.reset();
+      purgePrivateQueries(queryClient);
+      lastRevsRef.current = {};
     }
     posthog.identify(user.id, {
       email: user.primaryEmailAddress?.emailAddress,
       name: user.fullName ?? user.username ?? undefined,
     });
     identifiedUserRef.current = user.id;
-  }, [isLoaded, posthog, user]);
+  }, [isLoaded, posthog, user, queryClient]);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -77,17 +92,17 @@ export const UserSync = () => {
     // not reorder later intent; failures remain for the next boot.
     void replayRemoteMutations(user.id).then(() => {
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.watchlist.list(),
+        queryKey: queryKeys.watchlist.list(undefined, user.id),
       });
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.watchlist.allEpisodes(),
+        queryKey: queryKeys.watchlist.allEpisodes(user.id),
       });
     });
   }, [isLoaded, user, queryClient]);
 
   useEffect(() => {
     if (isLoaded && !user) {
-      clearPendingOps(queryClient);
+      purgePrivateQueries(queryClient);
       // Also drop per-user revision baselines; keeping them keyed by user
       // id would leak entries across sign-out/sign-in of other accounts.
       lastRevsRef.current = {};
@@ -98,7 +113,7 @@ export const UserSync = () => {
     (domain: MutationDomain) => {
       if (domain === "watchlist") {
         void queryClient.invalidateQueries({
-          queryKey: queryKeys.watchlist.list(),
+          queryKey: queryKeys.watchlist.list(undefined, user?.id),
         });
       } else if (domain === "lists") {
         for (const key of listsSyncKeys(user?.id)) {

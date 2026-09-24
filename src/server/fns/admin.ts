@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import type { ApiResult } from "../schema/common";
+import { captureServerEvent } from "@/lib/posthog-server";
 import { getClerkAdminIds, invalidateUserCache } from "../auth";
 import { rolePermissions, users } from "../db/schema";
 import { bumpPermsRev } from "../helpers/watch-item";
@@ -36,6 +37,7 @@ export const getUserFeaturesFn = createServerFn({ method: "POST" }).handler(
     authedFn(
       {
         mode: "require",
+        allowBanned: true,
         guest: () =>
           ok({ roles: [], features: {}, isAdmin: false, isBanned: false }),
       },
@@ -75,7 +77,7 @@ export const setRolePermission = createServerFn({ method: "POST" })
     authedFn(
       { admin: true, rateLimit: WRITE_RATE_LIMIT },
       data,
-      async ({ db }) => {
+      async ({ db, user }) => {
         await syncRolePermissions(db, true);
 
         // Read the current global value first: if the toggle is a no-op
@@ -111,6 +113,12 @@ export const setRolePermission = createServerFn({ method: "POST" })
           await db.update(users).set({ permsRev: sql`${users.permsRev} + 1` });
         }
 
+        await captureServerEvent(user.id, "admin_action", {
+          action: "set_role_permission",
+          feature: data.feature,
+          enabled: data.enabled,
+        });
+
         return ok({ ok: true });
       },
     ),
@@ -122,7 +130,7 @@ export const setUserRoles = createServerFn({ method: "POST" })
     authedFn(
       { admin: true, rateLimit: WRITE_RATE_LIMIT },
       data,
-      async ({ db }) => {
+      async ({ db, user }) => {
         const target = await findUserByTokenIdentifier(
           db,
           data.tokenIdentifier,
@@ -139,6 +147,13 @@ export const setUserRoles = createServerFn({ method: "POST" })
 
         await bumpPermsRev(db, target.id);
         invalidateUserCache(target.tokenIdentifier);
+
+        await captureServerEvent(user.id, "admin_action", {
+          action: "set_user_roles",
+          targetUserId: target.id,
+          rolesCount: data.roles.length,
+        });
+
         return ok({ ok: true });
       },
     ),
@@ -162,6 +177,12 @@ export const setUserBanned = createServerFn({ method: "POST" })
           return fail("BAD_REQUEST", "Cannot ban yourself");
         }
 
+        const adminClerkIds = await getClerkAdminIds();
+        const targetClerkId = target.tokenIdentifier.split("|").pop() ?? "";
+        if (adminClerkIds.has(targetClerkId)) {
+          return fail("FORBIDDEN", "Cannot ban an administrator");
+        }
+
         await db
           .update(users)
           .set({ isBanned: data.banned })
@@ -169,6 +190,13 @@ export const setUserBanned = createServerFn({ method: "POST" })
 
         await bumpPermsRev(db, target.id);
         invalidateUserCache(target.tokenIdentifier);
+
+        await captureServerEvent(user.id, "admin_action", {
+          action: "set_user_banned",
+          targetUserId: target.id,
+          banned: data.banned,
+        });
+
         return ok({ ok: true });
       },
     ),

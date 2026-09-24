@@ -15,6 +15,7 @@ import {
 import { Play, XIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useMediaState } from "@/hooks/use-watchlist";
 import { usePlayerProgressListener } from "@/hooks/watch-progress/use-player-listener";
 import { navigateSearch } from "@/lib/media-dialog-helpers";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ interface VideoPlayerModalProps {
   title: string;
   season?: number;
   episode?: number;
+  savedProgress?: number;
   variant?: "card" | "page" | "episode";
   className?: string;
 }
@@ -43,6 +45,7 @@ export function VideoPlayerModal({
   title,
   season,
   episode,
+  savedProgress,
   variant = "page",
   className,
 }: VideoPlayerModalProps) {
@@ -85,14 +88,41 @@ export function VideoPlayerModal({
     }),
   });
 
+  const mediaState = useMediaState(String(tmdbId), type);
+  const effectiveProgress =
+    savedProgress !== undefined
+      ? savedProgress
+      : (mediaState?.progress ?? undefined);
+
   const playerUrl = import.meta.env.VITE_PUBLIC_VIDEO_URL
     ? buildPlayerUrl({
         type,
         tmdbId,
         season,
         episode,
+        savedProgress: effectiveProgress,
       })
     : undefined;
+
+  const [hasTimedOut, setHasTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !isLoading) {
+      setHasTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setHasTimedOut(true);
+      posthog?.capture("video_playback_timeout", {
+        tmdb_id: tmdbId,
+        media_type: type,
+        title,
+        season,
+        episode,
+      });
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, [isOpen, isLoading, posthog, tmdbId, type, title, season, episode]);
 
   const listenerContext = useMemo(
     () => ({
@@ -453,8 +483,43 @@ export function VideoPlayerModal({
           className="relative isolate z-1 size-full overflow-hidden bg-black p-0 [&:fullscreen]:fixed [&:fullscreen]:inset-0 [&:fullscreen]:z-9999 [&:fullscreen]:h-screen [&:fullscreen]:w-screen"
         >
           {isLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black">
-              <Spinner className="size-6 text-white" />
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black p-4 text-center">
+              {hasTimedOut ? (
+                <div className="flex max-w-sm flex-col items-center gap-3">
+                  <p className="text-sm font-medium text-white/90">
+                    Playback is taking longer than expected or the provider is
+                    unavailable.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setHasTimedOut(false);
+                        setIsLoading(true);
+                        if (playerContainerRef.current) {
+                          const iframe =
+                            playerContainerRef.current.querySelector("iframe");
+                          if (iframe && playerUrl) iframe.src = playerUrl;
+                        }
+                      }}
+                      className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+                    >
+                      Retry
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenChange(false)}
+                      className="text-white/70 hover:bg-white/10 hover:text-white"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Spinner className="size-6 text-white" />
+              )}
             </div>
           )}
           <iframe

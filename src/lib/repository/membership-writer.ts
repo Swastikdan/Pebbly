@@ -43,7 +43,7 @@ export function createMembershipWriter(
         broadcastMutation("watchlist");
         applyServerState(
           queryClient,
-          queryKeys.watchlist.list(),
+          queryKeys.watchlist.list(undefined, userId),
           rows,
           items.map((i) => `${i.mediaType}:${i.tmdbId}`),
         );
@@ -51,7 +51,7 @@ export function createMembershipWriter(
           task.handle?.resolve();
           if (task.outboxId) removeMutation(task.outboxId);
         }
-        scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds()]);
+        scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds(userId)]);
         return rows;
       } catch (error) {
         logError("batch set watchlist membership", error);
@@ -63,7 +63,9 @@ export function createMembershipWriter(
           description: "The change was reverted. Please try again.",
           type: "error",
         });
-        scheduleSync(queryClient, [queryKeys.watchlist.list()]);
+        scheduleSync(queryClient, [
+          queryKeys.watchlist.list(undefined, userId),
+        ]);
         throw error;
       }
     },
@@ -100,7 +102,11 @@ export function createMembershipWriter(
         overview: item.overview || undefined,
       };
 
-      const handle = watchlistOptimistic.beginMembershipOp(queryClient, args);
+      const handle = watchlistOptimistic.beginMembershipOp(
+        queryClient,
+        args,
+        userId,
+      );
       const outboxId = userId
         ? enqueueMutation(
             userId,

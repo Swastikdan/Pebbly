@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/react";
 import {
   ArrowUpDown,
   Globe,
@@ -36,12 +37,13 @@ const CustomListDialog = lazy(() =>
 export function CollectionPage({ listId }: { listId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   const [mediaFilter, setMediaFilter] = useState<"all" | MediaType>("all");
   const [editing, setEditing] = useState(false);
 
   const pageQuery = useQuery({
-    queryKey: queryKeys.lists.collectionPage(listId),
+    queryKey: queryKeys.lists.collectionPage(listId, user?.id),
     queryFn: () => unwrap(getCollectionPage({ data: { listId } })),
   });
 
@@ -50,7 +52,7 @@ export function CollectionPage({ listId }: { listId: string }) {
 
   const refreshPage = () =>
     queryClient.invalidateQueries({
-      queryKey: queryKeys.lists.collectionPage(listId),
+      queryKey: queryKeys.lists.collectionPage(listId, user?.id),
     });
 
   if (pageQuery.error) {

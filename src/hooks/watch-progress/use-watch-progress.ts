@@ -5,11 +5,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MediaType } from "@/domain/media";
 import type { ProgressStatus } from "@/domain/watchlist";
 import type {
+  EpisodeRef,
   EpisodeWatchedMap,
   ShowMetadata,
   WatchProgressData,
 } from "@/lib/watch-progress";
-import type { EpisodeRef } from "@/lib/watch-progress";
 import {
   fetchWatchedEpisodes,
   fetchWatchlistListFiltered,
@@ -33,13 +33,13 @@ export type {
 
 export function useWatchProgress(id: string | number, mediaType: MediaType) {
   const mediaState = useMediaState(String(id), mediaType);
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const queryClient = useQueryClient();
   const tmdbId = Number(id);
 
   const watchedEpisodesQuery = useQuery({
-    queryKey: queryKeys.watchlist.episodes(tmdbId),
-    queryFn: () => fetchWatchedEpisodes(queryClient, tmdbId),
+    queryKey: queryKeys.watchlist.episodes(tmdbId, user?.id),
+    queryFn: () => fetchWatchedEpisodes(queryClient, tmdbId, user?.id),
     enabled: !!isSignedIn && mediaType === "tv",
   });
   const watchedEpisodes = watchedEpisodesQuery.data ?? [];
@@ -118,15 +118,22 @@ export function useWatchProgress(id: string | number, mediaType: MediaType) {
 }
 
 export function useContinueWatching() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const queryClient = useQueryClient();
   const remote = useQuery({
-    queryKey: queryKeys.watchlist.list({ statusFilter: "watching", limit: 50 }),
+    queryKey: queryKeys.watchlist.list(
+      { statusFilter: "watching", limit: 50 },
+      user?.id,
+    ),
     queryFn: () =>
-      fetchWatchlistListFiltered(queryClient, {
-        statusFilter: "watching",
-        limit: 50,
-      }),
+      fetchWatchlistListFiltered(
+        queryClient,
+        {
+          statusFilter: "watching",
+          limit: 50,
+        },
+        user?.id,
+      ),
     enabled: !!isSignedIn,
   });
   const localMediaState = useWatchlistStore((state) => state.mediaState);
@@ -203,12 +210,12 @@ export function useEpisodeWatched(
   showMeta?: ShowMetadata,
 ) {
   const tmdbId = Number(tvId);
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const queryClient = useQueryClient();
   const mediaState = useMediaState(String(tvId), "tv");
   const watchedEpisodesQuery = useQuery({
-    queryKey: queryKeys.watchlist.episodes(tmdbId),
-    queryFn: () => fetchWatchedEpisodes(queryClient, tmdbId),
+    queryKey: queryKeys.watchlist.episodes(tmdbId, user?.id),
+    queryFn: () => fetchWatchedEpisodes(queryClient, tmdbId, user?.id),
     enabled: !!isSignedIn,
   });
   const watchedEpisodes = watchedEpisodesQuery.data ?? [];
@@ -425,12 +432,12 @@ export function useEpisodeProgress(
   season: number,
   episode: number,
 ) {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const queryClient = useQueryClient();
 
   const data = useQuery({
-    queryKey: queryKeys.watchlist.episodes(Number(tvId)),
-    queryFn: () => fetchWatchedEpisodes(queryClient, Number(tvId)),
+    queryKey: queryKeys.watchlist.episodes(Number(tvId), user?.id),
+    queryFn: () => fetchWatchedEpisodes(queryClient, Number(tvId), user?.id),
     enabled: !!isSignedIn,
   });
 
