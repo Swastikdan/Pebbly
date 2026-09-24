@@ -256,11 +256,11 @@ function ContinueWatchingSection() {
   const { isSignedIn, isLoaded } = useUser();
   const { items, isLoading, isSettled } = useContinueWatching();
 
-  // Do not reserve a placeholder for signed-out visitors. Continue Watching
-  // is a private, user-specific rail and should not leave an empty gap.
-  if (!isLoaded || !isSignedIn) return null;
+  if (!isLoaded) return null;
 
-  if (isLoading || !isSettled) {
+  // Show a placeholder skeleton only for authenticated users while remote queries fetch.
+  // Guests read directly from synchronous local storage so no skeleton is needed.
+  if (isSignedIn && (isLoading || !isSettled)) {
     return (
       <section aria-hidden="true" className="min-h-80">
         <div className="mt-2 flex items-center gap-4">
@@ -273,6 +273,7 @@ function ContinueWatchingSection() {
     );
   }
 
+  // Do not show an empty section or placeholder when there are no in-progress titles.
   if (items.length === 0) return null;
 
   return (
