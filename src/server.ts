@@ -5,6 +5,7 @@ import {
   captureServerException,
   getPostHogClient,
 } from "@/lib/posthog-server";
+import { isStreamLifetimeAbort } from "@/lib/runtime-errors";
 
 export default createServerEntry({
   async fetch(request: Request) {
@@ -75,6 +76,7 @@ export default createServerEntry({
           error: error instanceof Error ? error.message : String(error),
         }),
       );
+      if (isStreamLifetimeAbort(error)) throw error;
       try {
         await captureServerException(error, requestDistinctId);
       } catch (telemetryError) {
