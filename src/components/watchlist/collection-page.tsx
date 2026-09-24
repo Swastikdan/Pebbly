@@ -1,6 +1,8 @@
-import { useUser } from "@clerk/react";
+import { SignInButton, useUser } from "@clerk/react";
+import { usePostHog } from "@posthog/react";
 import {
   ArrowUpDown,
+  Copy,
   Globe,
   ListOrdered,
   ListPlus,
@@ -9,7 +11,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 
@@ -22,9 +24,10 @@ import { Button } from "@/components/ui/button";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { destructiveToast } from "@/hooks/use-destructive-toast";
+import { toast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
-import { cn, logError } from "@/lib/utils";
+import { cn, formatMediaTitle, logError } from "@/lib/utils";
 import { getCollectionPage } from "@/server/fns/list-collections";
 import { unwrap } from "@/server/schema/common";
 
@@ -38,17 +41,71 @@ export function CollectionPage({ listId }: { listId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useUser();
+  const posthog = usePostHog();
 
   const [mediaFilter, setMediaFilter] = useState<"all" | MediaType>("all");
   const [editing, setEditing] = useState(false);
+  const [isCloning, setIsCloning] = useState(false);
 
   const pageQuery = useQuery({
     queryKey: queryKeys.lists.collectionPage(listId, user?.id),
     queryFn: () => unwrap(getCollectionPage({ data: { listId } })),
   });
 
-  const { deleteList: deleteCustomList, reorderListItem: reorderItems } =
-    useRepository();
+  const {
+    deleteList: deleteCustomList,
+    reorderListItem: reorderItems,
+    cloneList,
+  } = useRepository();
+
+  const handleClone = useCallback(async () => {
+    if (isCloning || !pageQuery.data?.list) return;
+    const currentList = pageQuery.data.list;
+    setIsCloning(true);
+    try {
+      const newId = await cloneList(listId);
+      if (newId) {
+        posthog?.capture("collection_cloned", {
+          source_collection_id: listId,
+          is_public: currentList.visibility === "public",
+        });
+        toast({
+          title: "Collection copied",
+          description: `"${currentList.name} (copy)" was added to your collections.`,
+          type: "success",
+        });
+        await router.navigate({
+          to: "/c/$id/{-$slug}",
+          params: {
+            id: newId,
+            slug: formatMediaTitle.encode(`${currentList.name} (copy)`),
+          },
+        });
+      }
+    } catch (error) {
+      logError("clone list", error);
+      toast({
+        title: "Failed to copy collection",
+        description: "Please try again later.",
+        type: "error",
+      });
+    } finally {
+      setIsCloning(false);
+    }
+  }, [isCloning, pageQuery.data?.list, cloneList, listId, posthog, router]);
+
+  useEffect(() => {
+    if (!user || !pageQuery.data?.list) return;
+    try {
+      const pending = sessionStorage.getItem("pebbly:pending_clone");
+      if (pending === listId) {
+        sessionStorage.removeItem("pebbly:pending_clone");
+        void handleClone();
+      }
+    } catch {
+      // Storage unavailable or blocked
+    }
+  }, [user, pageQuery.data?.list, listId, handleClone]);
 
   const refreshPage = () =>
     queryClient.invalidateQueries({
@@ -152,7 +209,7 @@ export function CollectionPage({ listId }: { listId: string }) {
           )}
         </div>
 
-        {canManage && (
+        {canManage ? (
           <div className="flex shrink-0 items-center gap-1">
             <Button
               type="button"
@@ -169,6 +226,20 @@ export function CollectionPage({ listId }: { listId: string }) {
               type="button"
               variant="secondary"
               size="sm"
+              disabled={isCloning}
+              onClick={handleClone}
+              className="border-border text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
+              aria-label={`Duplicate ${list.name}`}
+            >
+              <Copy aria-hidden="true" size={13} />
+              <span className="hidden sm:inline">
+                {isCloning ? "Duplicating..." : "Duplicate"}
+              </span>
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
               onClick={handleDelete}
               className="border-border text-muted-foreground hover:text-destructive-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
               aria-label={`Delete ${list.name}`}
@@ -177,6 +248,45 @@ export function CollectionPage({ listId }: { listId: string }) {
               <span className="hidden sm:inline">Delete</span>
             </Button>
           </div>
+        ) : (
+          isPublic && (
+            <div className="flex shrink-0 items-center gap-1">
+              {user ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isCloning}
+                  onClick={handleClone}
+                  className="border-border text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
+                  aria-label={`Save a copy of ${list.name}`}
+                >
+                  <Copy aria-hidden="true" size={13} />
+                  <span>{isCloning ? "Saving..." : "Save a Copy"}</span>
+                </Button>
+              ) : (
+                <SignInButton mode="modal">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem("pebbly:pending_clone", listId);
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                    className="border-border text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
+                    aria-label={`Save a copy of ${list.name}`}
+                  >
+                    <Copy aria-hidden="true" size={13} />
+                    <span>Save a Copy</span>
+                  </Button>
+                </SignInButton>
+              )}
+            </div>
+          )
         )}
       </div>
 
