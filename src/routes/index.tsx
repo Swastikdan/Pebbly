@@ -63,9 +63,9 @@ const TopRatedTv = lazy(() =>
     default: m.TopRatedTv,
   })),
 );
-const ContinueWatching = lazy(() =>
-  import("@/components/homepage-media-deferred").then((m) => ({
-    default: m.ContinueWatching,
+const NextUpSection = lazy(() =>
+  import("@/components/next-up/next-up-section").then((m) => ({
+    default: m.NextUpSection,
   })),
 );
 
@@ -264,7 +264,7 @@ function ContinueWatchingSection() {
     return (
       <section aria-hidden="true" className="min-h-80">
         <div className="mt-2 flex items-center gap-4">
-          <h2 className="text-h2">Continue Watching</h2>
+          <h2 className="text-h2">Next Up</h2>
         </div>
         <div>
           <MediaSkeletonList cardType="vertical" count={6} />
@@ -277,23 +277,14 @@ function ContinueWatchingSection() {
   if (items.length === 0) return null;
 
   return (
-    <section className="min-h-80">
-      <div className="mt-2 flex items-center gap-4">
-        <h2 className="text-h2">Continue Watching</h2>
-      </div>
-      <div>
-        <LazySection
-          minHeight="280px"
-          fallback={<MediaSkeletonList cardType="vertical" count={6} />}
-        >
-          <Suspense
-            fallback={<MediaSkeletonList cardType="vertical" count={6} />}
-          >
-            <ContinueWatching />
-          </Suspense>
-        </LazySection>
-      </div>
-    </section>
+    <LazySection
+      minHeight="280px"
+      fallback={<MediaSkeletonList cardType="vertical" count={6} />}
+    >
+      <Suspense fallback={<MediaSkeletonList cardType="vertical" count={6} />}>
+        <NextUpSection />
+      </Suspense>
+    </LazySection>
   );
 }
 
