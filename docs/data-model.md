@@ -53,9 +53,10 @@ One row per (user, TMDB title). The heart of the watchlist.
 | `rating`                                        | real 0–10       | check constraint                                                      |
 | `updated_at`                                    | integer         | ms epoch, drives "recently updated" ordering                          |
 
-Indexes: `(user_id, tmdb_id, media_type)` **unique** · `(user_id, progress_status)` ·
-`(user_id, updated_at)`. Checks: `progress between 0 and 100`,
-`rating between 0 and 10`.
+Indexes: `(user_id, tmdb_id, media_type)` **unique** ·
+`(user_id, progress_status)`, `(user_id, updated_at)`, and keyset-covering
+`(user_id, in_watchlist, updated_at, id)` / media variants. Checks: `progress
+between 0 and 100`, `rating between 0 and 10`.
 
 ### episode_progress
 
@@ -87,7 +88,44 @@ the source of the "recently added" / account activity view.
 | `created_at` | integer         |                           |
 
 Index: `(user_id, created_at)`. Snapshots are only written when the current
-watchlist differs from the latest snapshot (see `helpers/snapshots.ts`).
+watchlist differs from the latest snapshot (see `helpers/snapshots.ts`). The
+JSON payload now includes status, reaction, progress, and metadata so a restore
+can recover the full active watchlist state.
+
+### watchlist_activity
+
+Durable user-facing change history for additions, removals, status changes,
+ratings, and completion events. Each row stores the previous and next state
+plus the metadata needed for a guarded undo.
+
+Indexes: `(user_id, created_at)` and
+`(user_id, media_type, tmdb_id, created_at)`. `reverted_at` prevents an undo
+from being applied more than once.
+
+### account_deletion_requests
+
+A 30-day self-service deletion lifecycle. `clerk_user_id` is retained so the
+scheduled task can delete the external Clerk identity while `user_id` remains
+the D1 owner key for cascade cleanup. The task refuses to remove local data
+until Clerk confirms deletion.
+
+### release_subscriptions
+
+Per-user, per-title release and regional availability preferences. The
+availability hash is compared on refresh to create deduplicated in-app
+notifications in `user_notifications`.
+
+### watch_sessions
+
+Playback session facts used by viewing insights. `watched_seconds` is recorded
+from trusted player events and `client_event_id` is the primary idempotency
+key, so retries cannot double-count a session.
+
+### user_notifications
+
+Durable in-app release and availability notifications. The unique
+`(user_id, dedupe_key)` index prevents repeated scheduled jobs from creating
+duplicate alerts.
 
 ### lists
 
@@ -121,7 +159,8 @@ Membership of a title in a list.
 | `rating`                                                     | real            |                                                                                                                    |
 
 Indexes: `(list_id, tmdb_id, media_type)` **unique** ·
-`(user_id, tmdb_id, media_type)` (covers user-level lookups).
+`(user_id, tmdb_id, media_type)`, `(list_id, position, added_at, id)`, and
+`(list_id, title)` for keyset paging and collection search.
 
 ### ai_recommendations
 
@@ -214,16 +253,21 @@ Keyset-pagination cursor for the daily cron task.
 
 ## Migrations (`drizzle/`)
 
-| Migration                     | What changed                                                                                                                              |
-| :---------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| `0000_dear_warbound.sql`      | Initial schema, all tables, indexes, checks. `users` still had `is_admin`                                                                 |
-| `0001_slippery_cammi.sql`     | Table rebuilds: `role_permissions` gets a real composite PK; `list_items.rating` and `watch_items.rating` switch from `integer` to `real` |
-| `0002_cute_bloodstrike.sql`   | Adds `snapshot_cursors`                                                                                                                   |
-| `0003_petite_sugar_man.sql`   | Drops `users.is_admin` (admin now read from Clerk only)                                                                                   |
-| `0004_wise_sabretooth.sql`    | Adds `users.watchlist_rev`, watchlist change-detection counter                                                                            |
-| `0005_yellow_rafael_vega.sql` | Adds `users.lists_rev` and `users.ai_rev`, lists + AI history counters                                                                    |
-| `0006_wild_iron_man.sql`      | Adds `users.perms_rev`, RBAC change-detection counter (role/ban/flag changes propagate through the same version poll)                     |
-| `0007_misty_vance_astro.sql`  | Collections support: adds `list_items.position`, `lists.description`, and `lists.sort_type` (public shareable lists with ranked ordering) |
+| Migration                                 | What changed                                                                                                                                     |
+| :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0000_dear_warbound.sql`                  | Initial schema, all tables, indexes, checks. `users` still had `is_admin`                                                                        |
+| `0001_slippery_cammi.sql`                 | Table rebuilds: `role_permissions` gets a real composite PK; `list_items.rating` and `watch_items.rating` switch from `integer` to `real`        |
+| `0002_cute_bloodstrike.sql`               | Adds `snapshot_cursors`                                                                                                                          |
+| `0003_petite_sugar_man.sql`               | Drops `users.is_admin` (admin now read from Clerk only)                                                                                          |
+| `0004_wise_sabretooth.sql`                | Adds `users.watchlist_rev`, watchlist change-detection counter                                                                                   |
+| `0005_yellow_rafael_vega.sql`             | Adds `users.lists_rev` and `users.ai_rev`, lists + AI history counters                                                                           |
+| `0006_wild_iron_man.sql`                  | Adds `users.perms_rev`, RBAC change-detection counter (role/ban/flag changes propagate through the same version poll)                            |
+| `0007_misty_vance_astro.sql`              | Collections support: adds `list_items.position`, `lists.description`, and `lists.sort_type` (public shareable lists with ranked ordering)        |
+| `0010_episode_watched_keyset_indexes.sql` | Adds covering indexes for episode progress keyset scans                                                                                          |
+| `0011_genre_mode.sql`                     | Adds recommendation genre mode support                                                                                                           |
+| `0012_user_taste_profiles.sql`            | Adds persistent user taste profiles                                                                                                              |
+| `0012_motionless_groot.sql`               | Adds library activity, snapshots metadata support, release subscriptions, notifications, viewing sessions, deletion requests, and keyset indexes |
+| `0013_deep_jimmy_woo.sql`                 | Adds the Clerk subject required by scheduled account deletion                                                                                    |
 
 > `drizzle-kit generate` (via `drizzle.config.ts`) produces these from the
 > schema. They are applied to D1 with `wrangler d1 migrations apply`, so the

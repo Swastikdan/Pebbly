@@ -1,16 +1,15 @@
-import { Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { memo } from "react";
 
 import type { AIRecommendation } from "@/domain/recommendations";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { MediaSkeletonList } from "@/components/media-skeleton-list";
+import { TasteProfileDialog } from "@/components/recommendations/taste-profile-dialog";
 import { ScrollContainer } from "@/components/scroll-container";
-import { Button } from "@/components/ui/button";
 import { useHomepageRecommendations } from "@/hooks/use-homepage-recommendations";
 import { useResolvedRecommendation } from "@/hooks/use-resolved-recommendation";
 import { describeGenerationError } from "@/lib/generation-errors";
 import { getDismissKey } from "@/lib/recommendation-options";
-import { cn } from "@/lib/utils";
 
 const HomepageRecommendationCard = memo(
   ({
@@ -42,85 +41,49 @@ const HomepageRecommendationCard = memo(
     const isLiked = likedKeys.has(`${mediaType}:${resolvedData.id}`);
 
     return (
-      <div className="group/rec-card relative">
-        <MediaCard
-          card_type="horizontal"
-          id={resolvedData.id}
-          title={resolvedData.title}
-          rating={resolvedData.rating}
-          image={resolvedData.posterPath ?? ""}
-          poster_path={resolvedData.posterPath ?? ""}
-          media_type={mediaType}
-          release_date={resolvedData.releaseDate}
-          overview={resolvedData.overview}
-          is_on_homepage={true}
-          relevanceScore={recommendation.relevanceScore}
-          hideWatchlistButton={true}
-        />
-
-        <div className="absolute end-2 top-2 z-20 flex gap-1.5 opacity-100 transition-opacity duration-200 ease-out [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/rec-card:opacity-100">
-          <Button
-            variant="secondary"
-            size="icon"
-            className={cn(
-              "pressable h-8 w-8 cursor-pointer rounded-md border transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] [@media(hover:hover)]:hover:scale-105",
-              isLiked
-                ? "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800"
-                : "border-neutral-700 bg-neutral-900/90 text-white hover:bg-neutral-800",
-            )}
-            aria-label={
-              isLiked ? "Remove from Watchlist" : "Add to Watchlist and like"
-            }
-            aria-pressed={isLiked}
-            onClick={(event) => {
-              event.stopPropagation();
-              event.preventDefault();
-              onFeedback(
-                recommendation,
-                resolvedData.id,
-                isLiked ? "unlike" : "like",
-                {
-                  image: resolvedData.posterPath ?? undefined,
-                  rating: resolvedData.rating,
-                  release_date: resolvedData.releaseDate ?? undefined,
-                  overview: resolvedData.overview,
-                },
-              );
-            }}
-            title={
-              isLiked ? "Remove from Watchlist" : "Add to Watchlist & Like"
-            }
-          >
-            <ThumbsUp
-              aria-hidden="true"
-              size={13}
-              className={isLiked ? "fill-white text-white" : "text-white"}
-            />
-          </Button>
-          <Button
-            variant="secondary"
-            size="icon"
-            className="pressable hover:border-destructive hover:bg-destructive/90 h-8 w-8 cursor-pointer rounded-md border border-neutral-700 bg-neutral-900/90 text-white transition-[color,background-color,border-color,transform] duration-150 hover:text-white active:scale-[0.96] [@media(hover:hover)]:hover:scale-105"
-            aria-label="Dislike recommendation"
-            onClick={(event) => {
-              event.stopPropagation();
-              event.preventDefault();
-              onFeedback(recommendation, resolvedData.id, "dislike");
-            }}
-            title="Dislike"
-          >
-            <ThumbsDown aria-hidden="true" size={13} />
-          </Button>
-        </div>
-      </div>
+      <MediaCard
+        card_type="horizontal"
+        id={resolvedData.id}
+        title={resolvedData.title}
+        rating={resolvedData.rating}
+        image={resolvedData.posterPath ?? ""}
+        poster_path={resolvedData.posterPath ?? ""}
+        media_type={mediaType}
+        release_date={resolvedData.releaseDate}
+        overview={resolvedData.overview}
+        is_on_homepage={true}
+        relevanceScore={recommendation.relevanceScore}
+        reasoning={recommendation.reasoning}
+        hideWatchlistButton={true}
+        feedbackActions={{
+          isLiked,
+          onMoreLikeThis: () => {
+            onFeedback(
+              recommendation,
+              resolvedData.id,
+              isLiked ? "unlike" : "like",
+              {
+                image: resolvedData.posterPath ?? undefined,
+                rating: resolvedData.rating,
+                release_date: resolvedData.releaseDate ?? undefined,
+                overview: resolvedData.overview,
+              },
+            );
+          },
+          onNotThis: () => {
+            onFeedback(recommendation, resolvedData.id, "dislike");
+          },
+        }}
+      />
     );
   },
 );
 
 function RecommendationSectionHeader() {
   return (
-    <div className="mb-1 flex items-center justify-between px-4 md:px-0">
+    <div className="mb-2 flex items-center justify-between px-4 md:px-0">
       <h2 className="text-h2">Picks For You</h2>
+      <TasteProfileDialog />
     </div>
   );
 }

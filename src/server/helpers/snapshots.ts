@@ -1,33 +1,74 @@
-import { desc, eq, gt } from "drizzle-orm";
+import { and, desc, eq, gt, or } from "drizzle-orm";
 
 import type { Db } from "../db/client";
+import type { MediaType } from "../schema/common";
 import { getDb } from "../db/client";
 import { users, watchItems, watchlistSnapshots } from "../db/schema";
 import { getEnv } from "../env";
+
+type SnapshotItem = {
+  tmdbId: number;
+  mediaType: MediaType;
+  progressStatus: string | null;
+  reaction: string | null;
+  progress: number | null;
+  title: string | null;
+  image: string | null;
+  rating: number | null;
+  releaseDate: string | null;
+  overview: string | null;
+};
 
 export async function createWatchlistSnapshot(
   db: Db,
   userId: string,
 ): Promise<void> {
-  const items = await db
-    .select({
-      tmdbId: watchItems.tmdbId,
-      mediaType: watchItems.mediaType,
-      inWatchlist: watchItems.inWatchlist,
-    })
-    .from(watchItems)
-    .where(eq(watchItems.userId, userId))
-    // Deterministic order before limit so the same watchlist always yields
-    // the same snapshot content.
-    .orderBy(watchItems.tmdbId, watchItems.mediaType)
-    .limit(500);
+  const items = [];
+  let cursor: { tmdbId: number; mediaType: MediaType } | null = null;
+  for (;;) {
+    const page: SnapshotItem[] = await db
+      .select({
+        tmdbId: watchItems.tmdbId,
+        mediaType: watchItems.mediaType,
+        progressStatus: watchItems.progressStatus,
+        reaction: watchItems.reaction,
+        progress: watchItems.progress,
+        title: watchItems.title,
+        image: watchItems.image,
+        rating: watchItems.rating,
+        releaseDate: watchItems.releaseDate,
+        overview: watchItems.overview,
+      })
+      .from(watchItems)
+      .where(
+        and(
+          eq(watchItems.userId, userId),
+          eq(watchItems.inWatchlist, true),
+          cursor
+            ? or(
+                gt(watchItems.tmdbId, cursor.tmdbId),
+                and(
+                  eq(watchItems.tmdbId, cursor.tmdbId),
+                  gt(watchItems.mediaType, cursor.mediaType),
+                ),
+              )
+            : undefined,
+        ),
+      )
+      .orderBy(watchItems.tmdbId, watchItems.mediaType)
+      .limit(500);
+    items.push(...page);
+    if (page.length < 500) break;
+    const last = page[page.length - 1];
+    cursor = { tmdbId: last.tmdbId, mediaType: last.mediaType };
+  }
 
-  const watchlistItems = items
-    .filter((item) => item.inWatchlist !== false)
-    .map((item) => ({ tmdbId: item.tmdbId, mediaType: item.mediaType }))
-    .sort(
-      (a, b) => a.tmdbId - b.tmdbId || a.mediaType.localeCompare(b.mediaType),
-    );
+  const watchlistItems = items.map((item) => ({
+    ...item,
+    progressStatus: item.progressStatus ?? null,
+    reaction: item.reaction ?? null,
+    progress: item.progress ?? null,
+  }));
 
   const latest = await db
     .select()
@@ -42,8 +83,7 @@ export async function createWatchlistSnapshot(
     latest[0].items.length === watchlistItems.length &&
     latest[0].items.every(
       (item, index) =>
-        item.tmdbId === watchlistItems[index]?.tmdbId &&
-        item.mediaType === watchlistItems[index]?.mediaType,
+        JSON.stringify(item) === JSON.stringify(watchlistItems[index]),
     )
   ) {
     return;
@@ -83,7 +123,10 @@ export async function createDailySnapshots(
       .orderBy(users.id)
       .limit(50);
 
-    if (batch.length === 0) break;
+    if (batch.length === 0) {
+      cursor = "";
+      break;
+    }
 
     for (const user of batch) {
       if (processed >= maxUsers) return { lastProcessedId: cursor, processed };

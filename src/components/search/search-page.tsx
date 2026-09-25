@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isMediaType } from "@/domain/media";
 import { useUrlPagedQuery } from "@/hooks/use-url-paged-query";
 import { getMedia, getSearchResult } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
@@ -37,20 +38,25 @@ const MIN_RATING_ITEMS = [
   { value: "7", label: "7+ Rating" },
   { value: "8", label: "8+ Rating" },
   { value: "9", label: "9+ Rating" },
-];
+] as const;
+
+type RatingValue = (typeof MIN_RATING_ITEMS)[number]["value"];
 
 export function SearchPage() {
   const navigate = useNavigate();
   const loaderData = useLoaderData({ from: "/search" });
-  const { page: pageNumber, query: searchQuery } = useSearch({
-    from: "/search",
-  });
+  const {
+    page: pageNumber,
+    query: searchQuery,
+    type: urlType,
+    minRating: urlMinRating,
+  } = useSearch({ from: "/search" });
 
   const query = searchQuery ?? "";
   const trimmedQuery = query.trim();
   const hasValidQuery = trimmedQuery.length >= 2;
-  const [type, setType] = useState<FilterType>(null);
-  const [minRating, setMinRating] = useState("0");
+  const type: FilterType = urlType ?? null;
+  const minRating = urlMinRating ?? "0";
 
   const urlPage = pageNumber ?? 1;
   const hasMatchingSearchLoaderData =
@@ -99,6 +105,8 @@ export function SearchPage() {
         search: {
           query: hasValidQuery ? trimmedQuery : undefined,
           page: newPage,
+          type: type ?? undefined,
+          minRating: minRating === "0" ? undefined : minRating,
         },
       });
     },
@@ -108,7 +116,10 @@ export function SearchPage() {
     if (!data?.results) return [];
 
     return data.results.filter((item: SearchResultsEntity) => {
-      if (item.media_type === "person") return false;
+      if (item.media_type === "person") {
+        return type === null && Number(minRating) === 0;
+      }
+      if (!isMediaType(item.media_type)) return false;
       if (type && item.media_type !== type) return false;
       const ratingMin = Number(minRating);
       if (ratingMin > 0 && (item.vote_average ?? 0) < ratingMin) return false;
@@ -116,29 +127,28 @@ export function SearchPage() {
     });
   }, [data?.results, type, minRating]);
 
-  const movieCount =
-    data?.results?.filter((item) => item.media_type === "movie").length ?? 0;
-  const tvCount =
-    data?.results?.filter((item) => item.media_type === "tv").length ?? 0;
+  const navigateWithFilters = useCallback(
+    (nextType: FilterType, nextMinRating: RatingValue, nextPage?: number) => {
+      navigate({
+        to: "/search",
+        search: {
+          query: hasValidQuery ? trimmedQuery : undefined,
+          page: nextPage && nextPage > 1 ? nextPage : undefined,
+          type: nextType ?? undefined,
+          minRating: nextMinRating === "0" ? undefined : nextMinRating,
+        },
+      });
+    },
+    [hasValidQuery, navigate, trimmedQuery],
+  );
 
-  useEffect(() => {
-    if (type && filteredData.length === 0 && data?.results?.length) {
-      setType(null);
-      setMinRating("0");
-    }
-    if (type === "movie" && movieCount === 0 && data?.results?.length) {
-      setType(null);
-      setMinRating("0");
-    }
-    if (type === "tv" && tvCount === 0 && data?.results?.length) {
-      setType(null);
-      setMinRating("0");
-    }
-  }, [filteredData.length, type, data?.results?.length, movieCount, tvCount]);
-
-  const handleTypeChange = useCallback((newType: FilterType) => {
-    setType((prevType) => (prevType === newType ? prevType : newType));
-  }, []);
+  const handleTypeChange = useCallback(
+    (newType: FilterType) => {
+      if (newType === type) return;
+      navigateWithFilters(newType, minRating);
+    },
+    [minRating, navigateWithFilters, type],
+  );
 
   const handleAllClick = useCallback(
     () => handleTypeChange(null),
@@ -153,11 +163,10 @@ export function SearchPage() {
     [handleTypeChange],
   );
 
-  const hasResults = !!data?.results?.length;
-  const baselineNonPersonCount = movieCount + tvCount;
+  const hasResults = filteredData.length > 0;
   const hasActiveFilters = type !== null || Number(minRating) > 0;
   const noResultsDueToFilters =
-    filteredData.length === 0 && hasActiveFilters && baselineNonPersonCount > 0;
+    filteredData.length === 0 && hasActiveFilters && !!data?.results?.length;
   const showPagination = hasResults && totalPages > 1;
   // A search refetch is an in-place update, not a page transition. Keeping the
   // previous results mounted prevents the grid from flashing away and, more
@@ -251,6 +260,8 @@ export function SearchPage() {
             search: {
               query: undefined,
               page: undefined,
+              type: undefined,
+              minRating: undefined,
             },
           });
         }}
@@ -263,17 +274,22 @@ export function SearchPage() {
         <div className="flex min-h-80 w-full items-center justify-center">
           <DefaultEmptyState
             onReset={() => {
-              if (noResultsDueToFilters) {
-                setType(null);
-                setMinRating("0");
-              } else {
-                navigate({ to: "/search" });
-              }
+              navigate({
+                to: "/search",
+                search: noResultsDueToFilters
+                  ? {
+                      query: trimmedQuery || undefined,
+                      page: undefined,
+                      type: undefined,
+                      minRating: undefined,
+                    }
+                  : { query: trimmedQuery || undefined, page: undefined },
+              });
             }}
             message={
               noResultsDueToFilters
-                ? "No movies or TV shows found with the selected filter"
-                : "No movies or TV shows found matching your search"
+                ? "No results found with the selected filter"
+                : "No movies, TV shows, or people found matching your search"
             }
           />
         </div>
@@ -308,50 +324,55 @@ export function SearchPage() {
             >
               All
             </Button>
-            {movieCount > 0 && (
-              <Button
-                className="h-7 rounded-md px-3 text-xs font-semibold"
-                variant="ghost"
-                onClick={handleMovieClick}
-                data-active={type === "movie"}
-                aria-pressed={type === "movie"}
-                style={
-                  type === "movie"
-                    ? {
-                        background: "var(--foreground)",
-                        color: "var(--background)",
-                      }
-                    : undefined
-                }
-              >
-                Movies
-              </Button>
-            )}
-            {tvCount > 0 && (
-              <Button
-                className="h-7 rounded-md px-3 text-xs font-semibold"
-                variant="ghost"
-                onClick={handleTVClick}
-                data-active={type === "tv"}
-                aria-pressed={type === "tv"}
-                style={
-                  type === "tv"
-                    ? {
-                        background: "var(--foreground)",
-                        color: "var(--background)",
-                      }
-                    : undefined
-                }
-              >
-                Series
-              </Button>
-            )}
+            <Button
+              className="h-7 rounded-md px-3 text-xs font-semibold"
+              variant="ghost"
+              onClick={handleMovieClick}
+              data-active={type === "movie"}
+              aria-pressed={type === "movie"}
+              style={
+                type === "movie"
+                  ? {
+                      background: "var(--foreground)",
+                      color: "var(--background)",
+                    }
+                  : undefined
+              }
+            >
+              Movies
+            </Button>
+            <Button
+              className="h-7 rounded-md px-3 text-xs font-semibold"
+              variant="ghost"
+              onClick={handleTVClick}
+              data-active={type === "tv"}
+              aria-pressed={type === "tv"}
+              style={
+                type === "tv"
+                  ? {
+                      background: "var(--foreground)",
+                      color: "var(--background)",
+                    }
+                  : undefined
+              }
+            >
+              Series
+            </Button>
           </div>
 
           <Select
             items={MIN_RATING_ITEMS}
             value={minRating}
-            onValueChange={(value) => setMinRating(value ?? "0")}
+            onValueChange={(value) => {
+              const nextMinRating = MIN_RATING_ITEMS.some(
+                (item) => item.value === value,
+              )
+                ? (value as RatingValue)
+                : "0";
+              if (nextMinRating !== minRating) {
+                navigateWithFilters(type, nextMinRating);
+              }
+            }}
           >
             <SelectTrigger
               size="sm"
@@ -374,28 +395,42 @@ export function SearchPage() {
           </Select>
 
           <span className="text-muted-foreground ms-auto text-[10px]">
-            {data?.total_results ?? 0} results
+            {filteredData.length} results
           </span>
         </div>
 
         <div className="flex min-h-105 w-full items-center justify-center">
           <MediaGrid stagger>
-            {filteredData.map((item, index) => (
-              <MediaCard
-                key={item.id}
-                id={item.id}
-                image={item.poster_path ?? item.profile_path ?? ""}
-                known_for_department={item.known_for_department ?? ""}
-                media_type={item.media_type as MediaType}
-                poster_path={item.poster_path ?? ""}
-                rating={item.vote_average ?? 0}
-                release_date={item.first_air_date ?? item.release_date ?? null}
-                title={item.title ?? item.name ?? "Untitled"}
-                overview={item.overview ?? undefined}
-                card_type="horizontal"
-                priority={index < 7}
-              />
-            ))}
+            {filteredData.map((item, index) =>
+              item.media_type === "person" ? (
+                <MediaCard
+                  key={`person-${item.id}`}
+                  card_type="person"
+                  id={item.id}
+                  name={item.name ?? "Unnamed person"}
+                  profile_path={item.profile_path ?? ""}
+                  known_for_department={item.known_for_department ?? ""}
+                  priority={index < 7}
+                />
+              ) : isMediaType(item.media_type) ? (
+                <MediaCard
+                  key={`${item.media_type}-${item.id}`}
+                  id={item.id}
+                  image={item.poster_path ?? ""}
+                  known_for_department={item.known_for_department ?? ""}
+                  media_type={item.media_type}
+                  poster_path={item.poster_path ?? ""}
+                  rating={item.vote_average ?? 0}
+                  release_date={
+                    item.first_air_date ?? item.release_date ?? null
+                  }
+                  title={item.title ?? item.name ?? "Untitled"}
+                  overview={item.overview ?? undefined}
+                  card_type="horizontal"
+                  priority={index < 7}
+                />
+              ) : null,
+            )}
           </MediaGrid>
         </div>
         <div className="min-h-14">

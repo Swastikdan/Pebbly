@@ -5,6 +5,7 @@ import { Link } from "@tanstack/react-router";
 import type { NextUpItem } from "@/lib/next-up-engine";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
+import { IMAGE_PREFIX } from "@/constants";
 import { useNextUp } from "@/hooks/use-next-up";
 import { toast } from "@/lib/notifications";
 import { mediaDetailRoute } from "@/lib/route-helpers";
@@ -15,7 +16,17 @@ export const NextUpSection = memo(function NextUpSection({
 }: {
   className?: string;
 }) {
-  const { queue, topItem, isLoading, isSettled, snooze, remove } = useNextUp();
+  const {
+    queue,
+    topItem,
+    topEpisodeDetails,
+    topWatchProviders,
+    providerLink,
+    isLoading,
+    isSettled,
+    snooze,
+    remove,
+  } = useNextUp();
 
   if (isLoading || !isSettled) {
     return null;
@@ -81,131 +92,204 @@ export const NextUpSection = memo(function NextUpSection({
       </div>
 
       {/* Featured Primary Card */}
-      <div className="border-border bg-card relative overflow-hidden rounded-xl border p-4 shadow-xs sm:p-6">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center">
-          {/* Media Visual */}
-          <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-lg md:w-72 lg:w-80">
-            {topItem.backdrop || topItem.image ? (
-              <Image
-                alt={topItem.title}
-                src={(topItem.backdrop || topItem.image) as string}
-                className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                width={360}
-                height={200}
-              />
-            ) : (
-              <div className="bg-muted flex h-full w-full items-center justify-center">
-                <Play className="text-muted-foreground/40 size-12" />
-              </div>
-            )}
+      {(() => {
+        const displayImage =
+          (topItem.type === "tv" && topEpisodeDetails?.stillPath
+            ? `${IMAGE_PREFIX.HD_BACKDROP}${topEpisodeDetails.stillPath}`
+            : null) ??
+          (topItem.backdrop
+            ? `${IMAGE_PREFIX.HD_BACKDROP}${topItem.backdrop}`
+            : null) ??
+          (topItem.image
+            ? `${IMAGE_PREFIX.LQ_BACKDROP}${topItem.image}`
+            : null);
 
-            {/* Progress bar overlay on video thumbnail */}
-            {typeof topItem.progressPercent === "number" &&
-              topItem.progressPercent > 0 && (
-                <div className="absolute inset-x-0 bottom-0 h-1.5 bg-black/60">
-                  <div
-                    className="bg-primary h-full transition-[width]"
-                    style={{
-                      width: `${Math.min(topItem.progressPercent, 100)}%`,
-                    }}
+        const displayOverview =
+          (topItem.type === "tv" && topEpisodeDetails?.overview
+            ? topEpisodeDetails.overview
+            : null) ?? topItem.overview;
+
+        return (
+          <div className="border-border bg-card relative overflow-hidden rounded-xl border p-4 shadow-xs sm:p-6">
+            <div className="flex flex-col gap-5 md:flex-row md:items-center">
+              {/* Media Visual */}
+              <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-lg md:w-72 lg:w-80">
+                {displayImage ? (
+                  <Image
+                    alt={topEpisodeDetails?.name ?? topItem.title}
+                    src={displayImage}
+                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                    width={360}
+                    height={200}
                   />
-                </div>
-              )}
-          </div>
-
-          {/* Details & Play Actions */}
-          <div className="flex flex-1 flex-col justify-between space-y-3">
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                {topItem.type === "tv" && topItem.nextEpisode && (
-                  <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold">
-                    <Tv aria-hidden="true" size={11} />
-                    Season {topItem.nextEpisode.season}, Episode{" "}
-                    {topItem.nextEpisode.episode}
-                  </span>
+                ) : (
+                  <div className="bg-muted flex h-full w-full items-center justify-center">
+                    <Play className="text-muted-foreground/40 size-12" />
+                  </div>
                 )}
-                {topItem.type === "movie" &&
-                  typeof topItem.progressPercent === "number" && (
-                    <span className="bg-secondary text-secondary-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium">
-                      <RotateCcw aria-hidden="true" size={11} />
-                      {Math.round(topItem.progressPercent)}% completed
-                    </span>
+
+                {/* Progress bar overlay on video thumbnail */}
+                {typeof topItem.progressPercent === "number" &&
+                  topItem.progressPercent > 0 && (
+                    <div className="absolute inset-x-0 bottom-0 h-1.5 bg-black/60">
+                      <div
+                        className="bg-primary h-full transition-[width]"
+                        style={{
+                          width: `${Math.min(topItem.progressPercent, 100)}%`,
+                        }}
+                      />
+                    </div>
                   )}
-                {topItem.source === "daily-pick" && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-500">
-                    <Sparkles aria-hidden="true" size={11} />
-                    Recommended Pick
-                  </span>
-                )}
               </div>
 
-              <Link
-                to={detailRoute.to}
-                params={detailRoute.params}
-                search={detailRoute.search}
-                className="hover:text-primary block transition-colors"
-              >
-                <h3 className="text-lg font-bold tracking-tight sm:text-xl">
-                  {topItem.title}
-                </h3>
-              </Link>
+              {/* Details & Play Actions */}
+              <div className="flex flex-1 flex-col justify-between space-y-3">
+                <div className="space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {topItem.type === "tv" && topItem.nextEpisode && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold">
+                          <Tv aria-hidden="true" size={11} />
+                          Season {topItem.nextEpisode.season}, Episode{" "}
+                          {topItem.nextEpisode.episode}
+                        </span>
+                        {topEpisodeDetails?.name && (
+                          <span className="text-foreground/90 text-xs font-semibold">
+                            "{topEpisodeDetails.name}"
+                          </span>
+                        )}
+                        {typeof topEpisodeDetails?.runtime === "number" &&
+                          topEpisodeDetails.runtime > 0 && (
+                            <span className="text-muted-foreground text-[11px]">
+                              • {topEpisodeDetails.runtime}m
+                            </span>
+                          )}
+                      </div>
+                    )}
+                    {topItem.type === "movie" &&
+                      typeof topItem.progressPercent === "number" && (
+                        <span className="bg-secondary text-secondary-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium">
+                          <RotateCcw aria-hidden="true" size={11} />
+                          {Math.round(topItem.progressPercent)}% completed
+                        </span>
+                      )}
+                    {topItem.source === "daily-pick" && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-500">
+                        <Sparkles aria-hidden="true" size={11} />
+                        Recommended Pick
+                      </span>
+                    )}
+                  </div>
 
-              {topItem.overview && (
-                <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed sm:text-sm">
-                  {topItem.overview}
-                </p>
-              )}
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              <Button
-                render={
                   <Link
-                    to={topRoute.to}
-                    params={topRoute.params}
-                    search={topRoute.search}
-                  />
-                }
-                variant="default"
-                size="sm"
-                className="gap-2 font-semibold"
-              >
-                <Play aria-hidden="true" className="size-3.5 fill-current" />
-                <span>
-                  {topItem.type === "tv" && topItem.nextEpisode
-                    ? `Play Episode ${topItem.nextEpisode.episode}`
-                    : "Resume Playback"}
-                </span>
-              </Button>
+                    to={detailRoute.to}
+                    params={detailRoute.params}
+                    search={detailRoute.search}
+                    className="hover:text-primary block transition-colors"
+                  >
+                    <h3 className="text-lg font-bold tracking-tight sm:text-xl">
+                      {topItem.title}
+                    </h3>
+                  </Link>
 
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={(e) => handleSnooze(topItem, e)}
-                className="gap-1.5 text-xs"
-                title="Hide from Next Up for 24 hours"
-              >
-                <Clock aria-hidden="true" size={13} />
-                <span className="hidden sm:inline">Snooze</span>
-              </Button>
+                  {displayOverview && (
+                    <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed sm:text-sm">
+                      {displayOverview}
+                    </p>
+                  )}
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={(e) => handleRemove(topItem, e)}
-                className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive/10 size-8 p-0"
-                title="Remove from Next Up"
-              >
-                <Trash2 aria-hidden="true" size={14} />
-                <span className="sr-only">Remove</span>
-              </Button>
+                  {/* Watch Provider context */}
+                  {topWatchProviders && topWatchProviders.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <span className="text-muted-foreground text-[11px] font-medium">
+                        Stream on:
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {topWatchProviders.map((provider) => (
+                          <a
+                            key={provider.id}
+                            href={providerLink ?? "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Watch on ${provider.name}`}
+                            className="inline-block shrink-0 transition-transform hover:scale-105"
+                          >
+                            {provider.logoPath ? (
+                              <Image
+                                src={`${IMAGE_PREFIX.PREVIEW}${provider.logoPath}`}
+                                alt={provider.name}
+                                width={22}
+                                height={22}
+                                className="size-5.5 rounded-md ring-1 ring-black/10 dark:ring-white/15"
+                              />
+                            ) : (
+                              <span className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 text-[10px] font-semibold">
+                                {provider.name}
+                              </span>
+                            )}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <Button
+                    render={
+                      <Link
+                        to={topRoute.to}
+                        params={topRoute.params}
+                        search={topRoute.search}
+                      />
+                    }
+                    variant="default"
+                    size="sm"
+                    className="gap-2 font-semibold"
+                  >
+                    <Play
+                      aria-hidden="true"
+                      className="size-3.5 fill-current"
+                    />
+                    <span>
+                      {topItem.type === "tv" && topItem.nextEpisode
+                        ? topEpisodeDetails?.name
+                          ? `Play E${topItem.nextEpisode.episode}: ${topEpisodeDetails.name}`
+                          : `Play Episode ${topItem.nextEpisode.episode}`
+                        : "Resume Playback"}
+                    </span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={(e) => handleSnooze(topItem, e)}
+                    className="gap-1.5 text-xs"
+                    title="Hide from Next Up for 24 hours"
+                  >
+                    <Clock aria-hidden="true" size={13} />
+                    <span className="hidden sm:inline">Snooze</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleRemove(topItem, e)}
+                    className="text-muted-foreground hover:text-destructive-foreground hover:bg-destructive/10 size-8 p-0"
+                    title="Remove from Next Up"
+                  >
+                    <Trash2 aria-hidden="true" size={14} />
+                    <span className="sr-only">Remove</span>
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Remaining Queue Rail */}
       {remainingQueue.length > 0 && (

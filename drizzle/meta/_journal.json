@@ -78,6 +78,27 @@
       "when": 1789876897945,
       "tag": "0011_genre_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1790271555182,
+      "tag": "0012_user_taste_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1790306326072,
+      "tag": "0012_motionless_groot",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1790307582911,
+      "tag": "0013_deep_jimmy_woo",
+      "breakpoints": true
     }
   ]
 }

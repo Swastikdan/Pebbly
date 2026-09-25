@@ -1,6 +1,6 @@
 import { useUser } from "@clerk/react";
 import { ArrowRightLeft } from "lucide-react";
-import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useId } from "react";
 
 import { openGuestMigrationModal } from "@/components/auth/guest-migration-dialog";
 import { Button } from "@/components/ui/button";
@@ -8,16 +8,16 @@ import { Download, Upload } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
+import { WatchlistActivityPanel } from "@/components/watchlist/watchlist-activity-panel";
 import { WatchlistFilters } from "@/components/watchlist/watchlist-filters";
 import { WatchlistGrid } from "@/components/watchlist/watchlist-grid";
 import { useFilteredWatchlist } from "@/hooks/use-filtered-watchlist";
 import { useRemoveFromWatchlistWithUndo } from "@/hooks/use-remove-with-undo";
 import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
 import { useWatchlistImportExport } from "@/hooks/use-watchlist-import-export";
+import { useWatchlistPage } from "@/hooks/use-watchlist-page";
 import { useLocalListsStore } from "@/stores/local-lists-store";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
-
-const WATCHLIST_PAGE_SIZE = 30;
 
 export function WatchlistTab() {
   const { isSignedIn } = useUser();
@@ -30,8 +30,7 @@ export function WatchlistTab() {
     localLists.length > 0;
 
   const importInputId = useId();
-  const { watchlist: watchlistData, loading: watchlistLoading } =
-    useWatchlist();
+  const { watchlist: watchlistData } = useWatchlist({ enabled: !isSignedIn });
   const removeFromWatchlist = useRemoveFromWatchlistWithUndo();
   const {
     importLoading,
@@ -46,43 +45,30 @@ export function WatchlistTab() {
   } = useWatchlistImportExport();
 
   const filters = useFilteredWatchlist(watchlistData);
-  const {
-    searchQuery,
-    activeFilter,
-    reactionFilter,
-    mediaFilter,
-    filteredWatchlist,
-    counts,
-  } = filters;
+  const { searchQuery, activeFilter, reactionFilter, mediaFilter } = filters;
 
-  const [page, setPage] = useState(1);
-  const filterKey = [
+  const pageState = useWatchlistPage({
     searchQuery,
     activeFilter,
     reactionFilter,
     mediaFilter,
-    filters.sortBy,
-  ].join("|");
-  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
-  if (prevFilterKey !== filterKey) {
-    setPrevFilterKey(filterKey);
-    setPage(1);
-  }
-  const totalPages = Math.ceil(filteredWatchlist.length / WATCHLIST_PAGE_SIZE);
-  const safePage = Math.min(page, Math.max(totalPages, 1));
-  const paginatedWatchlist = useMemo(
-    () =>
-      filteredWatchlist.slice(
-        (safePage - 1) * WATCHLIST_PAGE_SIZE,
-        safePage * WATCHLIST_PAGE_SIZE,
-      ),
-    [filteredWatchlist, safePage],
+    sortBy: filters.sortBy,
+  });
+  const watchlistLoading = pageState.loading;
+  const currentPage = pageState.currentPage;
+  const totalPages = pageState.totalPages;
+  const totalCount = pageState.totalCount;
+  const displayItems = pageState.items;
+  const displayCounts = pageState.counts;
+  const libraryCount = displayCounts.all || totalCount;
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      void pageState.goToPage(newPage);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [pageState],
   );
-
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
 
   return (
     <div className="pt-3">
@@ -121,12 +107,11 @@ export function WatchlistTab() {
             Watchlist
           </h1>
           <p className="text-muted-foreground mt-0.5 text-xs">
-            {watchlistData.length} title
-            {watchlistData.length !== 1 ? "s" : ""} saved
+            {libraryCount} title{libraryCount !== 1 ? "s" : ""} saved
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {(watchlistLoading || (watchlistData?.length ?? 0) > 0) && (
+          {(watchlistLoading || libraryCount > 0) && (
             <Button
               className="gap-1.5 text-xs"
               disabled={watchlistLoading || exportLoading || importLoading}
@@ -191,21 +176,23 @@ export function WatchlistTab() {
         </div>
       )}
 
-      {(watchlistLoading || watchlistData.length > 0) && (
+      {isSignedIn && <WatchlistActivityPanel />}
+
+      {(watchlistLoading || totalCount > 0) && (
         <WatchlistFilters
           filters={filters}
-          counts={counts}
-          filteredCount={filteredWatchlist.length}
-          totalCount={watchlistData.length}
+          counts={displayCounts}
+          filteredCount={totalCount}
+          totalCount={libraryCount}
           disabled={watchlistLoading}
         />
       )}
 
       <WatchlistGrid
-        items={paginatedWatchlist}
+        items={displayItems}
         loading={watchlistLoading}
         errorMessage={error ? error.message : null}
-        totalWatchlistCount={watchlistData.length}
+        totalWatchlistCount={libraryCount}
         hasActiveFilters={
           activeFilter !== "all" ||
           searchQuery.trim().length >= 2 ||
@@ -216,7 +203,7 @@ export function WatchlistTab() {
       />
 
       <Pagination
-        currentPage={safePage}
+        currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />

@@ -1,17 +1,26 @@
 import { useClerk, useUser } from "@clerk/react";
 import { usePostHog } from "@posthog/react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { DataVersion } from "@/hooks/data-version";
 import type { MutationDomain } from "@/lib/cross-tab-sync";
+import type { MutationOutboxSnapshot } from "@/lib/data/mutation-outbox";
 import type { QueryClient } from "@tanstack/react-query";
+import { SyncCenter } from "@/components/sync-center";
 import { fetchDataVersion } from "@/hooks/data-version";
 import { usePermissions } from "@/hooks/use-permissions";
 import { subscribeToCrossTabMutations } from "@/lib/cross-tab-sync";
+import {
+  discardMutation,
+  getMutationOutboxSnapshot,
+  retryFailedMutations,
+  retryMutation,
+  subscribeToMutationOutbox,
+} from "@/lib/data/mutation-outbox";
 import { clearPendingOps } from "@/lib/data/pending-ops";
+import { syncMutationOutbox } from "@/lib/data/sync-center";
 import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
-import { replayRemoteMutations } from "@/lib/repository/remote-repository";
 import { storeUser } from "@/server/fns/users";
 import { unwrap } from "@/server/schema/common";
 
@@ -25,6 +34,16 @@ export function purgePrivateQueries(client: QueryClient) {
   client.removeQueries({ queryKey: ["recommendations"] });
 }
 
+const EMPTY_SYNC_SNAPSHOT: MutationOutboxSnapshot = {
+  records: [],
+  pending: 0,
+  syncing: 0,
+  failed: 0,
+  recovered: 0,
+  permanent: 0,
+  total: 0,
+};
+
 export const UserSync = () => {
   const { user, isLoaded } = useUser();
   const queryClient = useQueryClient();
@@ -34,6 +53,12 @@ export const UserSync = () => {
 
   const lastRevsRef = useRef<Record<string, DataVersion>>({});
   const identifiedUserRef = useRef<string | null>(null);
+  const userId = user?.id;
+  const [syncState, setSyncState] = useState<{
+    userId: string | undefined;
+    snapshot: MutationOutboxSnapshot;
+  }>({ userId: undefined, snapshot: EMPTY_SYNC_SNAPSHOT });
+  const [online, setOnline] = useState(true);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -82,23 +107,89 @@ export const UserSync = () => {
     }
   }, [isBanned, isSignedIn, loading, signOut]);
 
-  // Drop journal state (pending optimistic ops, server bases, sync timers)
-  // when the session ends so nothing leaks into the next signed-in user.
-  useEffect(() => {
-    if (!isLoaded || !user) return;
-
-    // Replay only idempotent watchlist writes left by an interrupted request.
-    // The dispatcher is user-scoped and sequential, so one failed record does
-    // not reorder later intent; failures remain for the next boot.
-    void replayRemoteMutations(user.id).then(() => {
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.watchlist.list(undefined, user.id),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.watchlist.allEpisodes(user.id),
-      });
+  const refreshSyncSnapshot = useCallback(() => {
+    setSyncState({
+      userId,
+      snapshot: getMutationOutboxSnapshot(userId),
     });
-  }, [isLoaded, user, queryClient]);
+  }, [userId]);
+
+  const runSync = useCallback(() => {
+    if (!userId) return;
+    void syncMutationOutbox(userId)
+      .then(() => {
+        refreshSyncSnapshot();
+        if (identifiedUserRef.current !== userId) return;
+        void queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+      })
+      .catch(() => {
+        refreshSyncSnapshot();
+      });
+  }, [queryClient, refreshSyncSnapshot, userId]);
+
+  useEffect(() => {
+    if (!isLoaded || !userId) {
+      setSyncState({ userId: undefined, snapshot: EMPTY_SYNC_SNAPSHOT });
+      return;
+    }
+
+    let active = true;
+    const refresh = () => {
+      if (active) refreshSyncSnapshot();
+    };
+    const handleOnline = () => {
+      setOnline(true);
+      runSync();
+    };
+    const handleOffline = () => setOnline(false);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") runSync();
+    };
+    const unsubscribe = subscribeToMutationOutbox(refresh);
+    const setInitialOnline = () => {
+      if (active) setOnline(navigator.onLine !== false);
+    };
+
+    refresh();
+    setInitialOnline();
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("focus", runSync);
+    window.addEventListener("pageshow", runSync);
+    window.addEventListener("reconnect", runSync);
+    document.addEventListener("visibilitychange", handleVisibility);
+    runSync();
+
+    return () => {
+      active = false;
+      unsubscribe();
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("focus", runSync);
+      window.removeEventListener("pageshow", runSync);
+      window.removeEventListener("reconnect", runSync);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [isLoaded, refreshSyncSnapshot, runSync, userId]);
+
+  const handleRetry = useCallback(
+    (id?: string) => {
+      if (!userId) return;
+      if (id) retryMutation(id, userId);
+      else retryFailedMutations(userId);
+      runSync();
+    },
+    [runSync, userId],
+  );
+
+  const handleDiscard = useCallback(
+    (id: string) => {
+      if (!userId) return;
+      discardMutation(id, userId);
+      refreshSyncSnapshot();
+    },
+    [refreshSyncSnapshot, userId],
+  );
 
   useEffect(() => {
     if (isLoaded && !user) {
@@ -112,9 +203,7 @@ export const UserSync = () => {
   const invalidateDomain = useCallback(
     (domain: MutationDomain) => {
       if (domain === "watchlist") {
-        void queryClient.invalidateQueries({
-          queryKey: queryKeys.watchlist.list(undefined, user?.id),
-        });
+        void queryClient.invalidateQueries({ queryKey: ["watchlist"] });
       } else if (domain === "lists") {
         for (const key of listsSyncKeys(user?.id)) {
           void queryClient.invalidateQueries({ queryKey: key });
@@ -200,5 +289,16 @@ export const UserSync = () => {
     lastRevsRef.current[user.id] = current;
   }, [user?.id, versionQuery.data, queryClient, invalidateDomain]);
 
-  return null;
+  const visibleSyncSnapshot =
+    syncState.userId === userId ? syncState.snapshot : EMPTY_SYNC_SNAPSHOT;
+
+  return (
+    <SyncCenter
+      userId={userId ?? ""}
+      snapshot={visibleSyncSnapshot}
+      online={online}
+      onRetry={handleRetry}
+      onDiscard={handleDiscard}
+    />
+  );
 };

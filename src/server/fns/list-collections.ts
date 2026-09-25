@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import type { ApiResult, ProgressStatus, Reaction } from "../schema/common";
@@ -61,11 +61,17 @@ export type CollectionPagePayload =
       role: "owner";
       list: typeof lists.$inferSelect;
       items: EnrichedListItem[];
+      totalCount: number;
+      nextCursor: string | null;
+      hasNextPage: boolean;
     }
   | {
       role: "visitor";
       list: PublicCollectionList;
       items: CollectionPageItem[];
+      totalCount: number;
+      nextCursor: string | null;
+      hasNextPage: boolean;
     };
 
 export const getListItems = createServerFn({ method: "POST" })
@@ -94,6 +100,70 @@ export const getListItems = createServerFn({ method: "POST" })
     ),
   );
 
+type CollectionCursor = { position: number; addedAt: number; id: string };
+
+function encodeCollectionCursor(cursor: CollectionCursor) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(cursor))));
+}
+
+function decodeCollectionCursor(value?: string): CollectionCursor | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(value)))) as {
+      position?: unknown;
+      addedAt?: unknown;
+      id?: unknown;
+    };
+    if (
+      typeof parsed.position !== "number" ||
+      typeof parsed.addedAt !== "number" ||
+      typeof parsed.id !== "string"
+    ) {
+      return null;
+    }
+    return {
+      position: parsed.position,
+      addedAt: parsed.addedAt,
+      id: parsed.id,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function collectionFilters(
+  listId: string,
+  data: { search?: string; mediaType?: MediaType },
+) {
+  const filters = [eq(listItems.listId, listId)];
+  if (data.mediaType) filters.push(eq(listItems.mediaType, data.mediaType));
+  const search = data.search?.trim();
+  if (search) {
+    const pattern = `%${search.replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
+    filters.push(
+      or(like(listItems.title, pattern), like(listItems.overview, pattern)) ??
+        sql`1 = 0`,
+    );
+  }
+  return filters;
+}
+
+function collectionCursorFilter(cursor: CollectionCursor | null) {
+  if (!cursor) return undefined;
+  return or(
+    gt(listItems.position, cursor.position),
+    and(
+      eq(listItems.position, cursor.position),
+      gt(listItems.addedAt, cursor.addedAt),
+    ),
+    and(
+      eq(listItems.position, cursor.position),
+      eq(listItems.addedAt, cursor.addedAt),
+      gt(listItems.id, cursor.id),
+    ),
+  );
+}
+
 export const getCollectionPage = createServerFn({ method: "POST" })
   .validator(getCollectionPageArgsSchema)
   .handler(({ data }) =>
@@ -111,42 +181,89 @@ export const getCollectionPage = createServerFn({ method: "POST" })
         const list = listRows[0];
 
         if (user && user.id === list.userId) {
-          const items = await db
-            .select()
-            .from(listItems)
-            .where(eq(listItems.listId, data.listId))
-            .orderBy(asc(listItems.position), asc(listItems.addedAt));
+          const cursor = decodeCollectionCursor(data.cursor);
+          const limit = data.limit ?? 100;
+          const where = and(
+            ...collectionFilters(data.listId, data),
+            collectionCursorFilter(cursor),
+          );
+          const [items, countRows] = await Promise.all([
+            db
+              .select()
+              .from(listItems)
+              .where(where)
+              .orderBy(
+                asc(listItems.position),
+                asc(listItems.addedAt),
+                asc(listItems.id),
+              )
+              .limit(limit + 1),
+            db
+              .select({ count: sql<number>`count(*)` })
+              .from(listItems)
+              .where(and(...collectionFilters(data.listId, data))),
+          ]);
+          const hasNextPage = items.length > limit;
+          const pageItems = hasNextPage ? items.slice(0, limit) : items;
+          const last = pageItems[pageItems.length - 1];
           return ok({
             role: "owner",
             list,
-            items: await enrichItemsWithWatchState(db, user.id, items),
+            items: await enrichItemsWithWatchState(db, user.id, pageItems),
+            totalCount: Number(countRows[0]?.count ?? 0),
+            hasNextPage,
+            nextCursor:
+              hasNextPage && last
+                ? encodeCollectionCursor({
+                    position: last.position,
+                    addedAt: last.addedAt,
+                    id: last.id,
+                  })
+                : null,
           });
         }
 
-        // Visitors only ever see public lists, and never learn that private
-        // lists exist (same NOT_FOUND for missing and private).
         if (list.visibility !== "public") {
           return fail("NOT_FOUND", "Collection not found");
         }
 
-        // Privacy-critical: no watch_items join here; the owner's progress
-        // status and reactions must not leak to public viewers.
-        const items = await db
-          .select({
-            tmdbId: listItems.tmdbId,
-            mediaType: listItems.mediaType,
-            title: listItems.title,
-            image: listItems.image,
-            backdrop: listItems.backdrop,
-            rating: listItems.rating,
-            releaseDate: listItems.releaseDate,
-            overview: listItems.overview,
-            position: listItems.position,
-          })
-          .from(listItems)
-          .where(eq(listItems.listId, data.listId))
-          .orderBy(asc(listItems.position), asc(listItems.addedAt));
-
+        const cursor = decodeCollectionCursor(data.cursor);
+        const limit = data.limit ?? 100;
+        const where = and(
+          ...collectionFilters(data.listId, data),
+          collectionCursorFilter(cursor),
+        );
+        const [items, countRows] = await Promise.all([
+          db
+            .select({
+              tmdbId: listItems.tmdbId,
+              mediaType: listItems.mediaType,
+              title: listItems.title,
+              image: listItems.image,
+              backdrop: listItems.backdrop,
+              rating: listItems.rating,
+              releaseDate: listItems.releaseDate,
+              overview: listItems.overview,
+              position: listItems.position,
+              addedAt: listItems.addedAt,
+              id: listItems.id,
+            })
+            .from(listItems)
+            .where(where)
+            .orderBy(
+              asc(listItems.position),
+              asc(listItems.addedAt),
+              asc(listItems.id),
+            )
+            .limit(limit + 1),
+          db
+            .select({ count: sql<number>`count(*)` })
+            .from(listItems)
+            .where(and(...collectionFilters(data.listId, data))),
+        ]);
+        const hasNextPage = items.length > limit;
+        const pageItems = hasNextPage ? items.slice(0, limit) : items;
+        const last = pageItems[pageItems.length - 1];
         return ok({
           role: "visitor",
           list: {
@@ -160,12 +277,24 @@ export const getCollectionPage = createServerFn({ method: "POST" })
             createdAt: list.createdAt,
             updatedAt: list.updatedAt,
           },
-          items: items.map(({ releaseDate, ...item }) => ({
-            ...item,
-            release_date: releaseDate,
-            progressStatus: null,
-            reaction: null,
-          })),
+          items: pageItems.map(
+            ({ releaseDate, addedAt: _addedAt, id: _id, ...item }) => ({
+              ...item,
+              release_date: releaseDate,
+              progressStatus: null,
+              reaction: null,
+            }),
+          ),
+          totalCount: Number(countRows[0]?.count ?? 0),
+          hasNextPage,
+          nextCursor:
+            hasNextPage && last
+              ? encodeCollectionCursor({
+                  position: last.position,
+                  addedAt: last.addedAt,
+                  id: last.id,
+                })
+              : null,
         });
       },
     ),

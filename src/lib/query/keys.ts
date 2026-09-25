@@ -4,12 +4,28 @@ export const queryKeys = {
   watchlist: {
     list: (args?: { statusFilter?: string; limit?: number }, userId?: string) =>
       ["watchlist", "list", userId ?? "anonymous", args ?? {}] as const,
+    page: (
+      args: {
+        cursor?: string;
+        limit?: number;
+        statusFilter?: string;
+        mediaType?: string;
+        reactionFilter?: string;
+        search?: string;
+        sort?: string;
+      },
+      userId?: string,
+    ) => ["watchlist", "page", userId ?? "anonymous", args] as const,
     trackedTmdbIds: (userId?: string) =>
       ["watchlist", "tracked-ids", userId ?? "anonymous"] as const,
     episodes: (tmdbId: number, userId?: string) =>
       ["watchlist", "episodes", tmdbId, userId ?? "anonymous"] as const,
     allEpisodes: (userId?: string) =>
       ["watchlist", "all-episodes", userId ?? "anonymous"] as const,
+    activity: (userId?: string) =>
+      ["watchlist", "activity", userId ?? "anonymous"] as const,
+    snapshots: (userId?: string) =>
+      ["watchlist", "snapshots", userId ?? "anonymous"] as const,
   },
   lists: {
     all: (userId?: string) => ["lists", "all", userId ?? "anonymous"] as const,
@@ -27,14 +43,42 @@ export const queryKeys = {
       ] as const,
     // Owner/visitor payload for the /c/$id collection page. Viewer-dependent
     // on purpose: the server fn resolves owner vs public per request.
-    collectionPage: (listId: string, userId?: string) =>
-      ["lists", "collection-page", listId, userId ?? "anonymous"] as const,
+    collectionPage: (
+      listId: string,
+      userId?: string,
+      args?: {
+        cursor?: string;
+        limit?: number;
+        search?: string;
+        mediaType?: string;
+      },
+    ) =>
+      [
+        "lists",
+        "collection-page",
+        listId,
+        userId ?? "anonymous",
+        args ?? {},
+      ] as const,
+    collectionPagesPrefix: (listId?: string, userId?: string) =>
+      [
+        "lists",
+        "collection-page",
+        ...(listId ? [listId] : []),
+        ...(userId ? [userId] : []),
+      ] as const,
   },
   permissions: (userId?: string) =>
     ["permissions", userId ?? "anonymous"] as const,
   data: {
     version: (userId?: string) =>
       ["data", "version", userId ?? "anonymous"] as const,
+    releaseCalendar: (userId?: string) =>
+      ["data", "release-calendar", userId ?? "anonymous"] as const,
+    insights: (year: number | undefined, userId?: string) =>
+      ["data", "insights", year ?? "current", userId ?? "anonymous"] as const,
+    notifications: (userId?: string) =>
+      ["data", "notifications", userId ?? "anonymous"] as const,
   },
   admin: {
     users: (userId?: string) =>
@@ -48,6 +92,8 @@ export const queryKeys = {
       ["recommendations", "homepage", userId ?? "anonymous"] as const,
     feedback: (userId?: string) =>
       ["recommendations", "feedback", userId ?? "anonymous"] as const,
+    tasteProfile: (userId?: string) =>
+      ["recommendations", "taste-profile", userId ?? "anonymous"] as const,
   },
   /**
    * TMDB content caches. Every raw-literal content key lives here so
@@ -78,6 +124,10 @@ export const queryKeys = {
       ["media-list", type, page] as const,
     discoverKeyword: (id: number, page: number) =>
       ["discover-movies-keyword", id, page] as const,
+    discoverKeywordTv: (id: number, page: number) =>
+      ["discover-tv-keyword", id, page] as const,
+    discoverGenre: (id: number, type: MediaType, page: number) =>
+      ["discover-genre", type, id, page] as const,
     search: (query: string, page: number) => ["search", query, page] as const,
     searchFallback: (title: string, mediaType: MediaType) =>
       ["tmdb-search-fallback", title, mediaType] as const,
@@ -96,4 +146,5 @@ export const listsSyncKeys = (userId?: string) =>
     queryKeys.lists.all(userId),
     queryKeys.lists.itemsPrefix(),
     queryKeys.lists.itemListsPrefix(),
+    queryKeys.lists.collectionPagesPrefix(),
   ] as const;

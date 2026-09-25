@@ -98,7 +98,7 @@ export const setRecommendationFeedbackArgsSchema = v.object({
   tmdbId: v.pipe(v.number(), v.integer(), v.minValue(1)),
   mediaType: mediaTypeSchema,
   title: v.pipe(v.string(), v.maxLength(500)),
-  feedback: v.picklist(["not_interested", "like"]),
+  feedback: v.picklist(["not_interested", "dislike", "like"]),
   image: v.optional(v.pipe(v.string(), v.maxLength(500))),
   backdrop: v.optional(v.pipe(v.string(), v.maxLength(500))),
   rating: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(10))),

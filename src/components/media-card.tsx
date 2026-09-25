@@ -1,3 +1,4 @@
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 
@@ -96,8 +97,15 @@ interface MediaCardSpecificProps extends BaseCardProps {
   overview?: string;
   priority?: boolean;
   relevanceScore?: number;
+  reasoning?: string;
   hideWatchlistButton?: boolean;
   isRecommended?: boolean;
+  feedbackActions?: {
+    onMoreLikeThis: () => void;
+    onNotThis: () => void;
+    isLiked?: boolean;
+    isDisliked?: boolean;
+  };
 }
 
 interface PersonCardSpecificProps extends BaseCardProps {
@@ -171,6 +179,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
     children,
     hideWatchlistButton,
     isRecommended,
+    feedbackActions,
   } = props;
 
   const destination = mediaDetailRoute({
@@ -238,6 +247,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
         className={cn(
           "absolute end-2 top-2 z-10 flex items-center gap-1.5",
           actionsClassName,
+          feedbackActions?.isLiked && "!opacity-100",
         )}
       >
         {isContinueWatching && (
@@ -265,12 +275,64 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             className="h-8 w-8 rounded-md shadow-none"
           />
         )}
+        {feedbackActions && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              title={
+                feedbackActions.isLiked
+                  ? "More like this (saved)"
+                  : "More like this"
+              }
+              aria-label={`More like this: ${title}`}
+              aria-pressed={feedbackActions.isLiked}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                feedbackActions.onMoreLikeThis();
+              }}
+              className={cn(
+                "pressable flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border transition-all duration-150 active:scale-95",
+                feedbackActions.isLiked
+                  ? "border-emerald-600 bg-emerald-600 text-white"
+                  : "border-neutral-700 bg-black/70 text-white/90 hover:bg-neutral-800 hover:text-white",
+              )}
+            >
+              <ThumbsUp
+                aria-hidden="true"
+                className={cn(
+                  "size-3.5",
+                  feedbackActions.isLiked && "fill-current",
+                )}
+              />
+            </button>
+            <button
+              type="button"
+              title="Not for me"
+              aria-label={`Not this: ${title}`}
+              aria-pressed={feedbackActions.isDisliked}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                feedbackActions.onNotThis();
+              }}
+              className={cn(
+                "pressable hover:border-destructive hover:bg-destructive flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-neutral-700 bg-black/70 text-white/90 transition-all duration-150 hover:text-white active:scale-95",
+                feedbackActions.isDisliked &&
+                  "border-destructive bg-destructive text-white",
+              )}
+            >
+              <ThumbsDown aria-hidden="true" className="size-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 });
 const HorizontalCard = memo((props: MediaCardSpecificProps) => {
-  const { title, image, media_type, release_date, relevanceScore } = props;
+  const { title, image, media_type, release_date, relevanceScore, reasoning } =
+    props;
 
   const formattedTitle = formatMediaTitle.encode(title);
   // Use LQ (w185) as `src` fallback so the initial download on 1x phones
@@ -294,7 +356,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
       imageSizes="(max-width: 767px) 92px, (max-width: 1023px) 176px, 192px"
       mediaTypeLabel={media_type === "movie" ? "Movie" : "Series"}
       linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
-      actionsClassName="transition-[transform,opacity] duration-200 ease-out"
+      actionsClassName="opacity-100 transition-[transform,opacity] duration-200 ease-out [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
     >
       <div className="mt-2.5 flex flex-col gap-0.5 overflow-hidden">
         <AutoScrollTitle
@@ -323,14 +385,29 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
             </span>
           )}
         </div>
+        {reasoning && (
+          <p
+            className="text-muted-foreground/80 mt-1 line-clamp-2 text-[11px] leading-snug text-pretty"
+            title={reasoning}
+          >
+            {reasoning}
+          </p>
+        )}
       </div>
     </BaseMediaCard>
   );
 });
 
 const VerticalCard = memo((props: MediaCardSpecificProps) => {
-  const { title, image, id, media_type, release_date, isContinueWatching } =
-    props;
+  const {
+    title,
+    image,
+    id,
+    media_type,
+    release_date,
+    isContinueWatching,
+    reasoning,
+  } = props;
 
   const formattedTitle = formatMediaTitle.encode(title);
   const year = release_date ? new Date(release_date).getFullYear() : "";
@@ -411,6 +488,14 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
           <span className="text-meta text-muted-foreground capitalize">
             {year}
           </span>
+        )}
+        {reasoning && (
+          <p
+            className="text-muted-foreground/80 mt-0.5 line-clamp-2 text-[11px] leading-snug text-pretty"
+            title={reasoning}
+          >
+            {reasoning}
+          </p>
         )}
       </div>
     </BaseMediaCard>

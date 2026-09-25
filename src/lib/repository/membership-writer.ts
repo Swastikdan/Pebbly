@@ -52,6 +52,7 @@ export function createMembershipWriter(
           if (task.outboxId) removeMutation(task.outboxId);
         }
         scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds(userId)]);
+        void queryClient.invalidateQueries?.({ queryKey: ["watchlist"] });
         return rows;
       } catch (error) {
         logError("batch set watchlist membership", error);

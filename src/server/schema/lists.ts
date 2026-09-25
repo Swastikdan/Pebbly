@@ -124,6 +124,12 @@ export type ReorderListItemsArgs = v.InferOutput<
 
 export const getCollectionPageArgsSchema = v.object({
   listId: v.string(),
+  cursor: v.optional(v.pipe(v.string(), v.maxLength(1000))),
+  limit: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
+  ),
+  search: v.optional(v.pipe(v.string(), v.maxLength(200))),
+  mediaType: v.optional(mediaTypeSchema),
 });
 export type GetCollectionPageArgs = v.InferOutput<
   typeof getCollectionPageArgsSchema

@@ -44,6 +44,8 @@ export interface FeedbackSignals {
   dislikedTitles?: string[];
   dislikedTmdbIds?: number[];
   previousTitles?: string[];
+  dislikedThemes?: string[];
+  adventureLevel?: "familiar" | "balanced" | "adventurous";
 }
 
 export interface RecommendationCandidate {
@@ -427,6 +429,8 @@ export function buildCandidateRecommendationPrompt(args: {
   genreMode?: "together" | "separate";
   count: number;
   goal?: string;
+  dislikedThemes?: string[];
+  adventureLevel?: "familiar" | "balanced" | "adventurous";
 }): string {
   const candidateCatalog = args.candidates
     .map(
@@ -439,6 +443,16 @@ export function buildCandidateRecommendationPrompt(args: {
     : "";
   const disliked = args.dislikedTitles.length
     ? `Avoid titles/styles related to: ${args.dislikedTitles.join(", ")}\n`
+    : "";
+  const dislikedThemes = args.dislikedThemes?.length
+    ? `Strictly avoid these themes: ${args.dislikedThemes.join(", ")}\n`
+    : "";
+  const adventure = args.adventureLevel
+    ? args.adventureLevel === "familiar"
+      ? "Adventure style: Familiar. Prefer established, acclaimed titles closely matching user favorites. Avoid obscure titles.\n"
+      : args.adventureLevel === "adventurous"
+        ? "Adventure style: Adventurous. Prioritize bold storytelling, distinctive hidden gems, and unexpected genre mixes alongside hits.\n"
+        : "Adventure style: Balanced. Provide a solid mix of acclaimed titles and fresh discoveries.\n"
     : "";
   const previous = args.previousTitles.length
     ? `Do not repeat these previously shown titles: ${args.previousTitles.join(", ")}\n`
@@ -458,7 +472,7 @@ export function buildCandidateRecommendationPrompt(args: {
 
   return `You are ranking a current TMDB candidate catalog for personalized recommendations.
 You may ONLY select candidates from the catalog below. Never invent a title, TMDB ID, or media type. Return exactly ${args.count} recommendations when enough candidates exist. ${typeRule}
-${liked}${disliked}${previous}${genreRule}${genreRule ? "\n" : ""}${args.goal ?? "Choose the strongest, most varied matches for the user's taste."}
+${liked}${disliked}${dislikedThemes}${adventure}${previous}${genreRule}${genreRule ? "\n" : ""}${args.goal ?? "Choose the strongest, most varied matches for the user's taste."}
 
 Candidate catalog:
 ${candidateCatalog}

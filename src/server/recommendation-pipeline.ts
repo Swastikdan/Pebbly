@@ -334,12 +334,18 @@ async function runHistoryPipeline(
         genrePreference: options.genrePreference,
         genreMode: options.genreMode,
         count: Math.min(Math.max(options.count ?? 10, 1), 30),
+        dislikedThemes: feedbackSignals.dislikedThemes,
+        adventureLevel: feedbackSignals.adventureLevel,
         goal:
           generationType === "genre"
             ? "Rank the strongest popular, highly-rated matches for the requested genres. Do not personalize from the watchlist."
             : generationType === "list"
               ? "Prefer candidates that match the themes, genres, cast, creators, and tone of the selected custom list."
-              : "Prefer candidates that match the user's strongest positive viewing signals while keeping the results varied.",
+              : feedbackSignals.adventureLevel === "adventurous"
+                ? "Prefer adventurous, high-novelty, or distinctive candidates alongside proven favorites."
+                : feedbackSignals.adventureLevel === "familiar"
+                  ? "Stick to highly-acclaimed, familiar, well-tested candidates closely matching the user's favorite titles."
+                  : "Prefer candidates that match the user's strongest positive viewing signals while keeping the results varied.",
       })
     : generationType === "watchlist"
       ? buildWatchlistPrompt(
@@ -508,7 +514,14 @@ async function runHomepagePipeline(
         dislikedTitles: feedbackSignals.dislikedTitles ?? [],
         previousTitles,
         count: 30,
-        goal: "Choose a balanced homepage mix with the strongest 15 movie and 15 TV matches when enough candidates exist.",
+        dislikedThemes: feedbackSignals.dislikedThemes,
+        adventureLevel: feedbackSignals.adventureLevel,
+        goal:
+          feedbackSignals.adventureLevel === "adventurous"
+            ? "Choose an adventurous homepage mix with the strongest 15 movie and 15 TV matches, balancing hits with bold discoveries."
+            : feedbackSignals.adventureLevel === "familiar"
+              ? "Choose a familiar homepage mix with the strongest 15 movie and 15 TV matches, focusing on proven acclaimed hits."
+              : "Choose a balanced homepage mix with the strongest 15 movie and 15 TV matches when enough candidates exist.",
       })
     : buildHomepageRecommendationsPrompt(
         watchlistData,

@@ -8,6 +8,7 @@ import type {
   RecommendationCandidate,
   WatchlistData,
 } from "./prompts";
+import type { TasteProfile } from "./schema/taste-profile";
 import { captureAiGeneration } from "@/lib/posthog-server";
 import { normalizeTitleKey } from "@/lib/text";
 import { dedupeRecommendations, generateRecommendations } from "./ai";
@@ -16,6 +17,7 @@ import {
   listItems,
   lists,
   recommendationFeedback,
+  userTasteProfiles,
   watchItems,
 } from "./db/schema";
 import { getEnv } from "./env";
@@ -30,30 +32,64 @@ export const SYSTEM_INSTRUCTION =
 export type GenerationInputs = {
   watchlistData: WatchlistData;
   feedbackSignals: FeedbackSignals;
+  tasteProfile?: TasteProfile;
 };
 
 /**
  * Load everything a generation prompt needs in one shot: the user's viewing
- * data plus their like/dislike feedback folded into prompt-ready signal
- * lists. `dislikeKinds` selects which feedback values count as dislikes
- * ("not_interested" for history generations, plus "dislike" for homepage).
+ * data plus their like/dislike feedback and persistent taste profile folded
+ * into prompt-ready signal lists. `dislikeKinds` selects which feedback
+ * values count as dislikes ("not_interested" for history generations, plus
+ * "dislike" for homepage).
  */
 export async function gatherGenerationInputs(
   db: Db,
   userId: string,
   dislikeKinds: string[],
 ): Promise<GenerationInputs> {
-  const [watchlistData, feedbackList] = await Promise.all([
+  const [watchlistData, feedbackList, tasteProfileRows] = await Promise.all([
     gatherWatchlistData(db, userId),
     getRecommendationFeedbackInternal(db, userId),
+    db
+      .select()
+      .from(userTasteProfiles)
+      .where(eq(userTasteProfiles.userId, userId))
+      .limit(1),
   ]);
+
+  const tasteProfileRow = tasteProfileRows[0];
+  const tasteProfile: TasteProfile | undefined = tasteProfileRow
+    ? {
+        adventureLevel:
+          tasteProfileRow.adventureLevel as TasteProfile["adventureLevel"],
+        preferredGenres: tasteProfileRow.preferredGenres ?? [],
+        dislikedGenres: tasteProfileRow.dislikedGenres ?? [],
+        dislikedThemes: tasteProfileRow.dislikedThemes ?? [],
+        avoidTitles: tasteProfileRow.avoidTitles ?? [],
+        preferredMediaType:
+          tasteProfileRow.preferredMediaType as TasteProfile["preferredMediaType"],
+        updatedAt: tasteProfileRow.updatedAt,
+      }
+    : undefined;
+
+  const rawDislikedTitles = collectFeedback(
+    feedbackList,
+    dislikeKinds,
+    "title",
+  );
+  const combinedDislikedTitles = tasteProfile?.avoidTitles?.length
+    ? [...new Set([...rawDislikedTitles, ...tasteProfile.avoidTitles])]
+    : rawDislikedTitles;
 
   return {
     watchlistData,
+    tasteProfile,
     feedbackSignals: {
       likedTitles: collectFeedback(feedbackList, ["like"], "title"),
-      dislikedTitles: collectFeedback(feedbackList, dislikeKinds, "title"),
+      dislikedTitles: combinedDislikedTitles,
       dislikedTmdbIds: collectFeedback(feedbackList, dislikeKinds, "tmdbId"),
+      dislikedThemes: tasteProfile?.dislikedThemes,
+      adventureLevel: tasteProfile?.adventureLevel,
     },
   };
 }

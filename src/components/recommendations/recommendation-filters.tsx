@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import type { MediaType } from "@/domain/media";
+import { TasteProfileDialog } from "@/components/recommendations/taste-profile-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -167,6 +168,24 @@ export function RecommendationFilters({
             >
               <SlidersHorizontal aria-hidden="true" className="size-3.5" />
             </Button>
+
+            <TasteProfileDialog
+              trigger={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  aria-label="AI Taste Profile"
+                  title="AI Taste Profile"
+                  className="border-border bg-card/40 hover:bg-secondary/40 h-10 shrink-0 justify-center gap-1.5 rounded-md border px-3 text-xs font-semibold shadow-none transition-colors"
+                >
+                  <Sparkles
+                    aria-hidden="true"
+                    className="text-primary size-3.5"
+                  />
+                  <span className="hidden sm:inline">Taste Profile</span>
+                </Button>
+              }
+            />
           </div>
           <div className="mt-1 flex w-full sm:ms-auto sm:mt-0 sm:w-auto">
             <Button

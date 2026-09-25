@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { number, object, optional, string } from "valibot";
+import { createFileRoute, retainSearchParams } from "@tanstack/react-router";
+import { number, object, optional, picklist, string } from "valibot";
 
 import { getMedia, getSearchResult } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
@@ -7,10 +7,15 @@ import { queryKeys } from "@/lib/query/keys";
 const searchPageSearchSchema = object({
   page: optional(number()),
   query: optional(string()),
+  type: optional(picklist(["movie", "tv"])),
+  minRating: optional(picklist(["0", "6", "7", "8", "9"])),
 });
 
 export const Route = createFileRoute("/search")({
   validateSearch: searchPageSearchSchema,
+  search: {
+    middlewares: [retainSearchParams(["type", "minRating"])],
+  },
   loaderDeps: ({ search }) => ({ query: search.query, page: search.page }),
   // Search parameters change while the user is actively typing. Never swap in
   // a pending route component for this navigation: keeping the current route

@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/react";
 import { useEffect } from "react";
 
 import type { MediaType } from "@/domain/media";
@@ -6,6 +7,8 @@ import {
   logWatchProgressError,
   parsePlayerEventPayload,
 } from "@/lib/watch-progress";
+import { recordWatchSession } from "@/server/fns/retention";
+import { unwrap } from "@/server/schema/common";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
 
 export function usePlayerProgressListener(
@@ -24,12 +27,17 @@ export function usePlayerProgressListener(
   enabled = true,
 ) {
   const repository = useRepository();
+  const { isSignedIn } = useUser();
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;
 
     let lastSavedPercent = 0;
+    let lastMediaTime = 0;
+    let accumulatedSeconds = 0;
+    let sessionStartedAt = Date.now();
     let cachedIframeOrigins: string[] = [];
+
     let cachedIframeWindows = new Set<Window>();
     let lastQueryTime = 0;
 
@@ -107,6 +115,9 @@ export function usePlayerProgressListener(
 
       const safeProgress = Number.isFinite(progress) ? progress : 0;
       const safeCurrentTime = Number.isFinite(currentTime) ? currentTime : 0;
+      const mediaDelta = safeCurrentTime - lastMediaTime;
+      if (mediaDelta > 0 && mediaDelta <= 10) accumulatedSeconds += mediaDelta;
+      lastMediaTime = safeCurrentTime;
 
       if (
         safeProgress < 1 &&
@@ -121,6 +132,33 @@ export function usePlayerProgressListener(
         useLocalProgressStore
           .getState()
           .setLastPlayed(String(id), season, episode);
+      }
+
+      if (
+        isSignedIn &&
+        (playerEvent === "pause" || playerEvent === "ended") &&
+        accumulatedSeconds >= 1
+      ) {
+        const watchedSeconds = Math.round(accumulatedSeconds);
+        void unwrap(
+          recordWatchSession({
+            data: {
+              clientEventId: `playback-${Date.now()}-${id}-${season ?? 0}-${episode ?? 0}`,
+              tmdbId: Number(id),
+              mediaType,
+              season,
+              episode,
+              startedAt: sessionStartedAt,
+              endedAt: Date.now(),
+              watchedSeconds,
+              progressPercent: safeProgress,
+            },
+          }),
+        ).catch((error) =>
+          logWatchProgressError("record viewing session", error),
+        );
+        accumulatedSeconds = 0;
+        sessionStartedAt = Date.now();
       }
 
       if (
@@ -175,5 +213,5 @@ export function usePlayerProgressListener(
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [enabled, repository, activeContext]);
+  }, [enabled, isSignedIn, repository, activeContext]);
 }

@@ -26,6 +26,9 @@ export function CustomListMediaCard({
   onMove,
   canMoveUp,
   canMoveDown,
+  selected,
+  onSelect,
+  showSelect,
 }: {
   item: {
     tmdbId: number;
@@ -46,6 +49,9 @@ export function CustomListMediaCard({
   onMove?: (dir: -1 | 1) => void;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
+  showSelect?: boolean;
 }) {
   const { toggleListItem } = useRepository();
   const hasMetadata = !!(item.title && (item.backdrop || item.image));
@@ -142,6 +148,16 @@ export function CustomListMediaCard({
       actions={
         !readOnly && (
           <div className="flex shrink-0 items-start gap-0.5">
+            {showSelect && (
+              <input
+                type="checkbox"
+                checked={Boolean(selected)}
+                onChange={onSelect}
+                onClick={(event) => event.stopPropagation()}
+                aria-label={`Select ${item.title ?? "title"}`}
+                className="accent-primary mt-1 size-4"
+              />
+            )}
             {onMove !== undefined && (
               <div className="flex flex-col gap-0">
                 <button

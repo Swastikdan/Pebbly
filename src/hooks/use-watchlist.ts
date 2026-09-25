@@ -23,13 +23,13 @@ export type { MediaMetadata, MediaType, WatchlistItem };
  * The single shared watchlist fetch (key + queryFn + auth gate). Per-item
  * state derives from this one query instead of per-card RPCs.
  */
-function useWatchlistQuery() {
+function useWatchlistQuery(enabled = true) {
   const { isSignedIn, user } = useUser();
   const queryClient = useQueryClient();
   return useQuery({
     queryKey: queryKeys.watchlist.list(undefined, user?.id),
     queryFn: () => fetchWatchlistList(queryClient, user?.id),
-    enabled: !!isSignedIn,
+    enabled: enabled && !!isSignedIn,
     // Cross-device sync is driven by UserSync's watchlist-version poll
     // (refetch only when the revision changes), so this query itself does
     // not poll. Re-fetching the full list on an interval is O(list size)
@@ -37,9 +37,9 @@ function useWatchlistQuery() {
   });
 }
 
-export function useWatchlist() {
+export function useWatchlist({ enabled = true }: { enabled?: boolean } = {}) {
   const { isSignedIn, isLoaded } = useUser();
-  const remote = useWatchlistQuery();
+  const remote = useWatchlistQuery(enabled);
   const localMediaState = useWatchlistStore((state) => state.mediaState);
 
   const watchlist: WatchlistItem[] = useMemo(() => {
@@ -61,7 +61,7 @@ export function useWatchlist() {
   const loading =
     remote.data !== undefined
       ? false
-      : !isLoaded || (isSignedIn && remote.isPending);
+      : !isLoaded || (enabled && isSignedIn && remote.isPending);
 
   return { watchlist, loading };
 }

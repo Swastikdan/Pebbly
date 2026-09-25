@@ -134,6 +134,8 @@ export default defineNitroConfig({
     // Legacy duplicate-user consolidation (server/tasks/user-maintenance.ts).
     // Offset from the snapshot cron so the two never share an invocation.
     "30 3 * * *": "user-maintenance",
+    "0 4 * * *": "account-deletion",
+    "0 5 * * *": "release-alerts",
   },
   routeRules: {
     // Homepage edge caching: cache on Cloudflare edge CDN for 1 hour so repeat visits

@@ -11,11 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
+import { Route as InsightsRouteImport } from './routes/insights'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as ApiMetaimageRouteImport } from './routes/api.metaimage'
+import { Route as GenreIdRouteImport } from './routes/genre.$id'
 import { Route as KeywordIdRouteImport } from './routes/keyword.$id'
 import { Route as PersonIdRouteImport } from './routes/person.$id'
 import { Route as CIdChar123SlugChar125RouteImport } from './routes/c.$id.{-$slug}'
@@ -40,9 +44,24 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DisclaimerRoute = DisclaimerRouteImport.update({
   id: '/disclaimer',
   path: '/disclaimer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecommendationsRoute = RecommendationsRouteImport.update({
@@ -65,6 +84,11 @@ const WatchlistRoute = WatchlistRouteImport.update({
 const ApiMetaimageRoute = ApiMetaimageRouteImport.update({
   id: '/api/metaimage',
   path: '/api/metaimage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GenreIdRoute = GenreIdRouteImport.update({
+  id: '/genre/$id',
+  path: '/genre/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KeywordIdRoute = KeywordIdRouteImport.update({
@@ -145,11 +169,15 @@ const SeriesIdChar123SlugChar125SeasonSeasonNumberRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/calendar': typeof CalendarRoute
   '/disclaimer': typeof DisclaimerRoute
+  '/insights': typeof InsightsRoute
+  '/privacy': typeof PrivacyRoute
   '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
+  '/genre/$id': typeof GenreIdRoute
   '/keyword/$id': typeof KeywordIdRoute
   '/person/$id': typeof PersonIdRoute
   '/c/$id/{-$slug}': typeof CIdChar123SlugChar125Route
@@ -167,11 +195,15 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/calendar': typeof CalendarRoute
   '/disclaimer': typeof DisclaimerRoute
+  '/insights': typeof InsightsRoute
+  '/privacy': typeof PrivacyRoute
   '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
+  '/genre/$id': typeof GenreIdRoute
   '/keyword/$id': typeof KeywordIdRoute
   '/person/$id': typeof PersonIdRoute
   '/c/$id/{-$slug}': typeof CIdChar123SlugChar125Route
@@ -190,11 +222,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/calendar': typeof CalendarRoute
   '/disclaimer': typeof DisclaimerRoute
+  '/insights': typeof InsightsRoute
+  '/privacy': typeof PrivacyRoute
   '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
   '/watchlist': typeof WatchlistRoute
   '/api/metaimage': typeof ApiMetaimageRoute
+  '/genre/$id': typeof GenreIdRoute
   '/keyword/$id': typeof KeywordIdRoute
   '/person/$id': typeof PersonIdRoute
   '/c/$id/{-$slug}': typeof CIdChar123SlugChar125Route
@@ -214,11 +250,15 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/calendar'
     | '/disclaimer'
+    | '/insights'
+    | '/privacy'
     | '/recommendations'
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
+    | '/genre/$id'
     | '/keyword/$id'
     | '/person/$id'
     | '/c/$id/{-$slug}'
@@ -236,11 +276,15 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/calendar'
     | '/disclaimer'
+    | '/insights'
+    | '/privacy'
     | '/recommendations'
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
+    | '/genre/$id'
     | '/keyword/$id'
     | '/person/$id'
     | '/c/$id/{-$slug}'
@@ -258,11 +302,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/calendar'
     | '/disclaimer'
+    | '/insights'
+    | '/privacy'
     | '/recommendations'
     | '/search'
     | '/watchlist'
     | '/api/metaimage'
+    | '/genre/$id'
     | '/keyword/$id'
     | '/person/$id'
     | '/c/$id/{-$slug}'
@@ -281,11 +329,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  CalendarRoute: typeof CalendarRoute
   DisclaimerRoute: typeof DisclaimerRoute
+  InsightsRoute: typeof InsightsRoute
+  PrivacyRoute: typeof PrivacyRoute
   RecommendationsRoute: typeof RecommendationsRoute
   SearchRoute: typeof SearchRoute
   WatchlistRoute: typeof WatchlistRoute
   ApiMetaimageRoute: typeof ApiMetaimageRoute
+  GenreIdRoute: typeof GenreIdRoute
   KeywordIdRoute: typeof KeywordIdRoute
   PersonIdRoute: typeof PersonIdRoute
   CIdChar123SlugChar125Route: typeof CIdChar123SlugChar125Route
@@ -317,11 +369,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/disclaimer': {
       id: '/disclaimer'
       path: '/disclaimer'
       fullPath: '/disclaimer'
       preLoaderRoute: typeof DisclaimerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recommendations': {
@@ -350,6 +423,13 @@ declare module '@tanstack/react-router' {
       path: '/api/metaimage'
       fullPath: '/api/metaimage'
       preLoaderRoute: typeof ApiMetaimageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/genre/$id': {
+      id: '/genre/$id'
+      path: '/genre/$id'
+      fullPath: '/genre/$id'
+      preLoaderRoute: typeof GenreIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/keyword/$id': {
@@ -449,11 +529,15 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  CalendarRoute: CalendarRoute,
   DisclaimerRoute: DisclaimerRoute,
+  InsightsRoute: InsightsRoute,
+  PrivacyRoute: PrivacyRoute,
   RecommendationsRoute: RecommendationsRoute,
   SearchRoute: SearchRoute,
   WatchlistRoute: WatchlistRoute,
   ApiMetaimageRoute: ApiMetaimageRoute,
+  GenreIdRoute: GenreIdRoute,
   KeywordIdRoute: KeywordIdRoute,
   PersonIdRoute: PersonIdRoute,
   CIdChar123SlugChar125Route: CIdChar123SlugChar125Route,

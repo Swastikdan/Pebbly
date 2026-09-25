@@ -104,8 +104,11 @@ Every mutating/authenticated operation is a TanStack Start server function:
 | Module               | Responsibility                                                                                                                                                                   |
 | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `rpc.ts`             | The shared guard pipeline: `authedFn(config, data, handler)` resolves session → gates (feature/admin) → injects `{ data, user, claims, db }` and returns an `ApiResult` envelope |
-| `watchlist.ts`       | Read/watchlist queries, membership toggle (+batch), progress status, reactions, episode progress (single/season/show), `getDataVersion` revision poll                            |
-| `lists.ts`           | Custom-list CRUD + list-item toggling/reordering, public collection pages (`/c/$id`), list cloning, enriched reads                                                               |
+| `watchlist.ts`       | Keyset-paginated watchlist reads/counts, membership toggle (+batch), progress status, reactions, episode progress, `getDataVersion` revision poll                                |
+| `lists.ts`           | Custom-list CRUD, keyset-paginated collection reads, search, bulk item actions, reordering, cloning, and enriched reads                                                          |
+| `library.ts`         | Watchlist activity timeline/undo, snapshot listing, and snapshot restore                                                                                                         |
+| `privacy.ts`         | Full JSON/CSV account export, deletion scheduling/cancellation, and due-request processing                                                                                       |
+| `retention.ts`       | Release calendar subscriptions, in-app notifications, availability refresh, and viewing insights                                                                                 |
 | `import-export.ts`   | Bulk JSON watchlist import (bounded D1 batches)                                                                                                                                  |
 | `recommendations.ts` | AI generation (watchlist/list/genre), homepage picks, history, feedback, rate limiting                                                                                           |
 | `admin.ts`           | Admin-only: user listing, roles, ban status, feature-flag permissions                                                                                                            |
@@ -129,7 +132,7 @@ Server functions are:
 
 ### 3.3 Data access (`src/server/db/`)
 
-- `schema.ts`, the Drizzle SQLite schema (all 11 tables, indexes, checks; see
+- `schema.ts`, the Drizzle SQLite schema (19 tables, indexes, checks; see
   [data-model.md](./data-model.md)).
 - `client.ts`, `getDb(env)` returns a cached Drizzle instance per D1 binding
   (WeakMap keyed on the binding), plus `runBatch` which chunks multi-statement
@@ -192,7 +195,9 @@ Server functions are:
   immediately and replays it over fresh server snapshots so refetches cannot
   clobber in-flight state. Signed-in remote writes also enter the persistent
   `src/lib/data/mutation-outbox.ts`, which validates and replays idempotent
-  mutations sequentially on the next boot. Op builders live beside the journal
+  mutations sequentially on the next boot, online reconnect, focus, and page
+  wake. `sync-center.ts` classifies permanent/transient failures and the global
+  sync center exposes retry/discard state. Op builders live beside the journal
   in `src/lib/data/optimistic/`, and watchlist queries pass through its
   reconciler.
 - **Zustand stores** persist guest/local state from `src/stores/`:
@@ -326,10 +331,10 @@ leaks into the next session.
   plus ESModule rules because Nitro pre-bundles the output, and it must be
   passed via `--config` (never `--env`, which Nitro's redirected config
   breaks). Secrets are set per-Worker with `wrangler secret put`.
-- **Cron**: Cloudflare Cron Trigger `0 3 * * *` (production only) → Nitro
-  task `snapshots` (`server/tasks/snapshots.ts`) → `createDailySnapshots`,
-  bounded per run and resumable via a persisted cursor in
-  `snapshot_cursors`.
+- **Cron**: Cloudflare Cron Triggers run the `snapshots`, `user-maintenance`,
+  `account-deletion`, and `release-alerts` Nitro tasks in production. Snapshot
+  and user scans are bounded per run and resumable via `snapshot_cursors`;
+  deletion and release jobs process due rows in bounded batches.
 
 ## 6. Key invariants / rules of the codebase
 
@@ -348,7 +353,8 @@ leaks into the next session.
    arrays feed the Valibot picklists, the runtime validation Sets in the
    server helpers, _and_ the Drizzle column enums. One edit changes all three.
 6. **D1 batches are bounded** (≤100 statements) and chunked for large imports
-   so calls stay inside the Worker execution budget.
+   so calls stay inside the Worker execution budget. User-scale reads use
+   keyset cursors and aggregate count queries rather than loading a library.
 7. **Guest data is local-only** (Zustand + localStorage) and stays local;
    signing in switches writes to the remote repository but uploads nothing.
 8. **Theme is resolved before first paint** by an inline script; components

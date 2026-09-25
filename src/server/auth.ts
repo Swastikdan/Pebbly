@@ -131,6 +131,23 @@ const ADMIN_API_TIMEOUT_MS = 5_000;
  * come exclusively from the signed JWT claim (isAdminByClaims), which the
  * Clerk session-claims template populates from `publicMetadata.isAdmin`.
  */
+export async function deleteClerkUser(userId: string): Promise<boolean> {
+  const client = getClerkApiClient();
+  if (!client) return false;
+  try {
+    await client.users.deleteUser(userId);
+    return true;
+  } catch (error) {
+    const status =
+      error && typeof error === "object" && "status" in error
+        ? (error as { status?: unknown }).status
+        : undefined;
+    if (status === 404) return true;
+    console.error("Failed to delete Clerk user:", error);
+    return false;
+  }
+}
+
 export async function getClerkAdminIds(): Promise<Set<string>> {
   const client = getClerkApiClient();
   if (!client) return new Set();

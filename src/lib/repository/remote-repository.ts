@@ -39,6 +39,7 @@ import {
   toggleSeasonRows,
 } from "@/lib/watch-progress";
 import {
+  bulkUpdateListItems,
   cloneCustomList,
   createCustomList,
   createCustomListAndAddItem,
@@ -58,6 +59,7 @@ import {
   updateProgress as updateProgressFn,
 } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
+import { bulkListItemsArgsSchema } from "@/server/schema/library";
 import {
   markEpisodeWatchedArgsSchema,
   markSeasonEpisodesWatchedArgsSchema,
@@ -130,6 +132,7 @@ async function replayPendingMutations(userId: string): Promise<void> {
         case "mark-episode": {
           const parsed = v.safeParse(
             markEpisodeWatchedArgsSchema,
+
             record.payload,
           );
           if (!parsed.success) break;
@@ -557,6 +560,14 @@ export function createRemoteRepository(
       broadcastMutation("lists");
       scheduleSync(queryClient, [queryKeys.lists.all(userId)]);
       return newId;
+    },
+
+    async bulkUpdateListItems(args) {
+      const parsed = v.safeParse(bulkListItemsArgsSchema, args);
+      if (!parsed.success) throw new Error("Invalid collection bulk action");
+      await unwrap(bulkUpdateListItems({ data: parsed.output }));
+      broadcastMutation("lists");
+      scheduleSync(queryClient, listsSyncKeys(userId));
     },
   };
 

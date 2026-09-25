@@ -20,6 +20,30 @@ import { MEDIA_TYPES } from "@/domain/media";
 import { PROGRESS_STATUSES, REACTIONS } from "@/server/schema/common";
 import { LIST_TYPES, LIST_VISIBILITIES } from "@/server/schema/lists";
 import { HOMEPAGE_REC_STATUSES } from "@/server/schema/recommendations";
+import {
+  ADVENTURE_LEVELS,
+  PREFERRED_MEDIA_TYPES,
+} from "@/server/schema/taste-profile";
+
+export const WATCHLIST_ACTIVITY_ACTIONS = [
+  "added",
+  "removed",
+  "status_changed",
+  "rated",
+  "watched",
+] as const;
+export type WatchlistActivityAction =
+  (typeof WATCHLIST_ACTIVITY_ACTIONS)[number];
+
+export const DELETION_REQUEST_STATUSES = [
+  "pending",
+  "canceled",
+  "completed",
+] as const;
+export type DeletionRequestStatus = (typeof DELETION_REQUEST_STATUSES)[number];
+
+export const NOTIFICATION_KINDS = ["release", "availability"] as const;
+export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 /**
  * Render a canonical constant list as inline SQL string literals for CHECK
@@ -91,6 +115,19 @@ export const watchItems = sqliteTable(
     ),
     index("watch_items_user_status_idx").on(t.userId, t.progressStatus),
     index("watch_items_user_updated_idx").on(t.userId, t.updatedAt),
+    index("watch_items_user_watchlist_updated_idx").on(
+      t.userId,
+      t.inWatchlist,
+      t.updatedAt,
+      t.id,
+    ),
+    index("watch_items_user_watchlist_media_idx").on(
+      t.userId,
+      t.inWatchlist,
+      t.mediaType,
+      t.updatedAt,
+      t.id,
+    ),
     check("watch_items_progress_range", sql`${t.progress} between 0 and 100`),
     check("watch_items_rating_range", sql`${t.rating} between 0 and 10`),
   ],
@@ -104,11 +141,157 @@ export const watchlistSnapshots = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     items: text("items", { mode: "json" }).$type<
-      Array<{ tmdbId: number; mediaType: MediaType }>
+      Array<{
+        tmdbId: number;
+        mediaType: MediaType;
+        progressStatus: string | null;
+        reaction: string | null;
+        progress: number | null;
+        title: string | null;
+        image: string | null;
+        rating: number | null;
+        releaseDate: string | null;
+        overview: string | null;
+      }>
     >(),
     createdAt: integer("created_at").notNull(),
   },
   (t) => [index("snapshots_user_created_idx").on(t.userId, t.createdAt)],
+);
+
+export const watchlistActivity = sqliteTable(
+  "watchlist_activity",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tmdbId: integer("tmdb_id").notNull(),
+    mediaType: text("media_type", { enum: MEDIA_TYPES }).notNull(),
+    action: text("action", { enum: [...WATCHLIST_ACTIVITY_ACTIONS] }).notNull(),
+    title: text("title"),
+    image: text("image"),
+    rating: real("rating"),
+    releaseDate: text("release_date"),
+    overview: text("overview"),
+    previousStatus: text("previous_status", {
+      enum: [...PROGRESS_STATUSES],
+    }),
+    nextStatus: text("next_status", { enum: [...PROGRESS_STATUSES] }),
+    previousReaction: text("previous_reaction", { enum: [...REACTIONS] }),
+    nextReaction: text("next_reaction", { enum: [...REACTIONS] }),
+    previousProgress: integer("previous_progress"),
+    nextProgress: integer("next_progress"),
+    createdAt: integer("created_at").notNull(),
+    revertedAt: integer("reverted_at"),
+  },
+  (t) => [
+    index("watchlist_activity_user_created_idx").on(t.userId, t.createdAt),
+    index("watchlist_activity_user_media_idx").on(
+      t.userId,
+      t.mediaType,
+      t.tmdbId,
+      t.createdAt,
+    ),
+  ],
+);
+
+export const accountDeletionRequests = sqliteTable(
+  "account_deletion_requests",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status", { enum: [...DELETION_REQUEST_STATUSES] })
+      .notNull()
+      .default("pending"),
+    clerkUserId: text("clerk_user_id").notNull(),
+    requestedAt: integer("requested_at").notNull(),
+    scheduledFor: integer("scheduled_for").notNull(),
+    canceledAt: integer("canceled_at"),
+    completedAt: integer("completed_at"),
+  },
+  (t) => [index("account_deletion_status_idx").on(t.status, t.scheduledFor)],
+);
+
+export const releaseSubscriptions = sqliteTable(
+  "release_subscriptions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tmdbId: integer("tmdb_id").notNull(),
+    mediaType: text("media_type", { enum: MEDIA_TYPES }).notNull(),
+    title: text("title"),
+    releaseDate: text("release_date"),
+    region: text("region").notNull().default("US"),
+    notifyRelease: integer("notify_release", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    notifyAvailability: integer("notify_availability", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    availabilityHash: text("availability_hash"),
+    lastCheckedAt: integer("last_checked_at"),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("release_subscription_user_media_uq").on(
+      t.userId,
+      t.tmdbId,
+      t.mediaType,
+    ),
+    index("release_subscription_user_idx").on(t.userId, t.createdAt),
+  ],
+);
+
+export const userNotifications = sqliteTable(
+  "user_notifications",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: [...NOTIFICATION_KINDS] }).notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    readAt: integer("read_at"),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("user_notifications_user_dedupe_uq").on(t.userId, t.dedupeKey),
+    index("user_notifications_user_created_idx").on(t.userId, t.createdAt),
+  ],
+);
+
+export const watchSessions = sqliteTable(
+  "watch_sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tmdbId: integer("tmdb_id").notNull(),
+    mediaType: text("media_type", { enum: MEDIA_TYPES }).notNull(),
+    season: integer("season"),
+    episode: integer("episode"),
+    startedAt: integer("started_at").notNull(),
+    endedAt: integer("ended_at").notNull(),
+    watchedSeconds: integer("watched_seconds").notNull().default(0),
+    progressPercent: integer("progress_percent").notNull().default(0),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => [
+    index("watch_sessions_user_created_idx").on(t.userId, t.createdAt),
+    index("watch_sessions_user_media_idx").on(
+      t.userId,
+      t.mediaType,
+      t.tmdbId,
+      t.createdAt,
+    ),
+  ],
 );
 
 export const lists = sqliteTable(
@@ -171,6 +354,13 @@ export const listItems = sqliteTable(
     uniqueIndex("list_items_list_media_uq").on(t.listId, t.tmdbId, t.mediaType),
     // Covers both (user, media) and user-only lookups via leftmost prefix.
     index("list_items_user_media_idx").on(t.userId, t.tmdbId, t.mediaType),
+    index("list_items_list_position_idx").on(
+      t.listId,
+      t.position,
+      t.addedAt,
+      t.id,
+    ),
+    index("list_items_list_search_idx").on(t.listId, t.title),
   ],
 );
 
@@ -291,6 +481,52 @@ export const recommendationFeedback = sqliteTable(
     uniqueIndex("feedback_user_media_uq").on(t.userId, t.tmdbId, t.mediaType),
     // (user, feedback) drives the homepage/generation feedback lookups, must not be dropped
     index("feedback_user_feedback_idx").on(t.userId, t.feedback),
+  ],
+);
+
+export const userTasteProfiles = sqliteTable(
+  "user_taste_profiles",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    adventureLevel: text("adventure_level", {
+      enum: [...ADVENTURE_LEVELS],
+    })
+      .notNull()
+      .default("balanced"),
+    preferredGenres: text("preferred_genres", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    dislikedGenres: text("disliked_genres", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    dislikedThemes: text("disliked_themes", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    avoidTitles: text("avoid_titles", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    preferredMediaType: text("preferred_media_type", {
+      enum: [...PREFERRED_MEDIA_TYPES],
+    })
+      .notNull()
+      .default("all"),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (t) => [
+    check(
+      "user_taste_adventure_ck",
+      sql`${t.adventureLevel} in (${enumLiterals(ADVENTURE_LEVELS)})`,
+    ),
+    check(
+      "user_taste_media_type_ck",
+      sql`${t.preferredMediaType} in (${enumLiterals(PREFERRED_MEDIA_TYPES)})`,
+    ),
   ],
 );
 

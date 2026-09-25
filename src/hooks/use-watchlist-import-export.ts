@@ -1,21 +1,22 @@
 import type React from "react";
 import { useUser } from "@clerk/react";
 import { useCallback, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
 import type { EpisodeProgressRow } from "@/lib/server-types";
 import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
-import { fetchAllEpisodeProgress } from "@/lib/data/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
 import {
   parseWatchlistImport,
   planImportBatches,
 } from "@/lib/watchlist-import";
 import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
+import { getAllEpisodeProgress, getWatchlist } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
+import { mapWatchlistRowToItem } from "@/stores/watchlist-store";
 
 type ImportError = {
   message: string;
@@ -30,7 +31,8 @@ export const useWatchlistImportExport = () => {
   const [error, setError] = useState<ImportError | null>(null);
 
   const queryClient = useQueryClient();
-  const { watchlist, loading } = useWatchlist();
+  const { isSignedIn, user } = useUser();
+  const { watchlist, loading } = useWatchlist({ enabled: !isSignedIn });
 
   const importWatchlistLocal = useWatchlistStore(
     (state) => state.importWatchlistLocal,
@@ -39,30 +41,29 @@ export const useWatchlistImportExport = () => {
     (state) => state.markEpisodeWatched,
   );
 
-  const { isSignedIn, user } = useUser();
-  const allEpisodeProgress = useQuery({
-    queryKey: queryKeys.watchlist.allEpisodes(user?.id),
-    queryFn: () => fetchAllEpisodeProgress(queryClient, user?.id),
-    enabled: !!isSignedIn,
-  });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const exportWatchlist = useCallback(async () => {
-    if (!watchlist || watchlist.length === 0) return;
-
     try {
       setExportLoading(true);
       setError(null);
 
+      const remoteWatchlist = isSignedIn
+        ? (await unwrap(getWatchlist({ data: {} }))).map(mapWatchlistRowToItem)
+        : watchlist;
+      if (remoteWatchlist.length === 0) return;
+      const remoteEpisodes = isSignedIn
+        ? await unwrap(getAllEpisodeProgress())
+        : [];
       const localWatchedEpisodes =
         useLocalProgressStore.getState().watchedEpisodes;
 
-      const enhancedWatchlist = watchlist.map((item) => {
+      const enhancedWatchlist = remoteWatchlist.map((item) => {
         const itemWatched: Record<string, boolean> = {};
 
         if (item.type === "tv") {
-          if (isSignedIn && allEpisodeProgress.data) {
-            allEpisodeProgress.data
+          if (isSignedIn && remoteEpisodes) {
+            remoteEpisodes
               .filter(
                 (ep: EpisodeProgressRow) =>
                   String(ep.tmdbId) === String(item.external_id) &&
@@ -113,7 +114,7 @@ export const useWatchlistImportExport = () => {
     } finally {
       setExportLoading(false);
     }
-  }, [watchlist, isSignedIn, allEpisodeProgress.data]);
+  }, [watchlist, isSignedIn]);
 
   const importWatchlist = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {

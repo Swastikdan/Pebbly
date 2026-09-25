@@ -88,6 +88,14 @@ export interface WatchlistRepository {
   ): Promise<void>;
 }
 
+export type BulkListUpdateRepoArgs = {
+  listId: string;
+  items: Array<{ tmdbId: number; mediaType: MediaType }>;
+  action: "remove" | "move" | "status";
+  targetListId?: string;
+  progressStatus?: ProgressStatus;
+};
+
 export type ReorderListItemsRepoArgs = {
   listId: string;
   orderedItems: Array<{ tmdbId: number; mediaType: MediaType }>;
@@ -101,6 +109,7 @@ export interface ListsRepository {
   toggleListItem(args: ToggleListItemArgs): Promise<boolean>;
   reorderListItem(args: ReorderListItemsRepoArgs): Promise<void>;
   cloneList(sourceListId: string): Promise<string>;
+  bulkUpdateListItems(args: BulkListUpdateRepoArgs): Promise<void>;
 }
 
 export type Repository = WatchlistRepository & ListsRepository;

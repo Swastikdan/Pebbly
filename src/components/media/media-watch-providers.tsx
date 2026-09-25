@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IMAGE_PREFIX } from "@/constants";
+import { detectRegion } from "@/lib/detect-region";
 import { getWatchProviders } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 
@@ -43,14 +44,6 @@ const PROVIDER_GROUPS = [
   { key: "rent", label: "Rent" },
   { key: "buy", label: "Buy" },
 ] as const;
-
-const detectRegion = (): string => {
-  try {
-    return new Intl.Locale(navigator.language).region ?? "US";
-  } catch {
-    return "US";
-  }
-};
 
 const sortProviders = (providers: WatchProvider[]) =>
   [...providers].sort((a, b) => a.display_priority - b.display_priority);

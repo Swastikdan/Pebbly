@@ -142,4 +142,47 @@ describe("buildCandidateRecommendationPrompt", () => {
     expect(prompt).toContain("match all of these genres together");
     expect(prompt).not.toContain("The Nice Guys (TMDB ID:");
   });
+
+  it("embeds adventure styles and disliked themes accurately", () => {
+    const promptAdventurous = buildCandidateRecommendationPrompt({
+      candidates: [
+        {
+          tmdbId: 100,
+          mediaType: "movie",
+          title: "Drive",
+          year: 2011,
+          rating: 7.9,
+          voteCount: 12000,
+        },
+      ],
+      likedTitles: [],
+      dislikedTitles: ["Transformers"],
+      dislikedThemes: ["Jump Scares", "Gore & Body Horror"],
+      adventureLevel: "adventurous",
+      previousTitles: [],
+      count: 5,
+    });
+
+    expect(promptAdventurous).toContain(
+      "Strictly avoid these themes: Jump Scares, Gore & Body Horror",
+    );
+    expect(promptAdventurous).toContain(
+      "Adventure style: Adventurous. Prioritize bold storytelling, distinctive hidden gems, and unexpected genre mixes alongside hits.",
+    );
+    expect(promptAdventurous).toContain(
+      "Avoid titles/styles related to: Transformers",
+    );
+
+    const promptFamiliar = buildCandidateRecommendationPrompt({
+      candidates: [],
+      likedTitles: [],
+      dislikedTitles: [],
+      adventureLevel: "familiar",
+      previousTitles: [],
+      count: 5,
+    });
+    expect(promptFamiliar).toContain(
+      "Adventure style: Familiar. Prefer established, acclaimed titles closely matching user favorites. Avoid obscure titles.",
+    );
+  });
 });

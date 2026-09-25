@@ -188,6 +188,10 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
     async cloneList(sourceListId) {
       return useLocalListsStore.getState().cloneList(sourceListId);
     },
+
+    async bulkUpdateListItems(args) {
+      useLocalListsStore.getState().bulkUpdateListItems(args);
+    },
   };
 
   return { ...watchlist, ...lists };
