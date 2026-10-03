@@ -38,7 +38,6 @@ export function usePermissions(): PermissionState & {
   // via computeRoleFeatures (global flag AND granting role).
   const features = isBanned
     ? ({
-        "video-player": false,
         "ai-recommendations": false,
         "external-redirect": false,
       } as Record<RbacFeature, boolean>)

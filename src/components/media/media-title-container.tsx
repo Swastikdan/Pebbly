@@ -220,7 +220,7 @@ export const MediaTitleContainer = (props: {
             </span>
           )}
           <RatingCount
-            rating={parseFloat(vote_average?.toFixed(1) ?? "0")}
+            rating={vote_average ?? 0}
             ratingcount={vote_count ?? 0}
           />
         </div>

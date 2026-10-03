@@ -71,7 +71,7 @@ All persisted guest stores live in **`src/stores/`**:
 | :---------------------- | :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `useWatchlistStore`     | `src/stores/watchlist-store.ts`      | Guest watchlist (`mediaState`), persisted to localStorage with LRU eviction; mutators `setWatchlistMembershipLocal`, `setProgressStatusLocal`, `setReactionLocal`, `setProgressLocal`, `importWatchlistLocal` |
 | `useLocalListsStore`    | `src/stores/local-lists-store.ts`    | Guest custom lists                                                                                                                                                                                            |
-| `useLocalProgressStore` | `src/stores/local-progress-store.ts` | Guest episode/progress state (`lastPlayed`, watched episodes)                                                                                                                                                 |
+| `useLocalProgressStore` | `src/stores/local-progress-store.ts` | Guest episode/progress state (watched episodes)                                                                                                                                                               |
 | `useDailyPickStore`     | `src/stores/daily-pick-store.ts`     | Bounded persisted per-title backdrop/poster metadata cache; trending/popular catalogs remain in React Query                                                                                                   |
 
 All guest stores share their persist plumbing via
@@ -223,10 +223,9 @@ The rest of the data layer sits beside it:
   basic-page bodies.
 - `use-destructive-toast.ts`, confirmation toast that defers destructive
   actions until a countdown expires unless undone.
-- `use-watch-progress` (`src/hooks/watch-progress/`), player progress
-  tracking: `use-watch-progress.ts` (~450 lines), `use-player-listener.ts`
-  (postMessage listener that trusts sources by origin, with a DOM-scan
-  fallback). Pure player/progress contracts and helpers live in
+- `use-watch-progress` (`src/hooks/watch-progress/`), watch progress
+  tracking: `use-watch-progress.ts` (~450 lines). Pure progress contracts and
+  helpers live in
   `src/lib/watch-progress.ts`; the old `progress-helpers.ts` path is a
   compatibility re-export for hook-local callers.
 - `data-version.ts`, `fetchDataVersion`, the client fetch for the combined
@@ -322,7 +321,7 @@ old shadcn/Radix set; the foundation doesn't.
   `navigation-progress-bar.tsx` (top loading bar), `media-card.tsx`,
   `homepage-media.tsx`, `homepage-recommendations.tsx` ("Picks For You" row +
   feedback), `daily-pick.tsx` (theme-aware backdrop placeholder when no image
-  exists), `video-player-modal.tsx`, `watchlist-button.tsx`,
+  exists), `external-player-link.tsx`, `watchlist-button.tsx`,
   `custom-list-dialog.tsx`, `share-button.tsx`, `scroll-container.tsx`,
   `user-sync.tsx` (session sync, cross-device realtime, ban enforcement),
   `go-back.tsx`, `default-loader.tsx`, `default-not-found.tsx` (error +

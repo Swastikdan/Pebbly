@@ -17,10 +17,7 @@ function RoleToggleButtons({
   onToggleRole: (role: (typeof ROLE_CONFIGS)[number]["value"]) => void;
 }) {
   const currentRoles = (user.roles ?? []).filter(
-    (role) =>
-      role === "video-player" ||
-      role === "ai-integrations" ||
-      role === "external-redirect",
+    (role) => role === "ai-integrations" || role === "external-redirect",
   ) as (typeof ROLE_CONFIGS)[number]["value"][];
 
   return (

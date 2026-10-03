@@ -6,13 +6,8 @@ import { getDb, runBatch } from "./db/client";
 import { rolePermissions } from "./db/schema";
 import { getEnv } from "./env";
 
-export const DYNAMIC_ROLES = [
-  "video-player",
-  "ai-integrations",
-  "external-redirect",
-] as const;
+export const DYNAMIC_ROLES = ["ai-integrations", "external-redirect"] as const;
 export const VALID_FEATURES = [
-  "video-player",
   "ai-recommendations",
   "external-redirect",
 ] as const;
@@ -26,7 +21,6 @@ export type RbacFeature = (typeof VALID_FEATURES)[number];
 // role granting it is present. These defaults are applied before an admin has
 // ever touched a toggle.
 const DEFAULT_GLOBAL_PERMISSIONS: Record<RbacFeature, boolean> = {
-  "video-player": true,
   "ai-recommendations": true,
   "external-redirect": false,
 };
@@ -35,25 +29,17 @@ const DEFAULT_PERMISSIONS: Record<
   DynamicRbacRole,
   Record<RbacFeature, boolean>
 > = {
-  "video-player": {
-    "video-player": true,
-    "ai-recommendations": false,
-    "external-redirect": false,
-  },
   "ai-integrations": {
-    "video-player": false,
     "ai-recommendations": true,
     "external-redirect": false,
   },
   "external-redirect": {
-    "video-player": false,
     "ai-recommendations": false,
     "external-redirect": true,
   },
 };
 
 export const ROLE_FEATURES: Record<DynamicRbacRole, RbacFeature> = {
-  "video-player": "video-player",
   "ai-integrations": "ai-recommendations",
   "external-redirect": "external-redirect",
 };
@@ -125,10 +111,7 @@ export function isClerkAdmin(
 }
 
 export function isAdminByClaims(claims: ClerkSessionClaims | null): boolean {
-  return (
-    parseClerkPublicMeta(claims as unknown as Record<string, unknown> | null)
-      ?.isAdmin === true
-  );
+  return parseClerkPublicMeta(claims)?.isAdmin === true;
 }
 
 async function loadPermissions(db: Db) {
@@ -254,7 +237,13 @@ export async function syncRolePermissions(
   db: Db,
   force = false,
 ): Promise<void> {
-  const existingPermissions = await loadPermissions(db);
+  const rawRows = await db.select().from(rolePermissions);
+  const existingPermissions = rawRows.filter(
+    (p) =>
+      (p.role === "global" ||
+        DYNAMIC_ROLES.includes(p.role as DynamicRbacRole)) &&
+      VALID_FEATURES.includes(p.feature as RbacFeature),
+  );
 
   if (!force && existingPermissions.length > 0) {
     return;
@@ -263,7 +252,7 @@ export async function syncRolePermissions(
   const statements: unknown[] = [];
   const deleteKeys = new Set<string>();
 
-  for (const permission of existingPermissions) {
+  for (const permission of rawRows) {
     const isValidRole =
       DYNAMIC_ROLES.includes(permission.role as DynamicRbacRole) ||
       permission.role === "global";

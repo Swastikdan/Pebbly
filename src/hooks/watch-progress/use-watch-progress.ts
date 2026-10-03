@@ -46,53 +46,27 @@ export function useWatchProgress(id: string | number, mediaType: MediaType) {
 
   const localEpisodes = useLocalProgressStore((state) => state.watchedEpisodes);
 
-  const lastPlayed = useLocalProgressStore(
-    (state) => state.lastPlayed[String(id)] ?? null,
-  );
-
   const progress: WatchProgressData | null = useMemo(() => {
     if (!mediaState) return null;
 
     let context: { season?: number; episode?: number } | undefined;
 
     if (mediaType === "tv") {
-      if (lastPlayed) {
-        const { season, episode } = lastPlayed;
-        const isThisWatched = isSignedIn
-          ? watchedEpisodes.some(
-              (e) =>
-                e.season === season && e.episode === episode && e.isWatched,
-            )
-          : !!localEpisodes[makeEpisodeKey(tmdbId, season, episode)];
+      const watchedList: EpisodeRef[] = isSignedIn
+        ? watchedEpisodes
+            .filter((e) => e.isWatched)
+            .map((e) => ({ season: e.season, episode: e.episode }))
+        : Object.entries(localEpisodes)
+            .filter(([key, val]) => key.startsWith(`${tmdbId}:`) && val)
+            .map(([key]) => {
+              const parsed = parseEpisodeKey(key);
+              return parsed
+                ? { season: parsed.season, episode: parsed.episode }
+                : null;
+            })
+            .filter((ref): ref is EpisodeRef => ref !== null);
 
-        if (isThisWatched) {
-          context = { season, episode: episode + 1 };
-        } else {
-          context = { season, episode };
-        }
-      }
-
-      if (!context) {
-        const watchedList: EpisodeRef[] = isSignedIn
-          ? watchedEpisodes
-              .filter((e) => e.isWatched)
-              .map((e) => ({ season: e.season, episode: e.episode }))
-          : Object.entries(localEpisodes)
-              .filter(([key, val]) => key.startsWith(`${tmdbId}:`) && val)
-              .map(([key]) => {
-                const parsed = parseEpisodeKey(key);
-                return parsed
-                  ? { season: parsed.season, episode: parsed.episode }
-                  : null;
-              })
-              .filter((ref): ref is EpisodeRef => ref !== null);
-
-        context = resolveNextEpisode({
-          lastPlayed: null,
-          isLastPlayedWatched: false,
-          watchedEpisodes: watchedList,
-        });
-      }
+      context = resolveNextEpisode({ watchedEpisodes: watchedList });
     }
 
     return {
@@ -111,7 +85,6 @@ export function useWatchProgress(id: string | number, mediaType: MediaType) {
     watchedEpisodes,
     localEpisodes,
     tmdbId,
-    lastPlayed,
   ]);
 
   return { progress };

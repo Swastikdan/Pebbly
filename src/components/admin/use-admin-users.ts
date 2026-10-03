@@ -14,7 +14,6 @@ export const ROLE_CONFIGS: {
   label: string;
   short: string;
 }[] = [
-  { value: "video-player", label: "Video Player", short: "Video" },
   { value: "ai-integrations", label: "AI Integrations", short: "AI" },
   { value: "external-redirect", label: "External Redirect", short: "External" },
 ];
@@ -140,10 +139,7 @@ export function useAdminUsers() {
 
   const getCurrentRoles = (user: AdminUser): DynamicRbacRole[] =>
     (user.roles ?? []).filter(
-      (role) =>
-        role === "video-player" ||
-        role === "ai-integrations" ||
-        role === "external-redirect",
+      (role) => role === "ai-integrations" || role === "external-redirect",
     ) as DynamicRbacRole[];
 
   const isSelf = (user: AdminUser) =>

@@ -82,6 +82,9 @@
     {
       "idx": 11,
       "version": "6",
+    {
+      "idx": 11,
+      "version": "6",
       "when": 1790271555182,
       "tag": "0012_user_taste_profiles",
       "breakpoints": true
@@ -98,6 +101,15 @@
       "version": "6",
       "when": 1790307582911,
       "tag": "0013_deep_jimmy_woo",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1791021018172,
+      "tag": "0014_remove_video_playback_permissions",
+      "breakpoints": true
+    }
       "breakpoints": true
     }
   ]

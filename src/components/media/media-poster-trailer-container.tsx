@@ -1,6 +1,5 @@
-import { lazy, Suspense } from "react";
-
 import type { MediaType } from "@/domain/media";
+import { ExternalPlayerLink } from "@/components/external-player-link";
 import {
   PlayOverlay,
   YouTubeEmbed,
@@ -9,12 +8,6 @@ import { MediaThumbRail } from "@/components/media/media-thumb-rail";
 import { YouTubeThumbnail } from "@/components/media/youtube-thumbnail";
 import { Image } from "@/components/ui/image";
 import { useWatchProgress } from "@/hooks/watch-progress/use-watch-progress";
-
-const VideoPlayerModal = lazy(() =>
-  import("@/components/video-player-modal").then((m) => ({
-    default: m.VideoPlayerModal,
-  })),
-);
 
 export function MediaPosterTrailerContainer(props: {
   tmdbId: number;
@@ -51,17 +44,15 @@ export function MediaPosterTrailerContainer(props: {
           priority
         />
 
-        <Suspense fallback={null}>
-          <VideoPlayerModal
-            tmdbId={tmdbId}
-            type={type}
-            title={title}
-            variant="card"
-            className="bg-black/20 opacity-100 transition-colors hover:bg-black/30"
-            season={defaultSeason}
-            episode={defaultEpisode}
-          />
-        </Suspense>
+        <ExternalPlayerLink
+          tmdbId={tmdbId}
+          type={type}
+          title={title}
+          variant="card"
+          className="bg-black/20 opacity-100 transition-colors hover:bg-black/30"
+          season={defaultSeason}
+          episode={defaultEpisode}
+        />
       </div>
 
       {trailervideos.length > 0 && (

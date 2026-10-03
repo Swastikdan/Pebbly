@@ -44,6 +44,8 @@ const listColorSchema = v.pipe(
 );
 const listDescriptionSchema = v.pipe(v.string(), v.maxLength(150));
 
+const tmdbIdSchema = v.pipe(v.number(), v.integer(), v.minValue(1));
+
 const listFields = {
   name: customListNameSchema,
   color: v.optional(listColorSchema),
@@ -86,7 +88,7 @@ export const getListItemsArgsSchema = v.object({
 export type GetListItemsArgs = v.InferOutput<typeof getListItemsArgsSchema>;
 
 export const getItemListsArgsSchema = v.object({
-  tmdbId: v.number(),
+  tmdbId: tmdbIdSchema,
   mediaType: mediaTypeSchema,
 });
 export type GetItemListsArgs = v.InferOutput<typeof getItemListsArgsSchema>;
@@ -94,7 +96,7 @@ export type GetItemListsArgs = v.InferOutput<typeof getItemListsArgsSchema>;
 export const toggleListItemArgsSchema = v.object({
   ...metadataSchema.entries,
   listId: v.string(),
-  tmdbId: v.number(),
+  tmdbId: tmdbIdSchema,
   mediaType: mediaTypeSchema,
   backdrop: v.optional(v.pipe(v.string(), v.maxLength(512))),
 });
@@ -103,7 +105,7 @@ export type ToggleListItemArgs = v.InferOutput<typeof toggleListItemArgsSchema>;
 export const createCustomListAndAddItemArgsSchema = v.object({
   ...createCustomListArgsSchema.entries,
   ...metadataSchema.entries,
-  tmdbId: v.number(),
+  tmdbId: tmdbIdSchema,
   mediaType: mediaTypeSchema,
   backdrop: v.optional(v.pipe(v.string(), v.maxLength(512))),
 });
@@ -114,7 +116,7 @@ export type CreateCustomListAndAddItemArgs = v.InferOutput<
 export const reorderListItemsArgsSchema = v.object({
   listId: v.string(),
   orderedItems: v.pipe(
-    v.array(v.object({ tmdbId: v.number(), mediaType: mediaTypeSchema })),
+    v.array(v.object({ tmdbId: tmdbIdSchema, mediaType: mediaTypeSchema })),
     v.maxLength(1000),
   ),
 });

@@ -108,7 +108,7 @@ Other `.github/` files: issue templates (`bug_report.yml`, `feature_request.yml`
 | :------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `watchlist-store.ts`      | Zustand guest watchlist store (persisted, LRU storage): membership/progress/reaction mutators + `importWatchlistLocal`.                                                                               |
 | `local-lists-store.ts`    | Zustand guest custom-lists store (persisted).                                                                                                                                                         |
-| `local-progress-store.ts` | Zustand guest progress store (persisted; includes `lastPlayed` and per-episode watched state).                                                                                                        |
+| `local-progress-store.ts` | Zustand guest progress store (persisted; per-episode watched state).                                                                                                                                  |
 | `daily-pick-store.ts`     | Persisted bounded per-title backdrop/poster metadata cache for daily pick; trending and popular-TV catalogs come from React Query.                                                                    |
 | `guest-store-kit.ts`      | Shared persistence plumbing: `guestPersistOptions`/`guardedMerge` with optional per-store sanitizers, LRU storage on client, memory during SSR, plus `localId`, `nextRank`, and `mergeDefinedFields`. |
 
@@ -164,29 +164,28 @@ modules live here, hooks live in `src/hooks/`.
 
 ## `src/hooks/`: React hooks
 
-| File                                    | What it is                                                                                                                            |
-| :-------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| `use-watchlist.ts`                      | Thin read/mutation hooks delegating to the repository (~175 lines).                                                                   |
-| `use-watchlist-import-export.ts`        | Watchlist export/import (JSON) including guest→remote promotion (~440 lines).                                                         |
-| `use-custom-lists.ts`                   | Custom-list reads + mutations through the journal-reconciled queries (~110 lines).                                                    |
-| `use-recommendations.ts`                | AI recommendation queries/mutations (history, generate, feedback; caps exclusions at 1000 ids).                                       |
-| `use-homepage-recommendations.ts`       | Homepage recommendation controller: scoped queries, refresh/generation guard, rendered filtering, and optimistic feedback mutations.  |
-| `use-tmdb-verification.ts`              | Verifies AI-suggested titles against TMDB: `useTmdbData` (direct fetch), `useTmdbSearchFallback` (title search), `normalizeTmdbData`. |
-| `use-resolved-recommendation.ts`        | Resolution machine for AI rec cards (verify id → search fallback), skippable via `enabled: false`.                                    |
-| `use-daily-pick.ts`                     | "Tonight's Pick" orchestration over the pure engine + offline store (~260 lines).                                                     |
-| `use-remove-with-undo.ts`               | Removes a watchlist item immediately with an Undo toast that performs the inverse toggle.                                             |
-| `use-url-paged-query.ts`                | URL-driven pagination helper (page param sync, clamp to `MAX_PAGINATION_LIMIT`, optional scroll-to-top).                              |
-| `use-filtered-watchlist.ts`             | Filter/sort logic for the watchlist tab.                                                                                              |
-| `use-season-details.ts`                 | Batched TV season-detail fetching via a shared `RequestBatcher` onto the canonical `seasonDetails` key.                               |
-| `use-permissions.ts`                    | Client RBAC summary from `getUserFeaturesFn`; refetches on focus and on `permsRev` deltas (no fixed poll).                            |
-| `data-version.ts`                       | `fetchDataVersion`, client fetch for the combined per-user revision counters, polled by `user-sync.tsx`.                              |
-| `use-canonical-slug-redirect.ts`        | Client redirect to the canonical `/{type}/{id}/{slug}` URL (moved here from lib; it's a hook).                                        |
-| `use-theme.ts`                          | Light/dark/system theme: preference store, pre-paint DOM application, View Transitions crossfade, `toggleTheme`.                      |
-| `use-destructive-toast.ts`              | Confirmation toast that defers destructive actions until countdown expiry unless undone.                                              |
-| `watch-progress/use-watch-progress.ts`  | Watch/player progress orchestration (~450 lines): data fetching, progress calculations, mutations.                                    |
-| `watch-progress/use-player-listener.ts` | postMessage listener for player progress (origin-verified, DOM-scan fallback).                                                        |
-| `lib/watch-progress.ts`                 | Dependency-free progress/player contracts, validation, optimistic episode helpers, and `buildPlayerUrl`.                              |
-| `watch-progress/progress-helpers.ts`    | Compatibility re-export of `lib/watch-progress.ts`.                                                                                   |
+| File                                   | What it is                                                                                                                            |
+| :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| `use-watchlist.ts`                     | Thin read/mutation hooks delegating to the repository (~175 lines).                                                                   |
+| `use-watchlist-import-export.ts`       | Watchlist export/import (JSON) including guest→remote promotion (~440 lines).                                                         |
+| `use-custom-lists.ts`                  | Custom-list reads + mutations through the journal-reconciled queries (~110 lines).                                                    |
+| `use-recommendations.ts`               | AI recommendation queries/mutations (history, generate, feedback; caps exclusions at 1000 ids).                                       |
+| `use-homepage-recommendations.ts`      | Homepage recommendation controller: scoped queries, refresh/generation guard, rendered filtering, and optimistic feedback mutations.  |
+| `use-tmdb-verification.ts`             | Verifies AI-suggested titles against TMDB: `useTmdbData` (direct fetch), `useTmdbSearchFallback` (title search), `normalizeTmdbData`. |
+| `use-resolved-recommendation.ts`       | Resolution machine for AI rec cards (verify id → search fallback), skippable via `enabled: false`.                                    |
+| `use-daily-pick.ts`                    | "Tonight's Pick" orchestration over the pure engine + offline store (~260 lines).                                                     |
+| `use-remove-with-undo.ts`              | Removes a watchlist item immediately with an Undo toast that performs the inverse toggle.                                             |
+| `use-url-paged-query.ts`               | URL-driven pagination helper (page param sync, clamp to `MAX_PAGINATION_LIMIT`, optional scroll-to-top).                              |
+| `use-filtered-watchlist.ts`            | Filter/sort logic for the watchlist tab.                                                                                              |
+| `use-season-details.ts`                | Batched TV season-detail fetching via a shared `RequestBatcher` onto the canonical `seasonDetails` key.                               |
+| `use-permissions.ts`                   | Client RBAC summary from `getUserFeaturesFn`; refetches on focus and on `permsRev` deltas (no fixed poll).                            |
+| `data-version.ts`                      | `fetchDataVersion`, client fetch for the combined per-user revision counters, polled by `user-sync.tsx`.                              |
+| `use-canonical-slug-redirect.ts`       | Client redirect to the canonical `/{type}/{id}/{slug}` URL (moved here from lib; it's a hook).                                        |
+| `use-theme.ts`                         | Light/dark/system theme: preference store, pre-paint DOM application, View Transitions crossfade, `toggleTheme`.                      |
+| `use-destructive-toast.ts`             | Confirmation toast that defers destructive actions until countdown expiry unless undone.                                              |
+| `watch-progress/use-watch-progress.ts` | Watch progress orchestration (~450 lines): data fetching, progress calculations, mutations.                                           |
+| `lib/watch-progress.ts`                | Dependency-free progress contracts, validation, and optimistic episode helpers.                                                       |
+| `watch-progress/progress-helpers.ts`   | Compatibility re-export of `lib/watch-progress.ts`.                                                                                   |
 
 ## `src/components/`: UI
 
@@ -248,7 +247,7 @@ while the admin page is open).
 (grid/carousel card), `homepage-media.tsx` (homepage rows),
 `homepage-recommendations.tsx` ("Picks For You" row + feedback),
 `daily-pick.tsx` (daily pick widget with theme-aware backdrop placeholder),
-`video-player-modal.tsx` (fullscreen player), `watchlist-button.tsx`,
+`external-player-link.tsx` (external player redirect link), `watchlist-button.tsx`,
 `custom-list-dialog.tsx`, `share-button.tsx`, `scroll-container.tsx`,
 `user-sync.tsx` (session sync + ban enforcement + cross-device realtime:
 adaptive version poll that invalidates query groups only when a revision moved

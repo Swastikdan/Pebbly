@@ -104,7 +104,7 @@ status is resolved exclusively from the **signed JWT claim**
 former live Clerk API fallback was removed from the request path. An external
 call inside every gate check cost latency and Clerk rate-limit budget; access
 decisions must stay local to the verified token. The `users.roles` column only carries the two _dynamic_ feature
-roles (`video-player`, `ai-integrations`), not admin. `listUsers` derives
+roles (`ai-integrations`, `external-redirect`), not admin. `listUsers` derives
 admin badges from one paginated Clerk user-list call (display-only).
 
 **Consequences:**

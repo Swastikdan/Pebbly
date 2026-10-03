@@ -10,12 +10,10 @@ let client: ReturnType<typeof createFetch> | null = null;
 function isCloudflareWorker(): boolean {
   if (typeof window !== "undefined") return false;
   return (
-    typeof (globalThis as unknown as { __env__?: unknown }).__env__ !==
-      "undefined" ||
+    "__env__" in globalThis ||
     (typeof navigator !== "undefined" &&
       navigator.userAgent === "Cloudflare-Workers") ||
-    typeof (globalThis as unknown as { WebSocketPair?: unknown })
-      .WebSocketPair !== "undefined"
+    "WebSocketPair" in globalThis
   );
 }
 

@@ -1,7 +1,8 @@
-import { lazy, Suspense, useId, useState } from "react";
+import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { SeasonInfo, TvEpisodeDetail } from "@/lib/tmdb-schemas";
+import { ExternalPlayerLink } from "@/components/external-player-link";
 import {
   Accordion,
   AccordionItem,
@@ -20,12 +21,6 @@ import {
   useEpisodeWatched,
 } from "@/hooks/watch-progress/use-watch-progress";
 import { queryKeys } from "@/lib/query/keys";
-
-const VideoPlayerModal = lazy(() =>
-  import("@/components/video-player-modal").then((m) => ({
-    default: m.VideoPlayerModal,
-  })),
-);
 
 interface InlineEpisodeBrowserProps {
   tvId: number;
@@ -304,16 +299,14 @@ function EpisodeCard({
           }
           width={250}
         />
-        <Suspense fallback={null}>
-          <VideoPlayerModal
-            tmdbId={tvId}
-            type="tv"
-            title={`${showName} - ${episode.name}`}
-            season={seasonNumber}
-            episode={episode.episode_number}
-            variant="card"
-          />
-        </Suspense>
+        <ExternalPlayerLink
+          tmdbId={tvId}
+          type="tv"
+          title={`${showName} - ${episode.name}`}
+          season={seasonNumber}
+          episode={episode.episode_number}
+          variant="card"
+        />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">

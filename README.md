@@ -28,7 +28,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 
 - Browse trending, popular, top-rated, upcoming, and curated movie/TV collections.
 - Cross-media search with genre, media type, and keyword filters.
-- Detail pages with cast/crew info, trailers, season/episode browsers, and an embedded video player.
+- Detail pages with cast/crew info, trailers, season/episode browsers, and optional external-player redirect links.
 - Watchlist statuses (`watch-later`, `watching`, `done`, `dropped`), per-episode progress, and reaction tags (`loved`, `liked`, `mixed`, `not-for-me`, `recommended`).
 - Custom lists with public share pages (`/c/<id>`): owners can edit, reorder (ranked lists), and clone; visitors only see public lists. JSON export/import for watchlists, and sync across devices via Cloudflare D1.
 - Light/dark/system themes resolved before first paint (no flash of the wrong palette).
@@ -83,7 +83,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 │   ├── components/                  # UI components (coss ui on Base UI) & domain widgets
 │   │   ├── ui/                      # Base UI-based primitives + theming
 │   │   ├── homepage-recommendations.tsx # Homepage "Picks For You" row with interaction buttons
-│   │   ├── video-player-modal.tsx   # Fullscreen-capable responsive video player
+│   │   ├── external-player-link.tsx # Play link that opens the external player
 │   │   └── media-card.tsx           # Reusable media grid/carousel card
 │   ├── stores/                      # Zustand guest/local stores (watchlist, lists, progress, daily pick)
 │   ├── hooks/                       # Custom hooks (watchlist, watch progress, theme, recommendations, RBAC)

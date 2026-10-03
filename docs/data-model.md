@@ -27,7 +27,7 @@ Identity for signed-in users, mirrored from Clerk.
 | `id`                                                   | text PK          | uuid                                                                                                                                                                                                                                                                                 |
 | `token_identifier`                                     | text, **unique** | `clerk                                                                                                                                                                                                                                                                               | <sub>` (legacy formats supported at lookup time) |
 | `name` / `image` / `email`                             | text             | profile snapshot from Clerk claims                                                                                                                                                                                                                                                   |
-| `roles`                                                | text (json)      | dynamic RBAC roles: `video-player`, `ai-integrations`                                                                                                                                                                                                                                |
+| `roles`                                                | text (json)      | dynamic RBAC roles: `ai-integrations`, `external-redirect`                                                                                                                                                                                                                           |
 | `is_banned`                                            | boolean          | default `false`                                                                                                                                                                                                                                                                      |
 | `watchlist_rev` / `lists_rev` / `ai_rev` / `perms_rev` | integer          | monotonic per-domain revision counters for cross-device change detection, bumped atomically by every relevant mutation, polled via `getDataVersion` (see ADR-015). `perms_rev` covers RBAC state: role/ban changes bump the target user, global feature-flag toggles bump every user |
 
@@ -232,11 +232,11 @@ Indexes: `(user_id, tmdb_id, media_type)` **unique** ·
 
 RBAC feature flags, including the `global` kill switch.
 
-| Column    | Type    | Notes                                                                  |
-| :-------- | :------ | :--------------------------------------------------------------------- |
-| `role`    | text    | `global` \| `video-player` \| `ai-integrations` \| `external-redirect` |
-| `feature` | text    | `video-player` \| `ai-recommendations` \| `external-redirect`          |
-| `enabled` | boolean | default `true` (video/ai), `false` for `external-redirect`)            |
+| Column    | Type    | Notes                                                                   |
+| :-------- | :------ | :---------------------------------------------------------------------- |
+| `role`    | text    | `global` \| `ai-integrations` \| `external-redirect`                    |
+| `feature` | text    | `ai-recommendations` \| `external-redirect`                             |
+| `enabled` | boolean | default `true` (`ai-recommendations`), `false` for `external-redirect`) |
 
 Primary key: `(role, feature)`. Seeded/defaulted by `syncRolePermissions`
 (see [server-layer.md](./server-layer.md#5-rbac-srcserverrbacts)).

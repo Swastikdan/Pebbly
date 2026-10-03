@@ -209,15 +209,6 @@ export function useDailyPick(open: boolean) {
       })
     : null;
 
-  const playDestination = selectedItem
-    ? mediaDetailRoute({
-        mediaType,
-        id: selectedItem.id,
-        slug: formattedTitle || undefined,
-        play: true,
-      })
-    : null;
-
   return {
     candidateItems,
     itemsCount,
@@ -234,7 +225,6 @@ export function useDailyPick(open: boolean) {
     posterUrl,
     posterLqUrl,
     destination,
-    playDestination,
     setSelectedKey,
   };
 }

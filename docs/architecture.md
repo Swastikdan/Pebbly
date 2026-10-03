@@ -148,7 +148,7 @@ Server functions are:
   sign-in, race-safe via `onConflictDoNothing`), and exposes a short-lived
   in-memory user cache (15 s TTL, 500-entry LRU). Legacy duplicate-user
   reconciliation is kept off the request path in the maintenance helper.
-- `rbac.ts`, feature flags (`video-player`, `ai-recommendations`) evaluated
+- `rbac.ts`, feature flags (`ai-recommendations`, `external-redirect`) evaluated
   from a `role_permissions` table + dynamic user roles + a **global** kill
   switch. Admin is resolved by `isAdminByClaims` (the signed JWT
   `public_meta.isAdmin` claim) or the live Clerk API, never from the DB.
@@ -252,7 +252,7 @@ modules (journal, op builders, shared progress, notifications) live under
   collection page), `src/components/recommendations/`,
   `src/components/admin/`, feature-specific surfaces.
 - `src/components/media-card.tsx`, `homepage-media.tsx`,
-  `homepage-recommendations.tsx`, `daily-pick.tsx`, `video-player-modal.tsx`,
+  `homepage-recommendations.tsx`, `daily-pick.tsx`, `external-player-link.tsx`,
   `navigation-progress-bar.tsx`, cross-cutting discovery widgets.
 
 ## 4. Request flows

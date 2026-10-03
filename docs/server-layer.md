@@ -99,15 +99,14 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 
 ## 5. RBAC (`src/server/rbac.ts`)
 
-- Three dynamic roles (`video-player`, `ai-integrations`, `external-redirect`)
-  map 1:1 to three features (`video-player`, `ai-recommendations`,
-  `external-redirect`).
+- Two dynamic roles (`ai-integrations`, `external-redirect`) map 1:1 to two
+  features (`ai-recommendations`, `external-redirect`).
 - `hasFeature(claims, user, feature)`, the decision function:
   1. no claims → false
   2. banned user → false
   3. no user row → false
   4. `global:<feature>` permission row must be enabled (default `true` for
-     video/ai, `false` for `external-redirect`)
+     `ai-recommendations`, `false` for `external-redirect`)
   5. any of the user's roles grant the feature (permission row overrides
      `DEFAULT_PERMISSIONS`)
 - Gating is uniform for everyone, including administrators — there is no admin

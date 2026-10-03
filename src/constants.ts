@@ -117,23 +117,17 @@ export const MAX_PAGINATION_LIMIT = 500;
 
 export const RBAC_ROLES = [
   "admin",
-  "video-player",
   "ai-integrations",
   "external-redirect",
 ] as const;
 export type RbacRole = (typeof RBAC_ROLES)[number];
 export const PERMISSION_ROLES = [
-  "video-player",
   "ai-integrations",
   "external-redirect",
 ] as const;
 export type PermissionRole = (typeof PERMISSION_ROLES)[number];
 
 export const RBAC_FEATURES = {
-  "video-player": {
-    label: "Video Playback",
-    description: "Built-in video player modal for streaming content",
-  },
   "ai-recommendations": {
     label: "AI Recommendations",
     description:
@@ -141,8 +135,7 @@ export const RBAC_FEATURES = {
   },
   "external-redirect": {
     label: "External Player Redirect",
-    description:
-      "Open play buttons on the external player instead of the built-in modal.",
+    description: "Show play buttons that open the external player.",
   },
 } as const;
 export type RbacFeature = keyof typeof RBAC_FEATURES;

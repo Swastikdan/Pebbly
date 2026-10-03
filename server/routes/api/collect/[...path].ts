@@ -26,6 +26,11 @@ export default eventHandler(async (event) => {
   const url = getRequestURL(event);
   const pathWithSearch =
     url.pathname.replace(new RegExp(`^${PUBLIC_PREFIX}`), "") + url.search;
+  // The remainder must be an absolute path; anything else (e.g. a prefix
+  // match like `/api/collect.evil.com`) would change the upstream hostname.
+  if (!pathWithSearch.startsWith("/")) {
+    return new Response("Not found", { status: 404 });
+  }
   const targetHost =
     pathWithSearch.startsWith("/static/") ||
     pathWithSearch.startsWith("/array/")

@@ -62,7 +62,7 @@ const MediaList = memo(
               is_on_watchlist_page={item.is_on_watchlist_page}
               is_on_homepage={item.is_on_homepage}
               isContinueWatching={item.isContinueWatching}
-              card_type={props.cardType as unknown as "horizontal" | "vertical"}
+              card_type={props.cardType ?? "horizontal"}
               overview={item.overview}
               priority={
                 props.priorityCount ? index < props.priorityCount : false

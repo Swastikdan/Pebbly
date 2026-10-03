@@ -1,8 +1,8 @@
 import { defineNitroConfig } from "nitro/config";
 import { loadEnv } from "vite";
 
-// CSP origins are deployment-specific (dev Clerk tenant vs prod, external
-// player host, TMDB API base), so derive them from the same VITE_* env vars
+// CSP origins are deployment-specific (dev Clerk tenant vs prod, TMDB API
+// base), so derive them from the same VITE_* env vars
 // the app already uses instead of hardcoding them here. loadEnv reads
 // .env/.env.local/.env.<mode> files and includes matching real process.env
 // entries (which win), so local dev picks up `.env` while CI builds pick up
@@ -48,7 +48,6 @@ const clerkOrigins = originsOf(
 const tmdbApiOrigins = originsOf(
   buildEnv.VITE_PUBLIC_TMDB_API_URL || "https://api.themoviedb.org/3",
 );
-const videoPlayerOrigins = originsOf(buildEnv.VITE_PUBLIC_VIDEO_URL);
 // PostHog ingests events on its API host and lazily loads recorder/survey
 // assets from the sibling `-assets` host, so both origins must be allowed.
 const posthogHost =
@@ -102,12 +101,7 @@ const contentSecurityPolicy = [
     // PostHog event ingestion and remote config.
     ...posthogOrigins,
   ].join(" "),
-  [
-    "frame-src",
-    ...clerkOrigins,
-    ...videoPlayerOrigins,
-    "https://www.youtube.com",
-  ]
+  ["frame-src", ...clerkOrigins, "https://www.youtube.com"]
     .filter(Boolean)
     .join(" "),
   "media-src 'self' blob:",

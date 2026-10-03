@@ -44,6 +44,11 @@ export const useWatchlistImportExport = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const exportWatchlist = useCallback(async () => {
+    if (!watchlist || watchlist.length === 0) return;
+
+    let url: string | null = null;
+    let link: HTMLAnchorElement | null = null;
+
     try {
       setExportLoading(true);
       setError(null);
@@ -93,9 +98,9 @@ export const useWatchlistImportExport = () => {
 
       const json = JSON.stringify(enhancedWatchlist, null, 2);
       const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
+      url = URL.createObjectURL(blob);
 
-      const link = document.createElement("a");
+      link = document.createElement("a");
       const timestamp = new Date().toISOString().split("T")[0];
 
       link.href = url;
@@ -105,10 +110,20 @@ export const useWatchlistImportExport = () => {
       link.click();
 
       setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        if (link && document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+        if (url) {
+          URL.revokeObjectURL(url);
+        }
       }, 100);
     } catch (err) {
+      if (link && document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
       setError({ message: "Failed to export watchlist. Please try again." });
       console.error("Export error:", err);
     } finally {
@@ -123,12 +138,14 @@ export const useWatchlistImportExport = () => {
 
       if (!file.name.endsWith(".json")) {
         setError({ message: "Please select a valid JSON (.json) file." });
+        if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
 
       const MAX_FILE_SIZE = 10 * 1024 * 1024;
       if (file.size > MAX_FILE_SIZE) {
         setError({ message: "File size exceeds 10MB limit." });
+        if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
 

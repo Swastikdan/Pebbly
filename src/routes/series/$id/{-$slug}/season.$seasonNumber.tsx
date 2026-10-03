@@ -1,9 +1,9 @@
-import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
+import { ExternalPlayerLink } from "@/components/external-player-link";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
@@ -21,12 +21,6 @@ import {
   tvSeasonRoute,
 } from "@/lib/route-helpers";
 import { formatMediaTitle } from "@/lib/utils";
-
-const VideoPlayerModal = lazy(() =>
-  import("@/components/video-player-modal").then((m) => ({
-    default: m.VideoPlayerModal,
-  })),
-);
 
 export const Route = createFileRoute(
   "/series/$id/{-$slug}/season/$seasonNumber",
@@ -156,16 +150,14 @@ function TvSeasonDetailPage() {
                   width={320}
                   priority={index === 0}
                 />
-                <Suspense fallback={null}>
-                  <VideoPlayerModal
-                    tmdbId={tvId}
-                    type="tv"
-                    title={`${showName} - ${episode.name}`}
-                    season={seasonNumber}
-                    episode={episode.episode_number}
-                    variant="card"
-                  />
-                </Suspense>
+                <ExternalPlayerLink
+                  tmdbId={tvId}
+                  type="tv"
+                  title={`${showName} - ${episode.name}`}
+                  season={seasonNumber}
+                  episode={episode.episode_number}
+                  variant="card"
+                />
               </div>
 
               <div className="flex flex-1 flex-col gap-2">
@@ -178,16 +170,14 @@ function TvSeasonDetailPage() {
                       {episode.name}
                     </h3>
                   </div>
-                  <Suspense fallback={null}>
-                    <VideoPlayerModal
-                      tmdbId={tvId}
-                      type="tv"
-                      title={`${showName} - ${episode.name}`}
-                      season={seasonNumber}
-                      episode={episode.episode_number}
-                      variant="episode"
-                    />
-                  </Suspense>
+                  <ExternalPlayerLink
+                    tmdbId={tvId}
+                    type="tv"
+                    title={`${showName} - ${episode.name}`}
+                    season={seasonNumber}
+                    episode={episode.episode_number}
+                    variant="episode"
+                  />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">

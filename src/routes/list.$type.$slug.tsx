@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-router";
 import { number, object, optional } from "valibot";
 
-import type { MediaType } from "@/domain/media";
 import type { MediaListQuery } from "@/domain/media-query";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { DefaultErrorComponent } from "@/components/default-not-found";
@@ -187,7 +186,7 @@ function MediaListPage() {
               id={item.id}
               image={item.poster_path ?? ""}
               known_for_department={item.known_for_department ?? ""}
-              media_type={mediatype as unknown as MediaType}
+              media_type={mediatype}
               poster_path={item.poster_path ?? ""}
               rating={item.vote_average ?? 0}
               release_date={item.first_air_date ?? item.release_date ?? null}

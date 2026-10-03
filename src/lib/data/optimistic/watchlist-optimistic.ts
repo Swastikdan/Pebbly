@@ -252,15 +252,23 @@ function beginMarkShowOp(
   userId?: string,
 ): OpHandle {
   const entries: PendingOpEntry<WatchItemRow | EpisodeProgressRow>[] = [];
-  if (args.progressStatus !== undefined) {
+  const progressStatus = args.progressStatus;
+  if (progressStatus !== undefined) {
     entries.push({
       key: queryKeys.watchlist.list(undefined, userId),
       touchedIds: [`${args.mediaType}:${args.tmdbId}`],
       apply: (rows) =>
-        applyProgressStatusRows(
-          rows as WatchItemRow[],
-          args as unknown as ProgressStatusArgs,
-        ),
+        applyProgressStatusRows(rows as WatchItemRow[], {
+          tmdbId: args.tmdbId,
+          mediaType: args.mediaType,
+          progressStatus,
+          progress: args.progress,
+          title: args.title,
+          image: args.image,
+          rating: args.rating,
+          release_date: args.release_date,
+          overview: args.overview,
+        }),
     });
   }
   const episodeKey = queryKeys.watchlist.episodes(args.tmdbId, userId);

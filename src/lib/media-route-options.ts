@@ -212,13 +212,13 @@ export function basicDetailsQuery(
   if (kind === "movie") {
     return {
       queryKey: queryKeys.tmdb.basicMovieDetails(Number(id)),
-      queryFn: async () => await getBasicMovieDetails({ id: parseInt(id, 10) }),
+      queryFn: () => getBasicMovieDetails({ id: Number(id) }),
       enabled: !!id,
     };
   }
   return {
     queryKey: queryKeys.tmdb.basicTvDetails(Number(id)),
-    queryFn: async () => await getBasicTvDetails({ id: parseInt(id, 10) }),
+    queryFn: () => getBasicTvDetails({ id: Number(id) }),
     enabled: !!id,
   };
 }

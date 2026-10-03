@@ -41,15 +41,19 @@ export const homepageRecStatusSchema = v.picklist([...HOMEPAGE_REC_STATUSES]);
 // unbounded payloads, not normal usage.
 export const MAX_EXCLUDE_TMDB_IDS = 1000;
 
+const MAX_RECOMMENDATIONS_JSON_CHARS = 200_000;
+const positiveIntegerSchema = v.pipe(v.number(), v.integer(), v.minValue(1));
+
 export const generateRecommendationsArgsSchema = v.object({
   generationType: v.optional(generationTypeSchema),
   listId: v.optional(v.string()),
   mediaTypePreference: v.optional(mediaTypeSchema),
-  genrePreference: v.optional(v.string()),
-  genreIds: v.optional(v.pipe(v.array(v.number()), v.maxLength(10))),
+  // Interpolated into the LLM prompt, so keep it to a short genre list.
+  genrePreference: v.optional(v.pipe(v.string(), v.maxLength(300))),
+  genreIds: v.optional(v.pipe(v.array(positiveIntegerSchema), v.maxLength(10))),
   genreMode: v.optional(genreModeSchema),
   excludeTmdbIds: v.optional(
-    v.pipe(v.array(v.number()), v.maxLength(MAX_EXCLUDE_TMDB_IDS)),
+    v.pipe(v.array(positiveIntegerSchema), v.maxLength(MAX_EXCLUDE_TMDB_IDS)),
   ),
   yearFrom: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(1900), v.maxValue(2100)),
@@ -84,7 +88,12 @@ export type DeleteRecommendationArgs = v.InferOutput<
 
 export const updateVerifiedRecommendationsArgsSchema = v.object({
   id: v.string(),
-  recommendations: v.string(),
+  // A serialized recommendations array; capped so a client cannot persist an
+  // arbitrarily large blob into its own row.
+  recommendations: v.pipe(
+    v.string(),
+    v.maxLength(MAX_RECOMMENDATIONS_JSON_CHARS),
+  ),
 });
 export type UpdateVerifiedRecommendationsArgs = v.InferOutput<
   typeof updateVerifiedRecommendationsArgsSchema

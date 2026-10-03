@@ -1,4 +1,4 @@
-import { Dices, Eye, Play, ThumbsDown } from "lucide-react";
+import { Dices, Eye, ThumbsDown } from "lucide-react";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 
@@ -30,9 +30,7 @@ function DailyPickDialogContent({
 export function DailyPickButton() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { hasFeature, loading: isPermissionsLoading } = usePermissions();
-  const isPlaybackEnabled =
-    hasFeature("video-player") || hasFeature("external-redirect");
+  const { loading: isPermissionsLoading } = usePermissions();
 
   if (isPermissionsLoading) {
     return (
@@ -188,118 +186,49 @@ export function DailyPickButton() {
                     </p>
 
                     <div className="mt-5 flex flex-col gap-2">
-                      {isPlaybackEnabled ? (
-                        <>
-                          <div className="flex items-center gap-2">
-                            {pick.playDestination && (
-                              <Button
-                                render={
-                                  <Link
-                                    to={pick.playDestination.to}
-                                    params={pick.playDestination.params}
-                                    search={pick.playDestination.search}
-                                    onClick={() => setIsOpen(false)}
-                                  />
-                                }
-                                className="bg-foreground text-background hover:bg-foreground/90 h-10 min-w-0 flex-1 rounded-md text-xs font-medium sm:h-11 sm:text-sm"
-                              >
-                                <Play
-                                  aria-hidden="true"
-                                  className="me-1.5 size-3.5 fill-current"
-                                />
-                                <span>Watch Now</span>
-                              </Button>
-                            )}
+                      <div className="grid grid-cols-3 gap-2">
+                        <WatchlistButton
+                          id={pick.selectedItem.id}
+                          image={pick.selectedItem.poster_path ?? ""}
+                          media_type={pick.mediaType}
+                          rating={pick.rating}
+                          release_date={
+                            pick.selectedItem.release_date ??
+                            pick.selectedItem.first_air_date ??
+                            ""
+                          }
+                          title={pick.title}
+                          overview={pick.selectedItem.overview}
+                          showLabel
+                          className="h-10 w-full rounded-lg text-xs font-semibold sm:h-11 sm:text-sm"
+                        />
 
-                            <WatchlistButton
-                              id={pick.selectedItem.id}
-                              image={pick.selectedItem.poster_path ?? ""}
-                              media_type={pick.mediaType}
-                              rating={pick.rating}
-                              release_date={
-                                pick.selectedItem.release_date ??
-                                pick.selectedItem.first_air_date ??
-                                ""
-                              }
-                              title={pick.title}
-                              overview={pick.selectedItem.overview}
-                              className="h-10 w-10 shrink-0 rounded-lg sm:h-11 sm:w-11"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button
-                              variant="outline"
-                              onClick={pick.handleDislike}
-                              title="Dislike / Not for me (Removes from picks)"
-                              className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive-foreground active:bg-destructive/15 active:text-destructive-foreground h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-10"
-                            >
-                              <ThumbsDown
-                                aria-hidden="true"
-                                className="me-1.5 size-3.5"
-                              />
-                              <span>Dislike</span>
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              onClick={pick.handleShuffle}
-                              title="Pick Another"
-                              className="border-border hover:bg-accent active:bg-accent h-9 rounded-lg px-3 text-xs transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-10"
-                            >
-                              <Dices
-                                aria-hidden="true"
-                                className="me-1.5 size-3.5"
-                              />
-                              <span>Another</span>
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="grid grid-cols-3 gap-2">
-                          <WatchlistButton
-                            id={pick.selectedItem.id}
-                            image={pick.selectedItem.poster_path ?? ""}
-                            media_type={pick.mediaType}
-                            rating={pick.rating}
-                            release_date={
-                              pick.selectedItem.release_date ??
-                              pick.selectedItem.first_air_date ??
-                              ""
-                            }
-                            title={pick.title}
-                            overview={pick.selectedItem.overview}
-                            showLabel
-                            className="h-10 w-full rounded-lg text-xs font-semibold sm:h-11 sm:text-sm"
+                        <Button
+                          variant="outline"
+                          onClick={pick.handleDislike}
+                          title="Dislike / Not for me (Removes from picks)"
+                          className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive-foreground active:bg-destructive/15 active:text-destructive-foreground h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-11 sm:text-sm"
+                        >
+                          <ThumbsDown
+                            aria-hidden="true"
+                            className="me-1.5 size-3.5"
                           />
+                          <span>Dislike</span>
+                        </Button>
 
-                          <Button
-                            variant="outline"
-                            onClick={pick.handleDislike}
-                            title="Dislike / Not for me (Removes from picks)"
-                            className="border-border text-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive-foreground active:bg-destructive/15 active:text-destructive-foreground h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-11 sm:text-sm"
-                          >
-                            <ThumbsDown
-                              aria-hidden="true"
-                              className="me-1.5 size-3.5"
-                            />
-                            <span>Dislike</span>
-                          </Button>
-
-                          <Button
-                            variant="outline"
-                            onClick={pick.handleShuffle}
-                            title="Pick Another"
-                            className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-11 sm:text-sm"
-                          >
-                            <Dices
-                              aria-hidden="true"
-                              className="me-1.5 size-3.5"
-                            />
-                            <span>Another</span>
-                          </Button>
-                        </div>
-                      )}
+                        <Button
+                          variant="outline"
+                          onClick={pick.handleShuffle}
+                          title="Pick Another"
+                          className="border-border hover:bg-accent active:bg-accent h-10 w-full rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.96] sm:h-11 sm:text-sm"
+                        >
+                          <Dices
+                            aria-hidden="true"
+                            className="me-1.5 size-3.5"
+                          />
+                          <span>Another</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

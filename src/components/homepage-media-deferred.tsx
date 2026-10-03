@@ -96,31 +96,31 @@ function ContinueWatchingContent({
       const data = r.data;
       const item = items[i];
 
+      const movie =
+        item.type === "movie" ? (data as BasicMovie | null | undefined) : null;
+      const tv =
+        item.type === "tv" ? (data as BasicTv | null | undefined) : null;
+      const details = movie ?? tv;
+
       const title =
-        item.title ??
-        (data
-          ? item.type === "movie"
-            ? (data as BasicMovie).title
-            : (data as BasicTv).name
-          : undefined);
-      const overview = item.overview ?? data?.overview;
+        item.title ?? (movie ? movie.title : tv ? tv.name : undefined);
+      const overview = item.overview ?? details?.overview;
 
       if (!title || !overview) return null;
 
-      const raw = data as unknown as Record<string, unknown>;
       const result: MediaListProps = {
         id: Number(item.id),
         title,
-        vote_average: item.rating ?? (raw?.vote_average as number) ?? 0,
-        vote_count: (raw?.vote_count as number) ?? 0,
-        poster_path: item.image ?? (raw?.poster_path as string) ?? "",
-        backdrop_path: item.image ?? (raw?.backdrop_path as string) ?? "",
+        vote_average: item.rating ?? details?.vote_average ?? 0,
+        vote_count: details?.vote_count ?? 0,
+        poster_path: item.image ?? details?.poster_path ?? "",
+        backdrop_path: item.image ?? details?.backdrop_path ?? "",
         overview,
         media_type: item.type,
-        adult: (raw?.adult as boolean) ?? false,
-        original_language: (raw?.original_language as string) ?? "",
-        popularity: (raw?.popularity as number) ?? 0,
-        video: (raw?.video as boolean) ?? false,
+        adult: details?.adult ?? false,
+        original_language: details?.original_language ?? "",
+        popularity: details?.popularity ?? 0,
+        video: movie?.video ?? false,
         isContinueWatching: true,
       };
 

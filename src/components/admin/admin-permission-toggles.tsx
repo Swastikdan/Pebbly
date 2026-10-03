@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, ExternalLink, Zap } from "lucide-react";
+import { AlertTriangle, ExternalLink, Zap } from "lucide-react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -11,13 +11,11 @@ import { getRolePermissions, setRolePermission } from "@/server/fns/admin";
 import { unwrap } from "@/server/schema/common";
 
 const FEATURE_ROLES: Record<RbacFeature, PermissionRole> = {
-  "video-player": "video-player",
   "ai-recommendations": "ai-integrations",
   "external-redirect": "external-redirect",
 };
 
-const FEATURE_ICONS: Record<RbacFeature, typeof Activity> = {
-  "video-player": Activity,
+const FEATURE_ICONS: Record<RbacFeature, typeof Zap> = {
   "ai-recommendations": Zap,
   "external-redirect": ExternalLink,
 };
