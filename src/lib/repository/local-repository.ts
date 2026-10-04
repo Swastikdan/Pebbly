@@ -197,7 +197,7 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
             }));
           }
         },
-        commit: () => {
+        commit: async () => {
           // Finalized on local store
         },
       };

@@ -133,6 +133,8 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
     overview,
     is_on_watchlist_page,
     posthog,
+    props.onOptimisticRemove,
+    props.onRestore,
   ]);
 
   return (

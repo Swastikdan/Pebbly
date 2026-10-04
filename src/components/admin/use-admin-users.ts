@@ -80,7 +80,7 @@ export function useAdminUsers() {
   });
 
   const [selectedUser, setSelectedUser] = useState<UserTarget | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [roleError, setRoleError] = useState<string | null>(null);
   const [roleOverrides, setRoleOverrides] = useState<
@@ -198,11 +198,7 @@ export function useAdminUsers() {
   ];
 
   const getCurrentRoles = (user: AdminUser): DynamicRbacRole[] =>
-    (
-      roleOverrides.get(user.tokenIdentifier) ??
-      user.roles ??
-      []
-    ).filter(
+    (roleOverrides.get(user.tokenIdentifier) ?? user.roles ?? []).filter(
       (role) => role === "ai-integrations" || role === "external-redirect",
     ) as DynamicRbacRole[];
 

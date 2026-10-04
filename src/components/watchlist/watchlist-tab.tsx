@@ -1,10 +1,11 @@
 import { useUser } from "@clerk/react";
-import { ArrowRightLeft } from "@/components/ui/hugeicons";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import type { ProgressStatus } from "@/domain/watchlist";
+import type { WatchlistItem } from "@/stores/watchlist-store";
 import { openGuestMigrationModal } from "@/components/auth/guest-migration-dialog";
 import { Button } from "@/components/ui/button";
+import { ArrowRightLeft } from "@/components/ui/hugeicons";
 import { Download, Upload } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
@@ -83,16 +84,12 @@ export function WatchlistTab() {
     [],
   );
 
+  const filterKey = `${debouncedSearchQuery}|${activeFilter}|${reactionFilter}|${mediaFilter}|${filters.sortBy}`;
   useEffect(() => {
+    void filterKey;
     setStatusOverrides(new Map());
     setHiddenKeys(new Set());
-  }, [
-    debouncedSearchQuery,
-    activeFilter,
-    reactionFilter,
-    mediaFilter,
-    filters.sortBy,
-  ]);
+  }, [filterKey]);
 
   const pageState = useWatchlistPage({
     searchQuery: debouncedSearchQuery,

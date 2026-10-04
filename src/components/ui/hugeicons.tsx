@@ -1,6 +1,6 @@
+import type { ComponentProps } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import * as FreeIcons from "@hugeicons/core-free-icons";
-import type { ComponentProps } from "react";
 
 type IconName = keyof typeof FreeIcons;
 type Props = Omit<ComponentProps<typeof HugeiconsIcon>, "icon">;
@@ -85,7 +85,10 @@ const icons = {
 
 function createIcon(iconName: IconName) {
   return function HugeiconsCompatIcon(props: Props) {
-    return <HugeiconsIcon icon={FreeIcons[iconName] as (typeof FreeIcons)[IconName]} {...props} />;
+    // The compatibility layer resolves icon exports from its typed name map.
+    // biome-ignore lint/performance/noDynamicNamespaceImportAccess: runtime map keeps the shared icon wrapper compact
+    const icon = FreeIcons[iconName] as (typeof FreeIcons)[IconName];
+    return <HugeiconsIcon icon={icon} {...props} />;
   };
 }
 

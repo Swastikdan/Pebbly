@@ -294,13 +294,7 @@ export function useHomepageRecommendations() {
         refreshHomepage();
       } catch (error) {
         console.error("Failed to update recommendation feedback:", error);
-        if (feedback === "dislike") {
-          setLocalDismissedKeys((prev) => {
-            const next = new Set(prev);
-            next.delete(key);
-            return next;
-          });
-        } else if (feedback === "like") {
+        if (feedback === "like") {
           setLocalLikedKeys((prev) => {
             const next = new Set(prev);
             next.delete(mediaKey);

@@ -112,6 +112,7 @@ function ListSkeleton({ rows }: { rows: number }) {
   return (
     <div className="grid gap-2" aria-hidden="true">
       {Array.from({ length: rows }, (_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: fixed skeleton placeholders
         <div key={i} className="flex items-center gap-3 p-2">
           <Skeleton className="size-8 shrink-0 rounded-lg" />
           <div className="grid flex-1 gap-1.5">

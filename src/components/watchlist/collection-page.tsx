@@ -155,6 +155,14 @@ export function CollectionPage({ listId }: { listId: string }) {
     Math.ceil((currentCollectionPage?.totalCount ?? 0) / 100),
   );
 
+  const items = currentCollectionPage?.items ?? [];
+  const visibleItems = useMemo(
+    () =>
+      items.filter(
+        (item) => !hiddenKeys.has(`${item.mediaType}:${item.tmdbId}`),
+      ),
+    [items, hiddenKeys],
+  );
   const collectionFilterKey = `${search}|${mediaFilter}`;
   useEffect(() => {
     void collectionFilterKey;
@@ -168,7 +176,6 @@ export function CollectionPage({ listId }: { listId: string }) {
     reorderListItem: reorderItems,
     cloneList,
     bulkUpdateListItems: runBulkListItems,
-    toggleListItem,
   } = useRepository();
 
   const handleClone = useCallback(async () => {
@@ -242,7 +249,6 @@ export function CollectionPage({ listId }: { listId: string }) {
 
   const payload = currentCollectionPage;
   const list = payload.list;
-  const items = payload.items;
   const isPebblyPicks = list.listType === "pebbly-picks";
   const isOrdered = list.sortType === "ordered";
   const isPublic = list.visibility === "public";
@@ -250,14 +256,6 @@ export function CollectionPage({ listId }: { listId: string }) {
   // the loader), so role === "owner" covers them; pebbly-picks are system
   // lists that must never expose Edit/Delete.
   const canManage = payload.role === "owner" && !isPebblyPicks;
-
-  const visibleItems = useMemo(
-    () =>
-      items.filter(
-        (item) => !hiddenKeys.has(`${item.mediaType}:${item.tmdbId}`),
-      ),
-    [items, hiddenKeys],
-  );
 
   const indexed = visibleItems.map((item, index) => ({ item, index }));
   const filtered =

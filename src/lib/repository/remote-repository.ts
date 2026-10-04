@@ -6,6 +6,7 @@ import type {
   ProgressStatusArgs,
   SetReactionArgs,
 } from "@/lib/data/optimistic/watchlist-optimistic";
+import type { OpHandle } from "@/lib/data/pending-ops";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
@@ -28,7 +29,7 @@ import {
   applyProgressUpdateRows,
   watchlistOptimistic,
 } from "@/lib/data/optimistic/watchlist-optimistic";
-import { beginOp, scheduleSync, type OpHandle } from "@/lib/data/pending-ops";
+import { beginOp, scheduleSync } from "@/lib/data/pending-ops";
 import { toast } from "@/lib/notifications";
 import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
 import { createMembershipWriter } from "@/lib/repository/membership-writer";
@@ -504,7 +505,7 @@ export function createRemoteRepository(
           handle?.remove();
           handle = null;
         },
-        commit: () => {
+        commit: async () => {
           if (committed) return;
           committed = true;
           unwrap(deleteCustomList({ data: { listId } }))

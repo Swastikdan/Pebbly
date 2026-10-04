@@ -10,8 +10,6 @@ describe("destructiveToast", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.spyOn(toastManager, "add").mockReturnValue("toast-test-id");
-    vi.spyOn(toastManager, "update").mockReturnValue(undefined as any);
-    vi.spyOn(toastManager, "close").mockReturnValue(undefined as any);
   });
 
   afterEach(() => {
@@ -72,7 +70,7 @@ describe("destructiveToast", () => {
     destructiveToast({ title: "Collection deleted", onConfirm });
 
     // No hover handlers are exposed, so nothing can pause the countdown.
-    const { data } = (toastManager.add as any).mock.calls[0][0];
+    const { data } = vi.mocked(toastManager.add).mock.calls[0][0];
     expect(data.rootProps).toBeUndefined();
 
     vi.advanceTimersByTime(DESTRUCTIVE_TOAST_TIMEOUT - 200);
@@ -90,7 +88,7 @@ describe("destructiveToast", () => {
       onUndo,
     });
 
-    const addCall = (toastManager.add as any).mock.calls[0][0];
+    const addCall = vi.mocked(toastManager.add).mock.calls[0][0];
     addCall.actionProps.onClick();
 
     expect(onUndo).toHaveBeenCalledTimes(1);
@@ -123,7 +121,7 @@ describe("destructiveToast", () => {
       onConfirm,
     });
 
-    const addCall = (toastManager.add as any).mock.calls[0][0];
+    const addCall = vi.mocked(toastManager.add).mock.calls[0][0];
     addCall.actionProps.onClick();
 
     vi.advanceTimersByTime(DESTRUCTIVE_TOAST_TIMEOUT);

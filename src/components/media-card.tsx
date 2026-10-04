@@ -1,10 +1,10 @@
-import { ThumbsDown, ThumbsUp } from "@/components/ui/hugeicons";
 import { memo, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
+import { ThumbsDown, ThumbsUp } from "@/components/ui/hugeicons";
 import { Star, XIcon } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +16,6 @@ import {
   useWatchProgress,
 } from "@/hooks/watch-progress/use-watch-progress";
 import { destructiveToast } from "@/lib/notifications";
-import { useRepository } from "@/lib/repository/use-repository";
 import { mediaDetailRoute } from "@/lib/route-helpers";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
@@ -39,13 +38,7 @@ interface ContinueWatchingRemoveButtonProps {
 
 const ContinueWatchingRemoveButton = memo(
   (props: ContinueWatchingRemoveButtonProps) => {
-    const {
-      id,
-      mediaType,
-      title,
-      onOptimisticRemove,
-      onRestore,
-    } = props;
+    const { id, mediaType, title, onOptimisticRemove, onRestore } = props;
     const { removeFromContinueWatching } = useRemoveFromContinueWatching();
 
     return (
@@ -188,6 +181,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
   const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
 
   useEffect(() => {
+    void feedbackActions?.isLiked;
     setOptimisticLiked(null);
   }, [feedbackActions?.isLiked]);
 
@@ -297,11 +291,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              title={
-                isLiked
-                  ? "More like this (saved)"
-                  : "More like this"
-              }
+              title={isLiked ? "More like this (saved)" : "More like this"}
               aria-label={`More like this: ${title}`}
               aria-pressed={isLiked}
               onClick={(event) => {
@@ -319,10 +309,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             >
               <ThumbsUp
                 aria-hidden="true"
-                className={cn(
-                  "size-3.5",
-                  isLiked && "fill-current",
-                )}
+                className={cn("size-3.5", isLiked && "fill-current")}
               />
             </button>
             <button

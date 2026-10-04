@@ -1,8 +1,9 @@
-import { ChevronRight, Sparkles } from "@/components/ui/hugeicons";
+import { useEffect, useState } from "react";
 
 import type { ProgressStatus } from "@/domain/watchlist";
 import type { WatchlistItem } from "@/stores/watchlist-store";
 import { Button } from "@/components/ui/button";
+import { ChevronRight, Sparkles } from "@/components/ui/hugeicons";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,7 +19,6 @@ import { destructiveToast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
-import { useEffect, useState } from "react";
 // Status advances one way only: watch-later → watching → done. "done" is
 // terminal on the card, no wrap-around back to watch-later.
 const STATUS_ORDER: ProgressStatus[] = ["watch-later", "watching", "done"];
@@ -51,10 +51,7 @@ export function WatchlistCard({
     item: WatchlistItem,
     options?: { onUndo?: () => void },
   ) => void;
-  onStatusChange?: (
-    item: WatchlistItem,
-    nextStatus: ProgressStatus,
-  ) => void;
+  onStatusChange?: (item: WatchlistItem, nextStatus: ProgressStatus) => void;
   priority?: boolean;
 }) {
   const [removed, setRemoved] = useState(false);
@@ -62,8 +59,11 @@ export function WatchlistCard({
     useState<ProgressStatus | null>(null);
 
   useEffect(() => {
+    void item.progressStatus;
     setOptimisticStatus(null);
   }, [item.progressStatus]);
+
+  const { setProgressStatus } = useRepository();
 
   if (removed) return null;
 
@@ -81,8 +81,6 @@ export function WatchlistCard({
     ? `${IMAGE_PREFIX.PREVIEW}${item.image}`
     : undefined;
   const year = releaseYearOf(item.release_date);
-
-  const { setProgressStatus } = useRepository();
 
   const metadata = {
     title: item.title,
@@ -187,7 +185,7 @@ export function WatchlistCard({
               onClick={advanceStatus}
               title={`${progressOption.label}. Click to move to ${nextOption.label}`}
               aria-label={`Marked as ${progressOption.label}. Click to move to ${nextOption.label}.`}
-              className="bg-secondary/80 text-secondary-foreground hover:bg-primary/15 hover:text-primary inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.98] "
+              className="bg-secondary/80 text-secondary-foreground hover:bg-primary/15 hover:text-primary inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.98]"
             >
               <ProgressIcon aria-hidden="true" size={12} />
               {progressOption.label}

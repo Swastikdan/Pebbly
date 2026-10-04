@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MediaType } from "@/domain/media";
 import { useToggleWatchlistItem } from "@/hooks/use-watchlist";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
-import { destructiveToast, toast } from "@/lib/notifications";
+import { destructiveToast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import { logError } from "@/lib/utils";
 import {
@@ -63,7 +63,9 @@ export function useRecommendationCardFeedback() {
     useState<Record<string, GuestFeedbackEntry>>(readGuestFeedback);
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set());
   const [localLikedKeys, setLocalLikedKeys] = useState<Set<string>>(new Set());
-  const [localUnlikedKeys, setLocalUnlikedKeys] = useState<Set<string>>(new Set());
+  const [localUnlikedKeys, setLocalUnlikedKeys] = useState<Set<string>>(
+    new Set(),
+  );
 
   const serverFeedbackQuery = useQuery({
     queryKey: queryKeys.recommendations.feedback(user?.id),
@@ -95,7 +97,13 @@ export function useRecommendationCardFeedback() {
       set.delete(key);
     }
     return set;
-  }, [isSignedIn, feedbackList, guestFeedback, localLikedKeys, localUnlikedKeys]);
+  }, [
+    isSignedIn,
+    feedbackList,
+    guestFeedback,
+    localLikedKeys,
+    localUnlikedKeys,
+  ]);
 
   const dislikedKeys = useMemo(() => {
     const set = new Set<string>();
