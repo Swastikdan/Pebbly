@@ -1,7 +1,4 @@
-// Shared plumbing for the AI provider adapters: `ai.ts` (Workers AI in
-// production) and `ai-gemini.ts` (local REST fallback). Both classify provider
-// failures into the same normalized error codes, so the low-level error
-// helpers live here once.
+// Shared plumbing for Workers AI provider helpers and error handling in `ai.ts`.
 
 /** Minimal shape both providers' thrown errors are inspected as. */
 export type ProviderErrorLike = {

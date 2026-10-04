@@ -2,19 +2,19 @@
 
 ## 1. Tech stack
 
-| Layer          | Technology                                                                                                | Where it lives                                                         |
-| :------------- | :-------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
-| Framework      | TanStack Start (file-based routing) + TanStack Router + React 19                                          | `src/router.tsx`, `src/start.ts`, `src/routes/`                        |
-| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset)                                                     | `wrangler.toml`, `nitro.config.ts`                                     |
-| Database       | Cloudflare D1 (SQLite) via Drizzle ORM                                                                    | `src/server/db/`, `drizzle/`                                           |
-| Validation     | Valibot (schemas shared between client and server fns)                                                    | `src/server/schema/`, `src/lib/tmdb-schemas.ts`                        |
-| Auth           | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification)                                          | `src/server/auth.ts`, `src/start.ts`                                   |
-| AI             | Cloudflare Workers AI binding (`@cf/meta/llama-3.1-8b-instruct-fast`) with optional local Gemini fallback | `src/server/ai.ts`, `src/server/ai-gemini.ts`, `src/server/prompts.ts` |
-| Media metadata | TMDB REST API (`@better-fetch/fetch` client)                                                              | `src/lib/tmdb.ts`, `src/lib/queries.ts`                                |
-| Client data    | TanStack Query (React Query)                                                                              | `src/lib/query/`                                                       |
-| Client state   | Zustand (persisted to localStorage with LRU eviction)                                                     | `src/stores/`                                                          |
-| Styling        | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes    | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts`       |
-| Tooling        | Vite 8, Prettier (formatting) + Biome (linting only), TypeScript strict, Wrangler                         | root config files                                                      |
+| Layer          | Technology                                                                                             | Where it lives                                                   |
+| :------------- | :----------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| Framework      | TanStack Start (file-based routing) + TanStack Router + React 19                                       | `src/router.tsx`, `src/start.ts`, `src/routes/`                  |
+| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset)                                                  | `wrangler.toml`, `nitro.config.ts`                               |
+| Database       | Cloudflare D1 (SQLite) via Drizzle ORM                                                                 | `src/server/db/`, `drizzle/`                                     |
+| Validation     | Valibot (schemas shared between client and server fns)                                                 | `src/server/schema/`, `src/lib/tmdb-schemas.ts`                  |
+| Auth           | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification)                                       | `src/server/auth.ts`, `src/start.ts`                             |
+| AI             | Cloudflare Workers AI binding (`@cf/meta/llama-3.1-8b-instruct-fast`)                                  | `src/server/ai.ts`, `src/server/prompts.ts`                      |
+| Media metadata | TMDB REST API (`@better-fetch/fetch` client)                                                           | `src/lib/tmdb.ts`, `src/lib/queries.ts`                          |
+| Client data    | TanStack Query (React Query)                                                                           | `src/lib/query/`                                                 |
+| Client state   | Zustand (persisted to localStorage with LRU eviction)                                                  | `src/stores/`                                                    |
+| Styling        | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts` |
+| Tooling        | Vite 8, Prettier (formatting) + Biome (linting only), TypeScript strict, Wrangler                      | root config files                                                |
 
 Formatting is owned by **Prettier** (`.prettierrc`: import sorting +
 `prettier-plugin-tailwindcss`); Biome's formatter is disabled and it runs as a
@@ -163,12 +163,9 @@ Server functions are:
   `buildHomepageRecommendationsPrompt`) sharing one sectioned builder
   underneath. They live server-side because their single consumer is the
   recommendation fns.
-- `src/server/ai.ts`, `generateRecommendations()`: provider-neutral seam over
-  the Cloudflare Workers AI binding in production and the optional local
-  adapter. JSON-mode responses are validated with Valibot and provider-
-  specific failures are mapped to safe application error codes.
-- `src/server/ai-gemini.ts`, private local Gemini adapter: REST request/response
-  handling, fallback model order, and Gemini-specific error classification.
+- `src/server/ai.ts`, `generateRecommendations()`: executes recommendations via
+  the Cloudflare Workers AI binding. JSON-mode responses are validated with Valibot and
+  provider-specific failures are mapped to safe application error codes.
 - `src/server/recommendation-pipeline.ts`, shared generation orchestration for
   history and homepage intents: rate-limit reservation, watchlist/feedback
   gathering, exclusions, candidate catalog, prompt construction, AI call,

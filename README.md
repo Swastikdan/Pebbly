@@ -146,8 +146,6 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
    VITE_PUBLIC_POSTHOG_PROJECT_TOKEN=phc_your_project_token
    VITE_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 
-   # Optional local AI fallback (production uses the Workers AI binding)
-   GEMINI_API_KEY=your_gemini_key
 
    # Clerk server-side session verification (@clerk/backend)
    CLERK_SECRET_KEY=sk_test_YOUR_CLERK_SECRET_KEY

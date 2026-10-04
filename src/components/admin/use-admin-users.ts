@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { RbacRole } from "@/constants";
@@ -81,6 +81,9 @@ export function useAdminUsers() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [roleError, setRoleError] = useState<string | null>(null);
+  // Keep role toggles based on the latest requested state. The user list can
+  // lag behind a successful mutation while its query is being refreshed.
+  const roleOverrides = useRef(new Map<string, DynamicRbacRole[]>());
   const [search, setSearch] = useState("");
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
 
@@ -138,7 +141,11 @@ export function useAdminUsers() {
   ];
 
   const getCurrentRoles = (user: AdminUser): DynamicRbacRole[] =>
-    (user.roles ?? []).filter(
+    (
+      roleOverrides.current.get(user.tokenIdentifier) ??
+      user.roles ??
+      []
+    ).filter(
       (role) => role === "ai-integrations" || role === "external-redirect",
     ) as DynamicRbacRole[];
 
@@ -152,12 +159,14 @@ export function useAdminUsers() {
     const next = currentRoles.includes(role)
       ? currentRoles.filter((r) => r !== role)
       : [...currentRoles, role];
+    roleOverrides.current.set(user.tokenIdentifier, next);
     setUserRolesMutation
       .mutateAsync({
         tokenIdentifier: user.tokenIdentifier,
         roles: next,
       })
       .catch((err) => {
+        roleOverrides.current.delete(user.tokenIdentifier);
         setRoleError(err instanceof Error ? err.message : String(err));
       });
   };

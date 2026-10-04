@@ -61,7 +61,6 @@ uphold this code. Please report unacceptable behavior to the maintainers.
    CLERK_SECRET_KEY=sk_test_...
    CLERK_ISSUER_URL=https://your-app.clerk.accounts.dev
    VITE_PUBLIC_APP_URL=http://localhost:3000
-   GEMINI_API_KEY=your_gemini_key
    ```
 
 3. **Initialize the local database**

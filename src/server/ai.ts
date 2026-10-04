@@ -3,7 +3,6 @@ import * as v from "valibot";
 import type { Recommendation } from "./schema/recommendations";
 import type { MediaType } from "@/domain/media";
 import { normalizeTitleKey } from "@/lib/text";
-import { generateGeminiRecommendations } from "./ai-gemini";
 import {
   delay,
   getErrorMessage,
@@ -11,14 +10,13 @@ import {
   HTTP_SERVICE_UNAVAILABLE,
   HTTP_TOO_MANY_REQUESTS,
 } from "./ai-utils";
-import { getEnv, getEnvVar } from "./env";
+import { getEnv } from "./env";
 
 export type { Recommendation };
 
-// Cloudflare Workers AI is the production provider. It is accessed through
-// the native `AI` binding with JSON mode, so deployed Workers do not depend on
-// Gemini's API region availability. Gemini REST remains a local-development
-// fallback behind the private adapter in `ai-gemini.ts`.
+// Cloudflare Workers AI is the recommendation provider. It is accessed through
+// the native `AI` binding with JSON mode, so recommendations execute on the edge
+// without depending on external API keys or third-party region restrictions.
 
 const WORKERS_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const WORKERS_AI_TIMEOUT_MS = 30_000;
@@ -104,10 +102,10 @@ const recommendationElementSchema = v.pipe(
   })),
 );
 
-// Shared JSON Schema used by both Workers AI JSON mode and the local Gemini
-// fallback. Structured output helps guarantee the shape, while the Valibot
-// pass below remains the final defensive validation layer.
-const GEMINI_RESPONSE_SCHEMA = {
+// Shared JSON Schema used by Workers AI JSON mode. Structured output helps
+// guarantee the shape, while the Valibot pass below remains the final defensive
+// validation layer.
+const RECOMMENDATIONS_JSON_SCHEMA = {
   type: "object",
   properties: {
     recommendations: {
@@ -145,7 +143,7 @@ type WorkersAiBinding = {
 
 const WORKERS_AI_RESPONSE_FORMAT = {
   type: "json_schema",
-  json_schema: GEMINI_RESPONSE_SCHEMA,
+  json_schema: RECOMMENDATIONS_JSON_SCHEMA,
 };
 
 function extractWorkersAiText(response: unknown): string {
@@ -284,10 +282,7 @@ async function callWorkersAI(
 }
 
 /**
- * Run the configured provider (Workers AI binding in production, Gemini REST
- * as the local fallback) and return parsed, deduplicated recommendations.
- * Provider choice, model fallback, timeouts, parsing and error classification
- * are all implementation; callers see one small interface.
+ * Run Cloudflare Workers AI to generate parsed, deduplicated recommendations.
  */
 export async function generateRecommendations({
   prompt,
@@ -298,80 +293,10 @@ export async function generateRecommendations({
   systemInstruction: string;
   retries?: number;
 }): Promise<GenerateRecommendationsResult> {
-  // Cloudflare Workers AI is the production provider. Keeping this check at
-  // the shared entry point means deployed Workers never send requests to
-  // Gemini, avoiding Gemini's region restriction entirely.
-  if (getEnv().AI) {
-    return callWorkersAI(prompt, systemInstruction, retries);
-  }
-
-  // Local Vite development has no Workers AI binding, so retain Gemini as a
-  // convenient fallback when a local GEMINI_API_KEY is configured.
-  const apiKey = getEnvVar("GEMINI_API_KEY");
-  if (!apiKey) {
-    console.error("Neither the Workers AI binding nor GEMINI_API_KEY is set");
+  if (!getEnv().AI) {
+    console.error("Workers AI binding is not configured");
     return { error: "api_unavailable" };
   }
 
-  let responseText = "";
-  let usedModel = "unknown";
-  let highDemandError = false;
-  let rateLimited = false;
-  let locationUnsupported = false;
-  let reasoningTokens: number | undefined;
-  let success = false;
-
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const result = await generateGeminiRecommendations({
-        apiKey,
-        prompt,
-        systemInstruction,
-        responseSchema: GEMINI_RESPONSE_SCHEMA,
-      });
-      if (result.responseText) {
-        responseText = result.responseText;
-        usedModel = result.usedModel;
-        highDemandError = result.highDemandError;
-        rateLimited = result.rateLimited;
-        locationUnsupported = result.locationUnsupported;
-        reasoningTokens = result.reasoningTokens;
-        success = true;
-        break;
-      }
-
-      highDemandError = highDemandError || result.highDemandError;
-      rateLimited = rateLimited || result.rateLimited;
-      locationUnsupported = locationUnsupported || result.locationUnsupported;
-    } catch (error) {
-      console.error(
-        "Gemini generation orchestration error:",
-        getErrorMessage(error),
-      );
-      if (attempt < retries) await delay(1000);
-    }
-  }
-  if (!success || !responseText) {
-    // Never expose provider response text to the client. In particular, the
-    // Gemini location message is actionable only as a classified error code;
-    // all other unexpected provider failures stay behind a generic message.
-    const error = locationUnsupported
-      ? "location_unsupported"
-      : rateLimited
-        ? "rate_limited"
-        : highDemandError
-          ? "high_demand"
-          : "api_unavailable";
-    return { error };
-  }
-
-  // Log reasoning tokens at the top-level call as well (useful for observability).
-  if (reasoningTokens != null) {
-    console.log(
-      `[ai] generateRecommendations reasoningTokens:`,
-      reasoningTokens,
-    );
-  }
-
-  return parseRecommendationResponse(responseText, usedModel, reasoningTokens);
+  return callWorkersAI(prompt, systemInstruction, retries);
 }

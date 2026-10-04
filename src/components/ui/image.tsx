@@ -19,9 +19,7 @@ const ImageComponent = ({
 }: ImageProps & {
   fallbackImage?: string;
   blurSrc?: string;
-  /** Title shown while a non-priority image is still decoding, in place of
-   * the shimmer skeleton. Use for media posters so the card never flashes an
-   * empty surface before the artwork arrives. */
+  /** Optional text shown over the image while it loads. */
   placeholderText?: string;
 }) => {
   const [error, setError] = useState(false);
@@ -88,7 +86,7 @@ const ImageComponent = ({
           <span className="line-clamp-4">{placeholderText}</span>
         </div>
       )}
-      {!loaded && !priority && !placeholderText && (
+      {!loaded && !priority && (
         <Skeleton className="absolute inset-0 rounded-none" />
       )}
       <ReactImage

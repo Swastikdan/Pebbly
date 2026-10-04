@@ -79,4 +79,4 @@ DROP TABLE `__stash_list_items`;--> statement-breakpoint
 CREATE UNIQUE INDEX `list_items_list_media_uq` ON `list_items` (`list_id`,`tmdb_id`,`media_type`);--> statement-breakpoint
 CREATE INDEX `list_items_user_media_idx` ON `list_items` (`user_id`,`tmdb_id`,`media_type`);--> statement-breakpoint
 CREATE UNIQUE INDEX `lists_user_name_uq` ON `lists` (`user_id`,`name`);--> statement-breakpoint
-CREATE INDEX `lists_user_sort_idx` ON `lists` (`user_id`,`sort_order`)
+CREATE INDEX `lists_user_sort_idx` ON `lists` (`user_id`,`sort_order`);--> statement-breakpoint

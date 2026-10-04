@@ -1,8 +1,15 @@
 import { useUser } from "@clerk/react";
+import { History } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogPopup,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { queryKeys } from "@/lib/query/keys";
 import { logError } from "@/lib/utils";
 import {
@@ -58,20 +65,23 @@ export function WatchlistActivityPanel() {
   };
 
   return (
-    <section className="border-border bg-secondary/20 rounded-lg border">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between px-3 py-3 text-start text-sm font-semibold"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant="secondary"
+            className="gap-1.5 text-xs"
+          />
+        }
       >
-        <span>Activity & recovery</span>
-        <span className="text-muted-foreground text-xs font-normal">
-          {open ? "Hide" : "View timeline"}
-        </span>
-      </button>
-      {open && (
-        <div className="border-border grid gap-4 border-t p-3 md:grid-cols-[1fr_240px]">
+        <History aria-hidden="true" size={14} />
+        <span className="hidden sm:inline">Activity & recovery</span>
+        <span className="sm:hidden">Activity</span>
+      </DialogTrigger>
+      <DialogPopup className="max-w-2xl overflow-y-auto p-4 sm:p-6">
+        <DialogTitle className="mb-4 pe-10">Activity & recovery</DialogTitle>
+        <div className="grid gap-5 md:grid-cols-[1fr_240px]">
           <div>
             <h2 className="text-xs font-semibold">Recent activity</h2>
             {activity.isPending && (
@@ -167,7 +177,7 @@ export function WatchlistActivityPanel() {
             </ol>
           </div>
         </div>
-      )}
-    </section>
+      </DialogPopup>
+    </Dialog>
   );
 }

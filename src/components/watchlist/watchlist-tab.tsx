@@ -111,6 +111,7 @@ export function WatchlistTab() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {isSignedIn && <WatchlistActivityPanel />}
           {(watchlistLoading || libraryCount > 0) && (
             <Button
               className="gap-1.5 text-xs"
@@ -175,8 +176,6 @@ export function WatchlistTab() {
             : `Importing ${importTotal} title${importTotal === 1 ? "" : "s"}…`}
         </div>
       )}
-
-      {isSignedIn && <WatchlistActivityPanel />}
 
       {(watchlistLoading || totalCount > 0) && (
         <WatchlistFilters

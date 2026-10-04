@@ -29,13 +29,12 @@ server layer is split between **Nitro** (framework-agnostic entry points) and
 ## 2. Environment (`src/server/env.ts`)
 
 - `Env` interface mirrors the Worker bindings (`DB`, `ASSETS`, `AI`,
-  `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL`, optional `GEMINI_API_KEY`, `APP_ENV`).
+  `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL`, `APP_ENV`).
 - `getEnv()` reads `globalThis.__env__` (set by Nitro on the Worker) with a
   `process.env` fallback for Node dev.
 - `validateEnv()` runs once per isolate/process and validates string vars with
   Valibot. A missing `CLERK_SECRET_KEY` is a loud `console.error` (it silently
-  degrades everyone to guest). A missing `GEMINI_API_KEY` only warns when the
-  Workers AI binding is also absent.
+  degrades everyone to guest).
 - `isPreview()` / `isProduction()` read the optional `APP_ENV` var (the
   preview Worker sets `APP_ENV=preview`) for environment-specific behavior.
 - The `DB` binding is validated separately in `getDb` with an actionable error
@@ -266,13 +265,9 @@ consumer is the recommendation fns):
 
 AI access:
 
-- `generateRecommendations(prompt, systemInstruction, retries)` is the
-  provider-neutral entry point. In Cloudflare it calls the native Workers AI
-  `AI` binding using `@cf/meta/llama-3.1-8b-instruct-fast` and JSON mode.
-- Local Vite development can fall back to the private `ai-gemini.ts` adapter
-  when `GEMINI_API_KEY` is configured; that module owns Gemini REST requests,
-  model fallback, and Gemini-specific error classification. Deployed Workers
-  do not require that secret.
+- `generateRecommendations(prompt, systemInstruction, retries)` executes
+  recommendations using Cloudflare Workers AI with `@cf/meta/llama-3.1-8b-instruct-fast`
+  and JSON mode.
 - Responses are validated per element with Valibot, and provider-specific
   failures are mapped to safe application error codes.
 - `recommendation-pipeline.ts` owns the shared history/homepage generation

@@ -135,7 +135,9 @@ export function useWatchlistPage(args: PageArgs) {
       ? Boolean(currentPage?.hasNextPage)
       : safePage < localTotalPages,
     loading: isSignedIn
-      ? remote.isPending || remote.isFetching
+      ? // Keep the current page visible during background refreshes (for example
+        // after focus or cross-device sync); only show skeletons on first load.
+        remote.isPending
       : watchlist.loading,
     error: remote.error,
     goToPage,

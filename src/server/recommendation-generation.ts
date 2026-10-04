@@ -20,7 +20,6 @@ import {
   userTasteProfiles,
   watchItems,
 } from "./db/schema";
-import { getEnv } from "./env";
 import { collectAllByKeyset } from "./helpers/paginate";
 import { candidateIdentity } from "./recommendation-candidates";
 import { PEBBLY_PICKS_LIST_TYPE } from "./schema/lists";
@@ -226,7 +225,7 @@ export async function runAiGeneration(args: {
 }
 
 function getAiProvider(): string {
-  return getEnv().AI ? "cloudflare-workers-ai" : "gemini";
+  return "cloudflare-workers-ai";
 }
 
 /**
