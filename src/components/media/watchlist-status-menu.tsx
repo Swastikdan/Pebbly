@@ -302,7 +302,7 @@ function AddToListDialog({
   mediaType: MediaType;
   metadata?: MediaMetadataForList;
 }) {
-  const { lists } = useCustomLists();
+  const { lists, loading: isLoadingLists } = useCustomLists();
   const itemLists = useItemLists(tmdbId, mediaType);
   const { isSignedIn } = useUser();
   const { toggleListItem } = useRepository();
@@ -351,11 +351,15 @@ function AddToListDialog({
           ) : (
             <>
               <ModalBody className="max-h-80 space-y-1.5">
-                {userLists.length === 0 && (
+                {isLoadingLists ? (
+                  <p className="text-muted-foreground py-6 text-center text-sm">
+                    Loading your collections…
+                  </p>
+                ) : userLists.length === 0 ? (
                   <p className="text-muted-foreground py-6 text-center text-sm">
                     No collections yet. Create your first one to add this title.
                   </p>
-                )}
+                ) : null}
 
                 {userLists.map((list) => {
                   const isInList = safeItemLists.includes(list._id);
@@ -370,6 +374,14 @@ function AddToListDialog({
                           ? "border-primary/20 bg-primary/[0.06] text-foreground font-semibold"
                           : "text-muted-foreground hover:border-border/60 hover:bg-secondary/50 hover:text-foreground border-transparent",
                       )}
+                      style={
+                        isInList && list.color
+                          ? {
+                              backgroundColor: `${list.color}12`,
+                              borderColor: `${list.color}55`,
+                            }
+                          : undefined
+                      }
                       onClick={() =>
                         toggleListItem({
                           listId: list._id,

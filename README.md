@@ -1,6 +1,6 @@
 # Pebbly
 
-Pebbly is a full-stack movie and TV show discovery app built with TanStack Start, Cloudflare Workers, D1 (SQLite), Drizzle ORM, Valibot, Clerk, Cloudflare Workers AI, and TMDB metadata. It has media browsing, persistent watchlists, per-episode progress tracking, custom lists, and AI recommendations based on what you watch.
+Pebbly is a full-stack movie and TV show discovery app built with TanStack Start, Cloudflare Workers, D1 (SQLite), Drizzle ORM, Valibot, Clerk, Cloudflare Workers AI, and TMDB metadata. It has media browsing, persistent watchlists, per-episode progress tracking, ranked custom collections, and AI recommendations based on what you watch.
 ---
 
 [![Deploy Preview](https://github.com/Swastikdan/Pebbly/actions/workflows/preview.yml/badge.svg)](https://github.com/Swastikdan/Pebbly/actions/workflows/preview.yml)
@@ -30,7 +30,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 - Cross-media search with genre, media type, and keyword filters.
 - Detail pages with cast/crew info, trailers, season/episode browsers, and optional external-player redirect links.
 - Watchlist statuses (`watch-later`, `watching`, `done`, `dropped`), per-episode progress, and reaction tags (`loved`, `liked`, `mixed`, `not-for-me`, `recommended`).
-- Custom lists with public share pages (`/c/<id>`): owners can edit, reorder (ranked lists), and clone; visitors only see public lists. JSON export/import for watchlists, and sync across devices via Cloudflare D1.
+- Custom collections with public share pages (`/c/<id>`): choose an accent color, add or remove titles from the collection picker, and optionally rank titles with drag-to-reorder controls. Owners can edit, clone, and bulk-manage titles; visitors only see public collections. Watchlists and collections sync across devices via Cloudflare D1.
 - Light/dark/system themes resolved before first paint (no flash of the wrong palette).
 
 ### AI recommendations
@@ -72,7 +72,7 @@ In-depth architecture docs live in the [`docs/`](./docs/) folder:
 │   │   ├── helpers/                 # Shared DB logic (watch items, episode sync, snapshots)
 │   │   ├── fns/                     # Type-safe TanStack Start server functions (rpc guards, watchlist, lists, recs, admin)
 │   │   ├── schema/                  # Valibot schemas & typed API result contracts
-│   │   ├── auth.ts                  # Clerk server-side JWT verification & user resolution
+│   │   ├── auth.server.ts           # Clerk server-side JWT verification & user resolution
 │   │   ├── prompts.ts               # Context-aware prompt builders for AI recommendations
 │   │   ├── ai.ts                    # Workers AI client with local Gemini fallback
 │   │   └── rbac.ts                  # Role-based access control & feature flags

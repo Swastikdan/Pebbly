@@ -1,17 +1,6 @@
 import { SignInButton, useUser } from "@clerk/react";
 import { usePostHog } from "@posthog/react";
 import {
-  ArrowUpDown,
-  Copy,
-  Globe,
-  ListOrdered,
-  ListPlus,
-  Lock,
-  Pencil,
-  Sparkles,
-  Trash2,
-} from "@/components/ui/hugeicons";
-import {
   lazy,
   Suspense,
   useCallback,
@@ -30,6 +19,17 @@ import { DefaultNotFoundComponent } from "@/components/default-not-found";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
+import {
+  ArrowUpDown,
+  Copy,
+  Globe,
+  ListOrdered,
+  ListPlus,
+  Lock,
+  Pencil,
+  Sparkles,
+  Trash2,
+} from "@/components/ui/hugeicons";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
@@ -315,7 +315,9 @@ export function CollectionPage({ listId }: { listId: string }) {
     setSelectedKeys((current) =>
       current.size === visibleItems.length
         ? new Set()
-        : new Set(visibleItems.map((item) => `${item.mediaType}:${item.tmdbId}`)),
+        : new Set(
+            visibleItems.map((item) => `${item.mediaType}:${item.tmdbId}`),
+          ),
     );
   };
   const goToCollectionPage = async (nextPage: number) => {
@@ -740,6 +742,7 @@ export function CollectionPage({ listId }: { listId: string }) {
                   toggleSelected(`${item.mediaType}:${item.tmdbId}`)
                 }
                 showSelect={canManage}
+                listColor={list.color ?? undefined}
               />
             ))}
           </div>

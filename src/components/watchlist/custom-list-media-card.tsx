@@ -1,9 +1,9 @@
-import { ArrowDown, ArrowUp } from "@/components/ui/hugeicons";
 import { useState } from "react";
 
 import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
 import { Button } from "@/components/ui/button";
+import { ArrowDown, ArrowUp } from "@/components/ui/hugeicons";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import {
@@ -30,6 +30,7 @@ export function CustomListMediaCard({
   selected,
   onSelect,
   showSelect,
+  listColor,
 }: {
   item: {
     tmdbId: number;
@@ -53,6 +54,7 @@ export function CustomListMediaCard({
   selected?: boolean;
   onSelect?: () => void;
   showSelect?: boolean;
+  listColor?: string;
 }) {
   const { toggleListItem } = useRepository();
   const hasMetadata = !!(item.title && (item.backdrop || item.image));
@@ -108,7 +110,21 @@ export function CustomListMediaCard({
           ? `/${routeType}/${item.tmdbId}/${formattedTitle}`
           : `/${routeType}/${item.tmdbId}`
       }
-      className="rounded-lg"
+      className={cn(
+        "rounded-lg",
+        selected &&
+          (listColor
+            ? "text-foreground"
+            : "border-primary/20 bg-primary/[0.06] text-foreground"),
+      )}
+      style={
+        selected && listColor
+          ? {
+              backgroundColor: `${listColor}12`,
+              borderColor: `${listColor}55`,
+            }
+          : undefined
+      }
       poster={
         <>
           {hasMetadata && imageUrl ? (
@@ -140,16 +156,19 @@ export function CustomListMediaCard({
       titleClassName="group-hover:text-primary transition-colors"
       actions={
         !readOnly && (
-          <div className="flex shrink-0 items-start gap-0.5">
+          <div className="flex shrink-0 items-center gap-0.5">
             {showSelect && (
-              <input
-                type="checkbox"
-                checked={Boolean(selected)}
-                onChange={onSelect}
-                onClick={(event) => event.stopPropagation()}
-                aria-label={`Select ${item.title ?? "title"}`}
-                className="accent-primary mt-1 size-4"
-              />
+              <label className="flex size-9 shrink-0 cursor-pointer items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={Boolean(selected)}
+                  onChange={onSelect}
+                  onClick={(event) => event.stopPropagation()}
+                  aria-label={`Select ${item.title ?? "title"}`}
+                  className="size-4"
+                  style={{ accentColor: listColor || "var(--primary)" }}
+                />
+              </label>
             )}
             {onMove !== undefined && (
               <div className="flex flex-col gap-0">

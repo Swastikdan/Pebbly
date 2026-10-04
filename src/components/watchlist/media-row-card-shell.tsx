@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, CSSProperties, ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { Star } from "@/components/ui/icons";
@@ -102,6 +102,7 @@ export function MediaMetaRow({
 type MediaRowCardShellProps = {
   to: string;
   className?: string;
+  style?: CSSProperties;
   poster: ReactNode;
   title: ReactNode;
   titleClassName?: string;
@@ -115,6 +116,7 @@ type MediaRowCardShellProps = {
 export function MediaRowCardShell({
   to,
   className,
+  style,
   poster,
   title,
   titleClassName,
@@ -127,6 +129,7 @@ export function MediaRowCardShell({
   return (
     <Link
       to={to}
+      style={style}
       className={cn(
         "border-border/60 bg-card hover:border-border/90 dark:border-border/40 dark:hover:border-border/70 group relative flex gap-3.5 border p-3.5 transition-colors dark:shadow-none",
         className,
