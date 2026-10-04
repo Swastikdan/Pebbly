@@ -1,9 +1,11 @@
 import { useUser } from "@clerk/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { RbacRole } from "@/constants";
+import { destructiveToast, toast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
+import { logError } from "@/lib/utils";
 import { listUsers, setUserBanned, setUserRoles } from "@/server/fns/admin";
 import { unwrap } from "@/server/schema/common";
 
@@ -14,7 +16,6 @@ export const ROLE_CONFIGS: {
   label: string;
   short: string;
 }[] = [
-  { value: "video-player", label: "Video Player", short: "Video" },
   { value: "ai-integrations", label: "AI Integrations", short: "AI" },
   { value: "external-redirect", label: "External Redirect", short: "External" },
 ];
@@ -79,38 +80,96 @@ export function useAdminUsers() {
   });
 
   const [selectedUser, setSelectedUser] = useState<UserTarget | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [roleError, setRoleError] = useState<string | null>(null);
+  const [roleOverrides, setRoleOverrides] = useState<
+    Map<string, DynamicRbacRole[]>
+  >(new Map());
+  const [bannedOverrides, setBannedOverrides] = useState<Map<string, boolean>>(
+    new Map(),
+  );
   const [search, setSearch] = useState("");
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
 
   const users = usersQuery.data;
 
+  const effectiveUsers = useMemo(() => {
+    return (users ?? []).map((user) => {
+      const isBannedOverride = bannedOverrides.get(user.tokenIdentifier);
+      const rolesOverride = roleOverrides.get(user.tokenIdentifier);
+      return {
+        ...user,
+        isBanned:
+          isBannedOverride !== undefined ? isBannedOverride : user.isBanned,
+        roles: rolesOverride !== undefined ? rolesOverride : user.roles,
+      };
+    });
+  }, [users, bannedOverrides, roleOverrides]);
+
   const handleConfirmBanToggle = async () => {
     if (!selectedUser) return;
-    setIsSubmitting(true);
+    const target = selectedUser;
+    setSelectedUser(null);
     setErrorMessage(null);
 
+    const willBan = !target.isBanned;
+
+    // Immediately optimistic on client (0ms)
+    setBannedOverrides((prev) =>
+      new Map(prev).set(target.tokenIdentifier, willBan),
+    );
+
+    if (willBan) {
+      // Destructive action: Ban User
+      destructiveToast({
+        title: "User banned",
+        description: target.name || target.email,
+        onUndo: () => {
+          // Revert client state immediately - 0 server calls
+          setBannedOverrides((prev) => {
+            const next = new Map(prev);
+            next.set(target.tokenIdentifier, false);
+            return next;
+          });
+        },
+        onConfirm: async () => {
+          try {
+            await setUserBannedMutation.mutateAsync({
+              tokenIdentifier: target.tokenIdentifier,
+              banned: true,
+            });
+          } catch (err) {
+            logError("Ban user error", err);
+          }
+        },
+      });
+      return;
+    }
+
+    // Additive/restorative action: Unban User
     try {
       await setUserBannedMutation.mutateAsync({
-        tokenIdentifier: selectedUser.tokenIdentifier,
-        banned: !selectedUser.isBanned,
+        tokenIdentifier: target.tokenIdentifier,
+        banned: false,
       });
-      setSelectedUser(null);
+      toast({
+        title: "User unbanned",
+        description: target.name || target.email,
+      });
     } catch (err) {
-      console.error("Ban user error:", err);
-      setErrorMessage(
-        err instanceof Error ? err.message : "Failed to update user status",
-      );
-    } finally {
-      setIsSubmitting(false);
+      logError("Unban user error", err);
+      setBannedOverrides((prev) => {
+        const next = new Map(prev);
+        next.set(target.tokenIdentifier, true);
+        return next;
+      });
     }
   };
 
   const lowerSearch = search.toLowerCase().trim();
   const hasValidSearch = lowerSearch.length >= 2;
-  const filteredUsers = (users ?? []).filter((user) => {
+  const filteredUsers = effectiveUsers.filter((user) => {
     const matchesSearch =
       !hasValidSearch ||
       user.name.toLowerCase().includes(lowerSearch) ||
@@ -125,25 +184,22 @@ export function useAdminUsers() {
   });
 
   const filterTabs: { id: FilterTab; label: string; count: number }[] = [
-    { id: "all", label: "All", count: users?.length ?? 0 },
+    { id: "all", label: "All", count: effectiveUsers.length },
     {
       id: "active",
       label: "Active",
-      count: (users ?? []).filter((u) => !u.isBanned).length,
+      count: effectiveUsers.filter((u) => !u.isBanned).length,
     },
     {
       id: "banned",
       label: "Banned",
-      count: (users ?? []).filter((u) => u.isBanned).length,
+      count: effectiveUsers.filter((u) => u.isBanned).length,
     },
   ];
 
   const getCurrentRoles = (user: AdminUser): DynamicRbacRole[] =>
-    (user.roles ?? []).filter(
-      (role) =>
-        role === "video-player" ||
-        role === "ai-integrations" ||
-        role === "external-redirect",
+    (roleOverrides.get(user.tokenIdentifier) ?? user.roles ?? []).filter(
+      (role) => role === "ai-integrations" || role === "external-redirect",
     ) as DynamicRbacRole[];
 
   const isSelf = (user: AdminUser) =>
@@ -153,15 +209,59 @@ export function useAdminUsers() {
   const toggleRole = (user: AdminUser, role: DynamicRbacRole) => {
     setRoleError(null);
     const currentRoles = getCurrentRoles(user);
-    const next = currentRoles.includes(role)
+    const isRemoving = currentRoles.includes(role);
+    const next = isRemoving
       ? currentRoles.filter((r) => r !== role)
       : [...currentRoles, role];
+
+    // Immediately optimistic on client (0ms)
+    setRoleOverrides((prev) => new Map(prev).set(user.tokenIdentifier, next));
+
+    if (isRemoving) {
+      const config = ROLE_CONFIGS.find((c) => c.value === role);
+      const roleLabel = config?.label ?? role;
+      destructiveToast({
+        title: `Role removed: ${roleLabel}`,
+        description: `${user.name}`,
+        onUndo: () => {
+          // Revert client state immediately - 0 server calls
+          setRoleOverrides((prev) => {
+            const m = new Map(prev);
+            m.set(user.tokenIdentifier, currentRoles);
+            return m;
+          });
+        },
+        onConfirm: async () => {
+          try {
+            await setUserRolesMutation.mutateAsync({
+              tokenIdentifier: user.tokenIdentifier,
+              roles: next,
+            });
+          } catch (err) {
+            setRoleOverrides((prev) => {
+              const m = new Map(prev);
+              m.set(user.tokenIdentifier, currentRoles);
+              return m;
+            });
+            setRoleError(err instanceof Error ? err.message : String(err));
+          }
+        },
+      });
+      return;
+    }
+
+    // Additive: granting role
     setUserRolesMutation
       .mutateAsync({
         tokenIdentifier: user.tokenIdentifier,
         roles: next,
       })
       .catch((err) => {
+        setRoleOverrides((prev) => {
+          const m = new Map(prev);
+          m.set(user.tokenIdentifier, currentRoles);
+          return m;
+        });
         setRoleError(err instanceof Error ? err.message : String(err));
       });
   };

@@ -36,6 +36,7 @@ export function MediaDetailPage(props: {
   hasMorePosters: boolean;
   aboveMedia?: ReactNode;
   belowMedia?: ReactNode;
+  initialRegion?: string;
 }) {
   const { entity, mediaPage } = props;
   return (
@@ -70,12 +71,20 @@ export function MediaDetailPage(props: {
         image={mediaPage.image}
         title={mediaPage.displayTitle}
         trailervideos={mediaPage.trailervideos}
+        metadata={{
+          title: mediaPage.displayTitle,
+          image: props.posterPath ?? mediaPage.image,
+          rating: props.voteAverage,
+          release_date: props.releaseDate,
+          overview: props.overview,
+        }}
       />
       <GenreContainer genres={mediaPage.genres} />
       <MediaWatchProviders
         id={props.id}
         type={entity}
         inTheaters={props.inTheaters}
+        initialRegion={props.initialRegion}
       />
       <MediaDescription description={props.overview} />
       <CastSection

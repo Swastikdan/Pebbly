@@ -102,7 +102,7 @@ export function MediaCreditsPage<K extends MediaType>(props: {
   return (
     <MediaCreditSection
       id={parseInt(id, 10)}
-      slug={slug as string}
+      slug={slug}
       title={title}
       type={entity}
     />

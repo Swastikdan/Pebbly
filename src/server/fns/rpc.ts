@@ -1,9 +1,17 @@
-import type { AuthUser, ClerkSessionClaims, RequireUserResult } from "../auth";
+import type {
+  AuthUser,
+  ClerkSessionClaims,
+  RequireUserResult,
+} from "../auth.server";
 import type { Db } from "../db/client";
 import type { RbacFeature } from "../rbac";
 import type { ApiResult } from "../schema/common";
 import { captureServerException } from "@/lib/posthog-server";
-import { findUserByClaims, getSessionClaims, requireUser } from "../auth";
+import {
+  findUserByClaims,
+  getSessionClaims,
+  requireUser,
+} from "../auth.server";
 import { getDb } from "../db/client";
 import { getEnv } from "../env";
 import { consumeRateLimitBudget } from "../helpers/rate-limit";
@@ -50,6 +58,11 @@ export interface AuthedFnConfig {
   readonly feature?: RbacFeature;
   readonly featureDenied?: "fail" | "guest";
   readonly admin?: boolean;
+  /**
+   * If true, allows banned users to execute the handler. Defaults to false,
+   * meaning banned accounts are rejected globally with FORBIDDEN.
+   */
+  readonly allowBanned?: boolean;
   /**
    * Per-user write budget for mutating fns. Enforced inside `authedFn`
    * after the auth gates pass, against one shared bucket per user
@@ -118,6 +131,10 @@ export function authedFn<TData, C extends AuthedFnConfig, TResult>(
 
     const { user, claims } = resolved;
 
+    if (!config.allowBanned && user?.isBanned === true) {
+      return fail("FORBIDDEN", "Forbidden: account is banned") as TResult;
+    }
+
     if (config.feature && !(await hasFeature(claims, user, config.feature))) {
       if ((config.featureDenied ?? "fail") === "guest" && config.guest) {
         return config.guest() as TResult;
@@ -126,6 +143,9 @@ export function authedFn<TData, C extends AuthedFnConfig, TResult>(
     }
 
     if (config.admin === true) {
+      if (user?.isBanned === true) {
+        return fail("FORBIDDEN", "Forbidden: account is banned") as TResult;
+      }
       // JWT-claim-only: the signed claim is the sole request-path source for
       // admin decisions (a live Clerk API fallback here would put an external
       // call inside every admin gate). Requires the Clerk session-claims

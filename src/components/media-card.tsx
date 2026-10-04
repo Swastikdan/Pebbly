@@ -1,9 +1,10 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
 import { AutoScrollTitle } from "@/components/ui/auto-scroll-title";
 import { Badge } from "@/components/ui/badge";
+import { ThumbsDown, ThumbsUp } from "@/components/ui/hugeicons";
 import { Star, XIcon } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,8 +15,7 @@ import {
   useRemoveFromContinueWatching,
   useWatchProgress,
 } from "@/hooks/watch-progress/use-watch-progress";
-import { toast } from "@/lib/notifications";
-import { useRepository } from "@/lib/repository/use-repository";
+import { destructiveToast } from "@/lib/notifications";
 import { mediaDetailRoute } from "@/lib/route-helpers";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
@@ -23,6 +23,52 @@ interface BaseCardProps {
   id: number;
   className?: string;
 }
+
+interface ContinueWatchingRemoveButtonProps {
+  id: number;
+  mediaType: MediaType;
+  title: string;
+  image: string;
+  rating: number;
+  releaseDate: string | null;
+  overview?: string;
+  onOptimisticRemove?: () => void;
+  onRestore?: () => void;
+}
+
+const ContinueWatchingRemoveButton = memo(
+  (props: ContinueWatchingRemoveButtonProps) => {
+    const { id, mediaType, title, onOptimisticRemove, onRestore } = props;
+    const { removeFromContinueWatching } = useRemoveFromContinueWatching();
+
+    return (
+      <button
+        type="button"
+        title="Remove from Continue Watching"
+        aria-label="Remove from Continue Watching"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onOptimisticRemove?.();
+          destructiveToast({
+            title: "Removed from Continue Watching",
+            description: title,
+            timeout: 5000,
+            onUndo: () => {
+              onRestore?.();
+            },
+            onConfirm: () => {
+              void removeFromContinueWatching(id, mediaType);
+            },
+          });
+        }}
+        className="hover:bg-destructive flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color] duration-150 hover:text-white"
+      >
+        <XIcon aria-hidden="true" className="size-4" />
+      </button>
+    );
+  },
+);
 
 interface MediaCardSpecificProps extends BaseCardProps {
   card_type: "horizontal" | "vertical";
@@ -39,8 +85,15 @@ interface MediaCardSpecificProps extends BaseCardProps {
   overview?: string;
   priority?: boolean;
   relevanceScore?: number;
+  reasoning?: string;
   hideWatchlistButton?: boolean;
   isRecommended?: boolean;
+  feedbackActions?: {
+    onMoreLikeThis: () => void;
+    onNotThis: (options?: { onRestore?: () => void }) => void;
+    isLiked?: boolean;
+    isDisliked?: boolean;
+  };
 }
 
 interface PersonCardSpecificProps extends BaseCardProps {
@@ -114,10 +167,8 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
     children,
     hideWatchlistButton,
     isRecommended,
+    feedbackActions,
   } = props;
-
-  const { removeFromContinueWatching } = useRemoveFromContinueWatching();
-  const { setProgressStatus } = useRepository();
 
   const destination = mediaDetailRoute({
     mediaType: media_type,
@@ -125,6 +176,21 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
     slug: formattedTitle || undefined,
     play: isContinueWatching && continueWatchingPlay,
   });
+
+  const [removed, setRemoved] = useState(false);
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    void feedbackActions?.isLiked;
+    setOptimisticLiked(null);
+  }, [feedbackActions?.isLiked]);
+
+  if (removed) return null;
+
+  const isLiked =
+    optimisticLiked !== null
+      ? optimisticLiked
+      : Boolean(feedbackActions?.isLiked);
 
   return (
     <div className={cn("group relative", containerClassName)}>
@@ -145,6 +211,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             alt={title}
             src={imageUrl}
             blurSrc={blurSrc}
+            placeholderText={title}
             className="h-full w-full object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
             width={imageWidth}
             height={imageHeight}
@@ -184,44 +251,21 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
         className={cn(
           "absolute end-2 top-2 z-10 flex items-center gap-1.5",
           actionsClassName,
+          (isLiked || feedbackActions?.isLiked) && "!opacity-100",
         )}
       >
         {isContinueWatching && (
-          <button
-            type="button"
-            title="Remove from Continue Watching"
-            aria-label="Remove from Continue Watching"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              removeFromContinueWatching(id, media_type);
-              toast({
-                title: "Removed from Continue Watching",
-                description: title,
-                action: {
-                  label: "Undo",
-                  onClick: () => {
-                    setProgressStatus({
-                      id: String(id),
-                      mediaType: media_type,
-                      progressStatus: "watching",
-                      metadata: {
-                        title,
-                        image: poster_path ?? props.image ?? "",
-                        rating,
-                        release_date: release_date ?? "",
-                        overview,
-                      },
-                      currentStatus: "watch-later",
-                    });
-                  },
-                },
-              });
-            }}
-            className="hover:bg-destructive flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white/80 transition-[color,background-color] duration-150 hover:text-white"
-          >
-            <XIcon aria-hidden="true" className="size-4" />
-          </button>
+          <ContinueWatchingRemoveButton
+            id={id}
+            mediaType={media_type}
+            title={title}
+            image={poster_path ?? props.image ?? ""}
+            rating={rating}
+            releaseDate={release_date}
+            overview={overview}
+            onOptimisticRemove={() => setRemoved(true)}
+            onRestore={() => setRemoved(false)}
+          />
         )}
         {!hideWatchlistButton && (
           <WatchlistButton
@@ -235,14 +279,69 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             title={title}
             overview={overview}
             className="h-8 w-8 rounded-md shadow-none"
+            onOptimisticRemove={
+              is_on_watchlist_page ? () => setRemoved(true) : undefined
+            }
+            onRestore={
+              is_on_watchlist_page ? () => setRemoved(false) : undefined
+            }
           />
+        )}
+        {feedbackActions && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              title={isLiked ? "More like this (saved)" : "More like this"}
+              aria-label={`More like this: ${title}`}
+              aria-pressed={isLiked}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setOptimisticLiked(!isLiked);
+                feedbackActions.onMoreLikeThis();
+              }}
+              className={cn(
+                "pressable flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border transition-all duration-150 active:scale-95",
+                isLiked
+                  ? "border-emerald-600 bg-emerald-600 text-white"
+                  : "border-neutral-700 bg-black/70 text-white/90 hover:border-emerald-600 hover:bg-emerald-600 hover:text-white",
+              )}
+            >
+              <ThumbsUp
+                aria-hidden="true"
+                className={cn("size-3.5", isLiked && "fill-current")}
+              />
+            </button>
+            <button
+              type="button"
+              title="Not for me"
+              aria-label={`Not this: ${title}`}
+              aria-pressed={feedbackActions.isDisliked}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setRemoved(true);
+                feedbackActions.onNotThis({
+                  onRestore: () => setRemoved(false),
+                });
+              }}
+              className={cn(
+                "pressable hover:border-destructive hover:bg-destructive flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-neutral-700 bg-black/70 text-white/90 transition-all duration-150 hover:text-white active:scale-95",
+                feedbackActions.isDisliked &&
+                  "border-destructive bg-destructive text-white",
+              )}
+            >
+              <ThumbsDown aria-hidden="true" className="size-3.5" />
+            </button>
+          </div>
         )}
       </div>
     </div>
   );
 });
 const HorizontalCard = memo((props: MediaCardSpecificProps) => {
-  const { title, image, media_type, release_date, relevanceScore } = props;
+  const { title, image, media_type, release_date, relevanceScore, reasoning } =
+    props;
 
   const formattedTitle = formatMediaTitle.encode(title);
   // Use LQ (w185) as `src` fallback so the initial download on 1x phones
@@ -266,7 +365,7 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
       imageSizes="(max-width: 767px) 92px, (max-width: 1023px) 176px, 192px"
       mediaTypeLabel={media_type === "movie" ? "Movie" : "Series"}
       linkClassName="block h-full w-full outline-hidden ring-offset-background transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pressable"
-      actionsClassName="transition-[transform,opacity] duration-200 ease-out"
+      actionsClassName="opacity-100 transition-[transform,opacity] duration-200 ease-out [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
     >
       <div className="mt-2.5 flex flex-col gap-0.5 overflow-hidden">
         <AutoScrollTitle
@@ -295,14 +394,29 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
             </span>
           )}
         </div>
+        {reasoning && (
+          <p
+            className="text-muted-foreground/80 mt-1 line-clamp-2 text-[11px] leading-snug text-pretty"
+            title={reasoning}
+          >
+            {reasoning}
+          </p>
+        )}
       </div>
     </BaseMediaCard>
   );
 });
 
 const VerticalCard = memo((props: MediaCardSpecificProps) => {
-  const { title, image, id, media_type, release_date, isContinueWatching } =
-    props;
+  const {
+    title,
+    image,
+    id,
+    media_type,
+    release_date,
+    isContinueWatching,
+    reasoning,
+  } = props;
 
   const formattedTitle = formatMediaTitle.encode(title);
   const year = release_date ? new Date(release_date).getFullYear() : "";
@@ -384,6 +498,14 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
             {year}
           </span>
         )}
+        {reasoning && (
+          <p
+            className="text-muted-foreground/80 mt-0.5 line-clamp-2 text-[11px] leading-snug text-pretty"
+            title={reasoning}
+          >
+            {reasoning}
+          </p>
+        )}
       </div>
     </BaseMediaCard>
   );
@@ -406,6 +528,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
           alt={name}
           src={imageUrl}
           blurSrc={blurSrc}
+          placeholderText={name}
           className="h-full w-full object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
           width={200}
           height={300}

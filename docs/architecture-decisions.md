@@ -104,7 +104,7 @@ status is resolved exclusively from the **signed JWT claim**
 former live Clerk API fallback was removed from the request path. An external
 call inside every gate check cost latency and Clerk rate-limit budget; access
 decisions must stay local to the verified token. The `users.roles` column only carries the two _dynamic_ feature
-roles (`video-player`, `ai-integrations`), not admin. `listUsers` derives
+roles (`ai-integrations`, `external-redirect`), not admin. `listUsers` derives
 admin badges from one paginated Clerk user-list call (display-only).
 
 **Consequences:**
@@ -216,11 +216,9 @@ The production provider must avoid region restrictions, keep credentials out of
 client code, support structured JSON, and respond quickly enough for the
 synchronous server-function flow.
 
-**Decision:** Use the native Cloudflare Workers AI `AI` binding in production
-with `@cf/meta/llama-3.1-8b-instruct-fast` and JSON mode. Keep the existing Gemini
-REST client only as an optional local-development fallback when no Workers AI
-binding is available. Validate every generated recommendation with Valibot
-before it reaches filtering or persistence.
+**Decision:** Use the native Cloudflare Workers AI `AI` binding
+with `@cf/meta/llama-3.1-8b-instruct-fast` and JSON mode. Validate every generated
+recommendation with Valibot before it reaches filtering or persistence.
 
 **Consequences:**
 
@@ -229,7 +227,6 @@ before it reaches filtering or persistence.
   the configured Cloudflare binding.
 - The free Workers plan includes a daily Workers AI allocation, subject to
   Cloudflare's current quotas and model availability.
-- Local Vite development can still use Gemini with `GEMINI_API_KEY`.
 
 ---
 
@@ -320,7 +317,6 @@ isolate/process with a Valibot schema:
 
 - missing `CLERK_SECRET_KEY` → `console.error` (loud; every user degrades to
   guest),
-- missing `GEMINI_API_KEY` → warning only when the Workers AI binding is absent (feature-gated degradation),
 - missing D1 binding → fail-fast in `getDb` with a message explaining that
   `pnpm dev:web` is UI-only and `pnpm dev:cf` provides D1 + secrets.
 

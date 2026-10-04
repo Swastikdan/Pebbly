@@ -1,5 +1,6 @@
 import type { WatchlistMembershipArgs } from "@/lib/data/optimistic/watchlist-optimistic";
 import type { OpHandle } from "@/lib/data/pending-ops";
+import type { UndoableRemoval, WatchlistToggleItem } from "@/lib/repository/types";
 import type { WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
 import { createBatcher } from "@/lib/batcher";
@@ -43,7 +44,7 @@ export function createMembershipWriter(
         broadcastMutation("watchlist");
         applyServerState(
           queryClient,
-          queryKeys.watchlist.list(),
+          queryKeys.watchlist.list(undefined, userId),
           rows,
           items.map((i) => `${i.mediaType}:${i.tmdbId}`),
         );
@@ -51,7 +52,8 @@ export function createMembershipWriter(
           task.handle?.resolve();
           if (task.outboxId) removeMutation(task.outboxId);
         }
-        scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds()]);
+        scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds(userId)]);
+        void queryClient.invalidateQueries?.({ queryKey: ["watchlist"] });
         return rows;
       } catch (error) {
         logError("batch set watchlist membership", error);
@@ -63,7 +65,9 @@ export function createMembershipWriter(
           description: "The change was reverted. Please try again.",
           type: "error",
         });
-        scheduleSync(queryClient, [queryKeys.watchlist.list()]);
+        scheduleSync(queryClient, [
+          queryKeys.watchlist.list(undefined, userId),
+        ]);
         throw error;
       }
     },
@@ -100,7 +104,11 @@ export function createMembershipWriter(
         overview: item.overview || undefined,
       };
 
-      const handle = watchlistOptimistic.beginMembershipOp(queryClient, args);
+      const handle = watchlistOptimistic.beginMembershipOp(
+        queryClient,
+        args,
+        userId,
+      );
       const outboxId = userId
         ? enqueueMutation(
             userId,
@@ -115,6 +123,56 @@ export function createMembershipWriter(
         queryClient,
         outboxId,
       });
+    },
+
+    removeWithUndo(item: WatchlistToggleItem): UndoableRemoval {
+      const args: WatchlistMembershipArgs = {
+        tmdbId: Number(item.id),
+        mediaType: item.media_type,
+        inWatchlist: false,
+        title: item.title,
+        image: item.image,
+        rating: item.rating,
+        release_date: item.release_date || undefined,
+        overview: item.overview || undefined,
+      };
+
+      // 1. Apply optimistic removal to client cache immediately
+      const handle = watchlistOptimistic.beginMembershipOp(
+        queryClient,
+        args,
+        userId,
+      );
+
+      let settled = false;
+
+      return {
+        undo: () => {
+          if (settled) return;
+          settled = true;
+          // Roll back optimistic change on client immediately.
+          // Zero backend requests! No outbox record created!
+          handle.remove();
+        },
+        commit: async () => {
+          if (settled) return;
+          settled = true;
+          const outboxId = userId
+            ? enqueueMutation(
+                userId,
+                "set-membership",
+                args,
+                `${args.mediaType}:${args.tmdbId}`,
+              )
+            : undefined;
+          await batcher.schedule({
+            args,
+            handle,
+            queryClient,
+            outboxId,
+          });
+        },
+      };
     },
 
     dispose() {

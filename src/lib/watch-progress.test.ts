@@ -35,31 +35,9 @@ describe("makeEpisodeKey / parseEpisodeKey", () => {
 });
 
 describe("resolveNextEpisode", () => {
-  it("resumes at the last played episode when it is not finished", () => {
+  it("continues after the latest watched episode", () => {
     expect(
       resolveNextEpisode({
-        lastPlayed: { season: 1, episode: 4 },
-        isLastPlayedWatched: false,
-        watchedEpisodes: [],
-      }),
-    ).toEqual({ season: 1, episode: 4 });
-  });
-
-  it("advances past the last played episode once it is watched", () => {
-    expect(
-      resolveNextEpisode({
-        lastPlayed: { season: 1, episode: 4 },
-        isLastPlayedWatched: true,
-        watchedEpisodes: [{ season: 1, episode: 4 }],
-      }),
-    ).toEqual({ season: 1, episode: 5 });
-  });
-
-  it("continues after the latest watched episode without a last-played marker", () => {
-    expect(
-      resolveNextEpisode({
-        lastPlayed: null,
-        isLastPlayedWatched: false,
         watchedEpisodes: [
           { season: 1, episode: 10 },
           { season: 2, episode: 2 },
@@ -72,8 +50,6 @@ describe("resolveNextEpisode", () => {
   it("starts at S1E1 when nothing has been watched", () => {
     expect(
       resolveNextEpisode({
-        lastPlayed: null,
-        isLastPlayedWatched: false,
         watchedEpisodes: [],
       }),
     ).toEqual({ season: 1, episode: 1 });
@@ -82,8 +58,6 @@ describe("resolveNextEpisode", () => {
   it("keeps season boundaries when advancing from the final episode of a season", () => {
     expect(
       resolveNextEpisode({
-        lastPlayed: { season: 2, episode: 8 },
-        isLastPlayedWatched: true,
         watchedEpisodes: [{ season: 2, episode: 8 }],
       }),
     ).toEqual({ season: 2, episode: 9 });

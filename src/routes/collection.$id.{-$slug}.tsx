@@ -52,7 +52,7 @@ function MovieCollectionPage() {
   const { id, slug } = Route.useLoaderData();
   const { data, error, isLoading } = useQuery<Collection>({
     queryKey: queryKeys.tmdb.collection(Number(id)),
-    queryFn: async () => await getCollection({ id: parseInt(id, 10) }),
+    queryFn: () => getCollection({ id: Number(id) }),
   });
 
   useCanonicalSlugRedirect({
@@ -75,13 +75,10 @@ function MovieCollectionPage() {
 
   const user_rating =
     parts && parts.length > 0
-      ? parseInt(
-          (
-            (parts.map((part) => part.vote_average).reduce((a, b) => a + b, 0) /
-              parts.length) *
-            10
-          ).toFixed(0),
-          10,
+      ? Math.round(
+          (parts.reduce((sum, part) => sum + (part.vote_average ?? 0), 0) /
+            parts.length) *
+            10,
         )
       : 0;
 
@@ -107,6 +104,7 @@ function MovieCollectionPage() {
             className="h-70 w-50 shrink-0 rounded-xl object-cover sm:h-52 sm:w-36"
             height={300}
             src={IMAGE_PREFIX.HD_POSTER + poster_path}
+            placeholderText={name}
             width={200}
             priority
           />

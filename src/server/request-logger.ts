@@ -29,17 +29,14 @@ function payloadLoggingEnabled(): boolean {
   // dev-bindings platform proxy / Nitro's cloudflare handler) and the
   // plain `process.env` populated by Nitro's dotenv loader. The proxy
   // spreads `process.env` at startup, but the flag may live in only one
-  // of the two stores depending on load order, so we check both. Also
-  // check `import.meta.env` for `VITE_LOG_RPC_PAYLOADS` if the flag was
-  // put in `vite.config.ts` `define` or a `VITE_`-prefixed `.env` entry.
+  // of the two stores depending on load order, so we check both. Avoid
+  // enumerating or dynamically indexing `import.meta.env`: Vite's module
+  // runner rejects dynamic access to that proxy. These flags are server
+  // runtime settings and belong in `process.env` / `globalThis.__env__`.
   const holder = globalThis as EnvHolder;
-  const viteEnv = (import.meta as unknown as { env?: Record<string, unknown> })
-    ?.env;
   const raw =
     (holder.__env__?.[PAYLOAD_LOG_FLAG] as unknown) ??
-    (process.env as Record<string, unknown>)[PAYLOAD_LOG_FLAG] ??
-    viteEnv?.[PAYLOAD_LOG_FLAG] ??
-    viteEnv?.[`VITE_${PAYLOAD_LOG_FLAG}`];
+    process.env[PAYLOAD_LOG_FLAG];
   const value =
     typeof raw === "string"
       ? raw.trim().toLowerCase()

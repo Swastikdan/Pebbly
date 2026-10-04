@@ -1,13 +1,12 @@
 import { SignInButton, useUser } from "@clerk/react";
-import { ListPlus, Plus } from "lucide-react";
+import { ListPlus, Plus } from "@/components/ui/hugeicons";
 import { lazy, Suspense, useMemo, useState } from "react";
 
 import { DefaultLoader } from "@/components/default-loader";
 import { Button } from "@/components/ui/button";
 import { CustomListCard } from "@/components/watchlist/custom-list-card";
 import { useCustomLists } from "@/hooks/use-custom-lists";
-import { destructiveToast } from "@/hooks/use-destructive-toast";
-import { toast } from "@/lib/notifications";
+import { destructiveToast, toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { logError } from "@/lib/utils";
 
@@ -17,10 +16,18 @@ const CustomListDialog = lazy(() =>
   })),
 );
 
-export function MyListsTab() {
+interface MyListsTabProps {
+  initialUserId?: string;
+  initialSignedIn?: boolean;
+}
+
+export function MyListsTab({
+  initialUserId,
+  initialSignedIn,
+}: MyListsTabProps = {}) {
   const { isSignedIn, isLoaded } = useUser();
-  const { lists: customLists, loading } = useCustomLists();
-  const { deleteList: deleteCustomList, cloneList } = useRepository();
+  const { lists: customLists, loading } = useCustomLists(initialUserId);
+  const { deleteListWithUndo: repoDeleteList, cloneList } = useRepository();
   const [showCreateList, setShowCreateList] = useState(false);
   const [editingList, setEditingList] = useState<{
     id: string;
@@ -36,9 +43,12 @@ export function MyListsTab() {
     [customLists],
   );
 
-  // Clerk's isSignedIn is false until the session resolves; wait for it so
-  // signed-in users don't flash the signed-out CTA on first paint.
-  if (!isLoaded) {
+  const effectiveSignedIn = isSignedIn || !!initialSignedIn;
+
+  // Clerk's isSignedIn is false until the session resolves; wait for it if
+  // loader didn't establish a signed-in session so signed-in users don't
+  // flash the signed-out CTA on first paint.
+  if (!isLoaded && !initialSignedIn) {
     return <DefaultLoader />;
   }
 
@@ -50,7 +60,7 @@ export function MyListsTab() {
   // opened at /c/$id), so signed-out visitors get a sign-in CTA instead of
   // the creation UI, because a localStorage-only list could never be opened or
   // shared, which read as broken.
-  if (!isSignedIn) {
+  if (!effectiveSignedIn) {
     return (
       <div className="flex min-h-[calc(100vh-400px)] flex-col items-center justify-center gap-6 py-16 text-center">
         <div className="text-muted-foreground border-border flex size-10 items-center justify-center rounded-md border">
@@ -84,11 +94,15 @@ export function MyListsTab() {
     visibility?: string | null;
     sortType?: "unordered" | "ordered";
   }) => {
+    const op = repoDeleteList(list._id);
     destructiveToast({
       title: "Collection deleted",
       description: list.name,
+      onUndo: () => {
+        op.undo();
+      },
       onConfirm: () => {
-        deleteCustomList(list._id);
+        op.commit();
       },
     });
   };

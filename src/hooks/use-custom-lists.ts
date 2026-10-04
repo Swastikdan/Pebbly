@@ -41,19 +41,20 @@ async function fetchItemLists(
   );
 }
 
-export function useCustomLists() {
+export function useCustomLists(initialUserId?: string) {
   const { isSignedIn, user } = useUser();
+  const effectiveUserId = user?.id ?? initialUserId;
   const queryClient = useQueryClient();
   const localLists = useLocalListsStore((state) => state.lists);
   const localItems = useLocalListsStore((state) => state.listItems);
   const remote = useQuery({
-    queryKey: queryKeys.lists.all(user?.id),
-    queryFn: () => fetchCustomLists(queryClient, user?.id),
-    enabled: !!isSignedIn,
+    queryKey: queryKeys.lists.all(effectiveUserId),
+    queryFn: () => fetchCustomLists(queryClient, effectiveUserId),
+    enabled: !!isSignedIn || !!initialUserId,
   });
 
   const lists = useMemo(() => {
-    if (isSignedIn) {
+    if (isSignedIn || (initialUserId && remote.data !== undefined)) {
       return (remote.data ?? []).map((list) => ({
         ...list,
         _id: list.id,
@@ -78,7 +79,7 @@ export function useCustomLists() {
         itemCount: items.length,
       };
     });
-  }, [isSignedIn, remote.data, localLists, localItems]);
+  }, [isSignedIn, remote.data, localLists, localItems, initialUserId]);
 
   return {
     lists,

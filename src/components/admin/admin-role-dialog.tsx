@@ -1,4 +1,4 @@
-import { AlertCircle, Ban, Loader2, ShieldCheck } from "lucide-react";
+import { AlertCircle, Ban, Loader2, ShieldCheck } from "@/components/ui/hugeicons";
 
 import type { UserTarget } from "@/components/admin/use-admin-users";
 import { Button } from "@/components/ui/button";

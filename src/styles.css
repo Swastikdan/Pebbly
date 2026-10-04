@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "tw-shimmer";
 @import "@fontsource-variable/geist";
 
 /* Fallback font metrics to reduce CLS from font swap. */
@@ -38,6 +39,22 @@
     }
     to {
       transform: translateX(-50%);
+    }
+  }
+  @keyframes toast-ring {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: 1;
+    }
+  }
+  @keyframes toast-progress {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
     }
   }
 }
@@ -196,8 +213,6 @@
   --shadow-2xl: var(--shadow-2xl);
   --radius-2xl: 1.25rem;
   --radius-3xl: 1.5rem;
-  /* A longer, linear sweep keeps dense poster grids from looking stuttery. */
-  --animate-skeleton: skeleton 2.2s linear -0.6s infinite;
   --animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
   --animate-toast-success-odd: toast-success 0.32s cubic-bezier(0.5, 1, 0.89, 1);
   --animate-toast-success-even: toast-success 0.32s
@@ -212,14 +227,6 @@
   --color-info: var(--info);
   --color-nav-active-bg: var(--nav-active-bg);
   --color-nav-active-fg: var(--nav-active-fg);
-  @keyframes skeleton {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(200%);
-    }
-  }
   @keyframes spinner-leaf-fade {
     0%,
     100% {
@@ -263,10 +270,15 @@
 }
 @layer base {
   html {
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
+    overflow-y: auto;
     text-underline-position: from-font;
     text-decoration-skip-ink: auto;
+  }
+  @media (min-width: 768px) {
+    html {
+      overflow-y: scroll;
+      scrollbar-gutter: stable;
+    }
   }
   * {
     @apply border-border outline-ring/50;
@@ -639,7 +651,6 @@
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: auto;
   touch-action: pan-x pan-y;
-  will-change: scroll-position;
 }
 .content-visibility-auto {
   content-visibility: auto;
@@ -669,7 +680,6 @@
   background: var(--background);
   border-top: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
   transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
 }
 @media (min-width: 768px) {
   .mobile-bottom-nav {

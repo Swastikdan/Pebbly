@@ -9,6 +9,12 @@ trustPolicyExclude:
 overrides:
   "uuid@<11.1.1": ">=11.1.1"
   "esbuild@<0.25.0": ">=0.25.0"
+  # rolldown 1.2.5 has a circular-chunk initialization regression that emits
+  # SSR chunks calling a top-level `var` (createSsrRpc) before it is assigned,
+  # producing "TypeError: createSsrRpc is not a function" (HTTP 500 on every
+  # SSR route). Later 1.2.x releases fix it; pin above 1.2.5. See
+  # rolldown#10747 / TanStack Start #8139. Bump once the default resolves past it.
+  "rolldown@>=1.2.5": "1.2.11"
 allowBuilds:
   "@clerk/shared": true
   "@parcel/watcher": true

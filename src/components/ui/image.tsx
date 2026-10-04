@@ -13,11 +13,14 @@ const ImageComponent = ({
   alt,
   priority,
   blurSrc,
+  placeholderText,
   className,
   ...props
 }: ImageProps & {
   fallbackImage?: string;
   blurSrc?: string;
+  /** Optional text shown over the image while it loads. */
+  placeholderText?: string;
 }) => {
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -75,6 +78,14 @@ const ImageComponent = ({
         className,
       )}
     >
+      {!loaded && placeholderText && (
+        <div
+          aria-hidden="true"
+          className="text-muted-foreground absolute inset-0 flex items-center justify-center p-2 text-center text-xs leading-snug font-semibold text-balance"
+        >
+          <span className="line-clamp-4">{placeholderText}</span>
+        </div>
+      )}
       {!loaded && !priority && (
         <Skeleton className="absolute inset-0 rounded-none" />
       )}

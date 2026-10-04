@@ -8,9 +8,12 @@ import {
   getBasicTvDetails,
   getMovieDetails,
   getTvDetails,
+  getWatchProviders,
 } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { formatMediaTitle, parseAndValidateId } from "@/lib/utils";
+import { getEdgeRegion } from "@/server/fns/region";
+import { unwrap } from "@/server/schema/common";
 
 type PosterBearing = { poster_path?: string | null };
 
@@ -55,6 +58,25 @@ export function slugTitle(slug: string | undefined, fallback = ""): string {
   return slug ? formatMediaTitle.decode(slug) : fallback;
 }
 
+function isNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const status =
+    ("status" in error && typeof error.status === "number"
+      ? error.status
+      : undefined) ??
+    ("statusCode" in error && typeof error.statusCode === "number"
+      ? error.statusCode
+      : undefined) ??
+    ("response" in error &&
+    error.response &&
+    typeof error.response === "object" &&
+    "status" in error.response &&
+    typeof error.response.status === "number"
+      ? error.response.status
+      : undefined);
+  return status === 404;
+}
+
 /**
  * Await the details query so the cache is populated before the loader
  * resolves (SSR head tags render real poster paths, never cold-cache nulls).
@@ -65,10 +87,20 @@ export async function ensureMediaDetails(
 ): Promise<PosterBearing> {
   const { key, fetcher } =
     MEDIA_DETAIL_QUERIES[options.mediaType][options.level ?? "basic"];
-  return await context.queryClient.ensureQueryData({
-    queryKey: key(options.id),
-    queryFn: () => fetcher({ id: options.id }),
-  });
+  try {
+    return await context.queryClient.ensureQueryData({
+      queryKey: key(options.id),
+      queryFn: () => fetcher({ id: options.id }),
+    });
+  } catch (error: unknown) {
+    if (isNotFoundError(error)) {
+      throw notFound();
+    }
+    // Return empty fallback so network errors or upstream timeouts
+    // don't crash SSR into a 500 error; the component will render its
+    // error state instead.
+    return { poster_path: null };
+  }
 }
 
 export type MediaRouteOptions = {
@@ -82,24 +114,47 @@ export type MediaRouteData = {
   slug?: string;
   title: string;
   posterPath: string | null;
+  region?: string;
 };
 
-export function loadMediaRouteData(
+export async function loadMediaRouteData(
   context: { queryClient: QueryClient },
   params: { id: string; slug?: string },
   options: MediaRouteOptions,
 ): Promise<MediaRouteData> {
   const numericId = requireRouteId(params.id);
-  return ensureMediaDetails(context, {
-    mediaType: options.mediaType,
-    id: numericId,
-    level: options.level,
-  }).then((data) => ({
+  const isFull = options.level === "full";
+
+  const [data, region] = await Promise.all([
+    ensureMediaDetails(context, {
+      mediaType: options.mediaType,
+      id: numericId,
+      level: options.level,
+    }),
+    isFull
+      ? unwrap(getEdgeRegion()).catch(() => "US")
+      : Promise.resolve(undefined),
+    isFull
+      ? context.queryClient
+          .ensureQueryData({
+            queryKey: queryKeys.tmdb.watchProviders(
+              numericId,
+              options.mediaType,
+            ),
+            queryFn: () =>
+              getWatchProviders({ type: options.mediaType, id: numericId }),
+          })
+          .catch(() => undefined)
+      : Promise.resolve(undefined),
+  ]);
+
+  return {
     id: params.id,
     slug: params.slug,
     title: slugTitle(params.slug, options.titleFallback),
     posterPath: data.poster_path ?? null,
-  }));
+    region,
+  };
 }
 
 export function detailHead(input: {

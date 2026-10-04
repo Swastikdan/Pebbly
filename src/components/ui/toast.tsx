@@ -1,16 +1,16 @@
 "use client";
 
 import type React from "react";
+import { Toast } from "@base-ui/react/toast";
+
+import { buttonVariants } from "@/components/ui/button";
 import {
   CircleAlertIcon,
   CircleCheckIcon,
   InfoIcon,
   LoaderCircleIcon,
   TriangleAlertIcon,
-} from "lucide-react";
-import { Toast } from "@base-ui/react/toast";
-
-import { buttonVariants } from "@/components/ui/button";
+} from "@/components/ui/hugeicons";
 import { cn } from "@/lib/utils";
 
 const TOAST_ICONS = {
@@ -24,6 +24,10 @@ const TOAST_ICONS = {
 type SwipeDirection = "up" | "down" | "left" | "right";
 
 type ToastData = {
+  /** Remaining whole seconds, rendered inside the destructive countdown ring. */
+  secondsLeft?: number;
+  /** Total countdown length in ms (drives the ring animation). */
+  duration?: number;
   rootProps?: Omit<
     React.ComponentProps<typeof Toast.Root>,
     "children" | "className" | "swipeDirection" | "toast"
@@ -59,6 +63,57 @@ function upsertReplayClassName(toast: {
   return isEven ? "animate-toast-success-even" : "animate-toast-success-odd";
 }
 
+function CountdownRing({
+  seconds,
+  duration,
+  ending,
+}: {
+  seconds?: number;
+  duration: number;
+  /** Toast is closing: stop the ring animation so it can't delay removal. */
+  ending?: boolean;
+}): React.ReactElement {
+  return (
+    <div
+      aria-hidden="true"
+      className="relative flex size-8 shrink-0 items-center justify-center"
+      data-slot="toast-timer"
+    >
+      <svg className="absolute inset-0 -rotate-90" viewBox="0 0 32 32">
+        <circle
+          cx="16"
+          cy="16"
+          r="14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          className="text-foreground/15"
+        />
+        <circle
+          cx="16"
+          cy="16"
+          r="14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          pathLength={1}
+          strokeDasharray={1}
+          className="text-foreground"
+          style={{
+            animation: ending
+              ? "none"
+              : `toast-ring ${duration}ms linear forwards`,
+          }}
+        />
+      </svg>
+      <span className="text-foreground text-xs font-semibold tabular-nums">
+        {seconds ?? ""}
+      </span>
+    </div>
+  );
+}
+
 function Toasts({
   position,
   portalProps,
@@ -88,12 +143,14 @@ function Toasts({
             ? TOAST_ICONS[toast.type as keyof typeof TOAST_ICONS]
             : null;
           const toastData = toast.data as ToastData | undefined;
+          const isDestructive = toast.type === "destructive";
+          const isEnding = toast.transitionStatus === "ending";
 
           return (
             <Toast.Root
               key={toast.id}
               className={cn(
-                "text-popover-foreground data-expanded:bg-popover dark:data-expanded:bg-popover absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full rounded-lg border bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(1%*max(0,var(--toast-index,0))))] shadow-none select-none [transition:transform_300ms_cubic-bezier(.22,1,.36,1),opacity_300ms_cubic-bezier(.22,1,.36,1),height_150ms_ease-out,background-color_150ms_ease-out]",
+                "group text-popover-foreground data-expanded:bg-popover dark:data-expanded:bg-popover absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full overflow-hidden rounded-lg border bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(1%*max(0,var(--toast-index,0))))] shadow-none select-none [transition:transform_300ms_cubic-bezier(.22,1,.36,1),opacity_300ms_cubic-bezier(.22,1,.36,1),height_150ms_ease-out,background-color_150ms_ease-out]",
                 "data-[position*=right]:right-0 data-[position*=right]:left-auto",
                 "data-[position*=left]:right-auto data-[position*=left]:left-0",
                 "data-[position*=center]:right-0 data-[position*=center]:left-0",
@@ -132,7 +189,19 @@ function Toasts({
               toast={toast}
             >
               <Toast.Content className="pointer-events-auto flex items-center justify-between gap-1.5 overflow-hidden px-3.5 py-3 text-sm transition-opacity duration-250 data-behind:opacity-0 data-behind:not-data-expanded:pointer-events-none data-expanded:opacity-100">
-                <div className="flex gap-2">
+                <div
+                  className={cn(
+                    "flex min-w-0 gap-2",
+                    isDestructive && "items-center gap-3",
+                  )}
+                >
+                  {isDestructive && (
+                    <CountdownRing
+                      seconds={toastData?.secondsLeft}
+                      duration={toastData?.duration ?? 10_000}
+                      ending={isEnding}
+                    />
+                  )}
                   {Icon && (
                     <div
                       className="[&_svg]:pointer-events-none [&_svg]:shrink-0 [&>svg]:h-lh [&>svg]:w-4"
@@ -145,26 +214,52 @@ function Toasts({
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex min-w-0 flex-col gap-0.5">
                     <Toast.Title
-                      className="font-medium"
+                      className={cn(
+                        "font-medium",
+                        isDestructive &&
+                          "text-foreground truncate text-sm leading-tight font-semibold",
+                      )}
                       data-slot="toast-title"
                     />
                     <Toast.Description
-                      className="text-muted-foreground"
+                      className={cn(
+                        "text-muted-foreground text-[11px] leading-tight",
+                        isDestructive &&
+                          "text-muted-foreground/80 truncate text-[11px] leading-tight",
+                      )}
                       data-slot="toast-description"
                     />
                   </div>
                 </div>
                 {toast.actionProps && (
                   <Toast.Action
-                    className={buttonVariants({ size: "xs" })}
+                    className={cn(
+                      buttonVariants({
+                        size: "xs",
+                        variant: isDestructive ? "outline" : "default",
+                      }),
+                      isDestructive &&
+                        "active:bg-accent shrink-0 transition-[transform,color,background-color,border-color,opacity] duration-150 active:scale-[0.94]",
+                    )}
+                    disabled={isEnding}
                     data-slot="toast-action"
                   >
                     {toast.actionProps.children}
                   </Toast.Action>
                 )}
               </Toast.Content>
+              {!isDestructive && toast.timeout && toast.timeout > 0 ? (
+                <div
+                  data-slot="toast-progress"
+                  aria-hidden="true"
+                  className="bg-primary/25 pointer-events-none absolute bottom-0 left-0 h-0.5 w-full origin-left overflow-hidden rounded-b-lg group-hover:[animation-play-state:paused]"
+                  style={{
+                    animation: `toast-progress ${toast.timeout}ms linear forwards`,
+                  }}
+                />
+              ) : null}
             </Toast.Root>
           );
         })}

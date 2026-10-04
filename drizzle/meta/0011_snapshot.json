@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "2ce0b3e4-19b8-4305-80d3-bf59a9055e98",
-  "prevId": "fa7a80ca-6b5c-4b6b-924a-ee954b3e00f8",
+  "id": "6d9aad6f-a153-4b51-b5d8-034645ecafa3",
+  "prevId": "2ce0b3e4-19b8-4305-80d3-bf59a9055e98",
   "tables": {
     "ai_generation_jobs": {
       "name": "ai_generation_jobs",
@@ -918,6 +918,101 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
+    },
+    "user_taste_profiles": {
+      "name": "user_taste_profiles",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "adventure_level": {
+          "name": "adventure_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'balanced'"
+        },
+        "preferred_genres": {
+          "name": "preferred_genres",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "disliked_genres": {
+          "name": "disliked_genres",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "disliked_themes": {
+          "name": "disliked_themes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "avoid_titles": {
+          "name": "avoid_titles",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
+        },
+        "preferred_media_type": {
+          "name": "preferred_media_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'all'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_taste_profiles_user_id_users_id_fk": {
+          "name": "user_taste_profiles_user_id_users_id_fk",
+          "tableFrom": "user_taste_profiles",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "user_taste_adventure_ck": {
+          "name": "user_taste_adventure_ck",
+          "value": "\"user_taste_profiles\".\"adventure_level\" in ('familiar', 'balanced', 'adventurous')"
+        },
+        "user_taste_media_type_ck": {
+          "name": "user_taste_media_type_ck",
+          "value": "\"user_taste_profiles\".\"preferred_media_type\" in ('all', 'movie', 'tv')"
+        }
+      }
     },
     "users": {
       "name": "users",

@@ -9,6 +9,7 @@ import type {
   RepeatGenerateContext,
 } from "@/lib/recommendation-options";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
+import { destructiveToast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import {
   buildGenerateAgainOptions,
@@ -39,13 +40,14 @@ export {
 // Generation is fully synchronous: `startGeneration` runs the AI call inline
 // and returns the recommendations in the same response, so the client needs no
 // job polling.
-export function useRecommendations() {
+export function useRecommendations(initialUserId?: string) {
   const { isSignedIn, user } = useUser();
+  const effectiveUserId = user?.id ?? initialUserId;
   const queryClient = useQueryClient();
   const historyQuery = useQuery({
-    queryKey: queryKeys.recommendations.history(user?.id),
+    queryKey: queryKeys.recommendations.history(effectiveUserId),
     queryFn: () => unwrap(getRecommendationHistory()),
-    enabled: !!isSignedIn,
+    enabled: !!isSignedIn || !!initialUserId,
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export function useRecommendations() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.recommendations.history(user?.id),
+        queryKey: queryKeys.recommendations.history(effectiveUserId),
       });
     },
   });
@@ -102,7 +104,7 @@ export function useRecommendations() {
 
         broadcastMutation("ai");
         await queryClient.invalidateQueries({
-          queryKey: queryKeys.recommendations.history(user?.id),
+          queryKey: queryKeys.recommendations.history(effectiveUserId),
         });
         return result.generationId ?? null;
       } catch (e) {
@@ -112,7 +114,7 @@ export function useRecommendations() {
         setIsGenerating(false);
       }
     },
-    [queryClient, user?.id],
+    [queryClient, effectiveUserId],
   );
 
   const generateAgain = useCallback(
@@ -130,11 +132,19 @@ export function useRecommendations() {
   const deleteEntry = useCallback(
     async (id: string) => {
       setOptimisticDeletedIds((prev) => new Set(prev).add(id));
-      try {
-        await deleteMutation.mutateAsync(id);
-      } catch (error) {
-        logRecommendationError("delete recommendation", error);
-      }
+      destructiveToast({
+        title: "Recommendation deleted",
+        onUndo: () => {
+          setOptimisticDeletedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+        },
+        onConfirm: () => {
+          deleteMutation.mutate(id);
+        },
+      });
     },
     [deleteMutation],
   );
@@ -149,17 +159,17 @@ export function useRecommendations() {
         );
         broadcastMutation("ai");
         await queryClient.invalidateQueries({
-          queryKey: queryKeys.recommendations.history(user?.id),
+          queryKey: queryKeys.recommendations.history(effectiveUserId),
         });
       } catch (error) {
         logRecommendationError("update verified recommendations", error);
         throw error;
       }
     },
-    [queryClient, user?.id],
+    [queryClient, effectiveUserId],
   );
 
-  const loading = isSignedIn && historyQuery.isPending;
+  const loading = (isSignedIn || !!initialUserId) && historyQuery.isPending;
 
   return {
     history,

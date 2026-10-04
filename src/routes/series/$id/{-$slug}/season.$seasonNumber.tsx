@@ -1,9 +1,9 @@
-import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { DefaultLoader } from "@/components/default-loader";
 import { DefaultNotFoundComponent } from "@/components/default-not-found";
+import { ExternalPlayerLink } from "@/components/external-player-link";
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
 import { Badge } from "@/components/ui/badge";
@@ -21,12 +21,6 @@ import {
   tvSeasonRoute,
 } from "@/lib/route-helpers";
 import { formatMediaTitle } from "@/lib/utils";
-
-const VideoPlayerModal = lazy(() =>
-  import("@/components/video-player-modal").then((m) => ({
-    default: m.VideoPlayerModal,
-  })),
-);
 
 export const Route = createFileRoute(
   "/series/$id/{-$slug}/season/$seasonNumber",
@@ -96,6 +90,17 @@ function TvSeasonDetailPage() {
   const seasons = tvData.seasons?.slice() ?? [];
   const showName = tvData.name ?? tvData.original_name;
   const urltitle = formatMediaTitle.encode(showName);
+  const showMetadata = {
+    title: showName,
+    image:
+      tvData.poster_path ??
+      seasonData.poster_path ??
+      tvData.backdrop_path ??
+      "",
+    rating: tvData.vote_average,
+    release_date: tvData.first_air_date ?? "",
+    overview: tvData.overview ?? seasonData.overview ?? undefined,
+  };
 
   return (
     <section className="mx-auto block min-h-[90vh] max-w-7xl items-center px-4">
@@ -153,19 +158,19 @@ function TvSeasonDetailPage() {
                         `${IMAGE_PREFIX.LQ_BACKDROP}${episode.still_path}`
                       : `https://placehold.co/500x281?text=No+Image`
                   }
+                  placeholderText={episode.name}
                   width={320}
                   priority={index === 0}
                 />
-                <Suspense fallback={null}>
-                  <VideoPlayerModal
-                    tmdbId={tvId}
-                    type="tv"
-                    title={`${showName} - ${episode.name}`}
-                    season={seasonNumber}
-                    episode={episode.episode_number}
-                    variant="card"
-                  />
-                </Suspense>
+                <ExternalPlayerLink
+                  tmdbId={tvId}
+                  type="tv"
+                  title={`${showName} - ${episode.name}`}
+                  season={seasonNumber}
+                  episode={episode.episode_number}
+                  variant="card"
+                  metadata={showMetadata}
+                />
               </div>
 
               <div className="flex flex-1 flex-col gap-2">
@@ -178,16 +183,15 @@ function TvSeasonDetailPage() {
                       {episode.name}
                     </h3>
                   </div>
-                  <Suspense fallback={null}>
-                    <VideoPlayerModal
-                      tmdbId={tvId}
-                      type="tv"
-                      title={`${showName} - ${episode.name}`}
-                      season={seasonNumber}
-                      episode={episode.episode_number}
-                      variant="episode"
-                    />
-                  </Suspense>
+                  <ExternalPlayerLink
+                    tmdbId={tvId}
+                    type="tv"
+                    title={`${showName} - ${episode.name}`}
+                    season={seasonNumber}
+                    episode={episode.episode_number}
+                    variant="episode"
+                    metadata={showMetadata}
+                  />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">

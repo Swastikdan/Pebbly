@@ -41,6 +41,19 @@ const config = defineConfig(({ mode }) => ({
     // intentional baseline; revisit if this grows beyond the 850 KiB limit.
     chunkSizeWarningLimit: 850,
     rollupOptions: {
+      // Base UI and our UI wrappers use `use client` for React Server
+      // Components. This app doesn't use RSC, so suppress only the warnings
+      // about that directive being dropped and keep other warnings visible.
+      onLog(level, log, defaultHandler) {
+        if (
+          level === "warn" &&
+          log.code === "MODULE_LEVEL_DIRECTIVE" &&
+          log.message.includes('"use client"')
+        ) {
+          return;
+        }
+        defaultHandler(level, log);
+      },
       treeshake: {
         propertyReadSideEffects: false,
       },
@@ -103,7 +116,7 @@ const config = defineConfig(({ mode }) => ({
                 },
                 {
                   name: "vendor-icons",
-                  test: (id) => /[\\/]lucide-react[\\/]/.test(id),
+                  test: (id) => /[\\/]@hugeicons[\\/]/.test(id),
                   priority: 10,
                 },
                 {
@@ -139,7 +152,10 @@ const config = defineConfig(({ mode }) => ({
       "@tanstack/react-router-devtools",
       "@tanstack/react-query-devtools",
     ],
-    noExternal: mode === "production" ? true : undefined,
+    noExternal:
+      mode === "production"
+        ? /^(?!class-variance-authority$|clsx$).*/
+        : undefined,
   },
 }));
 

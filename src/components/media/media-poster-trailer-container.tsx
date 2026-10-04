@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
-
 import type { MediaType } from "@/domain/media";
+import type { MediaMetadata } from "@/domain/watchlist";
+import { ExternalPlayerLink } from "@/components/external-player-link";
 import {
   PlayOverlay,
   YouTubeEmbed,
@@ -10,20 +10,15 @@ import { YouTubeThumbnail } from "@/components/media/youtube-thumbnail";
 import { Image } from "@/components/ui/image";
 import { useWatchProgress } from "@/hooks/watch-progress/use-watch-progress";
 
-const VideoPlayerModal = lazy(() =>
-  import("@/components/video-player-modal").then((m) => ({
-    default: m.VideoPlayerModal,
-  })),
-);
-
 export function MediaPosterTrailerContainer(props: {
   tmdbId: number;
   type: MediaType;
   image: string;
   title: string;
   trailervideos: Array<{ key: string; name: string }>;
+  metadata?: MediaMetadata;
 }) {
-  const { tmdbId, type, image, title, trailervideos } = props;
+  const { tmdbId, type, image, title, trailervideos, metadata } = props;
   const { progress } = useWatchProgress(tmdbId, type);
 
   let defaultSeason: number | undefined;
@@ -47,21 +42,21 @@ export function MediaPosterTrailerContainer(props: {
           className="bg-secondary aspect-[2/3] h-full w-full rounded-xl object-cover sm:h-56 sm:w-auto md:h-[17.5rem] lg:h-80"
           height={450}
           src={image}
+          placeholderText={title}
           width={300}
           priority
         />
 
-        <Suspense fallback={null}>
-          <VideoPlayerModal
-            tmdbId={tmdbId}
-            type={type}
-            title={title}
-            variant="card"
-            className="bg-black/20 opacity-100 transition-colors hover:bg-black/30"
-            season={defaultSeason}
-            episode={defaultEpisode}
-          />
-        </Suspense>
+        <ExternalPlayerLink
+          tmdbId={tmdbId}
+          type={type}
+          title={title}
+          variant="card"
+          className="bg-black/20 opacity-100 transition-colors hover:bg-black/30"
+          season={defaultSeason}
+          episode={defaultEpisode}
+          metadata={metadata}
+        />
       </div>
 
       {trailervideos.length > 0 && (

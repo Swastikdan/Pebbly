@@ -1,16 +1,25 @@
-import { Check, Copy, Globe, List, ListOrdered, Lock } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
 import type { MediaType } from "@/domain/media";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogPopup } from "@/components/ui/dialog";
 import {
-  Dialog,
-  DialogHeader,
-  DialogPopup,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Check,
+  Copy,
+  Globe,
+  List,
+  ListOrdered,
+  ListPlus,
+  Lock,
+  Pencil,
+} from "@/components/ui/hugeicons";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "@/components/ui/modal-parts";
 import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
@@ -195,14 +204,17 @@ export function CustomListDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPopup className="overflow-hidden rounded-lg p-0 sm:max-w-lg">
-        <div className="space-y-5 px-6 py-5">
-          <DialogHeader className="relative">
-            <DialogTitle className="font-heading pe-6 text-start text-lg font-semibold tracking-tight">
-              {isEditing ? "Edit Collection" : "New Collection"}
-            </DialogTitle>
-          </DialogHeader>
-
+      <DialogPopup className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+        <ModalHeader
+          icon={isEditing ? Pencil : ListPlus}
+          title={isEditing ? "Edit Collection" : "New Collection"}
+          subtitle={
+            isEditing
+              ? "Update the details of this collection."
+              : "Group titles you want to keep together."
+          }
+        />
+        <ModalBody className="space-y-5">
           <div className="space-y-1.5">
             <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
               <Label htmlFor={listNameId}>Name</Label>
@@ -345,7 +357,7 @@ export function CustomListDialog({
               <p className="text-muted-foreground/80 min-h-7 text-xs leading-relaxed">
                 {sortType === "unordered"
                   ? "A simple list of titles."
-                  : "Titles are numbered #1, #2, … and can be reordered."}
+                  : "Rank titles from #1 upward, then drag to reorder."}
               </p>
             </div>
           </div>
@@ -359,30 +371,32 @@ export function CustomListDialog({
               {error}
             </p>
           )}
-
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => onOpenChange(false)}
-              disabled={saving}
-              className="h-10 cursor-pointer text-xs font-semibold"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={saving || !name.trim()}
-              className="h-10 cursor-pointer text-xs font-bold"
-            >
-              {saving
-                ? "Saving…"
-                : isEditing
-                  ? "Save Changes"
-                  : "Create Collection"}
-            </Button>
-          </div>
-        </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            disabled={saving}
+            className="text-xs"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={saving || !name.trim()}
+            className="text-xs font-semibold"
+          >
+            {saving
+              ? "Saving\u2026"
+              : isEditing
+                ? "Save Changes"
+                : "Create Collection"}
+          </Button>
+        </ModalFooter>
       </DialogPopup>
     </Dialog>
   );

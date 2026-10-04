@@ -2,11 +2,18 @@ import * as v from "valibot";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  classifyMutationError,
   clearPendingMutations,
   enqueueMutation,
+  getMutationOutboxSnapshot,
+  markMutationFailed,
+  markMutationRecovered,
+  markMutationSyncing,
   mutationOutboxRecordSchema,
   pendingMutationsFor,
   removeMutation,
+  retryFailedMutations,
+  retryMutation,
 } from "./mutation-outbox";
 
 type StorageMock = Storage & { data: Map<string, string> };
@@ -148,6 +155,92 @@ describe("mutation outbox", () => {
     expect(v.safeParse(mutationOutboxRecordSchema, infRecord).success).toBe(
       false,
     );
+  });
+
+  it("tracks syncing, transient failures, permanent failures, and recovery", () => {
+    const transientId = enqueueMutation("user-a", "test", { value: 1 });
+    const permanentId = enqueueMutation("user-a", "test", { value: 2 });
+
+    expect(markMutationSyncing(transientId)).toBe(true);
+    markMutationFailed(transientId, new TypeError("network unavailable"));
+    markMutationFailed(permanentId, { code: "BAD_REQUEST", message: "bad" });
+
+    expect(getMutationOutboxSnapshot("user-a")).toMatchObject({
+      pending: 0,
+      syncing: 0,
+      failed: 2,
+      permanent: 1,
+      recovered: 0,
+    });
+    expect(pendingMutationsFor("user-a")[0]).toMatchObject({
+      id: transientId,
+      state: "failed",
+      attempts: 1,
+      failure: { kind: "transient", message: "network unavailable" },
+    });
+    expect(pendingMutationsFor("user-a")[1]).toMatchObject({
+      id: permanentId,
+      state: "failed",
+      failure: { kind: "permanent", code: "BAD_REQUEST" },
+    });
+
+    expect(retryMutation(transientId, "user-a")).toBe(true);
+    expect(markMutationRecovered(transientId)).toBe(true);
+    expect(pendingMutationsFor("user-a").map((record) => record.id)).toEqual([
+      permanentId,
+    ]);
+    expect(getMutationOutboxSnapshot("user-a")).toMatchObject({
+      pending: 0,
+      failed: 1,
+      recovered: 1,
+      total: 2,
+    });
+  });
+
+  it("retries all failed records and keeps their chronological order", () => {
+    storage.setItem(
+      "pebbly-pending-mutations",
+      JSON.stringify([
+        {
+          id: "newer",
+          userId: "user-a",
+          kind: "test",
+          payload: 2,
+          createdAt: 20,
+          state: "failed",
+          failure: { kind: "transient", message: "offline", at: 20 },
+        },
+        {
+          id: "older",
+          userId: "user-a",
+          kind: "test",
+          payload: 1,
+          createdAt: 10,
+          state: "failed",
+          failure: { kind: "transient", message: "offline", at: 10 },
+        },
+      ]),
+    );
+
+    expect(pendingMutationsFor("user-a").map((record) => record.id)).toEqual([
+      "older",
+      "newer",
+    ]);
+    expect(retryFailedMutations("user-a")).toBe(true);
+    expect(pendingMutationsFor("user-a").map((record) => record.state)).toEqual(
+      ["pending", "pending"],
+    );
+  });
+
+  it("classifies retryable HTTP failures as transient and client failures as permanent", () => {
+    expect(classifyMutationError({ status: 503 })).toMatchObject({
+      kind: "transient",
+      status: 503,
+    });
+    expect(classifyMutationError({ response: { status: 422 } })).toMatchObject({
+      kind: "permanent",
+      status: 422,
+    });
   });
 
   it("rejects records with missing required fields", () => {

@@ -1,6 +1,6 @@
 import { getCookie, getRequestHeader } from "@tanstack/react-start/server";
 import { createClerkClient, verifyToken } from "@clerk/backend";
-import { eq, or, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { getDb } from "./db/client";
 import { users } from "./db/schema";
@@ -78,19 +78,6 @@ export function toTokenIdentifier(sub: string): string {
   return sub.startsWith("clerk|") ? sub : `clerk|${sub}`;
 }
 
-/**
- * Escape `%`, `_`, and `\` so a tokenIdentifier fallback LIKE pattern cannot
- * interpret characters from the subject as wildcards. Used with an explicit
- * `ESCAPE '\'` clause (see `tokenIdentifierLike`).
- */
-function escapeLikePattern(value: string): string {
-  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
-}
-
-function tokenIdentifierLike(subject: string) {
-  return sql`${users.tokenIdentifier} like ${`%|${escapeLikePattern(subject)}`} escape '\\'`;
-}
-
 /** Reject `promise` after `ms` if it has not settled. */
 async function withTimeout<T>(
   promise: Promise<T>,
@@ -131,6 +118,23 @@ const ADMIN_API_TIMEOUT_MS = 5_000;
  * come exclusively from the signed JWT claim (isAdminByClaims), which the
  * Clerk session-claims template populates from `publicMetadata.isAdmin`.
  */
+export async function deleteClerkUser(userId: string): Promise<boolean> {
+  const client = getClerkApiClient();
+  if (!client) return false;
+  try {
+    await client.users.deleteUser(userId);
+    return true;
+  } catch (error) {
+    const status =
+      error && typeof error === "object" && "status" in error
+        ? (error as { status?: unknown }).status
+        : undefined;
+    if (status === 404) return true;
+    console.error("Failed to delete Clerk user:", error);
+    return false;
+  }
+}
+
 export async function getClerkAdminIds(): Promise<Set<string>> {
   const client = getClerkApiClient();
   if (!client) return new Set();
@@ -189,10 +193,8 @@ export function invalidateUserCache(sub?: string) {
 }
 
 /**
- * Multi-format tokenIdentifier matching so users created under any prior
- * format resolve (`clerk|<sub>`, bare `<sub>`, or any `*|<sub>` legacy prefix).
- * Fast-paths the canonical format with a direct unique index seek before
- * falling back to the legacy LIKE pattern.
+ * Find users matching the Clerk claims via direct unique index seek on the
+ * canonical tokenIdentifier (`clerk|<sub>`).
  */
 async function findUserMatchesByClaims(
   claims: ClerkSessionClaims,
@@ -202,32 +204,11 @@ async function findUserMatchesByClaims(
   if (!subject) return [];
   const tokenIdentifier = toTokenIdentifier(subject);
 
-  const exactMatches = await db
+  return db
     .select()
     .from(users)
     .where(eq(users.tokenIdentifier, tokenIdentifier))
     .limit(1);
-
-  if (exactMatches.length > 0) {
-    return exactMatches;
-  }
-
-  // Legacy LIKE fallback: matches accounts whose token_identifier predates the
-  // canonical `clerk:<sub>` format (Convex-era migration). Runs only when the
-  // exact-index seek misses, which for genuinely new users means a full table
-  // scan on first request. The background user-maintenance task owns legacy
-  // duplicate convergence, so once its migration window has closed, set
-  // DISABLE_LEGACY_TOKEN_LOOKUP=true in production to skip the scan entirely
-  // (see ADR-004 / architecture-hardening-plan item 4).
-  if (getEnvVar("DISABLE_LEGACY_TOKEN_LOOKUP") === "true") {
-    return [];
-  }
-
-  return db
-    .select()
-    .from(users)
-    .where(or(eq(users.tokenIdentifier, subject), tokenIdentifierLike(subject)))
-    .limit(10);
 }
 
 async function pickBestUserMatch(

@@ -11,7 +11,6 @@ import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAllMediaStates } from "@/hooks/use-watchlist";
-import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
 import { getMedia } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { tmdbSrcSet } from "@/lib/tmdb-image";
@@ -63,12 +62,6 @@ const TopRatedTv = lazy(() =>
     default: m.TopRatedTv,
   })),
 );
-const ContinueWatching = lazy(() =>
-  import("@/components/homepage-media-deferred").then((m) => ({
-    default: m.ContinueWatching,
-  })),
-);
-
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
     const data = await context.queryClient.ensureQueryData({
@@ -158,8 +151,6 @@ function HomePage() {
             </TabsPanel>
           </Tabs>
 
-          <ContinueWatchingSection />
-
           <BecauseYouWatchedSection />
 
           <RecommendationsSection />
@@ -247,50 +238,6 @@ function HomePage() {
             </Tabs>
           </LazySection>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function ContinueWatchingSection() {
-  const { isSignedIn, isLoaded } = useUser();
-  const { items, isLoading, isSettled } = useContinueWatching();
-
-  // Do not reserve a placeholder for signed-out visitors. Continue Watching
-  // is a private, user-specific rail and should not leave an empty gap.
-  if (!isLoaded || !isSignedIn) return null;
-
-  if (isLoading || !isSettled) {
-    return (
-      <section aria-hidden="true" className="min-h-80">
-        <div className="mt-2 flex items-center gap-4">
-          <h2 className="text-h2">Continue Watching</h2>
-        </div>
-        <div>
-          <MediaSkeletonList cardType="vertical" count={6} />
-        </div>
-      </section>
-    );
-  }
-
-  if (items.length === 0) return null;
-
-  return (
-    <section className="min-h-80">
-      <div className="mt-2 flex items-center gap-4">
-        <h2 className="text-h2">Continue Watching</h2>
-      </div>
-      <div>
-        <LazySection
-          minHeight="280px"
-          fallback={<MediaSkeletonList cardType="vertical" count={6} />}
-        >
-          <Suspense
-            fallback={<MediaSkeletonList cardType="vertical" count={6} />}
-          >
-            <ContinueWatching />
-          </Suspense>
-        </LazySection>
       </div>
     </section>
   );

@@ -26,68 +26,6 @@ export type ShowMetadata = {
   status?: string;
 };
 
-export interface PlayerEventPayload {
-  type: "PLAYER_EVENT";
-  data: {
-    event: "timeupdate" | "play" | "pause" | "ended" | "seeked";
-    currentTime: number;
-    duration: number;
-    progress: number;
-    id: string;
-    mediaType: MediaType;
-    season?: number;
-    episode?: number;
-  };
-}
-
-function isNonNegativeIntegerLike(value: unknown): boolean {
-  if (typeof value === "number") return Number.isInteger(value) && value >= 0;
-  if (typeof value !== "string" || !/^\d+$/.test(value)) return false;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && Number.isInteger(parsed) && parsed >= 0;
-}
-
-function isFiniteIntegerString(value: unknown): value is string {
-  if (typeof value !== "string" || !/^\d+$/.test(value)) return false;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && Number.isInteger(parsed);
-}
-
-export function isPlayerEventPayload(
-  value: unknown,
-): value is PlayerEventPayload {
-  if (!value || typeof value !== "object") return false;
-  const payload = value as Partial<PlayerEventPayload>;
-  const data = payload.data;
-  if (
-    payload.type !== "PLAYER_EVENT" ||
-    !data ||
-    typeof data !== "object" ||
-    !isFiniteIntegerString(data.id) ||
-    (data.mediaType !== "movie" && data.mediaType !== "tv") ||
-    typeof data.currentTime !== "number" ||
-    typeof data.progress !== "number"
-  )
-    return false;
-  if (data.season !== undefined && !isNonNegativeIntegerLike(data.season))
-    return false;
-  if (data.episode !== undefined && !isNonNegativeIntegerLike(data.episode))
-    return false;
-  return true;
-}
-
-export function parsePlayerEventPayload(
-  message: unknown,
-): PlayerEventPayload | null {
-  if (typeof message !== "string") return null;
-  try {
-    const parsed = JSON.parse(message) as unknown;
-    return isPlayerEventPayload(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
 export function makeEpisodeKey(
   tvId: number | string,
   season: number,
@@ -120,8 +58,8 @@ const byEpisodeOrder = (a: EpisodeRef, b: EpisodeRef) =>
   a.season !== b.season ? a.season - b.season : a.episode - b.episode;
 
 export function resolveNextEpisode(input: {
-  lastPlayed: EpisodeRef | null;
-  isLastPlayedWatched: boolean;
+  lastPlayed?: EpisodeRef | null;
+  isLastPlayedWatched?: boolean;
   watchedEpisodes: EpisodeRef[];
 }): EpisodeRef {
   if (input.lastPlayed) {
@@ -219,25 +157,4 @@ export function toggleSeasonRows(
       ),
     ),
   ];
-}
-
-export function buildPlayerUrl(opts: {
-  type: MediaType;
-  tmdbId: number;
-  season?: number;
-  episode?: number;
-  savedProgress?: number;
-}): string {
-  const videoUrl = import.meta.env.VITE_PUBLIC_VIDEO_URL;
-  if (!videoUrl) throw new Error("Video URL not set");
-  const params = new URLSearchParams({
-    autoPlay: "true",
-    nextEpisode: "true",
-    episodeSelector: "true",
-  });
-  if (opts.savedProgress && opts.savedProgress > 10)
-    params.set("progress", String(Math.floor(opts.savedProgress)));
-  return opts.type === "movie"
-    ? `${videoUrl}/embed/movie/${opts.tmdbId}?${params}`
-    : `${videoUrl}/embed/tv/${opts.tmdbId}/${opts.season ?? 1}/${opts.episode ?? 1}?${params}`;
 }

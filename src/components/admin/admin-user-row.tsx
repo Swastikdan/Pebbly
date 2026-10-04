@@ -1,4 +1,4 @@
-import { Ban, Check, ShieldCheck, UserCog, UserX } from "lucide-react";
+import { Ban, Check, ShieldCheck, UserCog, UserX } from "@/components/ui/hugeicons";
 
 import type { AdminUser } from "@/components/admin/use-admin-users";
 import { ROLE_CONFIGS } from "@/components/admin/use-admin-users";
@@ -17,10 +17,7 @@ function RoleToggleButtons({
   onToggleRole: (role: (typeof ROLE_CONFIGS)[number]["value"]) => void;
 }) {
   const currentRoles = (user.roles ?? []).filter(
-    (role) =>
-      role === "video-player" ||
-      role === "ai-integrations" ||
-      role === "external-redirect",
+    (role) => role === "ai-integrations" || role === "external-redirect",
   ) as (typeof ROLE_CONFIGS)[number]["value"][];
 
   return (

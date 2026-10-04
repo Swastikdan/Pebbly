@@ -25,7 +25,7 @@ export const Route = createFileRoute("/movie/$id/{-$slug}/")(
 );
 
 function MovieHomePage() {
-  const { id: movie_id, slug: movie_slug } = Route.useLoaderData();
+  const { id: movie_id, slug: movie_slug, region } = Route.useLoaderData();
   const movie_id_param = parseInt(movie_id, 10);
   const { data, error, isLoading } = useQuery<Movie>({
     queryKey: queryKeys.tmdb.movieDetails(movie_id_param),
@@ -58,17 +58,17 @@ function MovieHomePage() {
     original_title,
     overview,
     poster_path,
-    backdrop_path,
     release_date,
+    release_dates,
     runtime,
     tagline,
     title,
     vote_average,
     vote_count,
-    images,
+    backdrop_path,
     credits,
+    images,
     videos,
-    release_dates,
     keywords,
   } = data;
 
@@ -89,6 +89,7 @@ function MovieHomePage() {
       entity="movie"
       mediaPage={mediaPage}
       id={id}
+      initialRegion={region}
       overview={overview}
       posterPath={poster_path}
       backdropPath={backdrop_path}

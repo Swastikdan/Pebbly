@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { BasicMovie, BasicTv } from "@/lib/tmdb-schemas";
 import { IMAGE_PREFIX } from "@/constants";
 import { getBasicMovieDetails, getBasicTvDetails } from "@/lib/queries";
-import { isValidId } from "@/lib/utils";
+import { parseAndValidateId } from "@/lib/utils";
 
 const ERROR_HEADERS = { "Cache-Control": "no-cache" } as const;
 // Real TMDB image URLs are content-addressed and immutable, so the redirect
@@ -78,12 +78,13 @@ export const Route = createFileRoute("/api/metaimage")({
         const rawId = url.searchParams.get("id");
 
         const type = url.searchParams.get("type")?.toLowerCase();
-        const idNum = rawId ? parseInt(rawId, 10) : NaN;
+        // Strict parse: `parseInt` would accept "123abc" and fragment the
+        // cache across URLs that all resolve to the same title.
+        const parsedId = rawId ? parseAndValidateId(rawId) : null;
 
         if (
           !type ||
-          !rawId ||
-          !isValidId(idNum) ||
+          !parsedId?.success ||
           (type !== "movie" && type !== "tv")
         ) {
           return new Response(null, {
@@ -94,6 +95,8 @@ export const Route = createFileRoute("/api/metaimage")({
             },
           });
         }
+
+        const idNum = parsedId.data;
 
         try {
           if (type === "movie") {

@@ -15,7 +15,7 @@ import { queryKeys } from "@/lib/query/keys";
 export const MediaCreditSection = (props: {
   id: number;
   type: MediaType;
-  slug: string;
+  slug?: string;
   title: string;
 }) => {
   const { id, slug, title, type } = props;
@@ -52,7 +52,9 @@ export const MediaCreditSection = (props: {
       <div className="space-y-3 py-5">
         <div className="flex items-center justify-between gap-3">
           <GoBack
-            link={`/${routeSegment}/${id}/${slug}`}
+            link={
+              slug ? `/${routeSegment}/${id}/${slug}` : `/${routeSegment}/${id}`
+            }
             title="Back to main"
           />
           <ShareButton />

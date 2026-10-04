@@ -12,16 +12,24 @@ export type SetRolePermissionArgs = v.InferOutput<
   typeof setRolePermissionArgsSchema
 >;
 
+const tokenIdentifierSchema = v.pipe(
+  v.string(),
+  v.minLength(1),
+  v.maxLength(255),
+);
+
 export const setUserRolesArgsSchema = v.object({
-  tokenIdentifier: v.string(),
-  roles: v.array(
-    v.picklist(["video-player", "ai-integrations", "external-redirect"]),
+  tokenIdentifier: tokenIdentifierSchema,
+  // One entry per assignable role; bounds the JSON stored in `users.roles`.
+  roles: v.pipe(
+    v.array(v.picklist(["ai-integrations", "external-redirect"])),
+    v.maxLength(2),
   ),
 });
 export type SetUserRolesArgs = v.InferOutput<typeof setUserRolesArgsSchema>;
 
 export const setUserBannedArgsSchema = v.object({
-  tokenIdentifier: v.string(),
+  tokenIdentifier: tokenIdentifierSchema,
   banned: v.boolean(),
 });
 export type SetUserBannedArgs = v.InferOutput<typeof setUserBannedArgsSchema>;

@@ -9,6 +9,7 @@ import {
   useToggleWatchlistItem,
 } from "@/hooks/use-watchlist";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
+import { destructiveToast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import {
   filterRenderedRecommendations,
@@ -31,6 +32,9 @@ export function useHomepageRecommendations() {
     new Set(),
   );
   const [localLikedKeys, setLocalLikedKeys] = useState<Set<string>>(new Set());
+  const [localUnlikedKeys, setLocalUnlikedKeys] = useState<Set<string>>(
+    new Set(),
+  );
 
   const canAccessFeature = isSignedIn && hasFeature("ai-recommendations");
 
@@ -100,14 +104,20 @@ export function useHomepageRecommendations() {
   }, [canAccessFeature, recommendationsData?.needsRefresh, refreshHomepage]);
 
   const likedKeys = useMemo(() => {
-    const set = new Set<string>(localLikedKeys);
+    const set = new Set<string>();
     for (const feedback of feedbackList ?? []) {
       if (feedback.feedback === "like") {
         set.add(`${feedback.mediaType}:${feedback.tmdbId}`);
       }
     }
+    for (const key of localLikedKeys) {
+      set.add(key);
+    }
+    for (const key of localUnlikedKeys) {
+      set.delete(key);
+    }
     return set;
-  }, [feedbackList, localLikedKeys]);
+  }, [feedbackList, localLikedKeys, localUnlikedKeys]);
 
   const dislikedKeys = useMemo(() => {
     const set = new Set<string>();
@@ -164,6 +174,7 @@ export function useHomepageRecommendations() {
         release_date?: string;
         overview?: string;
       },
+      options?: { onRestore?: () => void },
     ) => {
       const key = getDismissKey(rec);
       const mediaKey = `${rec.mediaType}:${resolvedId}`;
@@ -174,13 +185,53 @@ export function useHomepageRecommendations() {
           next.add(key);
           return next;
         });
-      } else if (feedback === "like") {
-        setLocalLikedKeys((prev) => {
+
+        destructiveToast({
+          title: "Removed from recommendations",
+          description: rec.title,
+          onUndo: () => {
+            setLocalDismissedKeys((prev) => {
+              const next = new Set(prev);
+              next.delete(key);
+              return next;
+            });
+            options?.onRestore?.();
+          },
+          onConfirm: async () => {
+            try {
+              await unwrap(
+                setRecommendationFeedback({
+                  data: {
+                    tmdbId: resolvedId,
+                    mediaType: rec.mediaType,
+                    title: rec.title,
+                    feedback: "not_interested",
+                    image: metadata?.image,
+                    rating: metadata?.rating,
+                    release_date: metadata?.release_date,
+                    overview: metadata?.overview,
+                  },
+                }),
+              );
+              broadcastMutation("ai");
+              refreshHomepage();
+            } catch (error) {
+              logError("save homepage recommendation feedback", error);
+            }
+          },
+        });
+        return;
+      }
+
+      if (feedback === "like") {
+        setLocalLikedKeys((prev) => new Set(prev).add(mediaKey));
+        setLocalUnlikedKeys((prev) => {
           const next = new Set(prev);
-          next.add(mediaKey);
+          next.delete(mediaKey);
           return next;
         });
       } else {
+        setLocalUnlikedKeys((prev) => new Set(prev).add(mediaKey));
         setLocalLikedKeys((prev) => {
           const next = new Set(prev);
           next.delete(mediaKey);
@@ -230,7 +281,7 @@ export function useHomepageRecommendations() {
                 tmdbId: resolvedId,
                 mediaType: rec.mediaType,
                 title: rec.title,
-                feedback: feedback === "dislike" ? "not_interested" : "like",
+                feedback: "like",
                 image: metadata?.image,
                 rating: metadata?.rating,
                 release_date: metadata?.release_date,
@@ -243,13 +294,7 @@ export function useHomepageRecommendations() {
         refreshHomepage();
       } catch (error) {
         console.error("Failed to update recommendation feedback:", error);
-        if (feedback === "dislike") {
-          setLocalDismissedKeys((prev) => {
-            const next = new Set(prev);
-            next.delete(key);
-            return next;
-          });
-        } else if (feedback === "like") {
+        if (feedback === "like") {
           setLocalLikedKeys((prev) => {
             const next = new Set(prev);
             next.delete(mediaKey);

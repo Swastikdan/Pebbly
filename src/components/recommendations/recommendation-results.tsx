@@ -1,7 +1,8 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@/components/ui/hugeicons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
+import type { MediaType } from "@/domain/media";
 import type { AIRecommendation } from "@/domain/recommendations";
 import type { RecommendationHistoryEntry } from "@/hooks/use-recommendations";
 import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
@@ -9,6 +10,7 @@ import { formatTimestamp } from "@/components/recommendations/recommendation-uti
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MediaGrid } from "@/components/ui/media-grid";
+import { useRecommendationCardFeedback } from "@/hooks/use-recommendation-card-feedback";
 import { useResolvedRecommendation } from "@/hooks/use-resolved-recommendation";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +56,9 @@ function RecommendationCardGrid({
   entry: RecommendationHistoryEntry;
   updateVerified: (id: string, recs: AIRecommendation[]) => Promise<void>;
 }) {
+  const { isLiked, isDisliked, handleMoreLikeThis, handleNotThis } =
+    useRecommendationCardFeedback();
+
   const verifiedMapRef = useRef<Map<number, AIRecommendation>>(new Map());
   const pendingIndexes = entry.recommendations
     .map((recommendation, index) => {
@@ -142,6 +147,12 @@ function RecommendationCardGrid({
             recommendation={rec}
             isEntryVerified={!!entry.verified}
             onResolved={(verifiedRec) => onCardResolved(i, verifiedRec)}
+            feedback={{
+              isLiked,
+              isDisliked,
+              onMoreLikeThis: handleMoreLikeThis,
+              onNotThis: handleNotThis,
+            }}
           />
         ))}
       </MediaGrid>
@@ -170,10 +181,36 @@ function RecommendationCard({
   recommendation,
   isEntryVerified: _isEntryVerified,
   onResolved,
+  feedback,
 }: {
   recommendation: AIRecommendation;
   isEntryVerified: boolean;
   onResolved?: (verifiedRec: AIRecommendation) => void;
+  feedback?: {
+    isLiked: (id: number, type: MediaType) => boolean;
+    isDisliked: (id: number, type: MediaType) => boolean;
+    onMoreLikeThis: (target: {
+      id: number;
+      mediaType: MediaType;
+      title: string;
+      image?: string;
+      rating?: number;
+      release_date?: string;
+      overview?: string;
+    }) => void;
+    onNotThis: (
+      target: {
+        id: number;
+        mediaType: MediaType;
+        title: string;
+        image?: string;
+        rating?: number;
+        release_date?: string;
+        overview?: string;
+      },
+      options?: { onRestore?: () => void },
+    ) => void;
+  };
 }) {
   const { title, mediaType, relevanceScore, reasoning } = recommendation;
   const navigate = useNavigate();
@@ -216,10 +253,13 @@ function RecommendationCard({
   ]);
 
   if (hasCachedResolvedData) {
+    const cardId = recommendation.verifiedTmdbId as number;
+    if (feedback?.isDisliked(cardId, mediaType)) return null;
+
     return (
       <MediaCard
         card_type="horizontal"
-        id={recommendation.verifiedTmdbId as number}
+        id={cardId}
         title={recommendation.verifiedTitle ?? title}
         rating={recommendation.rating ?? 0}
         image={recommendation.posterPath ?? ""}
@@ -228,6 +268,38 @@ function RecommendationCard({
         release_date={recommendation.releaseDate ?? null}
         overview={recommendation.overview ?? ""}
         relevanceScore={relevanceScore}
+        reasoning={reasoning}
+        feedbackActions={
+          feedback
+            ? {
+                onMoreLikeThis: () =>
+                  feedback.onMoreLikeThis({
+                    id: cardId,
+                    mediaType,
+                    title: recommendation.verifiedTitle ?? title,
+                    image: recommendation.posterPath ?? undefined,
+                    rating: recommendation.rating,
+                    release_date: recommendation.releaseDate ?? undefined,
+                    overview: recommendation.overview,
+                  }),
+                onNotThis: (options) =>
+                  feedback.onNotThis(
+                    {
+                      id: cardId,
+                      mediaType,
+                      title: recommendation.verifiedTitle ?? title,
+                      image: recommendation.posterPath ?? undefined,
+                      rating: recommendation.rating,
+                      release_date: recommendation.releaseDate ?? undefined,
+                      overview: recommendation.overview,
+                    },
+                    options,
+                  ),
+                isLiked: feedback.isLiked(cardId, mediaType),
+                isDisliked: false,
+              }
+            : undefined
+        }
       />
     );
   }
@@ -237,10 +309,13 @@ function RecommendationCard({
   }
 
   if (resolvedData) {
+    const cardId = resolvedData.id;
+    if (feedback?.isDisliked(cardId, mediaType)) return null;
+
     return (
       <MediaCard
         card_type="horizontal"
-        id={resolvedData.id}
+        id={cardId}
         title={resolvedData.title}
         rating={resolvedData.rating}
         image={resolvedData.posterPath ?? ""}
@@ -249,6 +324,38 @@ function RecommendationCard({
         release_date={resolvedData.releaseDate}
         overview={resolvedData.overview}
         relevanceScore={relevanceScore}
+        reasoning={reasoning}
+        feedbackActions={
+          feedback
+            ? {
+                onMoreLikeThis: () =>
+                  feedback.onMoreLikeThis({
+                    id: cardId,
+                    mediaType,
+                    title: resolvedData.title,
+                    image: resolvedData.posterPath ?? undefined,
+                    rating: resolvedData.rating,
+                    release_date: resolvedData.releaseDate ?? undefined,
+                    overview: resolvedData.overview,
+                  }),
+                onNotThis: (options) =>
+                  feedback.onNotThis(
+                    {
+                      id: cardId,
+                      mediaType,
+                      title: resolvedData.title,
+                      image: resolvedData.posterPath ?? undefined,
+                      rating: resolvedData.rating,
+                      release_date: resolvedData.releaseDate ?? undefined,
+                      overview: resolvedData.overview,
+                    },
+                    options,
+                  ),
+                isLiked: feedback.isLiked(cardId, mediaType),
+                isDisliked: false,
+              }
+            : undefined
+        }
       />
     );
   }

@@ -1,23 +1,22 @@
-import { Activity, AlertTriangle, ExternalLink, Zap } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, ExternalLink, Zap } from "@/components/ui/hugeicons";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { PermissionRole, RbacFeature } from "@/constants";
 import { ErrorBanner } from "@/components/ui/feedback";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RBAC_FEATURES } from "@/constants";
+import { destructiveToast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import { getRolePermissions, setRolePermission } from "@/server/fns/admin";
 import { unwrap } from "@/server/schema/common";
 
 const FEATURE_ROLES: Record<RbacFeature, PermissionRole> = {
-  "video-player": "video-player",
   "ai-recommendations": "ai-integrations",
   "external-redirect": "external-redirect",
 };
 
-const FEATURE_ICONS: Record<RbacFeature, typeof Activity> = {
-  "video-player": Activity,
+const FEATURE_ICONS: Record<RbacFeature, typeof Zap> = {
   "ai-recommendations": Zap,
   "external-redirect": ExternalLink,
 };
@@ -148,12 +147,72 @@ export function AdminPermissionToggles() {
   });
 
   const rawPermissionsData = rawPermissions.data;
+  const [optimisticOverrides, setOptimisticOverrides] = useState<
+    Map<RbacFeature, boolean>
+  >(new Map());
+
+  const permissionsByRole = rawPermissionsData as
+    | Record<PermissionRole, Record<RbacFeature, boolean>>
+    | undefined;
+
+  const effectivePermissionsByRole = useMemo(() => {
+    if (!permissionsByRole) return undefined;
+    const next: Record<PermissionRole, Record<RbacFeature, boolean>> = {
+      "ai-integrations": { ...permissionsByRole["ai-integrations"] },
+      "external-redirect": { ...permissionsByRole["external-redirect"] },
+    };
+    for (const [feat, enabled] of optimisticOverrides) {
+      const role = FEATURE_ROLES[feat];
+      if (next[role]) {
+        next[role][feat] = enabled;
+      }
+    }
+    return next;
+  }, [permissionsByRole, optimisticOverrides]);
+
+  const handleToggle = (
+    feature: RbacFeature,
+    featureLabel: string,
+    enabled: boolean,
+  ) => {
+    // 1. Immediately optimistic on client (0ms)
+    setOptimisticOverrides((prev) => new Map(prev).set(feature, enabled));
+
+    if (!enabled) {
+      // Destructive: disabling global feature
+      destructiveToast({
+        title: `${featureLabel} disabled`,
+        description: "Global feature turned off",
+        onUndo: () => {
+          // Revert client state immediately - 0 server calls
+          setOptimisticOverrides((prev) => {
+            const next = new Map(prev);
+            next.set(feature, true);
+            return next;
+          });
+        },
+        onConfirm: () => {
+          setRolePermissionMutation.mutate({
+            feature,
+            enabled: false,
+          });
+        },
+      });
+      return;
+    }
+
+    // Additive: enabling global feature
+    setRolePermissionMutation.mutate({
+      feature,
+      enabled: true,
+    });
+  };
 
   if (rawPermissions.isError) {
     return <FeatureError onRetry={() => rawPermissions.refetch()} />;
   }
 
-  if (rawPermissionsData === undefined) {
+  if (effectivePermissionsByRole === undefined) {
     return (
       <div className="space-y-4">
         <div className="space-y-3">
@@ -181,11 +240,6 @@ export function AdminPermissionToggles() {
     );
   }
 
-  const permissionsByRole = rawPermissionsData as Record<
-    PermissionRole,
-    Record<RbacFeature, boolean>
-  >;
-
   return (
     <div className="space-y-4">
       {toggleError && <ErrorBanner>{toggleError}</ErrorBanner>}
@@ -195,12 +249,9 @@ export function AdminPermissionToggles() {
             key={feature}
             feature={feature as RbacFeature}
             featureLabel={config.label}
-            permissionsByRole={permissionsByRole}
+            permissionsByRole={effectivePermissionsByRole}
             onToggle={(_role, enabled) =>
-              setRolePermissionMutation.mutate({
-                feature: feature as RbacFeature,
-                enabled,
-              })
+              handleToggle(feature as RbacFeature, config.label, enabled)
             }
           />
         ))}

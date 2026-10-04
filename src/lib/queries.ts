@@ -239,13 +239,22 @@ export async function getDiscoverMovies({
 
 export async function getDiscoverTv({
   with_genres,
+  with_keywords,
   page,
 }: {
-  with_genres: string;
+  with_genres?: string;
+  with_keywords?: number;
   page?: number;
 }): Promise<SearchResults> {
   const pageNumber = page ?? 1;
-  const url = `/discover/tv?with_genres=${encodeURIComponent(with_genres)}&language=en-US&page=${pageNumber}`;
+  const params = new URLSearchParams({
+    language: "en-US",
+    page: String(pageNumber),
+  });
+  if (with_genres) params.set("with_genres", with_genres);
+  if (with_keywords !== undefined)
+    params.set("with_keywords", String(with_keywords));
+  const url = `/discover/tv?${params.toString()}`;
 
   return await safeFetch<SearchResults>(
     "getDiscoverTv",

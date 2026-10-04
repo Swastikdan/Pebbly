@@ -2,19 +2,19 @@
 
 ## 1. Tech stack
 
-| Layer          | Technology                                                                                                | Where it lives                                                         |
-| :------------- | :-------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
-| Framework      | TanStack Start (file-based routing) + TanStack Router + React 19                                          | `src/router.tsx`, `src/start.ts`, `src/routes/`                        |
-| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset)                                                     | `wrangler.toml`, `nitro.config.ts`                                     |
-| Database       | Cloudflare D1 (SQLite) via Drizzle ORM                                                                    | `src/server/db/`, `drizzle/`                                           |
-| Validation     | Valibot (schemas shared between client and server fns)                                                    | `src/server/schema/`, `src/lib/tmdb-schemas.ts`                        |
-| Auth           | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification)                                          | `src/server/auth.ts`, `src/start.ts`                                   |
-| AI             | Cloudflare Workers AI binding (`@cf/meta/llama-3.1-8b-instruct-fast`) with optional local Gemini fallback | `src/server/ai.ts`, `src/server/ai-gemini.ts`, `src/server/prompts.ts` |
-| Media metadata | TMDB REST API (`@better-fetch/fetch` client)                                                              | `src/lib/tmdb.ts`, `src/lib/queries.ts`                                |
-| Client data    | TanStack Query (React Query)                                                                              | `src/lib/query/`                                                       |
-| Client state   | Zustand (persisted to localStorage with LRU eviction)                                                     | `src/stores/`                                                          |
-| Styling        | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes    | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts`       |
-| Tooling        | Vite 8, Prettier (formatting) + Biome (linting only), TypeScript strict, Wrangler                         | root config files                                                      |
+| Layer          | Technology                                                                                             | Where it lives                                                   |
+| :------------- | :----------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| Framework      | TanStack Start (file-based routing) + TanStack Router + React 19                                       | `src/router.tsx`, `src/start.ts`, `src/routes/`                  |
+| Runtime / host | Cloudflare Workers (Nitro `cloudflare_module` preset)                                                  | `wrangler.toml`, `nitro.config.ts`                               |
+| Database       | Cloudflare D1 (SQLite) via Drizzle ORM                                                                 | `src/server/db/`, `drizzle/`                                     |
+| Validation     | Valibot (schemas shared between client and server fns)                                                 | `src/server/schema/`, `src/lib/tmdb-schemas.ts`                  |
+| Auth           | Clerk (`@clerk/react` client, `@clerk/backend` JWT verification)                                       | `src/server/auth.ts`, `src/start.ts`                             |
+| AI             | Cloudflare Workers AI binding (`@cf/meta/llama-3.1-8b-instruct-fast`)                                  | `src/server/ai.ts`, `src/server/prompts.ts`                      |
+| Media metadata | TMDB REST API (`@better-fetch/fetch` client)                                                           | `src/lib/tmdb.ts`, `src/lib/queries.ts`                          |
+| Client data    | TanStack Query (React Query)                                                                           | `src/lib/query/`                                                 |
+| Client state   | Zustand (persisted to localStorage with LRU eviction)                                                  | `src/stores/`                                                    |
+| Styling        | Tailwind CSS v4 + **coss ui** components built on Base UI (`@base-ui/react`), light/dark/system themes | `src/components/ui/`, `src/styles.css`, `src/hooks/use-theme.ts` |
+| Tooling        | Vite 8, Prettier (formatting) + Biome (linting only), TypeScript strict, Wrangler                      | root config files                                                |
 
 Formatting is owned by **Prettier** (`.prettierrc`: import sorting +
 `prettier-plugin-tailwindcss`); Biome's formatter is disabled and it runs as a
@@ -104,8 +104,11 @@ Every mutating/authenticated operation is a TanStack Start server function:
 | Module               | Responsibility                                                                                                                                                                   |
 | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `rpc.ts`             | The shared guard pipeline: `authedFn(config, data, handler)` resolves session → gates (feature/admin) → injects `{ data, user, claims, db }` and returns an `ApiResult` envelope |
-| `watchlist.ts`       | Read/watchlist queries, membership toggle (+batch), progress status, reactions, episode progress (single/season/show), `getDataVersion` revision poll                            |
-| `lists.ts`           | Custom-list CRUD + list-item toggling/reordering, public collection pages (`/c/$id`), list cloning, enriched reads                                                               |
+| `watchlist.ts`       | Keyset-paginated watchlist reads/counts, membership toggle (+batch), progress status, reactions, episode progress, `getDataVersion` revision poll                                |
+| `lists.ts`           | Custom-list CRUD, keyset-paginated collection reads, search, bulk item actions, reordering, cloning, and enriched reads                                                          |
+| `library.ts`         | Watchlist activity timeline/undo, snapshot listing, and snapshot restore                                                                                                         |
+| `privacy.ts`         | Full JSON/CSV account export, deletion scheduling/cancellation, and due-request processing                                                                                       |
+| `retention.ts`       | Release calendar subscriptions, in-app notifications, availability refresh, and viewing insights                                                                                 |
 | `import-export.ts`   | Bulk JSON watchlist import (bounded D1 batches)                                                                                                                                  |
 | `recommendations.ts` | AI generation (watchlist/list/genre), homepage picks, history, feedback, rate limiting                                                                                           |
 | `admin.ts`           | Admin-only: user listing, roles, ban status, feature-flag permissions                                                                                                            |
@@ -129,7 +132,7 @@ Server functions are:
 
 ### 3.3 Data access (`src/server/db/`)
 
-- `schema.ts`, the Drizzle SQLite schema (all 11 tables, indexes, checks; see
+- `schema.ts`, the Drizzle SQLite schema (19 tables, indexes, checks; see
   [data-model.md](./data-model.md)).
 - `client.ts`, `getDb(env)` returns a cached Drizzle instance per D1 binding
   (WeakMap keyed on the binding), plus `runBatch` which chunks multi-statement
@@ -145,7 +148,7 @@ Server functions are:
   sign-in, race-safe via `onConflictDoNothing`), and exposes a short-lived
   in-memory user cache (15 s TTL, 500-entry LRU). Legacy duplicate-user
   reconciliation is kept off the request path in the maintenance helper.
-- `rbac.ts`, feature flags (`video-player`, `ai-recommendations`) evaluated
+- `rbac.ts`, feature flags (`ai-recommendations`, `external-redirect`) evaluated
   from a `role_permissions` table + dynamic user roles + a **global** kill
   switch. Admin is resolved by `isAdminByClaims` (the signed JWT
   `public_meta.isAdmin` claim) or the live Clerk API, never from the DB.
@@ -160,12 +163,9 @@ Server functions are:
   `buildHomepageRecommendationsPrompt`) sharing one sectioned builder
   underneath. They live server-side because their single consumer is the
   recommendation fns.
-- `src/server/ai.ts`, `generateRecommendations()`: provider-neutral seam over
-  the Cloudflare Workers AI binding in production and the optional local
-  adapter. JSON-mode responses are validated with Valibot and provider-
-  specific failures are mapped to safe application error codes.
-- `src/server/ai-gemini.ts`, private local Gemini adapter: REST request/response
-  handling, fallback model order, and Gemini-specific error classification.
+- `src/server/ai.ts`, `generateRecommendations()`: executes recommendations via
+  the Cloudflare Workers AI binding. JSON-mode responses are validated with Valibot and
+  provider-specific failures are mapped to safe application error codes.
 - `src/server/recommendation-pipeline.ts`, shared generation orchestration for
   history and homepage intents: rate-limit reservation, watchlist/feedback
   gathering, exclusions, candidate catalog, prompt construction, AI call,
@@ -192,7 +192,9 @@ Server functions are:
   immediately and replays it over fresh server snapshots so refetches cannot
   clobber in-flight state. Signed-in remote writes also enter the persistent
   `src/lib/data/mutation-outbox.ts`, which validates and replays idempotent
-  mutations sequentially on the next boot. Op builders live beside the journal
+  mutations sequentially on the next boot, online reconnect, focus, and page
+  wake. `sync-center.ts` classifies permanent/transient failures and the global
+  sync center exposes retry/discard state. Op builders live beside the journal
   in `src/lib/data/optimistic/`, and watchlist queries pass through its
   reconciler.
 - **Zustand stores** persist guest/local state from `src/stores/`:
@@ -247,7 +249,7 @@ modules (journal, op builders, shared progress, notifications) live under
   collection page), `src/components/recommendations/`,
   `src/components/admin/`, feature-specific surfaces.
 - `src/components/media-card.tsx`, `homepage-media.tsx`,
-  `homepage-recommendations.tsx`, `daily-pick.tsx`, `video-player-modal.tsx`,
+  `homepage-recommendations.tsx`, `daily-pick.tsx`, `external-player-link.tsx`,
   `navigation-progress-bar.tsx`, cross-cutting discovery widgets.
 
 ## 4. Request flows
@@ -326,10 +328,10 @@ leaks into the next session.
   plus ESModule rules because Nitro pre-bundles the output, and it must be
   passed via `--config` (never `--env`, which Nitro's redirected config
   breaks). Secrets are set per-Worker with `wrangler secret put`.
-- **Cron**: Cloudflare Cron Trigger `0 3 * * *` (production only) → Nitro
-  task `snapshots` (`server/tasks/snapshots.ts`) → `createDailySnapshots`,
-  bounded per run and resumable via a persisted cursor in
-  `snapshot_cursors`.
+- **Cron**: Cloudflare Cron Triggers run the `snapshots`, `user-maintenance`,
+  `account-deletion`, and `release-alerts` Nitro tasks in production. Snapshot
+  and user scans are bounded per run and resumable via `snapshot_cursors`;
+  deletion and release jobs process due rows in bounded batches.
 
 ## 6. Key invariants / rules of the codebase
 
@@ -348,7 +350,8 @@ leaks into the next session.
    arrays feed the Valibot picklists, the runtime validation Sets in the
    server helpers, _and_ the Drizzle column enums. One edit changes all three.
 6. **D1 batches are bounded** (≤100 statements) and chunked for large imports
-   so calls stay inside the Worker execution budget.
+   so calls stay inside the Worker execution budget. User-scale reads use
+   keyset cursors and aggregate count queries rather than loading a library.
 7. **Guest data is local-only** (Zustand + localStorage) and stays local;
    signing in switches writes to the remote repository but uploads nothing.
 8. **Theme is resolved before first paint** by an inline script; components

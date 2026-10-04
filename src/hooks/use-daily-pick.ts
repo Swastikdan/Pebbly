@@ -11,6 +11,7 @@ import {
 } from "@/lib/daily-pick-engine";
 import { getMedia, getMovieDetails, getTvDetails } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
+import { destructiveToast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { mediaDetailRoute } from "@/lib/route-helpers";
 import { formatMediaTitle } from "@/lib/utils";
@@ -124,19 +125,44 @@ export function useDailyPick(open: boolean) {
 
   const handleDislike = () => {
     if (!selectedItem) return;
+    const item = selectedItem;
+    const currentKey = selectedKey;
+
     setReaction({
-      id: String(selectedItem.id),
-      mediaType: selectedItem.media_type,
+      id: String(item.id),
+      mediaType: item.media_type,
       reaction: "not-for-me",
       metadata: {
-        title: selectedItem.title,
-        image: selectedItem.poster_path,
-        rating: selectedItem.vote_average,
-        release_date: selectedItem.release_date ?? selectedItem.first_air_date,
-        overview: selectedItem.overview,
+        title: item.title,
+        image: item.poster_path,
+        rating: item.vote_average,
+        release_date: item.release_date ?? item.first_air_date,
+        overview: item.overview,
       },
     });
     handleShuffle();
+
+    destructiveToast({
+      title: "Removed from picks",
+      description: item.title,
+      onUndo: () => {
+        setReaction({
+          id: String(item.id),
+          mediaType: item.media_type,
+          reaction: null,
+          metadata: {
+            title: item.title,
+            image: item.poster_path,
+            rating: item.vote_average,
+            release_date: item.release_date ?? item.first_air_date,
+            overview: item.overview,
+          },
+        });
+        if (currentKey) {
+          setSelectedKey(currentKey);
+        }
+      },
+    });
   };
 
   const { data: selectedDetails } = useQuery({
@@ -209,15 +235,6 @@ export function useDailyPick(open: boolean) {
       })
     : null;
 
-  const playDestination = selectedItem
-    ? mediaDetailRoute({
-        mediaType,
-        id: selectedItem.id,
-        slug: formattedTitle || undefined,
-        play: true,
-      })
-    : null;
-
   return {
     candidateItems,
     itemsCount,
@@ -234,7 +251,6 @@ export function useDailyPick(open: boolean) {
     posterUrl,
     posterLqUrl,
     destination,
-    playDestination,
     setSelectedKey,
   };
 }

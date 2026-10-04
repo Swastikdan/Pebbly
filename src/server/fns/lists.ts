@@ -1,16 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import type { ApiResult } from "../schema/common";
 import type { ListType, ListVisibility } from "../schema/lists";
 import type { MediaType } from "@/domain/media";
 import { captureServerEvent } from "@/lib/posthog-server";
-import { runBatch } from "../db/client";
+import { chunkedQuery, runBatch } from "../db/client";
 import { listItems, lists } from "../db/schema";
 import { findOwnedRow } from "../helpers/owned-row";
-import { bumpListsRev } from "../helpers/watch-item";
+import {
+  bumpListsRev,
+  bumpWatchlistRev,
+  upsertWatchItem,
+} from "../helpers/watch-item";
 import { fail, ok } from "../schema/common";
+import { bulkListItemsArgsSchema } from "../schema/library";
 import {
   cloneCustomListArgsSchema,
   createCustomListAndAddItemArgsSchema,
@@ -251,6 +256,146 @@ export const reorderListItems = createServerFn({ method: "POST" })
         await applyItemOrder(db, data.listId, user.id, data.orderedItems);
         await bumpListsRev(db, user.id);
         return ok({ ok: true });
+      },
+    ),
+  );
+
+export const bulkUpdateListItems = createServerFn({ method: "POST" })
+  .validator(bulkListItemsArgsSchema)
+  .handler(({ data }) =>
+    authedFn(
+      { mode: "require", rateLimit: WRITE_RATE_LIMIT },
+      data,
+      async ({ db, user }): Promise<ApiResult<{ affected: number }>> => {
+        const list = await findOwnedRow(db, lists, user.id, data.listId);
+        if (!list) return fail("NOT_FOUND", "List not found");
+        if (data.items.length === 0) return ok({ affected: 0 });
+
+        if (data.action === "move" && !data.targetListId) {
+          return fail("BAD_REQUEST", "A target list is required");
+        }
+        if (data.action === "status" && !data.progressStatus) {
+          return fail("BAD_REQUEST", "A progress status is required");
+        }
+
+        const requestedKeys = new Set(
+          data.items.map((item) => `${item.mediaType}:${item.tmdbId}`),
+        );
+        const sourceItems = (
+          await db
+            .select()
+            .from(listItems)
+            .where(eq(listItems.listId, data.listId))
+        ).filter((item) =>
+          requestedKeys.has(`${item.mediaType}:${item.tmdbId}`),
+        );
+
+        if (data.action === "status") {
+          for (const item of sourceItems) {
+            await upsertWatchItem(
+              db,
+              user.id,
+              item.tmdbId,
+              item.mediaType,
+              {
+                inWatchlist: true,
+                progressStatus: data.progressStatus,
+                ...(data.progressStatus === "done"
+                  ? { progress: 100 }
+                  : data.progressStatus === "watch-later"
+                    ? { progress: 0 }
+                    : {}),
+                title: item.title,
+                image: item.image,
+                rating: item.rating,
+                release_date: item.releaseDate,
+                overview: item.overview,
+              },
+              { skipRevBump: true },
+            );
+          }
+          await bumpListsRev(db, user.id);
+          await bumpWatchlistRev(db, user.id);
+          return ok({ affected: sourceItems.length });
+        }
+
+        if (data.action === "move" && data.targetListId) {
+          const targetListId = data.targetListId;
+          const target = await findOwnedRow(db, lists, user.id, targetListId);
+          if (!target) return fail("NOT_FOUND", "Target list not found");
+          const targetItems = await chunkedQuery(
+            [...new Set(sourceItems.map((item) => item.tmdbId))],
+            (chunk) =>
+              db
+                .select({
+                  tmdbId: listItems.tmdbId,
+                  mediaType: listItems.mediaType,
+                })
+                .from(listItems)
+                .where(
+                  and(
+                    eq(listItems.listId, targetListId),
+                    inArray(listItems.tmdbId, chunk),
+                  ),
+                ),
+            80,
+          );
+          const targetKeys = new Set(
+            targetItems.map((item) => `${item.mediaType}:${item.tmdbId}`),
+          );
+          const statements: unknown[] = [];
+          for (const item of sourceItems) {
+            statements.push(
+              db
+                .delete(listItems)
+                .where(
+                  and(
+                    eq(listItems.listId, data.listId),
+                    eq(listItems.tmdbId, item.tmdbId),
+                    eq(listItems.mediaType, item.mediaType),
+                  ),
+                ),
+            );
+            if (!targetKeys.has(`${item.mediaType}:${item.tmdbId}`)) {
+              targetKeys.add(`${item.mediaType}:${item.tmdbId}`);
+              statements.push(
+                db.insert(listItems).values({
+                  id: crypto.randomUUID(),
+                  userId: user.id,
+                  listId: targetListId,
+                  tmdbId: item.tmdbId,
+                  mediaType: item.mediaType,
+                  position: item.position,
+                  addedAt: Date.now(),
+                  title: item.title,
+                  image: item.image,
+                  backdrop: item.backdrop,
+                  rating: item.rating,
+                  releaseDate: item.releaseDate,
+                  overview: item.overview,
+                }),
+              );
+            }
+          }
+          await runBatch(db, statements);
+          await bumpListsRev(db, user.id);
+          return ok({ affected: sourceItems.length });
+        }
+
+        const statements = sourceItems.map((item) =>
+          db
+            .delete(listItems)
+            .where(
+              and(
+                eq(listItems.listId, data.listId),
+                eq(listItems.tmdbId, item.tmdbId),
+                eq(listItems.mediaType, item.mediaType),
+              ),
+            ),
+        );
+        await runBatch(db, statements);
+        await bumpListsRev(db, user.id);
+        return ok({ affected: sourceItems.length });
       },
     ),
   );

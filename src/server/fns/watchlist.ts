@@ -1,9 +1,26 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, desc, eq, gt } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  isNull,
+  like,
+  lt,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import * as v from "valibot";
 
 import type { Db } from "../db/client";
-import type { ApiResult } from "../schema/common";
+import type {
+  ApiResult,
+  MediaType,
+  ProgressStatus,
+  Reaction,
+} from "../schema/common";
 import { captureServerEvent } from "@/lib/posthog-server";
 import { extractMetadataFields } from "@/lib/utils";
 import { runBatch } from "../db/client";
@@ -23,10 +40,12 @@ import {
   planMembershipRemoval,
   upsertWatchItem,
 } from "../helpers/watch-item";
+import { recordWatchlistActivity } from "../helpers/watchlist-activity";
 import { ok } from "../schema/common";
 import {
   batchSetWatchlistMembershipArgsSchema,
   getWatchlistArgsSchema,
+  getWatchlistPageArgsSchema,
   markEpisodeWatchedArgsSchema,
   markSeasonEpisodesWatchedArgsSchema,
   markShowEpisodesAndStatusArgsSchema,
@@ -38,6 +57,353 @@ import {
 } from "../schema/watchlist";
 import { authedFn, WRITE_RATE_LIMIT } from "./rpc";
 
+type WatchlistSort = "recent" | "rating" | "title" | "year";
+type WatchlistReactionFilter = "all" | "none" | Reaction;
+type WatchlistCursor = { value: string | number; id: string };
+
+export type WatchlistCounts = {
+  total: number;
+  all: number;
+  "watch-later": number;
+  watching: number;
+  done: number;
+  dropped: number;
+};
+
+export type WatchlistPage = {
+  items: (typeof watchItems.$inferSelect)[];
+  nextCursor: string | null;
+  hasNextPage: boolean;
+  totalCount: number;
+  counts: WatchlistCounts;
+};
+
+function encodeWatchlistCursor(cursor: WatchlistCursor): string {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(cursor))));
+}
+
+function decodeWatchlistCursor(value?: string): WatchlistCursor | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(decodeURIComponent(escape(atob(value)))) as {
+      value?: unknown;
+      id?: unknown;
+    };
+    if (
+      (typeof parsed.value !== "string" && typeof parsed.value !== "number") ||
+      typeof parsed.id !== "string"
+    ) {
+      return null;
+    }
+    return { value: parsed.value, id: parsed.id };
+  } catch {
+    return null;
+  }
+}
+
+function watchlistBaseFilters(
+  userId: string,
+  data: {
+    statusFilter?: ProgressStatus;
+    mediaType?: MediaType;
+    reactionFilter?: WatchlistReactionFilter;
+    search?: string;
+    excludeDropped?: boolean;
+  },
+) {
+  const filters = [
+    eq(watchItems.userId, userId),
+    eq(watchItems.inWatchlist, true),
+  ];
+  if (data.statusFilter)
+    filters.push(eq(watchItems.progressStatus, data.statusFilter));
+  if (data.excludeDropped) {
+    filters.push(
+      or(
+        isNull(watchItems.progressStatus),
+        ne(watchItems.progressStatus, "dropped"),
+      ) ?? sql`1 = 1`,
+    );
+  }
+
+  if (data.mediaType) filters.push(eq(watchItems.mediaType, data.mediaType));
+  if (data.reactionFilter === "none") filters.push(isNull(watchItems.reaction));
+  else if (data.reactionFilter && data.reactionFilter !== "all") {
+    filters.push(eq(watchItems.reaction, data.reactionFilter));
+  }
+  const search = data.search?.trim();
+  if (search) {
+    const pattern = `%${search.replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
+    filters.push(
+      or(
+        like(watchItems.title, pattern),
+        like(watchItems.overview, pattern),
+        like(watchItems.releaseDate, pattern),
+      ) ?? sql`1 = 0`,
+    );
+  }
+  return filters;
+}
+
+function watchlistCursorFilter(
+  cursor: WatchlistCursor | null,
+  sort: WatchlistSort,
+) {
+  if (!cursor) return undefined;
+  if (sort === "recent") {
+    return or(
+      lt(watchItems.updatedAt, Number(cursor.value)),
+      and(
+        eq(watchItems.updatedAt, Number(cursor.value)),
+        lt(watchItems.id, cursor.id),
+      ),
+    );
+  }
+  if (sort === "rating") {
+    const value = Number(cursor.value);
+    const score = sql`coalesce(${watchItems.rating}, 0)`;
+    return or(
+      lt(score, value),
+      and(eq(score, value), lt(watchItems.id, cursor.id)),
+    );
+  }
+  if (sort === "title") {
+    const value = String(cursor.value);
+    const title = sql`coalesce(${watchItems.title}, '')`;
+    return or(
+      gt(title, value),
+      and(eq(title, value), gt(watchItems.id, cursor.id)),
+    );
+  }
+  const value = String(cursor.value);
+  const releaseDate = sql`coalesce(${watchItems.releaseDate}, '')`;
+  return or(
+    lt(releaseDate, value),
+    and(eq(releaseDate, value), lt(watchItems.id, cursor.id)),
+  );
+}
+
+function watchlistOrderBy(sort: WatchlistSort) {
+  switch (sort) {
+    case "title":
+      return [asc(sql`coalesce(${watchItems.title}, '')`), asc(watchItems.id)];
+    case "rating":
+      return [
+        desc(sql`coalesce(${watchItems.rating}, 0)`),
+        desc(watchItems.id),
+      ];
+    case "year":
+      return [
+        desc(sql`coalesce(${watchItems.releaseDate}, '')`),
+        desc(watchItems.id),
+      ];
+    default:
+      return [desc(watchItems.updatedAt), desc(watchItems.id)];
+  }
+}
+
+function nextWatchlistCursor(
+  row: typeof watchItems.$inferSelect,
+  sort: WatchlistSort,
+): string {
+  const value =
+    sort === "recent"
+      ? row.updatedAt
+      : sort === "rating"
+        ? (row.rating ?? 0)
+        : sort === "title"
+          ? (row.title ?? "")
+          : (row.releaseDate ?? "");
+  return encodeWatchlistCursor({ value, id: row.id });
+}
+
+async function fetchAllActiveWatchlistRows(
+  db: Db,
+  userId: string,
+  statusFilter?: ProgressStatus,
+): Promise<(typeof watchItems.$inferSelect)[]> {
+  const rows: (typeof watchItems.$inferSelect)[] = [];
+  let cursor: WatchlistCursor | null = null;
+  for (;;) {
+    const page = await db
+      .select()
+      .from(watchItems)
+      .where(
+        and(
+          ...watchlistBaseFilters(userId, { statusFilter }),
+          watchlistCursorFilter(cursor, "recent"),
+        ),
+      )
+      .orderBy(...watchlistOrderBy("recent"))
+      .limit(500);
+    if (page.length === 0) break;
+    rows.push(...page);
+    if (page.length < 500) break;
+    cursor = {
+      value: page[page.length - 1].updatedAt,
+      id: page[page.length - 1].id,
+    };
+  }
+  return rows;
+}
+
+async function getWatchlistCountsForPage(
+  db: Db,
+  userId: string,
+  data: {
+    mediaType?: MediaType;
+    reactionFilter?: WatchlistReactionFilter;
+    search?: string;
+    excludeDropped?: boolean;
+  },
+): Promise<WatchlistCounts> {
+  const countRows = await db
+    .select({
+      status: watchItems.progressStatus,
+      count: sql<number>`count(*)`,
+    })
+    .from(watchItems)
+    .where(and(...watchlistBaseFilters(userId, data)))
+    .groupBy(watchItems.progressStatus);
+
+  const counts: WatchlistCounts = {
+    total: 0,
+    all: 0,
+    "watch-later": 0,
+    watching: 0,
+    done: 0,
+    dropped: 0,
+  };
+  for (const row of countRows) {
+    const count = Number(row.count);
+    const status = row.status ?? "watch-later";
+    if (status === "watching") counts.watching += count;
+    else if (status === "done") counts.done += count;
+    else if (status === "dropped") counts.dropped += count;
+    else counts["watch-later"] += count;
+    if (status !== "dropped") counts.all += count;
+    counts.total += count;
+  }
+  return counts;
+}
+
+export const getWatchlistPage = createServerFn({ method: "POST" })
+  .validator(getWatchlistPageArgsSchema)
+  .handler(({ data }) =>
+    authedFn(
+      {
+        mode: "current",
+        guest: () =>
+          ok({
+            items: [],
+            nextCursor: null,
+            hasNextPage: false,
+            totalCount: 0,
+            counts: {
+              total: 0,
+              all: 0,
+              "watch-later": 0,
+              watching: 0,
+              done: 0,
+              dropped: 0,
+            },
+          }),
+      },
+      data,
+      async ({ db, user }): Promise<ApiResult<WatchlistPage>> => {
+        const sort = data.sort ?? "recent";
+        const limit = data.limit ?? 30;
+        const cursor = decodeWatchlistCursor(data.cursor);
+        const rows = await db
+          .select()
+          .from(watchItems)
+          .where(
+            and(
+              ...watchlistBaseFilters(user.id, {
+                ...data,
+                excludeDropped: !data.statusFilter,
+              }),
+              watchlistCursorFilter(cursor, sort),
+            ),
+          )
+          .orderBy(...watchlistOrderBy(sort))
+          .limit(limit + 1);
+        const hasNextPage = rows.length > limit;
+        const items = hasNextPage ? rows.slice(0, limit) : rows;
+        const counts = await getWatchlistCountsForPage(db, user.id, {
+          mediaType: data.mediaType,
+          reactionFilter: data.reactionFilter,
+          search: data.search,
+          excludeDropped: !data.statusFilter,
+        });
+        return ok({
+          items,
+          nextCursor:
+            hasNextPage && items.length > 0
+              ? nextWatchlistCursor(items[items.length - 1], sort)
+              : null,
+          hasNextPage,
+          totalCount: counts.total,
+          counts,
+        });
+      },
+    ),
+  );
+
+export const getWatchlistCounts = createServerFn({ method: "POST" })
+  .validator(getWatchlistPageArgsSchema)
+  .handler(({ data }) =>
+    authedFn(
+      {
+        mode: "current",
+        guest: () =>
+          ok({
+            total: 0,
+            all: 0,
+            "watch-later": 0,
+            watching: 0,
+            done: 0,
+            dropped: 0,
+          }),
+      },
+      data,
+      async ({ db, user }): Promise<ApiResult<WatchlistCounts>> =>
+        ok(
+          await getWatchlistCountsForPage(db, user.id, {
+            ...data,
+            excludeDropped: !data.statusFilter,
+          }),
+        ),
+    ),
+  );
+
+async function upsertWithActivity(
+  db: Db,
+  userId: string,
+  tmdbId: number,
+  mediaType: "movie" | "tv",
+  updates: Parameters<typeof upsertWatchItem>[4],
+  options: { skipRevBump?: boolean } = {},
+) {
+  const before = await getWatchItem(db, userId, { tmdbId, mediaType });
+  const after = await upsertWatchItem(
+    db,
+    userId,
+    tmdbId,
+    mediaType,
+    updates,
+    options,
+  );
+  await recordWatchlistActivity(
+    db,
+    userId,
+    { tmdbId, mediaType },
+    before,
+    after,
+  );
+  return after;
+}
+
 export const getWatchlist = createServerFn({ method: "POST" })
   .validator(getWatchlistArgsSchema)
   .handler(({ data }) =>
@@ -48,31 +414,18 @@ export const getWatchlist = createServerFn({ method: "POST" })
         db,
         user,
       }): Promise<ApiResult<(typeof watchItems.$inferSelect)[]>> => {
-        const requestedLimit =
-          data.limit !== undefined && data.limit > 0
-            ? Math.floor(data.limit)
-            : 500;
-        const boundedLimit = Math.min(requestedLimit, 500);
-
-        const filters = [eq(watchItems.userId, user.id)];
-        if (data.statusFilter) {
-          filters.push(
-            eq(
-              watchItems.progressStatus,
-              data.statusFilter as
-                "watch-later" | "watching" | "done" | "dropped",
-            ),
-          );
+        if (data.limit !== undefined) {
+          const rows = await db
+            .select()
+            .from(watchItems)
+            .where(and(...watchlistBaseFilters(user.id, data)))
+            .orderBy(desc(watchItems.updatedAt), desc(watchItems.id))
+            .limit(data.limit);
+          return ok(rows);
         }
-
-        const rows = await db
-          .select()
-          .from(watchItems)
-          .where(and(...filters))
-          .orderBy(desc(watchItems.updatedAt))
-          .limit(boundedLimit);
-
-        return ok(rows);
+        return ok(
+          await fetchAllActiveWatchlistRows(db, user.id, data.statusFilter),
+        );
       },
     ),
   );
@@ -83,17 +436,7 @@ export const getTrackedTmdbIds = createServerFn({ method: "POST" }).handler(
       { mode: "current", guest: () => ok([]) },
       undefined,
       async ({ db, user }): Promise<ApiResult<number[]>> => {
-        const items = await db
-          .select({ tmdbId: watchItems.tmdbId })
-          .from(watchItems)
-          .where(
-            and(
-              eq(watchItems.userId, user.id),
-              eq(watchItems.inWatchlist, true),
-            ),
-          )
-          .limit(500);
-
+        const items = await fetchAllActiveWatchlistRows(db, user.id);
         return ok(items.map((item) => item.tmdbId));
       },
     ),
@@ -145,7 +488,7 @@ export const updateProgress = createServerFn({ method: "POST" })
         // Routed through the race-safe upsert: a double-submit that inserts
         // the same (user, tmdb, mediaType) row concurrently merges into the
         // winner's row instead of crashing on the unique index.
-        await upsertWatchItem(
+        await upsertWithActivity(
           db,
           user.id,
           data.tmdbId,
@@ -209,6 +552,8 @@ export const removeFromContinueWatching = createServerFn({ method: "POST" })
           .where(eq(watchItems.id, existing.id));
 
         await bumpWatchlistRev(db, user.id);
+        const after = await getWatchItem(db, user.id, data);
+        await recordWatchlistActivity(db, user.id, data, existing, after);
         return ok({ ok: true });
       },
     ),
@@ -247,6 +592,14 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
               .where(eq(watchItems.id, existing.id));
           }
           await bumpWatchlistRev(db, user.id);
+          await recordWatchlistActivity(
+            db,
+            user.id,
+            { tmdbId: data.tmdbId, mediaType: data.mediaType },
+            existing,
+            plan.delete ? null : plan.nextRow,
+          );
+          await createWatchlistSnapshot(db, user.id);
           await captureServerEvent(claims.sub, "watchlist_membership_changed", {
             action: "removed",
             media_type: data.mediaType,
@@ -255,7 +608,7 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
           return ok(plan.delete ? null : plan.nextRow);
         }
 
-        const row = await upsertWatchItem(
+        const row = await upsertWithActivity(
           db,
           user.id,
           data.tmdbId,
@@ -272,6 +625,7 @@ export const setWatchlistMembership = createServerFn({ method: "POST" })
           },
         );
 
+        await createWatchlistSnapshot(db, user.id);
         await captureServerEvent(claims.sub, "watchlist_membership_changed", {
           action: "added",
           media_type: data.mediaType,
@@ -397,6 +751,20 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
 
         await runBatch(db, statements);
 
+        for (const item of batchMap.values()) {
+          const key = `${item.mediaType}:${item.tmdbId}`;
+          const after = resultRows.find(
+            (row) => `${row.mediaType}:${row.tmdbId}` === key,
+          );
+          await recordWatchlistActivity(
+            db,
+            user.id,
+            { tmdbId: item.tmdbId, mediaType: item.mediaType },
+            existingMap.get(key),
+            after ?? null,
+          );
+        }
+
         await createWatchlistSnapshot(db, user.id);
         await bumpWatchlistRev(db, user.id);
         return ok(resultRows);
@@ -411,7 +779,7 @@ export const setProgressStatus = createServerFn({ method: "POST" })
       { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
-        await upsertWatchItem(
+        await upsertWithActivity(
           db,
           user.id,
           data.tmdbId,
@@ -434,6 +802,7 @@ export const setProgressStatus = createServerFn({ method: "POST" })
           },
         );
 
+        await createWatchlistSnapshot(db, user.id);
         return ok({ ok: true });
       },
     ),
@@ -446,7 +815,7 @@ export const setReaction = createServerFn({ method: "POST" })
       { mode: "require", rateLimit: WRITE_RATE_LIMIT },
       data,
       async ({ db, user }): Promise<ApiResult<{ ok: true }>> => {
-        await upsertWatchItem(
+        await upsertWithActivity(
           db,
           user.id,
           data.tmdbId,
@@ -465,6 +834,7 @@ export const setReaction = createServerFn({ method: "POST" })
           },
         );
 
+        await createWatchlistSnapshot(db, user.id);
         return ok({ ok: true });
       },
     ),
@@ -535,7 +905,7 @@ export const markShowEpisodesAndStatus = createServerFn({ method: "POST" })
           // Race-safe upsert (same rationale as updateProgress). The rev bump
           // is skipped here: the single bump below covers the whole operation
           // (watch item + episodes), so watchlistRev moves exactly once.
-          await upsertWatchItem(
+          await upsertWithActivity(
             db,
             user.id,
             data.tmdbId,

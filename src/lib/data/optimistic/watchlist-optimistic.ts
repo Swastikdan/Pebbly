@@ -140,12 +140,13 @@ function applyMembershipRows(
 function beginMembershipOp(
   queryClient: QueryClient,
   args: WatchlistMembershipArgs,
+  userId?: string,
 ): OpHandle {
   // Untagged on purpose: membership writes go through the request batcher,
   // whose flush counts one own mutation per server write (single or batched).
   return beginOp(queryClient, [
     {
-      key: queryKeys.watchlist.list(),
+      key: queryKeys.watchlist.list(undefined, userId),
       touchedIds: [`${args.mediaType}:${args.tmdbId}`],
       apply: (rows: WatchItemRow[]) => applyMembershipRows(rows, args),
     },
@@ -167,12 +168,13 @@ function applyProgressStatusRows(
 function beginProgressStatusOp(
   queryClient: QueryClient,
   args: ProgressStatusArgs,
+  userId?: string,
 ): OpHandle {
   return beginOp(
     queryClient,
     [
       {
-        key: queryKeys.watchlist.list(),
+        key: queryKeys.watchlist.list(undefined, userId),
         touchedIds: [`${args.mediaType}:${args.tmdbId}`],
         apply: (rows: WatchItemRow[]) => applyProgressStatusRows(rows, args),
       },
@@ -247,20 +249,29 @@ function applyShowEpisodesRows(
 function beginMarkShowOp(
   queryClient: QueryClient,
   args: MarkShowEpisodesAndStatusArgs,
+  userId?: string,
 ): OpHandle {
   const entries: PendingOpEntry<WatchItemRow | EpisodeProgressRow>[] = [];
-  if (args.progressStatus !== undefined) {
+  const progressStatus = args.progressStatus;
+  if (progressStatus !== undefined) {
     entries.push({
-      key: queryKeys.watchlist.list(),
+      key: queryKeys.watchlist.list(undefined, userId),
       touchedIds: [`${args.mediaType}:${args.tmdbId}`],
       apply: (rows) =>
-        applyProgressStatusRows(
-          rows as WatchItemRow[],
-          args as unknown as ProgressStatusArgs,
-        ),
+        applyProgressStatusRows(rows as WatchItemRow[], {
+          tmdbId: args.tmdbId,
+          mediaType: args.mediaType,
+          progressStatus,
+          progress: args.progress,
+          title: args.title,
+          image: args.image,
+          rating: args.rating,
+          release_date: args.release_date,
+          overview: args.overview,
+        }),
     });
   }
-  const episodeKey = queryKeys.watchlist.episodes(args.tmdbId);
+  const episodeKey = queryKeys.watchlist.episodes(args.tmdbId, userId);
   const currentEpisodes = (queryClient.getQueryData<EpisodeProgressRow[]>(
     episodeKey,
   ) ?? []) as EpisodeProgressRow[];
@@ -291,12 +302,13 @@ function applyReactionRows(
 function beginReactionOp(
   queryClient: QueryClient,
   args: SetReactionArgs,
+  userId?: string,
 ): OpHandle {
   return beginOp(
     queryClient,
     [
       {
-        key: queryKeys.watchlist.list(),
+        key: queryKeys.watchlist.list(undefined, userId),
         touchedIds: [`${args.mediaType}:${args.tmdbId}`],
         apply: (rows: WatchItemRow[]) => applyReactionRows(rows, args),
       },

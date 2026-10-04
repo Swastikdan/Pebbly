@@ -27,7 +27,9 @@ JEV_RERANK = "true"
 [triggers]
 # 03:00 UTC - daily watchlist snapshots (Nitro task "snapshots")
 # 03:30 UTC - legacy duplicate-user consolidation (Nitro task "user-maintenance")
-crons = ["0 3 * * *", "30 3 * * *"]
+# 04:00 UTC - due account deletions
+# 05:00 UTC - release and availability alerts
+crons = ["0 3 * * *", "30 3 * * *", "0 4 * * *", "0 5 * * *"]
 
 [observability.logs]
 enabled = true

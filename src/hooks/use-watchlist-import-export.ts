@@ -1,21 +1,22 @@
 import type React from "react";
 import { useUser } from "@clerk/react";
 import { useCallback, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
 import type { EpisodeProgressRow } from "@/lib/server-types";
 import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
-import { fetchAllEpisodeProgress } from "@/lib/data/watchlist-queries";
 import { queryKeys } from "@/lib/query/keys";
 import {
   parseWatchlistImport,
   planImportBatches,
 } from "@/lib/watchlist-import";
 import { importWatchlist as importWatchlistFn } from "@/server/fns/import-export";
+import { getAllEpisodeProgress, getWatchlist } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
 import { useLocalProgressStore } from "@/stores/local-progress-store";
+import { mapWatchlistRowToItem } from "@/stores/watchlist-store";
 
 type ImportError = {
   message: string;
@@ -30,7 +31,8 @@ export const useWatchlistImportExport = () => {
   const [error, setError] = useState<ImportError | null>(null);
 
   const queryClient = useQueryClient();
-  const { watchlist, loading } = useWatchlist();
+  const { isSignedIn, user } = useUser();
+  const { watchlist, loading } = useWatchlist({ enabled: !isSignedIn });
 
   const importWatchlistLocal = useWatchlistStore(
     (state) => state.importWatchlistLocal,
@@ -39,30 +41,34 @@ export const useWatchlistImportExport = () => {
     (state) => state.markEpisodeWatched,
   );
 
-  const { isSignedIn } = useUser();
-  const allEpisodeProgress = useQuery({
-    queryKey: queryKeys.watchlist.allEpisodes(),
-    queryFn: () => fetchAllEpisodeProgress(queryClient),
-    enabled: !!isSignedIn,
-  });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const exportWatchlist = useCallback(async () => {
     if (!watchlist || watchlist.length === 0) return;
 
+    let url: string | null = null;
+    let link: HTMLAnchorElement | null = null;
+
     try {
       setExportLoading(true);
       setError(null);
 
+      const remoteWatchlist = isSignedIn
+        ? (await unwrap(getWatchlist({ data: {} }))).map(mapWatchlistRowToItem)
+        : watchlist;
+      if (remoteWatchlist.length === 0) return;
+      const remoteEpisodes = isSignedIn
+        ? await unwrap(getAllEpisodeProgress())
+        : [];
       const localWatchedEpisodes =
         useLocalProgressStore.getState().watchedEpisodes;
 
-      const enhancedWatchlist = watchlist.map((item) => {
+      const enhancedWatchlist = remoteWatchlist.map((item) => {
         const itemWatched: Record<string, boolean> = {};
 
         if (item.type === "tv") {
-          if (isSignedIn && allEpisodeProgress.data) {
-            allEpisodeProgress.data
+          if (isSignedIn && remoteEpisodes) {
+            remoteEpisodes
               .filter(
                 (ep: EpisodeProgressRow) =>
                   String(ep.tmdbId) === String(item.external_id) &&
@@ -92,9 +98,9 @@ export const useWatchlistImportExport = () => {
 
       const json = JSON.stringify(enhancedWatchlist, null, 2);
       const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
+      url = URL.createObjectURL(blob);
 
-      const link = document.createElement("a");
+      link = document.createElement("a");
       const timestamp = new Date().toISOString().split("T")[0];
 
       link.href = url;
@@ -104,16 +110,26 @@ export const useWatchlistImportExport = () => {
       link.click();
 
       setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        if (link && document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+        if (url) {
+          URL.revokeObjectURL(url);
+        }
       }, 100);
     } catch (err) {
+      if (link && document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
       setError({ message: "Failed to export watchlist. Please try again." });
       console.error("Export error:", err);
     } finally {
       setExportLoading(false);
     }
-  }, [watchlist, isSignedIn, allEpisodeProgress.data]);
+  }, [watchlist, isSignedIn]);
 
   const importWatchlist = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,12 +138,14 @@ export const useWatchlistImportExport = () => {
 
       if (!file.name.endsWith(".json")) {
         setError({ message: "Please select a valid JSON (.json) file." });
+        if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
 
       const MAX_FILE_SIZE = 10 * 1024 * 1024;
       if (file.size > MAX_FILE_SIZE) {
         setError({ message: "File size exceeds 10MB limit." });
+        if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
 
@@ -168,10 +186,10 @@ export const useWatchlistImportExport = () => {
                 broadcastMutation("watchlist");
                 try {
                   await queryClient.invalidateQueries({
-                    queryKey: queryKeys.watchlist.list(),
+                    queryKey: queryKeys.watchlist.list(undefined, user?.id),
                   });
                   await queryClient.invalidateQueries({
-                    queryKey: queryKeys.watchlist.allEpisodes(),
+                    queryKey: queryKeys.watchlist.allEpisodes(user?.id),
                   });
                 } catch {
                   // Cache refresh is best-effort here; the original failure
@@ -187,10 +205,10 @@ export const useWatchlistImportExport = () => {
 
             broadcastMutation("watchlist");
             await queryClient.invalidateQueries({
-              queryKey: queryKeys.watchlist.list(),
+              queryKey: queryKeys.watchlist.list(undefined, user?.id),
             });
             await queryClient.invalidateQueries({
-              queryKey: queryKeys.watchlist.allEpisodes(),
+              queryKey: queryKeys.watchlist.allEpisodes(user?.id),
             });
           } else {
             importWatchlistLocal(
@@ -245,7 +263,13 @@ export const useWatchlistImportExport = () => {
 
       reader.readAsText(file);
     },
-    [importWatchlistLocal, isSignedIn, markEpisodeWatchedLocal, queryClient],
+    [
+      importWatchlistLocal,
+      isSignedIn,
+      markEpisodeWatchedLocal,
+      queryClient,
+      user?.id,
+    ],
   );
 
   const handleImportClick = useCallback(() => {

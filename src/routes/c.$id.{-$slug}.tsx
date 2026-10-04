@@ -3,6 +3,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { CollectionPage } from "@/components/watchlist/collection-page";
 import { queryKeys } from "@/lib/query/keys";
 import { getCollectionPage } from "@/server/fns/list-collections";
+import { getAuthSession } from "@/server/fns/users";
 import { ApiError, unwrap } from "@/server/schema/common";
 
 export const Route = createFileRoute("/c/$id/{-$slug}")({
@@ -10,9 +11,18 @@ export const Route = createFileRoute("/c/$id/{-$slug}")({
   // everyone else only ever sees public lists (private ones 404 without
   // revealing existence).
   loader: async ({ params, context }) => {
+    const session: { isSignedIn: boolean; userId: string | null } =
+      await unwrap(getAuthSession()).catch(() => ({
+        isSignedIn: false,
+        userId: null,
+      }));
+
     const payload = await context.queryClient
       .ensureQueryData({
-        queryKey: queryKeys.lists.collectionPage(params.id),
+        queryKey: queryKeys.lists.collectionPage(
+          params.id,
+          session.userId ?? undefined,
+        ),
         queryFn: () =>
           unwrap(getCollectionPage({ data: { listId: params.id } })),
       })

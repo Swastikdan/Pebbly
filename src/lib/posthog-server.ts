@@ -50,12 +50,21 @@ export async function captureServerEvent(
   distinctId: string,
   event: string,
   properties: Record<string, unknown>,
+  options?: { sessionId?: string },
 ): Promise<void> {
   try {
     const posthog = getPostHogClient();
     if (!posthog) return;
 
-    const sessionId = getRequestHeader("X-PostHog-Session-Id");
+    let sessionId = options?.sessionId;
+    if (!sessionId) {
+      try {
+        sessionId = getRequestHeader("X-PostHog-Session-Id") || undefined;
+      } catch {
+        // Outside request lifecycle / AsyncLocalStorage not present
+      }
+    }
+
     posthog.capture({
       distinctId,
       event,
@@ -73,11 +82,20 @@ export async function captureServerEvent(
 export async function captureServerException(
   error: unknown,
   distinctId: string,
+  options?: { sessionId?: string },
 ): Promise<void> {
   const posthog = getPostHogClient();
   if (!posthog) return;
 
-  const sessionId = getRequestHeader("X-PostHog-Session-Id");
+  let sessionId = options?.sessionId;
+  if (!sessionId) {
+    try {
+      sessionId = getRequestHeader("X-PostHog-Session-Id") || undefined;
+    } catch {
+      // Outside request lifecycle / AsyncLocalStorage not present
+    }
+  }
+
   await posthog.captureExceptionImmediate(error, distinctId, {
     $session_id: sessionId || undefined,
   });
@@ -105,7 +123,12 @@ export async function captureAiGeneration(args: {
   if (!posthog) return;
 
   try {
-    const sessionId = getRequestHeader("X-PostHog-Session-Id");
+    let sessionId: string | undefined;
+    try {
+      sessionId = getRequestHeader("X-PostHog-Session-Id") || undefined;
+    } catch {
+      // Outside request lifecycle / AsyncLocalStorage not present
+    }
     await posthog.captureAiImmediate({
       distinctId: args.distinctId,
       event: "$ai_generation",

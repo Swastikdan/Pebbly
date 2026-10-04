@@ -72,11 +72,17 @@ export type UpdateProgressArgs = {
   overview?: string;
 };
 
+export type UndoableRemoval = {
+  undo: () => void;
+  commit: () => Promise<void>;
+};
+
 export interface WatchlistRepository {
   toggleMembership(
     item: WatchlistToggleItem,
     inWatchlist: boolean,
   ): Promise<void>;
+  removeWithUndo(item: WatchlistToggleItem): UndoableRemoval;
   setProgressStatus(args: SetProgressStatusRepoArgs): void;
   setReaction(args: SetReactionRepoArgs): void;
   markEpisode(args: MarkEpisodeArgs): Promise<void>;
@@ -88,6 +94,14 @@ export interface WatchlistRepository {
   ): Promise<void>;
 }
 
+export type BulkListUpdateRepoArgs = {
+  listId: string;
+  items: Array<{ tmdbId: number; mediaType: MediaType }>;
+  action: "remove" | "move" | "status";
+  targetListId?: string;
+  progressStatus?: ProgressStatus;
+};
+
 export type ReorderListItemsRepoArgs = {
   listId: string;
   orderedItems: Array<{ tmdbId: number; mediaType: MediaType }>;
@@ -95,12 +109,14 @@ export type ReorderListItemsRepoArgs = {
 
 export interface ListsRepository {
   deleteList(listId: string): Promise<void>;
+  deleteListWithUndo(listId: string): UndoableRemoval;
   createList(args: CreateListArgs): Promise<string>;
   createListAndAddItem(args: CreateListAndAddArgs): Promise<void>;
   updateList(args: UpdateListArgs): Promise<void>;
   toggleListItem(args: ToggleListItemArgs): Promise<boolean>;
   reorderListItem(args: ReorderListItemsRepoArgs): Promise<void>;
   cloneList(sourceListId: string): Promise<string>;
+  bulkUpdateListItems(args: BulkListUpdateRepoArgs): Promise<void>;
 }
 
 export type Repository = WatchlistRepository & ListsRepository;

@@ -20,6 +20,40 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
         });
     },
 
+    removeWithUndo(item) {
+      useWatchlistStore
+        .getState()
+        .setWatchlistMembershipLocal(item.id, item.media_type, false, {
+          title: item.title,
+          image: item.image,
+          rating: item.rating,
+          release_date: item.release_date,
+          overview: item.overview,
+        });
+
+      let settled = false;
+
+      return {
+        undo: () => {
+          if (settled) return;
+          settled = true;
+          useWatchlistStore
+            .getState()
+            .setWatchlistMembershipLocal(item.id, item.media_type, true, {
+              title: item.title,
+              image: item.image,
+              rating: item.rating,
+              release_date: item.release_date,
+              overview: item.overview,
+            });
+        },
+        commit: async () => {
+          if (settled) return;
+          settled = true;
+        },
+      };
+    },
+
     setProgressStatus({
       id,
       mediaType,
@@ -144,6 +178,31 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
       useLocalListsStore.getState().deleteList(listId);
     },
 
+    deleteListWithUndo(listId) {
+      const state = useLocalListsStore.getState();
+      const existingList = state.lists.find((l) => l._id === listId);
+      const existingItems = state.listItems.filter((i) => i.listId === listId);
+
+      useLocalListsStore.setState({
+        lists: state.lists.filter((l) => l._id !== listId),
+        listItems: state.listItems.filter((i) => i.listId !== listId),
+      });
+
+      return {
+        undo: () => {
+          if (existingList) {
+            useLocalListsStore.setState((prev) => ({
+              lists: [...prev.lists, existingList],
+              listItems: [...prev.listItems, ...existingItems],
+            }));
+          }
+        },
+        commit: async () => {
+          // Finalized on local store
+        },
+      };
+    },
+
     async createList(args) {
       return useLocalListsStore
         .getState()
@@ -187,6 +246,10 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
 
     async cloneList(sourceListId) {
       return useLocalListsStore.getState().cloneList(sourceListId);
+    },
+
+    async bulkUpdateListItems(args) {
+      useLocalListsStore.getState().bulkUpdateListItems(args);
     },
   };
 

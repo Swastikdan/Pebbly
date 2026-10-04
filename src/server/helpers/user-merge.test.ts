@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { AuthUser } from "../auth";
+import type { AuthUser } from "../auth.server";
 import { pickCanonicalMatch } from "./user-merge";
 
 function user(id: string, tokenIdentifier: string): AuthUser {

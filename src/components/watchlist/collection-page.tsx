@@ -1,5 +1,27 @@
+import { SignInButton, useUser } from "@clerk/react";
+import { usePostHog } from "@posthog/react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
+
+import type { MediaType } from "@/domain/media";
+import type { ProgressStatus } from "@/domain/watchlist";
+import type { CollectionPagePayload } from "@/server/fns/list-collections";
+import { DefaultLoader } from "@/components/default-loader";
+import { DefaultNotFoundComponent } from "@/components/default-not-found";
+import { GoBack } from "@/components/go-back";
+import { ShareButton } from "@/components/share-button";
+import { Button } from "@/components/ui/button";
 import {
   ArrowUpDown,
+  Copy,
   Globe,
   ListOrdered,
   ListPlus,
@@ -7,25 +29,19 @@ import {
   Pencil,
   Sparkles,
   Trash2,
-} from "lucide-react";
-import { lazy, Suspense, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
-
-import type { MediaType } from "@/domain/media";
-import { DefaultLoader } from "@/components/default-loader";
-import { DefaultNotFoundComponent } from "@/components/default-not-found";
-import { GoBack } from "@/components/go-back";
-import { ShareButton } from "@/components/share-button";
-import { Button } from "@/components/ui/button";
+} from "@/components/ui/hugeicons";
+import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
-import { destructiveToast } from "@/hooks/use-destructive-toast";
+import { useCustomLists } from "@/hooks/use-custom-lists";
+import { destructiveToast, toast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
-import { cn, logError } from "@/lib/utils";
+import { cn, formatMediaTitle, logError } from "@/lib/utils";
 import { getCollectionPage } from "@/server/fns/list-collections";
 import { unwrap } from "@/server/schema/common";
+import { useLocalListsStore } from "@/stores/local-lists-store";
 
 const CustomListDialog = lazy(() =>
   import("@/components/custom-list-dialog").then((m) => ({
@@ -36,34 +52,203 @@ const CustomListDialog = lazy(() =>
 export function CollectionPage({ listId }: { listId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useUser();
+  const posthog = usePostHog();
 
   const [mediaFilter, setMediaFilter] = useState<"all" | MediaType>("all");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
+  const [targetListId, setTargetListId] = useState("");
+  const [bulkStatus, setBulkStatus] = useState<ProgressStatus | "">("");
   const [editing, setEditing] = useState(false);
-
-  const pageQuery = useQuery({
-    queryKey: queryKeys.lists.collectionPage(listId),
-    queryFn: () => unwrap(getCollectionPage({ data: { listId } })),
+  const [isCloning, setIsCloning] = useState(false);
+  const localLists = useLocalListsStore((state) => state.lists);
+  const localItems = useLocalListsStore((state) => state.listItems);
+  const isLocalCollection = listId.startsWith("local_");
+  const collectionArgs = {
+    listId,
+    limit: 100,
+    search: search.trim().length >= 2 ? search.trim() : undefined,
+    mediaType: mediaFilter === "all" ? undefined : mediaFilter,
+  };
+  const pageQuery = useInfiniteQuery({
+    queryKey: queryKeys.lists.collectionPage(listId, user?.id, collectionArgs),
+    queryFn: ({ pageParam }) =>
+      unwrap(
+        getCollectionPage({
+          data: { ...collectionArgs, cursor: pageParam },
+        }),
+      ),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled: !isLocalCollection,
   });
+  const { lists: availableLists } = useCustomLists();
+  const localCollectionPage = useMemo<CollectionPagePayload | null>(() => {
+    const localList = localLists.find((entry) => entry._id === listId);
+    if (!localList) return null;
+    const normalizedSearch = search.trim().toLocaleLowerCase();
+    const filteredItems = localItems
+      .filter((item) => item.listId === listId)
+      .filter((item) => mediaFilter === "all" || item.mediaType === mediaFilter)
+      .filter(
+        (item) =>
+          normalizedSearch.length < 2 ||
+          [item.title, item.overview].some((value) =>
+            value?.toLocaleLowerCase().includes(normalizedSearch),
+          ),
+      );
+    const pageItems = filteredItems.slice((page - 1) * 100, page * 100);
+    return {
+      role: "owner",
+      list: {
+        id: localList._id,
+        userId: "local",
+        name: localList.name,
+        color: localList.color ?? null,
+        description: localList.description ?? null,
+        visibility:
+          localList.visibility === "public" ||
+          localList.visibility === "private"
+            ? localList.visibility
+            : null,
+        listType:
+          localList.listType === "custom" ||
+          localList.listType === "pebbly-picks"
+            ? localList.listType
+            : null,
+        sortType: localList.sortType ?? "unordered",
+        sortOrder: localList.sortOrder,
+        createdAt: localList.createdAt,
+        updatedAt: localList.updatedAt,
+      },
+      items: pageItems.map((item, index) => ({
+        id: item._id,
+        userId: "local",
+        listId: item.listId,
+        tmdbId: item.tmdbId,
+        mediaType: item.mediaType,
+        position: item.position ?? index + 1,
+        addedAt: item.addedAt,
+        title: item.title ?? null,
+        image: item.image ?? null,
+        backdrop: item.backdrop ?? null,
+        rating: item.rating ?? null,
+        releaseDate: item.release_date ?? null,
+        overview: item.overview ?? null,
+        progressStatus: null,
+        reaction: null,
+        release_date: item.release_date ?? null,
+      })),
+      totalCount: filteredItems.length,
+      nextCursor: null,
+      hasNextPage: page * 100 < filteredItems.length,
+    };
+  }, [listId, localItems, localLists, mediaFilter, page, search]);
+  const currentCollectionPage = isLocalCollection
+    ? localCollectionPage
+    : pageQuery.data?.pages[page - 1];
+  const totalPages = Math.max(
+    1,
+    Math.ceil((currentCollectionPage?.totalCount ?? 0) / 100),
+  );
 
-  const { deleteList: deleteCustomList, reorderListItem: reorderItems } =
-    useRepository();
+  const items = currentCollectionPage?.items ?? [];
+  const visibleItems = useMemo(
+    () =>
+      items.filter(
+        (item) => !hiddenKeys.has(`${item.mediaType}:${item.tmdbId}`),
+      ),
+    [items, hiddenKeys],
+  );
+  const collectionFilterKey = `${search}|${mediaFilter}`;
+  useEffect(() => {
+    void collectionFilterKey;
+    setPage(1);
+    setSelectedKeys(new Set());
+    setHiddenKeys(new Set());
+  }, [collectionFilterKey]);
+
+  const {
+    deleteListWithUndo: repoDeleteList,
+    reorderListItem: reorderItems,
+    cloneList,
+    bulkUpdateListItems: runBulkListItems,
+  } = useRepository();
+
+  const handleClone = useCallback(async () => {
+    if (isCloning || !currentCollectionPage?.list) return;
+    const currentList = currentCollectionPage.list;
+    setIsCloning(true);
+    try {
+      const newId = await cloneList(listId);
+      if (newId) {
+        posthog?.capture("collection_cloned", {
+          source_collection_id: listId,
+          is_public: currentList.visibility === "public",
+        });
+        toast({
+          title: "Collection copied",
+          description: `"${currentList.name} (copy)" was added to your collections.`,
+          type: "success",
+        });
+        await router.navigate({
+          to: "/c/$id/{-$slug}",
+          params: {
+            id: newId,
+            slug: formatMediaTitle.encode(`${currentList.name} (copy)`),
+          },
+        });
+      }
+    } catch (error) {
+      logError("clone list", error);
+      toast({
+        title: "Failed to copy collection",
+        description: "Please try again later.",
+        type: "error",
+      });
+    } finally {
+      setIsCloning(false);
+    }
+  }, [
+    isCloning,
+    currentCollectionPage?.list,
+    cloneList,
+    listId,
+    posthog,
+    router,
+  ]);
+
+  useEffect(() => {
+    if (!user || !currentCollectionPage?.list) return;
+    try {
+      const pending = sessionStorage.getItem("pebbly:pending_clone");
+      if (pending === listId) {
+        sessionStorage.removeItem("pebbly:pending_clone");
+        void handleClone();
+      }
+    } catch {
+      // Storage unavailable or blocked
+    }
+  }, [user, currentCollectionPage?.list, listId, handleClone]);
 
   const refreshPage = () =>
     queryClient.invalidateQueries({
-      queryKey: queryKeys.lists.collectionPage(listId),
+      queryKey: queryKeys.lists.collectionPagesPrefix(listId, user?.id),
     });
 
   if (pageQuery.error) {
     return <DefaultNotFoundComponent />;
   }
 
-  if (pageQuery.isPending || !pageQuery.data) {
+  if ((!isLocalCollection && pageQuery.isPending) || !currentCollectionPage) {
     return <DefaultLoader />;
   }
 
-  const payload = pageQuery.data;
+  const payload = currentCollectionPage;
   const list = payload.list;
-  const items = payload.items;
   const isPebblyPicks = list.listType === "pebbly-picks";
   const isOrdered = list.sortType === "ordered";
   const isPublic = list.visibility === "public";
@@ -72,7 +257,7 @@ export function CollectionPage({ listId }: { listId: string }) {
   // lists that must never expose Edit/Delete.
   const canManage = payload.role === "owner" && !isPebblyPicks;
 
-  const indexed = items.map((item, index) => ({ item, index }));
+  const indexed = visibleItems.map((item, index) => ({ item, index }));
   const filtered =
     mediaFilter === "all"
       ? indexed
@@ -80,8 +265,8 @@ export function CollectionPage({ listId }: { listId: string }) {
 
   const handleMove = (index: number, dir: -1 | 1) => {
     const target = index + dir;
-    if (target < 0 || target >= items.length) return;
-    const order = [...items];
+    if (target < 0 || target >= visibleItems.length) return;
+    const order = [...visibleItems];
     [order[index], order[target]] = [order[target], order[index]];
     reorderItems({
       listId,
@@ -95,14 +280,121 @@ export function CollectionPage({ listId }: { listId: string }) {
   };
 
   const handleDelete = () => {
+    const op = repoDeleteList(listId);
     destructiveToast({
       title: "Collection deleted",
       description: list.name,
+      onUndo: () => {
+        op.undo();
+        void router.navigate({
+          to: "/c/$id/{-$slug}",
+          params: { id: listId, slug: formatMediaTitle.encode(list.name) },
+        });
+      },
       onConfirm: () => {
-        deleteCustomList(listId);
+        op.commit();
       },
     });
-    router.navigate({ to: "/watchlist", search: { tab: "collections" } });
+    void router.navigate({ to: "/watchlist", search: { tab: "collections" } });
+  };
+
+  const selectedItems = visibleItems.filter((item) =>
+    selectedKeys.has(`${item.mediaType}:${item.tmdbId}`),
+  );
+  const toggleSelected = (key: string) => {
+    setSelectedKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+  const selectAll = () => {
+    setSelectedKeys((current) =>
+      current.size === visibleItems.length
+        ? new Set()
+        : new Set(
+            visibleItems.map((item) => `${item.mediaType}:${item.tmdbId}`),
+          ),
+    );
+  };
+  const goToCollectionPage = async (nextPage: number) => {
+    const target = Math.min(Math.max(nextPage, 1), totalPages);
+    if (isLocalCollection) {
+      setPage(target);
+      return;
+    }
+    let loadedPages = pageQuery.data?.pages.length ?? 0;
+    while (loadedPages < target && pageQuery.hasNextPage) {
+      const result = await pageQuery.fetchNextPage();
+      loadedPages = result.data?.pages.length ?? loadedPages + 1;
+    }
+    setPage(Math.min(target, Math.max(loadedPages, 1)));
+  };
+
+  const runBulk = async (action: "remove" | "move" | "status") => {
+    if (selectedItems.length === 0) return;
+
+    if (action === "remove") {
+      const removedItems = [...selectedItems];
+      const removedKeys = removedItems.map(
+        (item) => `${item.mediaType}:${item.tmdbId}`,
+      );
+
+      setHiddenKeys((prev) => {
+        const next = new Set(prev);
+        for (const k of removedKeys) next.add(k);
+        return next;
+      });
+      setSelectedKeys(new Set());
+
+      destructiveToast({
+        title: `Removed ${removedItems.length} ${removedItems.length === 1 ? "item" : "items"}`,
+        description: `Removed from ${list.name}`,
+        onUndo: () => {
+          setHiddenKeys((prev) => {
+            const next = new Set(prev);
+            for (const k of removedKeys) next.delete(k);
+            return next;
+          });
+        },
+        onConfirm: async () => {
+          try {
+            await runBulkListItems({
+              listId,
+              items: removedItems.map((item) => ({
+                tmdbId: item.tmdbId,
+                mediaType: item.mediaType,
+              })),
+              action: "remove",
+            });
+            await refreshPage();
+          } catch (error) {
+            logError("bulk remove collection items", error);
+          }
+        },
+      });
+      return;
+    }
+
+    try {
+      await runBulkListItems({
+        listId,
+        items: selectedItems.map((item) => ({
+          tmdbId: item.tmdbId,
+          mediaType: item.mediaType,
+        })),
+        action,
+        targetListId: action === "move" ? targetListId : undefined,
+        progressStatus:
+          action === "status" ? bulkStatus || undefined : undefined,
+      });
+
+      setSelectedKeys(new Set());
+      await refreshPage();
+    } catch (error) {
+      logError("bulk collection action", error);
+    }
   };
 
   return (
@@ -150,7 +442,7 @@ export function CollectionPage({ listId }: { listId: string }) {
           )}
         </div>
 
-        {canManage && (
+        {canManage ? (
           <div className="flex shrink-0 items-center gap-1">
             <Button
               type="button"
@@ -167,6 +459,20 @@ export function CollectionPage({ listId }: { listId: string }) {
               type="button"
               variant="secondary"
               size="sm"
+              disabled={isCloning}
+              onClick={handleClone}
+              className="border-border text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
+              aria-label={`Duplicate ${list.name}`}
+            >
+              <Copy aria-hidden="true" size={13} />
+              <span className="hidden sm:inline">
+                {isCloning ? "Duplicating..." : "Duplicate"}
+              </span>
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
               onClick={handleDelete}
               className="border-border text-muted-foreground hover:text-destructive-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
               aria-label={`Delete ${list.name}`}
@@ -175,6 +481,45 @@ export function CollectionPage({ listId }: { listId: string }) {
               <span className="hidden sm:inline">Delete</span>
             </Button>
           </div>
+        ) : (
+          isPublic && (
+            <div className="flex shrink-0 items-center gap-1">
+              {user ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isCloning}
+                  onClick={handleClone}
+                  className="border-border text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
+                  aria-label={`Save a copy of ${list.name}`}
+                >
+                  <Copy aria-hidden="true" size={13} />
+                  <span>{isCloning ? "Saving..." : "Save a Copy"}</span>
+                </Button>
+              ) : (
+                <SignInButton mode="modal">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem("pebbly:pending_clone", listId);
+                      } catch {
+                        // ignore
+                      }
+                    }}
+                    className="border-border text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg border px-2.5 text-xs font-medium"
+                    aria-label={`Save a copy of ${list.name}`}
+                  >
+                    <Copy aria-hidden="true" size={13} />
+                    <span>Save a Copy</span>
+                  </Button>
+                </SignInButton>
+              )}
+            </div>
+          )
         )}
       </div>
 
@@ -199,12 +544,42 @@ export function CollectionPage({ listId }: { listId: string }) {
         </span>
       </div>
 
-      {items.length > 0 && (
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search this collection"
+          aria-label="Search this collection"
+          className="h-9 min-w-52 flex-1 sm:max-w-sm"
+        />
+        {canManage && visibleItems.length > 0 && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={selectAll}
+              aria-pressed={selectedKeys.size === visibleItems.length}
+            >
+              {selectedKeys.size === visibleItems.length
+                ? "Clear selection"
+                : "Select page"}
+            </Button>
+            {selectedKeys.size > 0 && (
+              <span className="text-muted-foreground text-xs">
+                {selectedKeys.size} selected
+              </span>
+            )}
+          </>
+        )}
+      </div>
+
+      {visibleItems.length > 0 && (
         <div className="scrollbar-hidden flex justify-center gap-1.5 overflow-x-auto sm:justify-start">
           <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
             {(["all", "movie", "tv"] as const).map((filter) => {
               const isActive = mediaFilter === filter;
-              const count = items.filter(
+              const count = visibleItems.filter(
                 (item) => filter === "all" || item.mediaType === filter,
               ).length;
               const label =
@@ -239,7 +614,68 @@ export function CollectionPage({ listId }: { listId: string }) {
         </div>
       )}
 
-      {canManage && isOrdered && items.length > 1 && (
+      {canManage && selectedItems.length > 0 && (
+        <div className="border-border bg-secondary/30 flex flex-wrap items-center gap-2 rounded-lg border p-2">
+          <span className="text-xs font-medium">Bulk actions</span>
+          <select
+            aria-label="Choose destination collection"
+            className="border-border bg-background h-8 rounded-md border px-2 text-xs"
+            value={targetListId}
+            onChange={(event) => setTargetListId(event.target.value)}
+          >
+            <option value="">Move to…</option>
+            {availableLists
+              .filter((candidate) => candidate._id !== listId)
+              .map((candidate) => (
+                <option key={candidate._id} value={candidate._id}>
+                  {candidate.name}
+                </option>
+              ))}
+          </select>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={!targetListId}
+            onClick={() => void runBulk("move")}
+          >
+            Move
+          </Button>
+          <select
+            aria-label="Choose watchlist status"
+            className="border-border bg-background h-8 rounded-md border px-2 text-xs"
+            value={bulkStatus}
+            onChange={(event) =>
+              setBulkStatus(event.target.value as ProgressStatus | "")
+            }
+          >
+            <option value="">Set status…</option>
+            <option value="watch-later">Watch later</option>
+            <option value="watching">Watching</option>
+            <option value="done">Watched</option>
+            <option value="dropped">Dropped</option>
+          </select>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={!bulkStatus}
+            onClick={() => void runBulk("status")}
+          >
+            Apply
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            onClick={() => void runBulk("remove")}
+          >
+            Remove
+          </Button>
+        </div>
+      )}
+
+      {canManage && isOrdered && visibleItems.length > 1 && (
         <p className="text-muted-foreground/60 flex items-center gap-1.5 text-xs">
           <ArrowUpDown size={12} className="shrink-0" />
           Ranked list. Use the arrow buttons on each title to rearrange.
@@ -247,7 +683,7 @@ export function CollectionPage({ listId }: { listId: string }) {
       )}
 
       <SilentErrorBoundary>
-        {items.length === 0 ? (
+        {visibleItems.length === 0 ? (
           <div className="text-muted-foreground flex flex-col items-center justify-center gap-4 py-20 text-center">
             <div className="bg-secondary/60 flex size-14 items-center justify-center rounded-lg">
               <ListPlus className="text-muted-foreground/80 size-6" />
@@ -293,17 +729,34 @@ export function CollectionPage({ listId }: { listId: string }) {
                 readOnly={!canManage}
                 rank={isOrdered ? index + 1 : undefined}
                 onMove={
-                  canManage && isOrdered
+                  canManage && isOrdered && page === 1
                     ? (dir) => handleMove(index, dir)
                     : undefined
                 }
-                canMoveUp={index > 0}
-                canMoveDown={index < items.length - 1}
+                canMoveUp={page === 1 && index > 0}
+                canMoveDown={page === 1 && index < visibleItems.length - 1}
+                selected={selectedKeys.has(`${item.mediaType}:${item.tmdbId}`)}
+                onSelect={() =>
+                  toggleSelected(`${item.mediaType}:${item.tmdbId}`)
+                }
+                showSelect={canManage}
+                listColor={list.color ?? undefined}
               />
             ))}
           </div>
         )}
       </SilentErrorBoundary>
+
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={Math.min(page, totalPages)}
+          totalPages={totalPages}
+          onPageChange={(nextPage) => {
+            void goToCollectionPage(nextPage);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      )}
 
       {editing && (
         <Suspense fallback={null}>

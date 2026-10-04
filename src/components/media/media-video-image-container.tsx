@@ -60,9 +60,9 @@ export const MediaVideoImageContainer = (props: {
 
   const queries = useQueries({ queries: queryConfigs });
 
-  const rawVideos = (queries[0].data as unknown as MediaVideos | undefined)
+  const rawVideos = (queries[0].data as MediaVideos | null | undefined)
     ?.results;
-  const mediaImages = queries[1].data as unknown as MediaImages;
+  const mediaImages = queries[1].data as MediaImages | null | undefined;
   const mediaVideos = useMemo(() => sortVideos(rawVideos), [rawVideos]);
 
   const isGlobalLoading = queries.some((q) => q.isPending);

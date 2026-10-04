@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import type { ProgressStatus } from "@/domain/watchlist";
 import type { WatchlistItem } from "@/hooks/use-watchlist";
 import { DefaultEmptyState } from "@/components/default-empty-state";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ export function WatchlistGrid({
   hasActiveFilters,
   totalWatchlistCount,
   onRemoveFromWatchlist,
+  onStatusChange,
 }: {
   items: WatchlistItem[];
   loading: boolean;
@@ -23,6 +25,7 @@ export function WatchlistGrid({
   hasActiveFilters: boolean;
   totalWatchlistCount?: number;
   onRemoveFromWatchlist: (item: WatchlistItem) => void;
+  onStatusChange?: (item: WatchlistItem, nextStatus: ProgressStatus) => void;
 }) {
   if (loading && items.length === 0) {
     return (
@@ -86,6 +89,7 @@ export function WatchlistGrid({
               key={`${item.type}-${item.external_id}`}
               item={item}
               onRemoveFromWatchlist={onRemoveFromWatchlist}
+              onStatusChange={onStatusChange}
               priority={index < 7}
             />
           ),

@@ -6,6 +6,7 @@ import type {
   ProgressStatusArgs,
   SetReactionArgs,
 } from "@/lib/data/optimistic/watchlist-optimistic";
+import type { OpHandle } from "@/lib/data/pending-ops";
 import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
@@ -39,6 +40,7 @@ import {
   toggleSeasonRows,
 } from "@/lib/watch-progress";
 import {
+  bulkUpdateListItems,
   cloneCustomList,
   createCustomList,
   createCustomListAndAddItem,
@@ -58,6 +60,7 @@ import {
   updateProgress as updateProgressFn,
 } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
+import { bulkListItemsArgsSchema } from "@/server/schema/library";
 import {
   markEpisodeWatchedArgsSchema,
   markSeasonEpisodesWatchedArgsSchema,
@@ -130,6 +133,7 @@ async function replayPendingMutations(userId: string): Promise<void> {
         case "mark-episode": {
           const parsed = v.safeParse(
             markEpisodeWatchedArgsSchema,
+
             record.payload,
           );
           if (!parsed.success) break;
@@ -203,6 +207,10 @@ export function createRemoteRepository(
       await memberships.toggleMembership(item, inWatchlist);
     },
 
+    removeWithUndo(item) {
+      return memberships.removeWithUndo(item);
+    },
+
     async setProgressStatus({
       id,
       mediaType,
@@ -237,15 +245,16 @@ export function createRemoteRepository(
           ...extractMetadataFields(metadata),
         };
         const syncKeys = [
-          queryKeys.watchlist.list(),
-          queryKeys.watchlist.episodes(Number(id)),
+          queryKeys.watchlist.list(undefined, userId),
+          queryKeys.watchlist.episodes(Number(id), userId),
         ];
         const send = (
           args: MarkShowEpisodesAndStatusArgs,
           kind = "mark-show",
         ) =>
           runJournaledMutation(queryClient, {
-            begin: () => watchlistOptimistic.beginMarkShowOp(queryClient, args),
+            begin: () =>
+              watchlistOptimistic.beginMarkShowOp(queryClient, args, userId),
             run: () => unwrap(markShowEpisodesAndStatus({ data: args })),
             syncKeys,
             errorMessage: "sync show episode status",
@@ -264,9 +273,10 @@ export function createRemoteRepository(
               watchlistOptimistic.beginProgressStatusOp(
                 queryClient,
                 statusArgs,
+                userId,
               ),
             run: () => unwrap(setProgressStatusFn({ data: statusArgs })),
-            syncKeys: [queryKeys.watchlist.list()],
+            syncKeys: [queryKeys.watchlist.list(undefined, userId)],
             errorMessage: "set show progress status",
             outbox: userId
               ? {
@@ -312,9 +322,9 @@ export function createRemoteRepository(
       };
       runJournaledMutation(queryClient, {
         begin: () =>
-          watchlistOptimistic.beginProgressStatusOp(queryClient, args),
+          watchlistOptimistic.beginProgressStatusOp(queryClient, args, userId),
         run: () => unwrap(setProgressStatusFn({ data: args })),
-        syncKeys: [queryKeys.watchlist.list()],
+        syncKeys: [queryKeys.watchlist.list(undefined, userId)],
         errorMessage: "set progress status",
         outbox: userId
           ? { userId, kind: "set-progress-status", payload: args }
@@ -335,9 +345,10 @@ export function createRemoteRepository(
       }
 
       runJournaledMutation(queryClient, {
-        begin: () => watchlistOptimistic.beginReactionOp(queryClient, payload),
+        begin: () =>
+          watchlistOptimistic.beginReactionOp(queryClient, payload, userId),
         run: () => unwrap(setReactionFn({ data: payload })),
-        syncKeys: [queryKeys.watchlist.list()],
+        syncKeys: [queryKeys.watchlist.list(undefined, userId)],
         errorMessage: "set reaction",
         notifyError: "Couldn't save your reaction change.",
         outbox: userId ? { userId, kind: "set-reaction", payload } : undefined,
@@ -345,7 +356,7 @@ export function createRemoteRepository(
     },
 
     async markEpisode(args) {
-      const episodeKey = queryKeys.watchlist.episodes(args.tmdbId);
+      const episodeKey = queryKeys.watchlist.episodes(args.tmdbId, userId);
       runJournaledMutation(queryClient, {
         begin: () =>
           beginOp(
@@ -372,7 +383,7 @@ export function createRemoteRepository(
     },
 
     async markSeason(args) {
-      const episodeKey = queryKeys.watchlist.episodes(args.tmdbId);
+      const episodeKey = queryKeys.watchlist.episodes(args.tmdbId, userId);
       runJournaledMutation(queryClient, {
         begin: () =>
           beginOp(
@@ -401,7 +412,7 @@ export function createRemoteRepository(
     },
 
     async updateProgress(args) {
-      const listKey = queryKeys.watchlist.list();
+      const listKey = queryKeys.watchlist.list(undefined, userId);
       runJournaledMutation(queryClient, {
         begin: () =>
           beginOp(
@@ -436,7 +447,7 @@ export function createRemoteRepository(
     },
 
     async removeFromContinueWatching(tmdbId, mediaType) {
-      const listKey = queryKeys.watchlist.list();
+      const listKey = queryKeys.watchlist.list(undefined, userId);
       runJournaledMutation(queryClient, {
         begin: () =>
           beginOp(
@@ -479,6 +490,41 @@ export function createRemoteRepository(
         syncKeys: listsSyncKeys(userId),
         errorMessage: "delete custom list",
       });
+    },
+
+    deleteListWithUndo(listId) {
+      let handle: OpHandle | null = beginDeleteListOp(
+        queryClient,
+        listId,
+        userId,
+      );
+      let committed = false;
+      return {
+        undo: () => {
+          if (committed) return;
+          handle?.remove();
+          handle = null;
+        },
+        commit: async () => {
+          if (committed) return;
+          committed = true;
+          unwrap(deleteCustomList({ data: { listId } }))
+            .catch((error) => {
+              logError("delete custom list", error);
+              handle?.remove();
+              toast({
+                title: "Couldn't sync",
+                description: "Failed to delete collection",
+                type: "error",
+              });
+            })
+            .finally(() => {
+              for (const key of listsSyncKeys(userId)) {
+                queryClient.invalidateQueries({ queryKey: key });
+              }
+            });
+        },
+      };
     },
 
     async createList(args) {
@@ -554,6 +600,14 @@ export function createRemoteRepository(
       broadcastMutation("lists");
       scheduleSync(queryClient, [queryKeys.lists.all(userId)]);
       return newId;
+    },
+
+    async bulkUpdateListItems(args) {
+      const parsed = v.safeParse(bulkListItemsArgsSchema, args);
+      if (!parsed.success) throw new Error("Invalid collection bulk action");
+      await unwrap(bulkUpdateListItems({ data: parsed.output }));
+      broadcastMutation("lists");
+      scheduleSync(queryClient, listsSyncKeys(userId));
     },
   };
 

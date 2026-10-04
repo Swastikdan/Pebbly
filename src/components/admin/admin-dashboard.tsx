@@ -1,4 +1,4 @@
-import { ToggleLeft, Users } from "lucide-react";
+import { ToggleLeft, Users } from "@/components/ui/hugeicons";
 
 import { AdminPermissionToggles } from "@/components/admin/admin-permission-toggles";
 import { AdminUserTable } from "@/components/admin/admin-user-table";

@@ -11,6 +11,7 @@ import {
   mergeDefinedFields,
   nextRank,
 } from "@/stores/guest-store-kit";
+import { useWatchlistStore } from "@/stores/watchlist-store";
 
 export type LocalList = {
   _id: string;
@@ -94,6 +95,14 @@ interface LocalListsStore {
     release_date?: string;
     overview?: string;
   }) => boolean;
+
+  bulkUpdateListItems: (args: {
+    listId: string;
+    items: Array<{ tmdbId: number; mediaType: MediaType }>;
+    action: "remove" | "move" | "status";
+    targetListId?: string;
+    progressStatus?: "watch-later" | "watching" | "done" | "dropped";
+  }) => void;
 
   reorderListItem: (
     listId: string,
@@ -299,6 +308,80 @@ export const useLocalListsStore = create<LocalListsStore>()(
           return { listItems: [...state.listItems, newItem] };
         });
         return added;
+      },
+
+      bulkUpdateListItems: ({
+        listId,
+        items,
+        action,
+        targetListId,
+        progressStatus,
+      }) => {
+        const selected = new Set(
+          items.map((item) => `${item.mediaType}:${item.tmdbId}`),
+        );
+        if (action === "status" && progressStatus) {
+          for (const item of items) {
+            const current = get().listItems.find(
+              (entry) =>
+                entry.listId === listId &&
+                entry.tmdbId === item.tmdbId &&
+                entry.mediaType === item.mediaType,
+            );
+            if (!current) continue;
+            useWatchlistStore
+              .getState()
+              .setProgressStatusLocal(
+                String(item.tmdbId),
+                item.mediaType,
+                progressStatus,
+                progressStatus === "done"
+                  ? 100
+                  : progressStatus === "watch-later"
+                    ? 0
+                    : undefined,
+                {
+                  title: current.title,
+                  image: current.image,
+                  rating: current.rating,
+                  release_date: current.release_date,
+                  overview: current.overview,
+                },
+              );
+          }
+          return;
+        }
+        set((state) => {
+          const remaining = state.listItems.filter(
+            (item) =>
+              item.listId !== listId ||
+              !selected.has(`${item.mediaType}:${item.tmdbId}`),
+          );
+          if (action !== "move" || !targetListId) {
+            return { listItems: remaining };
+          }
+          const moved = state.listItems.filter(
+            (item) =>
+              item.listId === listId &&
+              selected.has(`${item.mediaType}:${item.tmdbId}`),
+          );
+          const targetKeys = new Set(
+            remaining
+              .filter((item) => item.listId === targetListId)
+              .map((item) => `${item.mediaType}:${item.tmdbId}`),
+          );
+          const additions = moved
+            .filter(
+              (item) => !targetKeys.has(`${item.mediaType}:${item.tmdbId}`),
+            )
+            .map((item) => ({
+              ...item,
+              _id: localId("item"),
+              listId: targetListId,
+              addedAt: Date.now(),
+            }));
+          return { listItems: [...remaining, ...additions] };
+        });
       },
 
       reorderListItem: (listId, orderedItems) =>

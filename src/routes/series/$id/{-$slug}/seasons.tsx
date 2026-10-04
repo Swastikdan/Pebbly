@@ -45,7 +45,7 @@ function TvSeasonsPage() {
   const { id, slug, title } = Route.useLoaderData();
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.tmdb.tvDetails(Number(id)),
-    queryFn: async () => await getTvDetails({ id: parseInt(id, 10) }),
+    queryFn: () => getTvDetails({ id: Number(id) }),
     enabled: !!id,
   });
 
@@ -53,7 +53,7 @@ function TvSeasonsPage() {
     entity: "tv",
     subPageEntity: "seasons",
     id: data?.id,
-    title: data?.name ?? data?.name,
+    title: data?.name ?? data?.original_name,
     incomingPathname: `/series/${id}/${slug}/seasons`,
     isLoading,
   });
@@ -104,6 +104,7 @@ function TvSeasonsPage() {
                   className="h-40 w-28 shrink-0 rounded-lg object-cover md:h-52 md:w-36"
                   height={300}
                   src={IMAGE_PREFIX.SD_POSTER + season.poster_path}
+                  placeholderText={season.name}
                   width={200}
                   priority={index === 0}
                 />

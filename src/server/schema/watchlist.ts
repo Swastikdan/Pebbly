@@ -4,8 +4,17 @@ import {
   mediaTypeSchema,
   metadataSchema,
   progressStatusSchema,
+  REACTIONS,
   reactionSchema,
 } from "./common";
+
+export const WATCHLIST_SORTS = ["recent", "rating", "title", "year"] as const;
+export const watchlistSortSchema = v.picklist(WATCHLIST_SORTS);
+export const watchlistReactionFilterSchema = v.picklist([
+  "all",
+  "none",
+  ...REACTIONS,
+]);
 
 export const getWatchlistArgsSchema = v.object({
   limit: v.optional(
@@ -14,6 +23,21 @@ export const getWatchlistArgsSchema = v.object({
   statusFilter: v.optional(progressStatusSchema),
 });
 export type GetWatchlistArgs = v.InferOutput<typeof getWatchlistArgsSchema>;
+
+export const getWatchlistPageArgsSchema = v.object({
+  cursor: v.optional(v.pipe(v.string(), v.maxLength(1000))),
+  limit: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
+  ),
+  statusFilter: v.optional(progressStatusSchema),
+  mediaType: v.optional(mediaTypeSchema),
+  reactionFilter: v.optional(watchlistReactionFilterSchema),
+  search: v.optional(v.pipe(v.string(), v.maxLength(200))),
+  sort: v.optional(watchlistSortSchema),
+});
+export type GetWatchlistPageArgs = v.InferOutput<
+  typeof getWatchlistPageArgsSchema
+>;
 
 export const mediaIdentityArgsSchema = v.object({
   tmdbId: v.pipe(v.number(), v.integer(), v.minValue(1)),
