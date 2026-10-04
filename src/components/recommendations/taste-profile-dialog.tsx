@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogPopup, DialogTrigger } from "@/components/ui/dialog";
 import {
   Ban,
-  Check,
   Compass,
   Film,
   Flame,
@@ -80,18 +79,16 @@ const FORMAT_LABELS: Record<PreferredMediaType, string> = {
 type Tone = "positive" | "negative";
 
 const CHIP_BASE =
-  "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium leading-none transition-colors";
+  "inline-flex items-center justify-center rounded-full border px-3.5 py-2 text-sm font-medium leading-none transition-colors select-none";
 
-const CHIP_TONES: Record<Tone, { selected: string; icon: typeof Check }> = {
+const CHIP_TONES: Record<Tone, { selected: string }> = {
   positive: {
     selected:
       "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-600/85 dark:border-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/30",
-    icon: Check,
   },
   negative: {
     selected:
       "border-red-600 bg-red-600 text-white hover:bg-red-600/85 dark:border-red-500 dark:bg-red-500/20 dark:text-red-300 dark:hover:bg-red-500/30",
-    icon: Ban,
   },
 };
 
@@ -115,7 +112,7 @@ function ChipGrid({
   tone: Tone;
   onToggle: (item: string) => void;
 }) {
-  const { selected: selectedClass, icon: Icon } = CHIP_TONES[tone];
+  const { selected: selectedClass } = CHIP_TONES[tone];
   return (
     <div className="flex flex-wrap gap-2">
       {items.map((item) => {
@@ -128,7 +125,6 @@ function ChipGrid({
             onClick={() => onToggle(item)}
             className={cn(CHIP_BASE, isSelected ? selectedClass : CHIP_IDLE)}
           >
-            {isSelected && <Icon aria-hidden="true" className="size-3.5" />}
             {item}
           </button>
         );
