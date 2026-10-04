@@ -103,7 +103,7 @@ export default function PrivacyPage() {
   if (!isLoaded) return null;
   if (!isSignedIn) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-8">
         <GoBack title="Back" />
         <h1 className="text-h1 mt-6">Privacy center</h1>
         <p className="text-muted-foreground mt-2">
@@ -114,7 +114,7 @@ export default function PrivacyPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8 px-4 py-8">
+    <main className="mx-auto min-h-screen max-w-3xl space-y-8 px-4 py-8">
       <GoBack title="Back" />
       <header>
         <h1 className="text-h1">Privacy center</h1>
