@@ -14,24 +14,6 @@ const Footer = () => {
           {isSignedIn && (
             <>
               <Link
-                to="/calendar"
-                className="hover:text-foreground rounded-md px-2.5 py-1.5 transition-colors"
-              >
-                Calendar
-              </Link>
-              <span aria-hidden="true" className="text-border/60">
-                ·
-              </span>
-              <Link
-                to="/insights"
-                className="hover:text-foreground rounded-md px-2.5 py-1.5 transition-colors"
-              >
-                Insights
-              </Link>
-              <span aria-hidden="true" className="text-border/60">
-                ·
-              </span>
-              <Link
                 to="/privacy"
                 className="hover:text-foreground rounded-md px-2.5 py-1.5 transition-colors"
               >

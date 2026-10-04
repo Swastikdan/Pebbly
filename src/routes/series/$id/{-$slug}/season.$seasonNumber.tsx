@@ -90,6 +90,17 @@ function TvSeasonDetailPage() {
   const seasons = tvData.seasons?.slice() ?? [];
   const showName = tvData.name ?? tvData.original_name;
   const urltitle = formatMediaTitle.encode(showName);
+  const showMetadata = {
+    title: showName,
+    image:
+      tvData.poster_path ??
+      seasonData.poster_path ??
+      tvData.backdrop_path ??
+      "",
+    rating: tvData.vote_average,
+    release_date: tvData.first_air_date ?? "",
+    overview: tvData.overview ?? seasonData.overview ?? undefined,
+  };
 
   return (
     <section className="mx-auto block min-h-[90vh] max-w-7xl items-center px-4">
@@ -147,6 +158,7 @@ function TvSeasonDetailPage() {
                         `${IMAGE_PREFIX.LQ_BACKDROP}${episode.still_path}`
                       : `https://placehold.co/500x281?text=No+Image`
                   }
+                  placeholderText={episode.name}
                   width={320}
                   priority={index === 0}
                 />
@@ -157,6 +169,7 @@ function TvSeasonDetailPage() {
                   season={seasonNumber}
                   episode={episode.episode_number}
                   variant="card"
+                  metadata={showMetadata}
                 />
               </div>
 
@@ -177,6 +190,7 @@ function TvSeasonDetailPage() {
                     season={seasonNumber}
                     episode={episode.episode_number}
                     variant="episode"
+                    metadata={showMetadata}
                   />
                 </div>
 

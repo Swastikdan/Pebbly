@@ -2,10 +2,12 @@ import { usePostHog } from "@posthog/react";
 import { useCallback, useEffect, useMemo } from "react";
 import { useSearch } from "@tanstack/react-router";
 
-import type { MediaType } from "@/domain/media";
+import type { MediaMetadata, MediaType } from "@/domain/watchlist";
 import { buttonVariants } from "@/components/ui/button";
 import { Play } from "@/components/ui/icons";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useMediaState } from "@/hooks/use-watchlist";
+import { useRepository } from "@/lib/repository/use-repository";
 import { cn } from "@/lib/utils";
 
 // A `?play=true` landing should open exactly one external tab, even when the
@@ -21,6 +23,12 @@ interface ExternalPlayerLinkProps {
   episode?: number;
   variant?: "card" | "page" | "episode";
   className?: string;
+  /**
+   * Watch-item metadata to persist when play marks the title as watching.
+   * Callers that already hold the poster/overview should pass it so the
+   * continue-watching row renders without an extra details fetch.
+   */
+  metadata?: MediaMetadata;
 }
 
 export function ExternalPlayerLink({
@@ -31,9 +39,12 @@ export function ExternalPlayerLink({
   episode,
   variant = "page",
   className,
+  metadata,
 }: ExternalPlayerLinkProps) {
   const { hasFeature } = usePermissions();
   const posthog = usePostHog();
+  const repository = useRepository();
+  const mediaState = useMediaState(String(tmdbId), type);
 
   const search = useSearch({
     strict: false,
@@ -42,7 +53,26 @@ export function ExternalPlayerLink({
     }),
   });
 
+  // Clicking play is an implicit "I'm watching this" signal: promote the
+  // title to `watching` (continue watching) unless it is already watching or
+  // completed. Explicit choices like drop/removal are never overwritten.
+  const markAsWatching = useCallback(() => {
+    const current = mediaState?.progressStatus ?? null;
+    if (current === "watching" || current === "done") return;
+    repository.setProgressStatus({
+      id: String(tmdbId),
+      mediaType: type,
+      progressStatus: "watching",
+      currentStatus: current,
+      // Caller-supplied metadata wins: for TV episodes `title` is the
+      // episode-qualified play label, but the watch-item title should be the
+      // show's real title (carried in `metadata.title`).
+      metadata: { title, ...metadata },
+    });
+  }, [mediaState?.progressStatus, repository, tmdbId, type, title, metadata]);
+
   const capturePlay = useCallback(() => {
+    markAsWatching();
     posthog?.capture("video_playback_started", {
       tmdb_id: tmdbId,
       media_type: type,
@@ -51,7 +81,7 @@ export function ExternalPlayerLink({
       episode,
       mode: "redirect",
     });
-  }, [posthog, tmdbId, type, title, season, episode]);
+  }, [posthog, tmdbId, type, title, season, episode, markAsWatching]);
 
   const externalPlayerUrl = import.meta.env.VITE_PUBLIC_EXTERNAL_PLAYER_URL;
   // Play buttons are only rendered when the External Player Redirect feature

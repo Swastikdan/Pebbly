@@ -125,6 +125,7 @@ export function CustomListMediaCard({
               className="bg-muted h-40 w-26.75 rounded-lg object-cover sm:h-35 sm:w-23.25"
               height={210}
               src={imageUrl}
+              placeholderText={item.title}
               width={140}
               priority={priority}
             />

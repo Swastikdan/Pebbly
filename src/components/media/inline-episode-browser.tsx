@@ -1,7 +1,8 @@
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { SeasonInfo, TvEpisodeDetail } from "@/lib/tmdb-schemas";
+import type { ShowMetadata } from "@/lib/watch-progress";
 import { ExternalPlayerLink } from "@/components/external-player-link";
 import {
   Accordion,
@@ -52,14 +53,18 @@ export function InlineEpisodeBrowser({
   const hasMoreSeasons = allSeasons.length > 3;
 
   const totalEpisodes = seasons.reduce((acc, s) => acc + s.episode_count, 0);
-  const episodeTracker = useEpisodeWatched(tvId, totalEpisodes, {
-    title: showName,
-    image,
-    release_date,
-    overview,
-    rating,
-    status,
-  });
+  const showMetadata = useMemo(
+    () => ({
+      title: showName,
+      image,
+      release_date,
+      overview,
+      rating,
+      status,
+    }),
+    [showName, image, release_date, overview, rating, status],
+  );
+  const episodeTracker = useEpisodeWatched(tvId, totalEpisodes, showMetadata);
 
   const handleSeasonToggle = (
     s: SeasonInfo,
@@ -153,6 +158,7 @@ export function InlineEpisodeBrowser({
                   showName={showName}
                   seasonNumber={s.season_number}
                   episodeTracker={episodeTracker}
+                  showMetadata={showMetadata}
                 />
               </AccordionPanel>
             </AccordionItem>
@@ -180,11 +186,13 @@ function SeasonEpisodeList({
   showName,
   seasonNumber,
   episodeTracker,
+  showMetadata,
 }: {
   tvId: number;
   showName: string;
   seasonNumber: number;
   episodeTracker: ReturnType<typeof useEpisodeWatched>;
+  showMetadata: ShowMetadata;
 }) {
   const { data: seasonData, isLoading } = useQuery({
     queryKey: queryKeys.tmdb.seasonDetails(tvId, seasonNumber),
@@ -255,6 +263,7 @@ function SeasonEpisodeList({
               episode.episode_number,
             );
           }}
+          showMetadata={showMetadata}
         />
       ))}
     </div>
@@ -268,6 +277,7 @@ function EpisodeCard({
   seasonNumber,
   isWatched,
   onToggleWatched,
+  showMetadata,
 }: {
   episode: TvEpisodeDetail;
   showName: string;
@@ -275,6 +285,7 @@ function EpisodeCard({
   seasonNumber: number;
   isWatched: boolean;
   onToggleWatched: () => void;
+  showMetadata: ShowMetadata;
 }) {
   const [expanded, setExpanded] = useState(false);
   const overviewId = useId();
@@ -297,6 +308,7 @@ function EpisodeCard({
               ? `${IMAGE_PREFIX.LQ_BACKDROP}${episode.still_path}`
               : "https://placehold.co/500x281?text=No+Image"
           }
+          placeholderText={episode.name}
           width={250}
         />
         <ExternalPlayerLink
@@ -306,6 +318,7 @@ function EpisodeCard({
           season={seasonNumber}
           episode={episode.episode_number}
           variant="card"
+          metadata={showMetadata}
         />
       </div>
 

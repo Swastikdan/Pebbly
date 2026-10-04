@@ -13,11 +13,16 @@ const ImageComponent = ({
   alt,
   priority,
   blurSrc,
+  placeholderText,
   className,
   ...props
 }: ImageProps & {
   fallbackImage?: string;
   blurSrc?: string;
+  /** Title shown while a non-priority image is still decoding, in place of
+   * the shimmer skeleton. Use for media posters so the card never flashes an
+   * empty surface before the artwork arrives. */
+  placeholderText?: string;
 }) => {
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -75,7 +80,15 @@ const ImageComponent = ({
         className,
       )}
     >
-      {!loaded && !priority && (
+      {!loaded && placeholderText && (
+        <div
+          aria-hidden="true"
+          className="text-muted-foreground absolute inset-0 flex items-center justify-center p-2 text-center text-xs leading-snug font-semibold text-balance"
+        >
+          <span className="line-clamp-4">{placeholderText}</span>
+        </div>
+      )}
+      {!loaded && !priority && !placeholderText && (
         <Skeleton className="absolute inset-0 rounded-none" />
       )}
       <ReactImage

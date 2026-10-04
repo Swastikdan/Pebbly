@@ -118,6 +118,7 @@ export const NextUpSection = memo(function NextUpSection({
                   <Image
                     alt={topEpisodeDetails?.name ?? topItem.title}
                     src={displayImage}
+                    placeholderText={topEpisodeDetails?.name ?? topItem.title}
                     className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                     width={360}
                     height={200}
@@ -321,6 +322,7 @@ export const NextUpSection = memo(function NextUpSection({
                       <Image
                         alt={item.title}
                         src={(item.backdrop || item.image) as string}
+                        placeholderText={item.title}
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
                         width={200}
                         height={112}

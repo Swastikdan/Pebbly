@@ -1,4 +1,5 @@
 import type { MediaType } from "@/domain/media";
+import type { MediaMetadata } from "@/domain/watchlist";
 import { ExternalPlayerLink } from "@/components/external-player-link";
 import {
   PlayOverlay,
@@ -15,8 +16,9 @@ export function MediaPosterTrailerContainer(props: {
   image: string;
   title: string;
   trailervideos: Array<{ key: string; name: string }>;
+  metadata?: MediaMetadata;
 }) {
-  const { tmdbId, type, image, title, trailervideos } = props;
+  const { tmdbId, type, image, title, trailervideos, metadata } = props;
   const { progress } = useWatchProgress(tmdbId, type);
 
   let defaultSeason: number | undefined;
@@ -40,6 +42,7 @@ export function MediaPosterTrailerContainer(props: {
           className="bg-secondary aspect-[2/3] h-full w-full rounded-xl object-cover sm:h-56 sm:w-auto md:h-[17.5rem] lg:h-80"
           height={450}
           src={image}
+          placeholderText={title}
           width={300}
           priority
         />
@@ -52,6 +55,7 @@ export function MediaPosterTrailerContainer(props: {
           className="bg-black/20 opacity-100 transition-colors hover:bg-black/30"
           season={defaultSeason}
           episode={defaultEpisode}
+          metadata={metadata}
         />
       </div>
 

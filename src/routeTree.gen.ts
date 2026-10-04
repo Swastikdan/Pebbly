@@ -11,9 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
-import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as SearchRouteImport } from './routes/search'
@@ -44,19 +42,9 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CalendarRoute = CalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DisclaimerRoute = DisclaimerRouteImport.update({
   id: '/disclaimer',
   path: '/disclaimer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InsightsRoute = InsightsRouteImport.update({
-  id: '/insights',
-  path: '/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -169,9 +157,7 @@ const SeriesIdChar123SlugChar125SeasonSeasonNumberRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/calendar': typeof CalendarRoute
   '/disclaimer': typeof DisclaimerRoute
-  '/insights': typeof InsightsRoute
   '/privacy': typeof PrivacyRoute
   '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
@@ -195,9 +181,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/calendar': typeof CalendarRoute
   '/disclaimer': typeof DisclaimerRoute
-  '/insights': typeof InsightsRoute
   '/privacy': typeof PrivacyRoute
   '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
@@ -222,9 +206,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/calendar': typeof CalendarRoute
   '/disclaimer': typeof DisclaimerRoute
-  '/insights': typeof InsightsRoute
   '/privacy': typeof PrivacyRoute
   '/recommendations': typeof RecommendationsRoute
   '/search': typeof SearchRoute
@@ -250,9 +232,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/calendar'
     | '/disclaimer'
-    | '/insights'
     | '/privacy'
     | '/recommendations'
     | '/search'
@@ -276,9 +256,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
-    | '/calendar'
     | '/disclaimer'
-    | '/insights'
     | '/privacy'
     | '/recommendations'
     | '/search'
@@ -302,9 +280,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
-    | '/calendar'
     | '/disclaimer'
-    | '/insights'
     | '/privacy'
     | '/recommendations'
     | '/search'
@@ -329,9 +305,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  CalendarRoute: typeof CalendarRoute
   DisclaimerRoute: typeof DisclaimerRoute
-  InsightsRoute: typeof InsightsRoute
   PrivacyRoute: typeof PrivacyRoute
   RecommendationsRoute: typeof RecommendationsRoute
   SearchRoute: typeof SearchRoute
@@ -369,25 +343,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/calendar': {
-      id: '/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof CalendarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/disclaimer': {
       id: '/disclaimer'
       path: '/disclaimer'
       fullPath: '/disclaimer'
       preLoaderRoute: typeof DisclaimerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/insights': {
-      id: '/insights'
-      path: '/insights'
-      fullPath: '/insights'
-      preLoaderRoute: typeof InsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -529,9 +489,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  CalendarRoute: CalendarRoute,
   DisclaimerRoute: DisclaimerRoute,
-  InsightsRoute: InsightsRoute,
   PrivacyRoute: PrivacyRoute,
   RecommendationsRoute: RecommendationsRoute,
   SearchRoute: SearchRoute,
