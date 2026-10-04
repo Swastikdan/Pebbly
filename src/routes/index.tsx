@@ -11,7 +11,6 @@ import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { IMAGE_PREFIX, SITE_CONFIG } from "@/constants";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAllMediaStates } from "@/hooks/use-watchlist";
-import { useContinueWatching } from "@/hooks/watch-progress/use-watch-progress";
 import { getMedia } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
 import { tmdbSrcSet } from "@/lib/tmdb-image";
@@ -63,12 +62,6 @@ const TopRatedTv = lazy(() =>
     default: m.TopRatedTv,
   })),
 );
-const NextUpSection = lazy(() =>
-  import("@/components/next-up/next-up-section").then((m) => ({
-    default: m.NextUpSection,
-  })),
-);
-
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
     const data = await context.queryClient.ensureQueryData({
@@ -157,8 +150,6 @@ function HomePage() {
               </Suspense>
             </TabsPanel>
           </Tabs>
-
-          <ContinueWatchingSection />
 
           <BecauseYouWatchedSection />
 
@@ -249,39 +240,6 @@ function HomePage() {
         </div>
       </div>
     </section>
-  );
-}
-
-function ContinueWatchingSection() {
-  const { isSignedIn, isLoaded } = useUser();
-  const { items, isLoading, isSettled } = useContinueWatching();
-
-  if (!isLoaded) return null;
-
-  // Show a placeholder skeleton only for authenticated users while remote queries fetch.
-  // Guests read directly from synchronous local storage so no skeleton is needed.
-  if (isSignedIn && (isLoading || !isSettled)) {
-    return (
-      <section aria-hidden="true" className="min-h-80">
-        <div>
-          <MediaSkeletonList cardType="vertical" count={6} />
-        </div>
-      </section>
-    );
-  }
-
-  // Do not show an empty section or placeholder when there are no in-progress titles.
-  if (items.length === 0) return null;
-
-  return (
-    <LazySection
-      minHeight="280px"
-      fallback={<MediaSkeletonList cardType="vertical" count={6} />}
-    >
-      <Suspense fallback={<MediaSkeletonList cardType="vertical" count={6} />}>
-        <NextUpSection />
-      </Suspense>
-    </LazySection>
   );
 }
 
