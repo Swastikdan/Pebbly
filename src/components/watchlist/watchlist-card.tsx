@@ -1,4 +1,4 @@
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles } from "@/components/ui/hugeicons";
 
 import type { ProgressStatus } from "@/domain/watchlist";
 import type { WatchlistItem } from "@/stores/watchlist-store";
@@ -14,10 +14,11 @@ import {
 } from "@/components/watchlist/media-row-card-shell";
 import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
-import { toast } from "@/lib/notifications";
+import { destructiveToast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
+import { useEffect, useState } from "react";
 // Status advances one way only: watch-later → watching → done. "done" is
 // terminal on the card, no wrap-around back to watch-later.
 const STATUS_ORDER: ProgressStatus[] = ["watch-later", "watching", "done"];
@@ -25,23 +26,49 @@ const STATUS_ORDER: ProgressStatus[] = ["watch-later", "watching", "done"];
 function handleRemove(
   e: React.MouseEvent,
   item: WatchlistItem,
-  onRemoveFromWatchlist: (item: WatchlistItem) => void,
+  onRemoveFromWatchlist: (
+    item: WatchlistItem,
+    options?: { onUndo?: () => void },
+  ) => void,
+  setIsRemoved: (removed: boolean) => void,
 ) {
   e.preventDefault();
   e.stopPropagation();
-  onRemoveFromWatchlist(item);
+  setIsRemoved(true);
+  onRemoveFromWatchlist(item, {
+    onUndo: () => setIsRemoved(false),
+  });
 }
 
 export function WatchlistCard({
   item,
   onRemoveFromWatchlist,
+  onStatusChange,
   priority,
 }: {
   item: WatchlistItem;
-  onRemoveFromWatchlist: (item: WatchlistItem) => void;
+  onRemoveFromWatchlist: (
+    item: WatchlistItem,
+    options?: { onUndo?: () => void },
+  ) => void;
+  onStatusChange?: (
+    item: WatchlistItem,
+    nextStatus: ProgressStatus,
+  ) => void;
   priority?: boolean;
 }) {
-  const progressStatus = item.progressStatus ?? "watch-later";
+  const [removed, setRemoved] = useState(false);
+  const [optimisticStatus, setOptimisticStatus] =
+    useState<ProgressStatus | null>(null);
+
+  useEffect(() => {
+    setOptimisticStatus(null);
+  }, [item.progressStatus]);
+
+  if (removed) return null;
+
+  const progressStatus =
+    optimisticStatus ?? item.progressStatus ?? "watch-later";
   const reaction = item.reaction ?? null;
   const progressOption = getProgressOption(progressStatus);
   const reactionOption =
@@ -79,6 +106,8 @@ export function WatchlistCard({
 
     const capturedProgress = item.progress;
     const capturedStatus = progressStatus;
+    setOptimisticStatus(nextStatus);
+    onStatusChange?.(item, nextStatus);
     setProgressStatus({
       id: String(item.external_id),
       mediaType: item.type,
@@ -86,19 +115,20 @@ export function WatchlistCard({
       metadata,
       currentStatus: progressStatus,
     });
-    toast({
+    destructiveToast({
       title: `Marked as ${getProgressOption(nextStatus).label}`,
-      action: {
-        label: "Undo",
-        onClick: () =>
-          setProgressStatus({
-            id: String(item.external_id),
-            mediaType: item.type,
-            progressStatus: capturedStatus,
-            metadata,
-            currentStatus: nextStatus,
-            progress: capturedProgress,
-          }),
+      description: item.title,
+      onUndo: () => {
+        setOptimisticStatus(capturedStatus);
+        onStatusChange?.(item, capturedStatus);
+        setProgressStatus({
+          id: String(item.external_id),
+          mediaType: item.type,
+          progressStatus: capturedStatus,
+          metadata,
+          currentStatus: nextStatus,
+          progress: capturedProgress,
+        });
       },
     });
   };
@@ -129,7 +159,9 @@ export function WatchlistCard({
           size="icon"
           className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive-foreground shrink-0 p-1.5 transition-colors"
           aria-label={`Remove ${item.title} from watchlist`}
-          onClick={(e) => handleRemove(e, item, onRemoveFromWatchlist)}
+          onClick={(e) =>
+            handleRemove(e, item, onRemoveFromWatchlist, setRemoved)
+          }
         >
           <TrashBin aria-hidden="true" size={14} />
         </Button>
@@ -155,7 +187,7 @@ export function WatchlistCard({
               onClick={advanceStatus}
               title={`${progressOption.label}. Click to move to ${nextOption.label}`}
               aria-label={`Marked as ${progressOption.label}. Click to move to ${nextOption.label}.`}
-              className="bg-secondary/80 text-secondary-foreground hover:bg-secondary inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium"
+              className="bg-secondary/80 text-secondary-foreground hover:bg-primary/15 hover:text-primary inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[10px] font-medium transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.98] "
             >
               <ProgressIcon aria-hidden="true" size={12} />
               {progressOption.label}

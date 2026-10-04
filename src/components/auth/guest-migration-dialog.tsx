@@ -1,6 +1,6 @@
 import { useUser } from "@clerk/react";
 import { usePostHog } from "@posthog/react";
-import { ArrowRightLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowRightLeft, CheckCircle2, Loader2 } from "@/components/ui/hugeicons";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";

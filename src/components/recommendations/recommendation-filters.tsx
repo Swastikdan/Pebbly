@@ -4,7 +4,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Split,
-} from "lucide-react";
+} from "@/components/ui/hugeicons";
 
 import type { MediaType } from "@/domain/media";
 import { TasteProfileDialog } from "@/components/recommendations/taste-profile-dialog";

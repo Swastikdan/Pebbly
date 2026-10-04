@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { MediaType } from "@/domain/media";
 import { useToggleWatchlistItem } from "@/hooks/use-watchlist";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
-import { toast } from "@/lib/notifications";
+import { destructiveToast, toast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import { logError } from "@/lib/utils";
 import {
@@ -62,6 +62,8 @@ export function useRecommendationCardFeedback() {
   const [guestFeedback, setGuestFeedback] =
     useState<Record<string, GuestFeedbackEntry>>(readGuestFeedback);
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set());
+  const [localLikedKeys, setLocalLikedKeys] = useState<Set<string>>(new Set());
+  const [localUnlikedKeys, setLocalUnlikedKeys] = useState<Set<string>>(new Set());
 
   const serverFeedbackQuery = useQuery({
     queryKey: queryKeys.recommendations.feedback(user?.id),
@@ -86,8 +88,14 @@ export function useRecommendationCardFeedback() {
         }
       }
     }
+    for (const key of localLikedKeys) {
+      set.add(key);
+    }
+    for (const key of localUnlikedKeys) {
+      set.delete(key);
+    }
     return set;
-  }, [isSignedIn, feedbackList, guestFeedback]);
+  }, [isSignedIn, feedbackList, guestFeedback, localLikedKeys, localUnlikedKeys]);
 
   const dislikedKeys = useMemo(() => {
     const set = new Set<string>();
@@ -125,7 +133,28 @@ export function useRecommendationCardFeedback() {
       const currentlyLiked = likedKeys.has(key);
 
       if (currentlyLiked) {
-        // Toggle off
+        // Optimistic toggle off
+        setLocalUnlikedKeys((prev) => new Set(prev).add(key));
+        setLocalLikedKeys((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+
+        // Optimistically remove from watchlist
+        void toggleWatchlist(
+          {
+            id: String(item.id),
+            title: item.title,
+            media_type: item.mediaType,
+            rating: item.rating ?? 0,
+            image: item.image ?? "",
+            release_date: item.release_date ?? "",
+            overview: item.overview,
+          },
+          true,
+        ).catch((err) => logError("remove watchlist on unlike", err));
+
         if (isSignedIn) {
           try {
             await unwrap(
@@ -151,7 +180,28 @@ export function useRecommendationCardFeedback() {
         return;
       }
 
-      // Add like
+      // Optimistic add like
+      setLocalLikedKeys((prev) => new Set(prev).add(key));
+      setLocalUnlikedKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+
+      // Optimistically add to watchlist
+      void toggleWatchlist(
+        {
+          id: String(item.id),
+          title: item.title,
+          media_type: item.mediaType,
+          rating: item.rating ?? 0,
+          image: item.image ?? "",
+          release_date: item.release_date ?? "",
+          overview: item.overview,
+        },
+        false,
+      ).catch((err) => logError("add watchlist on like", err));
+
       if (isSignedIn) {
         try {
           await unwrap(
@@ -191,84 +241,72 @@ export function useRecommendationCardFeedback() {
           writeGuestFeedback(next);
           return next;
         });
-        // Also add to watchlist optimistically for guests
-        void toggleWatchlist(
-          {
-            id: String(item.id),
-            title: item.title,
-            media_type: item.mediaType,
-            rating: item.rating ?? 0,
-            image: item.image ?? "",
-            release_date: item.release_date ?? "",
-            overview: item.overview,
-          },
-          false,
-        );
       }
-
-      toast({
-        title: "More like this",
-        description: `We'll recommend more titles like "${item.title}".`,
-      });
     },
     [isSignedIn, user?.id, queryClient, likedKeys, toggleWatchlist],
   );
 
   const handleNotThis = useCallback(
-    async (item: FeedbackTarget) => {
+    (item: FeedbackTarget, options?: { onRestore?: () => void }) => {
       const key = `${item.mediaType}:${item.id}`;
 
-      // Optimistically hide card
-      setDismissedKeys((prev) => {
-        const next = new Set(prev);
-        next.add(key);
-        return next;
-      });
+      // Optimistically hide card immediately (0ms)
+      setDismissedKeys((prev) => new Set(prev).add(key));
 
-      if (isSignedIn) {
-        try {
-          await unwrap(
-            setRecommendationFeedback({
-              data: {
+      destructiveToast({
+        title: "Removed from recommendations",
+        description: item.title,
+        onUndo: () => {
+          // Revert client change - never calls backend
+          setDismissedKeys((prev) => {
+            const next = new Set(prev);
+            next.delete(key);
+            return next;
+          });
+          options?.onRestore?.();
+        },
+        onConfirm: async () => {
+          if (isSignedIn) {
+            try {
+              await unwrap(
+                setRecommendationFeedback({
+                  data: {
+                    tmdbId: item.id,
+                    mediaType: item.mediaType,
+                    title: item.title,
+                    feedback: "not_interested",
+                    image: item.image,
+                    rating: item.rating,
+                    release_date: item.release_date,
+                    overview: item.overview,
+                  },
+                }),
+              );
+              void queryClient.invalidateQueries({
+                queryKey: queryKeys.recommendations.feedback(user?.id),
+              });
+              broadcastMutation("ai");
+            } catch (error) {
+              logError("save recommendation feedback", error);
+            }
+          } else {
+            setGuestFeedback((prev) => {
+              const entry: GuestFeedbackEntry = {
                 tmdbId: item.id,
                 mediaType: item.mediaType,
                 title: item.title,
                 feedback: "not_interested",
-                image: item.image,
-                rating: item.rating,
-                release_date: item.release_date,
-                overview: item.overview,
-              },
-            }),
-          );
-          void queryClient.invalidateQueries({
-            queryKey: queryKeys.recommendations.feedback(user?.id),
-          });
-          broadcastMutation("ai");
-        } catch (error) {
-          logError("save recommendation feedback", error);
-        }
-      } else {
-        setGuestFeedback((prev) => {
-          const entry: GuestFeedbackEntry = {
-            tmdbId: item.id,
-            mediaType: item.mediaType,
-            title: item.title,
-            feedback: "not_interested",
-            updatedAt: Date.now(),
-          };
-          const next: Record<string, GuestFeedbackEntry> = {
-            ...prev,
-            [key]: entry,
-          };
-          writeGuestFeedback(next);
-          return next;
-        });
-      }
-
-      toast({
-        title: "Preference saved",
-        description: `Got it. Fewer titles like "${item.title}" will be suggested.`,
+                updatedAt: Date.now(),
+              };
+              const next: Record<string, GuestFeedbackEntry> = {
+                ...prev,
+                [key]: entry,
+              };
+              writeGuestFeedback(next);
+              return next;
+            });
+          }
+        },
       });
     },
     [isSignedIn, user?.id, queryClient],

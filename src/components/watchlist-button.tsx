@@ -12,6 +12,8 @@ import {
   useToggleWatchlistItem,
   useWatchlistItem,
 } from "@/hooks/use-watchlist";
+import { destructiveToast } from "@/lib/notifications";
+import { useRepository } from "@/lib/repository/use-repository";
 import { cn } from "@/lib/utils";
 
 interface WatchlistButtonProps {
@@ -26,6 +28,8 @@ interface WatchlistButtonProps {
   className?: string;
   overview?: string;
   showLabel?: boolean;
+  onOptimisticRemove?: () => void;
+  onRestore?: () => void;
 }
 
 const WatchlistButton = (props: WatchlistButtonProps) => {
@@ -48,6 +52,8 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [animKey, setAnimKey] = useState(0);
 
+  const repository = useRepository();
+
   useEffect(() => {
     if (optimisticOn !== null && isOnWatchList === optimisticOn) {
       setOptimisticOn(null);
@@ -62,6 +68,16 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
     const nextActive = !isActive;
     setOptimisticOn(nextActive);
 
+    const payload = {
+      title,
+      rating,
+      image,
+      id: itemId,
+      media_type,
+      release_date: release_date ?? "",
+      overview,
+    };
+
     if (!is_on_watchlist_page && nextActive) {
       setAnimKey((k) => k + 1);
       setIsAnimating(true);
@@ -69,22 +85,37 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
     }
 
     try {
-      await toggle(
-        {
-          title,
-          rating,
-          image,
-          id: itemId,
+      if (nextActive) {
+        // Additive action: sync immediately (batched), no popup
+        await toggle(payload, false);
+        posthog?.capture("watchlist_item_added", {
+          media_id: itemId,
           media_type,
-          release_date: release_date ?? "",
-          overview,
-        },
-        isActive,
-      );
-      posthog?.capture(
-        nextActive ? "watchlist_item_added" : "watchlist_item_removed",
-        { media_id: itemId, media_type, title },
-      );
+          title,
+        });
+      } else {
+        // Destructive action: optimistic change immediately, backend change after 5s timer
+        props.onOptimisticRemove?.();
+        const op = repository.removeWithUndo(payload);
+        posthog?.capture("watchlist_item_removed", {
+          media_id: itemId,
+          media_type,
+          title,
+        });
+        destructiveToast({
+          title: "Removed from watchlist",
+          description: title,
+          timeout: 5000,
+          onUndo: () => {
+            setOptimisticOn(true);
+            props.onRestore?.();
+            op.undo();
+          },
+          onConfirm: () => {
+            void op.commit();
+          },
+        });
+      }
     } catch (error) {
       console.error("Error toggling watchlist:", error);
       setOptimisticOn(null);
@@ -98,6 +129,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
     media_type,
     release_date,
     toggle,
+    repository,
     overview,
     is_on_watchlist_page,
     posthog,

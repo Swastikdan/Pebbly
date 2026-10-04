@@ -1,4 +1,4 @@
-import { Grid, Shield, Sparkles } from "lucide-react";
+import { Grid, Shield, Sparkles } from "@/components/ui/hugeicons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 

@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
 import type { ApiResult } from "../schema/common";
-import { invalidateUserCache } from "../auth";
+import { invalidateUserCache } from "../auth.server";
 import { users } from "../db/schema";
 import { ok } from "../schema/common";
 import { authedFn, WRITE_RATE_LIMIT } from "./rpc";

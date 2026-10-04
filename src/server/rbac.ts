@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 
-import type { AuthUser, ClerkSessionClaims } from "./auth";
+import type { AuthUser, ClerkSessionClaims } from "./auth.server";
 import type { Db } from "./db/client";
 import { getDb, runBatch } from "./db/client";
 import { rolePermissions } from "./db/schema";

@@ -1,4 +1,4 @@
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, X } from "@/components/ui/hugeicons";
 
 import type {
   WatchlistCounts,
@@ -100,10 +100,9 @@ export function WatchlistFilters({
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search saved titles"
             aria-label="Search watchlist"
-            disabled={disabled}
             className="border-border/70 bg-card h-9 rounded-md border ps-9 pe-10 text-sm dark:border-white/10"
           />
-          {searchQuery && !disabled && (
+          {searchQuery && (
             <Button
               type="button"
               variant="ghost"

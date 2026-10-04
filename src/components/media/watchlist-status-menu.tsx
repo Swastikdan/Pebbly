@@ -1,4 +1,11 @@
 import { SignInButton, useUser } from "@clerk/react";
+import { useState } from "react";
+
+import type { MediaType } from "@/domain/media";
+import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
+import { CustomListDialog } from "@/components/custom-list-dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogPopup } from "@/components/ui/dialog";
 import {
   Bookmark,
   Check,
@@ -9,21 +16,13 @@ import {
   Plus,
   Trash2,
   X,
-} from "lucide-react";
-import { useState } from "react";
-
-import type { MediaType } from "@/domain/media";
-import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
-import { CustomListDialog } from "@/components/custom-list-dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogPopup,
-  DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/ui/hugeicons";
 import { Menu, MenuPopup, MenuTrigger } from "@/components/ui/menu";
+import {
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "@/components/ui/modal-parts";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { getProgressOption, REACTION_OPTIONS } from "@/constants/watchlist";
 import { useCustomLists, useItemLists } from "@/hooks/use-custom-lists";
@@ -311,121 +310,104 @@ function AddToListDialog({
 
   const safeList = lists ?? [];
   const safeItemLists = itemLists ?? [];
+  const userLists = safeList.filter((list) => list.listType !== "pebbly-picks");
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogPopup className="overflow-hidden rounded-lg p-0 sm:max-w-95">
-          <div className="px-6 pt-6 pb-2">
-            <DialogHeader className="space-y-1">
-              <DialogTitle className="text-base font-semibold tracking-tight">
-                My Collections
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs">
-                {isSignedIn
-                  ? "Add or remove this title from your collections."
-                  : "Sign in to organize titles into your own collections."}
-              </DialogDescription>
-            </DialogHeader>
-          </div>
+        <DialogPopup className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-95">
+          <ModalHeader
+            icon={Bookmark}
+            title="My Collections"
+            subtitle={
+              isSignedIn ? (
+                <span className="text-[11px] sm:text-xs">
+                  Add or remove this title from your collections.
+                </span>
+              ) : (
+                <span className="text-[11px] sm:text-xs">
+                  Sign in to organize titles into your own collections.
+                </span>
+              )
+            }
+          />
 
           {!isSignedIn ? (
-            <div className="flex flex-col items-center gap-3 px-6 pt-2 pb-6 text-center">
-              <p className="text-muted-foreground text-xs">
-                Collections belong to your account. They stay private by default
-                and are shareable when you want.
-              </p>
-              <SignInButton mode="modal">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs font-semibold"
-                >
-                  Sign In
-                </Button>
-              </SignInButton>
-            </div>
+            <>
+              <ModalBody>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Collections belong to your account. They stay private by
+                  default and are shareable when you want.
+                </p>
+              </ModalBody>
+              <ModalFooter>
+                <SignInButton mode="modal">
+                  <Button size="sm" className="text-xs font-semibold">
+                    Sign In
+                  </Button>
+                </SignInButton>
+              </ModalFooter>
+            </>
           ) : (
             <>
-              <div className="px-6">
-                <div className="max-h-64 space-y-1.5 overflow-y-auto">
-                  {safeList.length === 0 && (
-                    <p className="text-muted-foreground py-6 text-center text-sm">
-                      No collections yet. Create one to get started.
-                    </p>
-                  )}
+              <ModalBody className="max-h-80 space-y-1.5">
+                {userLists.length === 0 && (
+                  <p className="text-muted-foreground py-6 text-center text-sm">
+                    No collections yet. Create your first one to add this title.
+                  </p>
+                )}
 
-                  {safeList
-                    .filter((list) => list.listType !== "pebbly-picks")
-                    .map((list) => {
-                      const isInList = safeItemLists.includes(list._id);
-                      return (
-                        <button
-                          key={list._id}
-                          type="button"
-                          aria-pressed={isInList}
-                          className={cn(
-                            "flex w-full items-center justify-between rounded-lg border border-transparent px-4 py-3 text-sm transition-[color,background-color,border-color] duration-200",
-                            isInList
-                              ? "bg-primary/[0.03] border-primary/10 text-foreground font-semibold"
-                              : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-                          )}
-                          onClick={() =>
-                            toggleListItem({
-                              listId: list._id,
-                              tmdbId,
-                              mediaType,
-                              title: metadata?.title,
-                              image: metadata?.image,
-                              backdrop: metadata?.backdrop,
-                              rating: metadata?.rating,
-                              release_date: metadata?.release_date,
-                              overview: metadata?.overview,
-                            })
-                          }
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div
-                              className={cn(
-                                "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-[color,background-color,border-color] duration-200",
-                                isInList
-                                  ? "border-primary bg-primary text-primary-foreground scale-105"
-                                  : "border-muted-foreground/30 bg-transparent",
-                              )}
-                            >
-                              {isInList && (
-                                <Check
-                                  aria-hidden="true"
-                                  size={11}
-                                  strokeWidth={3}
-                                />
-                              )}
-                            </div>
-                            <span className="truncate">{list.name}</span>
-                          </div>
-                          {list.color && (
-                            <span
-                              className="size-2.5 shrink-0 rounded-full"
-                              style={{ backgroundColor: list.color }}
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-
-              <div className="px-6 pt-3 pb-6">
+                {userLists.map((list) => {
+                  const isInList = safeItemLists.includes(list._id);
+                  return (
+                    <button
+                      key={list._id}
+                      type="button"
+                      aria-pressed={isInList}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-sm transition-[color,background-color,border-color] duration-200",
+                        isInList
+                          ? "border-primary/20 bg-primary/[0.06] text-foreground font-semibold"
+                          : "text-muted-foreground hover:border-border/60 hover:bg-secondary/50 hover:text-foreground border-transparent",
+                      )}
+                      onClick={() =>
+                        toggleListItem({
+                          listId: list._id,
+                          tmdbId,
+                          mediaType,
+                          title: metadata?.title,
+                          image: metadata?.image,
+                          backdrop: metadata?.backdrop,
+                          rating: metadata?.rating,
+                          release_date: metadata?.release_date,
+                          overview: metadata?.overview,
+                        })
+                      }
+                    >
+                      <span className="truncate">{list.name}</span>
+                      {isInList && (
+                        <Check
+                          aria-hidden="true"
+                          size={14}
+                          className="shrink-0"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </ModalBody>
+              <ModalFooter>
                 <Button
                   type="button"
                   variant="outline"
-                  className="text-muted-foreground hover:bg-secondary/60 hover:text-foreground h-auto w-full justify-center gap-2 border-dashed py-2.5 text-sm font-medium transition-colors"
+                  size="sm"
+                  className="gap-1.5 text-xs font-semibold"
                   onClick={() => setShowCreateDialog(true)}
                 >
-                  <Plus aria-hidden="true" size={16} />
+                  <Plus aria-hidden="true" size={14} />
                   Create New Collection
                 </Button>
-              </div>
+              </ModalFooter>
             </>
           )}
         </DialogPopup>

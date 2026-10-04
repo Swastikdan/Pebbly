@@ -115,16 +115,19 @@ export const MediaRecommendations = (props: {
                           release_date: item.release_date ?? undefined,
                           overview: item.overview,
                         }),
-                      onNotThis: () =>
-                        handleNotThis({
-                          id: item.id,
-                          mediaType: "movie",
-                          title: item.title,
-                          image: item.poster_path ?? undefined,
-                          rating: item.vote_average,
-                          release_date: item.release_date ?? undefined,
-                          overview: item.overview,
-                        }),
+                      onNotThis: (options) =>
+                        handleNotThis(
+                          {
+                            id: item.id,
+                            mediaType: "movie",
+                            title: item.title,
+                            image: item.poster_path ?? undefined,
+                            rating: item.vote_average,
+                            release_date: item.release_date ?? undefined,
+                            overview: item.overview,
+                          },
+                          options,
+                        ),
                     }}
                   />
                 ))
@@ -154,16 +157,19 @@ export const MediaRecommendations = (props: {
                           release_date: item.first_air_date ?? undefined,
                           overview: item.overview,
                         }),
-                      onNotThis: () =>
-                        handleNotThis({
-                          id: item.id,
-                          mediaType: "tv",
-                          title: item.name,
-                          image: item.poster_path ?? undefined,
-                          rating: item.vote_average,
-                          release_date: item.first_air_date ?? undefined,
-                          overview: item.overview,
-                        }),
+                      onNotThis: (options) =>
+                        handleNotThis(
+                          {
+                            id: item.id,
+                            mediaType: "tv",
+                            title: item.name,
+                            image: item.poster_path ?? undefined,
+                            rating: item.vote_average,
+                            release_date: item.first_air_date ?? undefined,
+                            overview: item.overview,
+                          },
+                          options,
+                        ),
                     }}
                   />
                 ))}

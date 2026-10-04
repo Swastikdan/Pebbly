@@ -1,30 +1,26 @@
-import {
-  Compass,
-  Flame,
-  Minus,
-  Plus,
-  RotateCcw,
-  SlidersHorizontal,
-  Sparkles,
-  X,
-} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type {
   AdventureLevel,
   PreferredMediaType,
 } from "@/server/schema/taste-profile";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogPopup, DialogTrigger } from "@/components/ui/dialog";
 import {
-  Dialog,
-  DialogDescription,
-  DialogHeader,
-  DialogPopup,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Ban,
+  Check,
+  Compass,
+  Film,
+  Flame,
+  Heart,
+  RotateCcw,
+  SlidersHorizontal,
+  Sparkles,
+  ThumbsDown,
+  X,
+} from "@/components/ui/hugeicons";
 import { Input } from "@/components/ui/input";
+import { ModalFooter, ModalHeader } from "@/components/ui/modal-parts";
 import { GENRE_LIST } from "@/constants";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { toast } from "@/lib/notifications";
@@ -75,6 +71,100 @@ const UNIQUE_GENRES = Array.from(
   new Set(GENRE_LIST.map((g) => g.name).filter(Boolean)),
 ).sort();
 
+const FORMAT_LABELS: Record<PreferredMediaType, string> = {
+  all: "Movies & TV Shows",
+  movie: "Movies Only",
+  tv: "TV Series Only",
+};
+
+type Tone = "positive" | "negative";
+
+const CHIP_BASE =
+  "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium leading-none transition-colors";
+
+const CHIP_TONES: Record<Tone, { selected: string; icon: typeof Check }> = {
+  positive: {
+    selected:
+      "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-600/85 dark:border-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/30",
+    icon: Check,
+  },
+  negative: {
+    selected:
+      "border-red-600 bg-red-600 text-white hover:bg-red-600/85 dark:border-red-500 dark:bg-red-500/20 dark:text-red-300 dark:hover:bg-red-500/30",
+    icon: Ban,
+  },
+};
+
+const CHIP_IDLE =
+  "border-border bg-background text-foreground/80 hover:bg-muted hover:text-foreground";
+
+function summarize(items: string[], empty: string) {
+  if (items.length === 0) return empty;
+  const shown = items.slice(0, 3).join(", ");
+  return items.length > 3 ? `${shown} +${items.length - 3}` : shown;
+}
+
+function ChipGrid({
+  items,
+  selected,
+  tone,
+  onToggle,
+}: {
+  items: string[];
+  selected: string[];
+  tone: Tone;
+  onToggle: (item: string) => void;
+}) {
+  const { selected: selectedClass, icon: Icon } = CHIP_TONES[tone];
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map((item) => {
+        const isSelected = selected.includes(item);
+        return (
+          <button
+            key={item}
+            type="button"
+            aria-pressed={isSelected}
+            onClick={() => onToggle(item)}
+            className={cn(CHIP_BASE, isSelected ? selectedClass : CHIP_IDLE)}
+          >
+            {isSelected && <Icon aria-hidden="true" className="size-3.5" />}
+            {item}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProfileSection({
+  id,
+  description,
+  openId,
+  children,
+}: {
+  id: string;
+  icon?: unknown;
+  title?: string;
+  description?: string;
+  summary?: string;
+  tone?: Tone;
+  count?: number;
+  openId: string | null;
+  onToggle?: (id: string | null) => void;
+  children: React.ReactNode;
+}) {
+  if (openId !== id) return null;
+  return (
+    <section role="tabpanel" id={`taste-panel-${id}`}>
+      {description && (
+        <p className="text-muted-foreground mb-3 text-xs">{description}</p>
+      )}
+      {children}
+    </section>
+  );
+}
+
 export function TasteProfileDialog({
   trigger,
   open: controlledOpen,
@@ -109,6 +199,7 @@ export function TasteProfileDialog({
     tasteProfile.avoidTitles,
   );
 
+  const [openSection, setOpenSection] = useState<string | null>("basics");
   const [customThemeInput, setCustomThemeInput] = useState("");
   const [avoidTitleInput, setAvoidTitleInput] = useState("");
 
@@ -120,6 +211,7 @@ export function TasteProfileDialog({
       setDislikedGenres(tasteProfile.dislikedGenres);
       setDislikedThemes(tasteProfile.dislikedThemes);
       setAvoidTitles(tasteProfile.avoidTitles);
+      setOpenSection("basics");
     }
   }, [isOpen, tasteProfile]);
 
@@ -223,276 +315,297 @@ export function TasteProfileDialog({
         />
       )}
 
-      <DialogPopup className="max-h-[90vh] w-full max-w-2xl overflow-y-auto p-6 sm:p-7">
-        <DialogHeader className="mb-5 space-y-1.5 text-start">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary/10 text-primary flex size-7 items-center justify-center rounded-md">
-              <Sparkles aria-hidden="true" size={14} />
-            </div>
-            <DialogTitle className="font-heading text-lg font-bold sm:text-xl">
-              AI Taste Profile
-            </DialogTitle>
-          </div>
-          <DialogDescription className="text-muted-foreground text-xs leading-relaxed sm:text-sm">
-            Fine-tune how Pebbly builds recommendations for you. Set your
-            adventure level, choose preferred genres, and exclude disliked
-            themes or franchises.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogPopup className="flex h-[min(540px,90vh)] w-full max-w-2xl flex-col gap-0 overflow-hidden p-0">
+        <ModalHeader
+          icon={Sparkles}
+          title="AI Taste Profile"
+          subtitle="Fine-tune how Pebbly builds recommendations for you."
+        />
 
-        <div className="space-y-6">
-          {/* 1. Adventure Level */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-foreground text-xs font-semibold sm:text-sm">
+        <div
+          role="tablist"
+          aria-label="Taste profile sections"
+          className="no-scrollbar flex shrink-0 gap-1 overflow-x-auto px-5 pt-4 pb-1"
+        >
+          {[
+            { id: "basics", label: "Style", icon: Compass, count: 0 },
+            {
+              id: "preferred",
+              label: "Preferred",
+              icon: Heart,
+              count: preferredGenres.length,
+            },
+            {
+              id: "disliked",
+              label: "Disliked",
+              icon: ThumbsDown,
+              count: dislikedGenres.length,
+            },
+            {
+              id: "themes",
+              label: "Themes",
+              icon: Ban,
+              count: dislikedThemes.length,
+            },
+            {
+              id: "titles",
+              label: "Titles",
+              icon: Film,
+              count: avoidTitles.length,
+            },
+          ].map((tab) => {
+            const active = openSection === tab.id;
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-controls={`taste-panel-${tab.id}`}
+                onClick={() => setOpenSection(tab.id)}
+                className={cn(
+                  "flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <TabIcon aria-hidden="true" size={14} />
+                {tab.label}
+                {tab.count > 0 && (
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 text-[11px] leading-5 font-semibold",
+                      active ? "bg-primary-foreground/20" : "bg-muted",
+                    )}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
+          <div className="space-y-3">
+            {/* 1. Basics: Adventure + Format */}
+            <ProfileSection
+              id="basics"
+              icon={Compass}
+              title="Discovery Style"
+              summary={`${adventureLevel} · ${FORMAT_LABELS[preferredMediaType]}`}
+              openId={openSection}
+              onToggle={setOpenSection}
+            >
+              <h3 className="text-foreground mb-2 text-sm font-semibold">
                 Adventure Level
               </h3>
-              <span className="text-muted-foreground text-[11px] capitalize">
-                {adventureLevel}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-              {ADVENTURE_OPTIONS.map((opt) => {
-                const isSelected = adventureLevel === opt.value;
-                const Icon = opt.icon;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setAdventureLevel(opt.value)}
-                    className={cn(
-                      "flex flex-col items-start gap-1.5 rounded-lg border p-3 text-start transition-all",
-                      isSelected
-                        ? "border-primary bg-primary/5 text-foreground ring-primary/40 shadow-xs ring-1"
-                        : "border-border hover:bg-muted/50 text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Icon
-                        aria-hidden="true"
-                        size={14}
-                        className={
-                          isSelected ? "text-primary" : "text-muted-foreground"
-                        }
-                      />
-                      <span className="text-foreground text-xs font-bold">
-                        {opt.title}
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground text-[11px] leading-snug">
-                      {opt.description}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 2. Media Type Preference */}
-          <div className="space-y-2.5">
-            <h3 className="text-foreground text-xs font-semibold sm:text-sm">
-              Default Format
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { value: "all", label: "Movies & TV Shows" },
-                { value: "movie", label: "Movies Only" },
-                { value: "tv", label: "TV Series Only" },
-              ].map((fmt) => (
-                <button
-                  key={fmt.value}
-                  type="button"
-                  onClick={() =>
-                    setPreferredMediaType(fmt.value as PreferredMediaType)
-                  }
-                  className={cn(
-                    "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
-                    preferredMediaType === fmt.value
-                      ? "border-primary bg-primary text-primary-foreground font-semibold"
-                      : "border-border hover:bg-muted text-muted-foreground",
-                  )}
-                >
-                  {fmt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 3. Preferred Genres */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-foreground text-xs font-semibold sm:text-sm">
-                Preferred Genres
-              </h3>
-              <span className="text-muted-foreground text-[11px]">
-                {preferredGenres.length} selected
-              </span>
-            </div>
-            <p className="text-muted-foreground text-[11px]">
-              Genres you want recommendations to prioritize.
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {UNIQUE_GENRES.map((genre) => {
-                const isSelected = preferredGenres.includes(genre);
-                return (
-                  <Badge
-                    key={genre}
-                    variant={isSelected ? "default" : "outline"}
-                    className={cn(
-                      "cursor-pointer text-xs transition-colors",
-                      isSelected
-                        ? "border-transparent bg-emerald-600 text-white hover:bg-emerald-700"
-                        : "hover:bg-muted",
-                    )}
-                    onClick={() => togglePreferredGenre(genre)}
-                  >
-                    {isSelected && <Plus className="mr-1 size-3" />}
-                    {genre}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 4. Disliked Genres */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-foreground text-xs font-semibold sm:text-sm">
-                Disliked Genres
-              </h3>
-              <span className="text-muted-foreground text-[11px]">
-                {dislikedGenres.length} avoided
-              </span>
-            </div>
-            <p className="text-muted-foreground text-[11px]">
-              Genres you prefer not to see suggested.
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {UNIQUE_GENRES.map((genre) => {
-                const isSelected = dislikedGenres.includes(genre);
-                return (
-                  <Badge
-                    key={genre}
-                    variant={isSelected ? "destructive" : "outline"}
-                    className={cn(
-                      "cursor-pointer text-xs transition-colors",
-                      isSelected
-                        ? "bg-destructive text-destructive-foreground"
-                        : "hover:bg-muted",
-                    )}
-                    onClick={() => toggleDislikedGenre(genre)}
-                  >
-                    {isSelected && <Minus className="mr-1 size-3" />}
-                    {genre}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 5. Disliked Themes */}
-          <div className="space-y-2.5">
-            <h3 className="text-foreground text-xs font-semibold sm:text-sm">
-              Themes to Avoid
-            </h3>
-            <p className="text-muted-foreground text-[11px]">
-              Select recurring tropes or content themes you would rather skip.
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {COMMON_THEMES.map((theme) => {
-                const isSelected = dislikedThemes.includes(theme);
-                return (
-                  <Badge
-                    key={theme}
-                    variant={isSelected ? "secondary" : "outline"}
-                    className={cn(
-                      "cursor-pointer text-xs transition-colors",
-                      isSelected
-                        ? "border-destructive/60 bg-destructive/15 text-destructive font-medium"
-                        : "hover:bg-muted",
-                    )}
-                    onClick={() => toggleTheme(theme)}
-                  >
-                    {theme}
-                  </Badge>
-                );
-              })}
-            </div>
-
-            <form onSubmit={handleAddCustomTheme} className="mt-2 flex gap-2">
-              <Input
-                type="text"
-                placeholder="Add custom theme (e.g., multiverse, body swap)..."
-                value={customThemeInput}
-                onChange={(e) => setCustomThemeInput(e.target.value)}
-                className="h-8 text-xs"
-              />
-              <Button
-                type="submit"
-                variant="secondary"
-                size="sm"
-                className="h-8 shrink-0 text-xs"
-                disabled={!customThemeInput.trim()}
-              >
-                Add
-              </Button>
-            </form>
-          </div>
-
-          {/* 6. Avoid Titles & Franchises */}
-          <div className="space-y-2.5">
-            <h3 className="text-foreground text-xs font-semibold sm:text-sm">
-              Titles & Franchises to Avoid
-            </h3>
-            <p className="text-muted-foreground text-[11px]">
-              Exclude specific titles, universes, or franchises from ever
-              appearing.
-            </p>
-
-            {avoidTitles.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {avoidTitles.map((title) => (
-                  <span
-                    key={title}
-                    className="bg-secondary text-secondary-foreground inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs"
-                  >
-                    <span>{title}</span>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                {ADVENTURE_OPTIONS.map((opt) => {
+                  const isSelected = adventureLevel === opt.value;
+                  const Icon = opt.icon;
+                  return (
                     <button
+                      key={opt.value}
                       type="button"
-                      onClick={() => handleRemoveAvoidTitle(title)}
-                      className="hover:text-destructive text-muted-foreground transition-colors"
-                      aria-label={`Remove ${title} from avoided list`}
+                      onClick={() => setAdventureLevel(opt.value)}
+                      aria-pressed={isSelected}
+                      className={cn(
+                        "flex flex-col items-start gap-1.5 rounded-xl border p-3 text-start transition-all",
+                        isSelected
+                          ? "border-primary bg-primary/5 ring-primary/40 ring-1"
+                          : "border-border hover:bg-muted/50",
+                      )}
                     >
-                      <X size={12} />
+                      <div className="flex items-center gap-1.5">
+                        <Icon
+                          aria-hidden="true"
+                          size={15}
+                          className={
+                            isSelected
+                              ? "text-primary"
+                              : "text-muted-foreground"
+                          }
+                        />
+                        <span className="text-foreground text-sm font-semibold">
+                          {opt.title}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground text-xs leading-snug">
+                        {opt.description}
+                      </p>
                     </button>
-                  </span>
-                ))}
+                  );
+                })}
               </div>
-            )}
+              <h3 className="text-foreground mt-6 mb-2 text-sm font-semibold">
+                Default Format
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(FORMAT_LABELS) as PreferredMediaType[]).map(
+                  (value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={preferredMediaType === value}
+                      onClick={() => setPreferredMediaType(value)}
+                      className={cn(
+                        "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                        preferredMediaType === value
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border hover:bg-muted text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {FORMAT_LABELS[value]}
+                    </button>
+                  ),
+                )}
+              </div>
+            </ProfileSection>
 
-            <form onSubmit={handleAddAvoidTitle} className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="Avoid title or series (e.g., Star Wars, Fast & Furious)..."
-                value={avoidTitleInput}
-                onChange={(e) => setAvoidTitleInput(e.target.value)}
-                className="h-8 text-xs"
+            {/* 2. Preferred Genres */}
+            <ProfileSection
+              id="preferred"
+              icon={Heart}
+              title="Preferred Genres"
+              description="Genres you want recommendations to prioritize."
+              summary={summarize(preferredGenres, "None selected")}
+              tone="positive"
+              count={preferredGenres.length}
+              openId={openSection}
+              onToggle={setOpenSection}
+            >
+              <ChipGrid
+                items={UNIQUE_GENRES}
+                selected={preferredGenres}
+                tone="positive"
+                onToggle={togglePreferredGenre}
               />
-              <Button
-                type="submit"
-                variant="secondary"
-                size="sm"
-                className="h-8 shrink-0 text-xs"
-                disabled={!avoidTitleInput.trim()}
-              >
-                Add
-              </Button>
-            </form>
+            </ProfileSection>
+
+            {/* 3. Disliked Genres */}
+            <ProfileSection
+              id="disliked"
+              icon={ThumbsDown}
+              title="Disliked Genres"
+              description="Genres you prefer not to see suggested."
+              summary={summarize(dislikedGenres, "None avoided")}
+              tone="negative"
+              count={dislikedGenres.length}
+              openId={openSection}
+              onToggle={setOpenSection}
+            >
+              <ChipGrid
+                items={UNIQUE_GENRES}
+                selected={dislikedGenres}
+                tone="negative"
+                onToggle={toggleDislikedGenre}
+              />
+            </ProfileSection>
+
+            {/* 4. Themes to Avoid */}
+            <ProfileSection
+              id="themes"
+              icon={Ban}
+              title="Themes to Avoid"
+              description="Recurring tropes or content themes you would rather skip."
+              summary={summarize(dislikedThemes, "None avoided")}
+              tone="negative"
+              count={dislikedThemes.length}
+              openId={openSection}
+              onToggle={setOpenSection}
+            >
+              <ChipGrid
+                items={[
+                  ...COMMON_THEMES,
+                  ...dislikedThemes.filter((t) => !COMMON_THEMES.includes(t)),
+                ]}
+                selected={dislikedThemes}
+                tone="negative"
+                onToggle={toggleTheme}
+              />
+              <form onSubmit={handleAddCustomTheme} className="mt-3 flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Add custom theme (e.g., multiverse, body swap)..."
+                  value={customThemeInput}
+                  onChange={(e) => setCustomThemeInput(e.target.value)}
+                  className="h-9 text-sm"
+                />
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  size="sm"
+                  className="h-9 shrink-0 text-sm"
+                  disabled={!customThemeInput.trim()}
+                >
+                  Add
+                </Button>
+              </form>
+            </ProfileSection>
+
+            {/* 5. Avoid Titles & Franchises */}
+            <ProfileSection
+              id="titles"
+              icon={Film}
+              title="Titles & Franchises to Avoid"
+              description="Exclude specific titles, universes, or franchises from ever appearing."
+              summary={summarize(avoidTitles, "None avoided")}
+              tone="negative"
+              count={avoidTitles.length}
+              openId={openSection}
+              onToggle={setOpenSection}
+            >
+              {avoidTitles.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {avoidTitles.map((title) => (
+                    <span
+                      key={title}
+                      className={cn(
+                        CHIP_BASE,
+                        CHIP_TONES.negative.selected,
+                        "gap-1.5",
+                      )}
+                    >
+                      <span>{title}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAvoidTitle(title)}
+                        className="opacity-70 transition-opacity hover:opacity-100"
+                        aria-label={`Remove ${title} from avoided list`}
+                      >
+                        <X size={13} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <form onSubmit={handleAddAvoidTitle} className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Avoid title or series (e.g., Star Wars, Fast & Furious)..."
+                  value={avoidTitleInput}
+                  onChange={(e) => setAvoidTitleInput(e.target.value)}
+                  className="h-9 text-sm"
+                />
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  size="sm"
+                  className="h-9 shrink-0 text-sm"
+                  disabled={!avoidTitleInput.trim()}
+                >
+                  Add
+                </Button>
+              </form>
+            </ProfileSection>
           </div>
         </div>
 
         {/* Footer actions */}
-        <div className="border-border mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+        <ModalFooter className="justify-between gap-3">
           <Button
             type="button"
             variant="ghost"
@@ -527,7 +640,7 @@ export function TasteProfileDialog({
               Save Profile
             </Button>
           </div>
-        </div>
+        </ModalFooter>
       </DialogPopup>
     </Dialog>
   );

@@ -6,7 +6,7 @@ import {
   Pencil,
   Sparkles,
   Trash2,
-} from "lucide-react";
+} from "@/components/ui/hugeicons";
 import { Link } from "@tanstack/react-router";
 
 import { ListCollage } from "@/components/watchlist/list-collage";

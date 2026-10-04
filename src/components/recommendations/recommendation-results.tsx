@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@/components/ui/hugeicons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -198,15 +198,18 @@ function RecommendationCard({
       release_date?: string;
       overview?: string;
     }) => void;
-    onNotThis: (target: {
-      id: number;
-      mediaType: MediaType;
-      title: string;
-      image?: string;
-      rating?: number;
-      release_date?: string;
-      overview?: string;
-    }) => void;
+    onNotThis: (
+      target: {
+        id: number;
+        mediaType: MediaType;
+        title: string;
+        image?: string;
+        rating?: number;
+        release_date?: string;
+        overview?: string;
+      },
+      options?: { onRestore?: () => void },
+    ) => void;
   };
 }) {
   const { title, mediaType, relevanceScore, reasoning } = recommendation;
@@ -279,16 +282,19 @@ function RecommendationCard({
                     release_date: recommendation.releaseDate ?? undefined,
                     overview: recommendation.overview,
                   }),
-                onNotThis: () =>
-                  feedback.onNotThis({
-                    id: cardId,
-                    mediaType,
-                    title: recommendation.verifiedTitle ?? title,
-                    image: recommendation.posterPath ?? undefined,
-                    rating: recommendation.rating,
-                    release_date: recommendation.releaseDate ?? undefined,
-                    overview: recommendation.overview,
-                  }),
+                onNotThis: (options) =>
+                  feedback.onNotThis(
+                    {
+                      id: cardId,
+                      mediaType,
+                      title: recommendation.verifiedTitle ?? title,
+                      image: recommendation.posterPath ?? undefined,
+                      rating: recommendation.rating,
+                      release_date: recommendation.releaseDate ?? undefined,
+                      overview: recommendation.overview,
+                    },
+                    options,
+                  ),
                 isLiked: feedback.isLiked(cardId, mediaType),
                 isDisliked: false,
               }
@@ -332,16 +338,19 @@ function RecommendationCard({
                     release_date: resolvedData.releaseDate ?? undefined,
                     overview: resolvedData.overview,
                   }),
-                onNotThis: () =>
-                  feedback.onNotThis({
-                    id: cardId,
-                    mediaType,
-                    title: resolvedData.title,
-                    image: resolvedData.posterPath ?? undefined,
-                    rating: resolvedData.rating,
-                    release_date: resolvedData.releaseDate ?? undefined,
-                    overview: resolvedData.overview,
-                  }),
+                onNotThis: (options) =>
+                  feedback.onNotThis(
+                    {
+                      id: cardId,
+                      mediaType,
+                      title: resolvedData.title,
+                      image: resolvedData.posterPath ?? undefined,
+                      rating: resolvedData.rating,
+                      release_date: resolvedData.releaseDate ?? undefined,
+                      overview: resolvedData.overview,
+                    },
+                    options,
+                  ),
                 isLiked: feedback.isLiked(cardId, mediaType),
                 isDisliked: false,
               }

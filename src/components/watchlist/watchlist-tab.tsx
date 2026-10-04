@@ -1,7 +1,8 @@
 import { useUser } from "@clerk/react";
-import { ArrowRightLeft } from "lucide-react";
-import { useCallback, useId } from "react";
+import { ArrowRightLeft } from "@/components/ui/hugeicons";
+import { useCallback, useEffect, useId, useState } from "react";
 
+import type { ProgressStatus } from "@/domain/watchlist";
 import { openGuestMigrationModal } from "@/components/auth/guest-migration-dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Upload } from "@/components/ui/icons";
@@ -31,7 +32,21 @@ export function WatchlistTab() {
 
   const importInputId = useId();
   const { watchlist: watchlistData } = useWatchlist({ enabled: !isSignedIn });
-  const removeFromWatchlist = useRemoveFromWatchlistWithUndo();
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
+  const removeFromWatchlist = useRemoveFromWatchlistWithUndo({
+    onRemove: (item) => {
+      setHiddenKeys((prev) =>
+        new Set(prev).add(`${item.type}:${item.external_id}`),
+      );
+    },
+    onUndo: (item) => {
+      setHiddenKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(`${item.type}:${item.external_id}`);
+        return next;
+      });
+    },
+  });
   const {
     importLoading,
     importTotal,
@@ -46,9 +61,41 @@ export function WatchlistTab() {
 
   const filters = useFilteredWatchlist(watchlistData);
   const { searchQuery, activeFilter, reactionFilter, mediaFilter } = filters;
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(
+      () => setDebouncedSearchQuery(searchQuery),
+      250,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [searchQuery]);
+
+  const [statusOverrides, setStatusOverrides] = useState<
+    Map<string, ProgressStatus>
+  >(new Map());
+
+  const handleStatusChange = useCallback(
+    (item: WatchlistItem, nextStatus: ProgressStatus) => {
+      const key = `${item.type}:${item.external_id}`;
+      setStatusOverrides((prev) => new Map(prev).set(key, nextStatus));
+    },
+    [],
+  );
+
+  useEffect(() => {
+    setStatusOverrides(new Map());
+    setHiddenKeys(new Set());
+  }, [
+    debouncedSearchQuery,
+    activeFilter,
+    reactionFilter,
+    mediaFilter,
+    filters.sortBy,
+  ]);
 
   const pageState = useWatchlistPage({
-    searchQuery,
+    searchQuery: debouncedSearchQuery,
     activeFilter,
     reactionFilter,
     mediaFilter,
@@ -57,10 +104,33 @@ export function WatchlistTab() {
   const watchlistLoading = pageState.loading;
   const currentPage = pageState.currentPage;
   const totalPages = pageState.totalPages;
-  const totalCount = pageState.totalCount;
-  const displayItems = pageState.items;
+  const totalCount = Math.max(0, pageState.totalCount - hiddenKeys.size);
+  const displayItems = useMemo(
+    () =>
+      pageState.items
+        .map((item) => {
+          const key = `${item.type}:${item.external_id}`;
+          const overridden = statusOverrides.get(key);
+          if (overridden !== undefined) {
+            return { ...item, progressStatus: overridden };
+          }
+          return item;
+        })
+        .filter((item) => {
+          const key = `${item.type}:${item.external_id}`;
+          if (hiddenKeys.has(key)) return false;
+          if (activeFilter !== "all" && item.progressStatus !== activeFilter) {
+            return false;
+          }
+          return true;
+        }),
+    [pageState.items, hiddenKeys, statusOverrides, activeFilter],
+  );
   const displayCounts = pageState.counts;
-  const libraryCount = displayCounts.all || totalCount;
+  const libraryCount = Math.max(
+    0,
+    (displayCounts.all || totalCount) - hiddenKeys.size,
+  );
 
   const handlePageChange = useCallback(
     (newPage: number) => {
@@ -199,6 +269,7 @@ export function WatchlistTab() {
           reactionFilter !== "all"
         }
         onRemoveFromWatchlist={removeFromWatchlist}
+        onStatusChange={handleStatusChange}
       />
 
       <Pagination

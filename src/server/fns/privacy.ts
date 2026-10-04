@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, eq, lte, sql } from "drizzle-orm";
 
 import type { ApiResult } from "../schema/common";
-import { deleteClerkUser, invalidateUserCache } from "../auth";
+import { deleteClerkUser, invalidateUserCache } from "../auth.server";
 import { getDb } from "../db/client";
 import {
   accountDeletionRequests,

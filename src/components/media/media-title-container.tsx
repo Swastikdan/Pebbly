@@ -11,6 +11,7 @@ import {
   useToggleWatchlistItem,
   useWatchlistItem,
 } from "@/hooks/use-watchlist";
+import { destructiveToast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { logError } from "@/lib/utils";
 
@@ -51,7 +52,8 @@ export const MediaTitleContainer = (props: {
   } = props;
 
   const mediaState = useMediaState(String(id), media_type);
-  const { setProgressStatus, setReaction } = useRepository();
+  const repository = useRepository();
+  const { setProgressStatus, setReaction } = repository;
   const toggleWatchlist = useToggleWatchlistItem();
   const { isOnWatchList } = useWatchlistItem(String(id), media_type);
   const progressStatus = mediaState?.progressStatus ?? null;
@@ -134,14 +136,23 @@ export const MediaTitleContainer = (props: {
   };
 
   const handleRemove = () => {
-    toggleWatchlist(
-      {
-        ...metadata,
-        id: String(id),
-        media_type,
+    const payload = {
+      ...metadata,
+      id: String(id),
+      media_type,
+    };
+    const op = repository.removeWithUndo(payload);
+    destructiveToast({
+      title: "Removed from watchlist",
+      description: title,
+      timeout: 5000,
+      onUndo: () => {
+        op.undo();
       },
-      true,
-    ).catch((error) => logError("toggle watchlist", error));
+      onConfirm: () => {
+        void op.commit();
+      },
+    });
   };
 
   return (

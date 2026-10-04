@@ -24,7 +24,9 @@ import { isMediaType } from "@/domain/media";
 import { useUrlPagedQuery } from "@/hooks/use-url-paged-query";
 import { getMedia, getSearchResult } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
+import { destructiveToast } from "@/lib/notifications";
 import {
+  addToSearchHistory,
   clearSearchHistory,
   getSearchHistory,
   removeFromSearchHistory,
@@ -504,8 +506,18 @@ function SearchHistory({
           type="button"
           variant="ghost"
           onClick={() => {
+            const previousHistory = [...history];
             clearSearchHistory();
             setHistory([]);
+            destructiveToast({
+              title: "Search history cleared",
+              onUndo: () => {
+                for (const query of previousHistory) {
+                  addToSearchHistory(query);
+                }
+                setHistory(previousHistory);
+              },
+            });
           }}
           className="text-muted-foreground/60 hover:text-foreground h-auto p-0 text-xs transition-colors hover:bg-transparent"
         >
@@ -537,8 +549,17 @@ function SearchHistory({
               size="icon"
               className="size-4 cursor-pointer p-0 opacity-0 transition-opacity group-hover:opacity-60 hover:bg-transparent hover:opacity-100!"
               onClick={() => {
+                const previousHistory = [...history];
                 removeFromSearchHistory(item);
                 setHistory((prev) => prev.filter((h) => h !== item));
+                destructiveToast({
+                  title: "Removed from history",
+                  description: item,
+                  onUndo: () => {
+                    addToSearchHistory(item);
+                    setHistory(previousHistory);
+                  },
+                });
               }}
               aria-label={`Remove "${item}" from history`}
             >

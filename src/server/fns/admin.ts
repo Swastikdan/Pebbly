@@ -4,7 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import type { ApiResult } from "../schema/common";
 import { captureServerEvent } from "@/lib/posthog-server";
-import { getClerkAdminIds, invalidateUserCache } from "../auth";
+import { getClerkAdminIds, invalidateUserCache } from "../auth.server";
 import { rolePermissions, users } from "../db/schema";
 import { bumpPermsRev } from "../helpers/watch-item";
 import {

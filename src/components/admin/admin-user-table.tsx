@@ -1,4 +1,4 @@
-import { AlertCircle, Search } from "lucide-react";
+import { AlertCircle, Search } from "@/components/ui/hugeicons";
 
 import type { DynamicRbacRole } from "@/components/admin/use-admin-users";
 import { AdminRoleDialog } from "@/components/admin/admin-role-dialog";

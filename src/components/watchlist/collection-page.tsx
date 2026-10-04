@@ -10,7 +10,7 @@ import {
   Pencil,
   Sparkles,
   Trash2,
-} from "lucide-react";
+} from "@/components/ui/hugeicons";
 import {
   lazy,
   Suspense,
@@ -35,8 +35,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { useCustomLists } from "@/hooks/use-custom-lists";
-import { destructiveToast } from "@/hooks/use-destructive-toast";
-import { toast } from "@/lib/notifications";
+import { destructiveToast, toast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle, logError } from "@/lib/utils";
@@ -60,6 +59,7 @@ export function CollectionPage({ listId }: { listId: string }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
   const [targetListId, setTargetListId] = useState("");
   const [bulkStatus, setBulkStatus] = useState<ProgressStatus | "">("");
   const [editing, setEditing] = useState(false);
@@ -160,13 +160,15 @@ export function CollectionPage({ listId }: { listId: string }) {
     void collectionFilterKey;
     setPage(1);
     setSelectedKeys(new Set());
+    setHiddenKeys(new Set());
   }, [collectionFilterKey]);
 
   const {
-    deleteList: deleteCustomList,
+    deleteListWithUndo: repoDeleteList,
     reorderListItem: reorderItems,
     cloneList,
     bulkUpdateListItems: runBulkListItems,
+    toggleListItem,
   } = useRepository();
 
   const handleClone = useCallback(async () => {
@@ -249,7 +251,15 @@ export function CollectionPage({ listId }: { listId: string }) {
   // lists that must never expose Edit/Delete.
   const canManage = payload.role === "owner" && !isPebblyPicks;
 
-  const indexed = items.map((item, index) => ({ item, index }));
+  const visibleItems = useMemo(
+    () =>
+      items.filter(
+        (item) => !hiddenKeys.has(`${item.mediaType}:${item.tmdbId}`),
+      ),
+    [items, hiddenKeys],
+  );
+
+  const indexed = visibleItems.map((item, index) => ({ item, index }));
   const filtered =
     mediaFilter === "all"
       ? indexed
@@ -257,8 +267,8 @@ export function CollectionPage({ listId }: { listId: string }) {
 
   const handleMove = (index: number, dir: -1 | 1) => {
     const target = index + dir;
-    if (target < 0 || target >= items.length) return;
-    const order = [...items];
+    if (target < 0 || target >= visibleItems.length) return;
+    const order = [...visibleItems];
     [order[index], order[target]] = [order[target], order[index]];
     reorderItems({
       listId,
@@ -272,17 +282,25 @@ export function CollectionPage({ listId }: { listId: string }) {
   };
 
   const handleDelete = () => {
+    const op = repoDeleteList(listId);
     destructiveToast({
       title: "Collection deleted",
       description: list.name,
+      onUndo: () => {
+        op.undo();
+        void router.navigate({
+          to: "/c/$id/{-$slug}",
+          params: { id: listId, slug: formatMediaTitle.encode(list.name) },
+        });
+      },
       onConfirm: () => {
-        void deleteCustomList(listId);
+        op.commit();
       },
     });
     void router.navigate({ to: "/watchlist", search: { tab: "collections" } });
   };
 
-  const selectedItems = items.filter((item) =>
+  const selectedItems = visibleItems.filter((item) =>
     selectedKeys.has(`${item.mediaType}:${item.tmdbId}`),
   );
   const toggleSelected = (key: string) => {
@@ -295,9 +313,9 @@ export function CollectionPage({ listId }: { listId: string }) {
   };
   const selectAll = () => {
     setSelectedKeys((current) =>
-      current.size === items.length
+      current.size === visibleItems.length
         ? new Set()
-        : new Set(items.map((item) => `${item.mediaType}:${item.tmdbId}`)),
+        : new Set(visibleItems.map((item) => `${item.mediaType}:${item.tmdbId}`)),
     );
   };
   const goToCollectionPage = async (nextPage: number) => {
@@ -316,6 +334,49 @@ export function CollectionPage({ listId }: { listId: string }) {
 
   const runBulk = async (action: "remove" | "move" | "status") => {
     if (selectedItems.length === 0) return;
+
+    if (action === "remove") {
+      const removedItems = [...selectedItems];
+      const removedKeys = removedItems.map(
+        (item) => `${item.mediaType}:${item.tmdbId}`,
+      );
+
+      setHiddenKeys((prev) => {
+        const next = new Set(prev);
+        for (const k of removedKeys) next.add(k);
+        return next;
+      });
+      setSelectedKeys(new Set());
+
+      destructiveToast({
+        title: `Removed ${removedItems.length} ${removedItems.length === 1 ? "item" : "items"}`,
+        description: `Removed from ${list.name}`,
+        onUndo: () => {
+          setHiddenKeys((prev) => {
+            const next = new Set(prev);
+            for (const k of removedKeys) next.delete(k);
+            return next;
+          });
+        },
+        onConfirm: async () => {
+          try {
+            await runBulkListItems({
+              listId,
+              items: removedItems.map((item) => ({
+                tmdbId: item.tmdbId,
+                mediaType: item.mediaType,
+              })),
+              action: "remove",
+            });
+            await refreshPage();
+          } catch (error) {
+            logError("bulk remove collection items", error);
+          }
+        },
+      });
+      return;
+    }
+
     try {
       await runBulkListItems({
         listId,
@@ -491,16 +552,16 @@ export function CollectionPage({ listId }: { listId: string }) {
           aria-label="Search this collection"
           className="h-9 min-w-52 flex-1 sm:max-w-sm"
         />
-        {canManage && items.length > 0 && (
+        {canManage && visibleItems.length > 0 && (
           <>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={selectAll}
-              aria-pressed={selectedKeys.size === items.length}
+              aria-pressed={selectedKeys.size === visibleItems.length}
             >
-              {selectedKeys.size === items.length
+              {selectedKeys.size === visibleItems.length
                 ? "Clear selection"
                 : "Select page"}
             </Button>
@@ -513,12 +574,12 @@ export function CollectionPage({ listId }: { listId: string }) {
         )}
       </div>
 
-      {items.length > 0 && (
+      {visibleItems.length > 0 && (
         <div className="scrollbar-hidden flex justify-center gap-1.5 overflow-x-auto sm:justify-start">
           <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
             {(["all", "movie", "tv"] as const).map((filter) => {
               const isActive = mediaFilter === filter;
-              const count = items.filter(
+              const count = visibleItems.filter(
                 (item) => filter === "all" || item.mediaType === filter,
               ).length;
               const label =
@@ -614,7 +675,7 @@ export function CollectionPage({ listId }: { listId: string }) {
         </div>
       )}
 
-      {canManage && isOrdered && items.length > 1 && (
+      {canManage && isOrdered && visibleItems.length > 1 && (
         <p className="text-muted-foreground/60 flex items-center gap-1.5 text-xs">
           <ArrowUpDown size={12} className="shrink-0" />
           Ranked list. Use the arrow buttons on each title to rearrange.
@@ -622,7 +683,7 @@ export function CollectionPage({ listId }: { listId: string }) {
       )}
 
       <SilentErrorBoundary>
-        {items.length === 0 ? (
+        {visibleItems.length === 0 ? (
           <div className="text-muted-foreground flex flex-col items-center justify-center gap-4 py-20 text-center">
             <div className="bg-secondary/60 flex size-14 items-center justify-center rounded-lg">
               <ListPlus className="text-muted-foreground/80 size-6" />
@@ -673,7 +734,7 @@ export function CollectionPage({ listId }: { listId: string }) {
                     : undefined
                 }
                 canMoveUp={page === 1 && index > 0}
-                canMoveDown={page === 1 && index < items.length - 1}
+                canMoveDown={page === 1 && index < visibleItems.length - 1}
                 selected={selectedKeys.has(`${item.mediaType}:${item.tmdbId}`)}
                 onSelect={() =>
                   toggleSelected(`${item.mediaType}:${item.tmdbId}`)

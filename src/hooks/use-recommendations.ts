@@ -9,6 +9,7 @@ import type {
   RepeatGenerateContext,
 } from "@/lib/recommendation-options";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
+import { destructiveToast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import {
   buildGenerateAgainOptions,
@@ -131,11 +132,19 @@ export function useRecommendations(initialUserId?: string) {
   const deleteEntry = useCallback(
     async (id: string) => {
       setOptimisticDeletedIds((prev) => new Set(prev).add(id));
-      try {
-        await deleteMutation.mutateAsync(id);
-      } catch (error) {
-        logRecommendationError("delete recommendation", error);
-      }
+      destructiveToast({
+        title: "Recommendation deleted",
+        onUndo: () => {
+          setOptimisticDeletedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+        },
+        onConfirm: () => {
+          deleteMutation.mutate(id);
+        },
+      });
     },
     [deleteMutation],
   );

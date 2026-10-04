@@ -1,9 +1,17 @@
-import type { AuthUser, ClerkSessionClaims, RequireUserResult } from "../auth";
+import type {
+  AuthUser,
+  ClerkSessionClaims,
+  RequireUserResult,
+} from "../auth.server";
 import type { Db } from "../db/client";
 import type { RbacFeature } from "../rbac";
 import type { ApiResult } from "../schema/common";
 import { captureServerException } from "@/lib/posthog-server";
-import { findUserByClaims, getSessionClaims, requireUser } from "../auth";
+import {
+  findUserByClaims,
+  getSessionClaims,
+  requireUser,
+} from "../auth.server";
 import { getDb } from "../db/client";
 import { getEnv } from "../env";
 import { consumeRateLimitBudget } from "../helpers/rate-limit";

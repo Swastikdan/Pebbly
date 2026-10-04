@@ -1,6 +1,6 @@
 import { eq, inArray, sql } from "drizzle-orm";
 
-import type { AuthUser } from "../auth";
+import type { AuthUser } from "../auth.server";
 import type { Db } from "../db/client";
 import { chunkedQuery, runBatch } from "../db/client";
 import {

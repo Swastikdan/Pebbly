@@ -1,5 +1,5 @@
-import { Clock, Play, RotateCcw, Sparkles, Trash2, Tv } from "lucide-react";
-import { memo } from "react";
+import { Clock, Play, RotateCcw, Sparkles, Trash2, Tv } from "@/components/ui/hugeicons";
+import { memo, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import type { NextUpItem } from "@/lib/next-up-engine";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 import { useNextUp } from "@/hooks/use-next-up";
-import { toast } from "@/lib/notifications";
+import { destructiveToast } from "@/lib/notifications";
 import { mediaDetailRoute } from "@/lib/route-helpers";
 import { cn, formatMediaTitle } from "@/lib/utils";
 
@@ -18,43 +18,74 @@ export const NextUpSection = memo(function NextUpSection({
 }) {
   const {
     queue,
-    topItem,
     topEpisodeDetails,
     topWatchProviders,
     providerLink,
     isLoading,
     isSettled,
     snooze,
+    unsnooze,
     remove,
   } = useNextUp();
+
+  const [hiddenIds, setHiddenIds] = useState<Set<string | number>>(new Set());
+
+  const visibleQueue = useMemo(
+    () => queue.filter((item) => !hiddenIds.has(item.id)),
+    [queue, hiddenIds],
+  );
+
+  const topItem = visibleQueue[0] ?? null;
 
   if (isLoading || !isSettled) {
     return null;
   }
 
-  if (!topItem || queue.length === 0) {
+  if (!topItem || visibleQueue.length === 0) {
     return null;
   }
 
-  const remainingQueue = queue.slice(1);
+  const remainingQueue = visibleQueue.slice(1);
 
   const handleSnooze = (item: NextUpItem, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    snooze(item.id, item.type, 24);
-    toast({
+    setHiddenIds((prev) => new Set(prev).add(item.id));
+    destructiveToast({
       title: "Snoozed for 24 hours",
-      description: `"${item.title}" will temporarily hide from your Next Up queue.`,
+      description: item.title,
+      timeout: 5000,
+      onUndo: () => {
+        setHiddenIds((prev) => {
+          const next = new Set(prev);
+          next.delete(item.id);
+          return next;
+        });
+      },
+      onConfirm: () => {
+        snooze(item.id, item.type, 24);
+      },
     });
   };
 
   const handleRemove = async (item: NextUpItem, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    await remove(item.id, item.type);
-    toast({
+    setHiddenIds((prev) => new Set(prev).add(item.id));
+    destructiveToast({
       title: "Removed from Next Up",
-      description: `"${item.title}" was removed from your queue.`,
+      description: item.title,
+      timeout: 5000,
+      onUndo: () => {
+        setHiddenIds((prev) => {
+          const next = new Set(prev);
+          next.delete(item.id);
+          return next;
+        });
+      },
+      onConfirm: () => {
+        void remove(item.id, item.type);
+      },
     });
   };
 
@@ -77,20 +108,6 @@ export const NextUpSection = memo(function NextUpSection({
       aria-labelledby="next-up-heading"
       className={cn("space-y-4", className)}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="bg-primary/10 text-primary flex size-7 items-center justify-center rounded-md">
-            <Play aria-hidden="true" className="size-3.5 fill-current" />
-          </div>
-          <h2 id="next-up-heading" className="text-h2">
-            Next Up
-          </h2>
-          <span className="text-muted-foreground text-xs font-medium">
-            ({queue.length})
-          </span>
-        </div>
-      </div>
-
       {/* Featured Primary Card */}
       {(() => {
         const displayImage =

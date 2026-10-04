@@ -10,7 +10,7 @@ import {
   Radio,
   Search,
   Star,
-} from "lucide-react";
+} from "@/components/ui/hugeicons";
 import { Link } from "@tanstack/react-router";
 
 import { SheetClose } from "@/components/ui/sheet";

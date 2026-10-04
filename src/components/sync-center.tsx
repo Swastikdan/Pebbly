@@ -51,18 +51,14 @@ export function SyncCenter({
   onDiscard,
 }: SyncCenterProps) {
   const headingId = useId();
-  if (!userId || snapshot.total === 0) return null;
+  if (!userId || snapshot.failed === 0) return null;
 
-  const hasFailed = snapshot.failed > 0;
+  const failedRecords = snapshot.records.filter((r) => r.state === "failed");
+  if (failedRecords.length === 0) return null;
+
   const statusText = !online
-    ? "Offline. Changes will sync when the connection returns."
-    : snapshot.syncing > 0
-      ? "Syncing saved changes."
-      : hasFailed
-        ? "Some changes need your attention."
-        : snapshot.recovered > 0
-          ? "Saved changes are up to date."
-          : "Waiting to sync saved changes.";
+    ? "Offline. Some changes failed and need attention."
+    : "Some changes need your attention.";
 
   return (
     <section
@@ -79,23 +75,20 @@ export function SyncCenter({
             {statusText}
           </p>
         </div>
-        {hasFailed && (
-          <Button
-            aria-label="Retry all failed changes"
-            loading={snapshot.syncing > 0}
-            onClick={() => onRetry()}
-            size="sm"
-            variant="outline"
-          >
-            Retry
-          </Button>
-        )}
+        <Button
+          aria-label="Retry all failed changes"
+          loading={snapshot.syncing > 0}
+          onClick={() => onRetry()}
+          size="sm"
+          variant="outline"
+        >
+          Retry
+        </Button>
       </div>
 
       <ol className="mt-3 grid gap-2" aria-label="Saved changes">
-        {snapshot.records.map((record) => {
+        {failedRecords.map((record) => {
           const kindLabel = labelForKind(record.kind);
-          const canRetry = record.state === "failed";
           return (
             <li
               className="border-border flex items-center gap-2 border-t pt-2"
@@ -110,7 +103,7 @@ export function SyncCenter({
                 </div>
                 <div className="text-muted-foreground mt-0.5 text-[11px]">
                   {timeLabel(record.createdAt)}
-                  {record.state === "failed" && record.failure && (
+                  {record.failure && (
                     <span className="ml-1">
                       {record.failure.kind === "permanent"
                         ? "This change cannot be synced automatically."
@@ -119,16 +112,14 @@ export function SyncCenter({
                   )}
                 </div>
               </div>
-              {canRetry && (
-                <Button
-                  aria-label={`Retry ${kindLabel}`}
-                  onClick={() => onRetry(record.id)}
-                  size="xs"
-                  variant="outline"
-                >
-                  Retry
-                </Button>
-              )}
+              <Button
+                aria-label={`Retry ${kindLabel}`}
+                onClick={() => onRetry(record.id)}
+                size="xs"
+                variant="outline"
+              >
+                Retry
+              </Button>
               <Button
                 aria-label={`Discard ${kindLabel}`}
                 onClick={() => onDiscard(record.id)}

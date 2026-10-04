@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Sparkles } from "@/components/ui/hugeicons";
 import { memo } from "react";
 
 import type { AIRecommendation } from "@/domain/recommendations";
@@ -29,6 +29,7 @@ const HomepageRecommendationCard = memo(
         release_date?: string;
         overview?: string;
       },
+      options?: { onRestore?: () => void },
     ) => void;
   }) => {
     const { mediaType } = recommendation;
@@ -70,8 +71,14 @@ const HomepageRecommendationCard = memo(
               },
             );
           },
-          onNotThis: () => {
-            onFeedback(recommendation, resolvedData.id, "dislike");
+          onNotThis: (options) => {
+            onFeedback(
+              recommendation,
+              resolvedData.id,
+              "dislike",
+              undefined,
+              options,
+            );
           },
         }}
       />

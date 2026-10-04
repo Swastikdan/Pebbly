@@ -6,7 +6,7 @@ import {
   RefreshCw,
   Trash2,
   Tv,
-} from "lucide-react";
+} from "@/components/ui/hugeicons";
 
 import type { RecommendationHistoryEntry } from "@/hooks/use-recommendations";
 import { formatTimestamp } from "@/components/recommendations/recommendation-utils";

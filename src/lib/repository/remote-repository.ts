@@ -28,7 +28,7 @@ import {
   applyProgressUpdateRows,
   watchlistOptimistic,
 } from "@/lib/data/optimistic/watchlist-optimistic";
-import { beginOp, scheduleSync } from "@/lib/data/pending-ops";
+import { beginOp, scheduleSync, type OpHandle } from "@/lib/data/pending-ops";
 import { toast } from "@/lib/notifications";
 import { listsSyncKeys, queryKeys } from "@/lib/query/keys";
 import { createMembershipWriter } from "@/lib/repository/membership-writer";
@@ -204,6 +204,10 @@ export function createRemoteRepository(
   const watchlist: WatchlistRepository = {
     async toggleMembership(item, inWatchlist) {
       await memberships.toggleMembership(item, inWatchlist);
+    },
+
+    removeWithUndo(item) {
+      return memberships.removeWithUndo(item);
     },
 
     async setProgressStatus({
@@ -485,6 +489,41 @@ export function createRemoteRepository(
         syncKeys: listsSyncKeys(userId),
         errorMessage: "delete custom list",
       });
+    },
+
+    deleteListWithUndo(listId) {
+      let handle: OpHandle | null = beginDeleteListOp(
+        queryClient,
+        listId,
+        userId,
+      );
+      let committed = false;
+      return {
+        undo: () => {
+          if (committed) return;
+          handle?.remove();
+          handle = null;
+        },
+        commit: () => {
+          if (committed) return;
+          committed = true;
+          unwrap(deleteCustomList({ data: { listId } }))
+            .catch((error) => {
+              logError("delete custom list", error);
+              handle?.remove();
+              toast({
+                title: "Couldn't sync",
+                description: "Failed to delete collection",
+                type: "error",
+              });
+            })
+            .finally(() => {
+              for (const key of listsSyncKeys(userId)) {
+                queryClient.invalidateQueries({ queryKey: key });
+              }
+            });
+        },
+      };
     },
 
     async createList(args) {

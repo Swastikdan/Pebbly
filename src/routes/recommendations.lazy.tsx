@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useUser } from "@clerk/react";
-import { BrainCircuit } from "lucide-react";
+import { BrainCircuit } from "@/components/ui/hugeicons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
@@ -12,7 +12,6 @@ import { GoBack } from "@/components/go-back";
 import { RecommendationFilters } from "@/components/recommendations/recommendation-filters";
 import { RecommendationHistory } from "@/components/recommendations/recommendation-history";
 import { RecommendationResults } from "@/components/recommendations/recommendation-results";
-import { TasteProfileDialog } from "@/components/recommendations/taste-profile-dialog";
 import { fetchCustomLists } from "@/hooks/use-custom-lists";
 import { usePermissions } from "@/hooks/use-permissions";
 import {
@@ -50,7 +49,6 @@ function PageShell({ children }: { children: ReactNode }) {
       <div className="w-full max-w-7xl p-5">
         <div className="mb-6 flex items-center justify-between gap-3">
           <GoBack title="Back" />
-          <TasteProfileDialog />
         </div>
         <h1 className="text-h1 mb-6 text-start">AI Recommendations</h1>
         {children}

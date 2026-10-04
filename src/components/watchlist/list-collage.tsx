@@ -1,4 +1,4 @@
-import { ListPlus } from "lucide-react";
+import { ListPlus } from "@/components/ui/hugeicons";
 
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";

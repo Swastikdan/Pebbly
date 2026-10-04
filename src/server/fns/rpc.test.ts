@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { AuthUser, ClerkSessionClaims } from "../auth";
-import { requireUser } from "../auth";
+import type { AuthUser, ClerkSessionClaims } from "../auth.server";
+import { requireUser } from "../auth.server";
 import { authedFn } from "./rpc";
 
-vi.mock("../auth", () => ({
+vi.mock("../auth.server", () => ({
   requireUser: vi.fn(),
   getSessionClaims: vi.fn(),
   findUserByClaims: vi.fn(),

@@ -41,6 +41,22 @@
       transform: translateX(-50%);
     }
   }
+  @keyframes toast-ring {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: 1;
+    }
+  }
+  @keyframes toast-progress {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
 }
 :root {
   /* Base surface radius: 12px. All radius utilities derive from this scale. */

@@ -1,4 +1,4 @@
-import { Bookmark, ListPlus } from "lucide-react";
+import { Bookmark, ListPlus } from "@/components/ui/hugeicons";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { GoBack } from "@/components/go-back";

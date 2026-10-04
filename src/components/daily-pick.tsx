@@ -1,4 +1,4 @@
-import { Dices, Eye, ThumbsDown } from "lucide-react";
+import { Dices, Eye, ThumbsDown } from "@/components/ui/hugeicons";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 

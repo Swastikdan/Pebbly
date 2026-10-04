@@ -16,6 +16,7 @@ export function WatchlistGrid({
   hasActiveFilters,
   totalWatchlistCount,
   onRemoveFromWatchlist,
+  onStatusChange,
 }: {
   items: WatchlistItem[];
   loading: boolean;
@@ -23,6 +24,7 @@ export function WatchlistGrid({
   hasActiveFilters: boolean;
   totalWatchlistCount?: number;
   onRemoveFromWatchlist: (item: WatchlistItem) => void;
+  onStatusChange?: (item: WatchlistItem, nextStatus: any) => void;
 }) {
   if (loading && items.length === 0) {
     return (
@@ -86,6 +88,7 @@ export function WatchlistGrid({
               key={`${item.type}-${item.external_id}`}
               item={item}
               onRemoveFromWatchlist={onRemoveFromWatchlist}
+              onStatusChange={onStatusChange}
               priority={index < 7}
             />
           ),

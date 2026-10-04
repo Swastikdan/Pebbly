@@ -1,5 +1,5 @@
-import { ThumbsDown, ThumbsUp } from "lucide-react";
-import { memo } from "react";
+import { ThumbsDown, ThumbsUp } from "@/components/ui/hugeicons";
+import { memo, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
@@ -15,7 +15,7 @@ import {
   useRemoveFromContinueWatching,
   useWatchProgress,
 } from "@/hooks/watch-progress/use-watch-progress";
-import { toast } from "@/lib/notifications";
+import { destructiveToast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { mediaDetailRoute } from "@/lib/route-helpers";
 import { cn, formatMediaTitle } from "@/lib/utils";
@@ -33,14 +33,20 @@ interface ContinueWatchingRemoveButtonProps {
   rating: number;
   releaseDate: string | null;
   overview?: string;
+  onOptimisticRemove?: () => void;
+  onRestore?: () => void;
 }
 
 const ContinueWatchingRemoveButton = memo(
   (props: ContinueWatchingRemoveButtonProps) => {
-    const { id, mediaType, title, image, rating, releaseDate, overview } =
-      props;
+    const {
+      id,
+      mediaType,
+      title,
+      onOptimisticRemove,
+      onRestore,
+    } = props;
     const { removeFromContinueWatching } = useRemoveFromContinueWatching();
-    const { setProgressStatus } = useRepository();
 
     return (
       <button
@@ -50,27 +56,16 @@ const ContinueWatchingRemoveButton = memo(
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
-          removeFromContinueWatching(id, mediaType);
-          toast({
+          onOptimisticRemove?.();
+          destructiveToast({
             title: "Removed from Continue Watching",
             description: title,
-            action: {
-              label: "Undo",
-              onClick: () => {
-                setProgressStatus({
-                  id: String(id),
-                  mediaType,
-                  progressStatus: "watching",
-                  metadata: {
-                    title,
-                    image,
-                    rating,
-                    release_date: releaseDate ?? "",
-                    overview,
-                  },
-                  currentStatus: "watch-later",
-                });
-              },
+            timeout: 5000,
+            onUndo: () => {
+              onRestore?.();
+            },
+            onConfirm: () => {
+              void removeFromContinueWatching(id, mediaType);
             },
           });
         }}
@@ -102,7 +97,7 @@ interface MediaCardSpecificProps extends BaseCardProps {
   isRecommended?: boolean;
   feedbackActions?: {
     onMoreLikeThis: () => void;
-    onNotThis: () => void;
+    onNotThis: (options?: { onRestore?: () => void }) => void;
     isLiked?: boolean;
     isDisliked?: boolean;
   };
@@ -189,6 +184,20 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
     play: isContinueWatching && continueWatchingPlay,
   });
 
+  const [removed, setRemoved] = useState(false);
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setOptimisticLiked(null);
+  }, [feedbackActions?.isLiked]);
+
+  if (removed) return null;
+
+  const isLiked =
+    optimisticLiked !== null
+      ? optimisticLiked
+      : Boolean(feedbackActions?.isLiked);
+
   return (
     <div className={cn("group relative", containerClassName)}>
       <Link
@@ -248,7 +257,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
         className={cn(
           "absolute end-2 top-2 z-10 flex items-center gap-1.5",
           actionsClassName,
-          feedbackActions?.isLiked && "!opacity-100",
+          (isLiked || feedbackActions?.isLiked) && "!opacity-100",
         )}
       >
         {isContinueWatching && (
@@ -260,6 +269,8 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             rating={rating}
             releaseDate={release_date}
             overview={overview}
+            onOptimisticRemove={() => setRemoved(true)}
+            onRestore={() => setRemoved(false)}
           />
         )}
         {!hideWatchlistButton && (
@@ -274,6 +285,12 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             title={title}
             overview={overview}
             className="h-8 w-8 rounded-md shadow-none"
+            onOptimisticRemove={
+              is_on_watchlist_page ? () => setRemoved(true) : undefined
+            }
+            onRestore={
+              is_on_watchlist_page ? () => setRemoved(false) : undefined
+            }
           />
         )}
         {feedbackActions && (
@@ -281,29 +298,30 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             <button
               type="button"
               title={
-                feedbackActions.isLiked
+                isLiked
                   ? "More like this (saved)"
                   : "More like this"
               }
               aria-label={`More like this: ${title}`}
-              aria-pressed={feedbackActions.isLiked}
+              aria-pressed={isLiked}
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
+                setOptimisticLiked(!isLiked);
                 feedbackActions.onMoreLikeThis();
               }}
               className={cn(
                 "pressable flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border transition-all duration-150 active:scale-95",
-                feedbackActions.isLiked
+                isLiked
                   ? "border-emerald-600 bg-emerald-600 text-white"
-                  : "border-neutral-700 bg-black/70 text-white/90 hover:bg-neutral-800 hover:text-white",
+                  : "border-neutral-700 bg-black/70 text-white/90 hover:border-emerald-600 hover:bg-emerald-600 hover:text-white",
               )}
             >
               <ThumbsUp
                 aria-hidden="true"
                 className={cn(
                   "size-3.5",
-                  feedbackActions.isLiked && "fill-current",
+                  isLiked && "fill-current",
                 )}
               />
             </button>
@@ -315,7 +333,10 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                feedbackActions.onNotThis();
+                setRemoved(true);
+                feedbackActions.onNotThis({
+                  onRestore: () => setRemoved(false),
+                });
               }}
               className={cn(
                 "pressable hover:border-destructive hover:bg-destructive flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-neutral-700 bg-black/70 text-white/90 transition-all duration-150 hover:text-white active:scale-95",

@@ -1,4 +1,4 @@
-import { Ban, Check, ShieldCheck, UserCog, UserX } from "lucide-react";
+import { Ban, Check, ShieldCheck, UserCog, UserX } from "@/components/ui/hugeicons";
 
 import type { AdminUser } from "@/components/admin/use-admin-users";
 import { ROLE_CONFIGS } from "@/components/admin/use-admin-users";

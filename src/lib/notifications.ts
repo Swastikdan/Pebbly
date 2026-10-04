@@ -25,3 +25,8 @@ export function toast(options: ToastOptions) {
 }
 
 export type { ToastOptions } from "@/domain/notifications";
+export {
+  destructiveToast,
+  DESTRUCTIVE_TOAST_TIMEOUT,
+} from "@/hooks/use-destructive-toast";
+export type { DestructiveToastOptions } from "@/hooks/use-destructive-toast";

@@ -1,13 +1,12 @@
 import { SignInButton, useUser } from "@clerk/react";
-import { ListPlus, Plus } from "lucide-react";
+import { ListPlus, Plus } from "@/components/ui/hugeicons";
 import { lazy, Suspense, useMemo, useState } from "react";
 
 import { DefaultLoader } from "@/components/default-loader";
 import { Button } from "@/components/ui/button";
 import { CustomListCard } from "@/components/watchlist/custom-list-card";
 import { useCustomLists } from "@/hooks/use-custom-lists";
-import { destructiveToast } from "@/hooks/use-destructive-toast";
-import { toast } from "@/lib/notifications";
+import { destructiveToast, toast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { logError } from "@/lib/utils";
 
@@ -28,7 +27,7 @@ export function MyListsTab({
 }: MyListsTabProps = {}) {
   const { isSignedIn, isLoaded } = useUser();
   const { lists: customLists, loading } = useCustomLists(initialUserId);
-  const { deleteList: deleteCustomList, cloneList } = useRepository();
+  const { deleteListWithUndo: repoDeleteList, cloneList } = useRepository();
   const [showCreateList, setShowCreateList] = useState(false);
   const [editingList, setEditingList] = useState<{
     id: string;
@@ -95,11 +94,15 @@ export function MyListsTab({
     visibility?: string | null;
     sortType?: "unordered" | "ordered";
   }) => {
+    const op = repoDeleteList(list._id);
     destructiveToast({
       title: "Collection deleted",
       description: list.name,
+      onUndo: () => {
+        op.undo();
+      },
       onConfirm: () => {
-        deleteCustomList(list._id);
+        op.commit();
       },
     });
   };

@@ -1,4 +1,5 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp } from "@/components/ui/hugeicons";
+import { useState } from "react";
 
 import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
@@ -13,7 +14,7 @@ import {
   resolvePosterSrc,
 } from "@/components/watchlist/media-row-card-shell";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
-import { toast } from "@/lib/notifications";
+import { destructiveToast } from "@/lib/notifications";
 import { useRepository } from "@/lib/repository/use-repository";
 import { cn, formatMediaTitle, logError } from "@/lib/utils";
 
@@ -67,39 +68,30 @@ export function CustomListMediaCard({
   const reactionOption = reaction ? getReactionOption(reaction) : null;
   const ProgressIcon = progressOption.icon;
 
+  const [removed, setRemoved] = useState(false);
+
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleListItem({
-      listId: listId,
-      tmdbId: item.tmdbId,
-      mediaType: item.mediaType,
-    })
-      .then((added) => {
-        if (added) return;
-        toast({
-          title: "Removed from collection",
-          description: item.title,
-          action: {
-            label: "Undo",
-            onClick: () => {
-              toggleListItem({
-                listId,
-                tmdbId: item.tmdbId,
-                mediaType: item.mediaType,
-                title: item.title,
-                image: item.image,
-                backdrop: item.backdrop,
-                rating: item.rating,
-                release_date: item.release_date,
-                overview: item.overview,
-              }).catch((error) => logError("toggle list item", error));
-            },
-          },
-        });
-      })
-      .catch((error) => logError("toggle list item", error));
+    setRemoved(true);
+    destructiveToast({
+      title: "Removed from collection",
+      description: item.title,
+      timeout: 5000,
+      onUndo: () => {
+        setRemoved(false);
+      },
+      onConfirm: () => {
+        toggleListItem({
+          listId: listId,
+          tmdbId: item.tmdbId,
+          mediaType: item.mediaType,
+        }).catch((error) => logError("remove list item", error));
+      },
+    });
   };
+
+  if (removed) return null;
 
   const handleMoveClick = (dir: -1 | 1) => (e: React.MouseEvent) => {
     e.preventDefault();

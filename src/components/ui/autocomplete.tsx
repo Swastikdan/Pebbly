@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { ChevronsUpDownIcon, XIcon } from "lucide-react";
+import { ChevronsUpDownIcon, XIcon } from "@/components/ui/hugeicons";
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomplete";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
