@@ -6,6 +6,7 @@ import type { Db } from "./db/client";
 import type {
   FeedbackSignals,
   RecommendationCandidate,
+  WatchItemSummary,
   WatchlistData,
 } from "./prompts";
 import type { TasteProfile } from "./schema/taste-profile";
@@ -88,6 +89,8 @@ export async function gatherGenerationInputs(
       dislikedTitles: combinedDislikedTitles,
       dislikedTmdbIds: collectFeedback(feedbackList, dislikeKinds, "tmdbId"),
       dislikedThemes: tasteProfile?.dislikedThemes,
+      preferredGenres: tasteProfile?.preferredGenres,
+      dislikedGenres: tasteProfile?.dislikedGenres,
       adventureLevel: tasteProfile?.adventureLevel,
     },
   };
@@ -149,27 +152,10 @@ export async function runAiGeneration(args: {
   }
 
   const modelRecommendations = args.candidateCatalog?.length
-    ? aiResult.result.recommendations.flatMap((recommendation) => {
-        const tmdbId = recommendation.tmdbId;
-        if (typeof tmdbId !== "number") return [];
-        const candidate = args.candidateCatalog?.find(
-          (item) =>
-            candidateIdentity(item) ===
-            candidateIdentity({
-              mediaType: recommendation.mediaType,
-              tmdbId,
-            }),
-        );
-        if (!candidate) return [];
-        return [
-          {
-            ...recommendation,
-            title: candidate.title,
-            tmdbId: candidate.tmdbId,
-            mediaType: candidate.mediaType,
-          },
-        ];
-      })
+    ? matchRecommendationsToCatalog(
+        aiResult.result.recommendations,
+        args.candidateCatalog,
+      )
     : aiResult.result.recommendations;
 
   const recommendations = filterKnownRecommendations(
@@ -263,11 +249,71 @@ function collectFeedback<K extends "title" | "tmdbId">(
   return list.filter((f) => feedback.includes(f.feedback)).map((f) => f[key]);
 }
 
+/**
+ * Re-grounds model output against the candidate catalog. Matches on
+ * (mediaType, tmdbId) first, then falls back to an exact normalized title
+ * within the same media type: the model regularly echoes a correct title with
+ * a wrong or missing TMDB id, and dropping those silently lost good picks.
+ * Either way the emitted title/id/mediaType are taken from the catalog entry,
+ * so an invented title can never survive. The previous implementation scanned
+ * the catalog with `Array.find` per recommendation (O(candidates x picks)).
+ */
+export function matchRecommendationsToCatalog(
+  recommendations: Recommendation[],
+  catalog: RecommendationCandidate[],
+): Recommendation[] {
+  const byId = new Map<string, RecommendationCandidate>();
+  const byTitle = new Map<string, RecommendationCandidate>();
+  for (const candidate of catalog) {
+    byId.set(candidateIdentity(candidate), candidate);
+    const title = normalizeTitleKey(candidate.title);
+    // First catalog entry wins: the catalog arrives best-ranked-first, so a
+    // duplicate title resolves to the stronger candidate.
+    if (title) {
+      const titleKey = `${candidate.mediaType}:${title}`;
+      if (!byTitle.has(titleKey)) byTitle.set(titleKey, candidate);
+    }
+  }
+
+  return recommendations.flatMap((recommendation) => {
+    const tmdbId = recommendation.tmdbId;
+    const candidate =
+      (typeof tmdbId === "number"
+        ? byId.get(
+            candidateIdentity({
+              mediaType: recommendation.mediaType,
+              tmdbId,
+            }),
+          )
+        : undefined) ??
+      byTitle.get(
+        `${recommendation.mediaType}:${normalizeTitleKey(recommendation.title)}`,
+      );
+    if (!candidate) return [];
+    return [
+      {
+        ...recommendation,
+        title: candidate.title,
+        tmdbId: candidate.tmdbId,
+        mediaType: candidate.mediaType,
+      },
+    ];
+  });
+}
+
 function filterKnownRecommendations<
-  T extends { tmdbId?: number | null; title?: string | null },
+  T extends {
+    tmdbId?: number | null;
+    title?: string | null;
+    mediaType?: string;
+  },
 >(
   recommendations: T[],
-  watchItems: Array<{ tmdbId: number; title: string | null }>,
+  watchItems: Array<{
+    tmdbId: number;
+    title: string | null;
+    mediaType?: string;
+  }>,
   extraExcludedIds: number[],
   extraExcludedTitles: string[],
 ): T[] {
@@ -275,23 +321,35 @@ function filterKnownRecommendations<
     ...watchItems.map((item) => item.tmdbId),
     ...extraExcludedIds,
   ]);
-  const existingTitles = new Set([
-    ...watchItems.map((item) => normalizeTitleKey(item.title)),
-    ...extraExcludedTitles.map(normalizeTitleKey),
-  ]);
+  const existingTitles = new Set(
+    watchItems.map(
+      (item) => `${item.mediaType ?? "*"}:${normalizeTitleKey(item.title)}`,
+    ),
+  );
+  const genericExcludedTitles = new Set(
+    extraExcludedTitles.map(normalizeTitleKey),
+  );
   return recommendations.filter(
     (r) =>
       (r.tmdbId == null || !existingIds.has(r.tmdbId)) &&
-      !existingTitles.has(normalizeTitleKey(r.title)),
+      !existingTitles.has(
+        `${r.mediaType ?? "*"}:${normalizeTitleKey(r.title)}`,
+      ) &&
+      !genericExcludedTitles.has(normalizeTitleKey(r.title)),
   );
 }
 
 async function getRecommendationFeedbackInternal(db: Db, userId: string) {
-  return db
-    .select()
-    .from(recommendationFeedback)
-    .where(eq(recommendationFeedback.userId, userId))
-    .limit(100);
+  return (
+    db
+      .select()
+      .from(recommendationFeedback)
+      .where(eq(recommendationFeedback.userId, userId))
+      // Newest first: the 100-row cap previously took insertion order, which let
+      // stale feedback crowd out the user's most recent likes/dislikes.
+      .orderBy(desc(recommendationFeedback.updatedAt))
+      .limit(100)
+  );
 }
 
 async function gatherWatchlistData(
@@ -383,6 +441,7 @@ async function gatherWatchlistData(
     excludedWatchItems: watchItemRows.map((i) => ({
       tmdbId: i.tmdbId,
       title: i.title,
+      mediaType: i.mediaType as WatchItemSummary["mediaType"],
     })),
     lists: recommendationLists.map((l) => ({ _id: l.id, name: l.name })),
     listItems: listItemRows

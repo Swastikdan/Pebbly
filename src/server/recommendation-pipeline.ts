@@ -7,6 +7,7 @@ import type {
   Recommendation as RecommendationRow,
 } from "./schema/recommendations";
 import type { MediaType } from "@/domain/media";
+import { GENRE_LIST } from "@/constants";
 import { captureServerEvent } from "@/lib/posthog-server";
 import { dedupeRecommendations } from "./ai";
 import { aiRecommendations, homepageRecommendations } from "./db/schema";
@@ -32,6 +33,8 @@ const GENERATION_RATE_LIMIT_KEY = "ai-gen";
 const HOMEPAGE_RATE_LIMIT_KEY = "ai-homepage";
 const RECENT_HISTORY_EXCLUSION_ENTRIES = 10;
 const MAX_RECENT_EXCLUSION_TITLES = 150;
+const MAX_HOMEPAGE_RECOMMENDATIONS = 30;
+const MAX_HOMEPAGE_PER_MEDIA_TYPE = 15;
 
 type PipelineContext = {
   db: Db;
@@ -43,23 +46,32 @@ export type RecommendationPipelineIntent =
   | { type: "history"; options: GenerateRecommendationsArgs }
   | { type: "homepage" };
 
-function balanceHomepageRecommendations(
+/**
+ * Cap each media type at 15 and interleave them so neither side starves.
+ * The caps are applied to the filtered lists up front: guarding the loop with
+ * the *uncapped* lengths made it spin forever once a media type exceeded its
+ * cap (e.g. 16 movies and 0 TV shows), hanging the whole generation request.
+ * Exported so the termination guarantee is covered by tests.
+ */
+export function balanceHomepageRecommendations(
   recommendations: RecommendationRow[],
 ): RecommendationRow[] {
-  const movies = recommendations.filter((item) => item.mediaType === "movie");
-  const shows = recommendations.filter((item) => item.mediaType === "tv");
+  const movies = recommendations
+    .filter((item) => item.mediaType === "movie")
+    .slice(0, MAX_HOMEPAGE_PER_MEDIA_TYPE);
+  const shows = recommendations
+    .filter((item) => item.mediaType === "tv")
+    .slice(0, MAX_HOMEPAGE_PER_MEDIA_TYPE);
   const result: RecommendationRow[] = [];
-  let movieIndex = 0;
-  let showIndex = 0;
+  const total = Math.min(
+    MAX_HOMEPAGE_RECOMMENDATIONS,
+    movies.length + shows.length,
+  );
 
-  while (
-    result.length < 30 &&
-    (movieIndex < movies.length || showIndex < shows.length)
-  ) {
-    if (movieIndex < Math.min(movies.length, 15))
-      result.push(movies[movieIndex++]);
-    if (result.length >= 30) break;
-    if (showIndex < Math.min(shows.length, 15)) result.push(shows[showIndex++]);
+  for (let index = 0; result.length < total; index++) {
+    if (index < movies.length) result.push(movies[index]);
+    if (result.length >= total) break;
+    if (index < shows.length) result.push(shows[index]);
   }
 
   return result;
@@ -203,11 +215,10 @@ async function runHistoryPipeline(
     return { error: "listId is required for list generation" };
   }
 
-  const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
-    context.db,
-    context.userId,
-    ["not_interested"],
-  );
+  const { watchlistData, feedbackSignals, tasteProfile } =
+    await gatherGenerationInputs(context.db, context.userId, [
+      "not_interested",
+    ]);
   if (generationType === "watchlist" && watchlistData.watchItems.length === 0) {
     return { error: "empty_watchlist" };
   }
@@ -295,6 +306,18 @@ async function runHistoryPipeline(
             )
         : undefined,
     mediaTypePreference: options.mediaTypePreference,
+    preferredGenreIds:
+      generationType === "genre"
+        ? []
+        : tasteProfile?.preferredGenres
+            .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
+            .filter((id): id is number => id !== undefined),
+    dislikedGenreIds:
+      generationType === "genre"
+        ? []
+        : tasteProfile?.dislikedGenres
+            .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
+            .filter((id): id is number => id !== undefined),
     excludeTmdbIds,
     excludeTitles,
     yearFrom: options.yearFrom,
@@ -335,6 +358,8 @@ async function runHistoryPipeline(
         genreMode: options.genreMode,
         count: Math.min(Math.max(options.count ?? 10, 1), 30),
         dislikedThemes: feedbackSignals.dislikedThemes,
+        preferredGenres: tasteProfile?.preferredGenres,
+        dislikedGenres: tasteProfile?.dislikedGenres,
         adventureLevel: feedbackSignals.adventureLevel,
         goal:
           generationType === "genre"
@@ -457,11 +482,11 @@ async function runHomepagePipeline(
   );
   if (token.error) return { error: token.error };
 
-  const { watchlistData, feedbackSignals } = await gatherGenerationInputs(
-    context.db,
-    context.userId,
-    ["not_interested", "dislike"],
-  );
+  const { watchlistData, feedbackSignals, tasteProfile } =
+    await gatherGenerationInputs(context.db, context.userId, [
+      "not_interested",
+      "dislike",
+    ]);
   const previous = parseStoredRecommendations(homepageEntry?.recommendations);
   const recent = await getRecentRecommendationExclusions(
     context.db,
@@ -488,6 +513,12 @@ async function runHomepagePipeline(
     excludedWatchItems: watchlistData.excludedWatchItems,
     excludeTmdbIds: excludeIds,
     excludeTitles,
+    preferredGenreIds: tasteProfile?.preferredGenres
+      .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
+      .filter((id): id is number => id !== undefined),
+    dislikedGenreIds: tasteProfile?.dislikedGenres
+      .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
+      .filter((id): id is number => id !== undefined),
     limit: 60,
     balanced: true,
   });
@@ -515,6 +546,8 @@ async function runHomepagePipeline(
         previousTitles,
         count: 30,
         dislikedThemes: feedbackSignals.dislikedThemes,
+        preferredGenres: tasteProfile?.preferredGenres,
+        dislikedGenres: tasteProfile?.dislikedGenres,
         adventureLevel: feedbackSignals.adventureLevel,
         goal:
           feedbackSignals.adventureLevel === "adventurous"

@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
-import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowUp } from "@/components/ui/hugeicons";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
@@ -154,70 +153,6 @@ export function CustomListMediaCard({
         `${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`
       }
       titleClassName="group-hover:text-primary transition-colors"
-      actions={
-        !readOnly && (
-          <div className="flex shrink-0 items-center gap-0.5">
-            {showSelect && (
-              <label className="flex size-9 shrink-0 cursor-pointer items-center justify-center">
-                <input
-                  type="checkbox"
-                  checked={Boolean(selected)}
-                  onChange={onSelect}
-                  onClick={(event) => event.stopPropagation()}
-                  aria-label={`Select ${item.title ?? "title"}`}
-                  className="size-4"
-                  style={{ accentColor: listColor || "var(--primary)" }}
-                />
-              </label>
-            )}
-            {onMove !== undefined && (
-              <div className="flex flex-col gap-0">
-                <button
-                  type="button"
-                  onClick={handleMoveClick(-1)}
-                  disabled={!canMoveUp}
-                  title="Move up one rank"
-                  className={cn(
-                    "text-muted-foreground/60 flex size-5 items-center justify-center rounded-md transition-colors",
-                    canMoveUp
-                      ? "hover:bg-secondary hover:text-foreground cursor-pointer"
-                      : "cursor-not-allowed opacity-30",
-                  )}
-                  aria-label="Move up one rank"
-                >
-                  <ArrowUp aria-hidden="true" size={12} />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleMoveClick(1)}
-                  disabled={!canMoveDown}
-                  title="Move down one rank"
-                  className={cn(
-                    "text-muted-foreground/60 flex size-5 items-center justify-center rounded-md transition-colors",
-                    canMoveDown
-                      ? "hover:bg-secondary hover:text-foreground cursor-pointer"
-                      : "cursor-not-allowed opacity-30",
-                  )}
-                  aria-label="Move down one rank"
-                >
-                  <ArrowDown aria-hidden="true" size={12} />
-                </button>
-              </div>
-            )}
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive-foreground shrink-0 p-1.5 opacity-100 transition-colors focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
-              aria-label={`Remove from collection`}
-              onClick={handleRemove}
-            >
-              <TrashBin aria-hidden="true" size={14} />
-            </Button>
-          </div>
-        )
-      }
       metaRow={
         <MediaMetaRow
           mediaType={item.mediaType}
@@ -230,8 +165,8 @@ export function CustomListMediaCard({
       overview={item.overview}
       overviewClassName="text-muted-foreground/80 dark:text-muted-foreground/60"
       footer={
-        (item.progressStatus || item.reaction) && (
-          <div className="flex items-center gap-1.5 pt-2">
+        (item.progressStatus || item.reaction || !readOnly) && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-2">
             {item.progressStatus && (
               <MediaChip icon={ProgressIcon} label={progressOption.label} />
             )}
@@ -241,6 +176,76 @@ export function CustomListMediaCard({
                 label={reactionOption.label}
                 title={reactionOption.label}
               />
+            )}
+            {!readOnly && (
+              <div className="ms-auto flex items-center gap-1.5">
+                {showSelect && (
+                  <label
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onSelect?.();
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onSelect?.();
+                    }}
+                    className={cn(
+                      "border-border/70 text-foreground hover:bg-secondary inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border px-2 text-[11px] font-medium transition-colors",
+                      selected && "bg-secondary border-foreground/30",
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selected)}
+                      onChange={() => {}}
+                      aria-label={`Select ${item.title ?? "title"}`}
+                      className="size-3.5"
+                      style={{ accentColor: listColor || "var(--primary)" }}
+                    />
+                    {selected ? "Selected" : "Select"}
+                  </label>
+                )}
+                {onMove !== undefined && (
+                  <div className="border-border/70 inline-flex h-7 items-center overflow-hidden rounded-md border">
+                    <button
+                      type="button"
+                      onClick={handleMoveClick(-1)}
+                      disabled={!canMoveUp}
+                      title="Move up one rank"
+                      aria-label="Move up one rank"
+                      className="hover:bg-secondary text-foreground flex h-full items-center gap-1 px-2 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
+                    >
+                      <ArrowUp aria-hidden="true" size={12} />
+                      <span className="hidden sm:inline">Up</span>
+                    </button>
+                    <span className="bg-border/70 h-full w-px" />
+                    <button
+                      type="button"
+                      onClick={handleMoveClick(1)}
+                      disabled={!canMoveDown}
+                      title="Move down one rank"
+                      aria-label="Move down one rank"
+                      className="hover:bg-secondary text-foreground flex h-full items-center gap-1 px-2 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
+                    >
+                      <ArrowDown aria-hidden="true" size={12} />
+                      <span className="hidden sm:inline">Down</span>
+                    </button>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleRemove}
+                  aria-label="Remove from collection"
+                  title="Remove from collection"
+                  className="border-destructive/40 text-destructive-foreground hover:bg-destructive/10 inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px] font-medium transition-colors"
+                >
+                  <TrashBin aria-hidden="true" size={12} />
+                  Remove
+                </button>
+              </div>
             )}
           </div>
         )

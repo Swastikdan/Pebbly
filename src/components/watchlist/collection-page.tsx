@@ -35,6 +35,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { useCustomLists } from "@/hooks/use-custom-lists";
+import { collectionViewMode } from "@/lib/collection-view";
 import { destructiveToast, toast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
 import { useRepository } from "@/lib/repository/use-repository";
@@ -90,16 +91,17 @@ export function CollectionPage({ listId }: { listId: string }) {
     const localList = localLists.find((entry) => entry._id === listId);
     if (!localList) return null;
     const normalizedSearch = search.trim().toLocaleLowerCase();
-    const filteredItems = localItems
-      .filter((item) => item.listId === listId)
-      .filter((item) => mediaFilter === "all" || item.mediaType === mediaFilter)
-      .filter(
-        (item) =>
-          normalizedSearch.length < 2 ||
-          [item.title, item.overview].some((value) =>
-            value?.toLocaleLowerCase().includes(normalizedSearch),
-          ),
-      );
+    const collectionItems = localItems.filter((item) => item.listId === listId);
+    const searchedItems = collectionItems.filter(
+      (item) =>
+        normalizedSearch.length < 2 ||
+        [item.title, item.overview].some((value) =>
+          value?.toLocaleLowerCase().includes(normalizedSearch),
+        ),
+    );
+    const filteredItems = searchedItems.filter(
+      (item) => mediaFilter === "all" || item.mediaType === mediaFilter,
+    );
     const pageItems = filteredItems.slice((page - 1) * 100, page * 100);
     return {
       role: "owner",
@@ -143,6 +145,15 @@ export function CollectionPage({ listId }: { listId: string }) {
         release_date: item.release_date ?? null,
       })),
       totalCount: filteredItems.length,
+      // Search-scoped but mediaType-independent, so selecting a media type the
+      // list has none of never blanks out the filter tabs.
+      mediaTypeCounts: {
+        all: searchedItems.length,
+        movie: searchedItems.filter((item) => item.mediaType === "movie")
+          .length,
+        tv: searchedItems.filter((item) => item.mediaType === "tv").length,
+      },
+      collectionItemCount: collectionItems.length,
       nextCursor: null,
       hasNextPage: page * 100 < filteredItems.length,
     };
@@ -249,6 +260,17 @@ export function CollectionPage({ listId }: { listId: string }) {
 
   const payload = currentCollectionPage;
   const list = payload.list;
+  const { mediaTypeCounts, collectionItemCount } = payload;
+  const trimmedSearch = search.trim();
+  const viewMode = collectionViewMode({
+    mediaFilter,
+    search,
+    visibleCount: visibleItems.length,
+  });
+  const resetFilters = () => {
+    setSearch("");
+    setMediaFilter("all");
+  };
   const isPebblyPicks = list.listType === "pebbly-picks";
   const isOrdered = list.sortType === "ordered";
   const isPublic = list.visibility === "public";
@@ -524,14 +546,14 @@ export function CollectionPage({ listId }: { listId: string }) {
       </div>
 
       {/* Meta Row: count • description • created date */}
-      <div className="text-muted-foreground/75 flex flex-wrap items-center gap-2 text-xs">
-        <span>
-          {items.length} {items.length === 1 ? "title" : "titles"}
+      <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+        <span className="text-foreground font-medium">
+          {collectionItemCount} {collectionItemCount === 1 ? "title" : "titles"}
         </span>
         {list.description && (
           <>
-            <span>•</span>
-            <span className="max-w-md truncate">{list.description}</span>
+            <span aria-hidden="true">•</span>
+            <span className="max-w-xl truncate">{list.description}</span>
           </>
         )}
         <span className="ms-auto shrink-0 text-[11px]">
@@ -544,44 +566,13 @@ export function CollectionPage({ listId }: { listId: string }) {
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search this collection"
-          aria-label="Search this collection"
-          className="h-9 min-w-52 flex-1 sm:max-w-sm"
-        />
-        {canManage && visibleItems.length > 0 && (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={selectAll}
-              aria-pressed={selectedKeys.size === visibleItems.length}
-            >
-              {selectedKeys.size === visibleItems.length
-                ? "Clear selection"
-                : "Select page"}
-            </Button>
-            {selectedKeys.size > 0 && (
-              <span className="text-muted-foreground text-xs">
-                {selectedKeys.size} selected
-              </span>
-            )}
-          </>
-        )}
-      </div>
-
-      {visibleItems.length > 0 && (
-        <div className="scrollbar-hidden flex justify-center gap-1.5 overflow-x-auto sm:justify-start">
-          <div className="bg-secondary/50 border-border/40 dark:bg-secondary/30 dark:border-border/20 flex gap-0.5 rounded-lg border p-0.5">
+      {/* Single toolbar: filters + search + selection */}
+      <div className="border-border/60 bg-card flex flex-wrap items-center gap-2 rounded-xl border p-2">
+        {collectionItemCount > 0 && (
+          <div className="bg-secondary/50 border-border/40 flex gap-0.5 rounded-lg border p-0.5">
             {(["all", "movie", "tv"] as const).map((filter) => {
               const isActive = mediaFilter === filter;
-              const count = visibleItems.filter(
-                (item) => filter === "all" || item.mediaType === filter,
-              ).length;
+              const count = mediaTypeCounts[filter];
               const label =
                 filter === "all"
                   ? "All"
@@ -611,12 +602,42 @@ export function CollectionPage({ listId }: { listId: string }) {
               );
             })}
           </div>
-        </div>
+        )}
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search this collection"
+          aria-label="Search this collection"
+          className="h-9 min-w-44 flex-1"
+        />
+        {canManage && visibleItems.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={selectAll}
+            aria-pressed={selectedKeys.size === visibleItems.length}
+            className="h-9"
+          >
+            {selectedKeys.size === visibleItems.length
+              ? "Clear selection"
+              : "Select all"}
+          </Button>
+        )}
+      </div>
+
+      {canManage && isOrdered && visibleItems.length > 1 && (
+        <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+          <ArrowUpDown size={12} className="shrink-0" />
+          Ranked list. Use Up / Down on each title to rearrange.
+        </p>
       )}
 
       {canManage && selectedItems.length > 0 && (
-        <div className="border-border bg-secondary/30 flex flex-wrap items-center gap-2 rounded-lg border p-2">
-          <span className="text-xs font-medium">Bulk actions</span>
+        <div className="border-border bg-card sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-xl border p-2.5 shadow-lg">
+          <span className="text-xs font-semibold">
+            {selectedItems.length} selected
+          </span>
           <select
             aria-label="Choose destination collection"
             className="border-border bg-background h-8 rounded-md border px-2 text-xs"
@@ -675,15 +696,8 @@ export function CollectionPage({ listId }: { listId: string }) {
         </div>
       )}
 
-      {canManage && isOrdered && visibleItems.length > 1 && (
-        <p className="text-muted-foreground/60 flex items-center gap-1.5 text-xs">
-          <ArrowUpDown size={12} className="shrink-0" />
-          Ranked list. Use the arrow buttons on each title to rearrange.
-        </p>
-      )}
-
       <SilentErrorBoundary>
-        {visibleItems.length === 0 ? (
+        {viewMode === "empty" ? (
           <div className="text-muted-foreground flex flex-col items-center justify-center gap-4 py-20 text-center">
             <div className="bg-secondary/60 flex size-14 items-center justify-center rounded-lg">
               <ListPlus className="text-muted-foreground/80 size-6" />
@@ -698,14 +712,29 @@ export function CollectionPage({ listId }: { listId: string }) {
               </p>
             </div>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : viewMode === "no-matches" ? (
+          // The collection has titles, but the current search/media-type filter
+          // matches none. The filter tabs above stay mounted so this state is
+          // always escapable.
           <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-16 text-center">
             <p className="text-xs">
-              No {mediaFilter === "movie" ? "movies" : "TV shows"} in this list.
+              {mediaFilter !== "all" && trimmedSearch.length >= 2
+                ? `No ${mediaFilter === "movie" ? "movies" : "TV shows"} match "${trimmedSearch}".`
+                : mediaFilter !== "all"
+                  ? `No ${mediaFilter === "movie" ? "movies" : "TV shows"} in this collection.`
+                  : `No titles match "${trimmedSearch}".`}
             </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={resetFilters}
+            >
+              Show all titles
+            </Button>
           </div>
         ) : (
-          <div className="stagger-grid grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="stagger-grid grid w-full grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
             {filtered.map(({ item, index }) => (
               <CustomListMediaCard
                 key={`${item.tmdbId}-${item.mediaType}`}
