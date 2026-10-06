@@ -1,25 +1,18 @@
-import { useState } from "react";
+import { memo } from "react";
+import { Link } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
 import { ArrowDown, ArrowUp } from "@/components/ui/hugeicons";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
-import {
-  MediaChip,
-  MediaMetaRow,
-  MediaRowCardShell,
-  releaseYearOf,
-  resolvePosterSrc,
-} from "@/components/watchlist/media-row-card-shell";
+import { releaseYearOf } from "@/components/watchlist/media-row-card-shell";
+import { IMAGE_PREFIX } from "@/constants";
 import { getProgressOption, getReactionOption } from "@/constants/watchlist";
-import { destructiveToast } from "@/lib/notifications";
-import { useRepository } from "@/lib/repository/use-repository";
-import { cn, formatMediaTitle, logError } from "@/lib/utils";
+import { cn, formatMediaTitle } from "@/lib/utils";
 
-export function CustomListMediaCard({
+function CustomListMediaCardImpl({
   item,
-  listId,
   priority,
   readOnly,
   rank,
@@ -30,6 +23,7 @@ export function CustomListMediaCard({
   onSelect,
   showSelect,
   listColor,
+  onRemove,
 }: {
   item: {
     tmdbId: number;
@@ -54,45 +48,38 @@ export function CustomListMediaCard({
   onSelect?: () => void;
   showSelect?: boolean;
   listColor?: string;
+  onRemove?: () => void;
 }) {
-  const { toggleListItem } = useRepository();
-  const hasMetadata = !!(item.title && (item.backdrop || item.image));
   const formattedTitle = item.title
     ? formatMediaTitle.encode(item.title)
     : undefined;
-  const imageUrl = resolvePosterSrc(item.image, item.backdrop);
+
+  // SD quality (w500) for crisp posters in the grid
+  const posterSrc = item.image
+    ? `${IMAGE_PREFIX.SD_POSTER}${item.image}`
+    : item.backdrop
+      ? `${IMAGE_PREFIX.SD_BACKDROP}${item.backdrop}`
+      : undefined;
+
   const year = releaseYearOf(item.release_date);
 
-  const progressStatus = item.progressStatus ?? "watch-later";
-  const reaction = item.reaction ?? null;
-  const progressOption = getProgressOption(progressStatus);
-  const reactionOption = reaction ? getReactionOption(reaction) : null;
-  const ProgressIcon = progressOption.icon;
+  const progressOption = item.progressStatus
+    ? getProgressOption(item.progressStatus)
+    : null;
+  const reactionOption = item.reaction
+    ? getReactionOption(item.reaction)
+    : null;
 
-  const [removed, setRemoved] = useState(false);
+  const routeType = item.mediaType === "tv" ? "series" : item.mediaType;
+  const to = formattedTitle
+    ? `/${routeType}/${item.tmdbId}/${formattedTitle}`
+    : `/${routeType}/${item.tmdbId}`;
 
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setRemoved(true);
-    destructiveToast({
-      title: "Removed from collection",
-      description: item.title,
-      timeout: 5000,
-      onUndo: () => {
-        setRemoved(false);
-      },
-      onConfirm: () => {
-        toggleListItem({
-          listId: listId,
-          tmdbId: item.tmdbId,
-          mediaType: item.mediaType,
-        }).catch((error) => logError("remove list item", error));
-      },
-    });
+    onRemove?.();
   };
-
-  if (removed) return null;
 
   const handleMoveClick = (dir: -1 | 1) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -100,156 +87,224 @@ export function CustomListMediaCard({
     onMove?.(dir);
   };
 
-  const routeType = item.mediaType === "tv" ? "series" : item.mediaType;
+  const handleSelect = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onSelect?.();
+  };
 
   return (
-    <MediaRowCardShell
-      to={
-        formattedTitle
-          ? `/${routeType}/${item.tmdbId}/${formattedTitle}`
-          : `/${routeType}/${item.tmdbId}`
-      }
-      className={cn(
-        "rounded-lg",
-        selected &&
-          (listColor
-            ? "text-foreground"
-            : "border-primary/20 bg-primary/[0.06] text-foreground"),
-      )}
-      style={
-        selected && listColor
-          ? {
-              backgroundColor: `${listColor}12`,
-              borderColor: `${listColor}55`,
-            }
-          : undefined
-      }
-      poster={
-        <>
-          {hasMetadata && imageUrl ? (
+    <div className="group/card relative flex flex-col">
+      {/* ── Poster container ─────────────────────────── */}
+      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl">
+        {/* Poster / fallback */}
+        <Link
+          to={to}
+          className="absolute inset-0"
+          aria-label={item.title ?? `${item.mediaType} #${item.tmdbId}`}
+        >
+          {posterSrc ? (
             <Image
+              src={posterSrc}
               alt={item.title ?? ""}
-              className="bg-muted h-40 w-26.75 rounded-lg object-cover sm:h-35 sm:w-23.25"
-              height={210}
-              src={imageUrl}
-              placeholderText={item.title}
-              width={140}
+              layout="fullWidth"
+              className="size-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-[1.04]"
               priority={priority}
             />
           ) : (
-            <div className="bg-secondary text-muted-foreground flex h-40 w-26.75 shrink-0 animate-pulse items-center justify-center rounded-lg text-xs font-medium sm:h-35 sm:w-23.25">
-              {item.mediaType === "movie" ? "MOV" : "SER"}
+            <div className="bg-muted text-muted-foreground/40 flex size-full items-center justify-center text-[11px] font-semibold tracking-widest uppercase">
+              {item.mediaType === "movie" ? "Movie" : "Series"}
             </div>
           )}
-          {rank !== undefined && (
-            <span className="bg-foreground text-background border-card absolute -start-1.5 -top-1.5 flex size-6 items-center justify-center rounded-md border-2 text-[11px] font-bold tabular-nums">
-              {rank}
+          {/* Permanent bottom vignette */}
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/75 via-black/10 to-transparent" />
+        </Link>
+
+        {/* ── Selected state: simple white/dark overlay, no coloured ring ── */}
+        {selected && (
+          <div className="pointer-events-none absolute inset-0 z-10 rounded-xl bg-white/10 ring-2 ring-white/60 ring-inset dark:bg-white/[0.07] dark:ring-white/30" />
+        )}
+
+        {/* ── Rank badge — top-left ─────────────────── */}
+        {rank !== undefined && (
+          <div
+            className="absolute start-2 top-2 z-20 flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-[11px] font-bold text-white tabular-nums shadow"
+            style={{ backgroundColor: listColor ?? "rgba(0,0,0,0.6)" }}
+          >
+            {rank}
+          </div>
+        )}
+
+        {/* ── Status + Reaction chips — bottom ─────── */}
+        <div className="pointer-events-none absolute start-2 end-2 bottom-2 z-20 flex items-end justify-between gap-1">
+          {progressOption && (
+            <span className="flex h-6 items-center gap-1.5 rounded-md bg-black/65 px-2 text-[11px] font-semibold text-white backdrop-blur-sm">
+              <progressOption.icon aria-hidden="true" size={11} />
+              {progressOption.label}
             </span>
           )}
-        </>
-      }
-      title={
-        item.title ??
-        `${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`
-      }
-      titleClassName="group-hover:text-primary transition-colors"
-      metaRow={
-        <MediaMetaRow
-          mediaType={item.mediaType}
-          year={year}
-          rating={item.rating}
-          className="text-muted-foreground/90 dark:text-muted-foreground/75 text-[11px]"
-          labelClassName="font-medium"
-        />
-      }
-      overview={item.overview}
-      overviewClassName="text-muted-foreground/80 dark:text-muted-foreground/60"
-      footer={
-        (item.progressStatus || item.reaction || !readOnly) && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-2">
-            {item.progressStatus && (
-              <MediaChip icon={ProgressIcon} label={progressOption.label} />
+          {reactionOption && (
+            <span className="ms-auto flex h-6 items-center gap-1.5 rounded-md bg-black/65 px-2 text-[11px] font-semibold text-white backdrop-blur-sm">
+              <reactionOption.icon aria-hidden="true" size={11} />
+              <span className="sr-only">{reactionOption.label}</span>
+            </span>
+          )}
+        </div>
+
+        {/* ── Action buttons overlay (top) ─────────── */}
+        {!readOnly && (
+          <div
+            className={cn(
+              "absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-1.5 p-2",
+              // hide on desktop until hover; always visible when selected
+              selected
+                ? "opacity-100"
+                : "opacity-100 md:opacity-0 md:transition-opacity md:duration-200 md:group-hover/card:opacity-100",
             )}
-            {reactionOption && (
-              <MediaChip
-                icon={reactionOption.icon}
-                label={reactionOption.label}
-                title={reactionOption.label}
-              />
-            )}
-            {!readOnly && (
-              <div className="ms-auto flex items-center gap-1.5">
-                {showSelect && (
-                  <label
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onSelect?.();
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key !== "Enter" && event.key !== " ") return;
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onSelect?.();
-                    }}
-                    className={cn(
-                      "border-border/70 text-foreground hover:bg-secondary inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border px-2 text-[11px] font-medium transition-colors",
-                      selected && "bg-secondary border-foreground/30",
-                    )}
+          >
+            {/* Select toggle — square, instant swap, no transition */}
+            {showSelect && (
+              <button
+                type="button"
+                onClick={handleSelect}
+                aria-label={selected ? "Deselect" : "Select"}
+                className={cn(
+                  "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border shadow-sm",
+                  selected
+                    ? "bg-foreground border-foreground text-background"
+                    : "border-white/40 bg-black/50 text-white backdrop-blur-sm hover:bg-black/70",
+                )}
+              >
+                {selected ? (
+                  /* Checkmark — no transition, just swap */
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    aria-hidden="true"
                   >
-                    <input
-                      type="checkbox"
-                      checked={Boolean(selected)}
-                      onChange={() => {}}
-                      aria-label={`Select ${item.title ?? "title"}`}
-                      className="size-3.5"
-                      style={{ accentColor: listColor || "var(--primary)" }}
+                    <path
+                      d="M2.5 7.5l3 3 6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
-                    {selected ? "Selected" : "Select"}
-                  </label>
+                  </svg>
+                ) : (
+                  /* Plain square outline */
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <rect
+                      x="1"
+                      y="1"
+                      width="12"
+                      height="12"
+                      rx="1.5"
+                      stroke="currentColor"
+                      strokeOpacity="0.85"
+                      strokeWidth="1.5"
+                    />
+                  </svg>
                 )}
-                {onMove !== undefined && (
-                  <div className="border-border/70 inline-flex h-7 items-center overflow-hidden rounded-md border">
-                    <button
-                      type="button"
-                      onClick={handleMoveClick(-1)}
-                      disabled={!canMoveUp}
-                      title="Move up one rank"
-                      aria-label="Move up one rank"
-                      className="hover:bg-secondary text-foreground flex h-full items-center gap-1 px-2 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
-                    >
-                      <ArrowUp aria-hidden="true" size={12} />
-                      <span className="hidden sm:inline">Up</span>
-                    </button>
-                    <span className="bg-border/70 h-full w-px" />
-                    <button
-                      type="button"
-                      onClick={handleMoveClick(1)}
-                      disabled={!canMoveDown}
-                      title="Move down one rank"
-                      aria-label="Move down one rank"
-                      className="hover:bg-secondary text-foreground flex h-full items-center gap-1 px-2 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
-                    >
-                      <ArrowDown aria-hidden="true" size={12} />
-                      <span className="hidden sm:inline">Down</span>
-                    </button>
-                  </div>
-                )}
+              </button>
+            )}
+
+            {/* Move + Remove — top-right */}
+            <div className="ms-auto flex gap-1.5">
+              {onMove !== undefined && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleMoveClick(-1)}
+                    disabled={!canMoveUp}
+                    title="Move up"
+                    aria-label="Move up one rank"
+                    className="flex size-8 items-center justify-center rounded-md border border-white/35 bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70 disabled:cursor-not-allowed disabled:opacity-25"
+                  >
+                    <ArrowUp aria-hidden="true" size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMoveClick(1)}
+                    disabled={!canMoveDown}
+                    title="Move down"
+                    aria-label="Move down one rank"
+                    className="flex size-8 items-center justify-center rounded-md border border-white/35 bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70 disabled:cursor-not-allowed disabled:opacity-25"
+                  >
+                    <ArrowDown aria-hidden="true" size={14} />
+                  </button>
+                </>
+              )}
+              {onRemove !== undefined && (
                 <button
                   type="button"
                   onClick={handleRemove}
                   aria-label="Remove from collection"
-                  title="Remove from collection"
-                  className="border-destructive/40 text-destructive-foreground hover:bg-destructive/10 inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px] font-medium transition-colors"
+                  title="Remove"
+                  className="flex size-8 items-center justify-center rounded-md border border-white/35 bg-black/50 text-white backdrop-blur-sm transition-colors hover:border-red-400/50 hover:bg-red-500/75"
                 >
-                  <TrashBin aria-hidden="true" size={12} />
-                  Remove
+                  <TrashBin aria-hidden="true" size={14} />
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        )
-      }
-    />
+        )}
+      </div>
+
+      {/* ── Footer ─────────────────────────────────── */}
+      <div className="mt-2 min-w-0 px-0.5">
+        <Link to={to} tabIndex={-1} aria-hidden="true">
+          <h3
+            className={cn(
+              "line-clamp-2 text-[13px] leading-snug font-semibold transition-colors duration-150",
+              selected
+                ? "text-primary"
+                : "text-foreground group-hover/card:text-primary",
+            )}
+          >
+            {item.title ??
+              `${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`}
+          </h3>
+        </Link>
+        <div className="text-muted-foreground/70 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
+          <span className="font-medium">
+            {item.mediaType === "tv" ? "TV" : "Movie"}
+          </span>
+          {year && (
+            <>
+              <span aria-hidden="true" className="opacity-40">
+                ·
+              </span>
+              <span>{year}</span>
+            </>
+          )}
+          {(item.rating ?? 0) > 0 && (
+            <>
+              <span aria-hidden="true" className="opacity-40">
+                ·
+              </span>
+              <span>★ {item.rating?.toFixed(1)}</span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
+
+/**
+ * Memoized: this card renders up to 100× per page. A `memo` boundary lets the
+ * reconciler skip every untouched card when one card's selection state flips
+ * or a sibling is removed, instead of re-rendering all 100 subtrees in one
+ * main-thread block.
+ */
+export const CustomListMediaCard = memo(CustomListMediaCardImpl);
+
+CustomListMediaCard.displayName = "CustomListMediaCard";
