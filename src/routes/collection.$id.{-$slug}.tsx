@@ -104,7 +104,6 @@ function MovieCollectionPage() {
             className="h-70 w-50 shrink-0 rounded-xl object-cover sm:h-52 sm:w-36"
             height={300}
             src={IMAGE_PREFIX.HD_POSTER + poster_path}
-            placeholderText={name}
             width={200}
             priority
           />

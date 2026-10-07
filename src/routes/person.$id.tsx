@@ -262,7 +262,6 @@ function PersonPage() {
                 className="h-full w-full object-cover"
                 width={300}
                 height={450}
-                placeholderText={name}
                 priority
               />
             ) : (

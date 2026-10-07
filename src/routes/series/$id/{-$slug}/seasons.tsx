@@ -104,7 +104,6 @@ function TvSeasonsPage() {
                   className="h-40 w-28 shrink-0 rounded-lg object-cover md:h-52 md:w-36"
                   height={300}
                   src={IMAGE_PREFIX.SD_POSTER + season.poster_path}
-                  placeholderText={season.name}
                   width={200}
                   priority={index === 0}
                 />

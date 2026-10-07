@@ -144,7 +144,6 @@ export function WatchlistCard({
           height={210}
           src={imageUrl}
           blurSrc={blurSrc}
-          placeholderText={item.title}
           width={140}
           priority={priority}
         />

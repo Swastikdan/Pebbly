@@ -748,12 +748,19 @@ export function CollectionPage({ listId }: { listId: string }) {
       )}
 
       {canManage && selectedItems.length > 0 && (
-        <div className="border-border/60 bg-background/95 sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-2xl border px-3 py-2 shadow-lg shadow-black/10 backdrop-blur-md">
+        <div className="border-border/60 bg-background/95 sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 backdrop-blur-md">
           {/* Count */}
           <div className="flex items-center gap-2">
             <span
-              className="flex h-6 min-w-6 items-center justify-center rounded-lg px-1.5 text-[11px] font-bold text-white tabular-nums"
-              style={{ backgroundColor: "var(--primary)" }}
+              className={cn(
+                "flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-[11px] font-bold tabular-nums",
+                !list.color && "bg-foreground text-background",
+              )}
+              style={
+                list.color
+                  ? { backgroundColor: list.color, color: "#ffffff" }
+                  : undefined
+              }
             >
               {selectedItems.length}
             </span>
@@ -768,7 +775,7 @@ export function CollectionPage({ listId }: { listId: string }) {
           <div className="flex items-center gap-1.5">
             <select
               aria-label="Choose destination collection"
-              className="border-border bg-secondary/60 text-foreground h-7 rounded-lg border px-2 text-[11px] font-medium focus:outline-none"
+              className="border-border bg-secondary/60 text-foreground h-7 rounded-md border px-2 text-[11px] font-medium focus:outline-none"
               value={targetListId}
               onChange={(event) => setTargetListId(event.target.value)}
             >
@@ -784,10 +791,10 @@ export function CollectionPage({ listId }: { listId: string }) {
             <Button
               type="button"
               size="sm"
-              variant="secondary"
+              variant={targetListId ? "default" : "outline"}
               disabled={!targetListId}
               onClick={() => void runBulk("move")}
-              className="h-7 rounded-lg px-2.5 text-[11px] font-medium"
+              className="h-7 rounded-md px-2.5 text-[11px] font-medium"
             >
               Move
             </Button>
@@ -799,7 +806,7 @@ export function CollectionPage({ listId }: { listId: string }) {
           <div className="flex items-center gap-1.5">
             <select
               aria-label="Choose watchlist status"
-              className="border-border bg-secondary/60 text-foreground h-7 rounded-lg border px-2 text-[11px] font-medium focus:outline-none"
+              className="border-border bg-secondary/60 text-foreground h-7 rounded-md border px-2 text-[11px] font-medium focus:outline-none"
               value={bulkStatus}
               onChange={(event) =>
                 setBulkStatus(event.target.value as ProgressStatus | "")
@@ -814,10 +821,10 @@ export function CollectionPage({ listId }: { listId: string }) {
             <Button
               type="button"
               size="sm"
-              variant="secondary"
+              variant={bulkStatus ? "default" : "outline"}
               disabled={!bulkStatus}
               onClick={() => void runBulk("status")}
-              className="h-7 rounded-lg px-2.5 text-[11px] font-medium"
+              className="h-7 rounded-md px-2.5 text-[11px] font-medium"
             >
               Apply
             </Button>
@@ -831,7 +838,7 @@ export function CollectionPage({ listId }: { listId: string }) {
             size="sm"
             variant="destructive"
             onClick={() => void runBulk("remove")}
-            className="h-7 rounded-lg px-2.5 text-[11px] font-medium"
+            className="h-7 rounded-md px-2.5 text-[11px] font-medium"
           >
             Remove
           </Button>
@@ -933,7 +940,7 @@ export function CollectionPage({ listId }: { listId: string }) {
             </Button>
           </div>
         ) : (
-          <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid w-full grid-cols-2 gap-2.5 min-[440px]:grid-cols-3 sm:grid-cols-4 sm:gap-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8">
             {filtered.map(({ item, index }) => (
               <CustomListMediaCard
                 key={`${item.tmdbId}-${item.mediaType}`}

@@ -1,9 +1,9 @@
-import { Dices, Eye, ThumbsDown } from "@/components/ui/hugeicons";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogPopup, DialogTrigger } from "@/components/ui/dialog";
+import { Dices, Eye, ThumbsDown } from "@/components/ui/hugeicons";
 import {
   BookMarkIcon,
   FilmIcon,
@@ -85,7 +85,6 @@ export function DailyPickButton() {
                       <Image
                         alt={pick.title}
                         src={pick.backdropUrl}
-                        placeholderText={pick.title}
                         className="h-full w-full object-cover"
                         width={600}
                         height={350}
@@ -139,7 +138,6 @@ export function DailyPickButton() {
                           <Image
                             alt={pick.title}
                             src={pick.posterUrl}
-                            placeholderText={pick.title}
                             className="h-full w-full object-cover transition-transform duration-200 [@media(hover:hover)]:group-hover/poster:scale-105"
                             width={100}
                             height={150}

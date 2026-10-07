@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
-import { ArrowDown, ArrowUp } from "@/components/ui/hugeicons";
+import { ArrowDown, ArrowUp, Check } from "@/components/ui/hugeicons";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
 import { releaseYearOf } from "@/components/watchlist/media-row-card-shell";
@@ -153,65 +153,29 @@ function CustomListMediaCardImpl({
 
         {/* ── Action buttons overlay (top) ─────────── */}
         {!readOnly && (
-          <div
-            className={cn(
-              "absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-1.5 p-2",
-              // hide on desktop until hover; always visible when selected
-              selected
-                ? "opacity-100"
-                : "opacity-100 md:opacity-0 md:transition-opacity md:duration-200 md:group-hover/card:opacity-100",
-            )}
-          >
-            {/* Select toggle — square, instant swap, no transition */}
+          <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-1.5 p-2">
+            {/* Select toggle — clean square checkbox with Check icon */}
             {showSelect && (
               <button
                 type="button"
                 onClick={handleSelect}
                 aria-label={selected ? "Deselect" : "Select"}
+                style={
+                  selected && listColor
+                    ? { backgroundColor: listColor, borderColor: listColor }
+                    : undefined
+                }
                 className={cn(
-                  "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border shadow-sm",
+                  "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border shadow-sm transition-colors",
                   selected
-                    ? "bg-foreground border-foreground text-background"
-                    : "border-white/40 bg-black/50 text-white backdrop-blur-sm hover:bg-black/70",
+                    ? listColor
+                      ? "text-white"
+                      : "bg-foreground border-foreground text-background"
+                    : "border-white/50 bg-black/50 text-transparent backdrop-blur-sm hover:border-white hover:bg-black/70",
                 )}
               >
-                {selected ? (
-                  /* Checkmark — no transition, just swap */
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M2.5 7.5l3 3 6-6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                ) : (
-                  /* Plain square outline */
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <rect
-                      x="1"
-                      y="1"
-                      width="12"
-                      height="12"
-                      rx="1.5"
-                      stroke="currentColor"
-                      strokeOpacity="0.85"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
+                {selected && (
+                  <Check size={16} strokeWidth={2.5} aria-hidden="true" />
                 )}
               </button>
             )}
@@ -265,9 +229,12 @@ function CustomListMediaCardImpl({
             className={cn(
               "line-clamp-2 text-[13px] leading-snug font-semibold transition-colors duration-150",
               selected
-                ? "text-primary"
+                ? listColor
+                  ? ""
+                  : "text-primary"
                 : "text-foreground group-hover/card:text-primary",
             )}
+            style={selected && listColor ? { color: listColor } : undefined}
           >
             {item.title ??
               `${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`}

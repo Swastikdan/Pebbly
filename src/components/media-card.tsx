@@ -211,7 +211,6 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
             alt={title}
             src={imageUrl}
             blurSrc={blurSrc}
-            placeholderText={title}
             className="h-full w-full object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
             width={imageWidth}
             height={imageHeight}
@@ -528,7 +527,6 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
           alt={name}
           src={imageUrl}
           blurSrc={blurSrc}
-          placeholderText={name}
           className="h-full w-full object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
           width={200}
           height={300}
