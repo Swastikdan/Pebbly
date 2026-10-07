@@ -41,10 +41,12 @@ export type CandidateGenerationOptions = {
   yearTo?: number;
   limit?: number;
   balanced?: boolean;
+  preferredGenreIds?: number[];
+  dislikedGenreIds?: number[];
 };
 
 const MIN_TMDB_YEAR = 1800;
-const MAX_SEED_TITLES = 2;
+const MAX_SEED_TITLES = 4;
 const DEFAULT_CANDIDATE_LIMIT = 40;
 const HOMEPAGE_CANDIDATE_LIMIT = 60;
 
@@ -136,7 +138,12 @@ function toTvCandidate(
   };
 }
 
-function scoreCandidate(candidate: RawCandidate, maxPopularity: number) {
+export function scoreCandidate(
+  candidate: RawCandidate,
+  maxPopularity: number,
+  preferred: Set<number> = new Set(),
+  disliked: Set<number> = new Set(),
+) {
   const ratingScore = Math.min(candidate.rating / 10, 1);
   const voteScore = Math.min(Math.log10(candidate.voteCount + 1) / 5, 1);
   const popularityScore = Math.min(
@@ -156,12 +163,20 @@ function scoreCandidate(candidate: RawCandidate, maxPopularity: number) {
         ? 0.05
         : 0;
 
+  const preferredHits = candidate.genreIds.filter((id) =>
+    preferred.has(id),
+  ).length;
+  const dislikedHits = candidate.genreIds.filter((id) =>
+    disliked.has(id),
+  ).length;
   return (
     ratingScore * 0.42 +
     voteScore * 0.25 +
     popularityScore * 0.15 +
     freshnessScore * 0.08 +
-    sourceScore * 0.1
+    sourceScore * 0.1 +
+    Math.min(preferredHits, 3) * 0.12 -
+    Math.min(dislikedHits, 3) * 0.15
   );
 }
 
@@ -222,7 +237,17 @@ export async function getRecommendationCandidates(
         Promise.all(
           mediaTypes.map(async (type) => {
             try {
-              return await getMedia({ type, page: 1 });
+              return (
+                await Promise.all(
+                  [1, 2].map(async (page) => {
+                    try {
+                      return await getMedia({ type, page });
+                    } catch {
+                      return [];
+                    }
+                  }),
+                )
+              ).flat();
             } catch (error) {
               console.warn(
                 `[recommendations] TMDB ${type} candidates failed`,
@@ -251,10 +276,18 @@ export async function getRecommendationCandidates(
     genreQueries.flatMap((genreQuery) =>
       mediaTypes.map(async (type) => {
         try {
+          const fetchPage = (page: number) =>
+            type === "movies_popular"
+              ? getDiscoverMovies({ with_genres: genreQuery, page })
+              : getDiscoverTv({ with_genres: genreQuery, page });
+          const pages = options.genreMode === "separate" ? [1] : [1, 2];
+          const results = await Promise.all(
+            pages.map((page) => fetchPage(page).catch(() => ({ results: [] }))),
+          );
           const result =
             type === "movies_popular"
-              ? await getDiscoverMovies({ with_genres: genreQuery, page: 1 })
-              : await getDiscoverTv({ with_genres: genreQuery, page: 1 });
+              ? { results: results.flatMap((page) => page.results ?? []) }
+              : { results: results.flatMap((page) => page.results ?? []) };
           return { type, result };
         } catch (error) {
           console.warn(
@@ -395,10 +428,16 @@ export async function getRecommendationCandidates(
     ...uniqueCandidates.map((item) => item.popularity),
     1,
   );
+  const preferred = new Set(
+    (options.preferredGenreIds ?? []).filter(Number.isFinite),
+  );
+  const disliked = new Set(
+    (options.dislikedGenreIds ?? []).filter(Number.isFinite),
+  );
   const ranked = uniqueCandidates
     .map((candidate) => ({
       candidate,
-      score: scoreCandidate(candidate, maxPopularity),
+      score: scoreCandidate(candidate, maxPopularity, preferred, disliked),
     }))
     .sort((a, b) => b.score - a.score)
     .map(({ candidate }) => candidate);

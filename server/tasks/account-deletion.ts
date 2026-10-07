@@ -1,6 +1,6 @@
 import { defineTask } from "nitro/task";
 
-import { processDueAccountDeletions } from "../../src/server/fns/privacy";
+import { processDueAccountDeletions } from "../../src/server/helpers/account-deletion";
 
 export default defineTask({
   meta: {
