@@ -42,6 +42,7 @@ export function MediaPosterTrailerContainer(props: {
           className="bg-secondary aspect-[2/3] h-full w-full rounded-xl object-cover sm:h-56 sm:w-auto md:h-[17.5rem] lg:h-80"
           height={450}
           src={image}
+          placeholderText={title}
           width={300}
           priority
         />

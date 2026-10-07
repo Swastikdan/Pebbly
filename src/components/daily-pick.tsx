@@ -85,6 +85,7 @@ export function DailyPickButton() {
                       <Image
                         alt={pick.title}
                         src={pick.backdropUrl}
+                        placeholderText={pick.title}
                         className="h-full w-full object-cover"
                         width={600}
                         height={350}
@@ -138,6 +139,7 @@ export function DailyPickButton() {
                           <Image
                             alt={pick.title}
                             src={pick.posterUrl}
+                            placeholderText={pick.title}
                             className="h-full w-full object-cover transition-transform duration-200 [@media(hover:hover)]:group-hover/poster:scale-105"
                             width={100}
                             height={150}

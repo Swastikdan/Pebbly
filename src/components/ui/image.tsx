@@ -19,7 +19,7 @@ const ImageComponent = ({
 }: ImageProps & {
   fallbackImage?: string;
   blurSrc?: string;
-  /** Optional text shown over the image while it loads. */
+  /** Optional text shown as a fallback when the image fails to load. */
   placeholderText?: string;
 }) => {
   const [error, setError] = useState(false);
@@ -78,17 +78,32 @@ const ImageComponent = ({
         className,
       )}
     >
+      {/* Centered title text — always rendered while the image hasn't
+          successfully loaded. For non-priority images the skeleton (z-10)
+          sits on top so this is invisible until the skeleton fades out on
+          error. For priority images (no skeleton) it acts as a pleasant
+          centered placeholder while the image decodes. */}
       {!loaded && placeholderText && (
         <div
           aria-hidden="true"
-          className="text-muted-foreground absolute inset-0 flex items-center justify-center p-2 text-center text-xs leading-snug font-semibold text-balance"
+          className="text-muted-foreground absolute inset-0 z-0 flex items-center justify-center p-2 text-center text-xs leading-snug font-semibold text-balance"
         >
           <span className="line-clamp-4">{placeholderText}</span>
         </div>
       )}
-      {!loaded && !priority && (
-        <Skeleton className="absolute inset-0 rounded-none" />
+
+      {/* Shimmer skeleton — covers the entire area (including the text
+          above) while loading. Fades out once the image loads or errors
+          so the real image / text fallback can show through. */}
+      {!priority && (
+        <Skeleton
+          className={cn(
+            "absolute inset-0 z-10 rounded-none transition-opacity duration-500 ease-out",
+            (loaded || error) && "pointer-events-none opacity-0",
+          )}
+        />
       )}
+
       <ReactImage
         ref={attachRef}
         alt={alt ?? "Image"}
@@ -96,6 +111,7 @@ const ImageComponent = ({
           className,
           "transition-opacity duration-500 ease-out",
           !loaded && !priority && "opacity-0",
+          !loaded && "text-transparent",
         )}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : undefined}

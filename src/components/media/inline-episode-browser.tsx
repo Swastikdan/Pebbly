@@ -308,6 +308,7 @@ function EpisodeCard({
               ? `${IMAGE_PREFIX.LQ_BACKDROP}${episode.still_path}`
               : "https://placehold.co/500x281?text=No+Image"
           }
+          placeholderText={episode.name}
           width={250}
         />
         <ExternalPlayerLink
