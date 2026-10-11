@@ -146,8 +146,10 @@ export function buildGenerateOptions(
     const matchedEras = ERA_PRESETS.filter((e) =>
       input.selectedEras?.includes(e.label),
     );
-    options.yearFrom = Math.min(...matchedEras.map((e) => e.from));
-    options.yearTo = Math.max(...matchedEras.map((e) => e.to));
+    if (matchedEras.length) {
+      options.yearFrom = Math.min(...matchedEras.map((e) => e.from));
+      options.yearTo = Math.max(...matchedEras.map((e) => e.to));
+    }
   }
 
   const exclusions = cappedTrackedExclusions(trackedTmdbIds);

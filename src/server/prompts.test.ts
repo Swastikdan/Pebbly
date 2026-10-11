@@ -143,6 +143,60 @@ describe("buildCandidateRecommendationPrompt", () => {
     expect(prompt).not.toContain("The Nice Guys (TMDB ID:");
   });
 
+  it("adds genre names and a bounded overview so ranking can honour genre signals", () => {
+    const longOverview = `${"x".repeat(400)}`;
+    const prompt = buildCandidateRecommendationPrompt({
+      candidates: [
+        {
+          tmdbId: 550,
+          mediaType: "movie",
+          title: "Fight Club",
+          year: 1999,
+          rating: 8.4,
+          voteCount: 28000,
+          genreIds: [18, 53, 999999],
+          overview: `An insomniac office worker\n\n${longOverview}`,
+        },
+      ],
+      likedTitles: [],
+      dislikedTitles: [],
+      previousTitles: [],
+      count: 5,
+    });
+
+    expect(prompt).toContain("genres: Drama, Thriller");
+    // Unknown genre ids are dropped rather than leaking raw numbers.
+    expect(prompt).not.toContain("999999");
+    // Newlines are flattened and the snippet is capped with an ellipsis.
+    expect(prompt).toContain("An insomniac office worker x");
+    expect(prompt).not.toContain(longOverview);
+    expect(prompt).toContain("\u2026");
+  });
+
+  it("omits genre and overview fields when the candidate has none", () => {
+    const prompt = buildCandidateRecommendationPrompt({
+      candidates: [
+        {
+          tmdbId: 100,
+          mediaType: "movie",
+          title: "Drive",
+          year: 2011,
+          rating: 7.9,
+          voteCount: 12000,
+        },
+      ],
+      likedTitles: [],
+      dislikedTitles: [],
+      previousTitles: [],
+      count: 5,
+    });
+
+    expect(prompt).toContain(
+      "- movie:100 | Drive | 2011 | rating 7.9/10 | votes 12000",
+    );
+    expect(prompt).not.toContain("genres:");
+  });
+
   it("embeds adventure styles and disliked themes accurately", () => {
     const promptAdventurous = buildCandidateRecommendationPrompt({
       candidates: [

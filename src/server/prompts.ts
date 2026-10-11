@@ -2,6 +2,7 @@
 // (no server imports) so they are trivially testable and reusable anywhere.
 
 import type { MediaType } from "@/domain/media";
+import { GENRE_LIST } from "@/constants";
 
 export interface WatchItemSummary {
   tmdbId: number;
@@ -28,7 +29,11 @@ export interface WatchlistData {
   /** Bounded context sent as taste signals to keep prompts predictable. */
   watchItems: WatchItemSummary[];
   /** Full library identity set used only for exclusions. */
-  excludedWatchItems?: Array<{ tmdbId: number; title: string | null }>;
+  excludedWatchItems?: Array<{
+    tmdbId: number;
+    title: string | null;
+    mediaType: MediaType;
+  }>;
   lists: CustomListSummary[];
   listItems: CustomListItemSummary[];
   inputStats: {
@@ -45,6 +50,8 @@ export interface FeedbackSignals {
   dislikedTmdbIds?: number[];
   previousTitles?: string[];
   dislikedThemes?: string[];
+  preferredGenres?: string[];
+  dislikedGenres?: string[];
   adventureLevel?: "familiar" | "balanced" | "adventurous";
 }
 
@@ -108,6 +115,31 @@ function clampTitleCount(count?: number): number {
   return Math.min(Math.max(count ?? 10, 1), 30);
 }
 
+const GENRE_NAME_BY_ID = new Map(
+  GENRE_LIST.map((genre) => [genre.id, genre.name]),
+);
+
+// Candidate catalog lines are sent once per candidate (up to 60), so each
+// field stays short: genre names are the signal that lets the model honour
+// genre preferences and disliked themes, the overview is only a theme hint.
+const MAX_CANDIDATE_OVERVIEW_CHARS = 140;
+
+function candidateGenres(genreIds?: number[]): string {
+  if (!genreIds?.length) return "";
+  return genreIds
+    .map((id) => GENRE_NAME_BY_ID.get(id))
+    .filter((name): name is string => !!name)
+    .join(", ");
+}
+
+function candidateOverviewSnippet(overview?: string | null): string {
+  const text = overview?.replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  return text.length > MAX_CANDIDATE_OVERVIEW_CHARS
+    ? `${text.slice(0, MAX_CANDIDATE_OVERVIEW_CHARS - 1).trimEnd()}\u2026`
+    : text;
+}
+
 function indexWatchItemsByMediaKey(
   items: WatchItemSummary[],
 ): Map<string, WatchItemSummary> {
@@ -161,11 +193,18 @@ function buildWatchlistContext(
   // collide in the prioritized set (matches the lookup keys used elsewhere).
   const mediaKey = (item: WatchItemSummary) =>
     `${item.tmdbId}:${item.mediaType}`;
-  const prioritized = new Set(
-    [...loved, ...watching, ...done, ...watchLater, ...disliked]
-      .slice(0, 50)
-      .map(mediaKey),
-  );
+  const prioritized = new Set<string>();
+  // Reserve space for negative signals so a large loved list cannot hide them.
+  for (const item of [
+    ...disliked,
+    ...loved,
+    ...watching,
+    ...done,
+    ...watchLater,
+  ]) {
+    if (prioritized.size >= 50) break;
+    prioritized.add(mediaKey(item));
+  }
   const existingIds = [
     ...new Set([...watchItems.map((i) => i.tmdbId), ...excludeTmdbIds]),
   ];
@@ -209,6 +248,18 @@ function buildBasePromptSections(config: BasePromptConfig): string {
   }
   if (feedback?.dislikedTitles && feedback.dislikedTitles.length > 0) {
     prompt += `## Recommendations I explicitly marked as "not interested" (avoid similar styles/genres):\n${feedback.dislikedTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
+  }
+  if (feedback?.preferredGenres?.length) {
+    prompt += `## Genres I prefer:\n${feedback.preferredGenres.join(", ")}\n\n`;
+  }
+  if (feedback?.dislikedGenres?.length) {
+    prompt += `## Genres I want to avoid:\n${feedback.dislikedGenres.join(", ")}\n\n`;
+  }
+  if (feedback?.dislikedThemes?.length) {
+    prompt += `## Themes I want to avoid:\n${feedback.dislikedThemes.join(", ")}\n\n`;
+  }
+  if (feedback?.adventureLevel) {
+    prompt += `## Recommendation variety preference:\n${feedback.adventureLevel}\n\n`;
   }
   if (feedback?.previousTitles && feedback.previousTitles.length > 0) {
     prompt += `## Previously recommended titles (do NOT repeat these):\n${feedback.previousTitles.map((t) => `- ${t}`).join("\n")}\n\n`;
@@ -430,13 +481,26 @@ export function buildCandidateRecommendationPrompt(args: {
   count: number;
   goal?: string;
   dislikedThemes?: string[];
+  preferredGenres?: string[];
+  dislikedGenres?: string[];
   adventureLevel?: "familiar" | "balanced" | "adventurous";
 }): string {
   const candidateCatalog = args.candidates
-    .map(
-      (candidate) =>
-        `- ${candidate.mediaType}:${candidate.tmdbId} | ${candidate.title} | ${candidate.year ?? "unknown year"} | rating ${candidate.rating}/10 | votes ${candidate.voteCount}`,
-    )
+    .map((candidate) => {
+      const genres = candidateGenres(candidate.genreIds);
+      const overview = candidateOverviewSnippet(candidate.overview);
+      return [
+        `- ${candidate.mediaType}:${candidate.tmdbId}`,
+        candidate.title,
+        candidate.year ?? "unknown year",
+        `rating ${candidate.rating}/10`,
+        `votes ${candidate.voteCount}`,
+        genres ? `genres: ${genres}` : "",
+        overview,
+      ]
+        .filter((part) => part !== "")
+        .join(" | ");
+    })
     .join("\n");
   const liked = args.likedTitles.length
     ? `Liked titles: ${args.likedTitles.join(", ")}\n`
@@ -446,6 +510,12 @@ export function buildCandidateRecommendationPrompt(args: {
     : "";
   const dislikedThemes = args.dislikedThemes?.length
     ? `Strictly avoid these themes: ${args.dislikedThemes.join(", ")}\n`
+    : "";
+  const preferredGenres = args.preferredGenres?.length
+    ? `Strongly prefer titles in these genres: ${args.preferredGenres.join(", ")}\n`
+    : "";
+  const dislikedGenres = args.dislikedGenres?.length
+    ? `Avoid titles in these genres: ${args.dislikedGenres.join(", ")}\n`
     : "";
   const adventure = args.adventureLevel
     ? args.adventureLevel === "familiar"
@@ -472,7 +542,7 @@ export function buildCandidateRecommendationPrompt(args: {
 
   return `You are ranking a current TMDB candidate catalog for personalized recommendations.
 You may ONLY select candidates from the catalog below. Never invent a title, TMDB ID, or media type. Return exactly ${args.count} recommendations when enough candidates exist. ${typeRule}
-${liked}${disliked}${dislikedThemes}${adventure}${previous}${genreRule}${genreRule ? "\n" : ""}${args.goal ?? "Choose the strongest, most varied matches for the user's taste."}
+${liked}${disliked}${dislikedThemes}${preferredGenres}${dislikedGenres}${adventure}${previous}${genreRule}${genreRule ? "\n" : ""}${args.goal ?? "Choose the strongest, most varied matches for the user's taste."}
 
 Candidate catalog:
 ${candidateCatalog}

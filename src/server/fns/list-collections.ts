@@ -56,23 +56,36 @@ export type CollectionPageItem = {
   reaction: null;
 };
 
+export type CollectionMediaTypeCounts = {
+  all: number;
+  movie: number;
+  tv: number;
+};
+
+type CollectionCounts = {
+  /** Counts matching the active search, ignoring the mediaType filter. */
+  mediaTypeCounts: CollectionMediaTypeCounts;
+  /** Every item in the list, ignoring search and mediaType filters. */
+  collectionItemCount: number;
+};
+
 export type CollectionPagePayload =
-  | {
+  | ({
       role: "owner";
       list: typeof lists.$inferSelect;
       items: EnrichedListItem[];
       totalCount: number;
       nextCursor: string | null;
       hasNextPage: boolean;
-    }
-  | {
+    } & CollectionCounts)
+  | ({
       role: "visitor";
       list: PublicCollectionList;
       items: CollectionPageItem[];
       totalCount: number;
       nextCursor: string | null;
       hasNextPage: boolean;
-    };
+    } & CollectionCounts);
 
 export const getListItems = createServerFn({ method: "POST" })
   .validator(getListItemsArgsSchema)
@@ -148,6 +161,61 @@ function collectionFilters(
   return filters;
 }
 
+/**
+ * The collection page filters server-side (search + mediaType drive the
+ * paginated item query), so a media type with zero items would otherwise report
+ * an empty collection and unmount the filter tabs with no way back. These
+ * counts are independent of the mediaType filter: `mediaTypeCounts` powers the
+ * tab labels/counts, `collectionItemCount` tells "collection is empty" apart
+ * from "nothing matches this filter".
+ */
+async function loadCollectionCounts(
+  db: Db,
+  listId: string,
+  search: string | undefined,
+): Promise<CollectionCounts> {
+  const [typeRows, totalRows] = await Promise.all([
+    db
+      .select({ mediaType: listItems.mediaType, count: sql<number>`count(*)` })
+      .from(listItems)
+      .where(and(...collectionFilters(listId, { search })))
+      .groupBy(listItems.mediaType),
+    search?.trim()
+      ? db
+          .select({ count: sql<number>`count(*)` })
+          .from(listItems)
+          .where(eq(listItems.listId, listId))
+      : Promise.resolve(null),
+  ]);
+
+  const mediaTypeCounts: CollectionMediaTypeCounts = {
+    all: 0,
+    movie: 0,
+    tv: 0,
+  };
+  for (const row of typeRows) {
+    const count = Number(row.count);
+    mediaTypeCounts[row.mediaType] = count;
+    mediaTypeCounts.all += count;
+  }
+
+  return {
+    mediaTypeCounts,
+    collectionItemCount: totalRows
+      ? Number(totalRows[0]?.count ?? 0)
+      : mediaTypeCounts.all,
+  };
+}
+
+function filteredCount(
+  counts: CollectionCounts,
+  mediaType: MediaType | undefined,
+) {
+  return mediaType
+    ? counts.mediaTypeCounts[mediaType]
+    : counts.mediaTypeCounts.all;
+}
+
 function collectionCursorFilter(cursor: CollectionCursor | null) {
   if (!cursor) return undefined;
   return or(
@@ -187,7 +255,7 @@ export const getCollectionPage = createServerFn({ method: "POST" })
             ...collectionFilters(data.listId, data),
             collectionCursorFilter(cursor),
           );
-          const [items, countRows] = await Promise.all([
+          const [items, counts] = await Promise.all([
             db
               .select()
               .from(listItems)
@@ -198,10 +266,7 @@ export const getCollectionPage = createServerFn({ method: "POST" })
                 asc(listItems.id),
               )
               .limit(limit + 1),
-            db
-              .select({ count: sql<number>`count(*)` })
-              .from(listItems)
-              .where(and(...collectionFilters(data.listId, data))),
+            loadCollectionCounts(db, data.listId, data.search),
           ]);
           const hasNextPage = items.length > limit;
           const pageItems = hasNextPage ? items.slice(0, limit) : items;
@@ -210,7 +275,9 @@ export const getCollectionPage = createServerFn({ method: "POST" })
             role: "owner",
             list,
             items: await enrichItemsWithWatchState(db, user.id, pageItems),
-            totalCount: Number(countRows[0]?.count ?? 0),
+            totalCount: filteredCount(counts, data.mediaType),
+            mediaTypeCounts: counts.mediaTypeCounts,
+            collectionItemCount: counts.collectionItemCount,
             hasNextPage,
             nextCursor:
               hasNextPage && last
@@ -233,7 +300,7 @@ export const getCollectionPage = createServerFn({ method: "POST" })
           ...collectionFilters(data.listId, data),
           collectionCursorFilter(cursor),
         );
-        const [items, countRows] = await Promise.all([
+        const [items, counts] = await Promise.all([
           db
             .select({
               tmdbId: listItems.tmdbId,
@@ -256,10 +323,7 @@ export const getCollectionPage = createServerFn({ method: "POST" })
               asc(listItems.id),
             )
             .limit(limit + 1),
-          db
-            .select({ count: sql<number>`count(*)` })
-            .from(listItems)
-            .where(and(...collectionFilters(data.listId, data))),
+          loadCollectionCounts(db, data.listId, data.search),
         ]);
         const hasNextPage = items.length > limit;
         const pageItems = hasNextPage ? items.slice(0, limit) : items;
@@ -285,7 +349,9 @@ export const getCollectionPage = createServerFn({ method: "POST" })
               reaction: null,
             }),
           ),
-          totalCount: Number(countRows[0]?.count ?? 0),
+          totalCount: filteredCount(counts, data.mediaType),
+          mediaTypeCounts: counts.mediaTypeCounts,
+          collectionItemCount: counts.collectionItemCount,
           hasNextPage,
           nextCursor:
             hasNextPage && last

@@ -1,10 +1,10 @@
 import { ListPlus } from "@/components/ui/hugeicons";
-
 import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 
-const imgClass = "size-full object-cover transition-transform duration-500";
-const frameClass = "overflow-hidden rounded-lg bg-border/20";
+const imgClass =
+  "size-full object-cover transition-transform duration-700 ease-out";
+const frameClass = "overflow-hidden rounded-lg bg-muted/30";
 
 export function ListCollage({
   previews,
@@ -14,7 +14,7 @@ export function ListCollage({
   color?: string;
 }) {
   const fallbackBg = color
-    ? `linear-gradient(135deg, ${color}14 0%, ${color}30 100%)`
+    ? `linear-gradient(135deg, ${color}18 0%, ${color}35 100%)`
     : "linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--muted)) 100%)";
 
   if (previews.length === 0) {
@@ -40,23 +40,24 @@ export function ListCollage({
           src={`${IMAGE_PREFIX.LQ_BACKDROP}${previews[0]}`}
           alt="List preview"
           layout="fullWidth"
-          className={`${imgClass} group-hover/card:scale-[1.04]`}
+          className={`${imgClass} group-hover/card:scale-[1.03]`}
         />
-        <div className="from-background/40 absolute inset-0 bg-linear-to-t to-transparent" />
+        {/* Subtle vignette — dark-only so light mode stays clean */}
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/20 to-transparent dark:from-black/40" />
       </div>
     );
   }
 
   if (previews.length === 2) {
     return (
-      <div className={`grid size-full grid-cols-2 gap-1 ${frameClass}`}>
+      <div className={`grid size-full grid-cols-2 gap-[3px] ${frameClass}`}>
         {previews.slice(0, 2).map((preview, i) => (
           <div key={preview} className="size-full overflow-hidden">
             <Image
               src={`${IMAGE_PREFIX.LQ_BACKDROP}${preview}`}
               alt={`List preview ${i + 1}`}
               layout="fullWidth"
-              className={`${imgClass} group-hover/card:scale-[1.04]`}
+              className={`${imgClass} group-hover/card:scale-[1.03]`}
             />
           </div>
         ))}
@@ -66,23 +67,25 @@ export function ListCollage({
 
   if (previews.length === 3) {
     return (
-      <div className={`grid size-full grid-cols-3 gap-1 ${frameClass}`}>
-        <div className="col-span-2 h-full overflow-hidden">
+      <div
+        className={`grid size-full grid-cols-[2fr_1fr] gap-[3px] ${frameClass}`}
+      >
+        <div className="h-full overflow-hidden">
           <Image
             src={`${IMAGE_PREFIX.LQ_BACKDROP}${previews[0]}`}
             alt="List preview 1"
             layout="fullWidth"
-            className={`${imgClass} group-hover/card:scale-[1.04]`}
+            className={`${imgClass} group-hover/card:scale-[1.03]`}
           />
         </div>
-        <div className="grid h-full grid-rows-2 gap-1 overflow-hidden">
+        <div className="flex h-full flex-col gap-[3px]">
           {previews.slice(1, 3).map((preview, i) => (
-            <div key={preview} className="size-full overflow-hidden">
+            <div key={preview} className="flex-1 overflow-hidden">
               <Image
                 src={`${IMAGE_PREFIX.LQ_BACKDROP}${preview}`}
                 alt={`List preview ${i + 2}`}
                 layout="fullWidth"
-                className={`${imgClass} group-hover/card:scale-[1.04]`}
+                className={`${imgClass} size-full group-hover/card:scale-[1.03]`}
               />
             </div>
           ))}
@@ -91,17 +94,18 @@ export function ListCollage({
     );
   }
 
+  // 4+ images: 2×2 grid
   return (
     <div
-      className={`grid size-full grid-cols-2 grid-rows-2 gap-1 ${frameClass}`}
+      className={`grid size-full grid-cols-2 grid-rows-2 gap-[3px] ${frameClass}`}
     >
-      {previews.map((preview, i) => (
+      {previews.slice(0, 4).map((preview, i) => (
         <div key={preview} className="size-full overflow-hidden">
           <Image
             src={`${IMAGE_PREFIX.LQ_BACKDROP}${preview}`}
             alt={`List preview ${i + 1}`}
             layout="fullWidth"
-            className={`${imgClass} group-hover/card:scale-[1.04]`}
+            className={`${imgClass} group-hover/card:scale-[1.03]`}
           />
         </div>
       ))}

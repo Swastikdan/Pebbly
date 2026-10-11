@@ -195,6 +195,9 @@ export const getRecommendationFeedback = createServerFn({
         .select()
         .from(recommendationFeedback)
         .where(eq(recommendationFeedback.userId, user.id))
+        // Newest first so the 100-row cap keeps the most recent signals; the
+        // engine's own feedback read uses the same ordering.
+        .orderBy(desc(recommendationFeedback.updatedAt))
         .limit(100);
 
       return ok(rows);

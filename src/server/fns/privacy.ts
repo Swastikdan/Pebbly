@@ -1,9 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import type { ApiResult } from "../schema/common";
-import { deleteClerkUser, invalidateUserCache } from "../auth.server";
-import { getDb } from "../db/client";
 import {
   accountDeletionRequests,
   aiGenerationJobs,
@@ -11,7 +9,6 @@ import {
   episodeProgress,
   listItems,
   lists,
-  rateLimitAttempts,
   recommendationFeedback,
   releaseSubscriptions,
   userNotifications,
@@ -22,7 +19,6 @@ import {
   watchlistSnapshots,
   watchSessions,
 } from "../db/schema";
-import { getEnv } from "../env";
 import { fail, ok } from "../schema/common";
 import {
   cancelAccountDeletionArgsSchema,
@@ -221,30 +217,3 @@ export const cancelAccountDeletion = createServerFn({ method: "POST" })
       },
     ),
   );
-
-export async function processDueAccountDeletions(): Promise<number> {
-  const db = getDb(getEnv());
-  const now = Date.now();
-  const due = await db
-    .select()
-    .from(accountDeletionRequests)
-    .where(
-      and(
-        eq(accountDeletionRequests.status, "pending"),
-        lte(accountDeletionRequests.scheduledFor, now),
-      ),
-    )
-    .limit(100);
-  let deleted = 0;
-  for (const request of due) {
-    const clerkDeleted = await deleteClerkUser(request.clerkUserId);
-    if (!clerkDeleted) continue;
-    await db.delete(users).where(eq(users.id, request.userId));
-    await db
-      .delete(rateLimitAttempts)
-      .where(sql`${rateLimitAttempts.key} like ${`fnw:${request.userId}`}`);
-    invalidateUserCache(request.userId);
-    deleted++;
-  }
-  return deleted;
-}

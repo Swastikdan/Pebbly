@@ -131,7 +131,9 @@ export function MediaRowCardShell({
       to={to}
       style={style}
       className={cn(
-        "border-border/60 bg-card hover:border-border/90 dark:border-border/40 dark:hover:border-border/70 group relative flex gap-3.5 border p-3.5 transition-colors dark:shadow-none",
+        // cv-auto-card skips style/layout/paint for off-screen cards (see
+        // styles.css); big win on 100-card collection pages on phones.
+        "cv-auto-card border-border/60 bg-card hover:border-border/90 dark:border-border/40 dark:hover:border-border/70 group relative flex gap-3.5 border p-3.5 transition-colors dark:shadow-none",
         className,
       )}
     >

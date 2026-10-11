@@ -660,6 +660,19 @@
     contain: layout style paint;
   }
 }
+/* Off-screen media cards skip style/layout/paint work while scrolling a
+   collection page. contain-intrinsic-size approximates the two-line card
+   height so the scrollbar does not jump as cards enter the viewport; the
+   `auto` keyword reuses the last rendered size when it was larger. */
+.cv-auto-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 168px;
+}
+@supports not (content-visibility: auto) {
+  .cv-auto-card {
+    contain: layout style paint;
+  }
+}
 :root {
   --mobile-nav-height: 4.75rem;
 }

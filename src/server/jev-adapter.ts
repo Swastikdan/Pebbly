@@ -58,17 +58,19 @@ function parseScore(
   const genreConfidence = numberValue(answers.genre_fit?.confidence);
   const tasteScore = numberValue(answers.taste_fit?.noul);
 
-  if (hasGenreSignal && (genreScore === null || genreConfidence === null)) {
+  const hasValidGenre = genreScore !== null && genreConfidence !== null;
+  const hasValidTaste = tasteScore !== null;
+  if (hasGenreSignal && hasTasteSignal && !hasValidGenre && !hasValidTaste)
     return null;
-  }
-  if (hasTasteSignal && tasteScore === null) return null;
+  if (hasGenreSignal && !hasTasteSignal && !hasValidGenre) return null;
+  if (hasTasteSignal && !hasGenreSignal && !hasValidTaste) return null;
 
   const normalizedGenreScore = genreScore === null ? 0 : genreScore / 3;
   const normalizedTasteScore = tasteScore ?? 0;
   const score =
-    hasGenreSignal && hasTasteSignal
+    hasValidGenre && hasValidTaste
       ? normalizedGenreScore * 0.6 + normalizedTasteScore * 0.4
-      : hasGenreSignal
+      : hasValidGenre
         ? normalizedGenreScore
         : normalizedTasteScore;
 

@@ -8,6 +8,7 @@ import type { EpisodeProgressRow } from "@/lib/server-types";
 import { useWatchlist, useWatchlistStore } from "@/hooks/use-watchlist";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
 import { queryKeys } from "@/lib/query/keys";
+import { yieldToMain } from "@/lib/safe-idle";
 import {
   parseWatchlistImport,
   planImportBatches,
@@ -63,28 +64,51 @@ export const useWatchlistImportExport = () => {
       const localWatchedEpisodes =
         useLocalProgressStore.getState().watchedEpisodes;
 
+      // Group watched episodes once (O(E)) instead of filtering the full
+      // episode list for every title (O(T×E)) — with a few thousand episodes
+      // the old loop blocked the main thread for hundreds of ms on phones.
+      const watchedByTitle = new Map<string, Record<string, boolean>>();
+      if (isSignedIn && remoteEpisodes) {
+        for (const ep of remoteEpisodes as EpisodeProgressRow[]) {
+          if (!ep.isWatched) continue;
+          const key = String(ep.tmdbId);
+          const bucket = watchedByTitle.get(key);
+          if (bucket) {
+            bucket[`${ep.season}:${ep.episode}`] = true;
+          } else {
+            watchedByTitle.set(key, { [`${ep.season}:${ep.episode}`]: true });
+          }
+        }
+      }
+      const watchedPrefixes: Array<{ prefix: string; suffix: string }> = [];
+      if (!isSignedIn) {
+        for (const [key, val] of Object.entries(localWatchedEpisodes)) {
+          if (val) {
+            const separator = key.indexOf(":");
+            if (separator !== -1) {
+              watchedPrefixes.push({
+                prefix: key.slice(0, separator + 1),
+                suffix: key.slice(separator + 1),
+              });
+            }
+          }
+        }
+      }
+
       const enhancedWatchlist = remoteWatchlist.map((item) => {
         const itemWatched: Record<string, boolean> = {};
 
         if (item.type === "tv") {
           if (isSignedIn && remoteEpisodes) {
-            remoteEpisodes
-              .filter(
-                (ep: EpisodeProgressRow) =>
-                  String(ep.tmdbId) === String(item.external_id) &&
-                  ep.isWatched,
-              )
-              .forEach((ep: { season: number; episode: number }) => {
-                itemWatched[`${ep.season}:${ep.episode}`] = true;
-              });
+            const bucket = watchedByTitle.get(String(item.external_id));
+            if (bucket) Object.assign(itemWatched, bucket);
           } else {
             const prefix = `${item.external_id}:`;
-            Object.entries(localWatchedEpisodes).forEach(([key, val]) => {
-              if (key.startsWith(prefix) && val) {
-                const suffix = key.slice(prefix.length);
-                itemWatched[suffix] = true;
+            for (const entry of watchedPrefixes) {
+              if (entry.prefix === prefix) {
+                itemWatched[entry.suffix] = true;
               }
-            });
+            }
           }
         }
 
@@ -96,6 +120,9 @@ export const useWatchlistImportExport = () => {
         };
       });
 
+      // Serialize off the interaction path — stringify of a large watchlist
+      // is a multi-hundred-ms main-thread block on low-end phones.
+      await yieldToMain();
       const json = JSON.stringify(enhancedWatchlist, null, 2);
       const blob = new Blob([json], { type: "application/json" });
       url = URL.createObjectURL(blob);

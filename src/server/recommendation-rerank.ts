@@ -4,7 +4,7 @@ import { getEnv } from "@/server/env";
 import { createJevAdapter, JEV_MODEL } from "./jev-adapter";
 
 export { JEV_MODEL, JEV_TIMEOUT_MS } from "./jev-adapter";
-export const JEV_CANDIDATE_CAP = 12;
+export const JEV_CANDIDATE_CAP = 8;
 export const JEV_CONCURRENCY = 6;
 export const JEV_CONFIDENCE_FLOOR = 0.55;
 
