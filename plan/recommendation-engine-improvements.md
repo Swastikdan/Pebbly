@@ -34,7 +34,7 @@ client (use-recommendations / use-homepage-recommendations / recommendation-opti
             └─ dedupeRecommendations() + persist → ai_recommendations | homepage_recommendations
 ```
 
-### Current constants (baseline for the perf discussion)
+### Pre-change constants (baseline for the perf discussion)
 
 | Knob                                    | Value                                                                          | Where                                                    |
 | :-------------------------------------- | :----------------------------------------------------------------------------- | :------------------------------------------------------- |

@@ -36,6 +36,13 @@ const MAX_RECENT_EXCLUSION_TITLES = 150;
 const MAX_HOMEPAGE_RECOMMENDATIONS = 30;
 const MAX_HOMEPAGE_PER_MEDIA_TYPE = 15;
 
+function genreNamesToIds(names?: string[]): number[] | undefined {
+  if (!names) return undefined;
+  return names
+    .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
+    .filter((id): id is number => id !== undefined);
+}
+
 type PipelineContext = {
   db: Db;
   userId: string;
@@ -309,15 +316,11 @@ async function runHistoryPipeline(
     preferredGenreIds:
       generationType === "genre"
         ? []
-        : tasteProfile?.preferredGenres
-            .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
-            .filter((id): id is number => id !== undefined),
+        : genreNamesToIds(tasteProfile?.preferredGenres),
     dislikedGenreIds:
       generationType === "genre"
         ? []
-        : tasteProfile?.dislikedGenres
-            .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
-            .filter((id): id is number => id !== undefined),
+        : genreNamesToIds(tasteProfile?.dislikedGenres),
     excludeTmdbIds,
     excludeTitles,
     yearFrom: options.yearFrom,
@@ -513,12 +516,8 @@ async function runHomepagePipeline(
     excludedWatchItems: watchlistData.excludedWatchItems,
     excludeTmdbIds: excludeIds,
     excludeTitles,
-    preferredGenreIds: tasteProfile?.preferredGenres
-      .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
-      .filter((id): id is number => id !== undefined),
-    dislikedGenreIds: tasteProfile?.dislikedGenres
-      .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
-      .filter((id): id is number => id !== undefined),
+    preferredGenreIds: genreNamesToIds(tasteProfile?.preferredGenres),
+    dislikedGenreIds: genreNamesToIds(tasteProfile?.dislikedGenres),
     limit: 60,
     balanced: true,
   });

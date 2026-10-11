@@ -389,9 +389,14 @@ export function CollectionPage({ listId }: { listId: string }) {
     setPage(target);
     if (isLocalCollection) return;
     let loadedPages = pageQuery.data?.pages.length ?? 0;
-    while (loadedPages < target && pageQuery.hasNextPage) {
-      const result = await pageQuery.fetchNextPage();
-      loadedPages = result.data?.pages.length ?? loadedPages + 1;
+    try {
+      while (loadedPages < target && pageQuery.hasNextPage) {
+        const result = await pageQuery.fetchNextPage();
+        loadedPages = result.data?.pages.length ?? loadedPages;
+        if (!result.hasNextPage) break;
+      }
+    } finally {
+      if (loadedPages < target) setPage(Math.max(1, loadedPages));
     }
   };
 
@@ -775,7 +780,7 @@ export function CollectionPage({ listId }: { listId: string }) {
           <div className="flex items-center gap-1.5">
             <select
               aria-label="Choose destination collection"
-              className="border-border bg-secondary/60 text-foreground h-7 rounded-md border px-2 text-[11px] font-medium focus:outline-none"
+              className="border-border bg-secondary/60 text-foreground h-7 rounded-md border px-2 text-base font-medium focus:outline-none"
               value={targetListId}
               onChange={(event) => setTargetListId(event.target.value)}
             >
@@ -806,7 +811,7 @@ export function CollectionPage({ listId }: { listId: string }) {
           <div className="flex items-center gap-1.5">
             <select
               aria-label="Choose watchlist status"
-              className="border-border bg-secondary/60 text-foreground h-7 rounded-md border px-2 text-[11px] font-medium focus:outline-none"
+              className="border-border bg-secondary/60 text-foreground h-7 rounded-md border px-2 text-base font-medium focus:outline-none"
               value={bulkStatus}
               onChange={(event) =>
                 setBulkStatus(event.target.value as ProgressStatus | "")

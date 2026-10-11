@@ -99,7 +99,8 @@ const ImageComponent = ({
         <Skeleton
           className={cn(
             "absolute inset-0 z-10 rounded-none transition-opacity duration-500 ease-out",
-            (loaded || error) && "pointer-events-none opacity-0",
+            (loaded || error) &&
+              "pointer-events-none opacity-0 [animation-play-state:paused] [&_*]:[animation-play-state:paused] [&::before]:[animation-play-state:paused]",
           )}
         />
       )}

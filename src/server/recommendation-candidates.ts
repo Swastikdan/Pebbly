@@ -242,7 +242,11 @@ export async function getRecommendationCandidates(
                   [1, 2].map(async (page) => {
                     try {
                       return await getMedia({ type, page });
-                    } catch {
+                    } catch (error) {
+                      console.warn(
+                        `[recommendations] TMDB ${type} page ${page} candidates failed`,
+                        error,
+                      );
                       return [];
                     }
                   }),
@@ -282,7 +286,15 @@ export async function getRecommendationCandidates(
               : getDiscoverTv({ with_genres: genreQuery, page });
           const pages = options.genreMode === "separate" ? [1] : [1, 2];
           const results = await Promise.all(
-            pages.map((page) => fetchPage(page).catch(() => ({ results: [] }))),
+            pages.map((page) =>
+              fetchPage(page).catch((error) => {
+                console.warn(
+                  `[recommendations] TMDB ${type} genre page ${page} failed`,
+                  error,
+                );
+                return { results: [] };
+              }),
+            ),
           );
           const result =
             type === "movies_popular"
