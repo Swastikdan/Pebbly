@@ -5,16 +5,7 @@ import {
   isChunkLoadError,
   reloadForStaleChunk,
 } from "./stale-chunk-reload";
-
-function createStorage(): Pick<Storage, "getItem" | "setItem"> {
-  const values = new Map<string, string>();
-  return {
-    getItem: (key) => values.get(key) ?? null,
-    setItem: (key, value) => {
-      values.set(key, value);
-    },
-  };
-}
+import { createMemoryStorage as createStorage } from "./utils";
 
 describe("isChunkLoadError", () => {
   it.each([

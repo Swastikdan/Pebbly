@@ -15,26 +15,22 @@ const CHUNK_LOAD_ERROR_MESSAGES = [
 
 type ReloadMarker = { at: number; reported: boolean };
 
+type MarkerStorage = Pick<Storage, "getItem" | "setItem">;
+
 type ReloadOptions = {
-  storage?: Pick<Storage, "getItem" | "setItem">;
+  storage?: MarkerStorage;
   now?: number;
   reload?: () => void;
 };
 
 export function isChunkLoadError(error: unknown): boolean {
-  const message =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "";
-  const lowerMessage = message.toLowerCase();
+  const lowerMessage = String(
+    error instanceof Error ? error.message : (error ?? ""),
+  ).toLowerCase();
   return CHUNK_LOAD_ERROR_MESSAGES.some((text) => lowerMessage.includes(text));
 }
 
-function readMarker(
-  storage: Pick<Storage, "getItem">,
-): ReloadMarker | undefined {
+function readMarker(storage: MarkerStorage): ReloadMarker | undefined {
   try {
     const raw = storage.getItem(RELOAD_MARKER_KEY);
     if (!raw) return undefined;
@@ -47,10 +43,7 @@ function readMarker(
   }
 }
 
-function writeMarker(
-  storage: Pick<Storage, "setItem">,
-  marker: ReloadMarker,
-): boolean {
+function writeMarker(storage: MarkerStorage, marker: ReloadMarker): boolean {
   try {
     storage.setItem(RELOAD_MARKER_KEY, JSON.stringify(marker));
     return true;
@@ -81,7 +74,7 @@ export function reloadForStaleChunk({
  * the recovery a single time.
  */
 export function consumeStaleChunkRecovery(
-  storage: Pick<Storage, "getItem" | "setItem"> = window.sessionStorage,
+  storage: MarkerStorage = window.sessionStorage,
 ): boolean {
   const marker = readMarker(storage);
   if (!marker || marker.reported) return false;
