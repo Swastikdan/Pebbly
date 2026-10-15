@@ -20,6 +20,9 @@ export type { Recommendation };
 
 const WORKERS_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const WORKERS_AI_TIMEOUT_MS = 30_000;
+// A 30-title response with reasoning can exceed 2048 tokens; a truncated
+// response is invalid JSON and fails the whole generation.
+const WORKERS_AI_MAX_TOKENS = 4096;
 
 type RecommendationIdentity = {
   title?: string | null;
@@ -207,6 +210,17 @@ function parseRecommendationResponse(
   }
 }
 
+// Least to most actionable.
+const ERROR_PRIORITY = [
+  "api_unavailable",
+  "invalid_response",
+  "high_demand",
+  "rate_limited",
+] as const;
+type ErrorKind = (typeof ERROR_PRIORITY)[number];
+
+class InvalidResponseError extends Error {}
+
 async function callWorkersAI(
   prompt: string,
   systemInstruction: string,
@@ -222,12 +236,13 @@ async function callWorkersAI(
   // The Workers AI binding surfaces its own error shapes (Cloudflare error
   // codes / HTTP-style statuses), not the Gemini REST shapes the helper
   // classifiers match. Classify here so the shared Result error set
-  // (rate_limited / high_demand / api_unavailable) means the same thing
-  // regardless of provider (see architecture-hardening-plan item 17).
-  let errorKind: "rate_limited" | "high_demand" | "api_unavailable" =
-    "api_unavailable";
+  // (rate_limited / high_demand / invalid_response / api_unavailable) means
+  // the same thing regardless of provider (see architecture-hardening-plan
+  // item 17).
+  let errorKind: ErrorKind = "api_unavailable";
 
-  const classify = (error: unknown) => {
+  const classify = (error: unknown): ErrorKind => {
+    if (error instanceof InvalidResponseError) return "invalid_response";
     const err = error as { status?: number; code?: string; message?: string };
     const status = err?.status;
     const code = String(err?.code ?? "").toLowerCase();
@@ -237,7 +252,7 @@ async function callWorkersAI(
       code.includes("rate") ||
       message.includes("rate limit")
     ) {
-      return "rate_limited" as const;
+      return "rate_limited";
     }
     if (
       status === HTTP_SERVICE_UNAVAILABLE ||
@@ -248,9 +263,9 @@ async function callWorkersAI(
       message.includes("busy") ||
       message.includes("capacity")
     ) {
-      return "high_demand" as const;
+      return "high_demand";
     }
-    return "api_unavailable" as const;
+    return "api_unavailable";
   };
 
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -264,21 +279,29 @@ async function callWorkersAI(
           ],
           response_format: WORKERS_AI_RESPONSE_FORMAT,
           temperature: 0.2,
-          max_tokens: 2048,
+          max_tokens: WORKERS_AI_MAX_TOKENS,
         },
         { signal: AbortSignal.timeout(WORKERS_AI_TIMEOUT_MS) },
       );
       const responseText = extractWorkersAiText(response);
       if (!responseText) throw new Error("Workers AI returned no content");
 
-      return parseRecommendationResponse(responseText, WORKERS_AI_MODEL);
+      const parsed = parseRecommendationResponse(
+        responseText,
+        WORKERS_AI_MODEL,
+      );
+      if (parsed.error) {
+        throw new InvalidResponseError(
+          `Workers AI returned an invalid response (${responseText.length} chars)`,
+        );
+      }
+      return parsed;
     } catch (error) {
       console.error("Workers AI error:", getErrorMessage(error));
       // Prefer the most actionable classification we have seen so far.
       const kind = classify(error);
-      if (kind === "rate_limited") errorKind = "rate_limited";
-      else if (kind === "high_demand" && errorKind !== "rate_limited") {
-        errorKind = "high_demand";
+      if (ERROR_PRIORITY.indexOf(kind) > ERROR_PRIORITY.indexOf(errorKind)) {
+        errorKind = kind;
       }
       if (attempt < retries) await delay(500);
     }
