@@ -4,13 +4,21 @@ import type { AuthUser } from "../auth.server";
 import type { Db } from "../db/client";
 import { chunkedQuery, runBatch } from "../db/client";
 import {
+  aiGenerationJobs,
+  aiRecommendations,
   episodeProgress,
   homepageRecommendations,
   listItems,
   lists,
   recommendationFeedback,
+  releaseSubscriptions,
+  userNotifications,
   users,
+  userTasteProfiles,
   watchItems,
+  watchlistActivity,
+  watchlistSnapshots,
+  watchSessions,
 } from "../db/schema";
 
 /**
@@ -75,10 +83,12 @@ export interface MergeResult {
 }
 
 /**
- * Re-parent watch/episode/feedback/homepage rows and lists (with their
- * items) from every duplicate user onto the group's canonical user. Rows
- * whose natural key already exists on the canonical side are deleted rather
- * than moved (the unique index would reject the move anyway).
+ * Re-parent watch/episode/feedback/homepage rows, lists (with their
+ * items), taste profiles, subscriptions, notifications, sessions,
+ * snapshots, activity, and AI rows from every duplicate user onto the
+ * group's canonical user. Rows whose natural key already exists on the
+ * canonical side are deleted rather than moved (the unique index would
+ * reject the move anyway).
  */
 export async function mergeDuplicateUsers(db: Db): Promise<MergeResult> {
   const groups = await findDuplicateUserGroups(db);
@@ -101,6 +111,43 @@ export async function mergeDuplicateUsers(db: Db): Promise<MergeResult> {
       rowsTouched += await reparentEpisodes(db, canonical.id, dupe.id);
       rowsTouched += await reparentFeedback(db, canonical.id, dupe.id);
       rowsTouched += await reparentHomepageRow(db, canonical.id, dupe.id);
+      rowsTouched += await reparentTasteProfile(db, canonical.id, dupe.id);
+      rowsTouched += await reparentReleaseSubscriptions(
+        db,
+        canonical.id,
+        dupe.id,
+      );
+      rowsTouched += await reparentNotifications(db, canonical.id, dupe.id);
+      rowsTouched += await reparentPlainUserRows(
+        db,
+        watchSessions,
+        canonical.id,
+        dupe.id,
+      );
+      rowsTouched += await reparentPlainUserRows(
+        db,
+        watchlistSnapshots,
+        canonical.id,
+        dupe.id,
+      );
+      rowsTouched += await reparentPlainUserRows(
+        db,
+        watchlistActivity,
+        canonical.id,
+        dupe.id,
+      );
+      rowsTouched += await reparentPlainUserRows(
+        db,
+        aiRecommendations,
+        canonical.id,
+        dupe.id,
+      );
+      rowsTouched += await reparentPlainUserRows(
+        db,
+        aiGenerationJobs,
+        canonical.id,
+        dupe.id,
+      );
     }
 
     console.warn(
@@ -311,4 +358,145 @@ async function reparentHomepageRow(
     return 1;
   }
   return 0;
+}
+
+/**
+ * user_taste_profiles is keyed by userId: move the dupe's row only when the
+ * canonical user has none (the PK would reject the move otherwise). When
+ * both exist the canonical row wins and the dupe's row is deleted so no
+ * stale profile lingers on the inert dupe.
+ */
+async function reparentTasteProfile(
+  db: Db,
+  canonicalUserId: string,
+  dupeUserId: string,
+): Promise<number> {
+  const [canonicalRows, dupeRows] = await Promise.all([
+    db
+      .select({ userId: userTasteProfiles.userId })
+      .from(userTasteProfiles)
+      .where(eq(userTasteProfiles.userId, canonicalUserId))
+      .limit(1),
+    db
+      .select({ userId: userTasteProfiles.userId })
+      .from(userTasteProfiles)
+      .where(eq(userTasteProfiles.userId, dupeUserId))
+      .limit(1),
+  ]);
+  if (dupeRows.length === 0) return 0;
+  if (canonicalRows.length === 0) {
+    await db
+      .update(userTasteProfiles)
+      .set({ userId: canonicalUserId })
+      .where(eq(userTasteProfiles.userId, dupeUserId));
+    return 1;
+  }
+  await db
+    .delete(userTasteProfiles)
+    .where(eq(userTasteProfiles.userId, dupeUserId));
+  return 1;
+}
+
+/** Move (userId, tmdbId, mediaType)-keyed subscription rows, dropping dupes. */
+async function reparentReleaseSubscriptions(
+  db: Db,
+  canonicalUserId: string,
+  dupeUserId: string,
+): Promise<number> {
+  const canonicalKeys = new Set(
+    (
+      await db
+        .select({
+          tmdbId: releaseSubscriptions.tmdbId,
+          mediaType: releaseSubscriptions.mediaType,
+        })
+        .from(releaseSubscriptions)
+        .where(eq(releaseSubscriptions.userId, canonicalUserId))
+    ).map((r) => `${r.tmdbId}:${r.mediaType}`),
+  );
+
+  const dupeRows = await db
+    .select()
+    .from(releaseSubscriptions)
+    .where(eq(releaseSubscriptions.userId, dupeUserId));
+
+  const statements = dupeRows.map((row) => {
+    const key = `${row.tmdbId}:${row.mediaType}`;
+    if (!canonicalKeys.has(key)) {
+      canonicalKeys.add(key);
+      return db
+        .update(releaseSubscriptions)
+        .set({ userId: canonicalUserId })
+        .where(eq(releaseSubscriptions.id, row.id));
+    }
+    return db
+      .delete(releaseSubscriptions)
+      .where(eq(releaseSubscriptions.id, row.id));
+  });
+  await runBatch(db, statements);
+  return statements.length;
+}
+
+/** Move (userId, dedupeKey)-keyed notification rows, dropping dupes. */
+async function reparentNotifications(
+  db: Db,
+  canonicalUserId: string,
+  dupeUserId: string,
+): Promise<number> {
+  const canonicalKeys = new Set(
+    (
+      await db
+        .select({ dedupeKey: userNotifications.dedupeKey })
+        .from(userNotifications)
+        .where(eq(userNotifications.userId, canonicalUserId))
+    ).map((r) => r.dedupeKey),
+  );
+
+  const dupeRows = await db
+    .select()
+    .from(userNotifications)
+    .where(eq(userNotifications.userId, dupeUserId));
+
+  const statements = dupeRows.map((row) => {
+    if (!canonicalKeys.has(row.dedupeKey)) {
+      canonicalKeys.add(row.dedupeKey);
+      return db
+        .update(userNotifications)
+        .set({ userId: canonicalUserId })
+        .where(eq(userNotifications.id, row.id));
+    }
+    return db.delete(userNotifications).where(eq(userNotifications.id, row.id));
+  });
+  await runBatch(db, statements);
+  return statements.length;
+}
+
+type PlainUserTable =
+  | typeof watchSessions
+  | typeof watchlistSnapshots
+  | typeof watchlistActivity
+  | typeof aiRecommendations
+  | typeof aiGenerationJobs;
+
+/**
+ * Move rows of a user-scoped table with no per-user uniqueness (sessions,
+ * snapshots, activity, AI recommendations and generation jobs): every dupe
+ * row re-points at the canonical user in one statement.
+ */
+async function reparentPlainUserRows(
+  db: Db,
+  table: PlainUserTable,
+  canonicalUserId: string,
+  dupeUserId: string,
+): Promise<number> {
+  const dupeRows = await db
+    .select({ id: table.id })
+    .from(table)
+    .where(eq(table.userId, dupeUserId));
+  if (dupeRows.length === 0) return 0;
+  await db
+    .update(table)
+    .set({ userId: canonicalUserId })
+    .where(eq(table.userId, dupeUserId));
+  return dupeRows.length;
 }

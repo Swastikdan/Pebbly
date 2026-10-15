@@ -1,4 +1,3 @@
-import { Sparkles } from "@/components/ui/hugeicons";
 import { memo } from "react";
 
 import type { AIRecommendation } from "@/domain/recommendations";
@@ -6,6 +5,7 @@ import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { MediaSkeletonList } from "@/components/media-skeleton-list";
 import { TasteProfileDialog } from "@/components/recommendations/taste-profile-dialog";
 import { ScrollContainer } from "@/components/scroll-container";
+import { Sparkles } from "@/components/ui/hugeicons";
 import { useHomepageRecommendations } from "@/hooks/use-homepage-recommendations";
 import { useResolvedRecommendation } from "@/hooks/use-resolved-recommendation";
 import { describeGenerationError } from "@/lib/generation-errors";
@@ -54,7 +54,6 @@ const HomepageRecommendationCard = memo(
         overview={resolvedData.overview}
         is_on_homepage={true}
         relevanceScore={recommendation.relevanceScore}
-        reasoning={recommendation.reasoning}
         hideWatchlistButton={true}
         feedbackActions={{
           isLiked,

@@ -25,7 +25,7 @@ import {
   exportAccountDataArgsSchema,
   requestAccountDeletionArgsSchema,
 } from "../schema/library";
-import { authedFn, WRITE_RATE_LIMIT } from "./rpc";
+import { authedFn, EXPORT_RATE_LIMIT, WRITE_RATE_LIMIT } from "./rpc";
 
 function csvValue(value: unknown): string {
   const text = value == null ? "" : String(value);
@@ -43,11 +43,14 @@ function toCsv(rows: Record<string, unknown>[]): string {
   ].join("\n");
 }
 
+// Intentional: banned users get FORBIDDEN from authedFn (allowBanned
+// defaults to false) and cannot self-serve a data export; a banned account
+// must contact support.
 export const exportAccountData = createServerFn({ method: "POST" })
   .validator(exportAccountDataArgsSchema)
   .handler(({ data }) =>
     authedFn(
-      { mode: "require" },
+      { mode: "require", rateLimit: EXPORT_RATE_LIMIT },
       data,
       async ({
         db,
@@ -152,6 +155,8 @@ export const exportAccountData = createServerFn({ method: "POST" })
     ),
   );
 
+// Intentional: banned users get FORBIDDEN from authedFn and cannot schedule
+// deletion themselves; a banned account must contact support.
 export const requestAccountDeletion = createServerFn({ method: "POST" })
   .validator(requestAccountDeletionArgsSchema)
   .handler(({ data }) =>
@@ -190,6 +195,8 @@ export const requestAccountDeletion = createServerFn({ method: "POST" })
     ),
   );
 
+// Intentional: banned users get FORBIDDEN from authedFn and cannot cancel
+// deletion themselves; a banned account must contact support.
 export const cancelAccountDeletion = createServerFn({ method: "POST" })
   .validator(cancelAccountDeletionArgsSchema)
   .handler(({ data }) =>

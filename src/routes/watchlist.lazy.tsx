@@ -1,8 +1,8 @@
-import { Bookmark, ListPlus } from "@/components/ui/hugeicons";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { GoBack } from "@/components/go-back";
 import { ShareButton } from "@/components/share-button";
+import { Bookmark, ListPlus } from "@/components/ui/hugeicons";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { MyListsTab } from "@/components/watchlist/my-lists-tab";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
@@ -67,7 +67,9 @@ function WatchlistPage() {
               <TabsPanel value="my-lists" className="mt-0">
                 <SilentErrorBoundary>
                   <MyListsTab
-                    initialUserId={loaderData?.userId ?? undefined}
+                    initialUserId={
+                      loaderData?.clerkUserId ?? loaderData?.userId ?? undefined
+                    }
                     initialSignedIn={loaderData?.isSignedIn}
                   />
                 </SilentErrorBoundary>

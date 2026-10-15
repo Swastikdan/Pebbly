@@ -82,16 +82,22 @@ export interface GenerateRecommendationsResult {
   result?: RecommendationResult;
   usedModel?: string;
   error?: string;
+  message?: string;
   reasoningTokens?: number;
 }
 
 const recommendationElementSchema = v.pipe(
   v.object({
-    title: v.string(),
+    title: v.pipe(v.string(), v.minLength(1), v.maxLength(200)),
     tmdbId: v.union([v.number(), v.null(), v.undefined()]),
     mediaType: v.picklist(["movie", "tv"]),
-    relevanceScore: v.number(),
-    reasoning: v.string(),
+    relevanceScore: v.pipe(
+      v.number(),
+      v.finite(),
+      v.minValue(0),
+      v.maxValue(100),
+    ),
+    reasoning: v.pipe(v.string(), v.maxLength(2000)),
   }),
   v.transform((value) => ({
     title: value.title,
@@ -211,7 +217,7 @@ async function callWorkersAI(
   error?: string;
 }> {
   const ai = getEnv().AI as WorkersAiBinding | undefined;
-  if (!ai) return { error: "api_unavailable" };
+  if (!ai) return { error: "local_unavailable" };
 
   // The Workers AI binding surfaces its own error shapes (Cloudflare error
   // codes / HTTP-style statuses), not the Gemini REST shapes the helper
@@ -294,8 +300,13 @@ export async function generateRecommendations({
   retries?: number;
 }): Promise<GenerateRecommendationsResult> {
   if (!getEnv().AI) {
-    console.error("Workers AI binding is not configured");
-    return { error: "api_unavailable" };
+    console.error(
+      "[ai] Workers AI binding is missing; AI unavailable in local dev without Workers AI binding",
+    );
+    return {
+      error: "local_unavailable",
+      message: "AI unavailable in local dev without Workers AI binding",
+    };
   }
 
   return callWorkersAI(prompt, systemInstruction, retries);

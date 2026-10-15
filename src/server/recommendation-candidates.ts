@@ -28,7 +28,11 @@ type RawCandidate = {
 export type CandidateGenerationOptions = {
   watchItems: WatchlistData["watchItems"];
   /** Full tracked library used for exclusions; prompt context may be capped. */
-  excludedWatchItems?: Array<{ tmdbId: number; title: string | null }>;
+  excludedWatchItems?: Array<{
+    tmdbId: number;
+    title: string | null;
+    mediaType?: MediaType;
+  }>;
   /** Genre discovery is catalog-driven and must not use watchlist titles as seeds. */
   useWatchlistSeeds?: boolean;
   mediaTypePreference?: MediaType;
@@ -405,24 +409,38 @@ export async function getRecommendationCandidates(
   }
 
   const trackedItems = options.excludedWatchItems ?? options.watchItems;
-  const excludedIds = new Set([
-    ...options.excludeTmdbIds,
-    ...trackedItems.map((item) => item.tmdbId),
-  ]);
-  const excludedTitles = new Set(
-    [
-      ...options.excludeTitles,
-      ...trackedItems
-        .map((item) => item.title)
-        .filter((title): title is string => !!title),
-    ].map(normalizeTitleKey),
+  // Bare ids (caller-provided exclusions carry no media type) exclude every
+  // media type; tracked-library ids are keyed by media type so a movie never
+  // excludes a TV show sharing the same TMDB id and vice versa.
+  const excludedBareIds = new Set(options.excludeTmdbIds);
+  const excludedTrackedKeys = new Set(
+    trackedItems.map((item) => `${item.mediaType ?? "*"}:${item.tmdbId}`),
   );
+  // Caller-supplied titles exclude across every media type. Tracked-library
+  // titles are scoped by media type so a tracked movie cannot hide a TV
+  // candidate with the same normalized title; tracked items without a media
+  // type stay wildcards.
+  const excludedTitles = new Set(
+    options.excludeTitles.map((title) => normalizeTitleKey(title)),
+  );
+  const excludedTrackedTitleKeys = new Set<string>();
+  for (const item of trackedItems) {
+    if (!item.title) continue;
+    excludedTrackedTitleKeys.add(
+      `${item.mediaType ?? "*"}:${normalizeTitleKey(item.title)}`,
+    );
+  }
   const byIdentity = new Map<string, RawCandidate>();
   for (const candidate of rawCandidates) {
     const year = yearOf(candidate.releaseDate);
+    const titleKey = normalizeTitleKey(candidate.title);
     if (
-      excludedIds.has(candidate.tmdbId) ||
-      excludedTitles.has(normalizeTitleKey(candidate.title)) ||
+      excludedBareIds.has(candidate.tmdbId) ||
+      excludedTrackedKeys.has(`${candidate.mediaType}:${candidate.tmdbId}`) ||
+      excludedTrackedKeys.has(`*:${candidate.tmdbId}`) ||
+      excludedTitles.has(titleKey) ||
+      excludedTrackedTitleKeys.has(`${candidate.mediaType}:${titleKey}`) ||
+      excludedTrackedTitleKeys.has(`*:${titleKey}`) ||
       (options.yearFrom !== undefined &&
         (year === null || year < options.yearFrom)) ||
       (options.yearTo !== undefined && (year === null || year > options.yearTo))

@@ -29,6 +29,7 @@ const listPageSearchSchema = object({
 
 export const Route = createFileRoute("/list/$type/$slug")({
   validateSearch: listPageSearchSchema,
+  loaderDeps: ({ search }) => ({ page: search.page }),
   loader: async ({ params, context, location }) => {
     const { type, slug } = params;
 

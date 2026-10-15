@@ -19,32 +19,29 @@ export const Route = createFileRoute("/watchlist")({
     const session = await unwrap(getAuthSession()).catch(() => ({
       isSignedIn: false as const,
       userId: null,
+      clerkUserId: null,
     }));
 
-    if (session.isSignedIn && session.userId) {
+    // Cache-partition key is the Clerk sub (`clerkUserId`); `userId` is a
+    // deprecated alias of the same value.
+    const cacheKey = session.clerkUserId ?? session.userId ?? undefined;
+    if (session.isSignedIn && cacheKey) {
       await Promise.allSettled([
         context.queryClient.ensureQueryData({
-          queryKey: queryKeys.watchlist.list(
-            undefined,
-            session.userId ?? undefined,
-          ),
-          queryFn: () =>
-            fetchWatchlistList(
-              context.queryClient,
-              session.userId ?? undefined,
-            ),
+          queryKey: queryKeys.watchlist.list(undefined, cacheKey),
+          queryFn: () => fetchWatchlistList(context.queryClient, cacheKey),
         }),
         context.queryClient.ensureQueryData({
-          queryKey: queryKeys.lists.all(session.userId),
-          queryFn: () =>
-            fetchCustomLists(context.queryClient, session.userId ?? undefined),
+          queryKey: queryKeys.lists.all(cacheKey),
+          queryFn: () => fetchCustomLists(context.queryClient, cacheKey),
         }),
       ]);
     }
 
     return {
       isSignedIn: session.isSignedIn,
-      userId: session.userId,
+      userId: cacheKey ?? null,
+      clerkUserId: cacheKey ?? null,
     };
   },
   head: () => ({

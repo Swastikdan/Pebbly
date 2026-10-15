@@ -61,6 +61,12 @@ function actionMeta(action: string): ActionMeta {
         Icon: Eye,
         tone: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
       };
+    case "progress_updated":
+      return {
+        label: "Progress updated",
+        Icon: Clock,
+        tone: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+      };
     default:
       return {
         label: "Status changed",

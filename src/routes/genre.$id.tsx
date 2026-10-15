@@ -35,6 +35,7 @@ type GenreResult = {
 
 export const Route = createFileRoute("/genre/$id")({
   validateSearch: genrePageSearchSchema,
+  loaderDeps: ({ search }) => ({ page: search.page, type: search.type }),
   loader: async ({ params, context, location }) => {
     const genreId = requireRouteId(params.id);
     const search = location.search as { page?: number; type?: GenreType };
@@ -174,8 +175,8 @@ function GenrePage() {
   });
 
   const isLoading =
-    (type !== "tv" && (movieQuery.isLoading || movieQuery.isFetching)) ||
-    (type !== "movie" && (tvQuery.isLoading || tvQuery.isFetching)) ||
+    (type !== "tv" && movieQuery.isLoading) ||
+    (type !== "movie" && tvQuery.isLoading) ||
     isPending;
   const hasError =
     (type !== "tv" && !!movieQuery.error) ||

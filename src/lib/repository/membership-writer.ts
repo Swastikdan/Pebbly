@@ -1,6 +1,9 @@
 import type { WatchlistMembershipArgs } from "@/lib/data/optimistic/watchlist-optimistic";
 import type { OpHandle } from "@/lib/data/pending-ops";
-import type { UndoableRemoval, WatchlistToggleItem } from "@/lib/repository/types";
+import type {
+  UndoableRemoval,
+  WatchlistToggleItem,
+} from "@/lib/repository/types";
 import type { WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
 import { createBatcher } from "@/lib/batcher";
@@ -28,7 +31,10 @@ export function createMembershipWriter(
   queryClient: QueryClient,
   userId: string | undefined,
 ) {
-  const batcher = createBatcher<BatchedWatchlistMembershipTask, WatchItemRow>(
+  const batcher = createBatcher<
+    BatchedWatchlistMembershipTask,
+    WatchItemRow | null
+  >(
     async (tasks) => {
       const items = tasks.map((t) => t.args);
 
@@ -41,11 +47,23 @@ export function createMembershipWriter(
           rows = await unwrap(batchSetWatchlistMembership({ data: { items } }));
         }
 
+        // Align one result per task (null = full delete); the batcher
+        // contract rejects the whole batch on length mismatch.
+        const rowByKey = new Map(
+          rows.map((row) => [`${row.mediaType}:${row.tmdbId}`, row]),
+        );
+        const results = tasks.map(
+          (task) =>
+            rowByKey.get(`${task.args.mediaType}:${task.args.tmdbId}`) ?? null,
+        );
+        const liveRows = results.filter(
+          (row): row is WatchItemRow => row !== null,
+        );
         broadcastMutation("watchlist");
         applyServerState(
           queryClient,
           queryKeys.watchlist.list(undefined, userId),
-          rows,
+          liveRows,
           items.map((i) => `${i.mediaType}:${i.tmdbId}`),
         );
         for (const task of tasks) {
@@ -54,7 +72,7 @@ export function createMembershipWriter(
         }
         scheduleSync(queryClient, [queryKeys.watchlist.trackedTmdbIds(userId)]);
         void queryClient.invalidateQueries?.({ queryKey: ["watchlist"] });
-        return rows;
+        return results;
       } catch (error) {
         logError("batch set watchlist membership", error);
         for (const task of tasks) {

@@ -1,6 +1,5 @@
 import { useUser } from "@clerk/react";
 import { usePostHog } from "@posthog/react";
-import { ArrowRightLeft, CheckCircle2, Loader2 } from "@/components/ui/hugeicons";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -8,11 +7,18 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  ArrowRightLeft,
+  CheckCircle2,
+  Loader2,
+} from "@/components/ui/hugeicons";
 import { fetchWatchlistList } from "@/lib/data/watchlist-queries";
 import {
   buildMigrationPayload,
@@ -107,7 +113,7 @@ export function GuestMigrationDialog() {
     setOpen(true);
   }, [isLoaded, isSignedIn, user, preview.hasData]);
 
-  const handleDismiss = () => {
+  const markDismissed = () => {
     if (user?.id) {
       try {
         sessionStorage.setItem(
@@ -118,6 +124,19 @@ export function GuestMigrationDialog() {
         // Storage unavailable
       }
     }
+  };
+
+  // Dismissing (closing, Escape, or a failed migration) must preserve the
+  // guest stores so the user can retry; only the explicit "Keep Account Only"
+  // choice discards them.
+  const handleDismiss = () => {
+    markDismissed();
+    setOpen(false);
+  };
+
+  const handleKeepAccountOnly = () => {
+    markDismissed();
+    clearGuestStores();
     setOpen(false);
   };
 
@@ -225,17 +244,15 @@ export function GuestMigrationDialog() {
         }
       }}
     >
-      <DialogPopup className="max-w-md p-6">
-        <DialogHeader className="space-y-2 text-start">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-lg">
-              <ArrowRightLeft aria-hidden="true" size={18} />
+      <DialogPopup className="sm:max-w-md">
+        <DialogHeader className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-lg">
+              <ArrowRightLeft aria-hidden="true" size={20} />
             </div>
             <div>
-              <DialogTitle className="text-base font-semibold">
-                Merge Guest Library
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs">
+              <DialogTitle>Merge Guest Library</DialogTitle>
+              <DialogDescription className="mt-0.5">
                 You saved titles while browsing as a guest.
               </DialogDescription>
             </div>
@@ -243,88 +260,92 @@ export function GuestMigrationDialog() {
         </DialogHeader>
 
         {step === "idle" && (
-          <div className="space-y-4 pt-4">
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              We found items in your browser. Would you like to merge them into
-              your account so your watchlist and progress stay synced?
-            </p>
+          <>
+            <div className="space-y-4 px-6 pb-2">
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                We found items in your browser. Would you like to merge them
+                into your account so your watchlist and progress stay synced?
+              </p>
 
-            <div className="border-border bg-card/50 grid grid-cols-2 gap-2 rounded-lg border p-3">
-              <div className="space-y-0.5">
-                <span className="text-muted-foreground text-[11px] font-medium">
-                  New Titles
-                </span>
-                <p className="text-foreground text-base font-bold">
-                  {preview.newTitles}
-                </p>
+              <div className="border-border bg-muted/40 grid grid-cols-2 gap-2 rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <span className="text-muted-foreground text-[11px] font-medium">
+                    New Titles
+                  </span>
+                  <p className="text-foreground text-base font-bold">
+                    {preview.newTitles}
+                  </p>
+                </div>
+
+                {preview.conflictingTitles > 0 && (
+                  <div className="space-y-0.5">
+                    <span className="text-muted-foreground text-[11px] font-medium">
+                      Account Overlaps
+                    </span>
+                    <p className="text-foreground text-base font-bold">
+                      {preview.conflictingTitles}
+                    </p>
+                  </div>
+                )}
+
+                {preview.watchedEpisodesCount > 0 && (
+                  <div className="space-y-0.5">
+                    <span className="text-muted-foreground text-[11px] font-medium">
+                      Watched Episodes
+                    </span>
+                    <p className="text-foreground text-base font-bold">
+                      {preview.watchedEpisodesCount}
+                    </p>
+                  </div>
+                )}
+
+                {preview.listsCount > 0 && (
+                  <div className="space-y-0.5">
+                    <span className="text-muted-foreground text-[11px] font-medium">
+                      Collections
+                    </span>
+                    <p className="text-foreground text-base font-bold">
+                      {preview.listsCount}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {preview.conflictingTitles > 0 && (
-                <div className="space-y-0.5">
-                  <span className="text-muted-foreground text-[11px] font-medium">
-                    Account Overlaps
-                  </span>
-                  <p className="text-foreground text-base font-bold">
-                    {preview.conflictingTitles}
-                  </p>
-                </div>
-              )}
-
-              {preview.watchedEpisodesCount > 0 && (
-                <div className="space-y-0.5">
-                  <span className="text-muted-foreground text-[11px] font-medium">
-                    Watched Episodes
-                  </span>
-                  <p className="text-foreground text-base font-bold">
-                    {preview.watchedEpisodesCount}
-                  </p>
-                </div>
-              )}
-
-              {preview.listsCount > 0 && (
-                <div className="space-y-0.5">
-                  <span className="text-muted-foreground text-[11px] font-medium">
-                    Collections
-                  </span>
-                  <p className="text-foreground text-base font-bold">
-                    {preview.listsCount}
-                  </p>
-                </div>
+                <p className="text-muted-foreground/80 text-[11px] italic">
+                  Overlapping titles will be updated with your latest progress
+                  and reaction without creating duplicate rows.
+                </p>
               )}
             </div>
 
-            {preview.conflictingTitles > 0 && (
-              <p className="text-muted-foreground/80 text-[11px] italic">
-                Overlapping titles will be updated with your latest progress and
-                reaction without creating duplicate rows.
-              </p>
-            )}
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleDismiss}
-                className="text-xs"
+            <DialogFooter variant="bare">
+              <DialogClose
+                render={
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="min-h-8 flex-1"
+                    onClick={handleKeepAccountOnly}
+                  />
+                }
               >
                 Keep Account Only
-              </Button>
+              </DialogClose>
               <Button
                 type="button"
                 variant="default"
-                size="sm"
                 onClick={handleMigrate}
-                className="text-xs font-semibold"
+                className="min-h-8 flex-1"
               >
                 Merge into Account
               </Button>
-            </div>
-          </div>
+            </DialogFooter>
+          </>
         )}
 
         {step === "migrating" && (
-          <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
             <Loader2
               aria-hidden="true"
               size={28}
@@ -334,7 +355,7 @@ export function GuestMigrationDialog() {
               <p className="text-foreground text-sm font-semibold">
                 Merging your library...
               </p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-muted-foreground text-sm">
                 Syncing watchlist, progress, and collections into your account.
               </p>
             </div>
@@ -342,7 +363,7 @@ export function GuestMigrationDialog() {
         )}
 
         {step === "success" && (
-          <div className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-8 text-center">
             <CheckCircle2
               aria-hidden="true"
               size={36}
@@ -352,54 +373,56 @@ export function GuestMigrationDialog() {
               <p className="text-foreground text-sm font-semibold">
                 Migration Complete!
               </p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-muted-foreground text-sm">
                 Your guest watchlist and history are now safely in your account.
               </p>
             </div>
-            <div className="pt-2">
+            <DialogFooter variant="bare" className="w-full pt-0">
               <Button
                 type="button"
                 variant="default"
-                size="sm"
                 onClick={() => {
                   setOpen(false);
                   void navigate({ to: "/watchlist" });
                 }}
-                className="text-xs font-semibold"
+                className="min-h-8 w-full"
               >
                 View Watchlist
               </Button>
-            </div>
+            </DialogFooter>
           </div>
         )}
 
         {step === "error" && (
-          <div className="space-y-4 pt-4">
-            <p className="text-destructive-foreground text-xs font-medium">
-              {errorMessage ??
-                "Something went wrong while merging. Your local data has been preserved."}
-            </p>
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleDismiss}
-                className="text-xs"
+          <>
+            <div className="px-6 pb-2">
+              <p className="text-destructive-foreground text-sm font-medium">
+                {errorMessage ??
+                  "Something went wrong while merging. Your local data has been preserved."}
+              </p>
+            </div>
+            <DialogFooter variant="bare">
+              <DialogClose
+                render={
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="min-h-8 flex-1"
+                  />
+                }
               >
                 Cancel
-              </Button>
+              </DialogClose>
               <Button
                 type="button"
                 variant="default"
-                size="sm"
                 onClick={handleMigrate}
-                className="text-xs font-semibold"
+                className="min-h-8 flex-1"
               >
                 Retry
               </Button>
-            </div>
-          </div>
+            </DialogFooter>
+          </>
         )}
       </DialogPopup>
     </Dialog>

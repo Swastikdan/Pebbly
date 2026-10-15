@@ -1,4 +1,3 @@
-import { ArrowUpRight } from "@/components/ui/hugeicons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -9,6 +8,7 @@ import { MediaCard, MediaCardSkeleton } from "@/components/media-card";
 import { formatTimestamp } from "@/components/recommendations/recommendation-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ArrowUpRight } from "@/components/ui/hugeicons";
 import { MediaGrid } from "@/components/ui/media-grid";
 import { useRecommendationCardFeedback } from "@/hooks/use-recommendation-card-feedback";
 import { useResolvedRecommendation } from "@/hooks/use-resolved-recommendation";
@@ -268,7 +268,6 @@ function RecommendationCard({
         release_date={recommendation.releaseDate ?? null}
         overview={recommendation.overview ?? ""}
         relevanceScore={relevanceScore}
-        reasoning={reasoning}
         feedbackActions={
           feedback
             ? {
@@ -324,7 +323,6 @@ function RecommendationCard({
         release_date={resolvedData.releaseDate}
         overview={resolvedData.overview}
         relevanceScore={relevanceScore}
-        reasoning={reasoning}
         feedbackActions={
           feedback
             ? {

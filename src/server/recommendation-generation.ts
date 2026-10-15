@@ -317,10 +317,10 @@ function filterKnownRecommendations<
   extraExcludedIds: number[],
   extraExcludedTitles: string[],
 ): T[] {
-  const existingIds = new Set([
-    ...watchItems.map((item) => item.tmdbId),
-    ...extraExcludedIds,
-  ]);
+  const existingKeys = new Set(
+    watchItems.map((item) => `${item.mediaType ?? "*"}:${item.tmdbId}`),
+  );
+  const extraExcludedIdSet = new Set(extraExcludedIds);
   const existingTitles = new Set(
     watchItems.map(
       (item) => `${item.mediaType ?? "*"}:${normalizeTitleKey(item.title)}`,
@@ -331,7 +331,10 @@ function filterKnownRecommendations<
   );
   return recommendations.filter(
     (r) =>
-      (r.tmdbId == null || !existingIds.has(r.tmdbId)) &&
+      (r.tmdbId == null ||
+        (!extraExcludedIdSet.has(r.tmdbId) &&
+          !existingKeys.has(`${r.mediaType ?? "*"}:${r.tmdbId}`) &&
+          !existingKeys.has(`*:${r.tmdbId}`))) &&
       !existingTitles.has(
         `${r.mediaType ?? "*"}:${normalizeTitleKey(r.title)}`,
       ) &&

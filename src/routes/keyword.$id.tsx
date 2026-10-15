@@ -32,6 +32,7 @@ const keywordPageSearchSchema = object({
 
 export const Route = createFileRoute("/keyword/$id")({
   validateSearch: keywordPageSearchSchema,
+  loaderDeps: ({ search }) => ({ page: search.page, type: search.type }),
   loader: async ({ params, context, location }) => {
     const keywordId = requireRouteId(params.id);
     const search = location.search as { page?: number; type?: MediaType };
@@ -99,7 +100,6 @@ function KeywordPage() {
   const {
     data: mediaListData,
     error: mediaListError,
-    isFetching: isMediaListFetching,
     isLoading: isMediaListLoading,
   } = useQuery({
     queryKey:
@@ -129,7 +129,7 @@ function KeywordPage() {
     },
   });
 
-  const isLoading = isMediaListLoading || isMediaListFetching || isPending;
+  const isLoading = isMediaListLoading || isPending;
   const results = mediaListData?.results ?? [];
   const hasResults = results.length > 0;
   const showPagination = (mediaListData?.total_pages ?? 0) > 1;

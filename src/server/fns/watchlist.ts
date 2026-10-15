@@ -1,17 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gt,
-  isNull,
-  like,
-  lt,
-  ne,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull, lt, ne, or, sql } from "drizzle-orm";
 import * as v from "valibot";
 
 import type { Db } from "../db/client";
@@ -133,16 +121,26 @@ function watchlistBaseFilters(
   }
   const search = data.search?.trim();
   if (search) {
-    const pattern = `%${search.replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
+    const pattern = `%${escapeLikePattern(search)}%`;
+    // Pass the escape character as a bound parameter so SQLite receives one
+    // valid character; a literal here is easy to mangle through JS escaping.
+    const escapeChar = "\\";
     filters.push(
       or(
-        like(watchItems.title, pattern),
-        like(watchItems.overview, pattern),
-        like(watchItems.releaseDate, pattern),
+        sql`${watchItems.title} LIKE ${pattern} ESCAPE ${escapeChar}`,
+        sql`${watchItems.overview} LIKE ${pattern} ESCAPE ${escapeChar}`,
+        sql`${watchItems.releaseDate} LIKE ${pattern} ESCAPE ${escapeChar}`,
       ) ?? sql`1 = 0`,
     );
   }
   return filters;
+}
+
+function escapeLikePattern(value: string): string {
+  return value
+    .replaceAll("\\", "\\\\")
+    .replaceAll("%", "\\%")
+    .replaceAll("_", "\\_");
 }
 
 function watchlistCursorFilter(
@@ -222,6 +220,8 @@ async function fetchAllActiveWatchlistRows(
   userId: string,
   statusFilter?: ProgressStatus,
 ): Promise<(typeof watchItems.$inferSelect)[]> {
+  // Mirrors getWatchlistPage: dropped rows are excluded unless the caller
+  // explicitly filters by a status (e.g. statusFilter "dropped").
   const rows: (typeof watchItems.$inferSelect)[] = [];
   let cursor: WatchlistCursor | null = null;
   for (;;) {
@@ -230,7 +230,10 @@ async function fetchAllActiveWatchlistRows(
       .from(watchItems)
       .where(
         and(
-          ...watchlistBaseFilters(userId, { statusFilter }),
+          ...watchlistBaseFilters(userId, {
+            statusFilter,
+            excludeDropped: !statusFilter,
+          }),
           watchlistCursorFilter(cursor, "recent"),
         ),
       )
@@ -330,12 +333,28 @@ export const getWatchlistPage = createServerFn({ method: "POST" })
           .limit(limit + 1);
         const hasNextPage = rows.length > limit;
         const items = hasNextPage ? rows.slice(0, limit) : rows;
-        const counts = await getWatchlistCountsForPage(db, user.id, {
-          mediaType: data.mediaType,
-          reactionFilter: data.reactionFilter,
-          search: data.search,
-          excludeDropped: !data.statusFilter,
-        });
+        // Tab counts ignore statusFilter (one row per status bucket); the
+        // page total is a dedicated COUNT with the full filter set so a
+        // status-filtered view paginates correctly.
+        const [counts, totalRows] = await Promise.all([
+          getWatchlistCountsForPage(db, user.id, {
+            mediaType: data.mediaType,
+            reactionFilter: data.reactionFilter,
+            search: data.search,
+            excludeDropped: !data.statusFilter,
+          }),
+          db
+            .select({ count: sql<number>`count(*)` })
+            .from(watchItems)
+            .where(
+              and(
+                ...watchlistBaseFilters(user.id, {
+                  ...data,
+                  excludeDropped: !data.statusFilter,
+                }),
+              ),
+            ),
+        ]);
         return ok({
           items,
           nextCursor:
@@ -343,7 +362,7 @@ export const getWatchlistPage = createServerFn({ method: "POST" })
               ? nextWatchlistCursor(items[items.length - 1], sort)
               : null,
           hasNextPage,
-          totalCount: counts.total,
+          totalCount: Number(totalRows[0]?.count ?? 0),
           counts,
         });
       },
@@ -370,7 +389,9 @@ export const getWatchlistCounts = createServerFn({ method: "POST" })
       async ({ db, user }): Promise<ApiResult<WatchlistCounts>> =>
         ok(
           await getWatchlistCountsForPage(db, user.id, {
-            ...data,
+            mediaType: data.mediaType,
+            reactionFilter: data.reactionFilter,
+            search: data.search,
             excludeDropped: !data.statusFilter,
           }),
         ),
@@ -418,7 +439,14 @@ export const getWatchlist = createServerFn({ method: "POST" })
           const rows = await db
             .select()
             .from(watchItems)
-            .where(and(...watchlistBaseFilters(user.id, data)))
+            .where(
+              and(
+                ...watchlistBaseFilters(user.id, {
+                  ...data,
+                  excludeDropped: !data.statusFilter,
+                }),
+              ),
+            )
             .orderBy(desc(watchItems.updatedAt), desc(watchItems.id))
             .limit(data.limit);
           return ok(rows);

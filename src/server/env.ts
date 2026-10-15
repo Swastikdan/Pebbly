@@ -39,17 +39,23 @@ export function validateEnv(env: Env = getEnv()): void {
   validated = true;
 
   const result = v.safeParse(envSchema, env);
-  if (result.success) return;
-
-  for (const issue of result.issues) {
-    const name = issue.path?.map((p) => String(p.key)).join(".") ?? "unknown";
-    if (name === "CLERK_SECRET_KEY") {
-      console.error(
-        "[env] CLERK_SECRET_KEY is missing or empty. Clerk sessions will not verify and every user is treated as a guest. Set it in wrangler secrets (prod) or .dev.vars (local).",
-      );
-    } else {
-      console.warn(`[env] Invalid or missing value for ${name}.`);
+  if (!result.success) {
+    for (const issue of result.issues) {
+      const name = issue.path?.map((p) => String(p.key)).join(".") ?? "unknown";
+      if (name === "CLERK_SECRET_KEY") {
+        console.error(
+          "[env] CLERK_SECRET_KEY is missing or empty. Clerk sessions will not verify and every user is treated as a guest. Set it in wrangler secrets (prod) or .dev.vars (local).",
+        );
+      } else {
+        console.warn(`[env] Invalid or missing value for ${name}.`);
+      }
     }
+  }
+
+  if (!env.AI) {
+    console.warn(
+      "[env] Workers AI binding is missing. AI recommendations will return local_unavailable; declare the Workers AI (`ai`) binding in the Wrangler config (wrangler.toml / wrangler.preview.toml) to enable generation.",
+    );
   }
 }
 

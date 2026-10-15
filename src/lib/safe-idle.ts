@@ -20,7 +20,7 @@
  *   would plausibly have arrived.
  */
 export function safeIdle(
-  callback: () => void,
+  callback: (deadline?: IdleDeadline) => void,
   { timeout = 2000 }: { timeout?: number } = {},
 ): () => void {
   if (typeof window === "undefined") {
@@ -41,7 +41,9 @@ export function safeIdle(
   };
 
   if (typeof w.requestIdleCallback === "function") {
-    const handle = w.requestIdleCallback(callback, { timeout });
+    const handle = w.requestIdleCallback((deadline) => callback(deadline), {
+      timeout,
+    });
     return () => w.cancelIdleCallback?.(handle);
   }
 
@@ -51,14 +53,20 @@ export function safeIdle(
   // windows closely enough for prefetch/analytics-grade work.
   const delay = Math.max(1, timeout);
   const id = setTimeout(() => {
-    callback();
+    callback(undefined);
   }, delay);
   return () => clearTimeout(id);
 }
 
 /** True when the idle window granted by the scheduler is spent. */
 function deadlinePassed(deadline: IdleDeadline | undefined) {
-  return deadline ? deadline.timeRemaining() <= 0 : false;
+  if (!deadline) return false;
+  // A callback fired because its timeout elapsed reports didTimeout with a
+  // zero timeRemaining(). Still allow a chunk so timed-out callbacks advance
+  // instead of yielding forever with no progress; the wall-clock budget check
+  // in `step` keeps the work bounded.
+  if (deadline.didTimeout) return false;
+  return deadline.timeRemaining() <= 0;
 }
 
 /**
@@ -114,10 +122,10 @@ export function runChunked<T, R>(
       if (elapsed > budgetMs) break;
     }
     if (index >= items.length) finish();
-    else safeIdle(() => step(undefined), { timeout: 1000 });
+    else safeIdle((deadline) => step(deadline), { timeout: 1000 });
   };
 
-  safeIdle(() => step(undefined), { timeout: 1000 });
+  safeIdle((deadline) => step(deadline), { timeout: 1000 });
 
   // Cancelling stops further slices; onDone still fires exactly once so
   // callers can release resources deterministically.
