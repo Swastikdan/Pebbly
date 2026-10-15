@@ -1,4 +1,4 @@
-const APP_SHELL_CACHE = "pebbly-app-shell-v3";
+const APP_SHELL_CACHE = "pebbly-app-shell-v4";
 const APP_SHELL_URL = "/";
 const PRECACHE_URLS = [
   "/manifest.json",

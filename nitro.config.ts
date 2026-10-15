@@ -57,8 +57,7 @@ const posthogOrigins = originsOf(
   posthogHost.replace(".i.posthog.com", "-assets.i.posthog.com"),
 );
 
-// Report-only until violation reports confirm the allowlist is complete;
-// promote to enforced `Content-Security-Policy` afterwards.
+// Content-Security-Policy allowlist covering Clerk, PostHog, TMDB, YouTube, and Cloudflare Turnstile.
 const contentSecurityPolicy = [
   "default-src 'self'",
   [
@@ -139,12 +138,11 @@ export default defineNitroConfig({
     "0 5 * * *": "release-alerts",
   },
   routeRules: {
-    // Homepage edge caching: cache on Cloudflare edge CDN for 1 hour so repeat visits
-    // and Lighthouse audits get instant (<50ms) TTFB, with stale-while-revalidate.
+    // Homepage: do not cache HTML on edge CDN with s-maxage because asset chunk hashes change on deploy.
+    // Instead use max-age=0, must-revalidate so clients and edge always serve fresh HTML matching deployed assets.
     "/": {
       headers: {
-        "Cache-Control":
-          "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+        "Cache-Control": "public, max-age=0, must-revalidate",
       },
     },
     "/assets/**": {
@@ -208,7 +206,7 @@ export default defineNitroConfig({
         "X-Frame-Options": "SAMEORIGIN",
         "Referrer-Policy": "strict-origin-when-cross-origin",
         "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-        "Content-Security-Policy-Report-Only": contentSecurityPolicy,
+        "Content-Security-Policy": contentSecurityPolicy,
       },
     },
   },
