@@ -159,8 +159,8 @@ function collectionFilters(
     const pattern = `%${escaped}%`;
     filters.push(
       or(
-        sql`${listItems.title} LIKE ${pattern} ESCAPE '\'`,
-        sql`${listItems.overview} LIKE ${pattern} ESCAPE '\'`,
+        sql`${listItems.title} LIKE ${pattern} ESCAPE '\\'`,
+        sql`${listItems.overview} LIKE ${pattern} ESCAPE '\\'`,
       ) ?? sql`1 = 0`,
     );
   }

@@ -215,6 +215,26 @@ export const accountDeletionRequests = sqliteTable(
   (t) => [index("account_deletion_status_idx").on(t.status, t.scheduledFor)],
 );
 
+/**
+ * Durable retry ledger for Clerk deletions that failed after the user's DB
+ * rows were removed. The `account_deletion_requests` row is cascade-deleted
+ * with the user, so a failed Clerk delete would otherwise vanish; this table
+ * intentionally has NO foreign key so the record survives and a later run can
+ * retry the identity removal.
+ */
+export const clerkDeletionRetries = sqliteTable(
+  "clerk_deletion_retries",
+  {
+    clerkUserId: text("clerk_user_id").primaryKey(),
+    userId: text("user_id").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    lastError: text("last_error"),
+    firstFailedAt: integer("first_failed_at").notNull(),
+    lastAttemptedAt: integer("last_attempted_at").notNull(),
+  },
+  (t) => [index("clerk_deletion_retries_attempted_idx").on(t.lastAttemptedAt)],
+);
+
 export const releaseSubscriptions = sqliteTable(
   "release_subscriptions",
   {

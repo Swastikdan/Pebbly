@@ -60,7 +60,13 @@ export function safeIdle(
 
 /** True when the idle window granted by the scheduler is spent. */
 function deadlinePassed(deadline: IdleDeadline | undefined) {
-  return deadline ? deadline.timeRemaining() <= 0 : false;
+  if (!deadline) return false;
+  // A callback fired because its timeout elapsed reports didTimeout with a
+  // zero timeRemaining(). Still allow a chunk so timed-out callbacks advance
+  // instead of yielding forever with no progress; the wall-clock budget check
+  // in `step` keeps the work bounded.
+  if (deadline.didTimeout) return false;
+  return deadline.timeRemaining() <= 0;
 }
 
 /**

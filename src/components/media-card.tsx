@@ -85,7 +85,6 @@ interface MediaCardSpecificProps extends BaseCardProps {
   overview?: string;
   priority?: boolean;
   relevanceScore?: number;
-  reasoning?: string;
   hideWatchlistButton?: boolean;
   isRecommended?: boolean;
   feedbackActions?: {

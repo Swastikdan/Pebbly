@@ -397,7 +397,10 @@ export function SearchPage() {
           </Select>
 
           <span className="text-muted-foreground ms-auto text-[10px]">
-            {data?.total_results ?? filteredData.length} results
+            {hasActiveFilters
+              ? filteredData.length
+              : (data?.total_results ?? filteredData.length)}{" "}
+            results
             {hasActiveFilters ? " (filters active)" : ""}
           </span>
         </div>

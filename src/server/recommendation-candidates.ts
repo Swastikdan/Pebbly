@@ -416,22 +416,31 @@ export async function getRecommendationCandidates(
   const excludedTrackedKeys = new Set(
     trackedItems.map((item) => `${item.mediaType ?? "*"}:${item.tmdbId}`),
   );
+  // Caller-supplied titles exclude across every media type. Tracked-library
+  // titles are scoped by media type so a tracked movie cannot hide a TV
+  // candidate with the same normalized title; tracked items without a media
+  // type stay wildcards.
   const excludedTitles = new Set(
-    [
-      ...options.excludeTitles,
-      ...trackedItems
-        .map((item) => item.title)
-        .filter((title): title is string => !!title),
-    ].map(normalizeTitleKey),
+    options.excludeTitles.map((title) => normalizeTitleKey(title)),
   );
+  const excludedTrackedTitleKeys = new Set<string>();
+  for (const item of trackedItems) {
+    if (!item.title) continue;
+    excludedTrackedTitleKeys.add(
+      `${item.mediaType ?? "*"}:${normalizeTitleKey(item.title)}`,
+    );
+  }
   const byIdentity = new Map<string, RawCandidate>();
   for (const candidate of rawCandidates) {
     const year = yearOf(candidate.releaseDate);
+    const titleKey = normalizeTitleKey(candidate.title);
     if (
       excludedBareIds.has(candidate.tmdbId) ||
       excludedTrackedKeys.has(`${candidate.mediaType}:${candidate.tmdbId}`) ||
       excludedTrackedKeys.has(`*:${candidate.tmdbId}`) ||
-      excludedTitles.has(normalizeTitleKey(candidate.title)) ||
+      excludedTitles.has(titleKey) ||
+      excludedTrackedTitleKeys.has(`${candidate.mediaType}:${titleKey}`) ||
+      excludedTrackedTitleKeys.has(`*:${titleKey}`) ||
       (options.yearFrom !== undefined &&
         (year === null || year < options.yearFrom)) ||
       (options.yearTo !== undefined && (year === null || year > options.yearTo))

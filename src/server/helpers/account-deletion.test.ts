@@ -102,4 +102,53 @@ describe("processDueAccountDeletions", () => {
     expect(deleteClerkUser).not.toHaveBeenCalledWith("clerk-3");
     expect(invalidateUserCache).not.toHaveBeenCalledWith("clerk-3");
   });
+
+  it("records failed Clerk deletions and keeps processing the rest of the batch", async () => {
+    // First Clerk delete fails, second succeeds. The batch must not abort.
+    vi.mocked(deleteClerkUser)
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true);
+
+    const due = [
+      {
+        userId: "user-a",
+        clerkUserId: "clerk-a",
+        status: "pending",
+        scheduledFor: Date.now() - 1000,
+      },
+      {
+        userId: "user-b",
+        clerkUserId: "clerk-b",
+        status: "pending",
+        scheduledFor: Date.now() - 1000,
+      },
+    ];
+
+    const mockSelect = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue(due),
+    };
+    const mockDelete = { where: vi.fn().mockResolvedValue({}) };
+    const onConflictDoUpdate = vi.fn().mockResolvedValue({});
+    const insertValues = vi.fn().mockReturnValue({ onConflictDoUpdate });
+    const mockInsert = vi.fn().mockReturnValue({ values: insertValues });
+
+    const mockDb = {
+      run: vi.fn().mockResolvedValue({}),
+      select: vi.fn().mockReturnValue(mockSelect),
+      delete: vi.fn().mockReturnValue(mockDelete),
+      insert: mockInsert,
+    } as unknown as Db;
+
+    await expect(processDueAccountDeletions(mockDb)).rejects.toThrow(
+      AggregateError,
+    );
+
+    expect(deleteClerkUser).toHaveBeenCalledWith("clerk-a");
+    expect(deleteClerkUser).toHaveBeenCalledWith("clerk-b");
+    // Only the failed deletion is persisted for retry.
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+    expect(onConflictDoUpdate).toHaveBeenCalledTimes(1);
+  });
 });

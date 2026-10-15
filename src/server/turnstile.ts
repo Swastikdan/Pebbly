@@ -11,6 +11,22 @@ export interface TurnstileVerifyResult {
   cdata?: string;
 }
 
+/** Cloudflare's dummy test secret key (always passes). Dev/test only. */
+const TEST_SECRET_KEY = "1x0000000000000000000000000000000AA";
+/** Bound the Siteverify round trip so a stalled request fails fast. */
+const SITEVERIFY_TIMEOUT_MS = 10_000;
+
+/**
+ * True only in an explicit development/test environment. The always-pass test
+ * credential must never be reachable in production.
+ */
+function isDevOrTestEnv(): boolean {
+  if (import.meta.env.DEV === true || import.meta.env.MODE === "test") {
+    return true;
+  }
+  return typeof process !== "undefined" && process.env?.NODE_ENV === "test";
+}
+
 export async function verifyTurnstileToken(
   token: string,
   secretKey: string,
@@ -20,9 +36,14 @@ export async function verifyTurnstileToken(
     return { success: false, errorCodes: ["missing-input-response"] };
   }
 
-  // Cloudflare's dummy test secret key (always passes)
-  // Used in local dev when real secret key is not set
-  const effectiveSecret = secretKey || "1x0000000000000000000000000000000AA";
+  // Reject an empty secret in production instead of silently falling back to
+  // Cloudflare's passing test secret. The test credential is permitted only
+  // when a development/test environment is explicitly active.
+  const effectiveSecret =
+    secretKey || (isDevOrTestEnv() ? TEST_SECRET_KEY : "");
+  if (!effectiveSecret) {
+    return { success: false, errorCodes: ["missing-input-secret"] };
+  }
 
   try {
     const formData = new FormData();
@@ -37,6 +58,7 @@ export async function verifyTurnstileToken(
       {
         method: "POST",
         body: formData,
+        signal: AbortSignal.timeout(SITEVERIFY_TIMEOUT_MS),
       },
     );
 

@@ -54,7 +54,7 @@ export function validateEnv(env: Env = getEnv()): void {
 
   if (!env.AI) {
     console.warn(
-      "[env] Workers AI binding is missing. AI recommendations will return local_unavailable; bind Workers AI (wrangler dev / .dev.vars) to enable generation.",
+      "[env] Workers AI binding is missing. AI recommendations will return local_unavailable; declare the Workers AI (`ai`) binding in the Wrangler config (wrangler.toml / wrangler.preview.toml) to enable generation.",
     );
   }
 }

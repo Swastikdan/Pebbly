@@ -113,7 +113,7 @@ export function GuestMigrationDialog() {
     setOpen(true);
   }, [isLoaded, isSignedIn, user, preview.hasData]);
 
-  const handleDismiss = () => {
+  const markDismissed = () => {
     if (user?.id) {
       try {
         sessionStorage.setItem(
@@ -124,6 +124,18 @@ export function GuestMigrationDialog() {
         // Storage unavailable
       }
     }
+  };
+
+  // Dismissing (closing, Escape, or a failed migration) must preserve the
+  // guest stores so the user can retry; only the explicit "Keep Account Only"
+  // choice discards them.
+  const handleDismiss = () => {
+    markDismissed();
+    setOpen(false);
+  };
+
+  const handleKeepAccountOnly = () => {
+    markDismissed();
     clearGuestStores();
     setOpen(false);
   };
@@ -314,6 +326,7 @@ export function GuestMigrationDialog() {
                     variant="outline"
                     type="button"
                     className="min-h-8 flex-1"
+                    onClick={handleKeepAccountOnly}
                   />
                 }
               >

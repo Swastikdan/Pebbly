@@ -74,7 +74,15 @@ export interface AuthedFnConfig {
    * retry loop cannot hammer the DB), which is why the expensive AI
    * generation fns keep their own releasing cooldown instead.
    */
-  readonly rateLimit?: { readonly windowMs: number; readonly max: number };
+  readonly rateLimit?: {
+    readonly windowMs: number;
+    readonly max: number;
+    /**
+     * Namespaces the per-user budget so unrelated budgets don't share the
+     * same allowance. Defaults to the shared write bucket (`fnw`).
+     */
+    readonly bucket?: string;
+  };
 }
 
 /**
@@ -91,7 +99,11 @@ export const WRITE_RATE_LIMIT = { windowMs: 60_000, max: 120 } as const;
  * to ~14 selects, so it gets its own small allowance instead of the shared
  * write budget (read fns otherwise must not set `rateLimit`).
  */
-export const EXPORT_RATE_LIMIT = { windowMs: 60_000, max: 10 } as const;
+export const EXPORT_RATE_LIMIT = {
+  windowMs: 60_000,
+  max: 10,
+  bucket: "fne",
+} as const;
 
 type ModeOf<C> = C extends {
   readonly mode: infer M extends AuthMode;
@@ -169,9 +181,10 @@ export function authedFn<TData, C extends AuthedFnConfig, TResult>(
     }
 
     if (config.rateLimit && user) {
+      const bucket = config.rateLimit.bucket ?? "fnw";
       const reservation = await consumeRateLimitBudget(
         getDb(getEnv()),
-        `fnw:${user.id}`,
+        `${bucket}:${user.id}`,
         config.rateLimit.windowMs,
         config.rateLimit.max,
       );

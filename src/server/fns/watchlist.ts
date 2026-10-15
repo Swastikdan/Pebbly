@@ -122,11 +122,14 @@ function watchlistBaseFilters(
   const search = data.search?.trim();
   if (search) {
     const pattern = `%${escapeLikePattern(search)}%`;
+    // Pass the escape character as a bound parameter so SQLite receives one
+    // valid character; a literal here is easy to mangle through JS escaping.
+    const escapeChar = "\\";
     filters.push(
       or(
-        sql`${watchItems.title} LIKE ${pattern} ESCAPE '\'`,
-        sql`${watchItems.overview} LIKE ${pattern} ESCAPE '\'`,
-        sql`${watchItems.releaseDate} LIKE ${pattern} ESCAPE '\'`,
+        sql`${watchItems.title} LIKE ${pattern} ESCAPE ${escapeChar}`,
+        sql`${watchItems.overview} LIKE ${pattern} ESCAPE ${escapeChar}`,
+        sql`${watchItems.releaseDate} LIKE ${pattern} ESCAPE ${escapeChar}`,
       ) ?? sql`1 = 0`,
     );
   }

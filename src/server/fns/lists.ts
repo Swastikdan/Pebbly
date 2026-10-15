@@ -289,6 +289,9 @@ export const bulkUpdateListItems = createServerFn({ method: "POST" })
             .select()
             .from(listItems)
             .where(eq(listItems.listId, data.listId))
+            // Preserve the source list's displayed order so a move into
+            // another list assigns target positions in that same order.
+            .orderBy(asc(listItems.position), asc(listItems.addedAt))
         ).filter((item) =>
           requestedKeys.has(`${item.mediaType}:${item.tmdbId}`),
         );

@@ -149,7 +149,7 @@ function GenrePage() {
       ? movieQuery.data?.total_pages
       : type === "tv"
         ? tvQuery.data?.total_pages
-        : Math.min(
+        : Math.max(
             movieQuery.data?.total_pages ?? 1,
             tvQuery.data?.total_pages ?? 1,
           );

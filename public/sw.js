@@ -102,7 +102,7 @@ async function handleNavigation(request) {
   }
 }
 
-async function handleStatic(request) {
+async function handleStatic(request, event) {
   const cache = await caches.open(APP_SHELL_CACHE);
   const url = new URL(request.url);
   // Unhashed files (manifest, icons) change without a URL change, so pure
@@ -127,7 +127,9 @@ async function handleStatic(request) {
   // at once, refresh the cache for next time. Hashed assets and uncached
   // requests wait for the network (falling back to cache on failure).
   if (cached && isUnhashed) {
-    revalidate.catch(() => undefined);
+    // Keep the background revalidation alive for the life of the fetch event;
+    // otherwise the worker may be terminated before the cache is refreshed.
+    event.waitUntil(revalidate.catch(() => undefined));
     return cached;
   }
   return revalidate;
@@ -180,6 +182,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (isStaticRequest(request)) {
-    event.respondWith(handleStatic(request));
+    event.respondWith(handleStatic(request, event));
   }
 });
