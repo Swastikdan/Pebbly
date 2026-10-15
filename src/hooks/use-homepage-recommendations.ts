@@ -122,7 +122,10 @@ export function useHomepageRecommendations() {
   const dislikedKeys = useMemo(() => {
     const set = new Set<string>();
     for (const feedback of feedbackList ?? []) {
-      if (feedback.feedback === "not_interested") {
+      if (
+        feedback.feedback === "not_interested" ||
+        feedback.feedback === "dislike"
+      ) {
         set.add(`${feedback.mediaType}:${feedback.tmdbId}`);
       }
     }

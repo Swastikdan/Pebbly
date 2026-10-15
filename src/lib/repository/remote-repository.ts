@@ -498,16 +498,17 @@ export function createRemoteRepository(
         listId,
         userId,
       );
-      let committed = false;
+      let settled = false;
       return {
         undo: () => {
-          if (committed) return;
+          if (settled) return;
+          settled = true;
           handle?.remove();
           handle = null;
         },
         commit: async () => {
-          if (committed) return;
-          committed = true;
+          if (settled) return;
+          settled = true;
           unwrap(deleteCustomList({ data: { listId } }))
             .catch((error) => {
               logError("delete custom list", error);

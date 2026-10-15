@@ -50,7 +50,9 @@ export async function recordWatchlistActivity(
           ? ("rated" as const)
           : statusChanged
             ? ("status_changed" as const)
-            : ("status_changed" as const);
+            : progressChanged
+              ? ("progress_updated" as const)
+              : ("status_changed" as const);
 
   await db.insert(watchlistActivity).values({
     id: crypto.randomUUID(),

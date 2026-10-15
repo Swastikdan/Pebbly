@@ -4,14 +4,13 @@
  * throws and falls back to the generic "unavailable" message.
  *
  * The two surfaces that render these errors (the recommendations page and the
- * homepage rail) used to keep their own maps and grew them independently —
- * the `location_unsupported` code was added twice. Site-wide copy lives here;
- * per-surface wording passes overrides.
+ * homepage rail) used to keep their own maps and grew them independently.
+ * Site-wide copy lives here; per-surface wording passes overrides.
  */
 
 export type GenerationErrorCode =
   | "api_unavailable"
-  | "location_unsupported"
+  | "local_unavailable"
   | "invalid_response"
   | "rate_limited"
   | "high_demand"
@@ -23,9 +22,10 @@ const generationErrorMessages = {
   // Availability failures render nothing — the section keeps its normal
   // empty space instead of showing an error banner. Other, actionable codes
   // (rate limits, empty input, invalid response) still get visible copy.
+  // `local_unavailable` (missing Workers AI binding in local dev) maps to the
+  // same silent treatment as `api_unavailable`.
   api_unavailable: "",
-  location_unsupported:
-    "The AI provider is not available in this region. Please try again later.",
+  local_unavailable: "",
   invalid_response: "The AI returned an unexpected response. Please try again.",
   rate_limited:
     "Please wait a couple minutes before generating new recommendations.",

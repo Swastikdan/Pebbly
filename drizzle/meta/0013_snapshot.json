@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "0bf301fe-b807-4fd1-8b1f-bb4c717fed25",
-  "prevId": "06f71d2d-30c6-49a1-beb6-66780a5111bb",
+  "id": "06f71d2d-30c6-49a1-beb6-66780a5111bb",
+  "prevId": "6d9aad6f-a153-4b51-b5d8-034645ecafa3",
   "tables": {
     "account_deletion_requests": {
       "name": "account_deletion_requests",
@@ -21,13 +21,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'pending'"
-        },
-        "clerk_user_id": {
-          "name": "clerk_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
         },
         "requested_at": {
           "name": "requested_at",

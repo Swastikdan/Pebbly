@@ -1,4 +1,4 @@
-const APP_SHELL_CACHE = "pebbly-app-shell-v2";
+const APP_SHELL_CACHE = "pebbly-app-shell-v3";
 const APP_SHELL_URL = "/";
 const PRECACHE_URLS = [
   "/manifest.json",
@@ -51,10 +51,15 @@ function isStaticRequest(request) {
 
 function hasPrivateCacheHeaders(response) {
   const cacheControl = response.headers.get("cache-control") ?? "";
+  const vary = response.headers.get("vary") ?? "";
   return (
     /(^|,)\s*(private|no-store)\b/i.test(cacheControl) ||
     response.headers.get("set-cookie") !== null ||
-    response.headers.get("vary") === "*"
+    // Vary: * means every request may differ; Vary containing Cookie means
+    // the response is personalized per user, so it must not be served to
+    // others from the shared app-shell cache.
+    vary === "*" ||
+    /(^|,)\s*cookie\b/i.test(vary)
   );
 }
 
@@ -99,17 +104,33 @@ async function handleNavigation(request) {
 
 async function handleStatic(request) {
   const cache = await caches.open(APP_SHELL_CACHE);
+  const url = new URL(request.url);
+  // Unhashed files (manifest, icons) change without a URL change, so pure
+  // cache-first could serve them stale forever. Serve stale immediately
+  // while revalidating in the background; hashed /assets/* URLs are
+  // content-addressed and stay pure cache-first below.
+  const isUnhashed = PRECACHE_URLS.includes(url.pathname);
   const cached = await cache.match(request);
-  if (cached) return cached;
-  try {
-    const response = await fetch(request);
-    if (isCacheableResponse(response)) {
-      await cache.put(request, response.clone());
+  if (cached && !isUnhashed) return cached;
+  const revalidate = (async () => {
+    try {
+      const response = await fetch(request);
+      if (isCacheableResponse(response)) {
+        await cache.put(request, response.clone());
+      }
+      return response;
+    } catch {
+      return cached || Response.error();
     }
-    return response;
-  } catch {
-    return cached || Response.error();
+  })();
+  // Stale-while-revalidate for unhashed files: respond with the stale copy
+  // at once, refresh the cache for next time. Hashed assets and uncached
+  // requests wait for the network (falling back to cache on failure).
+  if (cached && isUnhashed) {
+    revalidate.catch(() => undefined);
+    return cached;
   }
+  return revalidate;
 }
 
 self.addEventListener("install", (event) => {

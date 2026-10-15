@@ -60,10 +60,12 @@ function parseScore(
 
   const hasValidGenre = genreScore !== null && genreConfidence !== null;
   const hasValidTaste = tasteScore !== null;
-  if (hasGenreSignal && hasTasteSignal && !hasValidGenre && !hasValidTaste)
-    return null;
-  if (hasGenreSignal && !hasTasteSignal && !hasValidGenre) return null;
-  if (hasTasteSignal && !hasGenreSignal && !hasValidTaste) return null;
+  // Every requested signal must validate: a partial score would silently
+  // reweight the blend toward whichever signal happened to parse.
+  if (hasGenreSignal && !hasValidGenre) return null;
+  if (hasTasteSignal && !hasValidTaste) return null;
+  // With no signals requested there is nothing to score against.
+  if (!hasGenreSignal && !hasTasteSignal) return null;
 
   const normalizedGenreScore = genreScore === null ? 0 : genreScore / 3;
   const normalizedTasteScore = tasteScore ?? 0;
@@ -76,7 +78,9 @@ function parseScore(
 
   return {
     score: Math.max(0, Math.min(1, score)),
-    confidence: genreConfidence ?? 1,
+    // Confidence comes from the signal actually used: the genre answer's
+    // confidence when genre scoring ran, otherwise the taste-signal default.
+    confidence: hasValidGenre && genreConfidence !== null ? genreConfidence : 1,
   };
 }
 

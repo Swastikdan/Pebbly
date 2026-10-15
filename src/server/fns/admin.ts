@@ -178,6 +178,11 @@ export const setUserBanned = createServerFn({ method: "POST" })
         }
 
         const adminClerkIds = await getClerkAdminIds();
+        // Fail closed: a null admin list means the Clerk lookup failed, so
+        // refuse the ban instead of letting an outage lift the admin guard.
+        if (adminClerkIds === null) {
+          return fail("FORBIDDEN", "Could not verify admin list, refusing ban");
+        }
         const targetClerkId = target.tokenIdentifier.split("|").pop() ?? "";
         if (adminClerkIds.has(targetClerkId)) {
           return fail("FORBIDDEN", "Cannot ban an administrator");
@@ -217,7 +222,7 @@ export const listUsers = createServerFn({ method: "POST" })
       // clerk sub id so the whole page maps in a single pass. On API
       // failure this degrades to "no admins" for display only; it never
       // gates access (that happens in requireAdmin / hasFeature).
-      const adminClerkIds = await getClerkAdminIds();
+      const adminClerkIds = (await getClerkAdminIds()) ?? new Set<string>();
 
       const results: Array<{
         _id: string;

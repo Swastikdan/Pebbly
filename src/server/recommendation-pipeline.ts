@@ -36,11 +36,56 @@ const MAX_RECENT_EXCLUSION_TITLES = 150;
 const MAX_HOMEPAGE_RECOMMENDATIONS = 30;
 const MAX_HOMEPAGE_PER_MEDIA_TYPE = 15;
 
-function genreNamesToIds(names?: string[]): number[] | undefined {
+// Movie/genre names entered via taste controls resolve to movie-catalog ids
+// only, so TV candidates carrying the semantic TV counterpart (e.g.
+// "Sci-Fi & Fantasy" for "Science Fiction") were never boosted or demoted.
+// Expand each name to its cross-catalog id set (see GENRE_LIST).
+const GENRE_ID_EXPANSIONS: Record<number, number[]> = {
+  28: [28, 10759], // Action -> Action & Adventure
+  12: [12, 10759], // Adventure -> Action & Adventure
+  878: [878, 10765], // Science Fiction -> Sci-Fi & Fantasy
+  14: [14, 10765], // Fantasy -> Sci-Fi & Fantasy
+  10765: [10765, 878, 14], // Sci-Fi & Fantasy -> Science Fiction, Fantasy
+  10759: [10759, 28, 12], // Action & Adventure -> Action, Adventure
+  10752: [10752, 10768], // War -> War & Politics
+  10768: [10768, 10752], // War & Politics -> War
+  10762: [10762, 10751, 16], // Kids -> Family, Animation
+  10766: [10766, 18], // Soap -> Drama
+};
+
+export function genreNamesToIdsExpanded(
+  names?: string[],
+): number[] | undefined {
   if (!names) return undefined;
-  return names
-    .map((name) => GENRE_LIST.find((g) => g.name === name)?.id)
-    .filter((id): id is number => id !== undefined);
+  const ids = new Set<number>();
+  for (const name of names) {
+    const match = GENRE_LIST.find(
+      (genre) => genre.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (!match) continue;
+    ids.add(match.id);
+    for (const id of GENRE_ID_EXPANSIONS[match.id] ?? []) ids.add(id);
+  }
+  return [...ids];
+}
+
+// Prompt-interpolated titles are untrusted free text; cap the count and
+// length before they reach any prompt builder so one noisy signal list cannot
+// blow up the prompt. Exclusion sets keep the full values (exact matching).
+const MAX_PROMPT_TITLE_CHARS = 80;
+
+export function truncateTitle(title: string): string {
+  const clean = title.trim();
+  return clean.length > MAX_PROMPT_TITLE_CHARS
+    ? `${clean.slice(0, MAX_PROMPT_TITLE_CHARS - 1).trimEnd()}…`
+    : clean;
+}
+
+function titlesForPrompt(
+  titles: string[] | undefined,
+  limit: number,
+): string[] {
+  return (titles ?? []).slice(0, limit).map(truncateTitle);
 }
 
 type PipelineContext = {
@@ -316,11 +361,11 @@ async function runHistoryPipeline(
     preferredGenreIds:
       generationType === "genre"
         ? []
-        : genreNamesToIds(tasteProfile?.preferredGenres),
+        : genreNamesToIdsExpanded(tasteProfile?.preferredGenres),
     dislikedGenreIds:
       generationType === "genre"
         ? []
-        : genreNamesToIds(tasteProfile?.dislikedGenres),
+        : genreNamesToIdsExpanded(tasteProfile?.dislikedGenres),
     excludeTmdbIds,
     excludeTitles,
     yearFrom: options.yearFrom,
@@ -353,17 +398,25 @@ async function runHistoryPipeline(
   const prompt = orderedCandidates.length
     ? buildCandidateRecommendationPrompt({
         candidates: orderedCandidates,
-        likedTitles,
-        dislikedTitles,
-        previousTitles,
+        likedTitles: titlesForPrompt(likedTitles, 20),
+        dislikedTitles: titlesForPrompt(dislikedTitles, 30),
+        previousTitles: titlesForPrompt(previousTitles, 30),
         mediaTypePreference: options.mediaTypePreference,
         genrePreference: options.genrePreference,
         genreMode: options.genreMode,
         count: Math.min(Math.max(options.count ?? 10, 1), 30),
-        dislikedThemes: feedbackSignals.dislikedThemes,
-        preferredGenres: tasteProfile?.preferredGenres,
-        dislikedGenres: tasteProfile?.dislikedGenres,
-        adventureLevel: feedbackSignals.adventureLevel,
+        // Genre generations are catalog-driven, not personalized: keep taste
+        // fields empty here to match the scoring path above.
+        dislikedThemes:
+          generationType === "genre" ? [] : feedbackSignals.dislikedThemes,
+        preferredGenres:
+          generationType === "genre" ? [] : tasteProfile?.preferredGenres,
+        dislikedGenres:
+          generationType === "genre" ? [] : tasteProfile?.dislikedGenres,
+        adventureLevel:
+          generationType === "genre"
+            ? undefined
+            : feedbackSignals.adventureLevel,
         goal:
           generationType === "genre"
             ? "Rank the strongest popular, highly-rated matches for the requested genres. Do not personalize from the watchlist."
@@ -383,7 +436,12 @@ async function runHistoryPipeline(
           options.yearFrom,
           options.yearTo,
           options.count,
-          { ...feedbackSignals, previousTitles },
+          {
+            ...feedbackSignals,
+            likedTitles: titlesForPrompt(feedbackSignals.likedTitles, 20),
+            dislikedTitles: titlesForPrompt(feedbackSignals.dislikedTitles, 30),
+            previousTitles: titlesForPrompt(previousTitles, 30),
+          },
         )
       : generationType === "list" && options.listId
         ? buildCustomListPrompt(
@@ -394,7 +452,15 @@ async function runHistoryPipeline(
             options.yearFrom,
             options.yearTo,
             options.count,
-            { ...feedbackSignals, previousTitles },
+            {
+              ...feedbackSignals,
+              likedTitles: titlesForPrompt(feedbackSignals.likedTitles, 20),
+              dislikedTitles: titlesForPrompt(
+                feedbackSignals.dislikedTitles,
+                30,
+              ),
+              previousTitles: titlesForPrompt(previousTitles, 30),
+            },
           )
         : buildGenrePrompt(
             watchlistData,
@@ -516,8 +582,8 @@ async function runHomepagePipeline(
     excludedWatchItems: watchlistData.excludedWatchItems,
     excludeTmdbIds: excludeIds,
     excludeTitles,
-    preferredGenreIds: genreNamesToIds(tasteProfile?.preferredGenres),
-    dislikedGenreIds: genreNamesToIds(tasteProfile?.dislikedGenres),
+    preferredGenreIds: genreNamesToIdsExpanded(tasteProfile?.preferredGenres),
+    dislikedGenreIds: genreNamesToIdsExpanded(tasteProfile?.dislikedGenres),
     limit: 60,
     balanced: true,
   });
@@ -540,9 +606,9 @@ async function runHomepagePipeline(
   const prompt = orderedCandidates.length
     ? buildCandidateRecommendationPrompt({
         candidates: orderedCandidates,
-        likedTitles: feedbackSignals.likedTitles ?? [],
-        dislikedTitles: feedbackSignals.dislikedTitles ?? [],
-        previousTitles,
+        likedTitles: titlesForPrompt(feedbackSignals.likedTitles, 20),
+        dislikedTitles: titlesForPrompt(feedbackSignals.dislikedTitles, 30),
+        previousTitles: titlesForPrompt(previousTitles, 30),
         count: 30,
         dislikedThemes: feedbackSignals.dislikedThemes,
         preferredGenres: tasteProfile?.preferredGenres,
@@ -557,10 +623,10 @@ async function runHomepagePipeline(
       })
     : buildHomepageRecommendationsPrompt(
         watchlistData,
-        feedbackSignals.likedTitles ?? [],
-        feedbackSignals.dislikedTitles ?? [],
+        titlesForPrompt(feedbackSignals.likedTitles, 20),
+        titlesForPrompt(feedbackSignals.dislikedTitles, 30),
         excludeIds,
-        previousTitles,
+        titlesForPrompt(previousTitles, 30),
       );
 
   const generated = await runAiGeneration({

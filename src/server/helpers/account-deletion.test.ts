@@ -39,11 +39,11 @@ describe("processDueAccountDeletions", () => {
 
     expect(count).toBe(1);
     expect(deleteClerkUser).toHaveBeenCalledWith("clerk-1");
-    expect(invalidateUserCache).toHaveBeenCalledWith("user-1");
+    expect(invalidateUserCache).toHaveBeenCalledWith("clerk-1");
     expect(mockDb.delete).toHaveBeenCalledTimes(2);
   });
 
-  it("skips deletion if Clerk user deletion fails", async () => {
+  it("deletes DB data first and rethrows when Clerk deletion fails", async () => {
     vi.mocked(deleteClerkUser).mockResolvedValue(false);
 
     const mockSelect = {
@@ -59,15 +59,47 @@ describe("processDueAccountDeletions", () => {
       ]),
     };
 
+    const mockDelete = {
+      where: vi.fn().mockResolvedValue({}),
+    };
+
     const mockDb = {
       select: vi.fn().mockReturnValue(mockSelect),
-      delete: vi.fn(),
+      delete: vi.fn().mockReturnValue(mockDelete),
+    } as unknown as Db;
+
+    await expect(processDueAccountDeletions(mockDb)).rejects.toThrow();
+    expect(deleteClerkUser).toHaveBeenCalledWith("clerk-2");
+    // DB PII is still deleted first; cache cleanup uses the Clerk sub.
+    expect(mockDb.delete).toHaveBeenCalled();
+    expect(invalidateUserCache).toHaveBeenCalledWith("clerk-2");
+  });
+
+  it("skips Clerk deletion when the DB delete fails", async () => {
+    const mockSelect = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue([
+        {
+          userId: "user-3",
+          clerkUserId: "clerk-3",
+          status: "pending",
+          scheduledFor: Date.now() - 1000,
+        },
+      ]),
+    };
+
+    const mockDb = {
+      select: vi.fn().mockReturnValue(mockSelect),
+      delete: vi.fn().mockReturnValue({
+        where: vi.fn().mockRejectedValue(new Error("db down")),
+      }),
     } as unknown as Db;
 
     const count = await processDueAccountDeletions(mockDb);
 
     expect(count).toBe(0);
-    expect(deleteClerkUser).toHaveBeenCalledWith("clerk-2");
-    expect(mockDb.delete).not.toHaveBeenCalled();
+    expect(deleteClerkUser).not.toHaveBeenCalledWith("clerk-3");
+    expect(invalidateUserCache).not.toHaveBeenCalledWith("clerk-3");
   });
 });

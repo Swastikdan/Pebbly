@@ -67,7 +67,9 @@ export interface AuthedFnConfig {
    * Per-user write budget for mutating fns. Enforced inside `authedFn`
    * after the auth gates pass, against one shared bucket per user
    * (`fnw:<user.id>`) across every fn that opts in — so the budget bounds
-   * a user's TOTAL write rate, not per-fn rates. Read fns must not set it.
+   * a user's TOTAL write rate, not per-fn rates. Read fns must not set it,
+   * except via the read-appropriate `EXPORT_RATE_LIMIT` for the heavy
+   * account-export fn.
    * The consumed slot is never released (failed writes keep counting, so a
    * retry loop cannot hammer the DB), which is why the expensive AI
    * generation fns keep their own releasing cooldown instead.
@@ -83,6 +85,13 @@ export interface AuthedFnConfig {
  * optimistic ops, so realistic write rates are far below this).
  */
 export const WRITE_RATE_LIMIT = { windowMs: 60_000, max: 120 } as const;
+
+/**
+ * Tighter budget for the heavy account-export read fn: one export fans out
+ * to ~14 selects, so it gets its own small allowance instead of the shared
+ * write budget (read fns otherwise must not set `rateLimit`).
+ */
+export const EXPORT_RATE_LIMIT = { windowMs: 60_000, max: 10 } as const;
 
 type ModeOf<C> = C extends {
   readonly mode: infer M extends AuthMode;

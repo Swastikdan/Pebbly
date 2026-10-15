@@ -340,8 +340,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
   );
 });
 const HorizontalCard = memo((props: MediaCardSpecificProps) => {
-  const { title, image, media_type, release_date, relevanceScore, reasoning } =
-    props;
+  const { title, image, media_type, release_date, relevanceScore } = props;
 
   const formattedTitle = formatMediaTitle.encode(title);
   // Use LQ (w185) as `src` fallback so the initial download on 1x phones
@@ -394,29 +393,14 @@ const HorizontalCard = memo((props: MediaCardSpecificProps) => {
             </span>
           )}
         </div>
-        {reasoning && (
-          <p
-            className="text-muted-foreground/80 mt-1 line-clamp-2 text-[11px] leading-snug text-pretty"
-            title={reasoning}
-          >
-            {reasoning}
-          </p>
-        )}
       </div>
     </BaseMediaCard>
   );
 });
 
 const VerticalCard = memo((props: MediaCardSpecificProps) => {
-  const {
-    title,
-    image,
-    id,
-    media_type,
-    release_date,
-    isContinueWatching,
-    reasoning,
-  } = props;
+  const { title, image, id, media_type, release_date, isContinueWatching } =
+    props;
 
   const formattedTitle = formatMediaTitle.encode(title);
   const year = release_date ? new Date(release_date).getFullYear() : "";
@@ -497,14 +481,6 @@ const VerticalCard = memo((props: MediaCardSpecificProps) => {
           <span className="text-meta text-muted-foreground capitalize">
             {year}
           </span>
-        )}
-        {reasoning && (
-          <p
-            className="text-muted-foreground/80 mt-0.5 line-clamp-2 text-[11px] leading-snug text-pretty"
-            title={reasoning}
-          >
-            {reasoning}
-          </p>
         )}
       </div>
     </BaseMediaCard>

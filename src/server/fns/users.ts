@@ -37,6 +37,12 @@ export const storeUser = createServerFn({ method: "POST" })
 
 export type AuthSessionResult = {
   isSignedIn: boolean;
+  /** Clerk `sub` — the stable per-identity cache-partition key. */
+  clerkUserId: string | null;
+  /**
+   * @deprecated Alias of `clerkUserId` kept so existing callers keep
+   * working; this was never the DB UUID, despite the name.
+   */
   userId: string | null;
 };
 
@@ -44,13 +50,15 @@ export const getAuthSession = createServerFn({ method: "POST" }).handler(() =>
   authedFn(
     {
       mode: "current",
-      guest: () => ok({ isSignedIn: false, userId: null }),
+      guest: () => ok({ isSignedIn: false, userId: null, clerkUserId: null }),
     },
     undefined,
     async ({ claims }): Promise<ApiResult<AuthSessionResult>> => {
+      const clerkUserId = claims?.sub ?? null;
       return ok({
         isSignedIn: true,
-        userId: claims?.sub ?? null,
+        userId: clerkUserId,
+        clerkUserId,
       });
     },
   ),

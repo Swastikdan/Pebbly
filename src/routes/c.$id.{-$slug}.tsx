@@ -11,18 +11,20 @@ export const Route = createFileRoute("/c/$id/{-$slug}")({
   // everyone else only ever sees public lists (private ones 404 without
   // revealing existence).
   loader: async ({ params, context }) => {
-    const session: { isSignedIn: boolean; userId: string | null } =
-      await unwrap(getAuthSession()).catch(() => ({
-        isSignedIn: false,
-        userId: null,
-      }));
+    const session: {
+      isSignedIn: boolean;
+      userId: string | null;
+      clerkUserId: string | null;
+    } = await unwrap(getAuthSession()).catch(() => ({
+      isSignedIn: false,
+      userId: null,
+      clerkUserId: null,
+    }));
 
+    const cacheKey = session.clerkUserId ?? session.userId ?? undefined;
     const payload = await context.queryClient
       .ensureQueryData({
-        queryKey: queryKeys.lists.collectionPage(
-          params.id,
-          session.userId ?? undefined,
-        ),
+        queryKey: queryKeys.lists.collectionPage(params.id, cacheKey),
         queryFn: () =>
           unwrap(getCollectionPage({ data: { listId: params.id } })),
       })

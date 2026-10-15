@@ -17,7 +17,10 @@ export const recommendationSchema = v.object({
   overview: v.optional(v.string()),
 });
 
-export const recommendationsArraySchema = v.array(recommendationSchema);
+export const recommendationsArraySchema = v.pipe(
+  v.array(recommendationSchema),
+  v.maxLength(60),
+);
 export type Recommendation = v.InferOutput<typeof recommendationSchema>;
 
 export const inputStatsSchema = v.object({

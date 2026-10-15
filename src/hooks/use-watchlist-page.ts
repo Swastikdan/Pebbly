@@ -104,10 +104,18 @@ export function useWatchlistPage(args: PageArgs) {
         return;
       }
       const target = Math.min(Math.max(nextPage, 1), totalPages);
+      // Read fresh state after each fetch: the `remote` closure goes stale
+      // once fetchNextPage resolves, so hasNextPage/page count must come
+      // from the fetch result, not the captured observer value.
       let loadedPages = remote.data?.pages.length ?? 0;
-      while (loadedPages < target && remote.hasNextPage) {
+      let hasNext = remote.hasNextPage;
+      let guard = 0;
+      const maxJumps = 20;
+      while (loadedPages < target && hasNext && guard < maxJumps) {
+        guard += 1;
         const result = await remote.fetchNextPage();
         loadedPages = result.data?.pages.length ?? loadedPages + 1;
+        hasNext = result.hasNextPage ?? false;
       }
       setPage(Math.min(target, Math.max(loadedPages, 1)));
     },

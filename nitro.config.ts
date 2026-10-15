@@ -71,6 +71,7 @@ const contentSecurityPolicy = [
     "https://cdn.jsdelivr.net",
     // PostHog loads session-replay and survey scripts from its assets host.
     ...posthogOrigins,
+    "https://challenges.cloudflare.com",
   ].join(" "),
   // Clerk registers its telemetry/handshake workers from blob: URLs, which
   // falls back to script-src when worker-src is absent.
@@ -100,8 +101,14 @@ const contentSecurityPolicy = [
     "https://clerk-telemetry.com",
     // PostHog event ingestion and remote config.
     ...posthogOrigins,
+    "https://challenges.cloudflare.com",
   ].join(" "),
-  ["frame-src", ...clerkOrigins, "https://www.youtube.com"]
+  [
+    "frame-src",
+    ...clerkOrigins,
+    "https://www.youtube.com",
+    "https://challenges.cloudflare.com",
+  ]
     .filter(Boolean)
     .join(" "),
   "media-src 'self' blob:",

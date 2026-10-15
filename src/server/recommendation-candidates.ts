@@ -28,7 +28,11 @@ type RawCandidate = {
 export type CandidateGenerationOptions = {
   watchItems: WatchlistData["watchItems"];
   /** Full tracked library used for exclusions; prompt context may be capped. */
-  excludedWatchItems?: Array<{ tmdbId: number; title: string | null }>;
+  excludedWatchItems?: Array<{
+    tmdbId: number;
+    title: string | null;
+    mediaType?: MediaType;
+  }>;
   /** Genre discovery is catalog-driven and must not use watchlist titles as seeds. */
   useWatchlistSeeds?: boolean;
   mediaTypePreference?: MediaType;
@@ -405,10 +409,13 @@ export async function getRecommendationCandidates(
   }
 
   const trackedItems = options.excludedWatchItems ?? options.watchItems;
-  const excludedIds = new Set([
-    ...options.excludeTmdbIds,
-    ...trackedItems.map((item) => item.tmdbId),
-  ]);
+  // Bare ids (caller-provided exclusions carry no media type) exclude every
+  // media type; tracked-library ids are keyed by media type so a movie never
+  // excludes a TV show sharing the same TMDB id and vice versa.
+  const excludedBareIds = new Set(options.excludeTmdbIds);
+  const excludedTrackedKeys = new Set(
+    trackedItems.map((item) => `${item.mediaType ?? "*"}:${item.tmdbId}`),
+  );
   const excludedTitles = new Set(
     [
       ...options.excludeTitles,
@@ -421,7 +428,9 @@ export async function getRecommendationCandidates(
   for (const candidate of rawCandidates) {
     const year = yearOf(candidate.releaseDate);
     if (
-      excludedIds.has(candidate.tmdbId) ||
+      excludedBareIds.has(candidate.tmdbId) ||
+      excludedTrackedKeys.has(`${candidate.mediaType}:${candidate.tmdbId}`) ||
+      excludedTrackedKeys.has(`*:${candidate.tmdbId}`) ||
       excludedTitles.has(normalizeTitleKey(candidate.title)) ||
       (options.yearFrom !== undefined &&
         (year === null || year < options.yearFrom)) ||

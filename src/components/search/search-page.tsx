@@ -22,9 +22,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { isMediaType } from "@/domain/media";
 import { useUrlPagedQuery } from "@/hooks/use-url-paged-query";
+import { destructiveToast } from "@/lib/notifications";
 import { getMedia, getSearchResult } from "@/lib/queries";
 import { queryKeys } from "@/lib/query/keys";
-import { destructiveToast } from "@/lib/notifications";
 import {
   addToSearchHistory,
   clearSearchHistory,
@@ -397,7 +397,8 @@ export function SearchPage() {
           </Select>
 
           <span className="text-muted-foreground ms-auto text-[10px]">
-            {filteredData.length} results
+            {data?.total_results ?? filteredData.length} results
+            {hasActiveFilters ? " (filters active)" : ""}
           </span>
         </div>
 
@@ -537,7 +538,11 @@ function SearchHistory({
               onClick={() =>
                 navigate({
                   to: "/search",
-                  search: { query: item },
+                  search: {
+                    query: item,
+                    type: undefined,
+                    minRating: undefined,
+                  },
                 })
               }
             >

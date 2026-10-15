@@ -152,6 +152,13 @@ const config = defineConfig(({ mode }) => ({
       "@tanstack/react-router-devtools",
       "@tanstack/react-query-devtools",
     ],
+    // Bundle every SSR dependency into the Worker build EXCEPT `clsx` and
+    // `class-variance-authority` (the negative lookahead keeps exactly those
+    // two external). Everything else must be inlined because the Cloudflare
+    // Worker runtime has no node_modules to resolve from at runtime. The two
+    // exclusions are safe only because both are tiny, side-effect-free,
+    // pure-ESM packages with no native bindings; do not broaden this
+    // exclusion without verifying the Worker build still resolves them.
     noExternal:
       mode === "production"
         ? /^(?!class-variance-authority$|clsx$).*/

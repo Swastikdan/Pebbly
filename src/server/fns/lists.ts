@@ -9,11 +9,14 @@ import { captureServerEvent } from "@/lib/posthog-server";
 import { chunkedQuery, runBatch } from "../db/client";
 import { listItems, lists } from "../db/schema";
 import { findOwnedRow } from "../helpers/owned-row";
+import { createWatchlistSnapshot } from "../helpers/snapshots";
 import {
   bumpListsRev,
   bumpWatchlistRev,
+  getWatchItem,
   upsertWatchItem,
 } from "../helpers/watch-item";
+import { recordWatchlistActivity } from "../helpers/watchlist-activity";
 import { fail, ok } from "../schema/common";
 import { bulkListItemsArgsSchema } from "../schema/library";
 import {
@@ -292,7 +295,11 @@ export const bulkUpdateListItems = createServerFn({ method: "POST" })
 
         if (data.action === "status") {
           for (const item of sourceItems) {
-            await upsertWatchItem(
+            const before = await getWatchItem(db, user.id, {
+              tmdbId: item.tmdbId,
+              mediaType: item.mediaType,
+            });
+            const after = await upsertWatchItem(
               db,
               user.id,
               item.tmdbId,
@@ -313,7 +320,15 @@ export const bulkUpdateListItems = createServerFn({ method: "POST" })
               },
               { skipRevBump: true },
             );
+            await recordWatchlistActivity(
+              db,
+              user.id,
+              { tmdbId: item.tmdbId, mediaType: item.mediaType },
+              before,
+              after ?? null,
+            );
           }
+          await createWatchlistSnapshot(db, user.id);
           await bumpListsRev(db, user.id);
           await bumpWatchlistRev(db, user.id);
           return ok({ affected: sourceItems.length });
@@ -321,6 +336,7 @@ export const bulkUpdateListItems = createServerFn({ method: "POST" })
 
         if (data.action === "move" && data.targetListId) {
           const targetListId = data.targetListId;
+          if (targetListId === data.listId) return ok({ affected: 0 });
           const target = await findOwnedRow(db, lists, user.id, targetListId);
           if (!target) return fail("NOT_FOUND", "Target list not found");
           const targetItems = await chunkedQuery(
@@ -343,6 +359,13 @@ export const bulkUpdateListItems = createServerFn({ method: "POST" })
           const targetKeys = new Set(
             targetItems.map((item) => `${item.mediaType}:${item.tmdbId}`),
           );
+          const highest = await db
+            .select({ position: listItems.position })
+            .from(listItems)
+            .where(eq(listItems.listId, targetListId))
+            .orderBy(desc(listItems.position))
+            .limit(1);
+          let nextPosition = highest.length > 0 ? highest[0].position + 1 : 1;
           const statements: unknown[] = [];
           for (const item of sourceItems) {
             statements.push(
@@ -365,7 +388,7 @@ export const bulkUpdateListItems = createServerFn({ method: "POST" })
                   listId: targetListId,
                   tmdbId: item.tmdbId,
                   mediaType: item.mediaType,
-                  position: item.position,
+                  position: nextPosition++,
                   addedAt: Date.now(),
                   title: item.title,
                   image: item.image,

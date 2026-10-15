@@ -29,6 +29,7 @@ export const WATCHLIST_ACTIVITY_ACTIONS = [
   "added",
   "removed",
   "status_changed",
+  "progress_updated",
   "rated",
   "watched",
 ] as const;

@@ -284,7 +284,10 @@ export const useLocalListsStore = create<LocalListsStore>()(
         let added = true;
         set((state) => {
           const existingIndex = state.listItems.findIndex(
-            (i) => i.listId === args.listId && i.tmdbId === args.tmdbId,
+            (i) =>
+              i.listId === args.listId &&
+              i.tmdbId === args.tmdbId &&
+              i.mediaType === args.mediaType,
           );
 
           if (existingIndex !== -1) {

@@ -263,10 +263,10 @@ export function TasteProfileDialog({
     await saveProfile({
       adventureLevel,
       preferredMediaType,
-      preferredGenres,
-      dislikedGenres,
-      dislikedThemes,
-      avoidTitles,
+      preferredGenres: preferredGenres.map((g) => g.trim().slice(0, 80)),
+      dislikedGenres: dislikedGenres.map((g) => g.trim().slice(0, 80)),
+      dislikedThemes: dislikedThemes.map((t) => t.trim().slice(0, 80)),
+      avoidTitles: avoidTitles.map((t) => t.trim().slice(0, 120)),
     });
     toast({
       title: "Taste profile saved",

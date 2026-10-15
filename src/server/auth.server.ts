@@ -113,8 +113,9 @@ const ADMIN_API_TIMEOUT_MS = 5_000;
 /**
  * Fetch the Clerk user ids whose public metadata marks them admin, using one
  * paginated API call per page (max page size). Used to render the admin user
- * table without a per-row lookup. Returns an empty set on any failure. This
- * is display-only data and must never be used for access decisions. Those
+ * table without a per-row lookup. Returns null on any failure so security
+ * gates can fail closed; display-only callers fall back to an empty set.
+ * This is display-only data and must never be used for access decisions. Those
  * come exclusively from the signed JWT claim (isAdminByClaims), which the
  * Clerk session-claims template populates from `publicMetadata.isAdmin`.
  */
@@ -135,9 +136,9 @@ export async function deleteClerkUser(userId: string): Promise<boolean> {
   }
 }
 
-export async function getClerkAdminIds(): Promise<Set<string>> {
+export async function getClerkAdminIds(): Promise<Set<string> | null> {
   const client = getClerkApiClient();
-  if (!client) return new Set();
+  if (!client) return null;
   const adminIds = new Set<string>();
   try {
     const PAGE_SIZE = 500;
@@ -160,6 +161,7 @@ export async function getClerkAdminIds(): Promise<Set<string>> {
     }
   } catch (error) {
     console.error("Failed to fetch Clerk user list for admin display:", error);
+    return null;
   }
   return adminIds;
 }

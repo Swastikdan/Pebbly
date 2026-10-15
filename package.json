@@ -41,6 +41,7 @@
     "@fontsource-variable/geist": "^5.3.0",
     "@hugeicons/core-free-icons": "^4.3.5",
     "@hugeicons/react": "^1.1.10",
+    "@marsidev/react-turnstile": "^1.6.1",
     "@posthog/react": "^1.11.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.102.1",

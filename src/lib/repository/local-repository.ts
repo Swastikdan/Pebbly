@@ -188,8 +188,11 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
         listItems: state.listItems.filter((i) => i.listId !== listId),
       });
 
+      let settled = false;
       return {
         undo: () => {
+          if (settled) return;
+          settled = true;
           if (existingList) {
             useLocalListsStore.setState((prev) => ({
               lists: [...prev.lists, existingList],
@@ -198,6 +201,8 @@ export function createLocalRepository(queryClient: QueryClient): Repository {
           }
         },
         commit: async () => {
+          if (settled) return;
+          settled = true;
           // Finalized on local store
         },
       };

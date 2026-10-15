@@ -205,6 +205,7 @@ function PersonPage() {
       to: "/person/$id",
       params: { id },
       search: {
+        page: undefined,
         query: value.trim() || undefined,
         type: filmographyType === "all" ? undefined : filmographyType,
       },
@@ -218,6 +219,7 @@ function PersonPage() {
       to: "/person/$id",
       params: { id },
       search: {
+        page: undefined,
         query: filmographyQuery.trim() || undefined,
         type: nextType === "all" ? undefined : nextType,
       },

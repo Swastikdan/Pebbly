@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import type { ApiResult, ProgressStatus, Reaction } from "../schema/common";
@@ -152,10 +152,16 @@ function collectionFilters(
   if (data.mediaType) filters.push(eq(listItems.mediaType, data.mediaType));
   const search = data.search?.trim();
   if (search) {
-    const pattern = `%${search.replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
+    const escaped = search
+      .replaceAll("\\", "\\\\")
+      .replaceAll("%", "\\%")
+      .replaceAll("_", "\\_");
+    const pattern = `%${escaped}%`;
     filters.push(
-      or(like(listItems.title, pattern), like(listItems.overview, pattern)) ??
-        sql`1 = 0`,
+      or(
+        sql`${listItems.title} LIKE ${pattern} ESCAPE '\'`,
+        sql`${listItems.overview} LIKE ${pattern} ESCAPE '\'`,
+      ) ?? sql`1 = 0`,
     );
   }
   return filters;
