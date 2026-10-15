@@ -25,6 +25,7 @@ import { THEME_STORAGE_KEY, useTheme } from "@/hooks/use-theme";
 import { getAnonymousId } from "@/lib/anonymous-id";
 import { reportClientSideError } from "@/lib/client-error-reporting";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
+import { consumeStaleChunkRecovery } from "@/lib/stale-chunk-reload";
 import appCss from "@/styles.css?url";
 
 // UserSync polls data-version every 10s and syncs Clerk user to DB – not
@@ -98,6 +99,7 @@ function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       <AnalyticsIdentity />
+      <StaleChunkRecoveryTracker />
       {children}
     </PostHogProvider>
   );
@@ -126,6 +128,18 @@ function AnalyticsIdentity() {
       posthog.identify(anonymousId, { account_type: "anonymous" });
     }
   }, [isLoaded, isSignedIn, posthog, user?.id]);
+
+  return null;
+}
+
+function StaleChunkRecoveryTracker() {
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (posthog && consumeStaleChunkRecovery()) {
+      posthog.capture("chunk_reload_recovered");
+    }
+  }, [posthog]);
 
   return null;
 }

@@ -4,6 +4,10 @@ import { Link, useRouter } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { reportClientSideError } from "@/lib/client-error-reporting";
+import {
+  isChunkLoadError,
+  reloadForStaleChunk,
+} from "@/lib/stale-chunk-reload";
 
 export function DefaultNotFoundComponent() {
   return (
@@ -39,6 +43,9 @@ export function DefaultErrorComponent({
 
   useEffect(() => {
     if (error === undefined) return;
+    if (isChunkLoadError(error) && navigator.onLine && reloadForStaleChunk()) {
+      return;
+    }
     reportClientSideError(error, {
       source: "route-error",
       componentStack: info?.componentStack,
