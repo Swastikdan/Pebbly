@@ -65,12 +65,12 @@ describe("generateRecommendations", () => {
   function stubAi(...responses: unknown[]) {
     const run = vi.fn();
     for (const response of responses) run.mockResolvedValueOnce(response);
-    (globalThis as { __env__?: unknown }).__env__ = { AI: { run } };
+    vi.stubGlobal("__env__", { AI: { run } });
     return run;
   }
 
   afterEach(() => {
-    delete (globalThis as { __env__?: unknown }).__env__;
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
