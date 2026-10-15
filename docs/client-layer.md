@@ -161,6 +161,12 @@ is pure data-layer code under `lib/data/` (no hook imports):
 
 The rest of the data layer sits beside it:
 
+- `src/lib/data/mutation-outbox.ts` + `sync-center.ts` + `mutation-registry.ts`,
+  the persistent outbox for signed-in writes: `mutation-outbox.ts` stores and
+  coalesces records; `mutation-registry.ts` is the one mapping from a record's
+  `kind` to its Valibot schema + server fn (`operationFor` / `runRemoteMutation`);
+  `sync-center.ts` replays them in order and classifies permanent vs transient
+  failures.
 - `src/lib/data/optimistic/watchlist-optimistic.ts`, membership/progress/
   reaction/mark-show op builders (incl. `buildSeasonEpisodeSelections`) plus
   the shared row transforms (`applyProgressUpdateRows`,
