@@ -20,6 +20,9 @@ export type { Recommendation };
 
 const WORKERS_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const WORKERS_AI_TIMEOUT_MS = 30_000;
+// A 30-title response with reasoning can exceed 2048 tokens; a truncated
+// response is invalid JSON and fails the whole generation.
+const WORKERS_AI_MAX_TOKENS = 4096;
 
 type RecommendationIdentity = {
   title?: string | null;
@@ -224,7 +227,8 @@ async function callWorkersAI(
   // classifiers match. Classify here so the shared Result error set
   // (rate_limited / high_demand / api_unavailable) means the same thing
   // regardless of provider (see architecture-hardening-plan item 17).
-  let errorKind: "rate_limited" | "high_demand" | "api_unavailable" =
+  let errorKind:
+    "rate_limited" | "high_demand" | "invalid_response" | "api_unavailable" =
     "api_unavailable";
 
   const classify = (error: unknown) => {
@@ -264,14 +268,26 @@ async function callWorkersAI(
           ],
           response_format: WORKERS_AI_RESPONSE_FORMAT,
           temperature: 0.2,
-          max_tokens: 2048,
+          max_tokens: WORKERS_AI_MAX_TOKENS,
         },
         { signal: AbortSignal.timeout(WORKERS_AI_TIMEOUT_MS) },
       );
       const responseText = extractWorkersAiText(response);
       if (!responseText) throw new Error("Workers AI returned no content");
 
-      return parseRecommendationResponse(responseText, WORKERS_AI_MODEL);
+      const parsed = parseRecommendationResponse(
+        responseText,
+        WORKERS_AI_MODEL,
+      );
+      if (!parsed.error) return parsed;
+
+      // Malformed output is usually transient, so it uses the same retry
+      // budget as a thrown provider error.
+      console.error(
+        `Workers AI returned an invalid response (${responseText.length} chars)`,
+      );
+      if (errorKind === "api_unavailable") errorKind = "invalid_response";
+      if (attempt < retries) await delay(500);
     } catch (error) {
       console.error("Workers AI error:", getErrorMessage(error));
       // Prefer the most actionable classification we have seen so far.

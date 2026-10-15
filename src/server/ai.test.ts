@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Recommendation } from "./ai";
-import { dedupeRecommendations } from "./ai";
+import { dedupeRecommendations, generateRecommendations } from "./ai";
 
 function recommendation(
   overrides: Partial<Recommendation> = {},
@@ -51,5 +51,55 @@ describe("dedupeRecommendations", () => {
 
     expect(result).toHaveLength(2);
     expect(result.map((item) => item.tmdbId)).toEqual([100, 603]);
+  });
+});
+
+describe("generateRecommendations", () => {
+  const validResponse = {
+    response: JSON.stringify({ recommendations: [recommendation()] }),
+  };
+  const truncatedResponse = {
+    response: '{"recommendations":[{"title":"The Matrix","tmdbId":6',
+  };
+
+  function stubAi(...responses: unknown[]) {
+    const run = vi.fn();
+    for (const response of responses) run.mockResolvedValueOnce(response);
+    (globalThis as { __env__?: unknown }).__env__ = { AI: { run } };
+    return run;
+  }
+
+  afterEach(() => {
+    delete (globalThis as { __env__?: unknown }).__env__;
+    vi.restoreAllMocks();
+  });
+
+  it("retries a malformed response within the retry budget", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const run = stubAi(truncatedResponse, validResponse);
+
+    const result = await generateRecommendations({
+      prompt: "prompt",
+      systemInstruction: "system",
+      retries: 2,
+    });
+
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(result.error).toBeUndefined();
+    expect(result.result?.recommendations).toHaveLength(1);
+  });
+
+  it("reports invalid_response when every attempt is malformed", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const run = stubAi(truncatedResponse, truncatedResponse);
+
+    const result = await generateRecommendations({
+      prompt: "prompt",
+      systemInstruction: "system",
+      retries: 2,
+    });
+
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(result.error).toBe("invalid_response");
   });
 });

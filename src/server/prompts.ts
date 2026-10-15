@@ -94,7 +94,7 @@ const RESPONSE_SCHEMA = `Respond with this exact JSON schema:
       "tmdbId": "number or null if unknown",
       "mediaType": "movie" or "tv",
       "relevanceScore": "number 0-100",
-      "reasoning": "string - 1-2 sentence explanation"
+      "reasoning": "string - one short sentence"
     }
   ]
 }
@@ -555,7 +555,7 @@ Return this exact JSON shape:
       "tmdbId": 123,
       "mediaType": "movie or tv",
       "relevanceScore": "number from 0 to 100",
-      "reasoning": "brief explanation based on the user's preferences"
+      "reasoning": "one short sentence based on the user's preferences"
     }
   ]
 }
