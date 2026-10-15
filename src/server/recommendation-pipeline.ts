@@ -477,7 +477,7 @@ async function runHistoryPipeline(
   const generated = await runAiGeneration({
     distinctId: context.userId,
     prompt,
-    attempts: 1,
+    attempts: 2,
     targetCount,
     watchItems: watchlistData.watchItems,
     excludedWatchItems: watchlistData.excludedWatchItems,

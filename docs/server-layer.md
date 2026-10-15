@@ -269,7 +269,8 @@ AI access:
   recommendations using Cloudflare Workers AI with `@cf/meta/llama-3.1-8b-instruct-fast`
   and JSON mode.
 - Responses are validated per element with Valibot, and provider-specific
-  failures are mapped to safe application error codes.
+  failures are mapped to safe application error codes. Malformed JSON output
+  uses the same `retries` budget as a thrown provider error.
 - `recommendation-pipeline.ts` owns the shared history/homepage generation
   choreography; `fns/recommendations.ts` exposes thin authenticated adapters.
 
