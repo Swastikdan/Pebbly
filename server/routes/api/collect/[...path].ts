@@ -21,11 +21,12 @@ const STRIPPED_REQUEST_HEADERS = new Set([
   "content-length",
   "accept-encoding",
 ]);
+const PUBLIC_PREFIX_RE = new RegExp(`^${PUBLIC_PREFIX}`);
 
 export default eventHandler(async (event) => {
   const url = getRequestURL(event);
   const pathWithSearch =
-    url.pathname.replace(new RegExp(`^${PUBLIC_PREFIX}`), "") + url.search;
+    url.pathname.replace(PUBLIC_PREFIX_RE, "") + url.search;
   // The remainder must be an absolute path; anything else (e.g. a prefix
   // match like `/api/collect.evil.com`) would change the upstream hostname.
   if (!pathWithSearch.startsWith("/")) {
@@ -51,13 +52,7 @@ export default eventHandler(async (event) => {
         // gzip-compressed session replay payloads sent to /s/.
         await readRawBody(event, false)
       : undefined;
-  const bodyBuffer = body
-    ? (() => {
-        const buffer = new ArrayBuffer(body.byteLength);
-        new Uint8Array(buffer).set(body);
-        return buffer;
-      })()
-    : undefined;
+  const bodyBuffer = body ? (body as unknown as BodyInit) : undefined;
 
   const originRequest = new Request(`https://${targetHost}${pathWithSearch}`, {
     method,

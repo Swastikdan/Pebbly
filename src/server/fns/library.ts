@@ -13,6 +13,11 @@ import {
   watchlistActivity,
   watchlistSnapshots,
 } from "../db/schema";
+import {
+  activityCursorGuard,
+  decodeCursor,
+  encodeCursor,
+} from "../helpers/cursor";
 import { createWatchlistSnapshot } from "../helpers/snapshots";
 import {
   bumpWatchlistRev,
@@ -31,25 +36,9 @@ import { authedFn, WRITE_RATE_LIMIT } from "./rpc";
 
 type ActivityCursor = { createdAt: number; id: string };
 
-function encodeActivityCursor(cursor: ActivityCursor) {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(cursor))));
-}
-
-function decodeActivityCursor(value?: string): ActivityCursor | null {
-  if (!value) return null;
-  try {
-    const parsed = JSON.parse(decodeURIComponent(escape(atob(value)))) as {
-      createdAt?: unknown;
-      id?: unknown;
-    };
-    if (typeof parsed.createdAt !== "number" || typeof parsed.id !== "string") {
-      return null;
-    }
-    return { createdAt: parsed.createdAt, id: parsed.id };
-  } catch {
-    return null;
-  }
-}
+const encodeActivityCursor = (cursor: ActivityCursor) => encodeCursor(cursor);
+const decodeActivityCursor = (value?: string) =>
+  decodeCursor(value, activityCursorGuard);
 
 export const getWatchlistActivity = createServerFn({ method: "POST" })
   .validator(getWatchlistActivityArgsSchema)

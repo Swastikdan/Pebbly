@@ -226,6 +226,19 @@ function durationSince(startedAt: number): string {
   return `${(performance.now() - startedAt).toFixed(1)}ms`;
 }
 
+function logLine(
+  level: "log" | "warn" | "error",
+  label: string,
+  target: string,
+  status: string,
+  startedAt: number,
+  error?: unknown,
+) {
+  const line = `${DIM}${label}${RESET} ${CYAN}${target}${RESET} ${status} ${DIM}${durationSince(startedAt)}${RESET}`;
+  if (error !== undefined) console.error(line, error);
+  else console[level](line);
+}
+
 export const requestLogger = createMiddleware({ type: "request" }).server(
   async ({ request, pathname, handlerType, next }) => {
     if (process.env.NODE_ENV === "production") return next();
@@ -278,15 +291,10 @@ export const serverFnLogger = createMiddleware({
   const startedAt = performance.now();
   try {
     const result = await next();
-    console.log(
-      `${DIM}[fn]${RESET} ${CYAN}${label}${RESET} ${DIM}${durationSince(startedAt)}${RESET}`,
-    );
+    logLine("log", "[fn]", label, "", startedAt);
     return result;
   } catch (error) {
-    console.error(
-      `${DIM}[fn]${RESET} ${CYAN}${label}${RESET} ${RED}THREW${RESET} ${DIM}${durationSince(startedAt)}${RESET}`,
-      error,
-    );
+    logLine("error", "[fn]", label, `${RED}THREW${RESET}`, startedAt, error);
     throw error;
   }
 });

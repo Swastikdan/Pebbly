@@ -10,6 +10,7 @@ import {
   users,
 } from "../db/schema";
 import { getEnv } from "../env";
+import { ensureTable } from "./ensure-table";
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -22,16 +23,10 @@ function errorMessage(error: unknown): string {
  */
 async function ensureRetryTable(db: Db): Promise<void> {
   try {
-    await db.run(
-      sql.raw(
-        `CREATE TABLE IF NOT EXISTS "clerk_deletion_retries" ("clerk_user_id" text PRIMARY KEY NOT NULL, "user_id" text NOT NULL, "attempts" integer DEFAULT 0 NOT NULL, "last_error" text, "first_failed_at" integer NOT NULL, "last_attempted_at" integer NOT NULL)`,
-      ),
-    );
-    await db.run(
-      sql.raw(
-        `CREATE INDEX IF NOT EXISTS "clerk_deletion_retries_attempted_idx" ON "clerk_deletion_retries" ("last_attempted_at")`,
-      ),
-    );
+    await ensureTable(db, [
+      `CREATE TABLE IF NOT EXISTS "clerk_deletion_retries" ("clerk_user_id" text PRIMARY KEY NOT NULL, "user_id" text NOT NULL, "attempts" integer DEFAULT 0 NOT NULL, "last_error" text, "first_failed_at" integer NOT NULL, "last_attempted_at" integer NOT NULL)`,
+      `CREATE INDEX IF NOT EXISTS "clerk_deletion_retries_attempted_idx" ON "clerk_deletion_retries" ("last_attempted_at")`,
+    ]);
   } catch (error) {
     console.error(
       "[account-deletion] could not ensure Clerk-deletion retry table:",

@@ -82,11 +82,19 @@ type TmdbCandidateItem = {
   overview?: string | null;
 };
 
-function toMovieCandidate(
+function toCandidate(
   item: TmdbCandidateItem,
+  mediaType: "movie" | "tv",
   source: CandidateSource,
 ): RawCandidate | null {
-  const title = item.title ?? item.original_title ?? "";
+  const title =
+    mediaType === "movie"
+      ? (item.title ?? item.original_title ?? "")
+      : (item.name ?? item.original_name ?? "");
+  const releaseDate =
+    mediaType === "movie"
+      ? (item.release_date ?? "")
+      : (item.first_air_date ?? "");
   if (
     !title ||
     !item.id ||
@@ -99,39 +107,10 @@ function toMovieCandidate(
   }
   return {
     tmdbId: item.id,
-    mediaType: "movie",
+    mediaType,
     title,
-    releaseDate: item.release_date ?? "",
-    rating: item.vote_average,
-    voteCount: item.vote_count,
-    popularity: item.popularity,
-    posterPath: item.poster_path,
-    genreIds: (item.genre_ids ?? []).filter((id): id is number => id !== null),
-    overview: item.overview ?? null,
-    source,
-  };
-}
+    releaseDate,
 
-function toTvCandidate(
-  item: TmdbCandidateItem,
-  source: CandidateSource,
-): RawCandidate | null {
-  const title = item.name ?? item.original_name ?? "";
-  if (
-    !title ||
-    !item.id ||
-    !item.poster_path ||
-    item.vote_average == null ||
-    item.vote_average <= 0 ||
-    item.vote_count == null
-  ) {
-    return null;
-  }
-  return {
-    tmdbId: item.id,
-    mediaType: "tv",
-    title,
-    releaseDate: item.first_air_date ?? "",
     rating: item.vote_average,
     voteCount: item.vote_count,
     popularity: item.popularity,
@@ -361,30 +340,33 @@ export async function getRecommendationCandidates(
   const rawCandidates: RawCandidate[] = [];
   for (const [index, items] of popularResults.entries()) {
     for (const item of items) {
-      const candidate =
-        mediaTypes[index] === "movies_popular"
-          ? toMovieCandidate(item, "popular")
-          : toTvCandidate(item, "popular");
+      const candidate = toCandidate(
+        item as TmdbCandidateItem,
+        mediaTypes[index] === "movies_popular" ? "movie" : "tv",
+        "popular",
+      );
       if (candidate) rawCandidates.push(candidate);
     }
   }
   for (const [index, result] of seedResults.entries()) {
     if (!result) continue;
     for (const item of result.results ?? []) {
-      const candidate =
-        seeds[index].mediaType === "movie"
-          ? toMovieCandidate(item, "seed")
-          : toTvCandidate(item, "seed");
+      const candidate = toCandidate(
+        item as TmdbCandidateItem,
+        seeds[index].mediaType,
+        "seed",
+      );
       if (candidate) rawCandidates.push(candidate);
     }
   }
 
   for (const { type, result } of genreResults) {
     for (const item of result.results ?? []) {
-      const candidate =
-        type === "movies_popular"
-          ? toMovieCandidate(item, "genre")
-          : toTvCandidate(item, "genre");
+      const candidate = toCandidate(
+        item as TmdbCandidateItem,
+        type === "movies_popular" ? "movie" : "tv",
+        "genre",
+      );
       if (candidate) rawCandidates.push(candidate);
     }
   }
@@ -401,10 +383,11 @@ export async function getRecommendationCandidates(
     ) {
       continue;
     }
-    const candidate =
-      trendingType === "movie"
-        ? toMovieCandidate(item, "trending")
-        : toTvCandidate(item, "trending");
+    const candidate = toCandidate(
+      item as TmdbCandidateItem,
+      trendingType,
+      "trending",
+    );
     if (candidate) rawCandidates.push(candidate);
   }
 

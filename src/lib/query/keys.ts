@@ -132,7 +132,7 @@ export const queryKeys = {
     searchFallback: (title: string, mediaType: MediaType) =>
       ["tmdb-search-fallback", title, mediaType] as const,
     trendingDay: () => ["trending-day"] as const,
-    homepageMedia: (type: string) => [type] as const,
+    homepageMedia: (type: string) => ["homepage-media", type] as const,
   },
 } as const;
 
@@ -148,3 +148,10 @@ export const listsSyncKeys = (userId?: string) =>
     queryKeys.lists.itemListsPrefix(),
     queryKeys.lists.collectionPagesPrefix(),
   ] as const;
+
+export const DAY_FRESH = {
+  staleTime: 86_400_000,
+  gcTime: 1_800_000,
+  retry: 2,
+  refetchOnWindowFocus: false,
+} as const;
