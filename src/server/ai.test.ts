@@ -89,6 +89,26 @@ describe("generateRecommendations", () => {
     expect(result.result?.recommendations).toHaveLength(1);
   });
 
+  it("retries when all recommendations fail local validation", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const invalidResponse = {
+      response: JSON.stringify({
+        recommendations: [recommendation({ relevanceScore: 101 })],
+      }),
+    };
+    const run = stubAi(invalidResponse, validResponse);
+
+    const result = await generateRecommendations({
+      prompt: "prompt",
+      systemInstruction: "system",
+      retries: 2,
+    });
+
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(result.error).toBeUndefined();
+    expect(result.result?.recommendations).toHaveLength(1);
+  });
+
   it("reports invalid_response when every attempt is malformed", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const run = stubAi(truncatedResponse, truncatedResponse);

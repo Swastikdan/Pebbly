@@ -148,7 +148,7 @@ function CustomListMediaCardImpl({
               {...dragHandleProps}
               aria-label={`Reorder rank ${rank}. Drag to move, or use the arrow buttons.`}
               title="Drag to reorder"
-              className="absolute start-2 top-2 z-20 flex size-8 min-w-8 cursor-grab touch-none items-center justify-center rounded-lg border border-white/80 bg-neutral-950 px-1.5 text-[11px] font-bold text-white tabular-nums shadow-md select-none active:cursor-grabbing"
+              className="absolute start-2 top-2 z-40 flex size-8 min-w-8 cursor-grab touch-none items-center justify-center rounded-lg border border-white/80 bg-neutral-950 px-1.5 text-[11px] font-bold text-white tabular-nums shadow-md select-none active:cursor-grabbing"
             >
               {rank}
             </button>

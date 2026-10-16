@@ -79,7 +79,7 @@ export function BottomSheetPopup({
         <DrawerPrimitive.Popup
           className={cn(
             "bg-popover text-popover-foreground ease-drawer relative row-start-2 flex max-h-[90dvh] min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-t-2xl border-t shadow-2xl outline-hidden",
-            "transition-[translate,transform] duration-300 will-change-transform data-ending-style:translate-y-full data-starting-style:translate-y-full",
+            "translate-y-[var(--drawer-swipe-movement-y,0px)] transition-[translate,transform] duration-300 will-change-transform data-ending-style:translate-y-full data-starting-style:translate-y-full data-swiping:transition-none",
             className,
           )}
           data-slot="bottom-sheet-popup"

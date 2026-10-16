@@ -291,6 +291,7 @@ export function CollectionPage({ listId }: { listId: string }) {
   // Drag-to-reorder commit. Lifts one title out and reinserts it at the drop
   // index, then persists the whole order — mirroring the arrow-button path.
   const handleReorder = (from: number, to: number) => {
+    if (deferredSearch.trim() || mediaFilter !== "all") return;
     if (from === to) return;
     if (from < 0 || to < 0) return;
     if (from >= visibleItems.length || to >= visibleItems.length) return;
@@ -310,7 +311,8 @@ export function CollectionPage({ listId }: { listId: string }) {
 
   const { draggingIndex, getHandleProps } = useReorderDrag({
     containerRef: gridRef,
-    enabled: page === 1,
+    enabled:
+      page === 1 && deferredSearch.trim() === "" && mediaFilter === "all",
     onReorder: handleReorder,
   });
 
@@ -988,7 +990,11 @@ export function CollectionPage({ listId }: { listId: string }) {
                 readOnly={!canManage}
                 rank={isOrdered ? index + 1 : undefined}
                 onMove={
-                  canManage && isOrdered && page === 1
+                  canManage &&
+                  isOrdered &&
+                  page === 1 &&
+                  deferredSearch.trim() === "" &&
+                  mediaFilter === "all"
                     ? handleMoveIndex(index)
                     : undefined
                 }
@@ -1002,7 +1008,11 @@ export function CollectionPage({ listId }: { listId: string }) {
                 reorderIndex={isOrdered ? index : undefined}
                 isDragging={draggingIndex === index}
                 dragHandleProps={
-                  canManage && isOrdered && page === 1
+                  canManage &&
+                  isOrdered &&
+                  page === 1 &&
+                  deferredSearch.trim() === "" &&
+                  mediaFilter === "all"
                     ? getHandleProps(index)
                     : undefined
                 }

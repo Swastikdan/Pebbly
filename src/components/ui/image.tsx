@@ -40,10 +40,13 @@ const ImageComponent = ({
     // selected resource. This avoids revealing a partially decoded image.
     const image = imageRef.current;
     if (!image) return;
-    void image.decode().then(
-      () => setLoaded(true),
-      () => setLoaded(true),
-    );
+    const decodedSrc = image.currentSrc;
+    const setLoadedIfCurrent = () => {
+      if (imageRef.current === image && image.currentSrc === decodedSrc) {
+        setLoaded(true);
+      }
+    };
+    void image.decode().then(setLoadedIfCurrent, setLoadedIfCurrent);
   }, []);
 
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -55,10 +58,13 @@ const ImageComponent = ({
     imageRef.current = node;
     if (!node?.complete) return;
     if (node.naturalWidth > 0) {
-      void node.decode().then(
-        () => setLoaded(true),
-        () => setLoaded(true),
-      );
+      const decodedSrc = node.currentSrc;
+      const setLoadedIfCurrent = () => {
+        if (imageRef.current === node && node.currentSrc === decodedSrc) {
+          setLoaded(true);
+        }
+      };
+      void node.decode().then(setLoadedIfCurrent, setLoadedIfCurrent);
     } else {
       setError(true);
     }

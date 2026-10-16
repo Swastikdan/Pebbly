@@ -200,8 +200,11 @@ function parseRecommendationResponse(
       if (validated.success) validRecommendations.push(validated.output);
     }
 
+    const recommendations = dedupeRecommendations(validRecommendations);
+    if (recommendations.length === 0) return { error: "invalid_response" };
+
     return {
-      result: { recommendations: dedupeRecommendations(validRecommendations) },
+      result: { recommendations },
       usedModel,
       reasoningTokens,
     };

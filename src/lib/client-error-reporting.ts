@@ -133,10 +133,11 @@ export function reportClientSideError(
   if (error instanceof DOMException && error.name === "AbortError") return;
 
   const lowerMsg = message.toLowerCase();
+  const chunkLoadError = isChunkLoadError(error);
   if (
     lowerMsg.includes("abort") ||
     lowerMsg.includes("resizeobserver") ||
-    lowerMsg.includes("failed to fetch") ||
+    (!chunkLoadError && lowerMsg.includes("failed to fetch")) ||
     lowerMsg.includes("fetch failed") ||
     lowerMsg.includes("networkerror") ||
     lowerMsg.includes("network error") ||

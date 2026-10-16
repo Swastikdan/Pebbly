@@ -170,7 +170,7 @@ export function MediaLightboxDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <motion.div
-          className="size-full touch-none"
+          className="size-full [touch-action:pan-y_pinch-zoom]"
           drag="x"
           // 1:1 tracking while a neighbour exists in that direction; rubber-band
           // (dragElastic) only at the ends, where there is nowhere to go.

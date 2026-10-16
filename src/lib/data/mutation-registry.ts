@@ -51,6 +51,10 @@ export type MutationKind = (typeof MUTATION_KINDS)[number];
 /** A replayable remote write, or `undefined` when the record is not actionable. */
 export type RemoteOperation = () => Promise<unknown>;
 
+function assertUnhandledKind(_kind: never): undefined {
+  return undefined;
+}
+
 /**
  * Resolves the remote operation for a record, validating and parsing its
  * persisted payload first. Returns `undefined` for an unknown kind or a payload
@@ -60,7 +64,10 @@ export type RemoteOperation = () => Promise<unknown>;
 export function operationFor(
   record: MutationOutboxRecord,
 ): RemoteOperation | undefined {
-  switch (record.kind) {
+  const kind = v.safeParse(v.picklist(MUTATION_KINDS), record.kind);
+  if (!kind.success) return undefined;
+  const mutationKind = kind.output;
+  switch (mutationKind) {
     case "set-membership": {
       const parsed = v.safeParse(
         setWatchlistMembershipArgsSchema,
@@ -120,7 +127,7 @@ export function operationFor(
         : undefined;
     }
     default:
-      return undefined;
+      return assertUnhandledKind(mutationKind);
   }
 }
 

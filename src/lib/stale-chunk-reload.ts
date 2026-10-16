@@ -57,14 +57,22 @@ function writeMarker(storage: MarkerStorage, marker: ReloadMarker): boolean {
  * the guard blocks the reload, so the caller can report the error.
  */
 export function reloadForStaleChunk({
-  storage = window.sessionStorage,
+  storage,
   now = Date.now(),
   reload = () => window.location.reload(),
 }: ReloadOptions = {}): boolean {
-  const marker = readMarker(storage);
+  let markerStorage = storage;
+  if (!markerStorage) {
+    try {
+      markerStorage = window.sessionStorage;
+    } catch {
+      return false;
+    }
+  }
+  const marker = readMarker(markerStorage);
   if (marker && now - marker.at < RELOAD_GUARD_MS) return false;
   // Without the marker the guard cannot stop a reload loop.
-  if (!writeMarker(storage, { at: now, reported: false })) return false;
+  if (!writeMarker(markerStorage, { at: now, reported: false })) return false;
   reload();
   return true;
 }
@@ -73,10 +81,16 @@ export function reloadForStaleChunk({
  * Returns true once after a stale-chunk reload, so the caller can record
  * the recovery a single time.
  */
-export function consumeStaleChunkRecovery(
-  storage: MarkerStorage = window.sessionStorage,
-): boolean {
-  const marker = readMarker(storage);
+export function consumeStaleChunkRecovery(storage?: MarkerStorage): boolean {
+  let markerStorage = storage;
+  if (!markerStorage) {
+    try {
+      markerStorage = window.sessionStorage;
+    } catch {
+      return false;
+    }
+  }
+  const marker = readMarker(markerStorage);
   if (!marker || marker.reported) return false;
-  return writeMarker(storage, { ...marker, reported: true });
+  return writeMarker(markerStorage, { ...marker, reported: true });
 }

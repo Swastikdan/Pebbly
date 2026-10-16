@@ -102,31 +102,34 @@ export function useReorderDrag({
     return best;
   }, []);
 
-  const finish = useCallback((event: React.PointerEvent<HTMLElement>) => {
-    const drag = dragRef.current;
-    if (!drag) return;
-    dragRef.current = null;
-    setDraggingIndex(null);
+  const finish = useCallback(
+    (event: React.PointerEvent<HTMLElement>, commit = true) => {
+      const drag = dragRef.current;
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      dragRef.current = null;
+      setDraggingIndex(null);
 
-    const { el } = drag;
-    el.style.transition = "";
-    el.style.transform = "";
-    el.style.zIndex = "";
-    el.style.willChange = "";
-    document.body.style.cursor = "";
-    if (el.hasPointerCapture?.(drag.pointerId)) {
-      el.releasePointerCapture(drag.pointerId);
-    }
-    void event;
-    if (drag.to !== drag.from) {
-      onReorderRef.current(drag.from, drag.to);
-    }
-  }, []);
+      const { el } = drag;
+      el.style.transition = "";
+      el.style.transform = "";
+      el.style.zIndex = "";
+      el.style.willChange = "";
+      document.body.style.cursor = "";
+      if (el.hasPointerCapture?.(drag.pointerId)) {
+        el.releasePointerCapture(drag.pointerId);
+      }
+      void event;
+      if (commit && drag.to !== drag.from) {
+        onReorderRef.current(drag.from, drag.to);
+      }
+    },
+    [],
+  );
 
   const getHandleProps = useCallback(
     (index: number): ReorderHandleProps => ({
       onPointerDown: (event: React.PointerEvent<HTMLElement>) => {
-        if (!enabled || event.button !== 0) return;
+        if (!enabled || event.button !== 0 || dragRef.current) return;
         const handle = event.currentTarget as HTMLElement;
         const el = handle.closest<HTMLElement>(REORDER_ITEM_SELECTOR);
         if (!el || !containerRef.current) return;
@@ -177,8 +180,8 @@ export function useReorderDrag({
           drag.to = target;
         }
       },
-      onPointerUp: finish,
-      onPointerCancel: finish,
+      onPointerUp: (event) => finish(event),
+      onPointerCancel: (event) => finish(event, false),
     }),
     [containerRef, enabled, finish, measure, nearestIndex],
   );

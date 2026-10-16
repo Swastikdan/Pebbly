@@ -185,6 +185,7 @@ const MobileBottomNav = () => {
 
         <BottomSheetPopup
           className="bg-background z-50 flex h-dvh max-h-none flex-col p-0 pt-[max(env(safe-area-inset-top),0.5rem)] outline-hidden"
+          viewportClassName="pt-0"
           closeProps={{
             className:
               "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-[max(env(safe-area-inset-top),0.75rem)] end-4 rounded-md border p-2",
