@@ -220,7 +220,14 @@ export function RecommendationFilters({
               : "pointer-events-none grid-rows-[0fr] opacity-0",
           )}
         >
-          <div className="border-border/40 mt-3 flex min-h-0 flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden border-t pt-4">
+          <div
+            className={cn(
+              "flex min-h-0 flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden",
+              showAdvancedOptions
+                ? "border-border/40 mt-3 border-t pt-4"
+                : "mt-0 border-0 pt-0",
+            )}
+          >
             <div className="scrollbar-hidden flex items-center gap-1.5 overflow-x-auto pb-0.5">
               <span className="text-muted-foreground me-1 shrink-0 text-xs font-medium">
                 Era
@@ -303,7 +310,14 @@ export function RecommendationFilters({
               : "pointer-events-none grid-rows-[0fr] opacity-0",
           )}
         >
-          <div className="border-border/40 mt-3 min-h-0 overflow-hidden border-t pt-4">
+          <div
+            className={cn(
+              "min-h-0 overflow-hidden",
+              genMode === "genre"
+                ? "border-border/40 mt-3 border-t pt-4"
+                : "mt-0 border-0 pt-0",
+            )}
+          >
             <div className="flex flex-wrap gap-2">
               {POPULAR_GENRES.map((genre) => (
                 <Button
