@@ -49,8 +49,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
   const posthog = usePostHog();
 
   const [optimisticOn, setOptimisticOn] = useState<boolean | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [animKey, setAnimKey] = useState(0);
+  const [popping, setPopping] = useState(false);
 
   const repository = useRepository();
 
@@ -79,9 +78,13 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
     };
 
     if (!is_on_watchlist_page && nextActive) {
-      setAnimKey((k) => k + 1);
-      setIsAnimating(true);
-      setTimeout(() => setIsAnimating(false), 420);
+      // Snap into the held state, then release on the next frame so the pop
+      // replays on every add and retargets mid-flight on rapid taps (a remount
+      // or a keyframe would restart from zero).
+      setPopping(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setPopping(false));
+      });
     }
 
     try {
@@ -164,12 +167,11 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
       ) : isActive ? (
         <>
           <span
-            key={animKey}
             className={cn(
-              "flex items-center justify-center",
-              isAnimating && "bookmark-pop",
+              "bookmark-pop flex items-center justify-center",
               showLabel && "me-1.5",
             )}
+            data-pop={popping ? "held" : undefined}
             style={{ display: "inline-flex" }}
           >
             <BookMarkFilledIcon

@@ -1,4 +1,3 @@
-import { Grid, Shield, Sparkles } from "@/components/ui/hugeicons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 
@@ -12,6 +11,15 @@ import {
 } from "@/components/navigation/nav-sheet-parts";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
+  BottomSheet,
+  BottomSheetDescription,
+  BottomSheetHeader,
+  BottomSheetPopup,
+  BottomSheetTitle,
+  BottomSheetTrigger,
+} from "@/components/ui/bottom-sheet";
+import { Grid, Shield, Sparkles } from "@/components/ui/hugeicons";
+import {
   BookMarkFilledIcon,
   BookMarkIcon,
   HomeFilledIcon,
@@ -19,14 +27,6 @@ import {
   SearchFilledIcon,
   SearchIcon,
 } from "@/components/ui/icons";
-import {
-  Sheet,
-  SheetDescription,
-  SheetHeader,
-  SheetPopup,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
 
@@ -138,19 +138,19 @@ const MobileBottomNav = () => {
               {/* Both icons stay in the DOM for a smooth cross-fade on every state change */}
               <span
                 className={cn(
-                  "absolute transition-[opacity,scale,filter] duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                  "ease-standard absolute transition-[opacity,scale,filter] duration-200",
                   active
                     ? "scale-100 opacity-100 [filter:blur(0px)]"
-                    : "scale-[0.25] opacity-0 [filter:blur(4px)]",
+                    : "scale-[0.9] opacity-0 [filter:blur(4px)]",
                 )}
               >
                 {tab.activeIcon}
               </span>
               <span
                 className={cn(
-                  "transition-[opacity,scale,filter] duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                  "ease-standard transition-[opacity,scale,filter] duration-200",
                   active
-                    ? "scale-[0.25] opacity-0 [filter:blur(4px)]"
+                    ? "scale-[0.9] opacity-0 [filter:blur(4px)]"
                     : "scale-100 opacity-100 [filter:blur(0px)]",
                 )}
               >
@@ -166,8 +166,8 @@ const MobileBottomNav = () => {
         <DeferredAccountButton variant="mobile" />
       </div>
 
-      <Sheet>
-        <SheetTrigger
+      <BottomSheet>
+        <BottomSheetTrigger
           render={
             <button
               type="button"
@@ -181,26 +181,24 @@ const MobileBottomNav = () => {
             <Grid className="size-5.5" />
           </span>
           <span className="mobile-bottom-nav-tab-label">More</span>
-        </SheetTrigger>
+        </BottomSheetTrigger>
 
-        <SheetPopup
-          side="bottom"
-          viewportClassName="pt-0"
-          className="bg-background z-50 flex h-dvh flex-col p-0 outline-hidden"
+        <BottomSheetPopup
+          className="bg-background z-50 flex h-dvh max-h-none flex-col p-0 pt-[max(env(safe-area-inset-top),0.5rem)] outline-hidden"
           closeProps={{
             className:
               "border-border/60 bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 top-[max(env(safe-area-inset-top),0.75rem)] end-4 rounded-md border p-2",
           }}
         >
-          <SheetHeader className="border-border/40 shrink-0 border-b px-5 pe-14 pt-[max(env(safe-area-inset-top),1.25rem)] pb-3.5 text-start">
-            <SheetTitle className="font-heading flex items-center gap-2 text-lg font-bold">
+          <BottomSheetHeader className="border-border/40 shrink-0 border-b px-5 pe-14 pb-3.5 text-start">
+            <BottomSheetTitle className="font-heading flex items-center gap-2 text-lg font-bold">
               <Grid className="text-primary size-5" />
               Explore & Navigation
-            </SheetTitle>
-            <SheetDescription className="text-muted-foreground text-xs">
+            </BottomSheetTitle>
+            <BottomSheetDescription className="text-muted-foreground text-xs">
               Browse movies, TV shows, AI tools, and site pages
-            </SheetDescription>
-          </SheetHeader>
+            </BottomSheetDescription>
+          </BottomSheetHeader>
 
           <div className="border-border/40 flex shrink-0 items-center justify-between border-b px-5 py-2.5">
             <span className="text-muted-foreground text-xs font-medium">
@@ -263,8 +261,8 @@ const MobileBottomNav = () => {
               currentPath={location.pathname}
             />
           </div>
-        </SheetPopup>
-      </Sheet>
+        </BottomSheetPopup>
+      </BottomSheet>
     </nav>
   );
 };

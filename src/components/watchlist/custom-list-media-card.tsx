@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 
 import type { MediaType } from "@/domain/media";
 import type { ProgressStatus, ReactionStatus } from "@/domain/watchlist";
+import type { ReorderHandleProps } from "@/hooks/use-reorder-drag";
 import { ArrowDown, ArrowUp, Check } from "@/components/ui/hugeicons";
 import { TrashBin } from "@/components/ui/icons";
 import { Image } from "@/components/ui/image";
@@ -22,8 +23,10 @@ function CustomListMediaCardImpl({
   selected,
   onSelect,
   showSelect,
-  listColor,
   onRemove,
+  reorderIndex,
+  isDragging,
+  dragHandleProps,
 }: {
   item: {
     tmdbId: number;
@@ -47,8 +50,13 @@ function CustomListMediaCardImpl({
   selected?: boolean;
   onSelect?: () => void;
   showSelect?: boolean;
-  listColor?: string;
   onRemove?: () => void;
+  /** Index used by the reorder hit-testing; also marks the card as draggable. */
+  reorderIndex?: number;
+  /** True while this card is the one being dragged. */
+  isDragging?: boolean;
+  /** Pointer handlers that turn the rank badge into a drag handle. */
+  dragHandleProps?: ReorderHandleProps;
 }) {
   const formattedTitle = item.title
     ? formatMediaTitle.encode(item.title)
@@ -94,7 +102,14 @@ function CustomListMediaCardImpl({
   };
 
   return (
-    <div className="group/card relative flex flex-col">
+    <div
+      className={cn(
+        "group/card relative flex flex-col",
+        isDragging && "z-50",
+        isDragging && "drop-shadow-2xl",
+      )}
+      data-reorder-index={reorderIndex}
+    >
       {/* ── Poster container ─────────────────────────── */}
       <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl">
         {/* Poster / fallback */}
@@ -108,7 +123,7 @@ function CustomListMediaCardImpl({
               src={posterSrc}
               alt={item.title ?? ""}
               layout="fullWidth"
-              className="size-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-[1.04]"
+              className="size-full object-cover transition-transform duration-300 ease-out group-hover/card:scale-[1.04]"
               priority={priority}
             />
           ) : (
@@ -125,15 +140,23 @@ function CustomListMediaCardImpl({
           <div className="pointer-events-none absolute inset-0 z-10 rounded-xl bg-white/10 ring-2 ring-white/60 ring-inset dark:bg-white/[0.07] dark:ring-white/30" />
         )}
 
-        {/* ── Rank badge — top-left ─────────────────── */}
-        {rank !== undefined && (
-          <div
-            className="absolute start-2 top-2 z-20 flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-[11px] font-bold text-white tabular-nums shadow"
-            style={{ backgroundColor: listColor ?? "rgba(0,0,0,0.6)" }}
-          >
-            {rank}
-          </div>
-        )}
+        {/* ── Rank badge — top-left (drag handle when reorderable) ── */}
+        {rank !== undefined &&
+          (dragHandleProps ? (
+            <button
+              type="button"
+              {...dragHandleProps}
+              aria-label={`Reorder rank ${rank}. Drag to move, or use the arrow buttons.`}
+              title="Drag to reorder"
+              className="absolute start-2 top-2 z-20 flex size-8 min-w-8 cursor-grab touch-none items-center justify-center rounded-lg border border-white/80 bg-neutral-950 px-1.5 text-[11px] font-bold text-white tabular-nums shadow-md select-none active:cursor-grabbing"
+            >
+              {rank}
+            </button>
+          ) : (
+            <div className="absolute start-2 top-2 z-20 flex size-8 min-w-8 items-center justify-center rounded-lg border border-white/80 bg-neutral-950 px-1.5 text-[11px] font-bold text-white tabular-nums shadow-md">
+              {rank}
+            </div>
+          ))}
 
         {/* ── Status + Reaction chips — bottom ─────── */}
         <div className="pointer-events-none absolute start-2 end-2 bottom-2 z-20 flex items-end justify-between gap-1">
@@ -153,35 +176,26 @@ function CustomListMediaCardImpl({
 
         {/* ── Action buttons overlay (top) ─────────── */}
         {!readOnly && (
-          <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-1.5 p-2">
-            {/* Select toggle — clean square checkbox with Check icon */}
-            {showSelect && (
-              <button
-                type="button"
-                onClick={handleSelect}
-                aria-label={selected ? "Deselect" : "Select"}
-                style={
-                  selected && listColor
-                    ? { backgroundColor: listColor, borderColor: listColor }
-                    : undefined
-                }
-                className={cn(
-                  "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border shadow-sm transition-colors",
-                  selected
-                    ? listColor
-                      ? "text-white"
-                      : "bg-foreground border-foreground text-background"
-                    : "border-white/50 bg-black/50 text-transparent backdrop-blur-sm hover:border-white hover:bg-black/70",
-                )}
-              >
-                {selected && (
-                  <Check size={16} strokeWidth={2.5} aria-hidden="true" />
-                )}
-              </button>
-            )}
-
+          <div className="collection-card-actions absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-2 p-2 transition-[opacity,transform] duration-150 ease-out">
             {/* Move + Remove — top-right */}
-            <div className="ms-auto flex gap-1.5">
+            <div className="ms-auto flex items-center gap-1">
+              {showSelect && (
+                <button
+                  type="button"
+                  onClick={handleSelect}
+                  aria-label={selected ? "Deselect" : "Select"}
+                  className={cn(
+                    "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border shadow-md transition-[transform,color,background-color,border-color] duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-[0.97]",
+                    selected
+                      ? "bg-foreground border-foreground text-background"
+                      : "border-white/80 bg-neutral-950 text-transparent hover:bg-neutral-800",
+                  )}
+                >
+                  {selected && (
+                    <Check size={16} strokeWidth={2.5} aria-hidden="true" />
+                  )}
+                </button>
+              )}
               {onMove !== undefined && (
                 <>
                   <button
@@ -190,7 +204,7 @@ function CustomListMediaCardImpl({
                     disabled={!canMoveUp}
                     title="Move up"
                     aria-label="Move up one rank"
-                    className="flex size-8 items-center justify-center rounded-md border border-white/35 bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70 disabled:cursor-not-allowed disabled:opacity-25"
+                    className="flex size-8 cursor-pointer items-center justify-center rounded-lg border border-white/80 bg-neutral-950 text-white shadow-md transition-[transform,background-color,color] duration-150 ease-out hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-neutral-950"
                   >
                     <ArrowUp aria-hidden="true" size={14} />
                   </button>
@@ -200,7 +214,7 @@ function CustomListMediaCardImpl({
                     disabled={!canMoveDown}
                     title="Move down"
                     aria-label="Move down one rank"
-                    className="flex size-8 items-center justify-center rounded-md border border-white/35 bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70 disabled:cursor-not-allowed disabled:opacity-25"
+                    className="flex size-8 cursor-pointer items-center justify-center rounded-lg border border-white/80 bg-neutral-950 text-white shadow-md transition-[transform,background-color,color] duration-150 ease-out hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-neutral-950"
                   >
                     <ArrowDown aria-hidden="true" size={14} />
                   </button>
@@ -212,7 +226,7 @@ function CustomListMediaCardImpl({
                   onClick={handleRemove}
                   aria-label="Remove from collection"
                   title="Remove"
-                  className="flex size-8 items-center justify-center rounded-md border border-white/35 bg-black/50 text-white backdrop-blur-sm transition-colors hover:border-red-400/50 hover:bg-red-500/75"
+                  className="flex size-8 cursor-pointer items-center justify-center rounded-lg border border-white/80 bg-neutral-950 text-white shadow-md transition-[transform,background-color,color,border-color] duration-150 ease-out hover:border-red-300 hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white active:scale-[0.97]"
                 >
                   <TrashBin aria-hidden="true" size={14} />
                 </button>
@@ -229,12 +243,9 @@ function CustomListMediaCardImpl({
             className={cn(
               "line-clamp-2 text-[13px] leading-snug font-semibold transition-colors duration-150",
               selected
-                ? listColor
-                  ? ""
-                  : "text-primary"
+                ? "text-primary"
                 : "text-foreground group-hover/card:text-primary",
             )}
-            style={selected && listColor ? { color: listColor } : undefined}
           >
             {item.title ??
               `${item.mediaType === "movie" ? "Movie" : "TV Show"} #${item.tmdbId}`}

@@ -214,11 +214,6 @@
   --radius-2xl: 1.25rem;
   --radius-3xl: 1.5rem;
   --animate-spinner-leaf-fade: spinner-leaf-fade 800ms linear infinite;
-  --animate-toast-success-odd: toast-success 0.32s cubic-bezier(0.5, 1, 0.89, 1);
-  --animate-toast-success-even: toast-success 0.32s
-    cubic-bezier(0.5, 1, 0.89, 1);
-  --animate-toast-error-odd: toast-error 0.28s cubic-bezier(0.5, 1, 0.89, 1);
-  --animate-toast-error-even: toast-error 0.28s cubic-bezier(0.5, 1, 0.89, 1);
   --color-warning-foreground: var(--warning-foreground);
   --color-warning: var(--warning);
   --color-success-foreground: var(--success-foreground);
@@ -234,37 +229,6 @@
     }
     50% {
       opacity: 1;
-    }
-  }
-  @keyframes toast-success {
-    0% {
-      scale: 1;
-    }
-    30% {
-      scale: 1.025;
-    }
-    60% {
-      scale: 0.99;
-    }
-    100% {
-      scale: 1;
-    }
-  }
-  @keyframes toast-error {
-    0% {
-      translate: 0 0;
-    }
-    25% {
-      translate: -3px 0;
-    }
-    50% {
-      translate: 3px 0;
-    }
-    75% {
-      translate: -3px 0;
-    }
-    100% {
-      translate: 0 0;
     }
   }
 }
@@ -548,6 +512,19 @@
         opacity 120ms ease-out;
     }
   }
+  /* Touch has no hover, so the press-down scale is the only *instant* feedback
+     that fires on pointer-down. The fine-pointer rule above only covers mouse;
+     this gives coarse pointers the same immediate, physical press. */
+  @media (hover: none), (pointer: coarse) {
+    .pressable {
+      transition:
+        transform 120ms ease-out,
+        opacity 120ms ease-out;
+    }
+    .pressable:active {
+      transform: scale(0.96);
+    }
+  }
   .pressable .interactive-raised:active,
   .pressable:active .interactive-raised {
     transform: none;
@@ -567,10 +544,13 @@
     animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .animate-fade-in-up {
-    will-change: transform, opacity;
     animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  /* Staggered entrance is a desktop nicety, on phones it forces dozens of simultaneous transform animations on every grid render, which is a primary source of scroll/tap jank. Small screens get a plain opacity fade with no stagger instead. Desktop staggers are capped at the first row of visible items (6, matching xl:grid-cols-6); later children appear instantly so large grids don't jank and rows load uniformly. */
+  /* Grid/list entrance (opt-in via the `stagger` prop). Every item fades in
+     together — intentionally NOT a cascade. A per-item stagger runs one
+     opacity/transform animation per card simultaneously on every grid render,
+     which is a primary source of scroll/tap jank on phones; a single shared
+     fade keeps large grids smooth. The sm+ rule only shortens the fade. */
   .stagger-grid > * {
     opacity: 1;
     transition: opacity 0.2s ease-out;
@@ -592,17 +572,24 @@
     will-change: transform;
     animation: progress-slide 1.4s var(--ease-emphatic) infinite;
   }
-  /* Watchlist button confirmation pop, transition + @starting-style so rapid toggles retarget from the current state instead of restarting from zero (keyframes would not be interruptible). */
+  /* Watchlist save confirmation. A held "pressed" state that snaps in, then
+     releases: it replays on every add and retargets mid-flight on rapid taps,
+     where a remount or a keyframe would restart from zero. */
   .bookmark-pop {
     transform: scale(1);
     opacity: 1;
+    /* Critically damped release: a tap carries no momentum, so it should not
+       overshoot. (Bounce with no throw is the thing the fluid-interface
+       guidance warns against.) The held→released retarget still replays on
+       every add and mid-flight on rapid taps. */
     transition:
-      transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
-      opacity 300ms ease-out;
-    @starting-style {
-      transform: scale(0.85);
-      opacity: 0.5;
-    }
+      transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 200ms ease-out;
+  }
+  .bookmark-pop[data-pop="held"] {
+    transform: scale(0.85);
+    opacity: 0.5;
+    transition: none;
   }
 }
 @keyframes fadeIn {
@@ -649,8 +636,16 @@
 }
 .scroll-snap-x {
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: auto;
+  overscroll-behavior-x: contain;
   touch-action: pan-x pan-y;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 1rem;
+}
+/* Every tile in a rail is a snap target, so a flick settles on an item instead
+   of stopping wherever the finger lifted. Scoped to the ScrollContainer's inner
+   flex track so nested boxes are not turned into stray snap areas. */
+.scroll-snap-x > * > * {
+  scroll-snap-align: center;
 }
 .content-visibility-auto {
   content-visibility: auto;
@@ -690,8 +685,10 @@
   padding-top: 4px;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  background: var(--background);
-  border-top: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent);
+  background: color-mix(in srgb, var(--background) 78%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
   transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 @media (min-width: 768px) {
@@ -762,5 +759,74 @@
     padding-bottom: calc(
       var(--mobile-nav-height) + env(safe-area-inset-bottom, 8px)
     );
+  }
+}
+
+/* ── Chrome materials ───────────────────────────────────────────────────────
+   Nav bars are a translucent functional layer, not an opaque strip: content
+   scrolls underneath and the material picks up its colour. Bigger surfaces
+   read thicker (more blur) than small chips. */
+@media (hover: hover) and (pointer: fine) {
+  .collection-card-actions {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  .group\/card:hover .collection-card-actions,
+  .group\/card:focus-within .collection-card-actions {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-navbar {
+  background: color-mix(in srgb, var(--background) 72%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+/* Browsers without backdrop-filter get an opaque bar rather than a
+   semi-transparent one that lets content show through unblurred. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .app-navbar,
+  .mobile-bottom-nav {
+    background: var(--background);
+  }
+}
+
+/* Reduced transparency: make translucent surfaces frostier/solid and drop the
+   blur so text stays legible for people who need it. */
+@media (prefers-reduced-transparency: reduce) {
+  .app-navbar,
+  .mobile-bottom-nav {
+    background: var(--background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  [data-slot="sheet-backdrop"],
+  [data-slot="dialog-backdrop"],
+  [data-slot="bottom-sheet-backdrop"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* More contrast: near-solid chrome with a defined, contrasting edge. */
+@media (prefers-contrast: more) {
+  .app-navbar,
+  .mobile-bottom-nav {
+    background: var(--background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--foreground);
+  }
+  [data-slot="sheet-backdrop"],
+  [data-slot="dialog-backdrop"],
+  [data-slot="bottom-sheet-backdrop"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: rgb(0 0 0 / 0.72);
   }
 }

@@ -154,10 +154,10 @@ export const MediaContainer = (props: MediaContainerProps) => {
               getThumbAlt={() => title}
               imageClassName="bg-foreground/10 aspect-video h-44 w-auto rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
               lightboxOverlayClassName="bg-black/80 backdrop-blur-sm dark:bg-black/85"
-              lightboxContentClassName="aspect-video w-full max-w-[90vw] rounded-lg border-0 bg-neutral-950 p-0 ring-0 gap-0 overflow-hidden"
+              lightboxContentClassName="aspect-video w-full max-w-[90vw] rounded-lg border-0 bg-background dark:bg-neutral-950 p-0 ring-0 gap-0 overflow-hidden"
               getLightboxTitle={() => `${title} Backdrop Image`}
               renderLightboxBody={(image) => (
-                <div className="relative isolate z-1 size-full h-full overflow-hidden rounded-lg bg-neutral-950 p-0">
+                <div className="bg-background relative isolate z-1 size-full h-full overflow-hidden rounded-lg p-0 dark:bg-neutral-950">
                   <Image
                     alt={title}
                     className="aspect-video size-full rounded-lg object-cover"
@@ -181,11 +181,11 @@ export const MediaContainer = (props: MediaContainerProps) => {
               getThumbSrc={(image) => image.poster_image ?? ""}
               getThumbAlt={() => title}
               imageClassName="bg-foreground/10 aspect-[2/3] h-44 w-auto rounded-xl object-cover transition-opacity duration-200 ease-in-out hover:opacity-90 md:h-52 lg:h-60 dark:hover:opacity-70"
-              lightboxContentClassName="aspect-[2/3] w-[85vw] max-h-[90vh] rounded-2xl border-0 bg-neutral-950 p-0 ring-0 gap-0 overflow-hidden sm:w-auto sm:h-[90vh] sm:max-h-none"
+              lightboxContentClassName="aspect-[2/3] w-[85vw] max-h-[90vh] rounded-2xl border-0 bg-background dark:bg-neutral-950 p-0 ring-0 gap-0 overflow-hidden sm:w-auto sm:h-[90vh] sm:max-h-none"
               lightboxOverlayClassName="bg-black/80 backdrop-blur-sm dark:bg-black/85"
               getLightboxTitle={() => `${title} Poster Image`}
               renderLightboxBody={(image) => (
-                <div className="relative isolate z-1 size-full h-full overflow-hidden rounded-2xl bg-neutral-950 p-0">
+                <div className="bg-background relative isolate z-1 size-full h-full overflow-hidden rounded-2xl p-0 dark:bg-neutral-950">
                   <Image
                     alt={title}
                     className="aspect-2/3 size-full rounded-2xl object-cover"

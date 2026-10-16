@@ -198,16 +198,16 @@ export function WatchlistActivityPanel() {
         <span className="hidden sm:inline">Activity & recovery</span>
         <span className="sm:hidden">Activity</span>
       </DialogTrigger>
-      <DialogPopup className="flex h-[min(600px,90vh)] w-full max-w-3xl flex-col gap-0 overflow-hidden p-0">
+      <DialogPopup className="flex h-[min(600px,90vh)] max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col gap-0 overflow-hidden p-0">
         <ModalHeader
           icon={History}
           title="Activity & recovery"
           subtitle="Undo recent changes or restore your watchlist from a snapshot."
         />
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[1fr_280px] md:overflow-hidden">
+        <div className="grid min-h-0 flex-1 auto-rows-max grid-cols-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] md:auto-rows-fr md:grid-cols-[1fr_280px] md:overflow-hidden md:pb-0">
           {/* Recent activity */}
-          <section className="flex min-h-0 flex-col p-4 sm:p-5 md:overflow-y-auto">
+          <section className="flex min-h-fit flex-col p-4 sm:p-5 md:min-h-0 md:overflow-y-auto">
             <SectionHeading
               title="Recent activity"
               count={activityItems.length}
@@ -297,7 +297,7 @@ export function WatchlistActivityPanel() {
           </section>
 
           {/* Snapshots */}
-          <section className="bg-muted/30 flex min-h-0 flex-col border-t p-4 sm:p-5 md:overflow-y-auto md:border-s md:border-t-0">
+          <section className="bg-muted/30 flex min-h-fit flex-col border-t p-4 sm:p-5 md:min-h-0 md:overflow-y-auto md:border-s md:border-t-0">
             <SectionHeading title="Snapshots" count={snapshotItems.length} />
             {snapshots.isPending && <ListSkeleton rows={3} />}
             {snapshots.data && snapshotItems.length === 0 && (

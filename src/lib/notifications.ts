@@ -1,5 +1,5 @@
 import type { ToastOptions } from "@/domain/notifications";
-import { toastManager } from "@/components/ui/toast";
+import { toastManager } from "@/components/ui/toast-manager";
 
 const TOAST_DURATION = 5000;
 

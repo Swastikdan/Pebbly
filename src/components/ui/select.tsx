@@ -2,14 +2,14 @@
 
 import type { VariantProps } from "class-variance-authority";
 import type * as React from "react";
+import { Select as SelectPrimitive } from "@base-ui/react/select";
+import { cva } from "class-variance-authority";
+
 import {
   ChevronDownIcon,
   ChevronsUpDownIcon,
   ChevronUpIcon,
 } from "@/components/ui/hugeicons";
-import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { cva } from "class-variance-authority";
-
 import { cn } from "@/lib/utils";
 
 export const Select: typeof SelectPrimitive.Root = SelectPrimitive.Root;
@@ -105,7 +105,7 @@ export function SelectPopup({
         sideOffset={sideOffset}
       >
         <SelectPrimitive.Popup
-          className="text-foreground origin-(--transform-origin) outline-hidden"
+          className="text-foreground origin-(--transform-origin) outline-hidden transition-[transform,opacity] duration-150 ease-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0"
           data-slot="select-popup"
           {...props}
         >

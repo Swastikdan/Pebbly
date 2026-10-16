@@ -57,6 +57,7 @@ export function MenuPopup({
         <MenuPrimitive.Popup
           className={cn(
             "bg-popover relative flex origin-(--transform-origin) rounded-lg border shadow-none outline-hidden not-[class*='w-']:min-w-32 focus:outline-hidden",
+            "transition-[transform,opacity] duration-150 ease-out will-change-transform data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
             className,
           )}
           data-slot="menu-popup"

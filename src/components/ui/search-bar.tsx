@@ -222,7 +222,7 @@ const SearchBar = memo(
             <button
               type="button"
               onClick={handleClear}
-              className="absolute inset-y-0 inset-e-0 z-20 flex w-11 cursor-pointer items-center justify-center transition-[color,background-color,box-shadow] duration-150 hover:opacity-70 active:scale-[0.96]"
+              className="absolute inset-y-0 inset-e-0 z-20 flex w-11 cursor-pointer items-center justify-center transition-[opacity,transform] duration-150 hover:opacity-70 active:scale-[0.96]"
               aria-label="Clear Search"
             >
               <XCircleIcon size={20} aria-hidden="true" />

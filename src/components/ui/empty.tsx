@@ -10,6 +10,7 @@ export function Empty({
     <div
       className={cn(
         "flex min-w-0 flex-1 flex-col items-center justify-center gap-6 px-6 py-12 text-center text-balance md:py-20",
+        "animate-fade-in-up",
         className,
       )}
       data-slot="empty"

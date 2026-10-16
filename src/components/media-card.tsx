@@ -300,7 +300,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
                 feedbackActions.onMoreLikeThis();
               }}
               className={cn(
-                "pressable flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border transition-all duration-150 active:scale-95",
+                "pressable flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border transition-[color,background-color,border-color,transform] duration-150 active:scale-95",
                 isLiked
                   ? "border-emerald-600 bg-emerald-600 text-white"
                   : "border-neutral-700 bg-black/70 text-white/90 hover:border-emerald-600 hover:bg-emerald-600 hover:text-white",
@@ -325,7 +325,7 @@ const BaseMediaCard = memo((props: BaseMediaCardProps) => {
                 });
               }}
               className={cn(
-                "pressable hover:border-destructive hover:bg-destructive flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-neutral-700 bg-black/70 text-white/90 transition-all duration-150 hover:text-white active:scale-95",
+                "pressable hover:border-destructive hover:bg-destructive flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-neutral-700 bg-black/70 text-white/90 transition-[color,background-color,border-color,transform] duration-150 hover:text-white active:scale-95",
                 feedbackActions.isDisliked &&
                   "border-destructive bg-destructive text-white",
               )}
@@ -498,7 +498,7 @@ const PersonCard = memo((props: PersonCardSpecificProps) => {
       params={{ id: String(id) }}
       className="group ring-offset-background focus-visible:ring-ring pressable relative block w-24 outline-hidden transition-[transform,opacity] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-offset-2 md:w-28 lg:w-32"
     >
-      <div className="bg-muted relative aspect-2/3 w-full overflow-hidden rounded-lg shadow-[0px_0px_0px_1px_oklch(0_0_0/0.06),0px_1px_2px_-1px_oklch(0_0_0/0.06),0px_2px_4px_0px_oklch(0_0_0/0.04)] transition-[box-shadow] duration-150 ease-out group-hover:shadow-[0px_0px_0px_1px_oklch(0_0_0/0.08),0px_1px_2px_-1px_oklch(0_0_0/0.08),0px_2px_4px_0px_oklch(0_0_0/0.06)] dark:shadow-[0_0_0_1px_oklch(1_0_0/0.08)] dark:group-hover:shadow-[0_0_0_1px_oklch(1_0_0/0.13)]">
+      <div className="bg-muted relative aspect-2/3 w-full overflow-hidden rounded-lg shadow-[0px_0px_0px_1px_oklch(0_0_0/0.06),0px_1px_2px_-1px_oklch(0_0_0/0.06),0px_2px_4px_0px_oklch(0_0_0/0.04)] group-hover:shadow-[0px_0px_0px_1px_oklch(0_0_0/0.08),0px_1px_2px_-1px_oklch(0_0_0/0.08),0px_2px_4px_0px_oklch(0_0_0/0.06)] dark:shadow-[0_0_0_1px_oklch(1_0_0/0.08)] dark:group-hover:shadow-[0_0_0_1px_oklch(1_0_0/0.13)]">
         <Image
           alt={name}
           src={imageUrl}

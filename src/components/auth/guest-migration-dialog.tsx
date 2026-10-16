@@ -363,7 +363,7 @@ export function GuestMigrationDialog() {
         )}
 
         {step === "success" && (
-          <div className="flex flex-col items-center justify-center gap-3 px-6 py-8 text-center">
+          <div className="animate-fade-in-up flex flex-col items-center justify-center gap-3 px-6 py-8 text-center">
             <CheckCircle2
               aria-hidden="true"
               size={36}

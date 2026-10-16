@@ -11,6 +11,7 @@ import {
   LoaderCircleIcon,
   TriangleAlertIcon,
 } from "@/components/ui/hugeicons";
+import { toastManager } from "@/components/ui/toast-manager";
 import { cn } from "@/lib/utils";
 
 const TOAST_ICONS = {
@@ -48,19 +49,6 @@ function getSwipeDirection(position: ToastPosition): SwipeDirection[] {
   }
 
   return ["right", verticalDirection];
-}
-
-function upsertReplayClassName(toast: {
-  type?: string;
-  updateKey?: number;
-}): string | undefined {
-  const k = toast.updateKey ?? 0;
-  if (k <= 0) return undefined;
-  const isEven = k % 2 === 0;
-  if (toast.type === "error") {
-    return isEven ? "animate-toast-error-even" : "animate-toast-error-odd";
-  }
-  return isEven ? "animate-toast-success-even" : "animate-toast-success-odd";
 }
 
 function CountdownRing({
@@ -180,7 +168,6 @@ function Toasts({
                 "data-expanded:data-ending-style:data-[swipe-direction=right]:transform-[translateX(calc(var(--toast-swipe-movement-x)+100%+var(--toast-inset)))_translateY(var(--toast-calc-offset-y))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=up]:transform-[translateY(calc(var(--toast-swipe-movement-y)-100%-var(--toast-inset)))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(var(--toast-swipe-movement-y)+100%+var(--toast-inset)))]",
-                upsertReplayClassName(toast),
               )}
               {...toastData?.rootProps}
               data-position={position}
@@ -267,9 +254,6 @@ function Toasts({
     </Toast.Portal>
   );
 }
-
-export const toastManager: ReturnType<typeof Toast.createToastManager> =
-  Toast.createToastManager();
 
 export type ToastPosition =
   | "top-left"

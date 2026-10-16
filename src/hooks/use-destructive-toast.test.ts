@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { toastManager } from "@/components/ui/toast";
+import { toastManager } from "@/components/ui/toast-manager";
 import {
   DESTRUCTIVE_TOAST_TIMEOUT,
   destructiveToast,

@@ -241,14 +241,20 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         href: appCss,
       },
       // Preload the latin Geist subset so the shared type system is ready
-      // before the first contentful paint.
-      {
-        rel: "preload",
-        href: geistLatinWoff2,
-        as: "font",
-        type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
+      // before the first contentful paint. Production only: in dev the
+      // font URL is served from /node_modules with a different URL than the
+      // bundled asset, so the preload is unused (console warning).
+      ...(import.meta.env.PROD
+        ? [
+            {
+              rel: "preload",
+              href: geistLatinWoff2,
+              as: "font",
+              type: "font/woff2",
+              crossOrigin: "anonymous",
+            } as const,
+          ]
+        : []),
       {
         rel: "icon",
         href: "/logo.svg",

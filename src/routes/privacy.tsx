@@ -30,7 +30,7 @@ function download(content: string, filename: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function PrivacyPage() {
+function PrivacyPage() {
   const { isSignedIn, isLoaded, user } = useUser();
   const [confirmation, setConfirmation] = useState("");
   const [pending, setPending] = useState<
