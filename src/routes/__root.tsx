@@ -25,6 +25,7 @@ import { THEME_STORAGE_KEY, useTheme } from "@/hooks/use-theme";
 import { getAnonymousId } from "@/lib/anonymous-id";
 import { reportClientSideError } from "@/lib/client-error-reporting";
 import { MetaImageTagsGenerator } from "@/lib/meta-image-tags";
+import { consumeStaleChunkRecovery } from "@/lib/stale-chunk-reload";
 import appCss from "@/styles.css?url";
 
 // UserSync polls data-version every 10s and syncs Clerk user to DB – not
@@ -98,6 +99,7 @@ function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       <AnalyticsIdentity />
+      <StaleChunkRecoveryTracker />
       {children}
     </PostHogProvider>
   );
@@ -126,6 +128,18 @@ function AnalyticsIdentity() {
       posthog.identify(anonymousId, { account_type: "anonymous" });
     }
   }, [isLoaded, isSignedIn, posthog, user?.id]);
+
+  return null;
+}
+
+function StaleChunkRecoveryTracker() {
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (posthog && consumeStaleChunkRecovery()) {
+      posthog.capture("chunk_reload_recovered");
+    }
+  }, [posthog]);
 
   return null;
 }
@@ -227,14 +241,20 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         href: appCss,
       },
       // Preload the latin Geist subset so the shared type system is ready
-      // before the first contentful paint.
-      {
-        rel: "preload",
-        href: geistLatinWoff2,
-        as: "font",
-        type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
+      // before the first contentful paint. Production only: in dev the
+      // font URL is served from /node_modules with a different URL than the
+      // bundled asset, so the preload is unused (console warning).
+      ...(import.meta.env.PROD
+        ? [
+            {
+              rel: "preload",
+              href: geistLatinWoff2,
+              as: "font",
+              type: "font/woff2",
+              crossOrigin: "anonymous",
+            } as const,
+          ]
+        : []),
       {
         rel: "icon",
         href: "/logo.svg",

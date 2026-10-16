@@ -1,4 +1,4 @@
-import { toastManager } from "@/components/ui/toast";
+import { toastManager } from "@/components/ui/toast-manager";
 import { logError } from "@/lib/utils";
 
 export const DESTRUCTIVE_TOAST_TIMEOUT = 5_000;

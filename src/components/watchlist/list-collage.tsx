@@ -3,7 +3,7 @@ import { Image } from "@/components/ui/image";
 import { IMAGE_PREFIX } from "@/constants";
 
 const imgClass =
-  "size-full object-cover transition-transform duration-700 ease-out";
+  "size-full object-cover transition-transform duration-300 ease-out";
 const frameClass = "overflow-hidden rounded-lg bg-muted/30";
 
 export function ListCollage({

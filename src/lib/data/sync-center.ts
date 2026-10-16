@@ -1,5 +1,3 @@
-import * as v from "valibot";
-
 import type { MutationOutboxRecord } from "@/lib/data/mutation-outbox";
 import {
   discardMutation,
@@ -8,32 +6,18 @@ import {
   markMutationInvalid,
   markMutationRecovered,
   markMutationSyncing,
-  MutationOutboxInvalidError,
   pendingMutationsFor,
   retryFailedMutations,
   retryMutation,
 } from "@/lib/data/mutation-outbox";
 import {
-  markEpisodeWatched,
-  markSeasonEpisodesWatched,
-  markShowEpisodesAndStatus,
-  removeFromContinueWatching,
-  setProgressStatus,
-  setReaction,
-  setWatchlistMembership,
-  updateProgress,
-} from "@/server/fns/watchlist";
-import { unwrap } from "@/server/schema/common";
-import {
-  markEpisodeWatchedArgsSchema,
-  markSeasonEpisodesWatchedArgsSchema,
-  markShowEpisodesAndStatusArgsSchema,
-  mediaIdentityArgsSchema,
-  setProgressStatusArgsSchema,
-  setReactionArgsSchema,
-  setWatchlistMembershipArgsSchema,
-  updateProgressArgsSchema,
-} from "@/server/schema/watchlist";
+  runRemoteMutation,
+  validateMutationRecord,
+} from "@/lib/data/mutation-registry";
+
+// Re-exported so existing consumers keep importing the replay surface from the
+// sync center; the mapping itself lives in one place (`mutation-registry`).
+export { runRemoteMutation, validateMutationRecord };
 
 export type MutationSyncResult = {
   attempted: number;
@@ -51,90 +35,6 @@ export type MutationSyncOptions = {
   run?: MutationSyncRunner;
   isOnline?: () => boolean;
 };
-
-type RemoteOperation = () => Promise<unknown>;
-
-function operationForRecord(
-  record: MutationOutboxRecord,
-): RemoteOperation | undefined {
-  switch (record.kind) {
-    case "set-membership": {
-      const parsed = v.safeParse(
-        setWatchlistMembershipArgsSchema,
-        record.payload,
-      );
-      return parsed.success
-        ? () => unwrap(setWatchlistMembership({ data: parsed.output }))
-        : undefined;
-    }
-    case "set-progress-status": {
-      const parsed = v.safeParse(setProgressStatusArgsSchema, record.payload);
-      return parsed.success
-        ? () => unwrap(setProgressStatus({ data: parsed.output }))
-        : undefined;
-    }
-    case "set-reaction": {
-      const parsed = v.safeParse(setReactionArgsSchema, record.payload);
-      return parsed.success
-        ? () => unwrap(setReaction({ data: parsed.output }))
-        : undefined;
-    }
-    case "mark-episode": {
-      const parsed = v.safeParse(markEpisodeWatchedArgsSchema, record.payload);
-      return parsed.success
-        ? () => unwrap(markEpisodeWatched({ data: parsed.output }))
-        : undefined;
-    }
-    case "mark-season": {
-      const parsed = v.safeParse(
-        markSeasonEpisodesWatchedArgsSchema,
-        record.payload,
-      );
-      return parsed.success
-        ? () => unwrap(markSeasonEpisodesWatched({ data: parsed.output }))
-        : undefined;
-    }
-    case "mark-show":
-    case "mark-show-episodes": {
-      const parsed = v.safeParse(
-        markShowEpisodesAndStatusArgsSchema,
-        record.payload,
-      );
-      return parsed.success
-        ? () => unwrap(markShowEpisodesAndStatus({ data: parsed.output }))
-        : undefined;
-    }
-    case "update-progress": {
-      const parsed = v.safeParse(updateProgressArgsSchema, record.payload);
-      return parsed.success
-        ? () => unwrap(updateProgress({ data: parsed.output }))
-        : undefined;
-    }
-    case "remove-continue-watching": {
-      const parsed = v.safeParse(mediaIdentityArgsSchema, record.payload);
-      return parsed.success
-        ? () => unwrap(removeFromContinueWatching({ data: parsed.output }))
-        : undefined;
-    }
-    default:
-      return undefined;
-  }
-}
-
-export function validateMutationRecord(record: MutationOutboxRecord) {
-  if (operationForRecord(record)) return undefined;
-  return `The saved ${record.kind} change is invalid or no longer supported.`;
-}
-
-export async function runRemoteMutation(record: MutationOutboxRecord) {
-  const operation = operationForRecord(record);
-  if (!operation) {
-    throw new MutationOutboxInvalidError(
-      `The saved ${record.kind} change is invalid or no longer supported.`,
-    );
-  }
-  await operation();
-}
 
 const activeSyncs = new Map<string, Promise<MutationSyncResult>>();
 

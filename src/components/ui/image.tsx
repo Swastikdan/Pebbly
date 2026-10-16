@@ -1,10 +1,9 @@
 import { Image as ReactImage } from "@unpic/react";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 
 import type { ImageProps } from "@unpic/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DEFAULT_PLACEHOLDER_IMAGE } from "@/constants";
-import { tmdbSrcSet } from "@/lib/tmdb-image";
 import { cn } from "@/lib/utils";
 
 const ImageComponent = ({
@@ -37,16 +36,35 @@ const ImageComponent = ({
   }, []);
 
   const handleLoad = useCallback(() => {
-    setLoaded(true);
+    // Keep the skeleton covering the image until the browser has decoded the
+    // selected resource. This avoids revealing a partially decoded image.
+    const image = imageRef.current;
+    if (!image) return;
+    const decodedSrc = image.currentSrc;
+    const setLoadedIfCurrent = () => {
+      if (imageRef.current === image && image.currentSrc === decodedSrc) {
+        setLoaded(true);
+      }
+    };
+    void image.decode().then(setLoadedIfCurrent, setLoadedIfCurrent);
   }, []);
+
+  const imageRef = useRef<HTMLImageElement | null>(null);
 
   // Images that finish decoding before hydration never fire synthetic
   // onLoad events. Attaching the ref happens during commit, before paint,
   // so cached images skip the skeleton without a flash.
   const attachRef = useCallback((node: HTMLImageElement | null) => {
+    imageRef.current = node;
     if (!node?.complete) return;
     if (node.naturalWidth > 0) {
-      setLoaded(true);
+      const decodedSrc = node.currentSrc;
+      const setLoadedIfCurrent = () => {
+        if (imageRef.current === node && node.currentSrc === decodedSrc) {
+          setLoaded(true);
+        }
+      };
+      void node.decode().then(setLoadedIfCurrent, setLoadedIfCurrent);
     } else {
       setError(true);
     }
@@ -56,21 +74,6 @@ const ImageComponent = ({
     ? (fallbackImage ?? DEFAULT_PLACEHOLDER_IMAGE)
     : initialSrc;
 
-  // TMDB assets are size-variant ladders on one CDN URL, so a srcset lets
-  // phones pull w185/w342 posters instead of the fixed w500/w780 JPEGs.
-  // Only attached when the caller declared `sizes`: without it browsers
-  // assume 100vw and would download larger files than the single src did.
-  const tmdbSrcSetCandidates = useMemo(
-    () => (props.sizes && !error ? tmdbSrcSet(currentSrc) : undefined),
-    [props.sizes, currentSrc, error],
-  );
-
-  // Priority images are LCP candidates (first 2 trending cards). They must
-  // be visible immediately for the browser to count LCP when the high-res
-  // resource decodes, not after React flips `loaded` and fades out a
-  // placeholder. Non-priority cards keep the blur/skeleton fade for
-  // perceived polish. See `src/components/homepage-media.tsx:132` where
-  // `priorityCount={2}` is set for the above-the-fold rail.
   return (
     <div
       className={cn(
@@ -95,15 +98,13 @@ const ImageComponent = ({
       {/* Shimmer skeleton — covers the entire area (including the text
           above) while loading. Fades out once the image loads or errors
           so the real image / text fallback can show through. */}
-      {!priority && (
-        <Skeleton
-          className={cn(
-            "absolute inset-0 z-10 rounded-none transition-opacity duration-500 ease-out",
-            (loaded || error) &&
-              "pointer-events-none opacity-0 [animation-play-state:paused] [&_*]:[animation-play-state:paused] [&::before]:[animation-play-state:paused]",
-          )}
-        />
-      )}
+      <Skeleton
+        className={cn(
+          "absolute inset-0 z-10 rounded-none transition-opacity duration-500 ease-out",
+          (loaded || error) &&
+            "pointer-events-none opacity-0 [animation-play-state:paused] [&_*]:[animation-play-state:paused] [&::before]:[animation-play-state:paused]",
+        )}
+      />
 
       <ReactImage
         ref={attachRef}
@@ -111,13 +112,13 @@ const ImageComponent = ({
         className={cn(
           className,
           "transition-opacity duration-500 ease-out",
-          !loaded && !priority && "opacity-0",
+          !loaded && "opacity-0",
           !loaded && "text-transparent",
         )}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : undefined}
         {...props}
-        srcSet={tmdbSrcSetCandidates}
+        srcSet={undefined}
         src={currentSrc}
         onError={handleError}
         onLoad={handleLoad}

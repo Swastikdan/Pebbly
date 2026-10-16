@@ -26,6 +26,9 @@ export function Input({
     // min-h instead of h: call sites size the wrapper (h-10, h-11, …) and the
     // native input must grow with it; a fixed height would top-align inside
     // the taller wrapper. Browsers center single-line text vertically.
+    // The ~infinite background-color transition is deliberate: it freezes
+    // Chrome's autofill background repaint so the autofill colour is applied
+    // without a visible transition. Not real motion.
     "text-foreground placeholder:text-muted-foreground/72 min-h-8.5 w-full min-w-0 rounded-[inherit] px-[calc(--spacing(3)-1px)] leading-8.5 outline-hidden [transition:background-color_5000000s_ease-in-out_0s] autofill:[-webkit-text-fill-color:var(--foreground)] sm:min-h-7.5 sm:leading-7.5",
     size === "sm" &&
       "min-h-7.5 px-[calc(--spacing(2.5)-1px)] leading-7.5 sm:min-h-6.5 sm:leading-6.5",

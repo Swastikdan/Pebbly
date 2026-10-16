@@ -137,9 +137,9 @@ export const MediaVideoImageContainer = (props: {
             prevLabel="Previous backdrop"
             nextLabel="Next backdrop"
             lightboxOverlayClassName="bg-black/80 backdrop-blur-sm dark:bg-black/85"
-            lightboxContentClassName="bg-neutral-950 aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:max-w-[90vw]"
+            lightboxContentClassName="bg-background dark:bg-neutral-950 aspect-video w-full max-w-[95vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:max-w-[90vw]"
             renderLightboxBody={(image) => (
-              <div className="size-full overflow-hidden rounded-lg bg-neutral-950">
+              <div className="bg-background size-full overflow-hidden rounded-lg dark:bg-neutral-950">
                 <Image
                   alt={image.file_path}
                   className="aspect-video size-full rounded-lg object-cover"
@@ -165,9 +165,9 @@ export const MediaVideoImageContainer = (props: {
             prevLabel="Previous poster"
             nextLabel="Next poster"
             lightboxOverlayClassName="bg-black/80 backdrop-blur-sm dark:bg-black/85"
-            lightboxContentClassName="bg-neutral-950 aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:h-full sm:w-auto"
+            lightboxContentClassName="bg-background dark:bg-neutral-950 aspect-[11/16] h-auto max-h-[90vh] w-full max-w-[90vw] gap-0 overflow-hidden rounded-lg border-0 p-0 ring-0 sm:h-full sm:w-auto"
             renderLightboxBody={(image) => (
-              <div className="size-full overflow-hidden rounded-lg bg-neutral-950">
+              <div className="bg-background size-full overflow-hidden rounded-lg dark:bg-neutral-950">
                 <Image
                   alt={image.file_path}
                   className="aspect-11/16 h-auto w-full rounded-lg object-center"

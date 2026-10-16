@@ -1,5 +1,7 @@
 import posthog from "posthog-js";
 
+import { isChunkLoadError } from "./stale-chunk-reload";
+
 const REPORT_COOLDOWN_MS = 10_000;
 let lastReportAt = 0;
 let lastReportKey = "";
@@ -24,6 +26,14 @@ function readRecord(value: unknown): Record<string, unknown> | undefined {
 }
 
 function classifyError(error: unknown, source: string): ErrorDiagnostics {
+  if (isChunkLoadError(error)) {
+    return {
+      errorName: error instanceof Error ? error.name : undefined,
+      errorCode: "CHUNK_LOAD_FAILED",
+      details: "A lazy chunk from an earlier deploy failed to load",
+    };
+  }
+
   const record = readRecord(error);
   const cause = readRecord(record?.cause);
   const providerError =
@@ -123,10 +133,11 @@ export function reportClientSideError(
   if (error instanceof DOMException && error.name === "AbortError") return;
 
   const lowerMsg = message.toLowerCase();
+  const chunkLoadError = isChunkLoadError(error);
   if (
     lowerMsg.includes("abort") ||
     lowerMsg.includes("resizeobserver") ||
-    lowerMsg.includes("failed to fetch") ||
+    (!chunkLoadError && lowerMsg.includes("failed to fetch")) ||
     lowerMsg.includes("fetch failed") ||
     lowerMsg.includes("networkerror") ||
     lowerMsg.includes("network error") ||
@@ -148,6 +159,11 @@ export function reportClientSideError(
   lastReportAt = now;
 
   posthog.captureException(error, {
+    // Each deploy changes the chunk hash in the message, so group all failed
+    // chunk loads into one issue instead of a new issue per deploy.
+    ...(diagnostics.errorCode === "CHUNK_LOAD_FAILED"
+      ? { $exception_fingerprint: "chunk-load-failed" }
+      : {}),
     tags: {
       source: context.source,
       route,

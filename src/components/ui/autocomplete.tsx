@@ -1,9 +1,9 @@
 "use client";
 
 import type React from "react";
-import { ChevronsUpDownIcon, XIcon } from "@/components/ui/hugeicons";
 import { Autocomplete as AutocompletePrimitive } from "@base-ui/react/autocomplete";
 
+import { ChevronsUpDownIcon, XIcon } from "@/components/ui/hugeicons";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
@@ -62,7 +62,7 @@ export function AutocompleteInput({
         <AutocompleteTrigger
           {...triggerProps}
           className={cn(
-            "absolute top-1/2 inline-flex size-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-transparent opacity-80 transition-colors outline-none hover:opacity-100 sm:size-7 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4",
+            "absolute top-1/2 inline-flex size-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-transparent opacity-80 transition-[color,opacity] outline-none hover:opacity-100 sm:size-7 pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4",
             "end-0.5",
             triggerProps?.className,
           )}
@@ -174,6 +174,51 @@ export function AutocompleteRow({
 
 export const AutocompleteValue: typeof AutocompletePrimitive.Value =
   AutocompletePrimitive.Value;
+
+export function AutocompletePopup({
+  children,
+  className,
+  sideOffset = 4,
+  align = "start",
+  alignOffset,
+  side = "bottom",
+  anchor,
+  portalProps,
+  ...props
+}: AutocompletePrimitive.Popup.Props & {
+  align?: AutocompletePrimitive.Positioner.Props["align"];
+  sideOffset?: AutocompletePrimitive.Positioner.Props["sideOffset"];
+  alignOffset?: AutocompletePrimitive.Positioner.Props["alignOffset"];
+  side?: AutocompletePrimitive.Positioner.Props["side"];
+  anchor?: AutocompletePrimitive.Positioner.Props["anchor"];
+  portalProps?: AutocompletePrimitive.Portal.Props;
+}): React.ReactElement {
+  return (
+    <AutocompletePrimitive.Portal {...portalProps}>
+      <AutocompletePrimitive.Positioner
+        align={align}
+        alignOffset={alignOffset}
+        anchor={anchor}
+        className="z-50"
+        data-slot="autocomplete-positioner"
+        side={side}
+        sideOffset={sideOffset}
+      >
+        <AutocompletePrimitive.Popup
+          className={cn(
+            "bg-popover text-popover-foreground relative flex origin-(--transform-origin) rounded-lg border shadow-md outline-hidden focus:outline-hidden",
+            "transition-[transform,opacity] duration-150 ease-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
+            className,
+          )}
+          data-slot="autocomplete-popup"
+          {...props}
+        >
+          {children}
+        </AutocompletePrimitive.Popup>
+      </AutocompletePrimitive.Positioner>
+    </AutocompletePrimitive.Portal>
+  );
+}
 
 export function AutocompleteList({
   className,

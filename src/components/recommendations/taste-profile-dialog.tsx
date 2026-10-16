@@ -409,7 +409,7 @@ export function TasteProfileDialog({
                       onClick={() => setAdventureLevel(opt.value)}
                       aria-pressed={isSelected}
                       className={cn(
-                        "flex flex-col items-start gap-1.5 rounded-xl border p-3 text-start transition-all",
+                        "flex flex-col items-start gap-1.5 rounded-xl border p-3 text-start transition-[color,background-color,border-color] duration-150 ease-out",
                         isSelected
                           ? "border-primary bg-primary/5 ring-primary/40 ring-1"
                           : "border-border hover:bg-muted/50",

@@ -193,7 +193,9 @@ Server functions are:
   clobber in-flight state. Signed-in remote writes also enter the persistent
   `src/lib/data/mutation-outbox.ts`, which validates and replays idempotent
   mutations sequentially on the next boot, online reconnect, focus, and page
-  wake. `sync-center.ts` classifies permanent/transient failures and the global
+  wake. The kind→server-fn mapping lives in one place
+  (`src/lib/data/mutation-registry.ts`) so a new mutation kind is a single
+  entry. `sync-center.ts` classifies permanent/transient failures and the global
   sync center exposes retry/discard state. Op builders live beside the journal
   in `src/lib/data/optimistic/`, and watchlist queries pass through its
   reconciler.

@@ -7,6 +7,7 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -40,6 +41,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { CustomListMediaCard } from "@/components/watchlist/custom-list-media-card";
 import { SilentErrorBoundary } from "@/components/watchlist/silent-error-boundary";
 import { useCustomLists } from "@/hooks/use-custom-lists";
+import { useReorderDrag } from "@/hooks/use-reorder-drag";
 import { collectionViewMode } from "@/lib/collection-view";
 import { destructiveToast, toast } from "@/lib/notifications";
 import { queryKeys } from "@/lib/query/keys";
@@ -283,6 +285,36 @@ export function CollectionPage({ listId }: { listId: string }) {
     queryClient.invalidateQueries({
       queryKey: queryKeys.lists.collectionPagesPrefix(listId, user?.id),
     });
+
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
+  // Drag-to-reorder commit. Lifts one title out and reinserts it at the drop
+  // index, then persists the whole order — mirroring the arrow-button path.
+  const handleReorder = (from: number, to: number) => {
+    if (deferredSearch.trim() || mediaFilter !== "all") return;
+    if (from === to) return;
+    if (from < 0 || to < 0) return;
+    if (from >= visibleItems.length || to >= visibleItems.length) return;
+    const order = [...visibleItems];
+    const [moved] = order.splice(from, 1);
+    order.splice(to, 0, moved);
+    reorderItems({
+      listId,
+      orderedItems: order.map((entry) => ({
+        tmdbId: entry.tmdbId,
+        mediaType: entry.mediaType,
+      })),
+    })
+      .then(refreshPage)
+      .catch((error) => logError("reorder list items", error));
+  };
+
+  const { draggingIndex, getHandleProps } = useReorderDrag({
+    containerRef: gridRef,
+    enabled:
+      page === 1 && deferredSearch.trim() === "" && mediaFilter === "all",
+    onReorder: handleReorder,
+  });
 
   if (pageQuery.error) {
     return <DefaultNotFoundComponent />;
@@ -540,22 +572,7 @@ export function CollectionPage({ listId }: { listId: string }) {
       {/* Title & Actions Row: Title + Visibility + Badges (left) | Edit + Delete (right) */}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
-          <h1
-            className="text-h1 truncate text-balance"
-            // Raw list colors are picked as swatches, not text colors (gold
-            // lands at 1.8:1 on light). Blending the hue into the page
-            // foreground keeps the collection identity readable in both themes
-            // (worst case ~4:1), instead of a plain foreground heading.
-            style={
-              list.color
-                ? {
-                    color: `color-mix(in oklab, ${list.color} 60%, var(--foreground))`,
-                  }
-                : undefined
-            }
-          >
-            {list.name}
-          </h1>
+          <h1 className="text-h1 truncate text-balance">{list.name}</h1>
           <span
             className="text-muted-foreground shrink-0"
             title={isPublic ? "Public" : "Private"}
@@ -748,7 +765,8 @@ export function CollectionPage({ listId }: { listId: string }) {
       {canManage && isOrdered && visibleItems.length > 1 && (
         <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
           <ArrowUpDown size={12} className="shrink-0" />
-          Ranked list. Use Up / Down on each title to rearrange.
+          Ranked list. Drag the number to reorder, or use Up / Down on each
+          title.
         </p>
       )}
 
@@ -945,7 +963,10 @@ export function CollectionPage({ listId }: { listId: string }) {
             </Button>
           </div>
         ) : (
-          <div className="grid w-full grid-cols-2 gap-2.5 min-[440px]:grid-cols-3 sm:grid-cols-4 sm:gap-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8">
+          <div
+            ref={gridRef}
+            className="grid w-full grid-cols-2 gap-2.5 min-[440px]:grid-cols-3 sm:grid-cols-4 sm:gap-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8"
+          >
             {filtered.map(({ item, index }) => (
               <CustomListMediaCard
                 key={`${item.tmdbId}-${item.mediaType}`}
@@ -969,7 +990,11 @@ export function CollectionPage({ listId }: { listId: string }) {
                 readOnly={!canManage}
                 rank={isOrdered ? index + 1 : undefined}
                 onMove={
-                  canManage && isOrdered && page === 1
+                  canManage &&
+                  isOrdered &&
+                  page === 1 &&
+                  deferredSearch.trim() === "" &&
+                  mediaFilter === "all"
                     ? handleMoveIndex(index)
                     : undefined
                 }
@@ -980,7 +1005,17 @@ export function CollectionPage({ listId }: { listId: string }) {
                   toggleSelected(`${item.mediaType}:${item.tmdbId}`)
                 }
                 showSelect={canManage}
-                listColor={list.color ?? undefined}
+                reorderIndex={isOrdered ? index : undefined}
+                isDragging={draggingIndex === index}
+                dragHandleProps={
+                  canManage &&
+                  isOrdered &&
+                  page === 1 &&
+                  deferredSearch.trim() === "" &&
+                  mediaFilter === "all"
+                    ? getHandleProps(index)
+                    : undefined
+                }
                 onRemove={
                   canManage
                     ? () =>

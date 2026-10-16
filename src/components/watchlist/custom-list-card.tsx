@@ -48,7 +48,7 @@ export function CustomListCard({
   return (
     <div
       className={cn(
-        "group/card border-border bg-card hover:border-foreground/20 relative flex flex-col rounded-xl border p-2.5 shadow-sm transition-[border-color,box-shadow] duration-250 hover:shadow-md",
+        "group/card border-border bg-card hover:border-foreground/20 relative flex flex-col rounded-xl border p-2.5 shadow-sm transition-[border-color] duration-200 hover:shadow-md",
       )}
     >
       <div className="relative">

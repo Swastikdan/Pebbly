@@ -1,3 +1,6 @@
+import type { MediaType } from "@/domain/media";
+import { TasteProfileDialog } from "@/components/recommendations/taste-profile-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Combine,
   RefreshCw,
@@ -5,10 +8,6 @@ import {
   Sparkles,
   Split,
 } from "@/components/ui/hugeicons";
-
-import type { MediaType } from "@/domain/media";
-import { TasteProfileDialog } from "@/components/recommendations/taste-profile-dialog";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectItem,
@@ -211,11 +210,17 @@ export function RecommendationFilters({
           </div>
         </div>
 
-        {showAdvancedOptions && (
-          <div
-            id="recommendation-advanced-options"
-            className="border-border/40 mt-3 flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-4"
-          >
+        <div
+          id="recommendation-advanced-options"
+          inert={!showAdvancedOptions}
+          className={cn(
+            "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out",
+            showAdvancedOptions
+              ? "grid-rows-[1fr] opacity-100"
+              : "pointer-events-none grid-rows-[0fr] opacity-0",
+          )}
+        >
+          <div className="border-border/40 mt-3 flex min-h-0 flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden border-t pt-4">
             <div className="scrollbar-hidden flex items-center gap-1.5 overflow-x-auto pb-0.5">
               <span className="text-muted-foreground me-1 shrink-0 text-xs font-medium">
                 Era
@@ -270,7 +275,7 @@ export function RecommendationFilters({
               </Select>
             </div>
           </div>
-        )}
+        </div>
 
         {genMode === "watchlist" &&
           !watchlistLoading &&
@@ -289,8 +294,16 @@ export function RecommendationFilters({
             </p>
           )}
 
-        {genMode === "genre" && (
-          <div className="border-border/40 mt-3 border-t pt-4">
+        <div
+          inert={genMode !== "genre"}
+          className={cn(
+            "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out",
+            genMode === "genre"
+              ? "grid-rows-[1fr] opacity-100"
+              : "pointer-events-none grid-rows-[0fr] opacity-0",
+          )}
+        >
+          <div className="border-border/40 mt-3 min-h-0 overflow-hidden border-t pt-4">
             <div className="flex flex-wrap gap-2">
               {POPULAR_GENRES.map((genre) => (
                 <Button
@@ -352,7 +365,7 @@ export function RecommendationFilters({
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

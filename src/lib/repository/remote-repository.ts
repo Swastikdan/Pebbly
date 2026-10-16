@@ -11,10 +11,6 @@ import type { EpisodeProgressRow, WatchItemRow } from "@/lib/server-types";
 import type { QueryClient } from "@tanstack/react-query";
 import { broadcastMutation } from "@/lib/cross-tab-sync";
 import {
-  pendingMutationsFor,
-  removeMutation,
-} from "@/lib/data/mutation-outbox";
-import {
   applyToggleInverse,
   beginCreateListAndAddOp,
   beginCreateListOp,
@@ -56,21 +52,10 @@ import {
   removeFromContinueWatching as removeFromContinueWatchingFn,
   setProgressStatus as setProgressStatusFn,
   setReaction as setReactionFn,
-  setWatchlistMembership,
   updateProgress as updateProgressFn,
 } from "@/server/fns/watchlist";
 import { unwrap } from "@/server/schema/common";
 import { bulkListItemsArgsSchema } from "@/server/schema/library";
-import {
-  markEpisodeWatchedArgsSchema,
-  markSeasonEpisodesWatchedArgsSchema,
-  markShowEpisodesAndStatusArgsSchema,
-  mediaIdentityArgsSchema,
-  setProgressStatusArgsSchema,
-  setReactionArgsSchema,
-  setWatchlistMembershipArgsSchema,
-  updateProgressArgsSchema,
-} from "@/server/schema/watchlist";
 import { runMutationAsync } from "./mutation-runner";
 import { resolveStatusPlan } from "./types";
 
@@ -94,106 +79,6 @@ function runJournaledMutation(
       });
     }
   });
-}
-
-async function replayPendingMutations(userId: string): Promise<void> {
-  for (const record of pendingMutationsFor(userId)) {
-    try {
-      let payload: unknown;
-      let run: ((data: never) => Promise<unknown>) | undefined;
-
-      switch (record.kind) {
-        case "set-membership": {
-          const parsed = v.safeParse(
-            setWatchlistMembershipArgsSchema,
-            record.payload,
-          );
-          if (!parsed.success) break;
-          payload = parsed.output;
-          run = (data) => unwrap(setWatchlistMembership({ data }));
-          break;
-        }
-        case "set-progress-status": {
-          const parsed = v.safeParse(
-            setProgressStatusArgsSchema,
-            record.payload,
-          );
-          if (!parsed.success) break;
-          payload = parsed.output;
-          run = (data) => unwrap(setProgressStatusFn({ data }));
-          break;
-        }
-        case "set-reaction": {
-          const parsed = v.safeParse(setReactionArgsSchema, record.payload);
-          if (!parsed.success) break;
-          payload = parsed.output;
-          run = (data) => unwrap(setReactionFn({ data }));
-          break;
-        }
-        case "mark-episode": {
-          const parsed = v.safeParse(
-            markEpisodeWatchedArgsSchema,
-
-            record.payload,
-          );
-          if (!parsed.success) break;
-          payload = parsed.output;
-          run = (data) => unwrap(markEpisodeWatched({ data }));
-          break;
-        }
-        case "mark-season": {
-          const parsed = v.safeParse(
-            markSeasonEpisodesWatchedArgsSchema,
-            record.payload,
-          );
-          if (!parsed.success) break;
-          payload = parsed.output;
-          run = (data) => unwrap(markSeasonEpisodesWatched({ data }));
-          break;
-        }
-        case "mark-show-episodes": {
-          const parsed = v.safeParse(
-            markShowEpisodesAndStatusArgsSchema,
-            record.payload,
-          );
-          if (!parsed.success) break;
-          payload = parsed.output;
-          run = (data) => unwrap(markShowEpisodesAndStatus({ data }));
-          break;
-        }
-        case "update-progress": {
-          const parsed = v.safeParse(updateProgressArgsSchema, record.payload);
-          if (!parsed.success) break;
-          payload = parsed.output;
-          run = (data) => unwrap(updateProgressFn({ data }));
-          break;
-        }
-        case "remove-continue-watching": {
-          const parsed = v.safeParse(mediaIdentityArgsSchema, record.payload);
-          if (!parsed.success) break;
-          payload = parsed.output;
-          run = (data) => unwrap(removeFromContinueWatchingFn({ data }));
-          break;
-        }
-      }
-
-      if (!run || payload === undefined) {
-        // Invalid or obsolete records must not block newer mutations forever.
-        removeMutation(record.id);
-        continue;
-      }
-      await run(payload as never);
-      removeMutation(record.id);
-    } catch (error) {
-      logError("replay pending mutation", error);
-      // Preserve the record for the next boot; stop here to retain ordering.
-      break;
-    }
-  }
-}
-
-export function replayRemoteMutations(userId: string): Promise<void> {
-  return replayPendingMutations(userId);
 }
 
 export function createRemoteRepository(

@@ -1,5 +1,6 @@
-import { ChevronLeft, ChevronRight } from "@/components/ui/hugeicons";
-import { useEffect } from "react";
+import type { PanInfo } from "motion/react";
+import { motion, useMotionValue } from "motion/react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -8,6 +9,7 @@ import {
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight } from "@/components/ui/hugeicons";
 import { Play } from "@/components/ui/icons";
 
 const NAV_BUTTON_CLASS =
@@ -123,6 +125,32 @@ export function MediaLightboxDialog({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [hasNext, hasPrev, isOpen, onNext, onPrev]);
 
+  const x = useMotionValue(0);
+  const [viewportWidth, setViewportWidth] = useState(0);
+
+  useEffect(() => {
+    const update = () => setViewportWidth(window.innerWidth);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // Commit to the next/prev item when the slide passes a distance threshold or
+  // the finger was still moving fast at release — velocity *or* distance, the
+  // same rule the OS uses for a flick.
+  const swipeThreshold = Math.max(60, Math.min(140, viewportWidth * 0.25));
+  const handleDragEnd = (_event: unknown, info: PanInfo) => {
+    const committed =
+      Math.abs(info.offset.x) > swipeThreshold ||
+      Math.abs(info.velocity.x) > 500;
+    if (committed && info.offset.x < 0 && hasNext) {
+      onNext();
+    } else if (committed && info.offset.x > 0 && hasPrev) {
+      onPrev();
+    }
+    x.set(0);
+  };
+
   return (
     <Dialog
       open={isOpen}
@@ -141,7 +169,22 @@ export function MediaLightboxDialog({
         <DialogHeader className="sr-only">
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        {children}
+        <motion.div
+          className="size-full [touch-action:pan-y_pinch-zoom]"
+          drag="x"
+          // 1:1 tracking while a neighbour exists in that direction; rubber-band
+          // (dragElastic) only at the ends, where there is nowhere to go.
+          dragConstraints={{
+            left: hasNext ? -viewportWidth : 0,
+            right: hasPrev ? viewportWidth : 0,
+          }}
+          dragElastic={0.18}
+          dragMomentum={false}
+          onDragEnd={handleDragEnd}
+          style={{ x }}
+        >
+          {children}
+        </motion.div>
         {hasPrev && (
           <LightboxNavButton dir="prev" label={prevLabel} onClick={onPrev} />
         )}

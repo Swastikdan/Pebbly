@@ -210,6 +210,10 @@ export function WatchlistTab() {
               id={importInputId}
               type="file"
               onChange={importWatchlist}
+              // SSR renders the signed-out (local) loading state; the client
+              // resolves the Clerk session after hydration, so `disabled` can
+              // legitimately differ on first paint. The client value wins.
+              suppressHydrationWarning
             />
             {importLoading ? (
               <Spinner aria-hidden="true" />
