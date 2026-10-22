@@ -28,11 +28,43 @@ type JevAnswer = {
 };
 
 type JevResponse = {
-  answers?: {
+  answers: {
     genre_fit?: JevAnswer;
     taste_fit?: JevAnswer;
   };
 };
+
+/** The binding returned a response that holds no usable score. */
+export class JevResponseError extends Error {}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// Calls billed through AI Gateway Unified Billing return the model output
+// inside a `{ state, result, gatewayMetadata }` envelope.
+function unwrapJevOutput(response: unknown): JevResponse | null {
+  if (!isRecord(response)) return null;
+  if (isRecord(response.answers)) return response as JevResponse;
+  if (isRecord(response.result) && isRecord(response.result.answers)) {
+    return response.result as JevResponse;
+  }
+  return null;
+}
+
+// Keys only, never values, so the description is safe to send to analytics.
+function describeShape(response: unknown): string {
+  if (!isRecord(response)) return `type=${typeof response}`;
+  const parts = [`keys=${Object.keys(response).join(",")}`];
+  if (typeof response.state === "string") parts.push(`state=${response.state}`);
+  const output = unwrapJevOutput(response);
+  for (const [id, answer] of Object.entries(output?.answers ?? {})) {
+    parts.push(
+      `${id}=${isRecord(answer) ? Object.keys(answer).join(",") : typeof answer}`,
+    );
+  }
+  return parts.join(" ");
+}
 
 function numberValue(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -46,14 +78,11 @@ function genreNames(candidate: RecommendationCandidate): string {
 }
 
 function parseScore(
-  response: unknown,
+  response: JevResponse,
   hasGenreSignal: boolean,
   hasTasteSignal: boolean,
 ): JevScore | null {
-  if (!response || typeof response !== "object") return null;
-  const answers = (response as JevResponse).answers;
-  if (!answers) return null;
-
+  const answers = response.answers;
   const genreScore = numberValue(answers.genre_fit?.score);
   const genreConfidence = numberValue(answers.genre_fit?.confidence);
   const tasteScore = numberValue(answers.taste_fit?.noul);
@@ -109,7 +138,7 @@ export function createJevAdapter(ai: JevBinding) {
     async score(
       candidate: RecommendationCandidate,
       context: JevScoringContext,
-    ): Promise<JevScore | null> {
+    ): Promise<JevScore> {
       const selectedGenres = context.selectedGenres ?? [];
       const likedTitles = context.likedTitles ?? [];
       const hasGenreSignal = selectedGenres.length > 0;
@@ -137,7 +166,15 @@ export function createJevAdapter(ai: JevBinding) {
         { signal },
       );
 
-      return parseScore(response, hasGenreSignal, hasTasteSignal);
+      const output = unwrapJevOutput(response);
+      const score =
+        output && parseScore(output, hasGenreSignal, hasTasteSignal);
+      if (!score) {
+        throw new JevResponseError(
+          `Unexpected Jev response shape: ${describeShape(response)}`,
+        );
+      }
+      return score;
     },
   };
 }

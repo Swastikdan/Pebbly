@@ -87,4 +87,80 @@ describe("rerankCandidatesWithJev", () => {
     expect(result.scored).toBe(1);
     expect(result.failed).toBe(1);
   });
+
+  it("scores answers inside the AI Gateway Unified Billing envelope", async () => {
+    const run = vi.fn().mockResolvedValue({
+      state: "Completed",
+      result: {
+        model: "jev-1.13.0",
+        answers: {
+          genre_fit: { type: "score", score: 2.4, confidence: 0.9 },
+          taste_fit: { type: "noul", noul: 0.8 },
+        },
+        usage: { input_tokens: 400, output_tokens: 70 },
+      },
+      gatewayMetadata: { keySource: "Unified" },
+    });
+    const result = await rerankCandidatesWithJev(candidates, {
+      enabled: true,
+      ai: { run },
+      selectedGenres: ["Comedy"],
+      likedTitles: ["A reference title"],
+    });
+
+    expect(result.ran).toBe(true);
+    expect(result.scored).toBe(2);
+    expect(result.fallbackReason).toBeUndefined();
+  });
+
+  it("reports the response shape when no response holds a usable score", async () => {
+    const result = await rerankCandidatesWithJev(candidates, {
+      enabled: true,
+      ai: {
+        run: vi.fn().mockResolvedValue({
+          state: "Failed",
+          result: {},
+          gatewayMetadata: {},
+        }),
+      },
+      likedTitles: ["A reference title"],
+    });
+
+    expect(result.ran).toBe(false);
+    expect(result.fallbackReason).toBe("invalid_response");
+    expect(result.fallbackDetail).toContain(
+      "keys=state,result,gatewayMetadata",
+    );
+    expect(result.fallbackDetail).toContain("state=Failed");
+  });
+
+  it("names the missing answer fields when a score answer is incomplete", async () => {
+    const result = await rerankCandidatesWithJev(candidates, {
+      enabled: true,
+      ai: {
+        run: vi.fn().mockResolvedValue({
+          answers: { genre_fit: { type: "score", score: 2 } },
+        }),
+      },
+      selectedGenres: ["Comedy"],
+    });
+
+    expect(result.fallbackReason).toBe("invalid_response");
+    expect(result.fallbackDetail).toContain("genre_fit=type,score");
+  });
+
+  it("reports a binding error, not an invalid response, when every call throws", async () => {
+    const result = await rerankCandidatesWithJev(candidates, {
+      enabled: true,
+      ai: {
+        run: vi.fn().mockRejectedValue(new Error("Insufficient balance")),
+      },
+      likedTitles: ["A reference title"],
+    });
+
+    expect(result.ran).toBe(false);
+    expect(result.fallbackReason).toBe("jev_error");
+    expect(result.fallbackDetail).toBe("Insufficient balance");
+    expect(result.failed).toBe(2);
+  });
 });
