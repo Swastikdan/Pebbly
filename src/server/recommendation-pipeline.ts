@@ -392,6 +392,7 @@ async function runHistoryPipeline(
     durationMs: reranked.durationMs,
     model: "typesafe/jev",
     fallbackReason: reranked.fallbackReason ?? null,
+    fallbackDetail: reranked.fallbackDetail ?? null,
   });
   const orderedCandidates = reranked.candidates;
 
@@ -601,6 +602,7 @@ async function runHomepagePipeline(
     durationMs: reranked.durationMs,
     model: "typesafe/jev",
     fallbackReason: reranked.fallbackReason ?? null,
+    fallbackDetail: reranked.fallbackDetail ?? null,
   });
   const orderedCandidates = reranked.candidates;
   const prompt = orderedCandidates.length

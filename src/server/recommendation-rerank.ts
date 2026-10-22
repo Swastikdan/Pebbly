@@ -1,12 +1,14 @@
 import type { JevBinding, JevScore, JevScoringContext } from "./jev-adapter";
 import type { RecommendationCandidate } from "./prompts";
 import { getEnv } from "@/server/env";
-import { createJevAdapter, JEV_MODEL } from "./jev-adapter";
+import { getErrorMessage } from "./ai-utils";
+import { createJevAdapter, JEV_MODEL, JevResponseError } from "./jev-adapter";
 
 export { JEV_MODEL, JEV_TIMEOUT_MS } from "./jev-adapter";
 export const JEV_CANDIDATE_CAP = 8;
 export const JEV_CONCURRENCY = 6;
 export const JEV_CONFIDENCE_FLOOR = 0.55;
+const FALLBACK_DETAIL_MAX_LENGTH = 200;
 
 export type JevRerankOptions = JevScoringContext & {
   /** Test seam; production callers use the Workers AI binding from getEnv(). */
@@ -30,6 +32,8 @@ export type JevRerankResult = {
     | "jev_error"
     | "low_confidence"
     | "invalid_response";
+  /** Shape of the unusable response, or the binding error, when every call failed. */
+  fallbackDetail?: string;
 };
 
 function isEnabled(): boolean {
@@ -110,6 +114,7 @@ export async function rerankCandidatesWithJev(
 
   const capped = candidates.slice(0, JEV_CANDIDATE_CAP);
   const adapter = createJevAdapter(ai);
+  let firstError: unknown;
   try {
     const scores = await mapWithConcurrency(
       capped,
@@ -117,9 +122,10 @@ export async function rerankCandidatesWithJev(
       async (candidate) => {
         try {
           return await adapter.score(candidate, options);
-        } catch {
+        } catch (error) {
           // One slow or unavailable candidate must not discard scores for the
           // rest of the bounded rerank batch.
+          if (!(firstError instanceof JevResponseError)) firstError = error;
           return null;
         }
       },
@@ -128,12 +134,20 @@ export async function rerankCandidatesWithJev(
       (score): score is JevScore => score !== null,
     );
     if (validScores.length === 0) {
-      const result = fallback(
-        "invalid_response",
-        capped.length,
-        0,
-        capped.length,
-      );
+      const result = {
+        ...fallback(
+          firstError instanceof JevResponseError
+            ? "invalid_response"
+            : "jev_error",
+          capped.length,
+          0,
+          capped.length,
+        ),
+        fallbackDetail: getErrorMessage(firstError).slice(
+          0,
+          FALLBACK_DETAIL_MAX_LENGTH,
+        ),
+      };
       console.warn(
         "[recommendations] Jev rerank fallback",
         JSON.stringify({ ...result, model: JEV_MODEL }),
