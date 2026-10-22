@@ -53,11 +53,10 @@ function unwrapJevOutput(response: unknown): JevResponse | null {
 }
 
 // Keys only, never values, so the description is safe to send to analytics.
-function describeShape(response: unknown): string {
+function describeShape(response: unknown, output: JevResponse | null): string {
   if (!isRecord(response)) return `type=${typeof response}`;
   const parts = [`keys=${Object.keys(response).join(",")}`];
   if (typeof response.state === "string") parts.push(`state=${response.state}`);
-  const output = unwrapJevOutput(response);
   for (const [id, answer] of Object.entries(output?.answers ?? {})) {
     parts.push(
       `${id}=${isRecord(answer) ? Object.keys(answer).join(",") : typeof answer}`,
@@ -78,11 +77,10 @@ function genreNames(candidate: RecommendationCandidate): string {
 }
 
 function parseScore(
-  response: JevResponse,
+  answers: JevResponse["answers"],
   hasGenreSignal: boolean,
   hasTasteSignal: boolean,
 ): JevScore | null {
-  const answers = response.answers;
   const genreScore = numberValue(answers.genre_fit?.score);
   const genreConfidence = numberValue(answers.genre_fit?.confidence);
   const tasteScore = numberValue(answers.taste_fit?.noul);
@@ -168,10 +166,10 @@ export function createJevAdapter(ai: JevBinding) {
 
       const output = unwrapJevOutput(response);
       const score =
-        output && parseScore(output, hasGenreSignal, hasTasteSignal);
+        output && parseScore(output.answers, hasGenreSignal, hasTasteSignal);
       if (!score) {
         throw new JevResponseError(
-          `Unexpected Jev response shape: ${describeShape(response)}`,
+          `Unexpected Jev response shape: ${describeShape(response, output)}`,
         );
       }
       return score;

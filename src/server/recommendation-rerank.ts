@@ -1,6 +1,7 @@
 import type { JevBinding, JevScore, JevScoringContext } from "./jev-adapter";
 import type { RecommendationCandidate } from "./prompts";
 import { getEnv } from "@/server/env";
+import { getErrorMessage } from "./ai-utils";
 import { createJevAdapter, JEV_MODEL, JevResponseError } from "./jev-adapter";
 
 export { JEV_MODEL, JEV_TIMEOUT_MS } from "./jev-adapter";
@@ -90,7 +91,6 @@ export async function rerankCandidatesWithJev(
     scored = 0,
     failed = 0,
     meanConfidence: number | null = null,
-    fallbackDetail?: string,
   ): JevRerankResult => ({
     candidates,
     ran: false,
@@ -100,7 +100,6 @@ export async function rerankCandidatesWithJev(
     meanConfidence,
     durationMs: Math.round(performance.now() - startedAt),
     fallbackReason,
-    fallbackDetail,
   });
 
   if (!(options.enabled ?? isEnabled())) return fallback("flag_off");
@@ -115,8 +114,7 @@ export async function rerankCandidatesWithJev(
 
   const capped = candidates.slice(0, JEV_CANDIDATE_CAP);
   const adapter = createJevAdapter(ai);
-  let responseError: unknown;
-  let callError: unknown;
+  let firstError: unknown;
   try {
     const scores = await mapWithConcurrency(
       capped,
@@ -127,8 +125,7 @@ export async function rerankCandidatesWithJev(
         } catch (error) {
           // One slow or unavailable candidate must not discard scores for the
           // rest of the bounded rerank batch.
-          if (error instanceof JevResponseError) responseError ??= error;
-          else callError ??= error;
+          if (!(firstError instanceof JevResponseError)) firstError = error;
           return null;
         }
       },
@@ -137,18 +134,20 @@ export async function rerankCandidatesWithJev(
       (score): score is JevScore => score !== null,
     );
     if (validScores.length === 0) {
-      const error = responseError ?? callError;
-      const result = fallback(
-        responseError ? "invalid_response" : "jev_error",
-        capped.length,
-        0,
-        capped.length,
-        null,
-        (error instanceof Error ? error.message : String(error)).slice(
+      const result = {
+        ...fallback(
+          firstError instanceof JevResponseError
+            ? "invalid_response"
+            : "jev_error",
+          capped.length,
+          0,
+          capped.length,
+        ),
+        fallbackDetail: getErrorMessage(firstError).slice(
           0,
           FALLBACK_DETAIL_MAX_LENGTH,
         ),
-      );
+      };
       console.warn(
         "[recommendations] Jev rerank fallback",
         JSON.stringify({ ...result, model: JEV_MODEL }),
