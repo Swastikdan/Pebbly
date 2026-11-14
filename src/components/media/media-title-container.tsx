@@ -1,3 +1,4 @@
+import { usePostHog } from "@posthog/react";
 import { useEffect, useMemo } from "react";
 
 import type { MediaType } from "@/domain/media";
@@ -56,6 +57,7 @@ export const MediaTitleContainer = (props: {
   const { setProgressStatus, setReaction } = repository;
   const toggleWatchlist = useToggleWatchlistItem();
   const { isOnWatchList } = useWatchlistItem(String(id), media_type);
+  const posthog = usePostHog();
   const progressStatus = mediaState?.progressStatus ?? null;
   const reaction = mediaState?.reaction ?? null;
 
@@ -113,7 +115,16 @@ export const MediaTitleContainer = (props: {
         media_type,
       },
       false,
-    ).catch((error) => logError("toggle watchlist", error));
+    )
+      .then(() =>
+        posthog?.capture("watchlist_item_added", {
+          media_id: String(id),
+          media_type,
+          title,
+          source: "media_page",
+        }),
+      )
+      .catch((error) => logError("toggle watchlist", error));
   };
 
   const handleStatusChange = (status: ProgressStatus) => {
@@ -142,6 +153,12 @@ export const MediaTitleContainer = (props: {
       media_type,
     };
     const op = repository.removeWithUndo(payload);
+    posthog?.capture("watchlist_item_removed", {
+      media_id: String(id),
+      media_type,
+      title,
+      source: "media_page",
+    });
     destructiveToast({
       title: "Removed from watchlist",
       description: title,
