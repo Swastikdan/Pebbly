@@ -6,6 +6,11 @@ import type { ApiResult, ProgressStatus, Reaction } from "../schema/common";
 import type { MediaType } from "@/domain/media";
 import { chunkedQuery } from "../db/client";
 import { listItems, lists, watchItems } from "../db/schema";
+import {
+  collectionCursorGuard,
+  decodeCursor,
+  encodeCursor,
+} from "../helpers/cursor";
 import { findOwnedRow } from "../helpers/owned-row";
 import { fail, ok } from "../schema/common";
 import {
@@ -115,34 +120,10 @@ export const getListItems = createServerFn({ method: "POST" })
 
 type CollectionCursor = { position: number; addedAt: number; id: string };
 
-function encodeCollectionCursor(cursor: CollectionCursor) {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(cursor))));
-}
-
-function decodeCollectionCursor(value?: string): CollectionCursor | null {
-  if (!value) return null;
-  try {
-    const parsed = JSON.parse(decodeURIComponent(escape(atob(value)))) as {
-      position?: unknown;
-      addedAt?: unknown;
-      id?: unknown;
-    };
-    if (
-      typeof parsed.position !== "number" ||
-      typeof parsed.addedAt !== "number" ||
-      typeof parsed.id !== "string"
-    ) {
-      return null;
-    }
-    return {
-      position: parsed.position,
-      addedAt: parsed.addedAt,
-      id: parsed.id,
-    };
-  } catch {
-    return null;
-  }
-}
+const encodeCollectionCursor = (cursor: CollectionCursor) =>
+  encodeCursor(cursor);
+const decodeCollectionCursor = (value?: string): CollectionCursor | null =>
+  decodeCursor(value, collectionCursorGuard);
 
 function collectionFilters(
   listId: string,

@@ -16,6 +16,7 @@ export const ROLE_CONFIGS: {
   label: string;
   short: string;
 }[] = [
+  { value: "play-preview", label: "Play Preview", short: "Preview" },
   { value: "ai-integrations", label: "AI Integrations", short: "AI" },
   { value: "external-redirect", label: "External Redirect", short: "External" },
 ];
@@ -199,7 +200,10 @@ export function useAdminUsers() {
 
   const getCurrentRoles = (user: AdminUser): DynamicRbacRole[] =>
     (roleOverrides.get(user.tokenIdentifier) ?? user.roles ?? []).filter(
-      (role) => role === "ai-integrations" || role === "external-redirect",
+      (role) =>
+        role === "ai-integrations" ||
+        role === "external-redirect" ||
+        role === "play-preview",
     ) as DynamicRbacRole[];
 
   const isSelf = (user: AdminUser) =>

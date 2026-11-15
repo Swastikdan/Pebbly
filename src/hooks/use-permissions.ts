@@ -40,6 +40,7 @@ export function usePermissions(): PermissionState & {
     ? ({
         "ai-recommendations": false,
         "external-redirect": false,
+        "play-preview": false,
       } as Record<RbacFeature, boolean>)
     : ((raw.data?.features ?? {}) as Record<RbacFeature, boolean>);
 

@@ -84,7 +84,7 @@ export function RecommendationFilters({
   return (
     <div className="border-border bg-card rounded-lg border p-3">
       <div className="space-y-3">
-        <div className="flex flex-col flex-wrap items-start gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col flex-wrap items-start gap-2 lg:flex-row lg:items-center">
           <Select
             items={genModeItems}
             value={genMode === "list" ? `list:${listId}` : genMode}
@@ -124,7 +124,7 @@ export function RecommendationFilters({
             </SelectPopup>
           </Select>
 
-          <div className="flex w-full items-center gap-2 sm:w-auto">
+          <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto">
             <div className="bg-secondary/20 border-border flex h-10 flex-1 items-center gap-1 rounded-md border p-1 sm:flex-none">
               <Button
                 className="h-8 flex-1 rounded-lg px-4 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150 sm:flex-none"
@@ -186,7 +186,7 @@ export function RecommendationFilters({
               }
             />
           </div>
-          <div className="mt-1 flex w-full sm:ms-auto sm:mt-0 sm:w-auto">
+          <div className="mt-1 flex w-full lg:ms-auto lg:mt-0 lg:w-auto">
             <Button
               onClick={handleGenerate}
               disabled={
@@ -210,72 +210,81 @@ export function RecommendationFilters({
           </div>
         </div>
 
-        <div
-          id="recommendation-advanced-options"
-          inert={!showAdvancedOptions}
-          className={cn(
-            "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out",
-            showAdvancedOptions
-              ? "grid-rows-[1fr] opacity-100"
-              : "pointer-events-none grid-rows-[0fr] opacity-0",
-          )}
-        >
-          <div className="border-border/40 mt-3 flex min-h-0 flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden border-t pt-4">
-            <div className="scrollbar-hidden flex items-center gap-1.5 overflow-x-auto pb-0.5">
-              <span className="text-muted-foreground me-1 shrink-0 text-xs font-medium">
-                Era
-              </span>
-              {ERA_PRESETS.map((era) => (
-                <Button
-                  key={era.label}
-                  type="button"
-                  aria-pressed={selectedEras.includes(era.label)}
-                  variant={
-                    selectedEras.includes(era.label) ? "default" : "ghost"
-                  }
-                  className={cn(
-                    "h-8 shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150",
-                    selectedEras.includes(era.label)
-                      ? "bg-primary text-primary-foreground border-transparent"
-                      : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60 hover:text-foreground border",
-                  )}
-                  onClick={() => toggleEra(era.label)}
-                >
-                  {era.label}
-                </Button>
-              ))}
-            </div>
+        {showAdvancedOptions && (
+          <div
+            id="recommendation-advanced-options"
+            inert={!showAdvancedOptions}
+            className={cn(
+              "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out",
+              showAdvancedOptions
+                ? "grid-rows-[1fr] opacity-100"
+                : "pointer-events-none grid-rows-[0fr] opacity-0",
+            )}
+          >
+            <div
+              className={cn(
+                "flex min-h-0 flex-wrap items-center gap-x-6 gap-y-3 overflow-hidden",
+                showAdvancedOptions
+                  ? "border-border/40 mt-3 border-t pt-4"
+                  : "mt-0 border-0 pt-0",
+              )}
+            >
+              <div className="scrollbar-hidden flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                <span className="text-muted-foreground me-1 shrink-0 text-xs font-medium">
+                  Era
+                </span>
+                {ERA_PRESETS.map((era) => (
+                  <Button
+                    key={era.label}
+                    type="button"
+                    aria-pressed={selectedEras.includes(era.label)}
+                    variant={
+                      selectedEras.includes(era.label) ? "default" : "ghost"
+                    }
+                    className={cn(
+                      "h-8 shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150",
+                      selectedEras.includes(era.label)
+                        ? "bg-primary text-primary-foreground border-transparent"
+                        : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60 hover:text-foreground border",
+                    )}
+                    onClick={() => toggleEra(era.label)}
+                  >
+                    {era.label}
+                  </Button>
+                ))}
+              </div>
 
-            <div className="flex shrink-0 items-center gap-1.5">
-              <span className="text-muted-foreground me-1 shrink-0 text-xs font-medium">
-                Count
-              </span>
-              <Select
-                items={COUNT_OPTIONS.map((c) => ({
-                  value: String(c),
-                  label: String(c),
-                }))}
-                value={String(count)}
-                onValueChange={(v) => setCount(Number(v))}
-              >
-                <SelectTrigger
-                  size="sm"
-                  aria-label="Number of recommendations"
-                  className="bg-secondary/40 border-border hover:bg-secondary/60 h-8 w-17.5 shrink-0 rounded-lg border px-2.5 text-xs font-semibold shadow-none transition-colors"
+              <div className="flex shrink-0 items-center gap-1.5">
+                <span className="text-muted-foreground me-1 shrink-0 text-xs font-medium">
+                  Count
+                </span>
+                <Select
+                  items={COUNT_OPTIONS.map((c) => ({
+                    value: String(c),
+                    label: String(c),
+                  }))}
+                  value={String(count)}
+                  onValueChange={(v) => setCount(Number(v))}
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectPopup className="min-w-16">
-                  {COUNT_OPTIONS.map((c) => (
-                    <SelectItem key={c} value={String(c)} className="text-xs">
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectPopup>
-              </Select>
+                  <SelectTrigger
+                    size="sm"
+                    aria-label="Number of recommendations"
+                    className="bg-secondary/40 border-border hover:bg-secondary/60 h-8 w-17.5 shrink-0 rounded-lg border px-2.5 text-xs font-semibold shadow-none transition-colors"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectPopup className="min-w-16">
+                    {COUNT_OPTIONS.map((c) => (
+                      <SelectItem key={c} value={String(c)} className="text-xs">
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectPopup>
+                </Select>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {genMode === "watchlist" &&
           !watchlistLoading &&
@@ -294,78 +303,87 @@ export function RecommendationFilters({
             </p>
           )}
 
-        <div
-          inert={genMode !== "genre"}
-          className={cn(
-            "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out",
-            genMode === "genre"
-              ? "grid-rows-[1fr] opacity-100"
-              : "pointer-events-none grid-rows-[0fr] opacity-0",
-          )}
-        >
-          <div className="border-border/40 mt-3 min-h-0 overflow-hidden border-t pt-4">
-            <div className="flex flex-wrap gap-2">
-              {POPULAR_GENRES.map((genre) => (
-                <Button
-                  key={genre.id}
-                  type="button"
-                  aria-pressed={selectedGenres.includes(genre.name)}
-                  variant={
-                    selectedGenres.includes(genre.name) ? "default" : "ghost"
-                  }
-                  className={cn(
-                    "h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150",
-                    selectedGenres.includes(genre.name)
-                      ? "bg-primary text-primary-foreground border-transparent"
-                      : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60 hover:text-foreground border",
-                  )}
-                  onClick={() => toggleGenre(genre.name)}
-                >
-                  {genre.name}
-                </Button>
-              ))}
-            </div>
-            {selectedGenres.length === 0 && (
-              <p className="text-muted-foreground mt-2 text-xs">
-                Select at least one genre to enable generation.
-              </p>
+        {genMode === "genre" && (
+          <div
+            inert={genMode !== "genre"}
+            className={cn(
+              "grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out",
+              genMode === "genre"
+                ? "grid-rows-[1fr] opacity-100"
+                : "pointer-events-none grid-rows-[0fr] opacity-0",
             )}
-            {selectedGenres.length > 1 && (
-              <div className="border-border/40 bg-secondary/20 mt-4 flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-semibold">
-                    How should genres work?
-                  </p>
-                  <p className="text-muted-foreground mt-0.5 text-[11px]">
-                    {genreMode === "together"
-                      ? "Every pick must blend all selected genres."
-                      : "Picks can come from any selected genre, mixed together."}
-                  </p>
-                </div>
-                <div className="bg-background/70 flex w-full rounded-md border p-1 sm:w-auto">
+          >
+            <div
+              className={cn(
+                "min-h-0 overflow-hidden",
+                genMode === "genre"
+                  ? "border-border/40 mt-3 border-t pt-4"
+                  : "mt-0 border-0 pt-0",
+              )}
+            >
+              <div className="flex flex-wrap gap-2">
+                {POPULAR_GENRES.map((genre) => (
                   <Button
+                    key={genre.id}
                     type="button"
-                    variant={genreMode === "together" ? "default" : "ghost"}
-                    aria-pressed={genreMode === "together"}
-                    className="h-8 flex-1 gap-1.5 px-3 text-xs sm:flex-none"
-                    onClick={() => setGenreMode("together")}
+                    aria-pressed={selectedGenres.includes(genre.name)}
+                    variant={
+                      selectedGenres.includes(genre.name) ? "default" : "ghost"
+                    }
+                    className={cn(
+                      "h-8 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,transform] duration-150",
+                      selectedGenres.includes(genre.name)
+                        ? "bg-primary text-primary-foreground border-transparent"
+                        : "bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/60 hover:text-foreground border",
+                    )}
+                    onClick={() => toggleGenre(genre.name)}
                   >
-                    <Combine className="size-3.5" /> Together
+                    {genre.name}
                   </Button>
-                  <Button
-                    type="button"
-                    variant={genreMode === "separate" ? "default" : "ghost"}
-                    aria-pressed={genreMode === "separate"}
-                    className="h-8 flex-1 gap-1.5 px-3 text-xs sm:flex-none"
-                    onClick={() => setGenreMode("separate")}
-                  >
-                    <Split className="size-3.5" /> Separately
-                  </Button>
-                </div>
+                ))}
               </div>
-            )}
+              {selectedGenres.length === 0 && (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Select at least one genre to enable generation.
+                </p>
+              )}
+              {selectedGenres.length > 1 && (
+                <div className="border-border/40 bg-secondary/20 mt-4 flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold">
+                      How should genres work?
+                    </p>
+                    <p className="text-muted-foreground mt-0.5 text-[11px]">
+                      {genreMode === "together"
+                        ? "Every pick must blend all selected genres."
+                        : "Picks can come from any selected genre, mixed together."}
+                    </p>
+                  </div>
+                  <div className="bg-background/70 flex w-full rounded-md border p-1 sm:w-auto">
+                    <Button
+                      type="button"
+                      variant={genreMode === "together" ? "default" : "ghost"}
+                      aria-pressed={genreMode === "together"}
+                      className="h-8 flex-1 gap-1.5 px-3 text-xs sm:flex-none"
+                      onClick={() => setGenreMode("together")}
+                    >
+                      <Combine className="size-3.5" /> Together
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={genreMode === "separate" ? "default" : "ghost"}
+                      aria-pressed={genreMode === "separate"}
+                      className="h-8 flex-1 gap-1.5 px-3 text-xs sm:flex-none"
+                      onClick={() => setGenreMode("separate")}
+                    >
+                      <Split className="size-3.5" /> Separately
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

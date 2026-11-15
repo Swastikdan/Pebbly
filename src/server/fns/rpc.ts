@@ -164,26 +164,20 @@ export function authedFn<TData, C extends AuthedFnConfig, TResult>(
     }
 
     if (config.admin === true) {
-      if (user?.isBanned === true) {
-        return fail("FORBIDDEN", "Forbidden: account is banned") as TResult;
-      }
-      // JWT-claim-only: the signed claim is the sole request-path source for
-      // admin decisions (a live Clerk API fallback here would put an external
-      // call inside every admin gate). Requires the Clerk session-claims
-      // template to embed `publicMetadata.isAdmin`. See isAdminByClaims.
-      // A revoked admin claim stops working when the short-lived session
-      // token expires and refreshes (verifyToken enforces `exp`); same
-      // bounded-staleness contract as hasFeature/getUserFeatures in rbac.ts.
+      // JWT-claim-only admin gate (no live Clerk lookup per request).
       const isAdmin = claims ? isAdminByClaims(claims) : false;
       if (!isAdmin) {
         return fail("FORBIDDEN", "Forbidden: admin access required") as TResult;
       }
     }
 
+    const env = getEnv();
+    const db = getDb(env);
+
     if (config.rateLimit && user) {
       const bucket = config.rateLimit.bucket ?? "fnw";
       const reservation = await consumeRateLimitBudget(
-        getDb(getEnv()),
+        db,
         `${bucket}:${user.id}`,
         config.rateLimit.windowMs,
         config.rateLimit.max,
@@ -201,7 +195,7 @@ export function authedFn<TData, C extends AuthedFnConfig, TResult>(
         data,
         user: user as UserFor<ModeOf<C>>,
         claims: claims as ClaimsFor<ModeOf<C>>,
-        db: getDb(getEnv()),
+        db,
       });
     } catch (error) {
       if (claims?.sub) {

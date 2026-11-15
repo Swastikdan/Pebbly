@@ -18,9 +18,18 @@ describe("RBAC constants and role mappings", () => {
   });
 
   it("maps dynamic roles 1:1 to valid features", () => {
-    expect(DYNAMIC_ROLES).toEqual(["ai-integrations", "external-redirect"]);
-    expect(VALID_FEATURES).toEqual(["ai-recommendations", "external-redirect"]);
+    expect(DYNAMIC_ROLES).toEqual([
+      "ai-integrations",
+      "external-redirect",
+      "play-preview",
+    ]);
+    expect(VALID_FEATURES).toEqual([
+      "ai-recommendations",
+      "external-redirect",
+      "play-preview",
+    ]);
     expect(ROLE_FEATURES["ai-integrations"]).toBe("ai-recommendations");
+    expect(ROLE_FEATURES["play-preview"]).toBe("play-preview");
     expect(ROLE_FEATURES["external-redirect"]).toBe("external-redirect");
   });
 });

@@ -14,6 +14,11 @@ import { extractMetadataFields } from "@/lib/utils";
 import { runBatch } from "../db/client";
 import { episodeProgress, users, watchItems } from "../db/schema";
 import {
+  decodeCursor,
+  encodeCursor,
+  watchlistCursorGuard,
+} from "../helpers/cursor";
+import {
   buildEpisodeSyncStatements,
   loadEpisodeRowsByKey,
   syncEpisodeProgressRecord,
@@ -66,28 +71,10 @@ export type WatchlistPage = {
   counts: WatchlistCounts;
 };
 
-function encodeWatchlistCursor(cursor: WatchlistCursor): string {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(cursor))));
-}
-
-function decodeWatchlistCursor(value?: string): WatchlistCursor | null {
-  if (!value) return null;
-  try {
-    const parsed = JSON.parse(decodeURIComponent(escape(atob(value)))) as {
-      value?: unknown;
-      id?: unknown;
-    };
-    if (
-      (typeof parsed.value !== "string" && typeof parsed.value !== "number") ||
-      typeof parsed.id !== "string"
-    ) {
-      return null;
-    }
-    return { value: parsed.value, id: parsed.id };
-  } catch {
-    return null;
-  }
-}
+const encodeWatchlistCursor = (cursor: WatchlistCursor): string =>
+  encodeCursor(cursor);
+const decodeWatchlistCursor = (value?: string): WatchlistCursor | null =>
+  decodeCursor(value, watchlistCursorGuard);
 
 function watchlistBaseFilters(
   userId: string,
@@ -779,11 +766,12 @@ export const batchSetWatchlistMembership = createServerFn({ method: "POST" })
 
         await runBatch(db, statements);
 
+        const rowsByKey = new Map<string, (typeof resultRows)[number]>(
+          resultRows.map((row) => [`${row.mediaType}:${row.tmdbId}`, row]),
+        );
         for (const item of batchMap.values()) {
           const key = `${item.mediaType}:${item.tmdbId}`;
-          const after = resultRows.find(
-            (row) => `${row.mediaType}:${row.tmdbId}` === key,
-          );
+          const after = rowsByKey.get(key);
           await recordWatchlistActivity(
             db,
             user.id,

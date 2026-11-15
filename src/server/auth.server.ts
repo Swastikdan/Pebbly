@@ -31,15 +31,17 @@ export interface ClerkSessionClaims {
 
 export function getSessionToken(): string | undefined {
   const authHeader = getRequestHeader("authorization");
-  if (authHeader?.toLowerCase().startsWith("bearer ")) {
+  if (
+    authHeader &&
+    authHeader.length > 7 &&
+    authHeader.slice(0, 7).toLowerCase() === "bearer "
+  ) {
     const bearer = authHeader.slice(7).trim();
-    if (bearer.length > 0) return bearer;
+    if (bearer) return bearer;
   }
   const cookieToken = getCookie("__session") || getCookie("__clerk_db_jwt");
-  if (typeof cookieToken === "string" && cookieToken.trim().length > 0) {
-    return cookieToken.trim();
-  }
-  return undefined;
+  const trimmed = typeof cookieToken === "string" ? cookieToken.trim() : "";
+  return trimmed || undefined;
 }
 
 export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
@@ -76,25 +78,6 @@ export async function getSessionClaims(): Promise<ClerkSessionClaims | null> {
 
 export function toTokenIdentifier(sub: string): string {
   return sub.startsWith("clerk|") ? sub : `clerk|${sub}`;
-}
-
-/** Reject `promise` after `ms` if it has not settled. */
-async function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  message: string,
-): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error(message)), ms);
-      }),
-    ]);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
 }
 
 let clerkApiClient: ReturnType<typeof createClerkClient> | null = null;
@@ -143,11 +126,15 @@ export async function getClerkAdminIds(): Promise<Set<string> | null> {
   try {
     const PAGE_SIZE = 500;
     for (let offset = 0; offset < 10_000; offset += PAGE_SIZE) {
-      const result = await withTimeout(
+      const result = await Promise.race([
         client.users.getUserList({ limit: PAGE_SIZE, offset }),
-        ADMIN_API_TIMEOUT_MS,
-        "Clerk user list lookup timed out",
-      );
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Clerk user list lookup timed out")),
+            ADMIN_API_TIMEOUT_MS,
+          ),
+        ),
+      ]);
       const pageUsers = result.data ?? [];
       for (const clerkUser of pageUsers) {
         if (clerkUser.publicMetadata?.isAdmin === true && clerkUser.id) {
@@ -174,10 +161,6 @@ const userCache = new Map<
 >();
 
 function pruneUserCache() {
-  const now = Date.now();
-  for (const [key, entry] of userCache) {
-    if (entry.expiresAt <= now) userCache.delete(key);
-  }
   while (userCache.size > USER_CACHE_MAX_SIZE) {
     const oldest = userCache.keys().next().value;
     if (oldest === undefined) break;
@@ -213,15 +196,6 @@ async function findUserMatchesByClaims(
     .limit(1);
 }
 
-async function pickBestUserMatch(
-  matches: AuthUser[],
-  tokenIdentifier: string,
-): Promise<AuthUser | null> {
-  // Deterministic, probe-free choice (legacy duplicate reconciliation moved
-  // to the offline user-maintenance task; see helpers/user-merge.ts).
-  return pickCanonicalMatch(matches, tokenIdentifier);
-}
-
 export async function findUserByClaims(
   claims: ClerkSessionClaims,
 ): Promise<AuthUser | null> {
@@ -230,12 +204,13 @@ export async function findUserByClaims(
 
   const now = Date.now();
   const cached = userCache.get(sub);
-  if (cached && cached.expiresAt > now) {
-    return cached.user;
+  if (cached) {
+    if (cached.expiresAt > now) return cached.user;
+    userCache.delete(sub);
   }
 
   const matches = await findUserMatchesByClaims(claims);
-  const user = await pickBestUserMatch(matches, toTokenIdentifier(sub));
+  const user = pickCanonicalMatch(matches, toTokenIdentifier(sub));
 
   userCache.set(sub, {
     user,

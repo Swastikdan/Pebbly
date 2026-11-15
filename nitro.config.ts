@@ -98,12 +98,12 @@ const contentSecurityPolicy = [
     ...posthogOrigins,
     // Clerk SDK telemetry beacon.
     "https://clerk-telemetry.com",
-    // PostHog event ingestion and remote config.
-    ...posthogOrigins,
     "https://challenges.cloudflare.com",
   ].join(" "),
   [
     "frame-src",
+    "https://www.vidy.st",
+    "https://vidy.st",
     ...clerkOrigins,
     "https://www.youtube.com",
     "https://challenges.cloudflare.com",

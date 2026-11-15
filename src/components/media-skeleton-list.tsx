@@ -2,21 +2,23 @@ import { memo } from "react";
 
 import { MediaCardSkeleton } from "@/components/media-card";
 import { ScrollContainer } from "@/components/scroll-container";
+import { SkeletonList } from "@/components/ui/skeleton-list";
 
 export const MediaSkeletonList = memo(
   (props: { count?: number; cardType?: "horizontal" | "vertical" }) => {
     const cardCount = props.count ?? 6;
     return (
       <ScrollContainer isButtonsVisible={false}>
-        <div className="flex gap-2 p-4 first:ps-0 last:pe-0">
-          {Array.from({ length: cardCount }).map((_, index) => (
+        <SkeletonList
+          count={cardCount}
+          className="flex gap-2 p-4 first:ps-0 last:pe-0"
+          render={(index) => (
             <MediaCardSkeleton
-              // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
               key={index}
               card_type={props.cardType ?? "horizontal"}
             />
-          ))}
-        </div>
+          )}
+        />
       </ScrollContainer>
     );
   },

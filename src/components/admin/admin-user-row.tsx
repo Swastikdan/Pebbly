@@ -1,9 +1,14 @@
-import { Ban, Check, ShieldCheck, UserCog, UserX } from "@/components/ui/hugeicons";
-
 import type { AdminUser } from "@/components/admin/use-admin-users";
 import { ROLE_CONFIGS } from "@/components/admin/use-admin-users";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Ban,
+  Check,
+  ShieldCheck,
+  UserCog,
+  UserX,
+} from "@/components/ui/hugeicons";
 
 function RoleToggleButtons({
   user,
@@ -17,7 +22,10 @@ function RoleToggleButtons({
   onToggleRole: (role: (typeof ROLE_CONFIGS)[number]["value"]) => void;
 }) {
   const currentRoles = (user.roles ?? []).filter(
-    (role) => role === "ai-integrations" || role === "external-redirect",
+    (role) =>
+      role === "ai-integrations" ||
+      role === "external-redirect" ||
+      role === "play-preview",
   ) as (typeof ROLE_CONFIGS)[number]["value"][];
 
   return (

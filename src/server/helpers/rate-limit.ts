@@ -2,6 +2,7 @@ import { eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import { rateLimitAttempts } from "../db/schema";
+import { ensureTable } from "./ensure-table";
 
 /**
  * Generic rate limiting over the `rate_limit_attempts` ledger.
@@ -49,18 +50,10 @@ export const MAX_RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
  * "rate_limit_attempts"...` and instead degrades to "allow".
  */
 async function ensureRateLimitTable(db: Db): Promise<void> {
-  // Use raw SQL so we don't depend on the table already being in the
-  // drizzle schema cache for DDL.
-  await db.run(
-    sql.raw(
-      `CREATE TABLE IF NOT EXISTS "rate_limit_attempts" ("id" text PRIMARY KEY NOT NULL, "key" text NOT NULL, "created_at" integer NOT NULL)`,
-    ),
-  );
-  await db.run(
-    sql.raw(
-      `CREATE INDEX IF NOT EXISTS "rate_limit_key_created_idx" ON "rate_limit_attempts" ("key","created_at")`,
-    ),
-  );
+  await ensureTable(db, [
+    `CREATE TABLE IF NOT EXISTS "rate_limit_attempts" ("id" text PRIMARY KEY NOT NULL, "key" text NOT NULL, "created_at" integer NOT NULL)`,
+    `CREATE INDEX IF NOT EXISTS "rate_limit_key_created_idx" ON "rate_limit_attempts" ("key","created_at")`,
+  ]);
 }
 
 function isMissingTableError(error: unknown): boolean {
