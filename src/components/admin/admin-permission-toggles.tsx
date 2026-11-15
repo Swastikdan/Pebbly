@@ -1,9 +1,9 @@
-import { AlertTriangle, ExternalLink, Zap } from "@/components/ui/hugeicons";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { PermissionRole, RbacFeature } from "@/constants";
 import { ErrorBanner } from "@/components/ui/feedback";
+import { AlertTriangle, ExternalLink, Zap } from "@/components/ui/hugeicons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RBAC_FEATURES } from "@/constants";
 import { destructiveToast } from "@/lib/notifications";
@@ -14,11 +14,13 @@ import { unwrap } from "@/server/schema/common";
 const FEATURE_ROLES: Record<RbacFeature, PermissionRole> = {
   "ai-recommendations": "ai-integrations",
   "external-redirect": "external-redirect",
+  "play-preview": "play-preview",
 };
 
 const FEATURE_ICONS: Record<RbacFeature, typeof Zap> = {
   "ai-recommendations": Zap,
   "external-redirect": ExternalLink,
+  "play-preview": Zap,
 };
 
 function ToggleSwitch({
@@ -152,14 +154,14 @@ export function AdminPermissionToggles() {
   >(new Map());
 
   const permissionsByRole = rawPermissionsData as
-    | Record<PermissionRole, Record<RbacFeature, boolean>>
-    | undefined;
+    Record<PermissionRole, Record<RbacFeature, boolean>> | undefined;
 
   const effectivePermissionsByRole = useMemo(() => {
     if (!permissionsByRole) return undefined;
     const next: Record<PermissionRole, Record<RbacFeature, boolean>> = {
       "ai-integrations": { ...permissionsByRole["ai-integrations"] },
       "external-redirect": { ...permissionsByRole["external-redirect"] },
+      "play-preview": { ...permissionsByRole["play-preview"] },
     };
     for (const [feat, enabled] of optimisticOverrides) {
       const role = FEATURE_ROLES[feat];

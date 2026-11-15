@@ -6,10 +6,15 @@ import { getDb, runBatch } from "./db/client";
 import { rolePermissions } from "./db/schema";
 import { getEnv } from "./env";
 
-export const DYNAMIC_ROLES = ["ai-integrations", "external-redirect"] as const;
+export const DYNAMIC_ROLES = [
+  "ai-integrations",
+  "external-redirect",
+  "play-preview",
+] as const;
 export const VALID_FEATURES = [
   "ai-recommendations",
   "external-redirect",
+  "play-preview",
 ] as const;
 
 export type DynamicRbacRole = (typeof DYNAMIC_ROLES)[number];
@@ -23,23 +28,32 @@ export type RbacFeature = (typeof VALID_FEATURES)[number];
 const DEFAULT_GLOBAL_PERMISSIONS: Record<RbacFeature, boolean> = {
   "ai-recommendations": true,
   "external-redirect": false,
+  "play-preview": false,
 };
 
 const DEFAULT_PERMISSIONS: Record<
   DynamicRbacRole,
   Record<RbacFeature, boolean>
 > = {
+  "play-preview": {
+    "ai-recommendations": false,
+    "external-redirect": false,
+    "play-preview": true,
+  },
   "ai-integrations": {
     "ai-recommendations": true,
     "external-redirect": false,
+    "play-preview": false,
   },
   "external-redirect": {
     "ai-recommendations": false,
     "external-redirect": true,
+    "play-preview": false,
   },
 };
 
 export const ROLE_FEATURES: Record<DynamicRbacRole, RbacFeature> = {
+  "play-preview": "play-preview",
   "ai-integrations": "ai-recommendations",
   "external-redirect": "external-redirect",
 };

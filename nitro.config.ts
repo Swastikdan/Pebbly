@@ -102,6 +102,8 @@ const contentSecurityPolicy = [
   ].join(" "),
   [
     "frame-src",
+    "https://www.vidy.st",
+    "https://vidy.st",
     ...clerkOrigins,
     "https://www.youtube.com",
     "https://challenges.cloudflare.com",

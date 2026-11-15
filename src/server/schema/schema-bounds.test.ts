@@ -33,12 +33,12 @@ describe("input bounds", () => {
     ).toBe(false);
   });
 
-  it("only accepts the remaining assignable roles and bounds the list", () => {
+  it("only accepts the assignable roles and bounds the list", () => {
     const tokenIdentifier = "clerk|user_1";
     expect(
       v.safeParse(setUserRolesArgsSchema, {
         tokenIdentifier,
-        roles: ["ai-integrations"],
+        roles: ["ai-integrations", "external-redirect", "play-preview"],
       }).success,
     ).toBe(true);
     expect(
@@ -50,7 +50,7 @@ describe("input bounds", () => {
     expect(
       v.safeParse(setUserRolesArgsSchema, {
         tokenIdentifier,
-        roles: Array(3).fill("ai-integrations"),
+        roles: Array(4).fill("ai-integrations"),
       }).success,
     ).toBe(false);
   });
