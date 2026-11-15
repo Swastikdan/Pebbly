@@ -119,15 +119,21 @@ export const RBAC_ROLES = [
   "admin",
   "ai-integrations",
   "external-redirect",
+  "play-preview",
 ] as const;
 export type RbacRole = (typeof RBAC_ROLES)[number];
 export const PERMISSION_ROLES = [
   "ai-integrations",
   "external-redirect",
+  "play-preview",
 ] as const;
 export type PermissionRole = (typeof PERMISSION_ROLES)[number];
 
 export const RBAC_FEATURES = {
+  "play-preview": {
+    label: "Play Preview",
+    description: "Play videos in the embedded Vidy player.",
+  },
   "ai-recommendations": {
     label: "AI Recommendations",
     description:

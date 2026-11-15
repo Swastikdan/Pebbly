@@ -22,8 +22,10 @@ export const setUserRolesArgsSchema = v.object({
   tokenIdentifier: tokenIdentifierSchema,
   // One entry per assignable role; bounds the JSON stored in `users.roles`.
   roles: v.pipe(
-    v.array(v.picklist(["ai-integrations", "external-redirect"])),
-    v.maxLength(2),
+    v.array(
+      v.picklist(["ai-integrations", "external-redirect", "play-preview"]),
+    ),
+    v.maxLength(3),
   ),
 });
 export type SetUserRolesArgs = v.InferOutput<typeof setUserRolesArgsSchema>;

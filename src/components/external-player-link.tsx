@@ -1,19 +1,21 @@
 import { usePostHog } from "@posthog/react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
 
 import type { MediaMetadata, MediaType } from "@/domain/watchlist";
 import { buttonVariants } from "@/components/ui/button";
+import { Dialog, DialogPopup, DialogTitle } from "@/components/ui/dialog";
 import { Play } from "@/components/ui/icons";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useMediaState } from "@/hooks/use-watchlist";
+import { buildVidyUrl, resolvePlaybackMode } from "@/lib/playback";
 import { useRepository } from "@/lib/repository/use-repository";
 import { cn } from "@/lib/utils";
 
-// A `?play=true` landing should open exactly one external tab, even when the
+// A `?play=true` landing should launch exactly one player, even when the
 // page mounts several ExternalPlayerLink instances (poster + episode rows).
-// Module-scoped so the first mounted link wins.
-let hasAutoRedirected = false;
+// Claim each router search object once so later navigations can play again.
+const autoPlayClaims = new WeakSet<object>();
 
 interface ExternalPlayerLinkProps {
   tmdbId: number;
@@ -43,6 +45,31 @@ export function ExternalPlayerLink({
 }: ExternalPlayerLinkProps) {
   const { hasFeature } = usePermissions();
   const posthog = usePostHog();
+  const [playerUrl, setPlayerUrl] = useState<string | null>(null);
+  const searchState = useSearch({ strict: false });
+  const mode = resolvePlaybackMode(
+    hasFeature("play-preview"),
+    hasFeature("external-redirect"),
+    import.meta.env.VITE_PUBLIC_EXTERNAL_PLAYER_URL,
+  );
+  const openPreview = useCallback(() => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--primary)";
+    document.body.append(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    const context = document.createElement("canvas").getContext("2d");
+    let hex = "FFFFFF";
+    if (context) {
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      hex = Array.from(context.getImageData(0, 0, 1, 1).data)
+        .slice(0, 3)
+        .map((v) => v.toString(16).padStart(2, "0"))
+        .join("");
+    }
+    setPlayerUrl(buildVidyUrl(tmdbId, type, season, episode, hex));
+  }, [tmdbId, type, season, episode]);
   const repository = useRepository();
   const mediaState = useMediaState(String(tmdbId), type);
 
@@ -79,9 +106,9 @@ export function ExternalPlayerLink({
       title,
       season,
       episode,
-      mode: "redirect",
+      mode,
     });
-  }, [posthog, tmdbId, type, title, season, episode, markAsWatching]);
+  }, [posthog, tmdbId, type, title, season, episode, markAsWatching, mode]);
 
   const externalPlayerUrl = import.meta.env.VITE_PUBLIC_EXTERNAL_PLAYER_URL;
   // Play buttons are only rendered when the External Player Redirect feature
@@ -95,26 +122,62 @@ export function ExternalPlayerLink({
       : `${base}/watch/tv/${tmdbId}/${season ?? 1}/${episode ?? 1}`;
   }, [hasFeature, type, tmdbId, season, episode]);
 
-  // Continue-watching links land on `?play=true`; open the external player
-  // (new tab; same tab if the popup is blocked).
+  // Continue-watching uses the same priority as an explicit play click.
   useEffect(() => {
     if (
       typeof window === "undefined" ||
-      !redirectUrl ||
+      !mode ||
       !search.play ||
-      hasAutoRedirected
+      autoPlayClaims.has(searchState)
     ) {
       return;
     }
-    hasAutoRedirected = true;
+    autoPlayClaims.add(searchState);
     capturePlay();
+    if (mode === "iframe") {
+      openPreview();
+      return;
+    }
+    if (!redirectUrl) return;
     const win = window.open(redirectUrl, "_blank", "noopener,noreferrer");
     if (!win) {
       window.location.assign(redirectUrl);
     }
-  }, [redirectUrl, search.play, capturePlay]);
+  }, [redirectUrl, search.play, capturePlay, mode, openPreview, searchState]);
 
-  if (!redirectUrl) return null;
+  if (!mode) return null;
+
+  const handlePlay = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.stopPropagation();
+    capturePlay();
+    if (mode === "iframe") {
+      event.preventDefault();
+      openPreview();
+    }
+  };
+  const player = (
+    <Dialog
+      open={playerUrl !== null}
+      onOpenChange={(open) => {
+        if (!open) setPlayerUrl(null);
+      }}
+    >
+      <DialogPopup className="w-full max-w-5xl overflow-hidden">
+        <DialogTitle className="py-4 ps-4 pe-14 text-sm font-semibold">
+          {title}
+        </DialogTitle>
+        {playerUrl && (
+          <iframe
+            src={playerUrl}
+            title={`Play ${title}`}
+            className="aspect-video w-full border-0"
+            allow="encrypted-media; autoplay *; fullscreen *"
+            allowFullScreen
+          />
+        )}
+      </DialogPopup>
+    </Dialog>
+  );
 
   const label =
     type === "tv" && season && episode
@@ -124,26 +187,29 @@ export function ExternalPlayerLink({
 
   if (variant === "card") {
     return (
-      <a
-        href={redirectUrl}
-        aria-label={ariaLabel}
-        title={label}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          "group/play focus-visible:ring-ring absolute inset-0 z-10 flex size-full cursor-pointer items-center justify-center rounded-[inherit] p-0 outline-hidden transition-opacity duration-100 focus-visible:ring-2 focus-visible:ring-offset-2",
-          className ??
-            "opacity-0 hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
-        )}
-        onClick={capturePlay}
-      >
-        <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
-          <Play
-            aria-hidden="true"
-            className="size-6 translate-x-[2px] fill-white text-white"
-          />
-        </div>
-      </a>
+      <>
+        {player}
+        <a
+          href={mode === "iframe" ? "#play" : redirectUrl}
+          aria-label={ariaLabel}
+          title={label}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "group/play focus-visible:ring-ring absolute inset-0 z-10 flex size-full cursor-pointer items-center justify-center rounded-[inherit] p-0 outline-hidden transition-opacity duration-100 focus-visible:ring-2 focus-visible:ring-offset-2",
+            className ??
+              "opacity-0 hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100",
+          )}
+          onClick={handlePlay}
+        >
+          <div className="flex size-12 items-center justify-center rounded-full bg-black/60 transition-[color,background-color,transform] duration-100 group-hover/play:scale-110 group-hover/play:bg-black/80">
+            <Play
+              aria-hidden="true"
+              className="size-6 translate-x-[2px] fill-white text-white"
+            />
+          </div>
+        </a>
+      </>
     );
   }
 
@@ -155,26 +221,30 @@ export function ExternalPlayerLink({
   );
 
   return (
-    <a
-      href={redirectUrl}
-      aria-label={ariaLabel}
-      title={label}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={buttonVariants({
-        size: "lg",
-        className: triggerClass,
-      })}
-      onClick={capturePlay}
-    >
-      <Play
-        aria-hidden="true"
-        className={cn(
-          "fill-current",
-          variant === "episode" ? "size-4" : "size-5",
-        )}
-      />
-      {label}
-    </a>
+    <>
+      {" "}
+      {player}
+      <a
+        href={mode === "iframe" ? "#play" : redirectUrl}
+        aria-label={ariaLabel}
+        title={label}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={buttonVariants({
+          size: "lg",
+          className: triggerClass,
+        })}
+        onClick={handlePlay}
+      >
+        <Play
+          aria-hidden="true"
+          className={cn(
+            "fill-current",
+            variant === "episode" ? "size-4" : "size-5",
+          )}
+        />
+        {label}
+      </a>
+    </>
   );
 }
