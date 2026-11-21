@@ -32,34 +32,28 @@ const getFullscreenElement = () => {
   return doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null;
 };
 
-const ignoreFullscreenFailure = (result: Promise<void> | void) => {
-  if (result) void result.catch(() => {});
-};
-
 /**
  * Hide mobile browser chrome by making the whole app fullscreen. This needs a
  * user gesture; the rejected request from a gesture-less `?play=true` landing
  * is ignored, leaving the in-app fullscreen dialog. iPhone Safari does not
  * support element fullscreen and no-ops.
+ *
+ * Returns the pending entry promise, or null when no request was started.
  */
-function requestPlayerFullscreen() {
-  if (typeof document === "undefined" || getFullscreenElement()) return false;
+function requestPlayerFullscreen(): Promise<void> | null {
+  if (typeof document === "undefined" || getFullscreenElement()) return null;
   // Skip the known-doomed call after a gesture-less autoplay landing. When the
   // browser exposes activation from the navigation click, let it through.
   if (navigator.userActivation && !navigator.userActivation.isActive)
-    return false;
+    return null;
   const element = document.documentElement as FullscreenElement;
   try {
-    if (element.requestFullscreen) {
-      ignoreFullscreenFailure(element.requestFullscreen());
-      return true;
-    }
+    if (element.requestFullscreen) return element.requestFullscreen();
     if (element.webkitRequestFullscreen) {
-      ignoreFullscreenFailure(element.webkitRequestFullscreen());
-      return true;
+      return element.webkitRequestFullscreen() ?? null;
     }
   } catch {}
-  return false;
+  return null;
 }
 
 function exitPlayerFullscreen() {
@@ -67,12 +61,11 @@ function exitPlayerFullscreen() {
   const doc = document as FullscreenDocument;
   try {
     if (doc.exitFullscreen) {
-      ignoreFullscreenFailure(doc.exitFullscreen());
+      void doc.exitFullscreen().catch(() => {});
       return;
     }
-    if (doc.webkitExitFullscreen) {
-      ignoreFullscreenFailure(doc.webkitExitFullscreen());
-    }
+    const result = doc.webkitExitFullscreen?.();
+    if (result) void result.catch(() => {});
   } catch {}
 }
 
@@ -106,6 +99,7 @@ export function ExternalPlayerLink({
   const posthog = usePostHog();
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const requestedFullscreen = useRef(false);
+  const pendingFullscreen = useRef<Promise<void> | null>(null);
   const searchState = useSearch({ strict: false });
   const mode = resolvePlaybackMode(
     hasFeature("play-preview"),
@@ -128,15 +122,40 @@ export function ExternalPlayerLink({
         .map((v) => v.toString(16).padStart(2, "0"))
         .join("");
     }
-    if (requestPlayerFullscreen()) requestedFullscreen.current = true;
+    const request = requestPlayerFullscreen();
+    if (request) {
+      requestedFullscreen.current = true;
+      pendingFullscreen.current = request;
+      request.then(
+        () => {
+          if (pendingFullscreen.current === request) {
+            pendingFullscreen.current = null;
+          }
+          // Closing before entry lands cannot exit yet — there is no element
+          // until it resolves. Exit now that fullscreen is actually active.
+          if (!requestedFullscreen.current) exitPlayerFullscreen();
+        },
+        () => {
+          if (pendingFullscreen.current !== request) return;
+          pendingFullscreen.current = null;
+          if (!getFullscreenElement()) requestedFullscreen.current = false;
+        },
+      );
+    }
     setPlayerUrl(buildVidyUrl(tmdbId, type, season, episode, hex));
   }, [tmdbId, type, season, episode]);
-  const closePreview = useCallback(() => {
-    setPlayerUrl(null);
+  const releaseFullscreen = useCallback(() => {
     if (!requestedFullscreen.current) return;
     requestedFullscreen.current = false;
+    // A request still in flight has no fullscreen element to exit yet; the
+    // completion handler above exits as soon as it lands.
+    if (pendingFullscreen.current) return;
     exitPlayerFullscreen();
   }, []);
+  const closePreview = useCallback(() => {
+    setPlayerUrl(null);
+    releaseFullscreen();
+  }, [releaseFullscreen]);
 
   // If the user leaves native fullscreen with Esc, forget the request so
   // closing the dialog does not exit an unrelated fullscreen session.
@@ -153,11 +172,9 @@ export function ExternalPlayerLink({
         "webkitfullscreenchange",
         handleFullscreenChange,
       );
-      if (!requestedFullscreen.current) return;
-      requestedFullscreen.current = false;
-      exitPlayerFullscreen();
+      releaseFullscreen();
     };
-  }, []);
+  }, [releaseFullscreen]);
   const repository = useRepository();
   const mediaState = useMediaState(String(tmdbId), type);
 
