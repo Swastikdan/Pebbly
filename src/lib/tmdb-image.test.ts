@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { tmdbSrcSet } from "./tmdb-image";
+import { tmdbImageUrl, tmdbSrcSet, toTmdbPath } from "./tmdb-image";
 
 describe("tmdbSrcSet", () => {
   it("expands a poster URL into the documented width ladder", () => {
@@ -46,5 +46,58 @@ describe("tmdbSrcSet", () => {
         expect(descriptor).toMatch(/^\d+w$/);
       }
     }
+  });
+});
+
+describe("toTmdbPath", () => {
+  it("passes a bare path through", () => {
+    expect(toTmdbPath("/abc.jpg")).toBe("/abc.jpg");
+  });
+
+  it("strips a full TMDB CDN prefix down to the bare path", () => {
+    expect(toTmdbPath("https://image.tmdb.org/t/p/w780/abc.jpg")).toBe(
+      "/abc.jpg",
+    );
+  });
+
+  it("returns undefined for empty and non-TMDB values", () => {
+    expect(toTmdbPath("")).toBeUndefined();
+    expect(toTmdbPath(null)).toBeUndefined();
+    expect(toTmdbPath(undefined)).toBeUndefined();
+    expect(
+      toTmdbPath("https://placehold.co/300x450?text=Image+Not+Found"),
+    ).toBeUndefined();
+  });
+});
+
+describe("tmdbImageUrl", () => {
+  it("prefixes a bare path", () => {
+    expect(tmdbImageUrl("https://image.tmdb.org/t/p/w185", "/abc.jpg")).toBe(
+      "https://image.tmdb.org/t/p/w185/abc.jpg",
+    );
+  });
+
+  it("does not glue a size prefix in front of a whole URL", () => {
+    expect(
+      tmdbImageUrl(
+        "https://image.tmdb.org/t/p/w185",
+        "https://image.tmdb.org/t/p/w780/abc.jpg",
+      ),
+    ).toBe("https://image.tmdb.org/t/p/w185/abc.jpg");
+  });
+
+  it("returns undefined for an absent or non-TMDB value, so the caller can fall back to a placeholder", () => {
+    // Guards the 404 cases: a bare prefix, a "null"/"undefined" tail, or a
+    // stored external placeholder URL with a size prefix glued on.
+    expect(
+      tmdbImageUrl("https://image.tmdb.org/t/p/w185", undefined),
+    ).toBeUndefined();
+    expect(tmdbImageUrl("https://image.tmdb.org/t/p/w185", "")).toBeUndefined();
+    expect(
+      tmdbImageUrl(
+        "https://image.tmdb.org/t/p/w185",
+        "https://placehold.co/300x450",
+      ),
+    ).toBeUndefined();
   });
 });

@@ -55,3 +55,34 @@ export function tmdbSrcSet(src: string): string | undefined {
 
   return [...entries].join(", ");
 }
+
+/**
+ * Normalizes a stored image value to a bare TMDB file path ("/abc.jpg").
+ * Strips a full TMDB CDN prefix when present, passes a bare path through, and
+ * returns undefined for anything that is not a TMDB asset (empty strings,
+ * external placeholder URLs). Callers can then glue a size prefix onto the path
+ * without doubling one that is already there.
+ */
+export function toTmdbPath(
+  value: string | null | undefined,
+): string | undefined {
+  if (!value) return undefined;
+  const urlMatch = TMDB_IMAGE_URL_RE.exec(value);
+  if (urlMatch) return urlMatch[3];
+  return value.startsWith("/") ? value : undefined;
+}
+
+/**
+ * Builds a sized TMDB image URL from a stored value that may be a bare path or
+ * a full CDN URL. Returns undefined when the value is not a TMDB asset, so the
+ * caller falls back to a placeholder instead of producing a URL that ends in a
+ * bare size prefix, a size prefix glued in front of a whole URL, or the literal
+ * word for an absent path — all of which the CDN answers with 404.
+ */
+export function tmdbImageUrl(
+  prefix: string,
+  value: string | null | undefined,
+): string | undefined {
+  const path = toTmdbPath(value);
+  return path ? `${prefix}${path}` : undefined;
+}
