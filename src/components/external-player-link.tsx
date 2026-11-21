@@ -80,8 +80,8 @@ function requestPlayerFullscreen(): Promise<void> | null {
   try {
     if (element.requestFullscreen) return element.requestFullscreen();
     if (element.webkitRequestFullscreen) {
-      element.webkitRequestFullscreen();
-      return waitForFullscreenEntry();
+      const result = element.webkitRequestFullscreen();
+      return result ?? waitForFullscreenEntry();
     }
   } catch {}
   return null;
