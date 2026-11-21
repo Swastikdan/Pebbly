@@ -1,5 +1,5 @@
 import { usePostHog } from "@posthog/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
 
 import type { MediaMetadata, MediaType } from "@/domain/watchlist";
@@ -16,6 +16,89 @@ import { cn } from "@/lib/utils";
 // page mounts several ExternalPlayerLink instances (poster + episode rows).
 // Claim each router search object once so later navigations can play again.
 const autoPlayClaims = new WeakSet<object>();
+
+type FullscreenElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void;
+};
+
+type FullscreenDocument = Document & {
+  webkitFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void> | void;
+};
+
+const getFullscreenElement = () => {
+  if (typeof document === "undefined") return null;
+  const doc = document as FullscreenDocument;
+  return doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null;
+};
+
+/**
+ * WebKit's prefixed request method returns `undefined`, so wait for the
+ * fullscreen change/error event to learn whether entry succeeded. This keeps
+ * the caller's cancel-on-close path working even after unmount.
+ */
+function waitForFullscreenEntry(): Promise<void> {
+  if (getFullscreenElement()) return Promise.resolve();
+  return new Promise<void>((resolve, reject) => {
+    const handleChange = () => {
+      if (!getFullscreenElement()) return;
+      cleanup();
+      resolve();
+    };
+    const handleError = () => {
+      cleanup();
+      reject(new Error("Fullscreen request failed"));
+    };
+    const cleanup = () => {
+      document.removeEventListener("fullscreenchange", handleChange);
+      document.removeEventListener("webkitfullscreenchange", handleChange);
+      document.removeEventListener("fullscreenerror", handleError);
+      document.removeEventListener("webkitfullscreenerror", handleError);
+    };
+    document.addEventListener("fullscreenchange", handleChange);
+    document.addEventListener("webkitfullscreenchange", handleChange);
+    document.addEventListener("fullscreenerror", handleError);
+    document.addEventListener("webkitfullscreenerror", handleError);
+  });
+}
+
+/**
+ * Hide mobile browser chrome by making the whole app fullscreen. This needs a
+ * user gesture; the rejected request from a gesture-less `?play=true` landing
+ * is ignored, leaving the in-app fullscreen dialog. iPhone Safari does not
+ * support element fullscreen and no-ops.
+ *
+ * Returns the pending entry promise, or null when no request was started.
+ */
+function requestPlayerFullscreen(): Promise<void> | null {
+  if (typeof document === "undefined" || getFullscreenElement()) return null;
+  // Skip the known-doomed call after a gesture-less autoplay landing. When the
+  // browser exposes activation from the navigation click, let it through.
+  if (navigator.userActivation && !navigator.userActivation.isActive)
+    return null;
+  const element = document.documentElement as FullscreenElement;
+  try {
+    if (element.requestFullscreen) return element.requestFullscreen();
+    if (element.webkitRequestFullscreen) {
+      const result = element.webkitRequestFullscreen();
+      return result ?? waitForFullscreenEntry();
+    }
+  } catch {}
+  return null;
+}
+
+function exitPlayerFullscreen() {
+  if (typeof document === "undefined" || !getFullscreenElement()) return;
+  const doc = document as FullscreenDocument;
+  try {
+    if (doc.exitFullscreen) {
+      void doc.exitFullscreen().catch(() => {});
+      return;
+    }
+    const result = doc.webkitExitFullscreen?.();
+    if (result) void result.catch(() => {});
+  } catch {}
+}
 
 interface ExternalPlayerLinkProps {
   tmdbId: number;
@@ -46,6 +129,8 @@ export function ExternalPlayerLink({
   const { hasFeature } = usePermissions();
   const posthog = usePostHog();
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
+  const requestedFullscreen = useRef(false);
+  const pendingFullscreen = useRef<Promise<void> | null>(null);
   const searchState = useSearch({ strict: false });
   const mode = resolvePlaybackMode(
     hasFeature("play-preview"),
@@ -68,8 +153,59 @@ export function ExternalPlayerLink({
         .map((v) => v.toString(16).padStart(2, "0"))
         .join("");
     }
+    const request = requestPlayerFullscreen();
+    if (request) {
+      requestedFullscreen.current = true;
+      pendingFullscreen.current = request;
+      request.then(
+        () => {
+          if (pendingFullscreen.current === request) {
+            pendingFullscreen.current = null;
+          }
+          // Closing before entry lands cannot exit yet — there is no element
+          // until it resolves. Exit now that fullscreen is actually active.
+          if (!requestedFullscreen.current) exitPlayerFullscreen();
+        },
+        () => {
+          if (pendingFullscreen.current !== request) return;
+          pendingFullscreen.current = null;
+          if (!getFullscreenElement()) requestedFullscreen.current = false;
+        },
+      );
+    }
     setPlayerUrl(buildVidyUrl(tmdbId, type, season, episode, hex));
   }, [tmdbId, type, season, episode]);
+  const releaseFullscreen = useCallback(() => {
+    if (!requestedFullscreen.current) return;
+    requestedFullscreen.current = false;
+    // A request still in flight has no fullscreen element to exit yet; the
+    // completion handler above exits as soon as it lands.
+    if (pendingFullscreen.current) return;
+    exitPlayerFullscreen();
+  }, []);
+  const closePreview = useCallback(() => {
+    setPlayerUrl(null);
+    releaseFullscreen();
+  }, [releaseFullscreen]);
+
+  // If the user leaves native fullscreen with Esc, forget the request so
+  // closing the dialog does not exit an unrelated fullscreen session.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const handleFullscreenChange = () => {
+      if (!getFullscreenElement()) requestedFullscreen.current = false;
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange,
+      );
+      releaseFullscreen();
+    };
+  }, [releaseFullscreen]);
   const repository = useRepository();
   const mediaState = useMediaState(String(tmdbId), type);
 
@@ -159,18 +295,24 @@ export function ExternalPlayerLink({
     <Dialog
       open={playerUrl !== null}
       onOpenChange={(open) => {
-        if (!open) setPlayerUrl(null);
+        if (!open) closePreview();
       }}
     >
-      <DialogPopup className="w-full max-w-5xl overflow-hidden">
-        <DialogTitle className="py-4 ps-4 pe-14 text-sm font-semibold">
-          {title}
-        </DialogTitle>
+      <DialogPopup
+        viewportClassName="grid-rows-1 p-0"
+        overlayClassName="bg-black/90"
+        className="row-start-1 h-dvh max-h-none w-full max-w-none overflow-hidden rounded-none border-0 bg-black"
+        closeProps={{
+          className:
+            "top-[max(env(safe-area-inset-top),0.75rem)] end-[max(env(safe-area-inset-right),0.75rem)] rounded-full border-white/15 bg-black/60 p-3 text-white shadow-lg backdrop-blur-md hover:bg-black/80 hover:text-white dark:hover:bg-black/80",
+        }}
+      >
+        <DialogTitle className="sr-only">{title}</DialogTitle>
         {playerUrl && (
           <iframe
             src={playerUrl}
             title={`Play ${title}`}
-            className="aspect-video w-full border-0"
+            className="min-h-0 w-full flex-1 border-0 bg-black"
             allow="encrypted-media; autoplay *; fullscreen *"
             allowFullScreen
           />

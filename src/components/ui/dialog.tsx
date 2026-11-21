@@ -1,11 +1,11 @@
 "use client";
 
 import type React from "react";
-import { XIcon } from "@/components/ui/hugeicons";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
+import { XIcon } from "@/components/ui/hugeicons";
 import { cn } from "@/lib/utils";
 
 export const Dialog: typeof DialogPrimitive.Root = DialogPrimitive.Root;
@@ -66,6 +66,7 @@ export function DialogPopup({
   portalProps,
   noOverlay = false,
   overlayClassName,
+  viewportClassName,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
@@ -74,6 +75,7 @@ export function DialogPopup({
   portalProps?: DialogPrimitive.Portal.Props;
   noOverlay?: boolean;
   overlayClassName?: string;
+  viewportClassName?: string;
 }): React.ReactElement {
   const {
     className: closeClassName,
@@ -87,6 +89,7 @@ export function DialogPopup({
         className={cn(
           bottomStickOnMobile &&
             "max-sm:grid-rows-[1fr_auto] max-sm:p-0 max-sm:pt-12",
+          viewportClassName,
         )}
       >
         <DialogPrimitive.Popup
