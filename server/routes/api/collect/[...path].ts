@@ -67,7 +67,11 @@ export default eventHandler(async (event) => {
   responseHeaders.delete("content-length");
   responseHeaders.delete("transfer-encoding");
 
-  return new Response(response.body, {
+  // Buffer the upstream body so a stalled PostHog response cannot keep the
+  // Worker's response stream open past the runtime's stream lifetime limit.
+  const responseBody = response.body ? await response.arrayBuffer() : null;
+
+  return new Response(responseBody, {
     status: response.status,
     headers: responseHeaders,
   });
