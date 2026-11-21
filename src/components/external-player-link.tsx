@@ -33,6 +33,36 @@ const getFullscreenElement = () => {
 };
 
 /**
+ * WebKit's prefixed request method returns `undefined`, so wait for the
+ * fullscreen change/error event to learn whether entry succeeded. This keeps
+ * the caller's cancel-on-close path working even after unmount.
+ */
+function waitForFullscreenEntry(): Promise<void> {
+  if (getFullscreenElement()) return Promise.resolve();
+  return new Promise<void>((resolve, reject) => {
+    const handleChange = () => {
+      if (!getFullscreenElement()) return;
+      cleanup();
+      resolve();
+    };
+    const handleError = () => {
+      cleanup();
+      reject(new Error("Fullscreen request failed"));
+    };
+    const cleanup = () => {
+      document.removeEventListener("fullscreenchange", handleChange);
+      document.removeEventListener("webkitfullscreenchange", handleChange);
+      document.removeEventListener("fullscreenerror", handleError);
+      document.removeEventListener("webkitfullscreenerror", handleError);
+    };
+    document.addEventListener("fullscreenchange", handleChange);
+    document.addEventListener("webkitfullscreenchange", handleChange);
+    document.addEventListener("fullscreenerror", handleError);
+    document.addEventListener("webkitfullscreenerror", handleError);
+  });
+}
+
+/**
  * Hide mobile browser chrome by making the whole app fullscreen. This needs a
  * user gesture; the rejected request from a gesture-less `?play=true` landing
  * is ignored, leaving the in-app fullscreen dialog. iPhone Safari does not
@@ -50,7 +80,8 @@ function requestPlayerFullscreen(): Promise<void> | null {
   try {
     if (element.requestFullscreen) return element.requestFullscreen();
     if (element.webkitRequestFullscreen) {
-      return element.webkitRequestFullscreen() ?? null;
+      element.webkitRequestFullscreen();
+      return waitForFullscreenEntry();
     }
   } catch {}
   return null;
