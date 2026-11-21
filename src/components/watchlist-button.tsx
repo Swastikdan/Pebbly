@@ -95,6 +95,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
           media_id: itemId,
           media_type,
           title,
+          source: "watchlist_button",
         });
       } else {
         // Destructive action: optimistic change immediately, backend change after 5s timer
@@ -104,6 +105,7 @@ const WatchlistButton = (props: WatchlistButtonProps) => {
           media_id: itemId,
           media_type,
           title,
+          source: "watchlist_button",
         });
         destructiveToast({
           title: "Removed from watchlist",
